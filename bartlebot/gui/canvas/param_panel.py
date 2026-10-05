@@ -50,7 +50,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import zone_names
+from bartlebot import param_cards, zone_names
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
@@ -66,6 +66,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.discard import discard_widget
+from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
@@ -958,6 +959,28 @@ class _HoverRow(QWidget):
 # ---------------------------------------------------------------------------
 # _DynamicParamForm
 # ---------------------------------------------------------------------------
+
+
+class _NodeHelpButton(IconButton):
+    """The node type's ``?``: the node browser's page for it.
+
+    Framed, in the accent: the same affordance as a row's ``?`` one panel over
+    (``HelpToggle``), only larger. It styles itself rather than being styled by the
+    panel, because an ``IconButton`` answers every ``StyleChange`` with its own flat
+    sheet, and whichever is applied last wins.
+    """
+
+    def __init__(self, parent=None) -> None:
+        super().__init__("help", tooltip="View node documentation", size=22, icon_size=14, parent=parent)
+
+    def apply_theme_styles(self) -> None:
+        super().apply_theme_styles()
+        set_style_sheet(
+            self,
+            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: {THEME.font_small_px}px; }}"
+            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}",
+        )
 
 
 class _DynamicParamForm(ThemedMixin, QWidget):
@@ -2312,6 +2335,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._state: StateModel | None = None
         self._transition: TransitionModel | None = None
         self._region: RegionModel | None = None
+        self._recovery_id: str | None = None
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
         # The player Ctrl+R records from; AppController points it at the last-focused game window.
@@ -2334,13 +2358,20 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._idle_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._stack.addWidget(self._idle_lbl)
 
-        # Page 1 — node
-        node_w = QWidget()
-        nf = QFormLayout(node_w)
-        nf.setContentsMargins(6, 6, 6, 6)
-        self._node_id_lbl = QLabel()
-        self._node_label_edit = QLineEdit()
+        # Page 1 — node. Since #142 a page of cards like the subgraph node's: the label
+        # as the title, one gray line for the node type and id, then Parameters,
+        # Connections, Notes and Role, the whole page scrolling as one.
+        from bartlebot.gui.canvas.node_cards import PageFoldBar, TitleEdit, ToFillLabel, record_line  # noqa: PLC0415
+        from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore  # noqa: PLC0415
+
+        self._node_id_lbl = ThemedTextLabel("", color="text_muted")
+        self._node_id_lbl.setToolTip("The node's id: what edges and the bot file call it")
+        self._node_label_edit = TitleEdit()
         self._node_type_combo = QComboBox()
+        self._node_type_combo.setToolTip("The node type. Changing it clears the params.")
+        # Not as wide as the longest type: it shares a line with the id and the ?.
+        self._node_type_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self._node_type_combo.setMinimumContentsLength(12)
         # The category headers carry a THEME color on the model item rather than a
         # stylesheet, so apply_theme_styles re-sets their foreground by hand.
         self._node_type_headers: list[QStandardItem] = []
@@ -2367,20 +2398,74 @@ class _ParamPanel(ThemedMixin, QWidget):
                 _model.appendRow(_item)
         self._node_type_combo.setModel(_model)
         self._node_type_combo.setItemDelegate(_NodeTypeDelegate(self._node_type_combo))
-        self._node_help_btn = IconButton("help", tooltip="View node documentation", size=22, icon_size=14)
+        self._node_help_btn = _NodeHelpButton()
         self._node_help_btn.clicked.connect(self._on_node_help)
 
-        _node_type_row = QWidget()
-        _nt_row_layout = QHBoxLayout(_node_type_row)
-        _nt_row_layout.setContentsMargins(0, 0, 0, 0)
-        _nt_row_layout.setSpacing(4)
-        _nt_row_layout.addWidget(self._node_type_combo, 1)
-        _nt_row_layout.addWidget(self._node_help_btn)
+        node_page = QWidget()
+        node_col = QVBoxLayout(node_page)
+        node_col.setContentsMargins(6, 6, 6, 6)
+        node_col.setSpacing(4)
+        node_col.addWidget(self._node_label_edit)
+        meta = QHBoxLayout()
+        meta.setContentsMargins(0, 0, 0, 0)
+        meta.setSpacing(6)
+        node_col.addLayout(meta)
+        meta.addWidget(self._node_type_combo, 1)
+        meta.addWidget(self._node_id_lbl)
+        meta.addWidget(self._node_help_btn)
+        node_col.addSpacing(4)
+        self._node_fold_bar = PageFoldBar(self._set_node_descriptions_visible)
+        node_col.addWidget(self._node_fold_bar)
+
+        # Parameters: the form, with Record (and, in a definition, Promote) on the band.
+        self._params_card = OptionCard(param_cards.PARAMS, "Parameters")
+        self._params_count = ToFillLabel()
+        self._params_card.add_header_widget(self._params_count)
+        # Definition documents only: put this node whole on the subgraph node as an
+        # input group, or take it off. A toggle on the band, with "Promoted" in the
+        # summary; its tooltip names what a click does next.
+        self._promote_btn = IconButton("chevrons_up", tooltip="Promote to input group", size=24, icon_size=16)
+        self._params_card.add_header_widget(self._promote_btn, gap_before=2)
+        self._node_promoted = False
+        self._promote_btn.clicked.connect(self._on_promote_clicked)
+        # Recording is how most params here get filled, so the button is drawn to be
+        # found (#106): SECONDARY's accent and the red dot, on the band so it works with
+        # the card folded (#142).
+        self._record_btn = RecordButton(
+            style=ActionStyle.SECONDARY, fill=False, get_clients=lambda: self._get_clients()
+        )
+        self._record_btn.setToolTip(
+            "Fill this node's values from the game (Ctrl+R records from the game window you were last in)"
+        )
+        self._record_btn.clicked.connect(self._on_record_clicked)
+        self._params_card.add_header_widget(self._record_btn, gap_before=2)
+        self._record_status_lbl = record_line()
+        self._params_card.body_layout.addWidget(self._record_status_lbl)
+        self._param_form = _DynamicParamForm()
+        self._params_card.body_layout.addWidget(self._param_form)
+        self._recording_player: int | None = None
+
+        # Connections: every route off the node by return value, including the ones the
+        # canvas never draws, then what comes in.
+        self._conn_card = OptionCard(param_cards.CONNECTIONS, "Connections")
+        self._conn_body = QWidget()
+        self._conn_body_layout = QVBoxLayout(self._conn_body)
+        self._conn_body_layout.setContentsMargins(0, 0, 0, 0)
+        self._conn_body_layout.setSpacing(2)
+        self._conn_card.body_layout.addWidget(self._conn_body)
+
+        # Notes — freeform per-node annotation, folded to its first line.
+        self._notes_card = OptionCard(param_cards.NOTES, "Notes")
+        self._notes_edit = QPlainTextEdit()
+        self._notes_edit.setPlaceholderText("Add a note…")
+        self._notes_edit.setFixedHeight(72)
+        self._notes_card.body_layout.addWidget(self._notes_edit)
 
         # FSM role checkboxes. Both roles are exactly-one and bot-wide, so these read
         # as checkboxes but behave as radios across nodes: checking one moves the role
         # here, and the box for the state that already holds it is disabled, because
         # unchecking would leave the bot with no answer and BotConfig requires one.
+        self._role_card = OptionCard(param_cards.ROLE, "Role")
         self._initial_check = QCheckBox("Initial state")
         self._initial_check.setToolTip(
             "Start the bot in this state.\n\nExactly one state is the initial state; "
@@ -2391,140 +2476,43 @@ class _ParamPanel(ThemedMixin, QWidget):
             "Resume here after a crashed client reconnects.\n\nExactly one state is the "
             "recovery state; checking this moves the role here from whichever state holds it now."
         )
-        _roles_row = QWidget()
-        _roles_layout = QHBoxLayout(_roles_row)
-        _roles_layout.setContentsMargins(0, 0, 0, 0)
-        _roles_layout.setSpacing(12)
-        _roles_layout.addWidget(self._initial_check)
-        _roles_layout.addWidget(self._recovery_check)
-        _roles_layout.addStretch()
+        self._role_card.body_layout.addWidget(self._initial_check)
+        self._role_card.body_layout.addWidget(self._recovery_check)
 
-        nf.addRow("ID", self._node_id_lbl)
-        nf.addRow("Label", self._node_label_edit)
-        nf.addRow("Node type", _node_type_row)
-        nf.addRow("Roles", _roles_row)
+        node_cards_box = QWidget()
+        node_cards = QVBoxLayout(node_cards_box)
+        node_cards.setContentsMargins(0, 0, 0, 0)
+        node_cards.setSpacing(8)
+        for card in (self._params_card, self._conn_card, self._notes_card, self._role_card):
+            node_cards.addWidget(card)
+        node_col.addWidget(node_cards_box)
+        node_col.addStretch(1)
+        self._node_cards = {
+            param_cards.PARAMS: self._params_card,
+            param_cards.CONNECTIONS: self._conn_card,
+            param_cards.NOTES: self._notes_card,
+            param_cards.ROLE: self._role_card,
+        }
+        self._node_folds = CardFolds(
+            self._node_fold_bar.heading_actions,
+            store=UiStateFoldStore(param_cards.NODE_PAGE_SURFACE, param_cards.node_page_fold_defaults()),
+        )
+        self._node_folds.set_cards(self._node_cards)
 
-        self._param_form = _DynamicParamForm()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(scroll.Shape.NoFrame)
         # Every inspector page reserves its gutter, so the panel keeps one content width
-        # whichever page is up and whether or not that page scrolls.
+        # whichever page is up, and a fold does not jolt every card sideways (#112).
         reserve_scrollbar_gutter(scroll)
-        scroll.setWidget(self._param_form)
-
-        self._returns_section = QWidget()
-        returns_layout = QVBoxLayout(self._returns_section)
-        returns_layout.setContentsMargins(6, 4, 6, 4)
-        returns_layout.setSpacing(2)
-        self._returns_title = QLabel("Returns:")
-        returns_layout.addWidget(self._returns_title)
-        self._returns_body_layout = QVBoxLayout()
-        self._returns_body_layout.setSpacing(1)
-        returns_layout.addLayout(self._returns_body_layout)
-        self._returns_section.setVisible(False)
-
-        # Record row — shown only for recordable node types
-        self._record_row = QWidget()
-        _rr_layout = QVBoxLayout(self._record_row)
-        _rr_layout.setContentsMargins(6, 0, 6, 4)
-        _rr_layout.setSpacing(2)
-        # Recording is how most params here get filled, so the button is drawn to be
-        # found (#106): the full width of the panel, like the wiki import beside it,
-        # with SECONDARY's accent and the red dot. The status goes underneath, and is
-        # hidden while it has nothing to say.
-        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True, get_clients=lambda: self._get_clients())
-        self._record_btn.setToolTip(
-            "Fill this node's values from the game (Ctrl+R records from the game window you were last in)"
-        )
-        self._record_status_lbl = QLabel("")
-        self._record_status_lbl.setWordWrap(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(node_page)
+        # Visibility only once everything is parented: see "Never show a widget before
+        # it has a parent" in gui/CLAUDE.md.
+        self._promote_btn.setVisible(False)
+        self._record_btn.setVisible(False)
         self._record_status_lbl.setVisible(False)
-        _rr_layout.addWidget(self._record_btn)
-        _rr_layout.addWidget(self._record_status_lbl)
-        self._record_row.setVisible(False)
-        self._record_btn.clicked.connect(self._on_record_clicked)
-
-        # Wiki import row — shown only for handle_combat nodes
-        self._wiki_import_row = QWidget()
-        _wi_layout = QHBoxLayout(self._wiki_import_row)
-        _wi_layout.setContentsMargins(6, 0, 6, 4)
-        _wi_layout.setSpacing(6)
-        self._wiki_import_btn = ActionButton("download", "Import drops from wiki…")
-        self._wiki_import_btn.setToolTip(
-            "Fetch drop data from a Wizard101 wiki creature page and add selected items to the bot's drop list."
-        )
-        _wi_layout.addWidget(self._wiki_import_btn)
-        self._wiki_import_row.setVisible(False)
-        self._wiki_import_btn.clicked.connect(self._on_wiki_import)
-
-        # Notes section — freeform per-node annotation
-        self._notes_section = QWidget()
-        _notes_vbox = QVBoxLayout(self._notes_section)
-        _notes_vbox.setContentsMargins(6, 4, 6, 6)
-        _notes_vbox.setSpacing(3)
-        self._notes_title = QLabel("Notes:")
-        _notes_vbox.addWidget(self._notes_title)
-        self._notes_edit = QPlainTextEdit()
-        self._notes_edit.setPlaceholderText("Add notes about this node…")
-        self._notes_edit.setFixedHeight(72)
-        _notes_vbox.addWidget(self._notes_edit)
-
-        # Connections section — lists outgoing/incoming transitions for this node
-        self._connections_section = QWidget()
-        _conn_outer = QVBoxLayout(self._connections_section)
-        _conn_outer.setContentsMargins(6, 4, 6, 4)
-        _conn_outer.setSpacing(4)
-
-        _conn_header = QWidget()
-        _conn_header_layout = QHBoxLayout(_conn_header)
-        _conn_header_layout.setContentsMargins(0, 0, 0, 0)
-        _conn_header_layout.setSpacing(4)
-        self._conn_toggle_btn = QPushButton("▾ Connections")
-        self._conn_toggle_btn.setFlat(True)
-        _conn_header_layout.addWidget(self._conn_toggle_btn)
-        _conn_header_layout.addStretch()
-        _conn_outer.addWidget(_conn_header)
-
-        self._conn_body = QWidget()
-        self._conn_body_layout = QVBoxLayout(self._conn_body)
-        self._conn_body_layout.setContentsMargins(0, 2, 0, 2)
-        self._conn_body_layout.setSpacing(2)
-        _conn_outer.addWidget(self._conn_body)
-
-        self._conn_expanded = True
-        self._conn_toggle_btn.clicked.connect(self._toggle_connections)
-        self._connections_section.setVisible(False)
-
-        # Definition documents only: promote this node whole to an input group on the
-        # subgraph node, or demote it. A text button, so it is named for what a click
-        # does; the status is the note beside it.
-        self._promote_row = QWidget()
-        _pr_layout = QHBoxLayout(self._promote_row)
-        _pr_layout.setContentsMargins(6, 4, 6, 0)
-        _pr_layout.setSpacing(6)
-        self._promote_btn = ActionButton("chevrons_up", "Promote to input group", fill=False)
-        self._promote_note = ThemedTextLabel("", color="text_muted")
-        self._promote_note.setWordWrap(True)
-        _pr_layout.addWidget(self._promote_btn)
-        _pr_layout.addWidget(self._promote_note, 1)
-        self._promote_row.setVisible(False)
-        self._node_promoted = False
-        self._promote_btn.clicked.connect(self._on_promote_clicked)
-
-        node_outer = QWidget()
-        node_vbox = QVBoxLayout(node_outer)
-        node_vbox.setContentsMargins(0, 0, 0, 0)
-        node_vbox.setSpacing(0)
-        node_vbox.addWidget(self._promote_row)
-        node_vbox.addWidget(node_w)
-        node_vbox.addWidget(self._record_row)
-        node_vbox.addWidget(scroll, 1)
-        node_vbox.addWidget(self._wiki_import_row)
-        node_vbox.addWidget(self._returns_section)
-        node_vbox.addWidget(self._connections_section)
-        node_vbox.addWidget(self._notes_section)
-        self._stack.addWidget(node_outer)
+        self._stack.addWidget(scroll)
 
         # Page 2 — edge
         edge_outer = QWidget()
@@ -2647,6 +2635,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._param_form.step_add_requested.connect(self._on_form_step_add_requested)
         self._param_form.step_remove_requested.connect(self._on_form_step_remove_requested)
         self._param_form.unlink_requested.connect(self._on_form_unlink_requested)
+        self._param_form.required_shown_changed.connect(self._refresh_params_card)
         self._region_label_edit.textChanged.connect(self._on_region_label_changed)
         self._region_color_row.changed.connect(self._on_region_color_changed)
 
@@ -2663,22 +2652,15 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._idle_lbl.setStyleSheet(f"color: {THEME.text_muted};")
         for header in self._node_type_headers:
             header.setForeground(QColor(THEME.text_muted))
-        self._node_help_btn.setStyleSheet(
-            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: {THEME.font_small_px}px; }}"
-            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
-        )
-        section_title = f"font-weight: bold; color: {THEME.text_subtle};"
-        self._returns_title.setStyleSheet(section_title)
-        self._notes_title.setStyleSheet(section_title)
-        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
+        self._node_help_btn.refresh_theme_styles()
+        # The status line owns its color, but a switch delivered to this panel alone
+        # reaches no child, so it is asked here as the title and id are.
+        self._record_status_lbl.refresh_theme_styles()
+        self._node_id_lbl.refresh_theme_styles()
+        self._node_label_edit.refresh_theme_styles()
         self._notes_edit.setStyleSheet(
             f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
             f"border-radius: 4px; color: {THEME.text}; font-size: {THEME.font_small_px}px; padding: 3px; }}"
-        )
-        self._conn_toggle_btn.setStyleSheet(
-            f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-            f" border: none; padding: 0; font-size: {THEME.font_small_px}px; background: transparent; }}"
         )
         self._flags_lbl.setStyleSheet(
             f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
@@ -2827,6 +2809,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._region = None
         self._all_states_for_node = list(all_states or [])
         self._all_transitions_for_node = list(all_transitions or [])
+        self._recovery_id = recovery_id
         self._suppress = True
         self._node_id_lbl.setText(state.id)
         self._node_label_edit.setText(state.label or "")
@@ -2844,35 +2827,94 @@ class _ParamPanel(ThemedMixin, QWidget):
             fill_hints=fill_hints,
             step_chips=step_chips,
             step_addable=step_addable,
+            row_actions=self._row_actions_for(state.node_type, schema),
         )
-        self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
         self._notes_edit.blockSignals(True)
         self._notes_edit.setPlainText(state.notes or "")
         self._notes_edit.blockSignals(False)
-        self._promote_row.setVisible(in_definition and bool(schema))
+        self._notes_card.set_summary(param_cards.notes_summary(state.notes))
         self._node_promoted = promoted_group is not None
-        if self._node_promoted:
-            self._promote_btn.set_icon_name("chevrons_down")
-            self._promote_btn.setText("Demote")
-            self._promote_btn.setToolTip("Take this node's input group off the subgraph node")
-            self._promote_note.setText("Promoted: every param is on the subgraph node, with Record.")
-        else:
-            self._promote_btn.set_icon_name("chevrons_up")
-            self._promote_btn.setText("Promote to input group")
-            self._promote_btn.setToolTip(
-                "Put every param of this node on the subgraph node as an input group, with its Record "
-                "button. It follows the node: a param added to the node type later appears there too."
-            )
-            self._promote_note.setText("")
+        self._promote_btn.set_icon_name("chevrons_down" if self._node_promoted else "chevrons_up")
+        self._promote_btn.set_tint(IconTint.ACCENT if self._node_promoted else IconTint.DEFAULT)
+        self._promote_btn.setToolTip(
+            "Demote: take this node's input group off the subgraph node"
+            if self._node_promoted
+            else "Promote to input group: put every param of this node on the subgraph node, with its Record "
+            "button. It follows the node: a param added to the node type later appears there too."
+        )
         self._suppress = False
         self._set_role_checks(state.id, initial_id, recovery_id)
+        self._promote_btn.setVisible(in_definition and bool(schema))
         # A definition's roles are a formality -- every Entry is a way in -- so there
         # is nothing for the boxes to mean there.
-        self._initial_check.parentWidget().setVisible(not in_definition)
-        self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES)
-        self._wiki_import_row.setVisible(state.node_type == "handle_combat")
+        self._role_card.setVisible(not in_definition)
+        recordable = state.node_type in recording.RECORDABLE_NODES
+        self._record_btn.setVisible(recordable)
+        self._record_status_lbl.setVisible(recordable)
+        self._refresh_record_hint()
+        self._refresh_params_card()
+        self._apply_node_folds(state.id in (initial_id, recovery_id))
         self._stack.setCurrentIndex(_PAGE_NODE)
+
+    def _row_actions_for(self, node_type: str, schema) -> dict:
+        """The wiki import, at the end of a fight's ``wiki_page`` row: the field it fills (#142)."""
+        if node_type != "handle_combat" or not any(f.key == WIKI_PAGE_PARAM for f in schema):
+            return {}
+        return {WIKI_PAGE_PARAM: ("download", "Import drops from wiki…", self._on_wiki_import)}
+
+    @property
+    def wiki_import_button(self) -> QPushButton | None:
+        """The wiki import at the end of a fight's ``wiki_page`` row, or None on any other node."""
+        return self._param_form.row_action(WIKI_PAGE_PARAM)
+
+    def _apply_node_folds(self, holds_role: bool) -> None:
+        """Fold the node page's cards as the reader left them; Role opens on a node that holds one."""
+        from bartlebot.gui.sidebar.option_card import UiStateFoldStore  # noqa: PLC0415
+
+        defaults = param_cards.node_page_fold_defaults(holds_role=holds_role)
+        self._node_folds.set_store(UiStateFoldStore(param_cards.NODE_PAGE_SURFACE, defaults))
+        self._node_folds.reload()
+
+    def _refresh_params_card(self) -> None:
+        """The Parameters band's count and summary, and the Connections and Role summaries."""
+        if self._state is None:
+            return
+        form = self._param_form
+        self._params_count.set_count(form.to_fill(), red=form.required_errors_shown())
+        params = form.get_params()
+        if self._state.node_type in recording.RECORDABLE_NODES:
+            parts = param_cards.recording_summary(form.schema, params, recording.recorded_keys(self._state.node_type))
+        else:
+            parts = param_cards.params_summary(form.schema, params)
+        if self._node_promoted:
+            parts = [param_cards.SummaryPart("Promoted"), *parts]
+        self._params_card.set_summary(parts)
+
+    @property
+    def node_cards(self) -> dict:
+        """The node page's four cards by group: ``params``, ``connections``, ``notes``, ``role``."""
+        return dict(self._node_cards)
+
+    @property
+    def node_folds(self):
+        return self._node_folds
+
+    @property
+    def params_to_fill(self):
+        """The Parameters band's "N to fill"."""
+        return self._params_count
+
+    def _set_node_descriptions_visible(self, shown: bool) -> None:
+        write_show_descriptions(shown)
+        self._param_form.set_descriptions_visible(shown)
+
+    def show_required_errors(self) -> None:
+        """Draw every empty required field on the shown page red: a save was refused for them."""
+        if self._stack.currentIndex() == _PAGE_NODE:
+            self._param_form.show_required_errors()
+        elif self._stack.currentIndex() == _PAGE_CALL:
+            self._call_page.show_required_errors()
 
     def show_region(
         self,
@@ -3049,6 +3091,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             self._initial_check.setEnabled(not is_initial)
             self._recovery_check.setChecked(is_recovery)
             self._recovery_check.setEnabled(not is_recovery)
+            self._role_card.set_summary(param_cards.role_summary(initial=is_initial, recovery=is_recovery))
         finally:
             self._suppress = was_suppressed
 
@@ -3197,11 +3240,14 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._state.node_type = node_type
         self._state.params = {}
         schema = NODE_PARAM_SCHEMAS.get(node_type, [])
-        self._param_form.load_schema(schema, {})
+        self._param_form.load_schema(schema, {}, row_actions=self._row_actions_for(node_type, schema))
         self._state.params = self._param_form.get_params()
-        self._rebuild_returns(node_type)
-        self._record_row.setVisible(node_type in recording.RECORDABLE_NODES)
-        self._wiki_import_row.setVisible(node_type == "handle_combat")
+        self._rebuild_connections(self._state.id)
+        recordable = node_type in recording.RECORDABLE_NODES
+        self._record_btn.setVisible(recordable)
+        self._record_status_lbl.setVisible(recordable)
+        self._refresh_record_hint()
+        self._refresh_params_card()
         self.structural_property_applied.emit()
 
     def _on_param_form_changed(self) -> None:
@@ -3209,6 +3255,9 @@ class _ParamPanel(ThemedMixin, QWidget):
             return
         self.edit_starting.emit("Edit params")
         self._state.params = self._param_form.get_params()
+        self._refresh_params_card()
+        if not recording.is_recording():
+            self._refresh_record_hint()
         self.properties_changed.emit()
 
     def _on_notes_changed(self) -> None:
@@ -3217,6 +3266,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         text = self._notes_edit.toPlainText().strip()
         self.edit_starting.emit("Edit params")
         self._state.notes = text if text else None
+        self._notes_card.set_summary(param_cards.notes_summary(self._state.notes))
         self.properties_changed.emit()
 
     def _on_edge_when_changed(self, text: str) -> None:
@@ -3379,6 +3429,10 @@ class _ParamPanel(ThemedMixin, QWidget):
         if recording.is_recording() or not self._shows_recordable_node():
             return False
         clients = self._get_clients()
+        self._recording_player = clients.index(client) + 1 if client in clients else None
+        if self._params_card.is_collapsed:
+            # Opened to watch the fields fill; not a fold the reader chose, so nothing is remembered.
+            self._params_card.set_collapsed(False)
         asyncio.ensure_future(
             recording.run_recording(
                 self._state.node_type,
@@ -3401,8 +3455,25 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._set_record_status("")
 
     def _set_record_status(self, text: str) -> None:
-        self._record_status_lbl.setText(text)
-        self._record_status_lbl.setVisible(bool(text))
+        """What the recorder says, at the top of the Parameters card; what Record fills while it says nothing.
+
+        A line always on screen for a recordable node, so starting a recording moves
+        nothing under the pointer.
+        """
+        if not text:
+            self._recording_player = None
+            self._refresh_record_hint()
+            return
+        player = self._recording_player
+        self._record_status_lbl.setText(f"Player {player} · {text}" if player else text)
+
+    def _refresh_record_hint(self) -> None:
+        if self._state is None or self._state.node_type not in recording.RECORDABLE_NODES:
+            self._record_status_lbl.setText("")
+            return
+        self._record_status_lbl.setText(
+            recording.recording_hint(self._state.node_type, self._param_form.schema, self._param_form.get_params())
+        )
 
     def _on_record_clicked(self) -> None:
         if recording.is_recording():
@@ -3440,79 +3511,57 @@ class _ParamPanel(ThemedMixin, QWidget):
         # The field never had focus, so no focus-out will draw the new label on the canvas.
         self.label_committed.emit()
 
-    def _rebuild_returns(self, node_type: str) -> None:
-        while self._returns_body_layout.count():
-            item = self._returns_body_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        spec = NODE_SPECS.get(node_type)
-        if spec and spec.returns:
-            for ret in spec.returns:
-                if ret.description:
-                    lbl = QLabel(f"<b>{ret.name}</b> — {ret.description}")
-                else:
-                    lbl = QLabel(f"<b>{ret.name}</b>")
-                lbl.setWordWrap(True)
-                lbl.setStyleSheet(f"font-size: {THEME.font_small_px}px;")
-                self._returns_body_layout.addWidget(lbl)
-            self._returns_section.setVisible(True)
-        else:
-            self._returns_section.setVisible(False)
-
     # ------------------------------------------------------------------
-    # Connections section
+    # Connections card: routes by return value, then what comes in
     # ------------------------------------------------------------------
-
-    def _toggle_connections(self) -> None:
-        self._conn_expanded = not self._conn_expanded
-        self._conn_body.setVisible(self._conn_expanded)
-        self._conn_toggle_btn.setText("▾ Connections" if self._conn_expanded else "▸ Connections")
 
     def _rebuild_connections(self, state_id: str) -> None:
-        """Rebuild the outgoing/incoming connections list for the selected node."""
-        # Clear existing rows
+        """Rebuild the Connections card for the selected node.
+
+        Returns were a section of their own and Connections another, and neither said
+        where an unrouted FAILURE goes -- to the recovery state, with no edge drawn
+        (``docs/RETURN_ROUTING.md``). One card now lists each return with its route,
+        the undrawn ones included, and each return's description behind its row's
+        ``?`` (#142). ``param_cards.outgoing_routes`` decides the routes, by the
+        engine's rules.
+        """
         while self._conn_body_layout.count():
             item = self._conn_body_layout.takeAt(0)
             if item.widget():
-                item.widget().deleteLater()
+                discard_widget(item.widget())
 
+        state = self._state if self._state is not None and self._state.id == state_id else None
         all_t = self._all_transitions_for_node
         state_map = {s.id: (s.label or s.id) for s in self._all_states_for_node}
-
-        outgoing = [t for t in all_t if t.source == state_id]
+        spec = NODE_SPECS.get(state.node_type) if state is not None else None
+        returns = [r.name for r in spec.returns] if spec and spec.returns else []
+        descriptions = {r.name: r.description for r in spec.returns} if spec and spec.returns else {}
+        routes = (
+            param_cards.outgoing_routes(
+                state,
+                returns,
+                all_t,
+                recovery_state=self._recovery_id,
+                state_ids=state_map,
+            )
+            if state is not None
+            else []
+        )
         incoming = [t for t in all_t if t.dest == state_id and t.source != state_id]
 
-        if not outgoing and not incoming:
+        if not routes and not incoming:
             placeholder = QLabel("No connections")
             placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
             self._conn_body_layout.addWidget(placeholder)
-            self._connections_section.setVisible(True)
+            self._conn_card.set_summary(param_cards.routes_summary([], state_map))
             return
 
-        # Sort outgoing: conditional first (matches evaluation order from to_machine_config)
-        outgoing.sort(key=lambda t: 0 if t.when else 1)
-
-        if outgoing:
-            out_lbl = QLabel("Outgoing:")
-            out_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; font-weight: 600;")
-            self._conn_body_layout.addWidget(out_lbl)
-            for priority, t in enumerate(outgoing, 1):
-                row = self._make_conn_row(
-                    t,
-                    badge_text=str(priority),
-                    chip_text=t.when or "always",
-                    node_label=state_map.get(t.dest, t.dest),
-                    node_id=t.dest,
-                    is_outgoing=True,
-                )
-                self._conn_body_layout.addWidget(row)
-
+        if routes:
+            self._conn_body_layout.addWidget(self._conn_heading("Outgoing, by return"))
+            for route in routes:
+                self._conn_body_layout.addWidget(self._make_route_row(route, state_map, descriptions))
         if incoming:
-            in_lbl = QLabel("Incoming:")
-            in_lbl.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; font-weight: 600;{'margin-top: 4px;' if outgoing else ''}"
-            )
-            self._conn_body_layout.addWidget(in_lbl)
+            self._conn_body_layout.addWidget(self._conn_heading("Incoming", spaced=bool(routes)))
             for t in incoming:
                 row = self._make_conn_row(
                     t,
@@ -3522,32 +3571,105 @@ class _ParamPanel(ThemedMixin, QWidget):
                     node_id=t.source,
                     is_outgoing=False,
                 )
-                self._conn_body_layout.addWidget(row)
+                # Behind an empty gutter, so its chip lines up with the routes' above.
+                revert, help_btn = RevertButton(), HelpToggle()
+                self._conn_body_layout.addWidget(build_gutter_row(OverrideBar(), revert, help_btn, row))
+                keep_slot_when_hidden(revert)
+                keep_slot_when_hidden(help_btn)
+        self._conn_card.set_summary(param_cards.routes_summary(routes, state_map))
 
-        self._connections_section.setVisible(True)
+    @staticmethod
+    def _conn_heading(text: str, *, spaced: bool = False) -> QLabel:
+        lbl = QLabel(text)
+        lbl.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; font-weight: 600;"
+            f"{' margin-top: 4px;' if spaced else ''}"
+        )
+        return lbl
+
+    def _make_route_row(self, route, state_map: dict[str, str], descriptions: dict[str, str]) -> QWidget:
+        """One outgoing route: its priority, its return, and where it goes -- the undrawn ones say so."""
+        if route.kind == param_cards.EDGE:
+            body = self._make_conn_row(
+                route.transition,
+                badge_text=str(route.priority),
+                chip_text=route.when or "always",
+                node_label=state_map.get(route.dest, route.dest),
+                node_id=route.dest,
+                is_outgoing=True,
+            )
+        else:
+            body = self._make_conn_row(
+                None,
+                badge_text="",
+                chip_text=route.when or "always",
+                node_label=state_map.get(route.dest, route.dest) if route.dest else "",
+                node_id=route.dest,
+                is_outgoing=True,
+                note=self._route_note(route),
+            )
+        prose = descriptions.get(route.when or "", "")
+        col_w = QWidget()
+        col = QVBoxLayout(col_w)
+        col.setContentsMargins(0, 0, 0, 0)
+        col.setSpacing(1)
+        col.addWidget(body)
+        description = None
+        if prose:
+            description = ThemedTextLabel(prose, color="text_muted")
+            description.setWordWrap(True)
+            col.addWidget(description)
+        help_btn = HelpToggle()
+        help_btn.setToolTip("Show what this return means")
+        revert = RevertButton()
+        outer = build_gutter_row(OverrideBar(), revert, help_btn, col_w)
+        # The Reset slot is kept, so these rows' ? lines up with the params' above.
+        keep_slot_when_hidden(revert)
+        if description is None:
+            keep_slot_when_hidden(help_btn)
+        else:
+            shown = self._param_form.descriptions_visible
+            help_btn.setChecked(shown)
+            description.setVisible(shown)
+            help_btn.toggled.connect(description.setVisible)
+        return outer
+
+    @staticmethod
+    def _route_note(route) -> tuple[str, str]:
+        """The chip a route that is not an edge wears: its text and its color token."""
+        if route.kind == param_cards.RECOVERY:
+            return "recovery · not drawn", "warning"
+        if route.kind == param_cards.STOP:
+            return (f"stops the bot: {route.reason}" if route.reason else "stops the bot"), "error"
+        if route.kind == param_cards.END:
+            return "ends the run", "text_muted"
+        return "not routed", "warning"
 
     def _make_conn_row(
         self,
-        transition: TransitionModel,
+        transition: TransitionModel | None,
         badge_text: str | None,
         chip_text: str,
         node_label: str,
-        node_id: str,
+        node_id: str | None,
         is_outgoing: bool,
+        note: tuple[str, str] | None = None,
     ) -> QWidget:
-        """Build a single connection row widget."""
+        """Build a single connection row widget: a route, or an edge coming in."""
         row = QWidget()
         row.setStyleSheet(f"QWidget {{ border-radius: 4px; }}QWidget:hover {{ background: {THEME.surface}; }}")
-        row.setCursor(Qt.CursorShape.PointingHandCursor)
+        if transition is not None:
+            row.setCursor(Qt.CursorShape.PointingHandCursor)
         layout = QHBoxLayout(row)
         layout.setContentsMargins(4, 2, 4, 2)
         layout.setSpacing(4)
 
-        # Priority badge (outgoing only)
+        # Priority badge (outgoing only): the order the engine tries edges in.
         if badge_text is not None:
             badge = QLabel(badge_text)
-            badge.setFixedWidth(18)
+            badge.setFixedWidth(14)
             badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            badge.setToolTip("Tried in this order: conditional edges first")
             badge.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_micro_px}px; font-weight: 600;")
             layout.addWidget(badge)
 
@@ -3570,31 +3692,49 @@ class _ParamPanel(ThemedMixin, QWidget):
             f"background: {chip_bg}; color: {chip_fg}; border-radius: 3px;"
             f" font-size: {THEME.font_subtext_px}px; font-weight: 600; padding: 1px 5px;"
         )
+        arrow = QLabel("→" if is_outgoing else "←")
+        arrow.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
-        # Node name link
-        name_lbl = QLabel(node_label)
+        # Node name link. Elided: a long label beside a route's note would otherwise
+        # widen the whole page past the sidebar.
+        name_lbl = ElidedLabel(node_label)
         name_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: {THEME.font_small_px}px;")
+        name_lbl.setFont(THEME.ui_font(THEME.font_small_px))
+        name_lbl.set_text_color(THEME.accent)
         name_lbl.setCursor(Qt.CursorShape.PointingHandCursor)
         name_lbl.setToolTip(f"Navigate to: {node_label}")
 
-        if is_outgoing:
-            layout.addWidget(chip)
-            layout.addWidget(name_lbl, 1)
-        else:
-            layout.addWidget(name_lbl, 1)
-            layout.addWidget(chip)
+        layout.addWidget(chip)
+        if node_label:
+            layout.addWidget(arrow)
+            layout.addWidget(name_lbl, 1 if note is None else 0)
+        if note is not None:
+            text, token = note
+            color = getattr(THEME, token)
+            note_lbl = QLabel(text)
+            note_lbl.setStyleSheet(
+                f"color: {color}; border: 1px solid {color}; border-radius: 3px;"
+                f" font-size: {THEME.font_subtext_px}px; padding: 0px 5px;"
+            )
+            if text.startswith("recovery"):
+                note_lbl.setToolTip("No edge is drawn: an unrouted FAILURE goes to the recovery state")
+            layout.addWidget(note_lbl)
+            layout.addStretch(1)
 
         # Clicking the node name navigates to that state
         def _on_name_clicked(ev, nid=node_id):
             ev.accept()
-            self.select_state_requested.emit(nid)
+            if nid:
+                self.select_state_requested.emit(nid)
 
         name_lbl.mousePressEvent = _on_name_clicked  # type: ignore[method-assign]
 
         # Clicking anywhere else on the row selects the edge
-        def _on_row_pressed(ev, t=transition):
-            self.select_edge_requested.emit(t)
+        if transition is not None:
 
-        row.mousePressEvent = _on_row_pressed  # type: ignore[method-assign]
+            def _on_row_pressed(ev, t=transition):
+                self.select_edge_requested.emit(t)
+
+            row.mousePressEvent = _on_row_pressed  # type: ignore[method-assign]
 
         return row

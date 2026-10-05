@@ -209,11 +209,10 @@ def test_the_node_type_category_headers_recolor(qapp, theme):
     assert panel._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
 
 
-def test_the_idle_page_and_section_titles_recolor(qapp, theme):
+def test_the_idle_page_and_status_line_recolor(qapp, theme):
     panel = _panel(theme)
     before = [
         panel._idle_lbl.styleSheet(),
-        panel._returns_title.styleSheet(),
         panel._record_status_lbl.styleSheet(),
         panel._flags_lbl.styleSheet(),
     ]
@@ -223,7 +222,6 @@ def test_the_idle_page_and_section_titles_recolor(qapp, theme):
 
     after = [
         panel._idle_lbl.styleSheet(),
-        panel._returns_title.styleSheet(),
         panel._record_status_lbl.styleSheet(),
         panel._flags_lbl.styleSheet(),
     ]
