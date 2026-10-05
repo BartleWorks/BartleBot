@@ -22,27 +22,53 @@ Two rules about the settings dialog itself:
   and a hand-edited `settings.json` can then put a string where a bool belongs and
   have it reach the widget. `streamer_mode` and `bot_library_path` were both in
   that state. `test_every_default_is_declared_on_its_model` is the guard.
-- **A row explains itself on the page, not on hover.** `settings/rows.py`'s
-  `hint()` is the dimmed line under a control; a tooltip is for a longer *why*
-  and never carries the whole explanation on its own. Before this the Log, Layout
-  and Auto-save rows had no explanation at all and the rest had theirs only where
-  a reader has to already suspect it is there.
-  `test_every_settings_row_explains_itself_on_the_page` checks that a hint
-  follows every control, within two rows so a pair sharing one hint is allowed.
-- **A section is a `RuleHeading`, not a bold label.** Every hint is two rows of
-  height, so a tab is long, and on a long page a bold line of text is not enough
-  to stop the eye — the Bot tab's five sections ran together as one column of
+- **A row explains itself on the page, not on hover — in one line.** Every
+  setting is a `rows.SettingRow`: the title, one line under it saying what the
+  setting does, and the control right-aligned in a fixed-width slot. The line is
+  always on screen; anything longer, the *why*, goes in `details=` and folds behind
+  the row's `?`, and the page's *Show descriptions · Hide descriptions* open or
+  fold every row at once (#148). Before the description-row rework the Log, Layout
+  and Auto-save rows had no explanation at all; after it every row carried a
+  paragraph, and the Bot tab was 1,392px tall. A tooltip still never carries the
+  whole explanation on its own.
+  `test_every_settings_row_explains_itself_on_the_page` checks every row has its
+  line, and that no tab still builds a `QFormLayout` row.
+- **Build a tab from `rows`, not by hand.** A form tab subclasses
+  `rows.SettingsForm` (`add_heading`, `add_row`, `add_group`, `finish`); a tab that
+  is not all form — Theme, Game — holds one with `margin=0` for its rows. The
+  dialog finds every form, so one tab's description links reach the others. A row
+  gets the sidebar's gutter through `build_gutter_row`: the override bar lights
+  when the value has left the app's default (`settings_manager.default_for`, in the
+  control's own terms), and `RevertButton` puts the default back — as pending as
+  any other edit until OK. Each setting is its own bordered card; sections stay
+  `RuleHeading`s.
+- **Only a setting with dependents folds.** A `rows.SettingGroup` is the parent's
+  own row (a check box) with the disclosure triangle in its last slot, and the rows
+  that only count while it is on — Quicksell, Auto-save, Grid. Off grays them,
+  never hides them; collapsed, a change inside lights the header's bar. Layout is
+  not a group: Maximize being *on* is what makes the window size moot. Every group
+  id is declared in `SETTINGS_FOLD_DEFAULTS`, or the others' reads prune its fold.
+- **Folds go in `ui_state.json`, not `settings.json`.** Which groups a reader left
+  open is view state, safe to lose: `bartlebot/ui_state.py` keeps only departures
+  from a default, keyed by surface and group, and reads the file afresh on every
+  call so two holders cannot overwrite each other. Whether descriptions are shown
+  is a setting of its own, `show_setting_descriptions`, written at once whatever
+  the dialog's OK or Cancel, and apart from the sidebar's
+  `show_option_descriptions`.
+- **A section is a `RuleHeading`, not a bold label.** A tab is long, and on a
+  long page a bold line of text is not enough to stop the eye — the Bot tab's five sections ran together as one column of
   rows. `widgets/rule_heading.py` is the same heading the detail panes use: the
   name at the left margin the fields align to, and a hairline out to the right.
   It carries its own space above, so a section adds the heading and nothing else.
   `test_every_settings_section_is_a_rule_heading` is the guard.
 
 - **The dialog fits the screen; the tabs do not have to.** A visible hint under
-  every row is two rows of height per setting, which grew the dialog taller than a
-  1080p screen and put OK and Cancel under the taskbar. The height stays —
-  it is what the descriptions cost — and the three form tabs are wrapped in
-  `rows.ScrollableTab` instead. Wrap a new form tab too. Do **not** wrap a tab
-  that carries the layout's stretch, as the Game tab's two card columns do:
+  every row once grew the dialog taller than a 1080p screen and put OK and Cancel
+  under the taskbar. A tab with every description and group open is still taller
+  than the dialog, so the four form tabs are wrapped in `rows.ScrollableTab`,
+  which caps the column at `PAGE_MAX_WIDTH_PX`, centers it, and reserves the scroll
+  bar's space so a fold does not jolt the column sideways (#112). Wrap a new
+  form tab too. Do **not** wrap a tab that carries the layout's stretch, as the Game tab's two card columns do:
   inside a scroll area they collapse to a couple of visible rows, and a column
   that scrolls inside a page that scrolls is two bars for one list. `_fit_to_screen` caps the
   dialog at `screen_fit.size_within_screen` on the way up as the last defense, and

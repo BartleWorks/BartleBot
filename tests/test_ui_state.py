@@ -90,3 +90,13 @@ def test_a_failed_write_is_logged_and_not_raised(tmp_path, caplog):
         UiState(path).set_collapsed("settings_dialog", "quicksell", False, default=True)
 
     assert "will not be remembered" in caplog.text
+
+
+def test_two_holders_do_not_write_over_each_others_entries(tmp_path):
+    """Each Settings tab holds its own; a stale copy must not erase the other tab's fold."""
+    path = tmp_path / UI_STATE_FILE
+    general, bot = UiState(path), UiState(path)
+    general.set_collapsed("settings_dialog", "autosave", False, default=True)
+    bot.set_collapsed("settings_dialog", "quicksell", False, default=True)
+
+    assert UiState(path).folds("settings_dialog", _DEFAULTS) == {"quicksell": False, "autosave": False}

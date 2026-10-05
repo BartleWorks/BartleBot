@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QDialog,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.gui import screen_fit
@@ -15,7 +16,7 @@ from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
-from bartlebot.gui.settings.rows import ScrollableTab
+from bartlebot.gui.settings.rows import ScrollableTab, SettingsForm
 from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.settings_manager import SettingsManager
@@ -81,6 +82,14 @@ class SettingsDialog(QDialog):
         # Game tab (accounts, launch profiles, game embed resolution)
         self._accounts_tab = AccountsTab(live_game_area=live_game_area)
         self._tabs.addTab(self._accounts_tab, "Game")
+
+        # Show and Hide descriptions are one preference for the whole dialog, so one tab's
+        # links reach every form -- including the ones inside Theme and Game.
+        self._forms: list[SettingsForm] = []
+        for i in range(self._tabs.count()):
+            self._forms.extend(_forms_in(self._tabs.widget(i)))
+        for form in self._forms:
+            form.descriptions_toggled.connect(self._on_descriptions_toggled)
 
         footer = dialog_footer(self, on_commit=self._on_accept)
 
@@ -165,7 +174,23 @@ class SettingsDialog(QDialog):
         if w := widgets.get(tab_name):
             self._tabs.setCurrentWidget(w)
 
+    @property
+    def forms(self) -> list[SettingsForm]:
+        """Every column of settings rows in the dialog, tab by tab."""
+        return list(self._forms)
+
+    def _on_descriptions_toggled(self, shown: bool) -> None:
+        for form in self._forms:
+            form.set_descriptions_shown(shown)
+
     def _on_accept(self) -> None:
         self.apply_all()
         SettingsManager.instance().save()
         self.accept()
+
+
+def _forms_in(tab: QWidget) -> list[SettingsForm]:
+    """*tab*'s settings forms: the tab itself if it is one, and any it holds."""
+    content = tab.content if isinstance(tab, ScrollableTab) else tab
+    own = [content] if isinstance(content, SettingsForm) else []
+    return own + content.findChildren(SettingsForm)

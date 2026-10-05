@@ -59,6 +59,7 @@ class _GeneralSettings(BaseModel):
     default_friend_name: str = ""
     favorite_realm: str = ""
     show_option_descriptions: bool = False
+    show_setting_descriptions: bool = False
     streamer_mode: bool = False
 
 
@@ -167,6 +168,8 @@ _DEFAULTS: dict[str, Any] = {
         "default_friend_name": "",
         "favorite_realm": "",
         "show_option_descriptions": False,
+        # The Settings dialog's own Show/Hide descriptions, apart from the sidebar's.
+        "show_setting_descriptions": False,
         "streamer_mode": False,
     },
     "game_embed": {
@@ -261,6 +264,15 @@ _STOCK_RESOLUTIONS: list[tuple[int, int]] = [
 VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
 
 # The panel floors moved to game_sizing.py, beside the arithmetic they are terms in.
+
+
+def default_for(section: str, key: str) -> Any:
+    """The shipped default for one setting, as ``settings.json`` would hold it.
+
+    A copy, so a caller holding a default list cannot edit ``_DEFAULTS`` itself. The
+    Settings dialog reads it to mark a row that has left its default and to put one back.
+    """
+    return copy.deepcopy(_DEFAULTS[section][key])
 
 
 def _appdata_dir() -> Path:

@@ -39,11 +39,16 @@ _FOLDS = "folds"
 
 
 class UiState:
-    """One read of ``ui_state.json``, and the writes made through it."""
+    """``ui_state.json``, read afresh by every call.
+
+    Holds no copy between calls, so two surfaces each holding one -- three Settings tabs,
+    each with its own folding group -- cannot write back a stale snapshot over the
+    other's entry.
+    """
 
     def __init__(self, path: Path | None = None) -> None:
         self._path = path if path is not None else product_dir() / UI_STATE_FILE
-        self._data = self._read()
+        self._data: dict[str, Any] = {}
 
     @property
     def path(self) -> Path:
@@ -55,6 +60,7 @@ class UiState:
         *defaults* names every group the surface has, so a stored group missing from it
         is one the surface no longer draws, and is dropped here.
         """
+        self._data = self._read()
         stored = self._surface(surface)
         stale = [group for group in stored if group not in defaults]
         if stale:
@@ -66,6 +72,7 @@ class UiState:
 
     def set_collapsed(self, surface: str, group: str, collapsed: bool, *, default: bool) -> None:
         """Remember *group*'s fold, storing nothing when it matches *default*."""
+        self._data = self._read()
         stored = self._surface(surface)
         if collapsed == default:
             if group not in stored:

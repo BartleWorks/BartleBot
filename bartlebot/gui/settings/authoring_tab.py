@@ -11,42 +11,46 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from PyQt6.QtGui import QKeySequence
-from PyQt6.QtWidgets import (
-    QDoubleSpinBox,
-    QFormLayout,
-    QKeySequenceEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QDoubleSpinBox, QKeySequenceEdit
 
 from bartlebot.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
 from bartlebot.game_keybindings import GameBinding, read_game_keybindings
 from bartlebot.gui.global_hotkeys import parse_binding
-from bartlebot.gui.settings.rows import hint
-from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.settings_manager import SPEED_MULTIPLIER_RANGE, SettingsManager
+from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SPEED_MULTIPLIER_RANGE, SettingsManager, default_for
 
-_HOTKEY_HINTS: dict[AuthoringAction, str] = {
-    AuthoringAction.XYZ_SYNC: "Moves every other player in the same zone onto the focused player's spot.",
+#: Each hotkey row's one line, and the longer prose behind its ``?`` (empty: none).
+_HOTKEY_TEXT: dict[AuthoringAction, tuple[str, str]] = {
+    AuthoringAction.XYZ_SYNC: ("Move every other player in the zone onto the focused player.", ""),
     AuthoringAction.TP_TO_FOCUSED: (
-        "Ports every other player to the focused player through the friends list, across zones and realms."
+        "Port every other player to the focused player.",
+        "Through the friends list, across zones and realms.",
     ),
-    AuthoringAction.TOGGLE_SPEED: "Switches the speed multiplier above on and off for every player.",
+    AuthoringAction.TOGGLE_SPEED: ("Switch the speed multiplier above on and off for every player.", ""),
     AuthoringAction.TOGGLE_COMBAT: (
-        "Switches auto-combat on and off. Fights use the open bot's default Duel Strategy, or the "
-        "built-in one; PvP is never fought."
+        "Switch auto-combat on and off.",
+        "Fights use the open bot's default Duel Strategy, or the built-in one; PvP is never fought.",
     ),
     AuthoringAction.TOGGLE_DIALOGUE: (
-        "Switches auto-dialogue on and off. NPC dialogue is clicked through on every player as it "
-        "opens, and a side quest offered on the way is declined, never accepted."
+        "Switch auto-dialogue on and off.",
+        "NPC dialogue is clicked through on every player as it opens, and a side quest offered on the "
+        "way is declined, never accepted.",
     ),
     AuthoringAction.TOGGLE_SPEED_AUTHORING: (
-        "Switches speed-authoring on and off. While it is on and the canvas is in Edit mode, keys "
-        "1–0 in a game window add that slot's favorites-bar node after the selected node, or at the "
-        "first gap from the start node, and start recording it from the player whose window you are in."
+        "Keys 1–0 add a favorites-bar node while in Edit mode.",
+        "Switches speed-authoring on and off. While it is on and the canvas is in Edit mode, keys 1–0 in "
+        "a game window add that slot's favorites-bar node after the selected node, or at the first gap "
+        "from the start node, and start recording it from the player whose window you are in.",
     ),
 }
+
+_HOTKEYS_NOTE = (
+    "The keys work only while a game window has the keyboard, so they never take a key from another "
+    "application or from BartleBot's own fields — but inside the game they replace whatever that key "
+    "did there, and a key the game binds itself is flagged below. The focused player is the game window "
+    "you are in; a button in the bar above the game windows uses the one you were last in."
+)
 
 
 def slot_key_notes(game_bindings: Sequence[GameBinding]) -> str:
@@ -98,39 +102,37 @@ def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBindi
     return problems
 
 
-class AuthoringTab(QWidget):
+class AuthoringTab(SettingsForm):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(0)
-
         sm = SettingsManager.instance()
-        # Read once per dialog: the game rewrites config.xml only when its own options change.
         self._game_bindings = read_game_keybindings()
 
-        layout.addWidget(RuleHeading("Speed"))
-        speed_form = QFormLayout()
-        speed_form.setSpacing(4)
+        self.add_heading("Speed")
         self._speed_sb = QDoubleSpinBox()
         self._speed_sb.setRange(*SPEED_MULTIPLIER_RANGE)
         self._speed_sb.setSingleStep(0.5)
         self._speed_sb.setDecimals(1)
         self._speed_sb.setSuffix("×")
         self._speed_sb.setValue(sm.speed_multiplier)
-        speed_form.addRow("Speed multiplier:", self._speed_sb)
-        speed_form.addRow(
-            hint(
-                "How much faster every player walks while Speed is on. It switches off when a bot "
-                "starts, since a run walks at the game's own speed. A change applies the next time "
-                "Speed is switched on."
+        self.add_row(
+            SettingRow(
+                "Speed multiplier",
+                "How much faster players walk while Speed is on.",
+                self._speed_sb,
+                default=default_for("authoring", "speed_multiplier"),
+                details=(
+                    "It switches off when a bot starts, since a run walks at the game's own speed. A change "
+                    "applies the next time Speed is switched on."
+                ),
             )
         )
-        layout.addLayout(speed_form)
 
-        layout.addWidget(RuleHeading("Hotkeys"))
-        keys_form = QFormLayout()
-        keys_form.setSpacing(4)
+        self.add_heading("Hotkeys")
+        self.add_note(_HOTKEYS_NOTE)
+        notes = slot_key_notes(self._game_bindings)
+        if notes:
+            self.add_note(notes)
         self._key_edits: dict[AuthoringAction, QKeySequenceEdit] = {}
         bindings = sm.authoring_hotkeys
         for action in AuthoringAction:
@@ -139,25 +141,20 @@ class AuthoringTab(QWidget):
             edit.setClearButtonEnabled(True)
             edit.keySequenceChanged.connect(self._refresh_problems)
             self._key_edits[action] = edit
-            keys_form.addRow(f"{ACTION_LABELS[action]}:", edit)
-            keys_form.addRow(hint(_HOTKEY_HINTS[action]))
-        layout.addLayout(keys_form)
-        layout.addWidget(
-            hint(
-                "The keys work only while a game window has the keyboard, so they never take a key "
-                "from another application or from BartleBot's own fields — but inside the game they "
-                "replace whatever that key did there, and a key the game binds itself is flagged "
-                "below. The focused player is the game window you are "
-                "in; a button in the bar above the game windows uses the one you were last in."
+            summary, details = _HOTKEY_TEXT[action]
+            self.add_row(
+                SettingRow(
+                    ACTION_LABELS[action],
+                    summary,
+                    edit,
+                    default=DEFAULT_AUTHORING_HOTKEYS[action.value],
+                    details=details,
+                )
             )
-        )
-        notes = slot_key_notes(self._game_bindings)
-        if notes:
-            layout.addWidget(hint(notes))
         self._problems = ThemedTextLabel("", css="padding-top: 6px;", color="error")
         self._problems.setWordWrap(True)
-        layout.addWidget(self._problems)
-        layout.addStretch()
+        self.add_widget(self._problems)
+        self.finish()
         self._refresh_problems()
 
     def bindings(self) -> dict[str, str]:

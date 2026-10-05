@@ -11,7 +11,6 @@ Real widget tests (QApplication required). The settings store is injected.
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtWidgets import QFormLayout
 
 from bartlebot import bot_options, realms
 from bartlebot import settings_manager as sm_mod
@@ -44,12 +43,7 @@ def _config() -> BotConfig:
 
 
 def _field(tab, label: str):
-    for form in tab.findChildren(QFormLayout):
-        for i in range(form.rowCount()):
-            item = form.itemAt(i, QFormLayout.ItemRole.LabelRole)
-            if item is not None and item.widget() is not None and item.widget().text() == label:
-                return form.itemAt(i, QFormLayout.ItemRole.FieldRole).widget()
-    raise AssertionError(f"no settings row labeled {label!r}")
+    return tab.row(label).control
 
 
 # ---------------------------------------------------------------------------
@@ -99,12 +93,12 @@ def test_the_bot_tab_writes_the_chosen_realm(qapp):
     before = sm.favorite_realm
     try:
         tab = BotTab()
-        _field(tab, "Favorite realm:").set_value("Wraith")
+        _field(tab, "Favorite realm").set_value("Wraith")
 
         tab.apply()
 
         assert sm.favorite_realm == "Wraith"
-        assert _field(BotTab(), "Favorite realm:").get_value() == "Wraith"
+        assert _field(BotTab(), "Favorite realm").get_value() == "Wraith"
     finally:
         sm.favorite_realm = before
 

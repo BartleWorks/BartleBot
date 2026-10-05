@@ -11,7 +11,6 @@ from PyQt6.QtWidgets import (
     QColorDialog,
     QComboBox,
     QFileDialog,
-    QFormLayout,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -22,11 +21,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.settings.rows import hint
+from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
 from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.settings_manager import SettingsManager
+from bartlebot.settings_manager import SettingsManager, default_for
 
 logger = logging.getLogger(__name__)
 
@@ -198,9 +197,6 @@ class ThemeTab(QWidget):
         # ------------------------------------------------------------------
         # Theme mode selector (moved here from General tab)
         # ------------------------------------------------------------------
-        mode_form = QFormLayout()
-        mode_form.setSpacing(8)
-
         self._theme_combo = QComboBox()
         self._theme_combo.addItem("System (follows Windows)", userData="system")
         self._theme_combo.addItem("Light", userData="light")
@@ -211,15 +207,23 @@ class ThemeTab(QWidget):
             if self._theme_combo.itemData(i) == current_theme:
                 self._theme_combo.setCurrentIndex(i)
                 break
-        mode_form.addRow("Theme:", self._theme_combo)
-        mode_form.addRow(
-            hint(
-                "System follows the Windows light/dark setting and re-reads it while the app is "
-                "open. Custom starts from whichever of Light or Dark Windows is on now, and "
-                "reveals the color list below."
+        # A form for the one row; the color list below it is not a column of settings.
+        mode_form = SettingsForm(margin=0)
+        mode_form.add_heading("Mode")
+        mode_form.add_row(
+            SettingRow(
+                "Theme",
+                "System follows the Windows light or dark setting.",
+                self._theme_combo,
+                default=default_for("general", "theme"),
+                details=(
+                    "It re-reads that setting while the app is open. Custom starts from whichever of "
+                    "Light or Dark Windows is on now, and reveals the color list below."
+                ),
             )
         )
-        outer.addLayout(mode_form)
+        mode_form.finish(stretch=False)
+        outer.addWidget(mode_form)
 
         # ------------------------------------------------------------------
         # Toolbar row (custom colors section)
@@ -301,6 +305,9 @@ class ThemeTab(QWidget):
         self._contrast_label.setWordWrap(True)
         self._contrast_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         outer.addWidget(self._contrast_label)
+        # Takes the height the color list leaves while it is hidden, and none while it is
+        # shown: the list's stretch outranks a factor of 0.
+        outer.addStretch(0)
 
         self._refresh_contrast()
 
