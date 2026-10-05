@@ -362,3 +362,15 @@ def test_a_wrapped_tab_still_applies_what_was_typed_into_it(qapp):
 
     assert SettingsManager.instance().default_safety_delay == 4.5
     assert wrapper.content is tab
+
+
+@pytest.mark.parametrize(
+    ("tab_cls", "title"),
+    [(GeneralTab, "Maximize on open"), (CanvasTab, "Snap nodes to grid")],
+)
+def test_a_fresh_install_starts_with_these_on(qapp, tab_cls, title):
+    """Both default to on, and on a fresh install the row is at its default, unmarked."""
+    row = tab_cls().row(title)
+
+    assert row.control.isChecked()
+    assert not row.is_changed

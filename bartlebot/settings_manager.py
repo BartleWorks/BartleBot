@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class _GeneralSettings(BaseModel):
     theme: str = "system"  # "light", "dark", or "system"
-    maximize_on_open: bool = False
+    maximize_on_open: bool = True
     clear_log_on_run: bool = True
     log_max_lines: int = 5000
     window_width: int = 1400
@@ -76,7 +76,7 @@ class _CanvasSettings(BaseModel):
     minimap_visible: bool = True
     auto_layout_on_load: bool = True
     lod_compact_threshold: float = 0.6
-    snap_to_grid: bool = False
+    snap_to_grid: bool = True
     show_failure_edges: bool = True  # superseded by failure_edge_mode; kept so an older build still reads one
     failure_edge_mode: str = "all"  # "all" | "hide_recovery" | "none" -- see canvas.bot_canvas
     zoom_step: float = 1.15  # wheel zoom multiplier per step (1.05–1.30)
@@ -137,7 +137,7 @@ DEFAULT_HOTKEY_NODES: tuple[str, ...] = (
 _DEFAULTS: dict[str, Any] = {
     "general": {
         "theme": "system",
-        "maximize_on_open": False,
+        "maximize_on_open": True,
         "clear_log_on_run": True,
         "log_max_lines": 5000,
         "window_width": 1400,
@@ -184,7 +184,7 @@ _DEFAULTS: dict[str, Any] = {
         "minimap_visible": True,
         "auto_layout_on_load": True,
         "lod_compact_threshold": 0.6,
-        "snap_to_grid": False,
+        "snap_to_grid": True,
         "show_failure_edges": True,
         "failure_edge_mode": "all",
         "zoom_step": 1.15,

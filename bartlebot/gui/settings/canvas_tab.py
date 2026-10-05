@@ -80,7 +80,7 @@ class CanvasTab(SettingsForm):
         self.add_heading("Grid")
 
         self._snap_cb = QCheckBox()
-        self._snap_cb.setChecked(sm.get("canvas", "snap_to_grid", default=False))
+        self._snap_cb.setChecked(sm.get("canvas", "snap_to_grid", default=True))
         snap = SettingRow(
             "Snap nodes to grid",
             "Align a dragged node to the grid.",

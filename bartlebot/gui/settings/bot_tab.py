@@ -72,7 +72,7 @@ class BotTab(SettingsForm):
         self._relog_interval_sb.setValue(sm.relog_interval_hours)
         self.add_row(
             SettingRow(
-                "Relog players every",
+                "Relog interval",
                 "Log every player out and back in to clear client slowdown.",
                 self._relog_interval_sb,
                 default=_default("relog_interval_hours"),

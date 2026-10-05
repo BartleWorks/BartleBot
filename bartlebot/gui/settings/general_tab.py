@@ -68,7 +68,7 @@ class GeneralTab(SettingsForm):
         self.add_heading("Layout")
 
         self._maximize_cb = QCheckBox()
-        self._maximize_cb.setChecked(sm.get_general("maximize_on_open", default=False))
+        self._maximize_cb.setChecked(sm.get_general("maximize_on_open", default=True))
         self.add_row(
             SettingRow(
                 "Maximize on open",
