@@ -241,10 +241,6 @@ which paints over the one thing they exist to show. Those are the color swatches
 `settings/theme_tab.py`, `canvas/param_panel.py` and `canvas/edit_scene.py`, and
 `bot_canvas`'s `_warning_pill` — a status pill that happens to be clickable.
 
-The `▾ Connections` disclosure in `param_panel.py` stays bare for a different reason: a
-disclosure is not an action at all. It belongs to the section-heading vocabulary below,
-not to the button vocabulary.
-
 **`theme_tab.py`'s "Reset to System Default" is the last one, and it is the sharpest
 case**: it keeps a hardcoded stylesheet so that it stays legible *whatever* the user has
 done to the running theme. It is the escape hatch from a custom theme that has made the
@@ -748,6 +744,50 @@ the document underneath from the library, as a run does. The definition's own si
 (inputs, panels, id and version) rides on `BotConfig.definition`, so undo and autosave
 carry it with no extra code.
 
+## The node pages are cards of compact rows (#142)
+
+The node page and the subgraph node page are the same shape: the label once, as an
+editable title (`node_cards.TitleEdit`); one gray line saying what the node is; Show /
+Hide descriptions and Collapse all / Expand all (`PageFoldBar`); then #138's
+`OptionCard`s. The node page's are Parameters, Connections, Notes and Role, and the
+whole page scrolls as one -- before, only the params scrolled and the other three sat
+pinned under them. The subgraph node page's are the ungrouped inputs, one per input
+group, and Role. What a card *says* is `bartlebot/param_cards.py`, which needs no Qt.
+
+- **One row builder, `_DynamicParamForm`, draws both pages' rows**, behind the option
+  surfaces' `[bar][reset][?]` gutter. A row is a head line and a control. Actions on a
+  field sit at the *end* of its control line as glyph-only `ActionButton`s (Fill
+  current, Go to zone, TP; `row_actions` adds one more, the wiki import), never in a
+  row of their own under it and never revealed on hover. Copy and Paste are on a
+  coordinate box's right-click menu. Prose -- a param's help, its default hint, the
+  glob hint -- folds behind `?` or lives in the placeholder and tooltip.
+- **Reset means different things on the two pages.** On a subgraph node it drops the
+  node's value so the definition's applies (`resettable` given), and the bar is lit
+  while there is one. On a node it puts the node type's default back, grays out with
+  "No default" on a required param whose default is its blank, and the bar is never
+  lit -- as on Options, the column is reserved without claiming a meaning.
+- **An empty required field is gray until it has been left empty.** Its asterisk and
+  border turn red once focus leaves its row with it still empty, or when a save or a
+  release is refused (`show_required_errors`), and clear the moment it is filled. A run
+  is never refused -- Run is disabled while the bot has errors -- which is why it is
+  not one of the triggers. Meanwhile the card's band says "N to fill", gray, folded or
+  not, and turns red with its rows.
+- **Record is on the band of the card it fills**, never a row inside it: it works with
+  the card folded and stays easy to find. The card's first line says what Record fills
+  (`recording.recording_hint`), then the recorder's own messages. Recording opens a
+  folded card without storing that as the reader's fold.
+- **Folds are the reader's, in `ui_state.json`** (`UiStateFoldStore`). The node page is
+  one surface with four groups, the same on every node. A subgraph node page is a
+  surface per definition, never per placed node; a card the reader has not touched
+  starts open while it holds an empty required field (unless its author marked it
+  Starts closed) and folded once complete -- decided when the page is built, never while
+  the user is working in it. Role opens on a node that holds a role.
+- **Connections is Returns merged in.** Every route off the node by return value, from
+  `param_cards.outgoing_routes`, which follows the engine's rules: a stop, a node with
+  no edges, the unrouted FAILURE that goes to the recovery state with no edge drawn
+  ("recovery · not drawn"), and an unrouted return nothing covers, in the warning
+  color. Each return's description is behind its row's `?`.
+
 ## Which panel owns what
 
 `LeftSidebar` is the bot's configuration and nothing else, and its tabs are
@@ -767,8 +807,9 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
 edge, a plain *region* (reached by selecting a whole region's members, the pill click,
 or its collapsed node; label, color, Collapse / Expand -- disabled with the reason when
-`collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, roles by entry port, inputs and node panels
-with Record, Open definition, Detach), or in a definition document with nothing selected
+`collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, its inputs and input groups as cards with
+Record on a promoted node's band, roles by entry port, Open definition, Detach -- see the
+section above), or in a definition document with nothing selected
 the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
 page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
 subgraph node (**Promote to input group** / **Demote**). A subgraph node nested in a
