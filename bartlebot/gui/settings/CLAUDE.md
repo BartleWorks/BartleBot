@@ -43,7 +43,7 @@ Two rules about the settings dialog itself:
   any other edit until OK. Each setting is its own bordered card; sections stay
   `RuleHeading`s.
 - **Only a setting with dependents folds.** A `rows.SettingGroup` is the parent's
-  own row (a check box) with the disclosure triangle in its last slot, and the rows
+  own row (a check box) with the assignment card's chevron in its last slot, and the rows
   that only count while it is on — Quicksell, Auto-save, Grid. Off grays them,
   never hides them; collapsed, a change inside lights the header's bar. Layout is
   not a group: Maximize being *on* is what makes the window size moot. Every group

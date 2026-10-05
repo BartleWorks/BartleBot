@@ -93,6 +93,11 @@ class IconButton(ThemedMixin, QPushButton):
             self.toggled.connect(self._on_toggled)
         self.refresh_theme_styles()
 
+    @property
+    def icon_name(self) -> str:
+        """The glyph drawn when unchecked -- the one :meth:`set_icon_name` last set."""
+        return self._icon_name
+
     def set_icon_name(self, icon_name: str) -> None:
         """Swap the glyph — e.g. a play button that has become a pause button."""
         if icon_name == self._icon_name:

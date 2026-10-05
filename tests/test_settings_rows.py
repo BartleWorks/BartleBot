@@ -133,6 +133,8 @@ def test_a_group_starts_collapsed_with_its_rows_hidden(qapp):
     assert group.is_collapsed
     assert all(row.isHidden() for row in group.rows)
     assert group.fold_button.toolTip() == "Expand A setting"
+    # The combat tab's assignment card's chevron: down while collapsed, up while open.
+    assert group.fold_button.icon_name == "chevron_down"
 
 
 def test_opening_a_group_shows_its_rows(qapp):
@@ -143,6 +145,7 @@ def test_opening_a_group_shows_its_rows(qapp):
     assert not group.is_collapsed
     assert not any(row.isHidden() for row in group.rows)
     assert group.fold_button.toolTip() == "Collapse A setting"
+    assert group.fold_button.icon_name == "chevron_up"
 
 
 def test_a_group_whose_header_is_off_grays_its_rows_but_keeps_their_gutters(qapp):

@@ -21,7 +21,7 @@ Every setting is a card of its own, a row in Windows 11's settings style::
 * The control sits at the right in a slot of one fixed width, so every control on a
   tab lines up in one column however long its title is. A control too wide for the
   slot (the user's keep list) goes under the text instead, full width.
-* A last 20px slot at the far right holds the fold triangle on a group's header row,
+* A last 20px slot at the far right holds the fold chevron on a group's header row,
   and is kept empty on every other row so their controls still line up.
 
 Borders go on each setting, not around a section: sections are ``RuleHeading``s, as
@@ -75,7 +75,6 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.icon_button import IconButton
@@ -91,8 +90,10 @@ logger = logging.getLogger(__name__)
 CONTROL_SLOT_PX = 210
 #: A number or key field's width, inside the slot. Combos and text fields fill it.
 NARROW_CONTROL_PX = 150
-#: The slot after the control: a group header's fold triangle, empty on other rows.
+#: The slot after the control: a group header's fold chevron, empty on other rows.
 FOLD_SLOT_PX = 20
+#: The chevron's glyph: the assignment card's, so both surfaces fold with one mark.
+FOLD_ICON_PX = 14
 #: Between the control slot and the fold slot.
 FOLD_GAP_PX = 4
 #: Between the text and the control slot.
@@ -403,7 +404,7 @@ class SettingRow(QWidget):
             self.refresh()
 
     def set_trailing(self, widget: QWidget) -> None:
-        """Put *widget* -- a group's fold triangle -- in the slot after the control."""
+        """Put *widget* -- a group's fold chevron -- in the slot after the control."""
         self._trailing_layout.addWidget(widget, 0, Qt.AlignmentFlag.AlignCenter)
 
     def reset(self) -> None:
@@ -477,8 +478,9 @@ class SettingCard(ThemedMixin, QFrame):
 class SettingGroup(SettingCard):
     """A setting with settings that depend on it: one card that folds.
 
-    The header is the parent setting's own row, a check box, with the fold triangle in
-    its last slot. While the check box is off the rows under it are grayed, not hidden.
+    The header is the parent setting's own row, a check box, with the fold chevron in
+    its last slot -- the combat tab's assignment card's: down while collapsed, up while
+    open. While the check box is off the rows under it are grayed, not hidden.
     While the card is collapsed and one of them has left its default, the header's bar
     lights, so a fold never hides a change -- the rule #138's cards follow.
     """
@@ -498,7 +500,7 @@ class SettingGroup(SettingCard):
         self.add_row(header)
         self._dividers = [self.add_row(row) for row in self._rows]
 
-        self._fold = IconButton("arrow_down", tooltip="", size=FOLD_SLOT_PX, icon_size=DISCLOSURE_PX, parent=self)
+        self._fold = IconButton("chevron_down", tooltip="", size=FOLD_SLOT_PX, icon_size=FOLD_ICON_PX, parent=self)
         self._fold.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         self._fold.clicked.connect(lambda: self.set_collapsed(not self._collapsed))
         header.set_trailing(self._fold)
@@ -543,7 +545,7 @@ class SettingGroup(SettingCard):
             row.setVisible(shown)
             if divider is not None:
                 divider.setVisible(shown)
-        self._fold.set_icon_name("arrow_right" if self._collapsed else "arrow_down")
+        self._fold.set_icon_name("chevron_down" if self._collapsed else "chevron_up")
         verb = "Expand" if self._collapsed else "Collapse"
         self._fold.setToolTip(f"{verb} {self._header.title}")
         self._refresh_rollup()
