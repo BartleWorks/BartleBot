@@ -1,235 +1,978 @@
 {
   "id": "0ade3137-c083-46dc-8ed3-67a35f560687",
-  "name": "Spike the Crusher",
-  "description": "Endlessly defeats Spike the Crusher in Big Ben, Marleybone",
+  "name": "Big Ben",
+  "description": "Endlessly completes Big Ben in Marleybone",
   "version": "1.0",
   "clients": "all",
   "initial": "t_sync_players_1_state_2",
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Admirable Shoes"
+      "name": "Admirable Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Alluring Robes"
+      "name": "Alluring Boots",
+      "category": "Boots"
     },
     {
-      "name": "Bewitching Shoes"
+      "name": "Alluring Robes",
+      "category": "Robes"
     },
     {
-      "name": "Big Energy Opal"
+      "name": "Amulet of Chilled Creatures",
+      "category": "Amulets"
     },
     {
-      "name": "Brisk Cap"
+      "name": "Animated Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Aristocrat's Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Cap of the Unicorn"
+      "name": "Artificial Robe",
+      "category": "Robes"
     },
     {
-      "name": "Caramel Popcorn"
+      "name": "Azoth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cat Burglar's Cap"
+      "name": "Balance-Boon Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Accurate Ruby +3%"
+      "name": "Band of Ice",
+      "category": "Rings"
     },
     {
-      "name": "Chipped Damage Ruby +8"
+      "name": "Banshee",
+      "category": "Spellements"
     },
     {
-      "name": "Chipped Defense Amethyst +15"
+      "name": "Banshee (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Chipped Mana Opal +11"
+      "name": "Banshee Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Cloak of Clarity"
+      "name": "Baton of Appreciation",
+      "category": "Wands"
     },
     {
-      "name": "Cloak of Fascination"
+      "name": "Bewitching Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Copper"
+      "name": "Big Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Crossbone Gravestone"
+      "name": "Blood Bat",
+      "category": "Spellements"
     },
     {
-      "name": "Crusher's Deathly Robe"
+      "name": "Blue Knotted Rug",
+      "category": "Housing Items"
     },
     {
-      "name": "Crusher's Dexterous Shoes"
+      "name": "Brisk Cap",
+      "category": "Hats"
     },
     {
-      "name": "Crusher's Hat"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Crusher's Milk Bottle"
+      "name": "Cap of the Banshee",
+      "category": "Hats"
     },
     {
-      "name": "Crusher's Mysterious Cap"
+      "name": "Cap of the Inventor",
+      "category": "Hats"
     },
     {
-      "name": "Crusher's Winter Vestment"
+      "name": "Cap of the Unicorn",
+      "category": "Hats"
     },
     {
-      "name": "Deer Knight Onyx"
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
     },
     {
-      "name": "Empty Milk Cartons"
+      "name": "Cat Burglar's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Exclusive Cap"
+      "name": "Chipped Accurate Ruby +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Feline's Invigorating Robe"
+      "name": "Chipped Damage Ruby +8",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Citrine +17"
+      "name": "Chipped Defense Amethyst +15",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Opal +10"
+      "name": "Chipped Defense Ruby +14",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Ruby +17"
+      "name": "Chipped Mana Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Garment of the Supreme"
+      "name": "Cloak of Clarity",
+      "category": "Robes"
     },
     {
-      "name": "Glowing Canine Hat"
+      "name": "Cloak of Fascination",
+      "category": "Robes"
     },
     {
-      "name": "Grass Post Opal"
+      "name": "Closed Furnace",
+      "category": "Housing Items"
     },
     {
-      "name": "Gummy Bloodbat"
+      "name": "Comedian's Ring",
+      "category": "Rings"
     },
     {
-      "name": "Ice Trap"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Infernal Drape"
+      "name": "Crossbone Gravestone",
+      "category": "Housing Items"
     },
     {
-      "name": "Iron"
+      "name": "Crusher's Deathly Robe",
+      "category": "Robes"
     },
     {
-      "name": "Jinxed Hat"
+      "name": "Crusher's Dexterous Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Leather Straps"
+      "name": "Crusher's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Medium Fish"
+      "name": "Crusher's Milk Bottle",
+      "category": "Housing Items"
     },
     {
-      "name": "Milk Carton"
+      "name": "Crusher's Mysterious Cap",
+      "category": "Hats"
     },
     {
-      "name": "Myth Ghoul"
+      "name": "Crusher's Winter Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Nickel"
+      "name": "Cupig",
+      "category": "Pets"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Cyclops",
+      "category": "Spellements"
     },
     {
-      "name": "Regenerate"
+      "name": "Cyclops (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Robe of Excellence"
+      "name": "Cyclops Minion",
+      "category": "Spellements"
     },
     {
-      "name": "Robe of the Bubble"
+      "name": "Cyclops Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Sandstorm"
+      "name": "Dark Sprite",
+      "category": "Spellements"
     },
     {
-      "name": "Savvy Vestment"
+      "name": "Dawdle Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Shoes of the Chimera"
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Slippers of the Worrier"
+      "name": "Deck of Chivalry",
+      "category": "Decks"
     },
     {
-      "name": "Spike's Amulet of Smiting"
+      "name": "Deck of Intensity",
+      "category": "Decks"
     },
     {
-      "name": "Spike's Boots of Diplomacy"
+      "name": "Deck of the Aurora",
+      "category": "Decks"
     },
     {
-      "name": "Spike's Boots of Excellence"
+      "name": "Decorative Nutcracker Wand",
+      "category": "Wands"
     },
     {
-      "name": "Spike's Icicle-Spiked Hat"
+      "name": "Deer Knight Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Spike's Mechanical Visor"
+      "name": "Delicate Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Spike's Robe of the Phoenix"
+      "name": "Dexterous Vest",
+      "category": "Robes"
     },
     {
-      "name": "Spike's Vestment of History"
+      "name": "Doctor's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Spirit Armor"
+      "name": "Dream Ghoul",
+      "category": "Pets"
     },
     {
-      "name": "Square Watermelon"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stinky Cheese"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Storm Trap"
+      "name": "Empty Milk Cartons",
+      "category": "Housing Items"
     },
     {
-      "name": "Striders of the Verge"
+      "name": "Evil Snowman Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Time of Legend Peridot"
+      "name": "Exacting Boots",
+      "category": "Boots"
     },
     {
-      "name": "Tin"
+      "name": "Exclusive Boots",
+      "category": "Boots"
     },
     {
-      "name": "Tin Can"
+      "name": "Exclusive Cap",
+      "category": "Hats"
     },
     {
-      "name": "Tunic of Symmetry"
+      "name": "Famous Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Tunic of the Clever"
+      "name": "Fancy Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Vampire"
+      "name": "Feline's Fiery Robe",
+      "category": "Robes"
     },
     {
-      "name": "Vest of Predominance"
+      "name": "Feline's Invigorating Robe",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Assistance"
+      "name": "Flawed Damage Citrine +10",
+      "category": "Jewels"
     },
     {
-      "name": "Wheat Cracker"
+      "name": "Flawed Damage Onyx +10",
+      "category": "Jewels"
     },
     {
-      "name": "White Rat Magician"
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Ruby +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Opal +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Opal +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +29",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +30",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flowering Canine Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Flowering Canine Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Frostman",
+      "category": "Pets"
+    },
+    {
+      "name": "Garment of the Supreme",
+      "category": "Robes"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Genteel Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ghoul (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Giant",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Glowing Canine Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Glowing Canine Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Golden Goose",
+      "category": "Pets"
+    },
+    {
+      "name": "Grandiose Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Grass Post Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Half-Shell Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Harp o' the Emerald Isle",
+      "category": "Wands"
+    },
+    {
+      "name": "Heck Hound",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "High Quality Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Hop-Hopping Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Ice Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Imp",
+      "category": "Spellements"
+    },
+    {
+      "name": "Imp (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Infernal Drape",
+      "category": "Robes"
+    },
+    {
+      "name": "Intrepid Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Jinxed Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Krokotillian",
+      "category": "Pets"
+    },
+    {
+      "name": "Krokotopia Grand Tent",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leprechaun",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Loyalty's Length",
+      "category": "Wands"
+    },
+    {
+      "name": "Lucky Leprechaun",
+      "category": "Pets"
+    },
+    {
+      "name": "Lump of Coal",
+      "category": "Pets"
+    },
+    {
+      "name": "Maple Moose",
+      "category": "Pets"
+    },
+    {
+      "name": "Marleybone Main Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Marvelous Shroud",
+      "category": "Robes"
+    },
+    {
+      "name": "Medium Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Meowiarty Archmage Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meowiarty Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meowiarty's Biting Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Meowiarty's Blueprints",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meowiarty's Brilliant Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Meowiarty's Clever Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Meowiarty's Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Meowiarty's Fyery Necklace",
+      "category": "Amulets"
+    },
+    {
+      "name": "Meowiarty's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Meowiarty's Icy Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Meowiarty's Intense Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Meowiarty's Intense Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Meowiarty's Phobic Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Meowiarty's Polished Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Meowiarty's Refined Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Meowiarty's Robe of Ice",
+      "category": "Robes"
+    },
+    {
+      "name": "Meowiarty's Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Meowiarty's Satyrical Choker",
+      "category": "Amulets"
+    },
+    {
+      "name": "Meowiarty's Shrouded Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Meowiarty's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Milk Carton",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mint Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Model MB Automobile",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mugsy's Robe of Equity",
+      "category": "Robes"
+    },
+    {
+      "name": "Mummy Costume Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Mysterious Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Myth Ghoul",
+      "category": "Pets"
+    },
+    {
+      "name": "Nature's Wrath",
+      "category": "Spellements"
+    },
+    {
+      "name": "Newspaper Page",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Novice's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nutcracker",
+      "category": "Pets"
+    },
+    {
+      "name": "Pacify",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Pet Egg",
+      "category": "Pets"
+    },
+    {
+      "name": "Pixie Queen",
+      "category": "Pets"
+    },
+    {
+      "name": "Pleasing Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Power Play",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Precious Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "Rack of Billy Clubs",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Redskin Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Regenerate",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Rescue Rover",
+      "category": "Pets"
+    },
+    {
+      "name": "Ring of Effect",
+      "category": "Rings"
+    },
+    {
+      "name": "Robe of Excellence",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Ideals",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Superiority",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Bubble",
+      "category": "Robes"
+    },
+    {
+      "name": "Sandals of Delusion",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Santa Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Savvy Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Scarab",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scarab (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scepter of the Spring",
+      "category": "Wands"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Seraph",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shoes of Sentiments",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Chimera",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Windless",
+      "category": "Boots"
+    },
+    {
+      "name": "Short Metal Fence",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Shortblade of Flowers",
+      "category": "Athames"
+    },
+    {
+      "name": "Slippers of the Worrier",
+      "category": "Boots"
+    },
+    {
+      "name": "Small Smoke Stack",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Smooth Spun Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Sniper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snowglobe",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Spectral Blast Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spectral Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Spike's Amulet of Smiting",
+      "category": "Amulets"
+    },
+    {
+      "name": "Spike's Boots of Diplomacy",
+      "category": "Boots"
+    },
+    {
+      "name": "Spike's Boots of Excellence",
+      "category": "Boots"
+    },
+    {
+      "name": "Spike's Icicle-Spiked Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Spike's Mechanical Visor",
+      "category": "Hats"
+    },
+    {
+      "name": "Spike's Robe of the Phoenix",
+      "category": "Robes"
+    },
+    {
+      "name": "Spike's Vestment of History",
+      "category": "Robes"
+    },
+    {
+      "name": "Spirit Armor",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spring Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Sprite Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Square Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stable Salacot",
+      "category": "Hats"
+    },
+    {
+      "name": "Staff of the Hopper",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of the Ice Wyvern",
+      "category": "Wands"
+    },
+    {
+      "name": "Stinky Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Storm Shark Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stormrider Hare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Striders of the Verge",
+      "category": "Boots"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sunbird Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Thinker's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Thinker's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Time of Legend Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tin Can",
+      "category": "Housing Items"
+    },
+    {
+      "name": "To Regent's Square",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Troll",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tunic of Symmetry",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of the Clever",
+      "category": "Robes"
+    },
+    {
+      "name": "Uniform of the Inventor",
+      "category": "Robes"
+    },
+    {
+      "name": "Uniform of the Proficient",
+      "category": "Robes"
+    },
+    {
+      "name": "Vampire",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Vest of Predominance",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Assistance",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Expertise",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Fright",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Enigma",
+      "category": "Robes"
+    },
+    {
+      "name": "Victorian Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Visor of Invention",
+      "category": "Hats"
+    },
+    {
+      "name": "Wand of Amity",
+      "category": "Wands"
+    },
+    {
+      "name": "Watchdog Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Watchman's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Wheat Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "White Rat Magician",
+      "category": "Pets"
+    },
+    {
+      "name": "Windstorm Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wyldfire Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Yellow Holiday Ornament",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
+    "Spellements",
     "Boss"
   ],
   "options": [
@@ -238,8 +981,28 @@
       "type": "drop_keep_list",
       "default": [
         "Spike",
-        "Crusher"
+        "Crusher",
+        "Meowiarty's Polished Shoes",
+        "Meowiarty's Cloak",
+        "Meowiarty's Helm",
+        "Precious Cap",
+        "Meowiarty's Phobic Cowl",
+        "Delicate Slippers",
+        "Meowiarty's Robe of Ice",
+        "Victorian Hat"
       ]
+    },
+    {
+      "name": "Defeat Spike the Crusher",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to defeat Spike the Crusher. Requires defeating Gearhead and spilling 3 bottles of milk."
+    },
+    {
+      "name": "Defeat Meowiarty",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat Meowiarty. Can be teleported to directly after entering Big Ben."
     }
   ],
   "states": [
@@ -344,8 +1107,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 6600,
-        "y": 0.0
+        "x": 8800.0,
+        "y": 90.0
       },
       "params": {
         "zone": "",
@@ -374,8 +1137,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Gearhead",
       "position": {
-        "x": 2640,
-        "y": 0.0
+        "x": 3080.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_BigBen",
@@ -391,8 +1154,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Gearhead",
       "position": {
-        "x": 3080,
-        "y": 0.0
+        "x": 3520.0,
+        "y": 90.0
       },
       "params": {
         "enemy": "Golem-Clockwork-MBBoss-L37",
@@ -405,8 +1168,8 @@
       "node_type": "interact",
       "label": "Spill first milk",
       "position": {
-        "x": 3520,
-        "y": 0.0
+        "x": 3960.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_BigBen",
@@ -435,8 +1198,8 @@
       "node_type": "interact",
       "label": "Spill second milk",
       "position": {
-        "x": 3960,
-        "y": 0.0
+        "x": 4400.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_BigBen",
@@ -462,8 +1225,8 @@
       "node_type": "interact",
       "label": "Spill third milk",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 4840.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_BigBen",
@@ -489,8 +1252,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Spike the Crusher",
       "position": {
-        "x": 4840,
-        "y": 0.0
+        "x": 5280.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_BigBen",
@@ -506,11 +1269,12 @@
       "node_type": "handle_combat",
       "label": "Defeat Spike the Crusher",
       "position": {
-        "x": 5280,
-        "y": 0.0
+        "x": 5720.0,
+        "y": 90.0
       },
       "params": {
-        "enemy": "",
+        "enemy": "Cat-Thug-Purple-MBBoss-LXX",
+        "wiki_page": "Creature:Spike the Crusher",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
@@ -520,8 +1284,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 5720,
-        "y": 0.0
+        "x": 6160.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_BigBen",
@@ -537,8 +1301,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6160,
-        "y": 0.0
+        "x": 6600.0,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -548,89 +1312,111 @@
         "only_safe": true,
         "timeout": 10.0
       }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Meowiarty",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "xyz": {
+          "x": -3.08,
+          "y": -2094.42,
+          "z": -279.12
+        }
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "sleep",
+      "label": "Wait for Meowiarty to load",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 5.0
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "handle_combat",
+      "label": "Defeat Meowiarty",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Cat-Meowiarty-MBBoss-L61",
+        "wiki_page": "Creature:Meowiarty",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_10",
@@ -669,6 +1455,170 @@
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Meowiarty",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Meowiarty",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Meowiarty",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "t_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Meowiarty",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Spike the Crusher",
+              "negate": true
+            },
+            {
+              "option": "Defeat Meowiarty",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Spike the Crusher",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -713,8 +1663,28 @@
     },
     {
       "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_3",
-      "dest": "state_6",
+      "dest": "state_19",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -723,8 +1693,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -733,9 +1703,79 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -778,6 +1818,51 @@
           "y": 0.0
         }
       }
+    },
+    {
+      "id": "d9d783fe",
+      "label": "Gearhead",
+      "members": [
+        "state_6",
+        "state_7"
+      ],
+      "color": 3,
+      "collapsed": true
+    },
+    {
+      "id": "67d27203",
+      "label": "Spill milks",
+      "members": [
+        "state_9",
+        "state_11",
+        "state_8"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "77e4d1be",
+      "label": "Spike the Crusher",
+      "members": [
+        "state_10",
+        "state_12",
+        "state_14",
+        "state_13"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "75270fd6",
+      "label": "Meowiarty",
+      "members": [
+        "state_17",
+        "state_16",
+        "state_18",
+        "state_15"
+      ],
+      "color": 5,
+      "collapsed": true
     }
   ],
   "template": {

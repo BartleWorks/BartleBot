@@ -451,7 +451,15 @@
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Heartsteel"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",

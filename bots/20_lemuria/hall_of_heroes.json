@@ -1099,7 +1099,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 2200.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -1113,7 +1113,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 2640.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {}
@@ -1123,7 +1123,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Hall of Heroes",
       "position": {
-        "x": 3520.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -1149,7 +1149,7 @@
       "node_type": "handle_combat",
       "label": "Defeat heroes of Lemuria",
       "position": {
-        "x": 3960.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -1164,7 +1164,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 4400.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -1181,7 +1181,7 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of Heroes",
       "position": {
-        "x": 4840.0,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -1205,8 +1205,8 @@
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": 1320.0004001498485,
-        "y": 0.0004953973327941341
+        "x": 0.0,
+        "y": 0.0
       },
       "params": {
         "relog_clients": [
@@ -1222,8 +1222,8 @@
       "node_type": "sync_in_zone",
       "label": "Sync in zone",
       "position": {
-        "x": 1760.0004001498485,
-        "y": 90.0004953973328
+        "x": 440.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter"
@@ -1234,7 +1234,7 @@
       "node_type": "handle_level_scaling",
       "label": "Handle level scaling",
       "position": {
-        "x": 1760.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -1246,7 +1246,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3080.0,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -1413,8 +1413,8 @@
           }
         },
         "anchor": {
-          "x": 1320.0004001498485,
-          "y": 0.0004953973327941341
+          "x": 0.0,
+          "y": 0.0
         }
       }
     }

@@ -8,457 +8,820 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Alligator Pear Tree"
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Amulet of Eyes"
+      "name": "Amulet of Eyes",
+      "category": "Amulets"
     },
     {
-      "name": "Athame of Adaption"
+      "name": "Athame of Adaption",
+      "category": "Athames"
     },
     {
-      "name": "Band of Equilibrium"
+      "name": "Band of Equilibrium",
+      "category": "Rings"
     },
     {
-      "name": "Band of the Bastion"
+      "name": "Band of the Bastion",
+      "category": "Rings"
     },
     {
-      "name": "Band of the Contender"
+      "name": "Band of the Contender",
+      "category": "Rings"
     },
     {
-      "name": "Band of the Skies"
+      "name": "Band of the Oasis",
+      "category": "Rings"
     },
     {
-      "name": "Birdcaller's Boots"
+      "name": "Band of the Skies",
+      "category": "Rings"
     },
     {
-      "name": "Birdcaller's Costume"
+      "name": "Banshee",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Birdcaller's Mask"
+      "name": "Birdcaller's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Biti Nirini's Torrid Boots"
+      "name": "Birdcaller's Costume",
+      "category": "Robes"
     },
     {
-      "name": "Bitter Cap"
+      "name": "Birdcaller's Mask",
+      "category": "Hats"
     },
     {
-      "name": "Blazing Helm"
+      "name": "Biti Nirini's Torrid Boots",
+      "category": "Boots"
     },
     {
-      "name": "Bone"
+      "name": "Bitter Cap",
+      "category": "Hats"
     },
     {
-      "name": "Boost Opal"
+      "name": "Blazing Helm",
+      "category": "Hats"
     },
     {
-      "name": "Boots of the Bastion"
+      "name": "Blizzard",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Boots of the Citadel"
+      "name": "Blood Bat Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Boots of the Whirlwind"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Bushy Palm Tree"
+      "name": "Boost Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Calculating Opal"
+      "name": "Boots of the Bastion",
+      "category": "Boots"
     },
     {
-      "name": "Charged Sandals"
+      "name": "Boots of the Citadel",
+      "category": "Boots"
     },
     {
-      "name": "Chipped Defense Onyx +13"
+      "name": "Boots of the Whirlwind",
+      "category": "Boots"
     },
     {
-      "name": "Chipped Health Opal +16"
+      "name": "Bushy Palm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Chipped Health Opal +17"
+      "name": "Calculating Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cloak of Harmony"
+      "name": "Cap of Burning Sands",
+      "category": "Hats"
     },
     {
-      "name": "Cloak of the Skies"
+      "name": "Charged Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Copper"
+      "name": "Chipped Defense Onyx +13",
+      "category": "Jewels"
     },
     {
-      "name": "Cowl of the Fortress"
+      "name": "Chipped Health Opal +16",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Accurate Ruby +2%"
+      "name": "Chipped Health Opal +17",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Opal +1"
+      "name": "Cloak of Harmony",
+      "category": "Robes"
     },
     {
-      "name": "Cracked Damage Peridot +4"
+      "name": "Cloak of Humility",
+      "category": "Robes"
     },
     {
-      "name": "Cracked Defense Amethyst +10"
+      "name": "Cloak of the Skies",
+      "category": "Robes"
     },
     {
-      "name": "Cracked Defense Sapphire +10"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cracked Defense Sapphire +9"
+      "name": "Cowl of Alacrity",
+      "category": "Hats"
     },
     {
-      "name": "Cracker"
+      "name": "Cowl of Sensibility",
+      "category": "Hats"
     },
     {
-      "name": "Cryptkeeper's Circlet"
+      "name": "Cowl of Summertime",
+      "category": "Hats"
     },
     {
-      "name": "Dagger of Downpour"
+      "name": "Cowl of the Fortress",
+      "category": "Hats"
     },
     {
-      "name": "Dirk of Harmony"
+      "name": "Cracked Accurate Peridot +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Dirt Post Opal"
+      "name": "Cracked Accurate Ruby +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Diviner's Hat of Squalls"
+      "name": "Cracked Accurate Sapphire +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Dryad"
+      "name": "Cracked Damage Citrine +4",
+      "category": "Jewels"
     },
     {
-      "name": "Dusty Robe"
+      "name": "Cracked Damage Opal +1",
+      "category": "Jewels"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Cracked Damage Opal +3",
+      "category": "Jewels"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Cracked Damage Peridot +4",
+      "category": "Jewels"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Cracked Damage Sapphire +4",
+      "category": "Jewels"
     },
     {
-      "name": "Evil Snowman (Tier 2b)"
+      "name": "Cracked Defense Amethyst +10",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Cat"
+      "name": "Cracked Defense Citrine +11",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Cat (Tier 2b)"
+      "name": "Cracked Defense Opal +4",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Elf"
+      "name": "Cracked Defense Peridot +12",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Elf (Tier 2b)"
+      "name": "Cracked Defense Sapphire +10",
+      "category": "Jewels"
     },
     {
-      "name": "Flowering Band"
+      "name": "Cracked Defense Sapphire +9",
+      "category": "Jewels"
     },
     {
-      "name": "Flowering Shoes"
+      "name": "Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Cryptkeeper's Circlet",
+      "category": "Hats"
     },
     {
-      "name": "Frost Beetle (Tier 2b)"
+      "name": "Dagger of Downpour",
+      "category": "Athames"
     },
     {
-      "name": "Green Grapes"
+      "name": "Dagger of Silence",
+      "category": "Athames"
     },
     {
-      "name": "Gummy Bloodbat"
+      "name": "Dead End Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Hat of the Mirage"
+      "name": "Dirk of Harmony",
+      "category": "Athames"
     },
     {
-      "name": "Hieroglyphic Ice Tablet"
+      "name": "Dirt Post Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Ice Trap"
+      "name": "Diviner's Hat of Squalls",
+      "category": "Hats"
     },
     {
-      "name": "Inferno Cat"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Intrepid Opal"
+      "name": "Dusty Robe",
+      "category": "Robes"
     },
     {
-      "name": "Iron"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Jewel of Obliteration"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krok Brazier"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krok Moon Plaque"
+      "name": "Evil Snowman (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krok Snake Plaque"
+      "name": "Fire Cat",
+      "category": "Spellements"
     },
     {
-      "name": "Krokenkahmen's Boots"
+      "name": "Fire Cat (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krokenkahmen's Circlet"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Krokenkahmen's Cloak"
+      "name": "Fire Elf (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krokenkahmen's Hat"
+      "name": "Fire Salamander",
+      "category": "Pets"
     },
     {
-      "name": "Krokenkahmen's Sandals"
+      "name": "Flowering Band",
+      "category": "Rings"
     },
     {
-      "name": "Krokenkahmen's Shoes"
+      "name": "Flowering Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Krokenkahmen's Vestment"
+      "name": "Footwraps of the Arctic",
+      "category": "Boots"
     },
     {
-      "name": "Krokomummy"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Krokotillian"
+      "name": "Frost Beetle (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krokotopian Sphinx"
+      "name": "Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lead"
+      "name": "Glacial Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Green Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Lightning Bats (Tier 2b)"
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Hat of the Mirage",
+      "category": "Hats"
     },
     {
-      "name": "Locust Swarm (Tier 2b)"
+      "name": "Headwrap of Annihilation",
+      "category": "Hats"
     },
     {
-      "name": "Loop of Quietude"
+      "name": "Hieroglyphic Ice Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "Maker's Vestment"
+      "name": "Ice Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mutate Cat (Ice)"
+      "name": "Ice-Giver Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Myth Trap"
+      "name": "Imp Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Nettle Root"
+      "name": "Inferno Cat",
+      "category": "Pets"
     },
     {
-      "name": "Nickel"
+      "name": "Intrepid Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Parched Kris"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Parched Sandals"
+      "name": "Jewel of Obliteration",
+      "category": "Rings"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Krok Brazier",
+      "category": "Housing Items"
     },
     {
-      "name": "Polar Shoes"
+      "name": "Krok Insect Plaque",
+      "category": "Housing Items"
     },
     {
-      "name": "Potted Palm"
+      "name": "Krok Moon Plaque",
+      "category": "Housing Items"
     },
     {
-      "name": "Powerful Ring"
+      "name": "Krok Snake Plaque",
+      "category": "Housing Items"
     },
     {
-      "name": "Purple Krok Sconce"
+      "name": "Krokenkahmen's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Pyrite"
+      "name": "Krokenkahmen's Circlet",
+      "category": "Hats"
     },
     {
-      "name": "Raised Storm Sarcophagus"
+      "name": "Krokenkahmen's Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Red Painted Column"
+      "name": "Krokenkahmen's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Krokenkahmen's Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Ring of the Badlands"
+      "name": "Krokenkahmen's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Robe of the Mirage"
+      "name": "Krokenkahmen's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Oracle"
+      "name": "Krokomummy",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rough-Hewn Hood"
+      "name": "Krokotillian",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rough-Hewn Robe"
+      "name": "Krokotopian Sphinx",
+      "category": "Housing Items"
     },
     {
-      "name": "Rugged Hood"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Runed Hood"
+      "name": "Life-Eye Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Sandals of Darkness"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Sandals of Energy"
+      "name": "Lightning Bats (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scarab"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Scarab (Tier 2b)"
+      "name": "Locust Swarm (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorpion"
+      "name": "Loop of Quietude",
+      "category": "Rings"
     },
     {
-      "name": "Scorpion (Tier 2b)"
+      "name": "Maker's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Seal of the Conqueror"
+      "name": "Manu's Hood of Power",
+      "category": "Hats"
     },
     {
-      "name": "Shoes of Mortality"
+      "name": "Manu's Scorching Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Shortblade of Ruination"
+      "name": "Manu's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Shroud of Rationality"
+      "name": "Mutate Cat (Ice)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Slow Leader Opal"
+      "name": "Myth Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Myth-Eye Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Snow Serpent (Tier 2b)"
+      "name": "Necromancer's Ivory Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Soothsayer's Helm"
+      "name": "Nettle Root",
+      "category": "Snacks"
     },
     {
-      "name": "Sparkling Band"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Sphinx's Circlet"
+      "name": "Pacify",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Spider Silk"
+      "name": "Parched Kris",
+      "category": "Athames"
     },
     {
-      "name": "Sprite"
+      "name": "Parched Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Stinky Cheese"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Storm Shark"
+      "name": "Polar Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Storm Shark"
+      "name": "Potted Palm",
+      "category": "Housing Items"
     },
     {
-      "name": "Storm Shark (Tier 2b)"
+      "name": "Powerful Ring",
+      "category": "Rings"
     },
     {
-      "name": "Stout Hood"
+      "name": "Prince Manu Nirini Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Sturdy Hood"
+      "name": "Purple Krok Sconce",
+      "category": "Housing Items"
     },
     {
-      "name": "Sturdy Robe"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Sunbird"
+      "name": "Quixotic Robes",
+      "category": "Robes"
     },
     {
-      "name": "Sunbird"
+      "name": "Raised Fire Sarcophagus",
+      "category": "Housing Items"
     },
     {
-      "name": "Sunbird (Tier 2b)"
+      "name": "Raised Storm Sarcophagus",
+      "category": "Housing Items"
     },
     {
-      "name": "Tall Palm Tree"
+      "name": "Red Floor Torch",
+      "category": "Housing Items"
     },
     {
-      "name": "Tempest"
+      "name": "Red Painted Column",
+      "category": "Housing Items"
     },
     {
-      "name": "Thaumaturge's Cowl of Awe"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Thermic Shield Amethyst"
+      "name": "Ring of the Badlands",
+      "category": "Rings"
     },
     {
-      "name": "Theurge's Brown Cloak"
+      "name": "Robe of the Mirage",
+      "category": "Robes"
     },
     {
-      "name": "Threadbare Hood"
+      "name": "Robe of the Oracle",
+      "category": "Robes"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Rough-Hewn Hood",
+      "category": "Hats"
     },
     {
-      "name": "Thunder Snake (Tier 2b)"
+      "name": "Rough-Hewn Robe",
+      "category": "Robes"
     },
     {
-      "name": "Tin"
+      "name": "Rugged Hood",
+      "category": "Hats"
     },
     {
-      "name": "Tiny Fish"
+      "name": "Runed Hood",
+      "category": "Hats"
     },
     {
-      "name": "Vest of Somnolence"
+      "name": "Sandals of Darkness",
+      "category": "Boots"
     },
     {
-      "name": "Vest of the Oasis"
+      "name": "Sandals of Energy",
+      "category": "Boots"
     },
     {
-      "name": "Vestment of Darkness"
+      "name": "Sandals of Refuge",
+      "category": "Boots"
     },
     {
-      "name": "Vestment of Ignition"
+      "name": "Sandals of Tall Tales",
+      "category": "Boots"
     },
     {
-      "name": "Vestment of the Arctic"
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Weakness Citrine"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Whirlwind Dagger"
+      "name": "Scarab (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wrapped Long Bench"
+      "name": "Scarab Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scorpion (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Seal of the Conqueror",
+      "category": "Rings"
+    },
+    {
+      "name": "Serpent Seat",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Shoes of Mortality",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Desert",
+      "category": "Boots"
+    },
+    {
+      "name": "Shortblade of Ruination",
+      "category": "Athames"
+    },
+    {
+      "name": "Shroud of Rationality",
+      "category": "Robes"
+    },
+    {
+      "name": "Signet of Ancients",
+      "category": "Rings"
+    },
+    {
+      "name": "Slippers of the Oasis",
+      "category": "Boots"
+    },
+    {
+      "name": "Slow Leader Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sniper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snow Serpent (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Soothsayer's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Sparkling Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Sphinx's Circlet",
+      "category": "Hats"
+    },
+    {
+      "name": "Sphinx's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sprite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stiletto of Ignition",
+      "category": "Athames"
+    },
+    {
+      "name": "Stinky Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stout Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Stout Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Stumble Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sturdy Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Sturdy Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sunbird (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tall Palm Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tempest",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Thaumaturge's Cowl of Awe",
+      "category": "Hats"
+    },
+    {
+      "name": "Thermic Shield Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Theurge's Brown Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Threadbare Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Thunder Snake",
+      "category": "Spellements"
+    },
+    {
+      "name": "Thunder Snake (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tiny Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Vest of Somnolence",
+      "category": "Robes"
+    },
+    {
+      "name": "Vest of the Desert",
+      "category": "Robes"
+    },
+    {
+      "name": "Vest of the Oasis",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Darkness",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Ignition",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Arctic",
+      "category": "Robes"
+    },
+    {
+      "name": "Weakness Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Whirlwind Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Wrapped Long Bench",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",
@@ -466,7 +829,18 @@
     "Gear",
     "Dungeon"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Birdcaller's Boots",
+        "Birdcaller's Costume",
+        "Birdcaller's Mask",
+        "Pink Dandelion"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -646,8 +1020,8 @@
       },
       "params": {
         "enemy": "KrokPharaoh-FireTut-KTBoss-L04",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "Creature:Prince Manu Nirini",
+        "use_default_strategy": true,
         "max_duration": 0.0
       }
     },
@@ -703,8 +1077,8 @@
       },
       "params": {
         "enemy": "KrokTut-Fire-L04",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "Creature:Krokenkahmen",
+        "use_default_strategy": true,
         "max_duration": 300.0
       }
     },
@@ -723,6 +1097,35 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
       }
     }
   ],
@@ -859,46 +1262,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_10",
       "dest": "state_12",
       "when": "SUCCESS",
@@ -921,6 +1284,36 @@
       "trigger": "advance",
       "source": "state_12",
       "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -964,6 +1357,28 @@
           "y": 0.0
         }
       }
+    },
+    {
+      "id": "a939b699",
+      "label": "Manu Nirini",
+      "members": [
+        "state_6",
+        "state_7",
+        "state_8"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "cf299c04",
+      "label": "Krokenkahmen",
+      "members": [
+        "state_9",
+        "state_10",
+        "state_5"
+      ],
+      "color": 2,
+      "collapsed": true
     }
   ],
   "template": {

@@ -726,7 +726,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 22880,
+        "x": 24200.0,
         "y": 90.0
       },
       "params": {
@@ -1712,8 +1712,8 @@
       "node_type": "enter_zone",
       "label": "Enter room 1A",
       "position": {
-        "x": 22880,
-        "y": -90.0
+        "x": 22880.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
@@ -1736,8 +1736,8 @@
       "node_type": "enter_zone",
       "label": "Exit room 1A",
       "position": {
-        "x": 23320,
-        "y": -90.0
+        "x": 23320.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
@@ -1760,8 +1760,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 23760,
-        "y": -90.0
+        "x": 23760.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -1797,6 +1797,35 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
       }
     }
   ],
@@ -2480,6 +2509,36 @@
         }
       ],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -2531,7 +2590,8 @@
         "state_12",
         "state_14"
       ],
-      "color": 2
+      "color": 2,
+      "collapsed": true
     },
     {
       "id": "68dbf8a0",
@@ -2546,9 +2606,11 @@
         "state_24",
         "state_25",
         "state_29",
-        "state_28"
+        "state_28",
+        "state_30"
       ],
-      "color": 4
+      "color": 4,
+      "collapsed": true
     },
     {
       "id": "8fa92e53",
@@ -2562,7 +2624,8 @@
         "state_34",
         "state_33"
       ],
-      "color": 5
+      "color": 5,
+      "collapsed": true
     },
     {
       "id": "addddc60",
@@ -2581,7 +2644,8 @@
         "state_41",
         "state_45"
       ],
-      "color": 6
+      "color": 6,
+      "collapsed": true
     },
     {
       "id": "e63cb258",
@@ -2593,7 +2657,31 @@
         "state_53",
         "state_50"
       ],
-      "color": 1
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "e13e56e3",
+      "label": "Control Panel",
+      "members": [
+        "state_10",
+        "state_7",
+        "state_11",
+        "state_9"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "0085aa90",
+      "label": "Respawn Sylster Glowstorm",
+      "members": [
+        "state_57",
+        "state_58",
+        "state_56"
+      ],
+      "color": 2,
+      "collapsed": true
     }
   ],
   "template": {

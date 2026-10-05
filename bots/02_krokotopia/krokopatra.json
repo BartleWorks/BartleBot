@@ -8,604 +8,808 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Alligator Pear Tree"
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Amulet of Eyes"
+      "name": "Amulet of Eyes",
+      "category": "Amulets"
     },
     {
-      "name": "Athame of Adaption"
+      "name": "Athame of Adaption",
+      "category": "Athames"
     },
     {
-      "name": "Augmented Mantle"
+      "name": "Augmented Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Band of the Bastion"
+      "name": "Band of the Bastion",
+      "category": "Rings"
     },
     {
-      "name": "Band of the Skies"
+      "name": "Band of the Skies",
+      "category": "Rings"
     },
     {
-      "name": "Big Boost Opal"
+      "name": "Big Boost Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Biti Nirini's Torrid Boots"
+      "name": "Biti Nirini's Torrid Boots",
+      "category": "Boots"
     },
     {
-      "name": "Black Cat"
+      "name": "Black Cat",
+      "category": "Pets"
     },
     {
-      "name": "Boat Tent"
+      "name": "Boat Tent",
+      "category": "Housing Items"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boo Pumpkin Mask"
+      "name": "Boo Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Boots of Talent"
+      "name": "Boots of Talent",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Citadel"
+      "name": "Boots of the Citadel",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Whirlwind"
+      "name": "Boots of the Whirlwind",
+      "category": "Boots"
     },
     {
-      "name": "Bountiful Wand"
+      "name": "Bountiful Wand",
+      "category": "Wands"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bunny Wand"
+      "name": "Bunny Wand",
+      "category": "Wands"
     },
     {
-      "name": "Charmed Clover Wand"
+      "name": "Charmed Clover Wand",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Accurate Amethyst +3%"
+      "name": "Chipped Accurate Amethyst +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Accurate Jade +3%"
+      "name": "Chipped Accurate Jade +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Citrine +13"
+      "name": "Chipped Defense Citrine +13",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Onyx +13"
+      "name": "Chipped Defense Onyx +13",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Ruby +13"
+      "name": "Chipped Defense Ruby +13",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Health Opal +16"
+      "name": "Chipped Health Opal +16",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +11"
+      "name": "Chipped Mana Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +12"
+      "name": "Chipped Mana Opal +12",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +9"
+      "name": "Chipped Mana Opal +9",
+      "category": "Jewels"
     },
     {
-      "name": "Clay Post Opal"
+      "name": "Clay Post Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Path Opal"
+      "name": "Clear Path Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cloak of the Skies"
+      "name": "Cloak of the Skies",
+      "category": "Robes"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of the Fortress"
+      "name": "Cowl of the Fortress",
+      "category": "Hats"
     },
     {
-      "name": "Cracked Damage Amethyst +5"
+      "name": "Cracked Damage Amethyst +5",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Onyx +6"
+      "name": "Cracked Damage Onyx +6",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Opal +2"
+      "name": "Cracked Damage Opal +2",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Sapphire +5"
+      "name": "Cracked Damage Sapphire +5",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Sapphire +6"
+      "name": "Cracked Damage Sapphire +6",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Defense Jade +11"
+      "name": "Cracked Defense Jade +11",
+      "category": "Jewels"
     },
     {
-      "name": "Cracker"
+      "name": "Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Cryptkeeper's Circlet"
+      "name": "Cryptkeeper's Circlet",
+      "category": "Hats"
     },
     {
-      "name": "Cupig"
+      "name": "Cupig",
+      "category": "Pets"
     },
     {
-      "name": "Dagger of Annihilation"
+      "name": "Dagger of Annihilation",
+      "category": "Athames"
     },
     {
-      "name": "Dagger of Downpour"
+      "name": "Dagger of Downpour",
+      "category": "Athames"
     },
     {
-      "name": "Death-Boon Onyx"
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Shot Onyx"
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Dependable Opal"
+      "name": "Dependable Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Dirk of Harmony"
+      "name": "Dirk of Harmony",
+      "category": "Athames"
     },
     {
-      "name": "Diviner's Hat of Squalls"
+      "name": "Diviner's Hat of Squalls",
+      "category": "Hats"
     },
     {
-      "name": "Dryad"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dusty Robe"
+      "name": "Dusty Robe",
+      "category": "Robes"
     },
     {
-      "name": "Egg Basket Wand"
+      "name": "Egg Basket Wand",
+      "category": "Wands"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snowman (Tier 2b)"
+      "name": "Evil Snowman (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fang Bat"
+      "name": "Fang Bat",
+      "category": "Pets"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Cat (Tier 2b)"
+      "name": "Fire Cat (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Elf (Tier 2b)"
+      "name": "Fire Elf (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Flowering Band"
+      "name": "Flowering Band",
+      "category": "Rings"
     },
     {
-      "name": "Footwraps of the Arctic"
+      "name": "Footwraps of the Arctic",
+      "category": "Boots"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Frost Beetle (Tier 2b)"
+      "name": "Frost Beetle (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ghoul Onyx"
+      "name": "Ghoul Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Gingerbread Wand"
+      "name": "Gingerbread Wand",
+      "category": "Wands"
     },
     {
-      "name": "Glacial Shield Ruby"
+      "name": "Glacial Shield Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Golden Goose"
+      "name": "Golden Goose",
+      "category": "Pets"
     },
     {
-      "name": "Goofy Pumpkin Mask"
+      "name": "Goofy Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Green Grapes"
+      "name": "Green Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Hallowe'en Robe"
+      "name": "Hallowe'en Robe",
+      "category": "Robes"
     },
     {
-      "name": "Happy Holidaisy"
+      "name": "Happy Holidaisy",
+      "category": "Seeds"
     },
     {
-      "name": "Hardy Boots"
+      "name": "Hardy Boots",
+      "category": "Boots"
     },
     {
-      "name": "Harp of the Lucky"
+      "name": "Harp of the Lucky",
+      "category": "Wands"
     },
     {
-      "name": "Helm of the Citadel"
+      "name": "Helm of the Citadel",
+      "category": "Hats"
     },
     {
-      "name": "Hieroglyphic Ice Tablet"
+      "name": "Hieroglyphic Ice Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "Humongofrog"
+      "name": "Humongofrog",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Trap"
+      "name": "Ice Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice-Boon Sapphire"
+      "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ill-Omened Striders"
+      "name": "Ill-Omened Striders",
+      "category": "Boots"
     },
     {
-      "name": "Iron"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Kitty Pumpkin Mask"
+      "name": "Kitty Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Krokopatra Exalted Duel"
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokopatra Master Duel"
+      "name": "Krokopatra Master Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokopatra's Cap"
+      "name": "Krokopatra's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Krokopatra's Circlet"
+      "name": "Krokopatra's Circlet",
+      "category": "Hats"
     },
     {
-      "name": "Krokopatra's Footwraps"
+      "name": "Krokopatra's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Krokopatra's Garments"
+      "name": "Krokopatra's Garments",
+      "category": "Robes"
     },
     {
-      "name": "Krokopatra's Robe"
+      "name": "Krokopatra's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Krokopatra's Shoes"
+      "name": "Krokopatra's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Krokopatra's Silent Cloak"
+      "name": "Krokopatra's Silent Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Krokotillian"
+      "name": "Krokotillian",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krokotopia Theme 4"
+      "name": "Krokotopia Theme 4",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokotopian Balance Modius"
+      "name": "Krokotopian Balance Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Death Modius"
+      "name": "Krokotopian Death Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Life Modius"
+      "name": "Krokotopian Life Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Modius"
+      "name": "Krokotopian Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Storm Modius"
+      "name": "Krokotopian Storm Modius",
+      "category": "Hats"
     },
     {
-      "name": "Large Archway"
+      "name": "Large Archway",
+      "category": "Housing Items"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Life Troll"
+      "name": "Life Troll",
+      "category": "Pets"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Lightning Bats (Tier 2b)"
+      "name": "Lightning Bats (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lightning Bats Amethyst"
+      "name": "Lightning Bats Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Locust Swarm (Tier 2b)"
+      "name": "Locust Swarm (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Loop of Quietude"
+      "name": "Loop of Quietude",
+      "category": "Rings"
     },
     {
-      "name": "Loop of the Defender"
+      "name": "Loop of the Defender",
+      "category": "Rings"
     },
     {
-      "name": "Lovely Leopard"
+      "name": "Lovely Leopard",
+      "category": "Pets"
     },
     {
-      "name": "Magma-Walkers"
+      "name": "Magma-Walkers",
+      "category": "Boots"
     },
     {
-      "name": "Maple Moose"
+      "name": "Maple Moose",
+      "category": "Pets"
     },
     {
-      "name": "Mummy Costume Bodywraps"
+      "name": "Mummy Costume Bodywraps",
+      "category": "Robes"
     },
     {
-      "name": "Mummy Costume Footwraps"
+      "name": "Mummy Costume Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Myth-Shot Peridot"
+      "name": "Myth-Shot Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Nettle Root"
+      "name": "Nettle Root",
+      "category": "Snacks"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Novice's Socket Wrench"
+      "name": "Novice's Socket Wrench",
+      "category": "Housing Items"
     },
     {
-      "name": "Overtake Opal"
+      "name": "Overtake Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Parched Kris"
+      "name": "Pacify",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Parched Sandals"
+      "name": "Parched Kris",
+      "category": "Athames"
     },
     {
-      "name": "Pet Egg"
+      "name": "Parched Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Phantasmal Raiment"
+      "name": "Pet Egg",
+      "category": "Pets"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Phantasmal Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Pip O'Plenty Opal"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Polar Shoes"
+      "name": "Pip O'Plenty Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Powerful Ring"
+      "name": "Polar Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Powerful Vestment"
+      "name": "Powerful Ring",
+      "category": "Rings"
     },
     {
-      "name": "Pyrite"
+      "name": "Powerful Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Raised Storm Sarcophagus"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Raised Storm Sarcophagus",
+      "category": "Housing Items"
     },
     {
-      "name": "Rescue Rover"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Ring of the Badlands"
+      "name": "Rescue Rover",
+      "category": "Pets"
     },
     {
-      "name": "Robe of the Bastion"
+      "name": "Ring of the Badlands",
+      "category": "Rings"
     },
     {
-      "name": "Robe of the Mirage"
+      "name": "Robe of the Bastion",
+      "category": "Robes"
     },
     {
-      "name": "Rod of Regard"
+      "name": "Robe of the Mirage",
+      "category": "Robes"
     },
     {
-      "name": "Rough-Hewn Hood"
+      "name": "Rod of Regard",
+      "category": "Wands"
     },
     {
-      "name": "Row of Scrolls"
+      "name": "Rough-Hewn Hood",
+      "category": "Hats"
     },
     {
-      "name": "Runed Hood"
+      "name": "Row of Scrolls",
+      "category": "Housing Items"
     },
     {
-      "name": "Sandals of Energy"
+      "name": "Runed Hood",
+      "category": "Hats"
     },
     {
-      "name": "Santa Hat"
+      "name": "Sandals of Energy",
+      "category": "Boots"
     },
     {
-      "name": "Scarab"
+      "name": "Santa Hat",
+      "category": "Hats"
     },
     {
-      "name": "Scarab (Tier 2b)"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Scorpion"
+      "name": "Scarab (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorpion (Tier 2b)"
+      "name": "Scorpion",
+      "category": "Spellements"
     },
     {
-      "name": "Scorpion Citrine"
+      "name": "Scorpion (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seal of the Conqueror"
+      "name": "Scorpion Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Seraph Wings"
+      "name": "Seal of the Conqueror",
+      "category": "Rings"
     },
     {
-      "name": "Shamrock Scepter"
+      "name": "Seraph Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Shoes of the Desert"
+      "name": "Shamrock Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Shroud of Rationality"
+      "name": "Shoes of the Desert",
+      "category": "Boots"
     },
     {
-      "name": "Silence Opal"
+      "name": "Shroud of Rationality",
+      "category": "Robes"
     },
     {
-      "name": "Silent Jewel"
+      "name": "Silence Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sniper"
+      "name": "Silent Jewel",
+      "category": "Rings"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Serpent (Tier 2b)"
+      "name": "Snow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Snowball"
+      "name": "Snow Serpent (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snowglobe"
+      "name": "Snowball",
+      "category": "Pets"
     },
     {
-      "name": "Snowman"
+      "name": "Snowglobe",
+      "category": "Housing Items"
     },
     {
-      "name": "Soothsayer's Helm"
+      "name": "Snowman",
+      "category": "Housing Items"
     },
     {
-      "name": "Sparkling Band"
+      "name": "Soothsayer's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Sphinx's Vestment"
+      "name": "Sparkling Band",
+      "category": "Rings"
     },
     {
-      "name": "Spider Silk"
+      "name": "Sphinx's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Spring Chicken Scepter"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Sprite"
+      "name": "Spring Chicken Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Square Watermelon"
+      "name": "Sprite",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Staff of Commitment"
+      "name": "Square Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Stinky Cheese"
+      "name": "Staff of Commitment",
+      "category": "Wands"
     },
     {
-      "name": "Storm Shark"
+      "name": "Stinky Cheese",
+      "category": "Snacks"
     },
     {
-      "name": "Storm Shark"
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Shark (Tier 2b)"
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm-Away Amethyst"
+      "name": "Storm Shark (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm-Shot Amethyst"
+      "name": "Storm-Away Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stormrider Hare"
+      "name": "Storm-Shot Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stout Hood"
+      "name": "Stormrider Hare",
+      "category": "Mounts"
     },
     {
-      "name": "Sturdy Hood"
+      "name": "Stout Hood",
+      "category": "Hats"
     },
     {
-      "name": "Sturdy Robe"
+      "name": "Sturdy Hood",
+      "category": "Hats"
     },
     {
-      "name": "Sunbird"
+      "name": "Sturdy Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sunbird (Tier 2b)"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Sweet Staff"
+      "name": "Sunbird (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tall Palm Tree"
+      "name": "Sweet Staff",
+      "category": "Wands"
     },
     {
-      "name": "Theurge's Hat"
+      "name": "Tall Palm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Threadbare Hood"
+      "name": "Theurge's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Threadbare Hood",
+      "category": "Hats"
     },
     {
-      "name": "Thunder Snake (Tier 2b)"
+      "name": "Thunder Snake",
+      "category": "Spellements"
     },
     {
-      "name": "Tin"
+      "name": "Thunder Snake (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tiny Fish"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "To The Oasis"
+      "name": "Tiny Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Tree Wrapped Gift"
+      "name": "To The Oasis",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Troll Peridot"
+      "name": "Tree Wrapped Gift",
+      "category": "Housing Items"
     },
     {
-      "name": "Vampire Costume Boots"
+      "name": "Troll Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Vest of Somnolence"
+      "name": "Vampire Costume Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vest of the Desert"
+      "name": "Vest of Somnolence",
+      "category": "Robes"
     },
     {
-      "name": "Vest of the Oasis"
+      "name": "Vest of the Desert",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Darkness"
+      "name": "Vest of the Oasis",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Ignition"
+      "name": "Vestment of Darkness",
+      "category": "Robes"
     },
     {
-      "name": "Volcanic Shield Sapphire"
+      "name": "Vestment of Ignition",
+      "category": "Robes"
     },
     {
-      "name": "Weakness"
+      "name": "Volcanic Shield Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Whirlwind Dagger"
+      "name": "Weakness",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Yuletide Lg. Small Fry Aquarium"
+      "name": "Whirlwind Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Yuletide Spirit"
+      "name": "Yuletide Lg. Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Spirit",
+      "category": "Pets"
     }
   ],
   "authors": "BartleBot",
@@ -677,7 +881,7 @@
       },
       "params": {
         "enemy": "KrokTut-Storm-KTBoss-L05",
-        "wiki_page": "",
+        "wiki_page": "Creature:Krokopatra",
         "use_default_strategy": false,
         "max_duration": 0.0
       }

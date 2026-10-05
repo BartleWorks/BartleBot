@@ -8,277 +8,368 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Antique Footguards"
+      "name": "Antique Footguards",
+      "category": "Boots"
     },
     {
-      "name": "Antique Overshirt"
+      "name": "Antique Overshirt",
+      "category": "Robes"
     },
     {
-      "name": "Armored Tunic"
+      "name": "Armored Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Ashen Cloak"
+      "name": "Ashen Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Banshee"
+      "name": "Banshee",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blonde Strawberry"
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Bloomshroud"
+      "name": "Bloomshroud",
+      "category": "Hats"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of Embers"
+      "name": "Boots of Embers",
+      "category": "Boots"
     },
     {
-      "name": "Cap of Advantages"
+      "name": "Cap of Advantages",
+      "category": "Hats"
     },
     {
-      "name": "Charged Cover"
+      "name": "Charged Cover",
+      "category": "Hats"
     },
     {
-      "name": "Cheese Broccoli"
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Chillcloak"
+      "name": "Chillcloak",
+      "category": "Robes"
     },
     {
-      "name": "Chipped Knife"
+      "name": "Chipped Knife",
+      "category": "Athames"
     },
     {
-      "name": "Chocolate Strawberry"
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Cloak of Vigilance"
+      "name": "Cloak of Vigilance",
+      "category": "Robes"
     },
     {
-      "name": "Cowl of the Discreet"
+      "name": "Cowl of the Discreet",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Wisdom"
+      "name": "Cowl of Wisdom",
+      "category": "Hats"
     },
     {
-      "name": "Dark Stone Tower"
+      "name": "Dark Stone Tower",
+      "category": "Housing Items"
     },
     {
-      "name": "Death Trap"
+      "name": "Death Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Double Sided Hat"
+      "name": "Double Sided Hat",
+      "category": "Hats"
     },
     {
-      "name": "Dulled Athame"
+      "name": "Dulled Athame",
+      "category": "Athames"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Elven Storm Cap"
+      "name": "Elven Storm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Engraved Amethyst Ring"
+      "name": "Engraved Amethyst Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Citrine Ring"
+      "name": "Engraved Citrine Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Jade Ring"
+      "name": "Engraved Jade Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Onyx Ring"
+      "name": "Engraved Onyx Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Peridot Ring"
+      "name": "Engraved Peridot Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Ruby Ring"
+      "name": "Engraved Ruby Ring",
+      "category": "Rings"
     },
     {
-      "name": "Fairy Cap"
+      "name": "Fairy Cap",
+      "category": "Hats"
     },
     {
-      "name": "Fairy's Wand"
+      "name": "Fairy's Wand",
+      "category": "Wands"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Shield"
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fireguard Slippers"
+      "name": "Fireguard Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Firestorm Vestment"
+      "name": "Firestorm Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Flametouched Hat"
+      "name": "Flametouched Hat",
+      "category": "Hats"
     },
     {
-      "name": "Flash Frozen Choker"
+      "name": "Flash Frozen Choker",
+      "category": "Amulets"
     },
     {
-      "name": "Footwraps of Seasons"
+      "name": "Footwraps of Seasons",
+      "category": "Boots"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frostshroud"
+      "name": "Frostshroud",
+      "category": "Hats"
     },
     {
-      "name": "Frostshroud"
+      "name": "Frostshroud",
+      "category": "Hats"
     },
     {
-      "name": "Fur-Lined Hood"
+      "name": "Fur-Lined Hood",
+      "category": "Hats"
     },
     {
-      "name": "Guiding Light"
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gummy Firecat"
+      "name": "Gummy Firecat",
+      "category": "Snacks"
     },
     {
-      "name": "Hardened Boots"
+      "name": "Hardened Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hardened Cap"
+      "name": "Hardened Cap",
+      "category": "Hats"
     },
     {
-      "name": "Hat of Eradication"
+      "name": "Hat of Eradication",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Audacity"
+      "name": "Helm of Audacity",
+      "category": "Hats"
     },
     {
-      "name": "Honey Sickle"
+      "name": "Honey Sickle",
+      "category": "Seeds"
     },
     {
-      "name": "Hood of Storms"
+      "name": "Hood of Storms",
+      "category": "Hats"
     },
     {
-      "name": "Hood of Tension"
+      "name": "Hood of Tension",
+      "category": "Hats"
     },
     {
-      "name": "Imp"
+      "name": "Imp",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Imp Lord's Helm"
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Insulated Wand"
+      "name": "Insulated Wand",
+      "category": "Wands"
     },
     {
-      "name": "Keen Eyes"
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Knife of Winter"
+      "name": "Knife of Winter",
+      "category": "Athames"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lord's Signet"
+      "name": "Lord's Signet",
+      "category": "Rings"
     },
     {
-      "name": "Pixie"
+      "name": "Pixie",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Prop House 1"
+      "name": "Prop House 1",
+      "category": "Housing Items"
     },
     {
-      "name": "Raiment of Storms"
+      "name": "Raiment of Storms",
+      "category": "Robes"
     },
     {
-      "name": "Robe of All Trades"
+      "name": "Robe of All Trades",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Embers"
+      "name": "Robe of Embers",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Blizzard"
+      "name": "Robe of the Blizzard",
+      "category": "Robes"
     },
     {
-      "name": "Roughspun Robe"
+      "name": "Roughspun Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sapphyra's Studded Boots"
+      "name": "Sapphyra's Studded Boots",
+      "category": "Boots"
     },
     {
-      "name": "Senior Novice's Robe"
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Senior Novice's Shoes"
+      "name": "Senior Novice's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Shimmering Cloak"
+      "name": "Shimmering Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Skullsplitter's Signet"
+      "name": "Skullsplitter's Signet",
+      "category": "Rings"
     },
     {
-      "name": "Slippers of Excitement"
+      "name": "Slippers of Excitement",
+      "category": "Boots"
     },
     {
-      "name": "Small Orange Symbol Rug"
+      "name": "Small Orange Symbol Rug",
+      "category": "Housing Items"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Snow Serpent",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Shield"
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Shield"
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stormcaller's Boots"
+      "name": "Stormcaller's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Stormcaller's Robe"
+      "name": "Stormcaller's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Studded Knife"
+      "name": "Studded Knife",
+      "category": "Athames"
     },
     {
-      "name": "Sugar Donut"
+      "name": "Sugar Donut",
+      "category": "Snacks"
     },
     {
-      "name": "Symmetrical Shoes"
+      "name": "Symmetrical Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Thunder Snake",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Time of Legend"
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tough"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Triton Statue"
+      "name": "Triton Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Troll"
+      "name": "Troll",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Venomous Cowl"
+      "name": "Venomous Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Vestment of Panic"
+      "name": "Vestment of Panic",
+      "category": "Robes"
     },
     {
-      "name": "Vrixx's Verdant Robes"
+      "name": "Vrixx's Verdant Robes",
+      "category": "Robes"
     },
     {
-      "name": "Wondershroud"
+      "name": "Wondershroud",
+      "category": "Hats"
     }
   ],
   "authors": "BartleBot",
@@ -287,7 +378,15 @@
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Elven Storm Cap"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -378,7 +477,7 @@
       },
       "params": {
         "enemy": "Skeleton-Gold-WCBoss-L03",
-        "wiki_page": "",
+        "wiki_page": "Creature:Sergeant Skullsplitter",
         "use_default_strategy": false,
         "max_duration": 0.0
       }

@@ -294,7 +294,15 @@
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Elven Storm Cap"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -385,7 +393,7 @@
       },
       "params": {
         "enemy": "Scarecrow-WCBoss-L03",
-        "wiki_page": "",
+        "wiki_page": "Creature:The Harvest Lord",
         "use_default_strategy": false,
         "max_duration": 0.0
       }

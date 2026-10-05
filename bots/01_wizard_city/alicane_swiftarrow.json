@@ -490,10 +490,21 @@
   ],
   "authors": "BartleBot",
   "tags": [
+    "Gear",
+    "Mounts",
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Elven Fire Robe",
+        "Shortblade of the Quick"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -584,7 +595,7 @@
       },
       "params": {
         "enemy": "FireElf-Prince-WCBoss-L04",
-        "wiki_page": "",
+        "wiki_page": "Creature:Alicane Swiftarrow",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
