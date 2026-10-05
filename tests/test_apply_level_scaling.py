@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.utility.apply_level_scaling as als
 import bartlebot.nodes.utility.handle_level_scaling as hls
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, prompt_at
 
 _PARAMS = {
     "zone": "TestZone",
@@ -33,18 +33,9 @@ _patch_elixir_active = lambda: patch(  # noqa: E731
 
 
 def _ready_client() -> FakeClient:
-    """Client with no stale prompt; interact prompt shows immediately at interact_xyz."""
+    """Client with no stale prompt, whose interact prompt shows at interact_xyz and nowhere else."""
     c = FakeClient()
-    seen = False
-
-    async def _npc_range():
-        # First call: stale-prompt check on entry → no stale prompt.
-        # Every call after: prompt is present at interact_xyz.
-        nonlocal seen
-        was_seen, seen = seen, True
-        return was_seen
-
-    c.is_in_npc_range.side_effect = _npc_range
+    prompt_at(c, _PARAMS["interact_xyz"])
     return c
 
 
@@ -94,8 +85,8 @@ async def test_prompt_never_appears_fails():
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
-    # teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == hls.MAX_RETRIES * 2
+    # The first reset, then teleport(interact) + teleport(reset) for each attempt
+    assert client.teleport.call_count == 1 + hls.MAX_RETRIES * 2
 
 
 async def test_menu_never_appears_fails():
@@ -180,18 +171,7 @@ async def test_stale_prompt_cleared_before_interaction():
     """A pre-existing interact prompt is dismissed via reset_xyz before the retry loop."""
     client = FakeClient()
     machine = FakeMachine(options={"Level Scaling Players": [1]})
-    call_count = 0
-
-    async def _npc_range():
-        nonlocal call_count
-        call_count += 1
-        if call_count == 1:
-            return True  # stale prompt visible on node entry
-        if call_count == 2:
-            return False  # cleared after teleporting to reset_xyz
-        return True  # correct prompt visible at interact_xyz
-
-    client.is_in_npc_range.side_effect = _npc_range
+    prompt_at(client, _PARAMS["interact_xyz"], initially=True)  # stale on node entry
 
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(hls, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
@@ -216,7 +196,10 @@ async def test_prompt_retry_then_success():
     client.teleport.side_effect = tracking_teleport
 
     async def npc_range():
-        return bool(reset_visited)
+        # Only at interact_xyz, and only once the client has been reset twice: the
+        # reset every run starts with, and the one after the first miss.
+        calls = client.teleport.call_args_list
+        return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
 
@@ -234,8 +217,8 @@ async def test_prompt_retry_then_success():
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert len(reset_visited) == 1
-    assert client.teleport.call_count == 3  # interact, reset, interact
+    assert len(reset_visited) == 2
+    assert client.teleport.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_missing_elixir_is_retried():
@@ -296,3 +279,20 @@ async def test_clients_use_station_one_at_a_time():
 
     assert result == "SUCCESS"
     assert order == ["x1", "click1", "x2", "click2"]
+
+
+async def test_a_prompt_that_will_not_clear_at_reset_fails_without_using_the_station():
+    client = FakeClient()
+    client.is_in_npc_range.return_value = True
+    machine = FakeMachine(options={"Level Scaling Players": [1]})
+
+    with (
+        _patch_menu_visible(),
+        _patch_menu_gone(),
+        patch.object(hls, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.PROMPT_CLEAR_SETTLE", 0),
+    ):
+        result = await als.run(machine, [client], _PARAMS)
+
+    assert result == "FAILURE"
+    client.send_key.assert_not_called()

@@ -61,6 +61,13 @@ SIGHTING_SETTLE_TIMEOUT = 3.0
 MAX_RETRIES = 3
 # Default number of attempts for recoverable operations (teleport-and-check loops).
 
+PROMPT_CLEAR_SETTLE = 0.5
+# Seconds a prompt must keep reading absent at reset_xyz before a client approaches the
+# object it is there for. Absent is also what a prompt still on its way reads as: a client
+# just off a loading screen beside another object (a World Gate's spiral door) raises that
+# object's prompt a moment later, and one that approaches before then carries it along and
+# presses X on the wrong object (#152). One read is not enough; a short run of them is.
+
 TRIGGER_TIMEOUT = 10.0
 # Seconds to wait for a UI event to fire after an input (loading screen start,
 # button becoming enabled, dialog appearing).

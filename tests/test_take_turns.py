@@ -225,3 +225,25 @@ async def test_logs_use_the_supplied_client_numbers():
 
     assert any("Client 4" in message for message, _level in machine.logs)
     assert not any("Client 1" in message for message, _level in machine.logs)
+
+
+async def test_a_client_whose_prompt_will_not_clear_at_reset_loses_its_turn():
+    """A prompt still up at reset_xyz is some other object's, and an approach from there
+    would press X on it (#152). That client is skipped; the rest still get their turns."""
+    clients = [_positional_client() for _ in range(3)]
+    clients[1].is_in_npc_range.side_effect = None
+    clients[1].is_in_npc_range.return_value = True
+    turns: list[int] = []
+    logs: list[tuple[str, int]] = []
+
+    async def _turn(client) -> bool:
+        turns.append(clients.index(client))
+        return True
+
+    with patch.object(nh, "PROMPT_CLEAR_SETTLE", 0):
+        results = await _run(clients, _turn, log=lambda msg, level=0: logs.append((msg, level)))
+
+    assert turns == [0, 2]
+    assert results[1] == nh.TurnResult(prompted=False, completed=False)
+    clients[1].teleport.assert_called_once_with(_RESET)
+    assert any("Client(s) [2]: interact prompt would not clear" in msg for msg, _ in logs)

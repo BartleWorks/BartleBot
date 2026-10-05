@@ -403,7 +403,7 @@ async def apply_elixir(
     apply_level_scaling node calls it with every Level Scaling Player.
     """
     # Clear any pre-existing interact prompt on the scaled clients.
-    await node_helpers.clear_stale_prompt(
+    if not await node_helpers.clear_stale_prompt(
         machine,
         [c for _, c in numbered],
         reset,
@@ -411,7 +411,8 @@ async def apply_elixir(
         safety_delay,
         POLL_INTERVAL,
         numbers=[n for n, _ in numbered],
-    )
+    ):
+        return False
 
     # Retry rounds over the clients that still need the elixir. One client uses the
     #    station from start to finish before the next one opens it: an open menu closes

@@ -175,6 +175,25 @@ class FakeGidEntity:
         self.global_id_full = AsyncMock(return_value=gid)
 
 
+def prompt_at(client: "FakeClient", *points, initially: bool = False) -> None:
+    """Make *client*'s interact prompt show only while its last teleport was to one of *points*.
+
+    That is how the game behaves, so a test using this does not depend on how many times a
+    node reads the prompt, only on where it sends the client. *initially* is the prompt
+    before the first teleport: True for a client that starts beside some other object.
+    Points are XYZs or the ``{"x", "y", "z"}`` dicts node params hold, compared by
+    coordinates, since XYZ has no equality of its own.
+    """
+    wanted = [(p["x"], p["y"], p["z"]) if isinstance(p, dict) else tuple(p) for p in points]
+
+    async def _showing() -> bool:
+        if not client.teleport.call_args_list:
+            return initially
+        return tuple(client.teleport.call_args_list[-1].args[0]) in wanted
+
+    client.is_in_npc_range.side_effect = _showing
+
+
 def see_each_other(*clients: "FakeClient") -> None:
     """Make *clients* have each other loaded, and nobody else: one zone, realm and instance.
 

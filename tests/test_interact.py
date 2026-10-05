@@ -1,7 +1,6 @@
 """Unit tests for the interact node."""
 
 import asyncio
-from itertools import chain, repeat
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -9,12 +8,19 @@ import pytest
 import bartlebot.nodes.interaction.interact as ix
 import bartlebot.nodes.node_helpers as _nh
 from bartlebot.nodes.paths import DECLINE_QUEST_PATH
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, prompt_at
 
 
 @pytest.fixture(autouse=True)
 def _no_page_settle(monkeypatch):
     monkeypatch.setattr(_nh, "DIALOG_PAGE_SETTLE", 0.0)
+
+
+@pytest.fixture(autouse=True)
+def _no_prompt_clear_settle(monkeypatch):
+    """The node polls reach_prompt at the real POLL_INTERVAL, so the settle at reset_xyz
+    would cost every test half a second; it still takes two reads to pass."""
+    monkeypatch.setattr(_nh, "PROMPT_CLEAR_SETTLE", 0.0)
 
 
 def _no_offer(visible):
@@ -41,12 +47,9 @@ _PARAMS = {
 
 
 def _ready_client() -> FakeClient:
-    """Client with no stale prompt and interact prompt showing immediately at interact_xyz."""
+    """Client with no stale prompt, whose interact prompt shows at interact_xyz and nowhere else."""
     c = FakeClient()
-    # First call: stale-prompt check on node entry → no stale prompt.
-    # Second call onward: prompt is present at interact_xyz (infinite Trues via repeat so
-    # the mock never exhausts if the node retries due to any scheduling variance).
-    c.is_in_npc_range.side_effect = chain([False], repeat(True))
+    prompt_at(c, _PARAMS["interact_xyz"])
     return c
 
 
@@ -61,7 +64,8 @@ async def test_success_no_dialog():
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    # Reset first, whether or not a prompt showed (#152), then the one approach.
+    assert [tuple(call.args[0]) for call in client.teleport.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
@@ -135,8 +139,8 @@ async def test_prompt_never_appears_fails():
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    # teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == ix.MAX_RETRIES * 2
+    # The first reset, then teleport(interact) + teleport(reset) for each attempt
+    assert client.teleport.call_count == 1 + ix.MAX_RETRIES * 2
 
 
 async def test_prompt_retry_then_success():
@@ -151,7 +155,10 @@ async def test_prompt_retry_then_success():
     client.teleport.side_effect = tracking_teleport
 
     async def npc_range():
-        return bool(reset_visited)
+        # Only at interact_xyz, and only once the client has been reset twice: the
+        # reset every run starts with, and the one after the first miss.
+        calls = client.teleport.call_args_list
+        return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
 
@@ -162,8 +169,8 @@ async def test_prompt_retry_then_success():
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert len(reset_visited) == 1
-    assert client.teleport.call_count == 3  # interact, reset, interact
+    assert len(reset_visited) == 2
+    assert client.teleport.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_dialog_timeout_fails():
@@ -209,18 +216,7 @@ async def test_stale_prompt_cleared_before_interaction():
     """A pre-existing interact prompt is dismissed via reset_xyz before the normal
     interaction loop runs, preventing an accidental interaction with the wrong object."""
     client = FakeClient()
-    call_count = 0
-
-    async def _npc_range():
-        nonlocal call_count
-        call_count += 1
-        if call_count == 1:
-            return True  # stale prompt visible on node entry
-        if call_count == 2:
-            return False  # cleared after teleporting to reset_xyz
-        return True  # correct prompt visible at interact_xyz
-
-    client.is_in_npc_range.side_effect = _npc_range
+    prompt_at(client, _PARAMS["interact_xyz"], initially=True)  # stale on entry
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),

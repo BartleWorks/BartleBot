@@ -295,7 +295,12 @@ async def run(machine, clients: list, params: dict) -> str:
         return await _await_arrival(machine, clients, to_zone)
 
     # 2–3. Clear a stale prompt, then teleport to interact_xyz until the prompt shows on
-    #      every client. A miss is not yet a failure — see below.
+    #      every client. A miss is not yet a failure — see below — but a prompt that will
+    #      not clear is: the fallback would press X on it.
+    if not await node_helpers.clear_stale_prompt(
+        machine, clients, reset, node_helpers.INTERACT_PROMPT, safety_delay, POLL_INTERVAL
+    ):
+        return "FAILURE"
     prompt_appeared = await node_helpers.reach_prompt(
         machine,
         clients,
@@ -305,6 +310,7 @@ async def run(machine, clients: list, params: dict) -> str:
         safety_delay,
         POLL_INTERVAL,
         fail_on_miss=False,
+        clear_first=False,
     )
 
     if prompt_appeared:

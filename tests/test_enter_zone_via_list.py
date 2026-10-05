@@ -7,7 +7,7 @@ is what these params are.
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.zone_entry.enter_zone_via_list as evl
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, prompt_at
 
 _PARAMS = {
     "zone": "TestZone",
@@ -21,12 +21,10 @@ _NH = "bartlebot.nodes.zone_entry.enter_zone_via_list.node_helpers"
 
 
 def _ready_client(zone: str = "TestZone") -> FakeClient:
-    """Client with no stale prompt and interact prompt appearing at interact_xyz."""
+    """Client with no stale prompt, whose interact prompt shows at interact_xyz and nowhere else."""
     c = FakeClient()
     c.zone_name.return_value = zone
-    # First call: stale-prompt check → no stale prompt.
-    # Second call onward: prompt is present at interact_xyz.
-    c.is_in_npc_range.side_effect = [False, True]
+    prompt_at(c, _PARAMS["interact_xyz"])
     return c
 
 
@@ -239,7 +237,8 @@ async def test_prompt_never_appears_fails():
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    assert client.teleport.call_count == evl.MAX_RETRIES * 2
+    # The first reset, then teleport(interact) + teleport(reset) for each attempt
+    assert client.teleport.call_count == 1 + evl.MAX_RETRIES * 2
 
 
 async def test_zone_list_never_opens_fails():
@@ -275,18 +274,7 @@ async def test_zone_change_timeout_fails():
 async def test_stale_prompt_cleared():
     """Pre-existing prompt is cleared via reset_xyz before the retry loop starts."""
     client = FakeClient()
-    call_count = 0
-
-    async def _npc_range():
-        nonlocal call_count
-        call_count += 1
-        if call_count == 1:
-            return True  # stale prompt on node entry
-        if call_count == 2:
-            return False  # cleared after teleport to reset_xyz
-        return True  # prompt at interact_xyz on first attempt
-
-    client.is_in_npc_range.side_effect = _npc_range
+    prompt_at(client, _PARAMS["interact_xyz"], initially=True)  # stale on node entry
     client.zone_name.side_effect = ["TestZone", "DestZone"]
 
     with (
@@ -301,6 +289,27 @@ async def test_stale_prompt_cleared():
     assert result == "SUCCESS"
     first_tp = client.teleport.call_args_list[0]
     assert first_tp.args[0].x == 1.0  # reset_xyz
+
+
+async def test_resets_before_approaching_even_with_no_prompt_showing_yet():
+    """#152: off a World Gate into Outsider's Camp, the spiral door's prompt is not up yet
+    when the node starts, and arrives a moment later. An approach straight from the spawn
+    point carried it to the Tamed Demox and opened the World Gate list. Every run stands at
+    reset_xyz first, so a late prompt appears and clears there instead."""
+    client = _ready_client()
+    client.zone_name.side_effect = ["TestZone", "DestZone"]
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+    ):
+        result = await evl.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert [tuple(call.args[0]) for call in client.teleport.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
 
 
 # ---------------------------------------------------------------------------

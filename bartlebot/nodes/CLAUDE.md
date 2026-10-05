@@ -48,6 +48,13 @@ a `PromptKind` (`INTERACT_PROMPT`, `DUNGEON_ENTRANCE_PROMPT`) rather than its ow
 clears a stale prompt via `reset_xyz`, retries up to `MAX_RETRIES`, and logs the failure.
 It lived six times over until #104, and a fix to it had to be made six times.
 
+Every approach starts from `reset_xyz`, whether or not a prompt shows, and waits there for
+the prompt to read absent for `PROMPT_CLEAR_SETTLE`. A prompt reading absent may only be on
+its way: off a loading screen beside another object, that object's prompt comes up a moment
+later, and an approach straight from the spawn carries it to the target (#152, the World
+Gate's spiral door answering an X meant for the Tamed Demox). A prompt that will not clear
+at reset fails the node rather than being approached through.
+
 Some world objects only serve one player at a time — a second client interacting while the
 first is mid-interaction has its keypress silently swallowed. Use `take_turns()` for those:
 it parks every client at `reset_xyz`, then sends them to the object one at a time, handing

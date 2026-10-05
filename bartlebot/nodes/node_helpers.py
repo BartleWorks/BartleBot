@@ -39,6 +39,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     OBJECT_USE_DELAY,
     POLL_INTERVAL,
     PORT_QUIET_GRACE,
+    PROMPT_CLEAR_SETTLE,
     TRIGGER_TIMEOUT,
     WINDOW_CLOSE_CONFIRM_INTERVAL,
     WINDOW_CLOSE_RETRY_INTERVAL,
@@ -708,17 +709,27 @@ async def take_turns(
 
     results: list[TurnResult] = []
 
-    # Clear everyone off the object first. Unconditional, unlike the parallel path's
-    # stale-prompt check: sequential mode is only worth anything if exactly one client is
-    # in range at a time, and a client that starts in range never leaves it on its own.
+    # Clear everyone off the object first, and let the prompt settle there, as
+    # clear_stale_prompt does for the parallel path (#152): sequential mode is only worth
+    # anything if exactly one client is in range at a time, and a client that starts in
+    # range never leaves it on its own.
     await asyncio.gather(*[c.teleport(reset_xyz) for c in clients])
-    await poll_until(lambda: none_in_npc_range(clients), safety_delay, poll_interval)
+    stuck = await settle_prompt_clear(clients, INTERACT_PROMPT, safety_delay, poll_interval)
+    if any(stuck):
+        _log(
+            f"Client(s) {[n for n, s in zip(labels, stuck) if s]}: interact prompt would not clear at reset_xyz; "
+            "skipping their turns, since approaching from there could interact with the wrong object",
+            logging.WARNING,
+        )
 
     for position, client in enumerate(clients):
+        number = labels[position]
+        if stuck[position]:
+            results.append(TurnResult(prompted=False, completed=False))
+            continue
         if position:
             await asyncio.sleep(gap)
 
-        number = labels[position]
         prompted = False
         for attempt in range(1, MAX_RETRIES + 1):
             await client.teleport(interact_xyz)
@@ -2033,26 +2044,63 @@ async def clear_stale_prompt(
     safety_delay: float,
     poll_interval: float = POLL_INTERVAL,
     numbers: list[int] | None = None,
-) -> None:
-    """Step every client off a *prompt* that is already showing before this run raises one.
+) -> bool:
+    """Stand every client at *reset* until no *prompt* is showing, before this run raises one.
 
-    A prompt left over from a previous interaction can linger after a teleport, and one
-    mistaken for this run's has the client press X on whatever it happens to be standing
-    on. If any client has one, every client teleports to *reset* and this waits up to
-    ``safety_delay`` for it to clear. *numbers* labels the clients in the log, 1-based,
-    for a caller working on a subset of the party.
+    A prompt that is not this run's has the client press X on whatever raised it. It may
+    be one left over from a previous interaction, or one still on its way: a client just
+    off a loading screen beside another object raises that object's prompt a moment
+    later, so a prompt reading absent proves nothing on its own (#152). So every client
+    teleports to *reset* whether or not a prompt shows, and the prompt must stay absent
+    there for PROMPT_CLEAR_SETTLE — see ``settle_prompt_clear``.
+
+    Returns False, having logged the node's failure, if a prompt still shows after
+    ``safety_delay``: *reset* is then in range of something, and approaching from it
+    would carry that prompt along. *numbers* labels the clients in the log, 1-based, for
+    a caller working on a subset of the party.
     """
-    showing = await asyncio.gather(*[prompt.showing(c) for c in clients])
-    if not any(showing):
-        return
     labels = _client_numbers(clients, numbers)
-    stale = [n for n, s in zip(labels, showing) if s]
-    machine.log(
-        f"Pre-existing {prompt.name} on client(s) {stale}; teleporting to reset_xyz to clear it",
-        logging.DEBUG,
-    )
+    showing = await asyncio.gather(*[prompt.showing(c) for c in clients])
+    if any(showing):
+        stale = [n for n, s in zip(labels, showing) if s]
+        machine.log(
+            f"Pre-existing {prompt.name} on client(s) {stale}; teleporting to reset_xyz to clear it",
+            logging.DEBUG,
+        )
     await asyncio.gather(*[c.teleport(reset) for c in clients])
-    await poll_until(lambda: prompt.none_showing(clients), safety_delay, poll_interval)
+    still = await settle_prompt_clear(clients, prompt, safety_delay, poll_interval)
+    if not any(still):
+        return True
+    machine.log(
+        f"FAILURE: {prompt.name} would not clear at reset_xyz on client(s) "
+        f"{[n for n, s in zip(labels, still) if s]} within {safety_delay:.1f}s — reset_xyz is in range of "
+        "something, so approaching from it could interact with the wrong object",
+        logging.WARNING,
+    )
+    return False
+
+
+async def settle_prompt_clear(
+    clients: list, prompt: PromptKind, timeout: float, poll_interval: float = POLL_INTERVAL
+) -> list[bool]:
+    """Wait for *prompt* to read absent on every client for PROMPT_CLEAR_SETTLE in a row.
+
+    The clients must already be standing out of range. Returns, per client, whether the
+    prompt still showed when *timeout* ran out — all False once it has settled. The
+    settle is counted in consecutive reads, at least two, so a prompt appearing between
+    reads restarts it.
+    """
+    needed = max(2, 1 + math.ceil(PROMPT_CLEAR_SETTLE / poll_interval)) if poll_interval > 0 else 2
+    streak = 0
+
+    async def _settled() -> bool:
+        nonlocal streak
+        streak = streak + 1 if await prompt.none_showing(clients) else 0
+        return streak >= needed
+
+    if await poll_until(_settled, timeout + PROMPT_CLEAR_SETTLE, poll_interval):
+        return [False] * len(clients)
+    return list(await asyncio.gather(*[prompt.showing(c) for c in clients]))
 
 
 async def reach_prompt(
@@ -2066,23 +2114,31 @@ async def reach_prompt(
     *,
     numbers: list[int] | None = None,
     fail_on_miss: bool = True,
+    clear_first: bool = True,
 ) -> bool:
     """Get every client standing at *point* with *prompt* showing.
 
     The routine every node that resets and retries shares, up to the point the prompt
     is on screen:
 
-      1. Clear a pre-existing prompt — see ``clear_stale_prompt``.
+      1. Stand at *reset* until no prompt shows — see ``clear_stale_prompt``. A prompt
+         that will not clear there is always the node's failure, logged as one.
       2. Up to MAX_RETRIES: teleport to *point* and wait ``safety_delay`` for the
          prompt on every client; on a miss, teleport back to *reset* and try again.
 
     Returns False once the retries run out. With *fail_on_miss*, the default, that is
     logged as the node's failure, so a caller's failure path is a bare ``return
     "FAILURE"``; a caller that carries on with whichever clients did get the prompt
-    passes False and logs its own outcome. Logs under the running node, since it is
-    called from one — see ``machine.log`` in the node conventions.
+    passes False and logs its own outcome, and finds every client still at *point*
+    rather than reset after the last attempt. Such a caller must tell a miss from step 1
+    failing, so it runs ``clear_stale_prompt`` itself and passes *clear_first* False.
+    Logs under the running node, since it is called from one — see ``machine.log`` in
+    the node conventions.
     """
-    await clear_stale_prompt(machine, clients, reset, prompt, safety_delay, poll_interval, numbers)
+    if clear_first and not await clear_stale_prompt(
+        machine, clients, reset, prompt, safety_delay, poll_interval, numbers
+    ):
+        return False
 
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to the {prompt.name}", logging.DEBUG)
@@ -2092,6 +2148,11 @@ async def reach_prompt(
         if await poll_until(lambda: prompt.all_showing(clients), safety_delay, poll_interval):
             return True
 
+        if attempt == MAX_RETRIES and not fail_on_miss:
+            # The caller presses X for whichever clients got the prompt, so they stay at
+            # *point*: back at *reset* they would read no prompt, or press X on another's.
+            machine.log(f"{prompt.name.capitalize()} did not appear on every client (attempt {attempt})", logging.DEBUG)
+            break
         machine.log(f"{prompt.name.capitalize()} did not appear (attempt {attempt}); resetting", logging.DEBUG)
         await asyncio.gather(*[c.teleport(reset) for c in clients])
 

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 from wizwalker import Keycode
 
 import bartlebot.nodes.zone_entry.enter_zone_via_object as itz
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, prompt_at
 
 _FROM_ZONE = "TestZone"  # matches FakeClient zone_name default
 _TO_ZONE = "TestZone/SnowGlobe"
@@ -21,14 +21,9 @@ _PARAMS = {
 
 
 def _ready_client() -> FakeClient:
-    """Client with no stale prompt and interact prompt appearing immediately.
-
-    is_in_npc_range side_effect:
-        call 1 — stale check on node entry → False (no stale prompt)
-        call 2 — retry loop poll → True (prompt present at interact_xyz)
-    """
+    """Client with no stale prompt, whose interact prompt shows at interact_xyz and nowhere else."""
     c = FakeClient()
-    c.is_in_npc_range.side_effect = [False, True]
+    prompt_at(c, _PARAMS["interact_xyz"])
     # zone_name: from_zone check → from_zone; final verify → to_zone
     c.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE]
     # is_loading: trigger loop → loading; none_loading wait → done
@@ -68,7 +63,8 @@ async def test_success_single_client():
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    # Reset first, whether or not a prompt showed (#152), then the one approach.
+    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
@@ -87,18 +83,7 @@ async def test_success_multiple_clients():
 async def test_stale_prompt_cleared_before_loop():
     """Stale prompt on node entry → first teleport is to reset_xyz, then to interact_xyz."""
     client = FakeClient()
-    call_count = 0
-
-    async def _npc_range():
-        nonlocal call_count
-        call_count += 1
-        if call_count == 1:
-            return True  # stale prompt visible on node entry
-        if call_count == 2:
-            return False  # cleared after teleporting to reset_xyz
-        return True  # correct prompt visible at interact_xyz
-
-    client.is_in_npc_range.side_effect = _npc_range
+    prompt_at(client, _PARAMS["interact_xyz"], initially=True)  # stale on node entry
     client.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE]
     client.is_loading.side_effect = [True, False]
 
@@ -122,8 +107,10 @@ async def test_prompt_never_appears_fails():
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    # interact + reset teleports for each attempt
+    # The first reset, then interact + reset for each attempt but the last, which stays at
+    # interact_xyz so the node can press X for whoever did get the prompt.
     assert client.teleport.call_count == itz.MAX_RETRIES * 2
+    assert client.teleport.call_args_list[-1].args[0].x == 0.0
     client.send_key.assert_not_called()
 
 
@@ -133,7 +120,7 @@ async def test_partial_prompt_presses_x_only_for_the_ready_client():
     failing the whole group."""
     ready = FakeClient()
     ready.zone_name.side_effect = [_FROM_ZONE, _FROM_ZONE, _TO_ZONE, _TO_ZONE]
-    ready.is_in_npc_range.return_value = True
+    prompt_at(ready, _PARAMS["interact_xyz"])
     ready.is_loading.side_effect = [True, False]
 
     stuck = FakeClient()
@@ -164,7 +151,10 @@ async def test_prompt_retry_then_success():
     client.teleport.side_effect = tracking_teleport
 
     async def npc_range():
-        return bool(reset_visited)
+        # Only at interact_xyz, and only once the client has been reset twice: the
+        # reset every run starts with, and the one after the first miss.
+        calls = client.teleport.call_args_list
+        return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
     client.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE]
@@ -174,15 +164,15 @@ async def test_prompt_retry_then_success():
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert len(reset_visited) == 1
-    assert client.teleport.call_count == 3  # interact, reset, interact
+    assert len(reset_visited) == 2
+    assert client.teleport.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_trigger_timeout_still_reaches_recovery_aware_arrival_check():
     """A client that never enters a loading screen after pressing X is not failed outright —
     it still reaches the recovery-aware arrival check, which is what ultimately fails here."""
     client = FakeClient()
-    client.is_in_npc_range.side_effect = [False, True]
+    prompt_at(client, _PARAMS["interact_xyz"])
     client.zone_name.return_value = _FROM_ZONE
     client.is_loading.return_value = False  # never starts loading
 
@@ -202,7 +192,7 @@ async def test_trigger_timeout_still_reaches_recovery_aware_arrival_check():
 async def test_wrong_to_zone_after_loading_fails():
     """FAILURE when clients load but arrive in an unexpected zone."""
     client = FakeClient()
-    client.is_in_npc_range.side_effect = [False, True]
+    prompt_at(client, _PARAMS["interact_xyz"])
     # Pre-check only; wait_for_zone_with_recovery (post-load) is mocked to return wrong zone.
     client.zone_name.side_effect = [_FROM_ZONE]
     client.is_loading.side_effect = [True, False]
@@ -414,7 +404,7 @@ async def test_sequential_does_not_park_a_departing_client():
 def _goes_through() -> FakeClient:
     """Raises the prompt, loads on its first keypress, and arrives -- however often it is read."""
     c = FakeClient()
-    c.is_in_npc_range.side_effect = itertools.chain([False], itertools.repeat(True))
+    prompt_at(c, _PARAMS["interact_xyz"])
     c.zone_name.side_effect = itertools.chain([_FROM_ZONE], itertools.repeat(_TO_ZONE))
     c.is_loading.side_effect = itertools.chain([True], itertools.repeat(False))
     return c
@@ -423,7 +413,7 @@ def _goes_through() -> FakeClient:
 def _left_behind() -> FakeClient:
     """Raises the prompt with everyone else, but its keypress never starts a transition."""
     c = FakeClient()
-    c.is_in_npc_range.side_effect = itertools.chain([False], itertools.repeat(True))
+    prompt_at(c, _PARAMS["interact_xyz"])
     c.zone_name.return_value = _FROM_ZONE
     return c
 
@@ -483,3 +473,18 @@ async def test_nobody_going_through_gives_no_turns():
 
     assert result == "FAILURE"
     turns.assert_not_awaited()
+
+
+async def test_a_prompt_that_will_not_clear_at_reset_fails_before_any_keypress():
+    """This node presses X for whichever clients have a prompt, so a prompt stuck on at
+    reset_xyz would be pressed — on whatever raised it (#152). It fails instead."""
+    client = FakeClient()
+    client.is_in_npc_range.return_value = True
+    machine = FakeMachine()
+
+    with patch.object(itz, "POLL_INTERVAL", 0), patch("bartlebot.nodes.node_helpers.PROMPT_CLEAR_SETTLE", 0):
+        result = await itz.run(machine, [client], _PARAMS)
+
+    assert result == "FAILURE"
+    client.send_key.assert_not_called()
+    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0]

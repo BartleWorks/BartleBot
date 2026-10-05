@@ -1,11 +1,12 @@
 """Unit tests for the interact_menu node."""
 
-from itertools import chain, repeat
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 import bartlebot.nodes.interaction.interact_menu as im
 from bartlebot.nodes import node_helpers
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, prompt_at
 
 _MENU_PATH = ["WorldView", "main"]
 
@@ -19,10 +20,17 @@ _PARAMS = {
 }
 
 
+@pytest.fixture(autouse=True)
+def _no_prompt_clear_settle(monkeypatch):
+    """The node polls reach_prompt at the real POLL_INTERVAL, so the settle at reset_xyz
+    would cost every test half a second; it still takes two reads to pass."""
+    monkeypatch.setattr(node_helpers, "PROMPT_CLEAR_SETTLE", 0.0)
+
+
 def _ready_client() -> FakeClient:
-    """Client with no stale prompt and interact prompt showing immediately at interact_xyz."""
+    """Client with no stale prompt, whose interact prompt shows at interact_xyz and nowhere else."""
     c = FakeClient()
-    c.is_in_npc_range.side_effect = chain([False], repeat(True))
+    prompt_at(c, _PARAMS["interact_xyz"])
     return c
 
 
@@ -37,7 +45,8 @@ async def test_success_menu_appears():
         result = await im.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    # Reset first, whether or not a prompt showed (#152), then the one approach.
+    assert [tuple(call.args[0]) for call in client.teleport.call_args_list] == [(1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
@@ -68,7 +77,8 @@ async def test_prompt_never_appears_fails():
         result = await im.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    assert client.teleport.call_count == im.MAX_RETRIES * 2
+    # The first reset, then teleport(interact) + teleport(reset) for each attempt
+    assert client.teleport.call_count == 1 + im.MAX_RETRIES * 2
 
 
 async def test_wrong_zone_fails():
@@ -98,18 +108,7 @@ async def test_one_client_wrong_zone_fails():
 async def test_stale_prompt_cleared():
     """A pre-existing prompt is dismissed via reset_xyz before the interaction loop."""
     client = FakeClient()
-    call_count = 0
-
-    async def _npc_range():
-        nonlocal call_count
-        call_count += 1
-        if call_count == 1:
-            return True  # stale prompt on entry
-        if call_count == 2:
-            return False  # cleared after teleport to reset_xyz
-        return True  # correct prompt at interact_xyz
-
-    client.is_in_npc_range.side_effect = _npc_range
+    prompt_at(client, _PARAMS["interact_xyz"], initially=True)  # stale on entry
 
     with (
         patch.object(im, "POLL_INTERVAL", 0),
@@ -135,7 +134,10 @@ async def test_prompt_retry_then_success():
     client.teleport.side_effect = tracking_teleport
 
     async def npc_range():
-        return bool(reset_visited)
+        # Only at interact_xyz, and only once the client has been reset twice: the
+        # reset every run starts with, and the one after the first miss.
+        calls = client.teleport.call_args_list
+        return bool(calls) and calls[-1].args[0].x == 0.0 and len(reset_visited) >= 2
 
     client.is_in_npc_range.side_effect = npc_range
 
@@ -146,8 +148,8 @@ async def test_prompt_retry_then_success():
         result = await im.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert len(reset_visited) == 1
-    assert client.teleport.call_count == 3  # interact, reset, interact
+    assert len(reset_visited) == 2
+    assert client.teleport.call_count == 4  # reset, interact, reset, interact
 
 
 async def test_interact_clients_subset():
