@@ -4,6 +4,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
+from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
+from bartlebot.option_groups import GROUP_GENERAL
+
 
 @dataclass
 class BotOptionSpec:
@@ -243,3 +246,16 @@ class NodeSpec:
     A bot holding such a node cannot be ``Player Realms: Separate``. See
     :mod:`bartlebot.player_realms` for the three places that is enforced.
     """
+
+
+#: Safety Delay, for any node that waits on the game server. One spec for every node that
+#: declares it, so its text and card cannot drift between them.
+SAFETY_DELAY_OPTION = BotOptionSpec(
+    name="Safety Delay",
+    group=GROUP_GENERAL,
+    type="float",
+    default=3.0,
+    minimum=0.0,
+    suffix=" s",
+    description=SAFETY_DELAY_DESCRIPTION,
+)

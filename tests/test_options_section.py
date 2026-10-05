@@ -62,7 +62,7 @@ def settings(tmp_path, monkeypatch):
 def _config(options=None, transitions=None) -> BotConfig:
     """A bot whose one node requires no options, so every option here is authorial.
 
-    ``mark_location`` is one of the sixteen nodes with no ``required_bot_options``;
+    ``sleep`` is one of the few nodes with no ``required_bot_options``;
     most nodes pull in Safety Delay, which would put a derived row in every list.
     """
     return BotConfig(
@@ -70,7 +70,7 @@ def _config(options=None, transitions=None) -> BotConfig:
         name="Test Bot",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id="a", node_type="mark_location", params={})],
+        states=[StateModel(id="a", node_type="sleep", params={})],
         transitions=transitions if transitions is not None else [],
         options=options if options is not None else [],
     )

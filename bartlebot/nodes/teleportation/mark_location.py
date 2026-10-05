@@ -3,19 +3,15 @@
 import asyncio
 import logging
 from dataclasses import dataclass
+from enum import Enum, auto
 
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH
-from bartlebot.nodes.timing import (
-    POLL_INTERVAL,
-    POSITION_STABILIZE_TIMEOUT,
-    POST_MARK_WAIT,
-    jitter,
-)
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, POSITION_STABILIZE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -49,14 +45,20 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players have a mark here: set now, or set earlier in this run."),
         ReturnSpec(
             "FAILURE",
-            "One or more players had no mana; players were not in the expected zone; "
-            "or the mark was not set after a second click.",
+            "One or more players could not mark (MarkButton grayed: no mana, in combat, or a zone "
+            "that refuses marks); players were not in the expected zone; or the game did not "
+            "answer a click within the Safety Delay.",
         ),
     ],
+    required_bot_options=[SAFETY_DELAY_OPTION],
     max_consecutive_retries=5,
     usage_notes=(
-        "Marking has no cooldown of its own. The timer under the Recall button is the cooldown the "
-        "hub button, HOME and recall share, and it does not hold up a mark."
+        "Marking has no cooldown, but it costs mana, and a drop in mana is how the node knows a "
+        "click landed. The timer under the Recall button is recall's own 30-second cooldown, "
+        "separate from the one the hub button and HOME share. While it runs the Recall button is "
+        "grayed and cannot show whether a mark is set, so the node waits it out first.\n\n"
+        "Raise Safety Delay if marks fail on a slow connection: it is how long the node waits "
+        "for the game to answer each click."
     ),
 )
 
@@ -89,22 +91,21 @@ def _remember(machine, client, mark: Mark) -> None:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name(), client.teleport(XYZ), client.calc_mana_ratio(),
+    APIs: client.zone_name(), client.teleport(XYZ), client.stats.current_mana(),
           client.body.position(), node_helpers.click_by_path()
 
     Flow:
       1. Leave out every client that already marked this spot in this run and still has a
-         mark (its RecallButton is enabled). SUCCESS at once if that is every client.
-      2. Verify the rest have mana (ratio > 0.0). Return FAILURE if any do not.
+         mark (its RecallButton is enabled, or grayed only by recall's cooldown). SUCCESS at
+         once if that is every client.
+      2. Verify the rest can mark: MarkButton enabled. Return FAILURE if any cannot.
       3. Verify all clients are in zone. Return FAILURE if not.
       4. Teleport any of the rest not already at xyz to the mark position, then wait for the
          server-reported position to stabilize before marking.
-      5. Click MarkButton on each of the rest.
-      6. If RecallButton is still grayed after marking, the same-spot edge case triggered —
-         the existing mark was cleared. Click MarkButton a second time to re-set the mark.
+      5. Mark each of the rest (:func:`mark_client`), which reads whether it had a mark before
+         clicking and re-marks only once it has seen the click clear one.
 
-    FAILURE: any client left to mark has no mana; clients not in zone; a mark was still not
-    set after the second click.
+    FAILURE: any client left to mark cannot; clients not in zone; a mark was not confirmed.
     """
     zone: str = params["zone"]
     xyz_data: dict = params["xyz"]
@@ -119,11 +120,10 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("SUCCESS: every client already marked this spot in this run")
         return "SUCCESS"
 
-    # 2. Verify the clients that will mark have mana to cast mark location.
-    mana_ratios = await asyncio.gather(*[c.calc_mana_ratio() for c in to_mark])
-    machine.log(f"Mana ratios: {[round(r, 2) for r in mana_ratios]}", logging.DEBUG)
-    if any(r <= 0.0 for r in mana_ratios):
-        machine.log("FAILURE: one or more clients have no mana to mark location", logging.WARNING)
+    # 2. Verify the clients that will mark can: the game grays MarkButton when they cannot.
+    can_mark = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, MARK_BUTTON_PATH) for c in to_mark])
+    if not all(can_mark):
+        machine.log(f"FAILURE: {_CANNOT_MARK}", logging.WARNING)
         return "FAILURE"
 
     # 3. Verify zone; teleport to xyz if needed.
@@ -151,7 +151,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("Waiting for client positions to stabilize after teleport…", logging.DEBUG)
         await asyncio.gather(*[_wait_stabilized(machine, c, target) for c in away])
 
-    # 5 and 6. Mark each client, handling the same-spot edge case.
+    # 5. Mark each client, handling the same-spot edge case.
     results = await asyncio.gather(*[mark_client(machine, c) for c in to_mark])
     if not all(results):
         machine.log("FAILURE: one or more clients failed to set a mark", logging.WARNING)
@@ -161,30 +161,105 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
+class _Click(Enum):
+    """What one click of MarkButton did, read from mana and the RecallButton."""
+
+    SET = auto()  # no mark before, one now
+    MOVED = auto()  # a mark elsewhere before, here now
+    CLEARED = auto()  # stood on the mark: the click removed it
+    UNSET = auto()  # mana spent, but the RecallButton never lit
+    NO_RESPONSE = auto()  # mana unchanged: the click did not land
+
+
+_CANNOT_MARK = "MarkButton grayed: no mana, in combat, or a zone that refuses marks (a house)"
+
+
 async def mark_client(machine, client) -> bool:
     """Mark location for a single client, where it stands. Returns True if mark was confirmed set.
 
     Public: handle_level_scaling marks each client wherever it is, with no recorded spot. A mark
     that is set is remembered for the rest of the run (:func:`marked_at`).
-    """
-    # No wait first: marking has no cooldown. The timer under the RecallButton is the teleport
-    # cooldown the hub button, HOME and recall share.
-    await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
-    await asyncio.sleep(jitter(POST_MARK_WAIT))
 
-    # Check if the RecallButton is now enabled (mark successfully set).
-    if not await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH):
-        # Edge case: client had an existing mark at this exact spot. Clicking MarkButton
-        # cleared it instead of resetting it, so click again to re-mark.
-        machine.log("RecallButton grayed after marking — same-spot mark cleared; marking again…", logging.DEBUG)
-        await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
-        await asyncio.sleep(jitter(POST_MARK_WAIT))
-        if not await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH):
-            return False
+    Every mark and every clear costs mana, so a drop in mana is the sign a click landed. Whether
+    the client had a mark before the click says which change to look for: a client standing on
+    its mark clears it, and only a clear that has been seen earns a second click. A click is
+    never repeated on a guess, because a late one would toggle the mark again.
+    """
+    if not await node_helpers.is_enabled_by_path(client, MARK_BUTTON_PATH):
+        machine.log(_CANNOT_MARK, logging.WARNING)
+        return False
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
+    had_mark = await _had_mark(machine, client, safety_delay)
+    if had_mark is None:
+        return False
+    click = await _click_mark(client, had_mark, safety_delay)
+    if click is _Click.CLEARED:
+        machine.log("Marking cleared the mark this player stood on; marking again…", logging.DEBUG)
+        click = await _click_mark(client, False, safety_delay)
+
+    if click is _Click.NO_RESPONSE:
+        machine.log(f"Mana did not drop within {safety_delay}s of marking: the click did not land", logging.WARNING)
+        return False
+    if click is _Click.UNSET:
+        machine.log(f"RecallButton stayed grayed for {safety_delay}s after marking: no mark was set", logging.WARNING)
+        return False
 
     zone, position = await asyncio.gather(client.zone_name(), client.body.position())
     _remember(machine, client, Mark(zone, position))
     return True
+
+
+async def _had_mark(machine, client, safety_delay: float) -> bool | None:
+    """Whether `client` has a mark anywhere, waiting out recall's cooldown to see. None if it never ends.
+
+    The RecallButton is grayed while its timer runs, mark or no mark, so it says nothing until
+    the timer is gone. Grayed with no timer is no mark, or a state recall is barred in; both
+    are read as no mark, and the click after shows which.
+    """
+    if await node_helpers.is_visible_by_path(client, RECALL_TIMER_PATH):
+        machine.log("Recall is on cooldown; waiting for it to end before marking…", logging.DEBUG)
+        if not await node_helpers.poll_until(
+            lambda: _recall_timer_hidden(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
+        ):
+            machine.log(f"Recall's cooldown did not end within {COMPASS_TELEPORT_TIMEOUT}s", logging.WARNING)
+            return None
+        # The button can light a moment after its timer goes.
+        return await node_helpers.poll_until(lambda: _recall_enabled(client), safety_delay, POLL_INTERVAL)
+    return await _recall_enabled(client)
+
+
+async def _click_mark(client, had_mark: bool, safety_delay: float) -> _Click:
+    """Click MarkButton once and wait, up to `safety_delay` per step, for the game to answer."""
+    mana = await client.stats.current_mana()
+    await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
+    if not await node_helpers.poll_until(lambda: _mana_below(client, mana), safety_delay, POLL_INTERVAL):
+        return _Click.NO_RESPONSE
+    if had_mark:
+        # A clear and a move both spend mana and differ only in the RecallButton graying, which
+        # can trail the mana by a moment, so a move is known only once the whole window passes.
+        if await node_helpers.poll_until(lambda: _recall_grayed(client), safety_delay, POLL_INTERVAL):
+            return _Click.CLEARED
+        return _Click.MOVED
+    if await node_helpers.poll_until(lambda: _recall_enabled(client), safety_delay, POLL_INTERVAL):
+        return _Click.SET
+    return _Click.UNSET
+
+
+async def _mana_below(client, mana: int) -> bool:
+    return await client.stats.current_mana() < mana
+
+
+async def _recall_enabled(client) -> bool:
+    return await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH)
+
+
+async def _recall_grayed(client) -> bool:
+    return not await _recall_enabled(client)
+
+
+async def _recall_timer_hidden(client) -> bool:
+    return not await node_helpers.is_visible_by_path(client, RECALL_TIMER_PATH)
 
 
 async def _still_marked_here(machine, client, zone: str, target: XYZ) -> bool:
@@ -194,8 +269,9 @@ async def _still_marked_here(machine, client, zone: str, target: XYZ) -> bool:
         return False
     if _distance(mark.position, target) > POSITION_MARGIN:
         return False
-    # Cleared by hand, or by a same-spot click outside this run's record.
-    return await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH)
+    # Cleared by hand, or by a same-spot click outside this run's record. A running recall
+    # timer grays the button too, but only because a recall just used the mark, which keeps it.
+    return await _recall_enabled(client) or await node_helpers.is_visible_by_path(client, RECALL_TIMER_PATH)
 
 
 async def _wait_stabilized(machine, client, target: XYZ) -> None:

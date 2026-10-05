@@ -16,11 +16,11 @@ from wizwalker import XYZ, Keycode
 from bartlebot import player_realms, scales, zone_names
 from bartlebot.nodes import node_helpers, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.zone_entry import enter_dungeon, enter_zone
-from bartlebot.option_groups import GROUP_GENERAL, GROUP_TEAM
+from bartlebot.option_groups import GROUP_TEAM
 
 PARAM_SCALES = "scales"
 
@@ -31,18 +31,6 @@ LEVEL_SCALING_NODE_TYPES = frozenset({"handle_level_scaling", "check_level_scali
 #: Where this node keeps its marks in ``machine.node_scratch``.
 SCRATCH_KEY = "handle_level_scaling"
 
-SAFETY_DELAY_OPTION = BotOptionSpec(
-    name="Safety Delay",
-    group=GROUP_GENERAL,
-    type="float",
-    default=3.0,
-    minimum=0.0,
-    suffix=" s",
-    description=(
-        "Seconds to allow for game-server responses when waiting for prompts or menus. "
-        "Increase on high-latency connections."
-    ),
-)
 
 LEVEL_SCALING_PLAYERS_OPTION = BotOptionSpec(
     name="Level Scaling Players",

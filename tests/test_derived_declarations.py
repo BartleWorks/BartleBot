@@ -428,13 +428,13 @@ def test_an_edit_that_touches_no_option_leaves_the_signature_alone():
     config = _config()
     before = options_signature(config)
 
-    config.states.append(StateModel(id="s1", node_type="mark_location", params={}))
+    config.states.append(StateModel(id="s1", node_type="sleep", params={}))
 
     assert options_signature(config) == before
 
 
 def test_adding_a_node_that_requires_an_option_moves_the_signature():
-    config = _config(states=[{"id": "s0", "node_type": "mark_location"}])
+    config = _config(states=[{"id": "s0", "node_type": "sleep"}])
     before = options_signature(config)
 
     config.states.append(StateModel(id="s1", node_type="interact", params={}))

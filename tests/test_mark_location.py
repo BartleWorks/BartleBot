@@ -1,13 +1,19 @@
-"""Unit tests for the mark_location node."""
+"""Unit tests for the mark_location node.
 
-from unittest.mock import AsyncMock, MagicMock, patch
+The game is a small fake compass HUD per client (`_Hud`): what MarkButton, RecallButton and
+recall's timer read, and what a MarkButton click does to them. Reads can lag a click, which
+is the case that used to toggle a freshly set mark straight off again.
+"""
+
+from contextlib import contextmanager
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.mark_location as ml
-from bartlebot.nodes.paths import RECALL_TIMER_PATH
+from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
@@ -15,30 +21,100 @@ _PARAMS = {
     "zone": _ZONE,
     "xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
 }
+# Short enough that a test waiting out a whole window stays fast.
+_SAFETY_DELAY = 0.05
 
 
-def _window():
-    """A fake UI window, enabled, for click_by_path to click."""
-    w = MagicMock()
-    w.maybe_text = AsyncMock(return_value="")
-    w.is_control_grayed = AsyncMock(return_value=False)
-    return w
+class _Hud:
+    """One client's compass HUD, and what a click of MarkButton does to it.
+
+    *marked*: a mark is set somewhere. *here*: it is where the client stands, so a click
+    clears it. *lag*: RecallButton reads that still show the old state after a click.
+    *cooldown*: reads of recall's timer that still show it running (RecallButton grayed).
+    *lands*: whether a click reaches the game at all. *refused*: a click spends mana but
+    sets no mark.
+    """
+
+    def __init__(
+        self,
+        client: FakeClient,
+        *,
+        marked: bool = False,
+        here: bool = False,
+        can_mark: bool = True,
+        lag: int = 0,
+        cooldown: int = 0,
+        lands: bool = True,
+        refused: bool = False,
+    ):
+        self.marked, self.here, self.can_mark = marked, here, can_mark
+        self.lag, self.cooldown, self.lands, self.refused = lag, cooldown, lands, refused
+        self.shown, self.pending = marked, 0
+        self.mana = 100
+        self.clicks = 0
+        client.stats.current_mana = AsyncMock(side_effect=lambda: self.mana)
+
+    def click(self) -> None:
+        self.clicks += 1
+        if not self.lands:
+            return
+        self.mana -= 1
+        if self.marked and self.here:
+            self.marked = self.here = False
+        elif not self.refused:
+            self.marked = self.here = True
+        self.pending = self.lag
+
+    def recall_enabled(self) -> bool:
+        if self.cooldown:
+            return False
+        if self.pending:
+            self.pending -= 1
+            return self.shown
+        self.shown = self.marked
+        return self.marked
+
+    def timer_visible(self) -> bool:
+        if self.cooldown:
+            self.cooldown -= 1
+            return True
+        return False
 
 
-async def _find_window(root, path):
-    """Every window the node looks for exists; the teleport timer is never one of them."""
-    assert path != RECALL_TIMER_PATH, "the teleport timer was read"
-    return _window()
+@contextmanager
+def _game(huds: dict):
+    """Route the node's reads and clicks to each client's `_Hud`."""
+
+    async def is_enabled(client, path):
+        hud = huds[client]
+        if path == MARK_BUTTON_PATH:
+            return hud.can_mark
+        assert path == RECALL_BUTTON_PATH
+        return hud.recall_enabled()
+
+    async def is_visible(client, path):
+        assert path == RECALL_TIMER_PATH
+        return huds[client].timer_visible()
+
+    async def click(client, path):
+        assert path == MARK_BUTTON_PATH
+        huds[client].click()
+
+    with (
+        patch.object(nh, "is_enabled_by_path", new=is_enabled),
+        patch.object(nh, "is_visible_by_path", new=is_visible),
+        patch.object(nh, "click_by_path", new=click),
+        patch.object(ml, "POLL_INTERVAL", 0),
+    ):
+        yield
 
 
-# Patch _get_window_from_path so every button the node clicks is found.
-_WINDOWS = patch.object(nh, "_get_window_from_path", new=_find_window)
-# Patch is_enabled_by_path so the RecallButton appears enabled (mark successfully set).
-_RECALL_ENABLED = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+def _machine() -> FakeMachine:
+    return FakeMachine(options={"Safety Delay": _SAFETY_DELAY})
 
 
 def _ready_client() -> FakeClient:
-    """Client in the correct zone at the target XYZ with full mana."""
+    """Client in the correct zone at the target XYZ."""
     c = FakeClient()
     # body.position at target XYZ → no teleport needed before marking.
     c.body.position = AsyncMock(return_value=XYZ(0.0, 0.0, 0.0))
@@ -46,37 +122,20 @@ def _ready_client() -> FakeClient:
 
 
 # ---------------------------------------------------------------------------
-# Mana checks
+# Who cannot mark
 # ---------------------------------------------------------------------------
 
 
-async def test_no_mana_returns_failure():
-    """FAILURE when a client has no mana; PAGE_DOWN never pressed."""
-    client = _ready_client()
-    client.calc_mana_ratio.return_value = 0.0
+async def test_a_grayed_mark_button_fails_without_a_click():
+    """MarkButton grayed (no mana, combat, a house): FAILURE before anyone clicks."""
+    ok, barred = _ready_client(), _ready_client()
+    huds = {ok: _Hud(ok), barred: _Hud(barred, can_mark=False)}
 
-    result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game(huds):
+        result = await ml.run(_machine(), [ok, barred], _PARAMS)
 
     assert result == "FAILURE"
-    client.send_key.assert_not_called()
-
-
-async def test_one_client_no_mana_fails():
-    """FAILURE when any one of several clients has no mana."""
-    c_ok = _ready_client()
-    c_empty = _ready_client()
-    c_empty.calc_mana_ratio.return_value = 0.0
-
-    result = await ml.run(FakeMachine(), [c_ok, c_empty], _PARAMS)
-
-    assert result == "FAILURE"
-    c_ok.send_key.assert_not_called()
-    c_empty.send_key.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# Zone checks
-# ---------------------------------------------------------------------------
+    assert huds[ok].clicks == huds[barred].clicks == 0
 
 
 async def test_wrong_zone_returns_failure():
@@ -84,23 +143,24 @@ async def test_wrong_zone_returns_failure():
     client = FakeClient()
     client.zone_name.return_value = "WrongZone"
 
-    result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game({client: _Hud(client)}):
+        result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "FAILURE"
     client.teleport.assert_not_called()
-    client.send_key.assert_not_called()
 
 
 async def test_one_client_wrong_zone_fails():
     """FAILURE when one of two clients is in the wrong zone."""
-    good = _ready_client()
-    bad = FakeClient()
+    good, bad = _ready_client(), FakeClient()
     bad.zone_name.return_value = "WrongZone"
+    huds = {good: _Hud(good), bad: _Hud(bad)}
 
-    result = await ml.run(FakeMachine(), [good, bad], _PARAMS)
+    with _game(huds):
+        result = await ml.run(_machine(), [good, bad], _PARAMS)
 
     assert result == "FAILURE"
-    good.send_key.assert_not_called()
+    assert huds[good].clicks == 0
 
 
 # ---------------------------------------------------------------------------
@@ -113,14 +173,8 @@ async def test_correct_zone_wrong_xyz_teleports_to_target():
     client = _ready_client()
     client.body.position = AsyncMock(return_value=XYZ(100.0, 0.0, 0.0))  # far from target
 
-    with (
-        _WINDOWS,
-        _RECALL_ENABLED,
-        patch.object(ml, "POST_MARK_WAIT", 0),
-        patch.object(ml, "POSITION_STABILIZE_TIMEOUT", 0),
-        patch.object(ml, "POLL_INTERVAL", 0),
-    ):
-        result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game({client: _Hud(client)}), patch.object(ml, "POSITION_STABILIZE_TIMEOUT", 0):
+        result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
     client.teleport.assert_called_once()
@@ -131,95 +185,137 @@ async def test_correct_zone_wrong_xyz_teleports_to_target():
 
 async def test_correct_zone_correct_xyz_no_teleport():
     """No teleport when the client is already at the target XYZ."""
-    client = _ready_client()  # body.position defaults to (0, 0, 0) == target
+    client = _ready_client()
 
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
-        result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game({client: _Hud(client)}):
+        result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
     client.teleport.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# Happy paths
+# The three ways a click succeeds
 # ---------------------------------------------------------------------------
 
 
-async def test_success_single_client():
-    """Happy path: RecallButton enabled after marking → SUCCESS, MarkButton clicked."""
-    client = _ready_client()
-
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
-        result = await ml.run(FakeMachine(), [client], _PARAMS)
-
-    assert result == "SUCCESS"
-    assert client.mouse_handler.click_window.call_count == 1
-
-
-async def test_success_multiple_clients():
-    """Happy path: two clients, both mark successfully → SUCCESS."""
+async def test_no_mark_before_sets_one_with_one_click():
+    """RecallButton grayed before, lit after: a new mark, one click."""
     clients = [_ready_client(), _ready_client()]
+    huds = {c: _Hud(c) for c in clients}
 
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
-        result = await ml.run(FakeMachine(), clients, _PARAMS)
-
-    assert result == "SUCCESS"
-    for c in clients:
-        assert c.mouse_handler.click_window.call_count == 1
-
-
-# ---------------------------------------------------------------------------
-# No cooldown
-# ---------------------------------------------------------------------------
-
-
-async def test_a_running_teleport_timer_does_not_hold_up_the_mark():
-    """Marking has no cooldown: the timer under the Recall button is the teleport cooldown, so it is not read.
-
-    _find_window fails the test if the node looks the timer up.
-    """
-    client = _ready_client()
-
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
-        result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game(huds):
+        result = await ml.run(_machine(), clients, _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.mouse_handler.click_window.call_count == 1
+    assert all(h.clicks == 1 and h.marked for h in huds.values())
 
 
-# ---------------------------------------------------------------------------
-# Same-spot edge case
-# ---------------------------------------------------------------------------
-
-
-async def test_same_spot_clicks_mark_button_twice():
-    """Same-spot mark scenario: RecallButton grayed after first mark → re-mark.
-
-    When the client already has a mark at this exact location, clicking MarkButton
-    clears it (RecallButton grays out) rather than resetting it. The node must click
-    MarkButton a second time.
-    """
+async def test_a_mark_elsewhere_is_moved_with_one_click():
+    """RecallButton lit before and after, mana spent: the mark moved here."""
     client = _ready_client()
-    # First check after marking: grayed (mark cleared); second check: enabled (re-mark succeeded).
-    recall_state = patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=[False, True]))
+    hud = _Hud(client, marked=True)
 
-    with _WINDOWS, recall_state, patch.object(ml, "POST_MARK_WAIT", 0):
-        result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.mouse_handler.click_window.call_count == 2
+    assert hud.clicks == 1 and hud.marked
 
 
-async def test_a_mark_still_unset_after_the_second_click_fails():
-    """FAILURE when the RecallButton stays grayed after both clicks: the mark never took."""
+async def test_standing_on_the_mark_clears_it_then_marks_again():
+    """Lit before, mana spent, then grayed: the click cleared the mark, so a second click sets it."""
     client = _ready_client()
-    recall_disabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+    hud = _Hud(client, marked=True, here=True)
 
-    with _WINDOWS, recall_disabled, patch.object(ml, "POST_MARK_WAIT", 0):
-        result = await ml.run(FakeMachine(), [client], _PARAMS)
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert hud.clicks == 2 and hud.marked
+
+
+async def test_a_slow_recall_button_does_not_earn_a_second_click():
+    """The old bug: a new mark whose RecallButton lights late was clicked again, clearing it."""
+    client = _ready_client()
+    hud = _Hud(client, lag=3)
+
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert hud.clicks == 1 and hud.marked
+
+
+async def test_a_clear_that_grays_the_button_late_is_still_seen():
+    """Standing on the mark with a lagging button: the clear shows late, and is still re-marked."""
+    client = _ready_client()
+    hud = _Hud(client, marked=True, here=True, lag=3)
+
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert hud.clicks == 2 and hud.marked
+
+
+# ---------------------------------------------------------------------------
+# A click the game does not answer
+# ---------------------------------------------------------------------------
+
+
+async def test_a_click_that_spends_no_mana_is_not_repeated():
+    """Mana unchanged after the Safety Delay: the click did not land, and is not tried again."""
+    client = _ready_client()
+    hud = _Hud(client, lands=False)
+
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    assert client.mouse_handler.click_window.call_count == 2
+    assert hud.clicks == 1
+
+
+async def test_mana_spent_but_no_mark_fails():
+    """Mana spent but RecallButton never lights: no mark, FAILURE, no second click."""
+    client = _ready_client()
+    hud = _Hud(client, refused=True)
+
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    assert hud.clicks == 1
+
+
+# ---------------------------------------------------------------------------
+# Recall's cooldown
+# ---------------------------------------------------------------------------
+
+
+async def test_recall_cooldown_is_waited_out_before_reading_the_mark():
+    """Timer running: RecallButton grayed says nothing, so the node waits, then sees the mark here."""
+    client = _ready_client()
+    hud = _Hud(client, marked=True, here=True, cooldown=3)
+
+    with _game({client: hud}):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    # Read as "no mark", the first click would have cleared it and then failed.
+    assert hud.clicks == 2 and hud.marked
+
+
+async def test_a_cooldown_that_never_ends_fails_without_a_click():
+    """The timer outlasts COMPASS_TELEPORT_TIMEOUT: FAILURE, nothing clicked."""
+    client = _ready_client()
+    hud = _Hud(client, marked=True, cooldown=10**9)
+
+    with _game({client: hud}), patch.object(ml, "COMPASS_TELEPORT_TIMEOUT", 0.05):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    assert hud.clicks == 0
 
 
 # ---------------------------------------------------------------------------
@@ -229,9 +325,9 @@ async def test_a_mark_still_unset_after_the_second_click_fails():
 
 async def test_a_mark_is_remembered_for_the_rest_of_the_run():
     """mark_client records where the client stood, for this node and the recall to read later."""
-    machine, client = FakeMachine(), _ready_client()
+    machine, client = _machine(), _ready_client()
 
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
+    with _game({client: _Hud(client)}):
         await ml.run(machine, [client], _PARAMS)
 
     mark = ml.marked_at(machine, client)
@@ -242,53 +338,67 @@ async def test_a_mark_is_remembered_for_the_rest_of_the_run():
 
 async def test_a_spot_already_marked_this_run_is_not_marked_again():
     """A second pass marks nothing: clicking the same spot again would only clear the mark."""
-    machine, client = FakeMachine(), _ready_client()
+    machine, client = _machine(), _ready_client()
+    hud = _Hud(client)
 
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
+    with _game({client: hud}):
         assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
         client.body.position = AsyncMock(return_value=XYZ(400.0, 0.0, 0.0))  # walked off since
         assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
 
-    assert client.mouse_handler.click_window.call_count == 1
+    assert hud.clicks == 1
     client.teleport.assert_not_called()
+
+
+async def test_a_mark_kept_through_a_recall_cooldown_is_not_marked_again():
+    """Just recalled: the timer grays the button, but the mark is still there and is left alone."""
+    machine, client = _machine(), _ready_client()
+    ml._remember(machine, client, ml.Mark(_ZONE, XYZ(0.0, 0.0, 0.0)))
+    hud = _Hud(client, marked=True, here=True, cooldown=1)
+
+    with _game({client: hud}):
+        result = await ml.run(machine, [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert hud.clicks == 0
 
 
 async def test_a_mark_set_since_somewhere_else_is_replaced():
     """A client whose last mark is elsewhere (say, a level scaling trip) marks this spot again."""
-    machine, client = FakeMachine(), _ready_client()
+    machine, client = _machine(), _ready_client()
     ml._remember(machine, client, ml.Mark(_ZONE, XYZ(5000.0, 0.0, 0.0)))
+    hud = _Hud(client, marked=True)
 
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
+    with _game({client: hud}):
         result = await ml.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.mouse_handler.click_window.call_count == 1
+    assert hud.clicks == 1
     assert ml.marked_at(machine, client).position.x == 0.0
 
 
 async def test_a_remembered_mark_that_is_gone_is_set_again():
-    """The record says marked, but the RecallButton is grayed: the mark was cleared, so mark again."""
-    machine, client = FakeMachine(), _ready_client()
+    """The record says marked, but the RecallButton is grayed with no timer: mark again."""
+    machine, client = _machine(), _ready_client()
     ml._remember(machine, client, ml.Mark(_ZONE, XYZ(0.0, 0.0, 0.0)))
-    # The kept-mark check reads grayed; the click after marking reads enabled.
-    recall_state = patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=[False, True]))
+    hud = _Hud(client)
 
-    with _WINDOWS, recall_state, patch.object(ml, "POST_MARK_WAIT", 0):
+    with _game({client: hud}):
         result = await ml.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.mouse_handler.click_window.call_count == 1
+    assert hud.clicks == 1
 
 
-async def test_only_the_clients_without_the_mark_check_mana():
-    """A client already marked here is not asked for mana it no longer needs."""
-    machine, marked, fresh = FakeMachine(), _ready_client(), _ready_client()
+async def test_only_the_clients_without_the_mark_are_checked():
+    """A client already marked here is not asked whether it can mark again."""
+    machine, marked, fresh = _machine(), _ready_client(), _ready_client()
     ml._remember(machine, marked, ml.Mark(_ZONE, XYZ(0.0, 0.0, 0.0)))
-    marked.calc_mana_ratio.return_value = 0.0
+    huds = {marked: _Hud(marked, marked=True, here=True, can_mark=False), fresh: _Hud(fresh)}
 
-    with _WINDOWS, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
+    with _game(huds):
         result = await ml.run(machine, [marked, fresh], _PARAMS)
 
     assert result == "SUCCESS"
-    assert marked.mouse_handler.click_window.call_count == 0
-    assert fresh.mouse_handler.click_window.call_count == 1
+    assert huds[marked].clicks == 0
+    assert huds[fresh].clicks == 1

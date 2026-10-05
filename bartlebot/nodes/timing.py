@@ -79,8 +79,8 @@ QUICKSELL_COMPLETE_TIMEOUT = 15.0
 
 COMPASS_TELEPORT_TIMEOUT = 35.0
 # Seconds to wait for a compass-controlled teleport button to become enabled.
-# The game imposes a 30-second cooldown on mark/recall/dorm/hub teleports;
-# this adds a 5-second safety margin.
+# Recall has a 30-second cooldown of its own, and the hub and HOME buttons share
+# a second 30-second one; this adds a 5-second safety margin. Marking has none.
 
 ENTER_COMBAT_TIMEOUT = 30.0
 # Seconds to wait for the combat-state flag to become active after teleporting
@@ -628,9 +628,6 @@ PREEMPT_PARK_TIMEOUT = 5.0
 # Seconds the ambient combat watcher waits for a node it cancelled to unwind and the run
 # loop to park. A cancel lands at the node's next await, so this is normally a moment; past
 # it the fight is fought anyway, since a fighter left alone is worse than a node still running.
-
-POST_MARK_WAIT = 2.0
-# Seconds to wait after PAGE_DOWN for the UI to reflect the new mark state.
 
 POSITION_STABILIZE_TIMEOUT = 5.0
 # Seconds to wait for the server-reported position to match a teleport target. The client

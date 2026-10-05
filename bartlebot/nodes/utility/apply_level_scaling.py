@@ -6,13 +6,12 @@ import logging
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
 # The elixir itself is handle_level_scaling's, which outlives this node: the library is
 # moving to it (#59), and this node goes once no bot uses it.
 from bartlebot.nodes.utility.handle_level_scaling import (
     LEVEL_SCALING_PLAYERS_OPTION,
-    SAFETY_DELAY_OPTION,
     apply_elixir,
 )
 

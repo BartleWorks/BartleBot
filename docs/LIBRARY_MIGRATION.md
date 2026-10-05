@@ -267,8 +267,8 @@ them in one loading screen, lands just outside the sigil, and can skip the closi
 which is usually welcome: drops are granted the moment the last boss falls.
 
 - **The mark runs once per Sync players**, at the start and after each recovery, not every
-  loop. A recall does not use a mark up, and marking has no cooldown of its own: the timer
-  under the Recall button is the cooldown the hub button, HOME and recall share.
+  loop. A recall does not use a mark up, and marking has no cooldown: the timer under the
+  Recall button is recall's own, separate from the one the hub button and HOME share.
 - **Every mark is remembered for the run** (`mark_location.MARKS_KEY`), written by
   `mark_client` so `handle_level_scaling`'s marks count. `mark_location` leaves a player
   already marked on its spot alone, and the recall names no spot of its own: with its zone
