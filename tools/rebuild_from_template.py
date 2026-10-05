@@ -10,7 +10,8 @@ in. This tool starts from the template's latest released version through
 - fills every setup step's fill-in it can find in the old file: the dungeon entry and exit,
   the fight's enemy, the Sync players zone, a mob's wait spot, a gauntlet's entry and a
   reagent's spawns. The node each value came from also lends its label. Dungeon Farmer's
-  mark is filled from the entry: the entrance zone, at the sigil's Reset XYZ;
+  mark is filled from the entry: the entrance zone, at the sigil's Reset XYZ, and its world
+  hub from the zone map: the hub of the world the Sync players zone is in;
 - in a template that recalls out of its dungeon (Dungeon Farmer), treats the old bot's whole
   way out as the recall: the walk-out exit, a hub teleport or a teleporter out, an old
   recall, and the plain navigation that only led to them, such as walking back through the
@@ -110,6 +111,10 @@ ENTRY_FILLS = {
     ("mark_location", "zone"): "from_zone",
     ("mark_location", "xyz"): "reset_xyz",
 }
+
+#: Template fill-ins that name the hub of the world the players sync in, read from the zone map:
+#: Dungeon Farmer goes there for wisps when a player has no mana to mark the entrance.
+HUB_FILLS = frozenset({("teleport_to_world_hub", "zone")})
 
 #: The node types a way out of a dungeon is made of: zone changes, teleports, and the steps
 #: and pauses between them. Nothing that farms.
@@ -1098,6 +1103,14 @@ def _fill(config, target, step_text: str, sources, old: OldBot, nav, report: Rep
     if state is None:
         return
     key = target.param or ""
+    if source is None and (state.node_type, key) in HUB_FILLS:
+        world = nav.world_of(old.sync_zone) if old.sync_zone else None
+        if world is None:
+            report.unfilled.append(f"{where}: no world on the zone map holds the sync zone ({step_text})")
+        else:
+            state.params[key] = world.hub
+            report.filled.append(f"{where} = {world.hub!r} (the hub of {world.key})")
+        return
     if source is None and (state.node_type, key) in ENTRY_FILLS and old.entry is not None:
         source, key = old.entry, ENTRY_FILLS[(state.node_type, key)]
     value = (source.params or {}).get(key) if source is not None else None

@@ -550,6 +550,26 @@ def test_the_mark_is_filled_from_the_entry(library):
     assert _steps_left(config, library) == 0
 
 
+def test_the_hub_for_wisps_is_the_hub_of_the_world_players_sync_in(library):
+    """A player without the mana to mark goes to the hub for wisps: the sync zone's, from the zone map."""
+    config, report = _rebuild(_dungeon(_WALK_OUT_STATES, _WALK_OUT_TRANSITIONS), "Dungeon Farmer", library)
+    hub = _by_type(config, "teleport_to_world_hub")[0]
+
+    assert hub.params["zone"] == HUB
+    assert any(line.endswith(f"= {HUB!r} (the hub of Celestia)") for line in report.filled)
+    assert report.clean
+
+
+def test_a_sync_zone_off_the_zone_map_leaves_the_hub_unfilled(library):
+    old = _dungeon(_WALK_OUT_STATES, _WALK_OUT_TRANSITIONS)
+    off_map = "Nowhere/Test_Unmapped_Zone"
+    next(s for s in old.states if s.id == "state_3").params["from_zone"] = off_map
+    _config, report = _rebuild(old, "Dungeon Farmer", library)
+
+    assert any("no world on the zone map holds the sync zone" in line for line in report.unfilled)
+    assert not report.clean
+
+
 def test_a_hub_teleport_out_becomes_the_recall(library):
     config, report = _rebuild(_dungeon([], [_t("state_7", "state_1")]), "Dungeon Farmer", library)
 
