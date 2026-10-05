@@ -493,13 +493,92 @@ COLLAPSE_OTHERS = "Collapse others"
 COLLAPSE_OTHERS_HINT = "Ctrl+click"
 
 
+class SettingsFoldStore:
+    """The option surfaces' folds: one ``{group: collapsed}`` in ``settings.json``.
+
+    #138 put them there before ``ui_state.json`` existed. They are four fixed keys, so
+    they stayed rather than being moved.
+    """
+
+    def __init__(self, settings: Callable[[], Any]) -> None:
+        self._settings = settings
+
+    def read(self) -> dict[str, bool]:
+        try:
+            stored = self._settings().get("general", option_groups.COLLAPSED_SETTING, default=None)
+        except Exception:
+            logger.exception("Failed to read which option groups are collapsed")
+            stored = None
+        return option_groups.collapsed_groups(stored)
+
+    def default(self, group: str) -> bool:
+        return group in option_groups.FIRST_RUN_COLLAPSED
+
+    def write(self, folds: dict[str, bool], changes: dict[str, bool]) -> None:  # noqa: ARG002
+        try:
+            self._settings().set("general", option_groups.COLLAPSED_SETTING, value=dict(folds))
+        except Exception:
+            logger.exception("Failed to remember which option groups are collapsed")
+
+
+class UiStateFoldStore:
+    """A surface's folds in ``ui_state.json``: only a fold that departs from its default.
+
+    *defaults* names every group the surface draws, so a stored group it no longer has
+    is pruned on read (``UiState.folds``). A default may depend on the page as it was
+    built -- an incomplete card starting open -- and the reader's own answer, once given,
+    is what is stored.
+    """
+
+    def __init__(self, surface: str, defaults: dict[str, bool], ui_state: Any = None) -> None:
+        from bartlebot.ui_state import UiState  # noqa: PLC0415 - keeps this module's imports light
+
+        self._surface = surface
+        self._defaults = dict(defaults)
+        self._ui = ui_state if ui_state is not None else UiState()
+
+    def read(self) -> dict[str, bool]:
+        return self._ui.folds(self._surface, self._defaults)
+
+    def default(self, group: str) -> bool:
+        return self._defaults.get(group, False)
+
+    def write(self, folds: dict[str, bool], changes: dict[str, bool]) -> None:  # noqa: ARG002
+        for group, collapsed in changes.items():
+            if group in self._defaults:
+                self._ui.set_collapsed(self._surface, group, collapsed, default=self._defaults[group])
+
+
+class CardHeadingActions(QWidget):
+    """A row that holds a surface's Collapse all / Expand all where there is no section heading.
+
+    The node page and the subgraph node page are pages of their own, not sections of
+    one, so the two actions sit at the right end of the row above their cards. They are
+    always drawn there: ``HeadingAction`` blanks its glyph until a section heading is
+    reached for, and this row has no heading to reach for.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._row = QHBoxLayout(self)
+        self._row.setContentsMargins(0, 0, 0, 0)
+        self._row.setSpacing(2)
+
+    def add_header_action(self, button: HeadingAction) -> None:
+        self._row.addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
+        button.reveal(True)
+
+
 class CardFolds:
     """Which of a surface's cards are folded, and every way there is to change it.
 
-    Option Values and Options each hold one. The answer is the *reader's*: one ``{group:
-    collapsed}`` in ``settings.json`` (``option_groups.COLLAPSED_SETTING``), the same for
-    every bot and shared by both surfaces. Only one of the two is on screen at a time, so
-    each re-reads it on the way in (``reload``) rather than the two being wired together.
+    Option Values and Options each hold one, and so do the node page and the subgraph
+    node page (#142). The answer is the *reader's*, and where it is kept is the
+    *store*'s: the option surfaces keep one ``{group: collapsed}`` in ``settings.json``
+    (``option_groups.COLLAPSED_SETTING``), the same for every bot and shared by both;
+    the node pages keep theirs in ``ui_state.json`` (:class:`UiStateFoldStore`). Only
+    one option surface is on screen at a time, so each re-reads it on the way in
+    (``reload``) rather than the two being wired together.
 
     The ways to change it:
 
@@ -512,8 +591,8 @@ class CardFolds:
       route to the two heading actions.
     """
 
-    def __init__(self, section, settings: Callable[[], Any]) -> None:
-        self._settings = settings
+    def __init__(self, section, settings: Callable[[], Any] | None = None, *, store: Any = None) -> None:
+        self._store = store if store is not None else SettingsFoldStore(settings)
         self._cards: dict[str, OptionCard] = {}
         self._folds = self._read()
 
@@ -541,6 +620,15 @@ class CardFolds:
         """Re-read the remembered answer -- the other surface may have changed it."""
         self._folds = self._read()
         self._apply()
+
+    def set_store(self, store: Any) -> None:
+        """Keep the folds in *store* from now on, and read them from it.
+
+        A subgraph node page changes store with every definition it shows, and its
+        defaults with every page it builds. Call it before ``set_cards``.
+        """
+        self._store = store
+        self._folds = self._read()
 
     def set_group_collapsed(self, group: str, collapsed: bool) -> None:
         self._update({group: collapsed})
@@ -594,24 +682,16 @@ class CardFolds:
         if not changes:
             return
         self._folds.update(changes)
-        try:
-            self._settings().set("general", option_groups.COLLAPSED_SETTING, value=dict(self._folds))
-        except Exception:
-            logger.exception("Failed to remember which option groups are collapsed")
+        self._store.write(dict(self._folds), dict(changes))
         self._apply()
 
     def _apply(self) -> None:
         for group, card in self._cards.items():
-            card.set_collapsed(self._folds.get(group, group in option_groups.FIRST_RUN_COLLAPSED))
+            card.set_collapsed(self._folds.get(group, self._store.default(group)))
         self._refresh_buttons()
 
     def _read(self) -> dict[str, bool]:
-        try:
-            stored = self._settings().get("general", option_groups.COLLAPSED_SETTING, default=None)
-        except Exception:
-            logger.exception("Failed to read which option groups are collapsed")
-            stored = None
-        return option_groups.collapsed_groups(stored)
+        return self._store.read()
 
     def _refresh_buttons(self) -> None:
         """Enable each heading action only while it has a card to act on, as Bar B does."""
