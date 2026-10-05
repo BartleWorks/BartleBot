@@ -147,3 +147,37 @@ async def test_advancing_until_clear_declines_an_offer_mid_conversation():
     assert offer.accepted == 0
     assert offer.declined == 1
     assert talker.dialogue.pages == [] and offer.pages == []
+
+
+# ---------------------------------------------------------------------------
+# first_wait — the longer wait for the first window, and only the first
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def _fast_polls(monkeypatch):
+    monkeypatch.setattr(nh, "POLL_INTERVAL", 0.0)
+    monkeypatch.setattr(nh, "DIALOG_FAST_POLL_INTERVAL", 0.0)
+
+
+async def test_first_wait_is_the_quiet_period_when_no_dialogue_opens(_fast_polls):
+    """An animation that never opens a window still gets its full wait."""
+    client = FakeClient()
+    Dialogue(client, [])
+    loop = asyncio.get_running_loop()
+
+    start = loop.time()
+    assert await nh.advance_dialogue_until_clear([client], 0.01, 5.0, first_wait=0.2)
+    assert loop.time() - start >= 0.2
+
+
+async def test_first_wait_no_longer_applies_once_dialogue_has_opened(_fast_polls):
+    """After the last page only the Safety Delay is waited: the animation played before it."""
+    client = FakeClient()
+    Dialogue(client, [TALK, TALK])
+    loop = asyncio.get_running_loop()
+
+    start = loop.time()
+    assert await nh.advance_dialogue_until_clear([client], 0.01, 10.0, first_wait=5.0)
+    assert loop.time() - start < 2.5
+    assert client.dialogue.pages == []

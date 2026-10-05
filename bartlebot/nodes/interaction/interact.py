@@ -69,9 +69,10 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Animation Delay (s)",
         help=(
             "Extra seconds to wait for this interaction's own animation, on top of the "
-            "Safety Delay. Added to the quiet period the node requires before it calls the "
-            "dialogue finished, so a cutscene that opens a late dialogue window is not "
-            "mistaken for silence. Additive rather than a replacement: the animation takes "
+            "Safety Delay. Applies only before the first dialogue window opens, so a "
+            "cutscene that opens it late is not mistaken for silence; once dialogue has "
+            "appeared, the node waits the Safety Delay alone after the last page. Additive "
+            "rather than a replacement: the animation takes "
             "the same time on every connection, while Safety Delay is the slack this "
             "player's connection needs on top of it."
         ),
@@ -157,8 +158,9 @@ async def run(machine, clients: list, params: dict) -> str:
          Return FAILURE if the prompt never appeared.
       5. Press X on all active_clients.
       6. Advance dialogue: click the advance button while any client is in_dialog().
-         Continue until no client is in dialogue AND Safety Delay + Animation Delay
-         seconds have elapsed (to avoid missing late-opening windows). Return FAILURE if
+         Continue until no client is in dialogue AND the quiet period has elapsed: Safety
+         Delay + Animation Delay until the first window opens (to avoid missing one an
+         animation opens late), Safety Delay alone after it. Return FAILURE if
          DIALOG_TIMEOUT expires.
 
     FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES;
@@ -195,8 +197,10 @@ async def run(machine, clients: list, params: dict) -> str:
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     has_dialogue: bool = params.get("has_dialogue", True)
     # The animation is a property of the object and the connection slack is a property of
-    # the machine, so the quiet period has to cover both rather than pick one.
-    dialogue_quiet: float = safety_delay + float(params.get("animation_delay") or INTERACT_ANIMATION_DELAY)
+    # the machine, so the wait for the first window has to cover both rather than pick one.
+    # The animation plays once, before that window opens: after the last page the node
+    # waits the Safety Delay alone.
+    first_dialogue_wait: float = safety_delay + float(params.get("animation_delay") or INTERACT_ANIMATION_DELAY)
 
     # 3s. Sequential mode: one client uses the object from approach to last dialogue box
     #     before the next one starts. Its dialogue is advanced per-client rather than for
@@ -209,7 +213,9 @@ async def run(machine, clients: list, params: dict) -> str:
             await client.send_key(Keycode.X, 0.1)
             if not has_dialogue:
                 return True
-            return await node_helpers.advance_dialogue_until_clear([client], dialogue_quiet, DIALOG_TIMEOUT)
+            return await node_helpers.advance_dialogue_until_clear(
+                [client], safety_delay, DIALOG_TIMEOUT, first_wait=first_dialogue_wait
+            )
 
         numbers = [i + 1 for i in interact_indices]
         results = await node_helpers.take_turns(
@@ -262,7 +268,9 @@ async def run(machine, clients: list, params: dict) -> str:
         return "SUCCESS"
 
     machine.log("Advancing dialogue…", logging.DEBUG)
-    if not await node_helpers.advance_dialogue_until_clear(active_clients, dialogue_quiet, DIALOG_TIMEOUT):
+    if not await node_helpers.advance_dialogue_until_clear(
+        active_clients, safety_delay, DIALOG_TIMEOUT, first_wait=first_dialogue_wait
+    ):
         machine.log(
             f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
             logging.WARNING,

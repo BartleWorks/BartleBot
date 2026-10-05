@@ -495,24 +495,25 @@ async def test_late_dialog_caught_within_safety_window():
 
 
 # ---------------------------------------------------------------------------
-# Animation Delay — additive on top of the resolved Safety Delay
+# Animation Delay — additive on top of the resolved Safety Delay, before the first window only
 # ---------------------------------------------------------------------------
 
 
-def _capture_quiet(monkeypatch) -> list[float]:
-    """Record the quiet period each advance_dialogue_until_clear call is given."""
-    seen: list[float] = []
+def _capture_quiet(monkeypatch) -> list[tuple[float, float]]:
+    """Record (quiet period, first-window wait) for each advance_dialogue_until_clear call."""
+    seen: list[tuple[float, float]] = []
 
-    async def _fake(clients, safety_delay, timeout):
-        seen.append(safety_delay)
+    async def _fake(clients, safety_delay, timeout, first_wait=None):
+        seen.append((safety_delay, first_wait))
         return True
 
     monkeypatch.setattr(_nh, "advance_dialogue_until_clear", _fake)
     return seen
 
 
-async def test_animation_delay_is_added_to_the_safety_delay(monkeypatch):
-    """The two waits measure different things, so the quiet period has to cover both."""
+async def test_animation_delay_is_added_to_the_wait_for_the_first_window_only(monkeypatch):
+    """The two waits measure different things, so the first window's wait covers both; the
+    animation plays once, so the wait after the last page is the Safety Delay alone."""
     seen = _capture_quiet(monkeypatch)
     client = _ready_client()
 
@@ -524,7 +525,7 @@ async def test_animation_delay_is_added_to_the_safety_delay(monkeypatch):
         )
 
     assert result == "SUCCESS"
-    assert seen == [5.0]
+    assert seen == [(3.0, 5.0)]
 
 
 async def test_no_animation_delay_leaves_the_quiet_period_at_the_safety_delay(monkeypatch):
@@ -536,7 +537,7 @@ async def test_no_animation_delay_leaves_the_quiet_period_at_the_safety_delay(mo
         result = await ix.run(FakeMachine(options={"Safety Delay": 3.0}), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert seen == [3.0]
+    assert seen == [(3.0, 3.0)]
 
 
 async def test_animation_delay_applies_on_the_sequential_path_too(monkeypatch):
@@ -556,7 +557,7 @@ async def test_animation_delay_applies_on_the_sequential_path_too(monkeypatch):
     )
 
     assert result == "SUCCESS"
-    assert seen == [5.0]
+    assert seen == [(3.0, 5.0)]
 
 
 async def test_animation_delay_costs_nothing_when_the_interaction_is_silent(monkeypatch):
