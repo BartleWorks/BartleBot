@@ -99,6 +99,9 @@ def test_moving_the_call_node_moves_the_anchor_and_every_member(canvas):
     before_anchor = dict(region.source.anchor)
     wisps_before = next(s for s in canvas.config.states if s.id == m("wisps")).position["x"]
     node = canvas.scene.node_items[REGION]
+    # Snap is on by default, and a 120px move lands back in the same 440px grid cell.
+    # This is about the members following, not about snapping.
+    canvas.scene.set_snap_enabled(False)
     node.setPos(node.pos() + QPointF(120, 0))
     canvas.scene.flush_positions()
     assert region.source.anchor["x"] == pytest.approx(before_anchor["x"] + 120)
