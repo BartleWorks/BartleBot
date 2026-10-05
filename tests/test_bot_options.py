@@ -523,7 +523,12 @@ def test_a_failed_save_as_keeps_the_bot_its_identity(tmp_path, monkeypatch):
 
 
 def test_every_node_declaring_safety_delay_uses_the_one_spec():
-    """A pasted copy is how the text drifted three ways before; every node shares param_schema's."""
+    """A pasted copy is how the text drifted three ways before; every node shares param_schema's.
+
+    Only when the node requires it may differ: ``sleep`` reads it behind a param of its own.
+    """
+    from dataclasses import replace  # noqa: PLC0415
+
     from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION  # noqa: PLC0415
     from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415
 
@@ -531,6 +536,6 @@ def test_every_node_declaring_safety_delay_uses_the_one_spec():
         name
         for name, spec in NODE_SPECS.items()
         for opt in spec.required_bot_options
-        if opt.name == "Safety Delay" and opt is not SAFETY_DELAY_OPTION
+        if opt.name == "Safety Delay" and replace(opt, required_when="", required_unless="") != SAFETY_DELAY_OPTION
     ]
     assert copies == []

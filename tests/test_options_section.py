@@ -62,7 +62,7 @@ def settings(tmp_path, monkeypatch):
 def _config(options=None, transitions=None) -> BotConfig:
     """A bot whose one node requires no options, so every option here is authorial.
 
-    ``sleep`` is one of the few nodes with no ``required_bot_options``;
+    ``sleep`` requires no options while its Use Safety Delay is off;
     most nodes pull in Safety Delay, which would put a derived row in every list.
     """
     return BotConfig(
