@@ -2,93 +2,108 @@
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QDoubleSpinBox,
-    QFormLayout,
-    QSpinBox,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 
-from bartlebot.gui.settings.rows import hint as _hint
-from bartlebot.settings_manager import SettingsManager
+from bartlebot.gui.settings.rows import SettingGroup, SettingRow, SettingsForm
+from bartlebot.settings_manager import SettingsManager, default_for
 
 
-class CanvasTab(QWidget):
+def _default(key: str):
+    return default_for("canvas", key)
+
+
+class CanvasTab(SettingsForm):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(0)
-
-        form = QFormLayout()
-        form.setSpacing(4)
-        form.setVerticalSpacing(4)
-
         sm = SettingsManager.instance()
 
-        # Enable minimap
+        self.add_heading("View")
+
         self._minimap_cb = QCheckBox()
         self._minimap_cb.setChecked(sm.get("canvas", "minimap_visible", default=True))
-        form.addRow("Enable minimap:", self._minimap_cb)
-        form.addRow(_hint("The overview in the canvas corner. Click or drag inside it to jump the camera."))
+        self.add_row(
+            SettingRow(
+                "Enable minimap",
+                "The overview in the canvas corner.",
+                self._minimap_cb,
+                default=_default("minimap_visible"),
+                details="Click or drag inside it to jump the camera.",
+            )
+        )
 
-        # Snap to grid
-        self._snap_cb = QCheckBox()
-        self._snap_cb.setChecked(sm.get("canvas", "snap_to_grid", default=False))
-        form.addRow("Snap nodes to grid:", self._snap_cb)
-        form.addRow(_hint("Align a dragged node to the grid below, instead of leaving it where it was dropped."))
-
-        # Grid style
-        self._grid_combo = QComboBox()
-        self._grid_combo.addItems(["Dots", "Lines", "None"])
-        _grid_map = {"dots": 0, "lines": 1, "none": 2}
-        self._grid_combo.setCurrentIndex(_grid_map.get(sm.get("canvas", "grid_style", default="dots"), 0))
-        form.addRow("Grid style:", self._grid_combo)
-        form.addRow(_hint("Dots, lines, or no grid drawn behind nodes. Only visible when snap is enabled."))
-
-        # LOD compact threshold
         self._lod_sb = QDoubleSpinBox()
         self._lod_sb.setRange(0.10, 1.00)
         self._lod_sb.setSingleStep(0.05)
         self._lod_sb.setDecimals(2)
         self._lod_sb.setValue(sm.get("canvas", "lod_compact_threshold", default=0.6))
-        form.addRow("Compact zoom threshold:", self._lod_sb)
-        form.addRow(
-            _hint(
-                "Nodes switch to a label-only view below this zoom level. Lower = full detail longer; higher = compact sooner."
+        self.add_row(
+            SettingRow(
+                "Compact zoom threshold",
+                "Below this zoom, nodes show their label only.",
+                self._lod_sb,
+                default=_default("lod_compact_threshold"),
+                details="Lower keeps full detail longer; higher goes compact sooner.",
             )
         )
 
-        # Zoom step
         self._zoom_sb = QDoubleSpinBox()
         self._zoom_sb.setRange(1.05, 1.30)
         self._zoom_sb.setSingleStep(0.01)
         self._zoom_sb.setDecimals(2)
         self._zoom_sb.setValue(sm.get("canvas", "zoom_step", default=1.15))
-        form.addRow("Zoom step:", self._zoom_sb)
-        form.addRow(
-            _hint(
-                "Wheel zoom multiplier per tick. Smaller = finer control (good for trackpads); larger = faster traversal."
+        self.add_row(
+            SettingRow(
+                "Zoom step",
+                "How far one wheel tick zooms.",
+                self._zoom_sb,
+                default=_default("zoom_step"),
+                details="Smaller gives finer control, which suits trackpads; larger moves faster.",
             )
         )
 
-        # Pan animation duration
         self._pan_sb = QSpinBox()
         self._pan_sb.setRange(0, 500)
         self._pan_sb.setSingleStep(50)
         self._pan_sb.setSuffix(" ms")
         self._pan_sb.setSpecialValueText("Instant")
         self._pan_sb.setValue(sm.get("canvas", "pan_animation_ms", default=300))
-        form.addRow("Pan animation speed:", self._pan_sb)
-        form.addRow(
-            _hint("How long the camera takes to smooth-pan to a node. Set to 0 (Instant) to disable animation.")
+        self.add_row(
+            SettingRow(
+                "Pan animation speed",
+                "How long the camera takes to glide to a node.",
+                self._pan_sb,
+                default=_default("pan_animation_ms"),
+                details="0 (Instant) turns the animation off.",
+            )
         )
 
-        layout.addLayout(form)
-        layout.addStretch()
+        self.add_heading("Grid")
+
+        self._snap_cb = QCheckBox()
+        self._snap_cb.setChecked(sm.get("canvas", "snap_to_grid", default=True))
+        snap = SettingRow(
+            "Snap nodes to grid",
+            "Align a dragged node to the grid.",
+            self._snap_cb,
+            default=_default("snap_to_grid"),
+            details="Instead of leaving it where it was dropped.",
+        )
+
+        self._grid_combo = QComboBox()
+        for label, value in (("Dots", "dots"), ("Lines", "lines"), ("None", "none")):
+            self._grid_combo.addItem(label, userData=value)
+        current = sm.get("canvas", "grid_style", default="dots")
+        self._grid_combo.setCurrentIndex(max(self._grid_combo.findData(current), 0))
+        grid = SettingRow(
+            "Grid style",
+            "Dots, lines, or no grid behind the nodes.",
+            self._grid_combo,
+            default=_default("grid_style"),
+            details="Only drawn while snap is on.",
+        )
+        self.add_group(SettingGroup("grid", snap, [grid]))
+
+        self.finish()
 
     def apply(self) -> None:
         sm = SettingsManager.instance()
@@ -97,5 +112,4 @@ class CanvasTab(QWidget):
         sm.set("canvas", "lod_compact_threshold", value=round(self._lod_sb.value(), 2))
         sm.set("canvas", "zoom_step", value=round(self._zoom_sb.value(), 2))
         sm.set("canvas", "pan_animation_ms", value=self._pan_sb.value())
-        _grid_values = ["dots", "lines", "none"]
-        sm.set("canvas", "grid_style", value=_grid_values[self._grid_combo.currentIndex()])
+        sm.set("canvas", "grid_style", value=self._grid_combo.currentData())

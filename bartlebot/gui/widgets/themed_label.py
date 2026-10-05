@@ -46,6 +46,12 @@ class ThemedTextLabel(ThemedMixin, QLabel):
         self._css = css
         self.refresh_theme_styles()
 
+    def set_color(self, color: str) -> None:
+        """Switch to another ``THEME`` token -- a label dimmed with the row it belongs to."""
+        if color != self._color_token:
+            self._color_token = color
+            self.refresh_theme_styles()
+
     def apply_theme_styles(self) -> None:
         set_style_sheet(self, _token_sheet(self._color_token, self._css))
 

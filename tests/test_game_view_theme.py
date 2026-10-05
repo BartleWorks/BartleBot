@@ -10,7 +10,7 @@ from PyQt6.QtCore import QEvent
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
-from bartlebot.gui.settings.canvas_tab import _hint
+from bartlebot.gui.settings.rows import hint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
@@ -149,9 +149,9 @@ def test_with_nothing_embedded_the_button_stays_hidden(qapp, theme, game_view):
 # ---------------------------------------------------------------------------
 
 
-def test_the_canvas_tab_hint_follows_the_theme(qapp, theme):
+def test_the_settings_hint_follows_the_theme(qapp, theme):
     theme("light")
-    lbl = _hint("Some explanation")
+    lbl = hint("Some explanation")
     light = THEME.text_muted
 
     _switch(qapp, lbl, theme, "dark")

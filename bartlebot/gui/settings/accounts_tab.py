@@ -62,13 +62,12 @@ from bartlebot.gui.game_embed.card_columns import (
 )
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard
 from bartlebot.gui.settings.profile_editor import ProfileDialog, mark_unfittable_resolutions
-from bartlebot.gui.settings.rows import hint
+from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager, default_for
 
 
 def _slots_in_use(exclude: str = "") -> dict[int, list[str]]:
@@ -641,10 +640,6 @@ class AccountsTab(QWidget):
         # What every launch does: the resolution, and the two options the app sets
         # in the client on its way up.
         # ------------------------------------------------------------------
-        layout.addWidget(RuleHeading("On launch"))
-
-        res_form = QFormLayout()
-        res_form.setSpacing(8)
         self._res_combo = QComboBox()
         for w, h in VALID_RESOLUTIONS:
             self._res_combo.addItem(f"{w}×{h}", userData=(w, h))
@@ -655,50 +650,65 @@ class AccountsTab(QWidget):
                 self._res_combo.setCurrentIndex(i)
                 break
 
-        res_form.addRow("Default game resolution:", self._res_combo)
+        self._auto_select_cb = QCheckBox()
+        self._auto_select_cb.setChecked(SettingsManager.instance().auto_select_character)
+        self._quick_tp_cb = QCheckBox()
+        self._quick_tp_cb.setChecked(SettingsManager.instance().disable_quick_friend_teleport)
+
+        # A form for these rows alone: the card columns below are not settings rows, and
+        # carry the stretch this tab is built around.
+        launch_form = SettingsForm(margin=0)
+        launch_form.add_heading("On launch")
         # What the user has to do, and nothing they do not. This used to open by telling
         # them to set the resolution by hand in the game's own options, which has not been
         # true since BartleBot started writing preferences.xml before every launch —
         # instructions for work the app already does read as work still outstanding.
         # The Windowed mode sentence went the same way in the resolution-restore work, which now forces
         # IsFullscreen off at launch and restores it after.
-        res_form.addRow(
-            hint(
-                "BartleBot sets the resolution itself at every launch and runs the game "
-                "windowed, and at smaller sizes scales the game's own "
-                "UI down to match while it runs, putting it back when the client closes. "
-                "Widescreen sizes keep a larger UI than 4:3 ones of the same height."
+        launch_form.add_row(
+            SettingRow(
+                "Default game resolution",
+                "BartleBot sets it at every launch and runs the game windowed.",
+                self._res_combo,
+                default=default_for("game_embed", "resolution"),
+                details=(
+                    "At smaller sizes it scales the game's own UI down to match while it runs, and puts "
+                    "it back when the client closes. Widescreen sizes keep a larger UI than 4:3 ones of "
+                    "the same height."
+                ),
             )
         )
-
         # Both of these are done to a client on its way up, which is why they are on this
         # tab and not the Bot one: neither is a level of any bot option's resolution, and
         # a bot that never starts still gets both.
-        self._auto_select_cb = QCheckBox()
-        self._auto_select_cb.setChecked(SettingsManager.instance().auto_select_character)
-        self._auto_select_cb.setToolTip("Also used to bring a player back after it crashes mid-run.")
-        res_form.addRow("Automatically select a character:", self._auto_select_cb)
-        res_form.addRow(
-            hint(
-                "After a launched client logs in, press Play on the most recently played "
-                "character. With this off every launched window still arrives at its "
-                "character-select screen, embedded in the game view, waiting for you to pick."
+        launch_form.add_row(
+            SettingRow(
+                "Automatically select a character",
+                "Press Play on the most recently played character after login.",
+                self._auto_select_cb,
+                default=default_for("general", "auto_select_character"),
+                details=(
+                    "Also used to bring a player back after it crashes mid-run. With this off, every "
+                    "launched window still arrives at its character-select screen, embedded in the game "
+                    "view, waiting for you to pick."
+                ),
             )
         )
-
-        self._quick_tp_cb = QCheckBox()
-        self._quick_tp_cb.setChecked(SettingsManager.instance().disable_quick_friend_teleport)
-        res_form.addRow("Disable quick friend teleport:", self._quick_tp_cb)
-        res_form.addRow(
-            hint(
-                "Turn the game's quick friend teleport option off in every client this app "
-                "launches. With it on, nodes that double-click a Friends List name to open a "
-                "profile teleport instead. The game reads this at startup, so it does not reach "
-                "a client that is already running."
+        launch_form.add_row(
+            SettingRow(
+                "Disable quick friend teleport",
+                "Turn the game's quick friend teleport off in every launched client.",
+                self._quick_tp_cb,
+                default=default_for("general", "disable_quick_friend_teleport"),
+                details=(
+                    "With it on, nodes that double-click a Friends List name to open a profile teleport "
+                    "instead. The game reads this at startup, so it does not reach a client that is "
+                    "already running."
+                ),
             )
         )
-
-        layout.addLayout(res_form)
+        launch_form.finish(stretch=False)
+        layout.addWidget(launch_form)
 
         self._res_combo.currentIndexChanged.connect(self._on_resolution_changed)
         self._refresh_resolution_fit()

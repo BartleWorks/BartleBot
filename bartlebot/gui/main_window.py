@@ -413,7 +413,7 @@ class MainWindow(QMainWindow):
             right_sidebar_floor=screen_fit.right_sidebar_floor(),
             left_sidebar_floor=screen_fit.left_sidebar_floor(),
         )
-        if sm.get_general("maximize_on_open", default=False):
+        if sm.get_general("maximize_on_open", default=True):
             self.showMaximized()
         else:
             w = max(sm.get_general("window_width", default=1400), min_w)

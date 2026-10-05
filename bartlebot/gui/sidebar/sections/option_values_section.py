@@ -69,16 +69,15 @@ from bartlebot import bot_options, option_groups
 from bartlebot.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.sidebar.option_gutter import (
-    GUTTER_BTN_PX,
     DescriptionSwitches,
     HelpToggle,
     OverrideBar,
+    RevertButton,
     build_gutter_row,
     keep_slot_when_hidden,
 )
 from bartlebot.gui.sidebar.sidebar_section import HeadingAction, SidebarSection, field_label
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
     TALL_TYPES,
     block_separate_if_merging,
@@ -143,35 +142,13 @@ class _SourceCaption(ThemedTextLabel):
         super().apply_theme_styles()
 
 
-class _RevertButton(IconButton):
-    """Discards the user's value for one row, putting the inherited one back.
-
-    Icon-only, and less discoverable than the word "Reset" it replaces -- the two
-    mitigations are that it tints ``THEME.accent`` only while there is something to
-    discard, and that its tooltip names the value and the level a click falls back
-    to.  It sits against the override bar because the two say the same thing: both
-    are set by the same two lines of ``_refresh_row``, and adjacent they read as one
-    affordance instead of two facts to correlate.
-    """
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(
-            "revert",
-            tooltip="Discard this value",
-            size=GUTTER_BTN_PX,
-            icon_size=16,
-            tint=IconTint.ACCENT_WHEN_ENABLED,
-            parent=parent,
-        )
-
-
 @dataclass
 class _RowChrome:
     """The parts of one row that change when its override state does."""
 
     widget: QWidget
     bar: OverrideBar
-    revert_btn: _RevertButton
+    revert_btn: RevertButton
     caption: _SourceCaption
     help_btn: HelpToggle
     outer: QWidget
@@ -576,7 +553,7 @@ class OptionValuesSection(SidebarSection):
         # The bar is a sibling of the body, not a border on it: a stylesheet border
         # set on the row would be inherited by every control inside it.
         bar = OverrideBar()
-        revert_btn = _RevertButton()
+        revert_btn = RevertButton()
         revert_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
 
         help_btn = HelpToggle()

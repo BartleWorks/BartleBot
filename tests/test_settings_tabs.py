@@ -20,14 +20,14 @@ from PyQt6.QtWidgets import QFormLayout, QLabel
 from bartlebot import bot_options
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.accounts_tab import AccountsTab
+from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
-from bartlebot.gui.settings.rows import ScrollableTab
+from bartlebot.gui.settings.rows import ScrollableTab, SettingRow
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import _DEFAULTS, _SECTION_MODELS, SettingsManager
 
@@ -66,9 +66,9 @@ def test_accepting_the_dialog_applies_every_tab(qapp):
 def test_the_bot_tab_writes_what_it_was_given(qapp):
     """Round trip through the settings singleton, which is the tab's only output."""
     tab = BotTab()
-    _field(tab, "Default Safety Delay:").setValue(7.5)
-    _field(tab, "Enable Quicksell:").setChecked(False)
-    _field(tab, "Friend teleport target:").setText("  Spare Idler  ")
+    _field(tab, "Default Safety Delay").setValue(7.5)
+    _field(tab, "Enable Quicksell").setChecked(False)
+    _field(tab, "Friend teleport target").setText("  Spare Idler  ")
 
     tab.apply()
 
@@ -93,14 +93,14 @@ def test_the_users_own_keep_list_round_trips_a_name_with_a_comma_in_it(qapp):
 
 def test_the_users_own_keep_list_is_written_from_what_was_typed(qapp):
     tab = BotTab()
-    _field(tab, "Always keep:").setText("Amber,  Pearl , ")
+    _field(tab, "Always keep").setText("Amber,  Pearl , ")
 
     tab.apply()
 
     assert SettingsManager.instance().get_general("quicksell_keep_list") == ["Amber", "Pearl"]
 
 
-_SHOW_EXPLANATION = "Show Quicksell explanation before each run:"
+_SHOW_EXPLANATION = "Show Quicksell explanation before each run"
 
 
 def test_the_quicksell_explanation_is_shown_on_a_fresh_install(qapp):
@@ -139,13 +139,13 @@ def test_the_launch_options_are_on_the_game_tab(qapp):
     auto-select on names the tab, so a move that misses it sends them nowhere.
     """
     tab = AccountsTab()
-    assert _field(tab, "Automatically select a character:") is not None
-    assert _field(tab, "Disable quick friend teleport:") is not None
+    assert _field(tab, "Automatically select a character") is not None
+    assert _field(tab, "Disable quick friend teleport") is not None
 
     with pytest.raises(AssertionError):
-        _field(BotTab(), "Automatically select a character:")
+        _field(BotTab(), "Automatically select a character")
     with pytest.raises(AssertionError):
-        _field(BotTab(), "Disable quick friend teleport:")
+        _field(BotTab(), "Disable quick friend teleport")
 
 
 def test_the_game_tab_applies_its_launch_options(qapp):
@@ -160,8 +160,8 @@ def test_the_game_tab_applies_its_launch_options(qapp):
     sm.disable_quick_friend_teleport = True
 
     tab = AccountsTab()
-    _field(tab, "Automatically select a character:").setChecked(False)
-    _field(tab, "Disable quick friend teleport:").setChecked(False)
+    _field(tab, "Automatically select a character").setChecked(False)
+    _field(tab, "Disable quick friend teleport").setChecked(False)
 
     tab.apply()
 
@@ -175,55 +175,34 @@ def test_the_game_tab_applies_its_launch_options(qapp):
 
 
 def _field(tab, label: str):
-    """The control on the row captioned *label*, found the way a reader would."""
-    for form in tab.findChildren(QFormLayout):
-        for i in range(form.rowCount()):
-            item = form.itemAt(i, QFormLayout.ItemRole.LabelRole)
-            if item is not None and item.widget() is not None and item.widget().text() == label:
-                return form.itemAt(i, QFormLayout.ItemRole.FieldRole).widget()
-    raise AssertionError(f"no settings row labeled {label!r}")
+    """The control on the row titled *label*, found the way a reader would."""
+    for row in tab.findChildren(SettingRow):
+        if row.title == label:
+            return row.control
+    raise AssertionError(f"no settings row titled {label!r}")
 
 
-def _rows(tab) -> list[list]:
-    """Every ``QFormLayout`` on *tab*, as a list of field widgets per row.
-
-    A hint is added with the one-argument ``addRow``, which puts it in the *field*
-    column with no label, so a row is a hint exactly when its field widget is a
-    ``ThemedTextLabel``.
-    """
-    forms = tab.findChildren(QFormLayout)
-    out = []
-    for form in forms:
-        row = []
-        for i in range(form.rowCount()):
-            item = form.itemAt(i, QFormLayout.ItemRole.FieldRole)
-            if item is None:
-                item = form.itemAt(i, QFormLayout.ItemRole.SpanningRole)
-            row.append(item.widget() if item is not None else None)
-        out.append(row)
-    return out
+_ALL_TABS = [GeneralTab, BotTab, CanvasTab, AuthoringTab, ThemeTab, AccountsTab]
 
 
-@pytest.mark.parametrize("tab_cls", [GeneralTab, BotTab, CanvasTab, ThemeTab])
+@pytest.mark.parametrize("tab_cls", _ALL_TABS)
 def test_every_settings_row_explains_itself_on_the_page(qapp, tab_cls):
     """No row may rely on a tooltip, or on nothing at all.
 
-    Within two rows rather than one, because a pair that reads as a single
-    setting -- Maximize on open and the window size under it -- shares one hint.
+    Its one line is always on screen; only the longer prose folds behind the ``?``.
+    And no row is the old shape -- a ``QFormLayout`` label beside a control, with the
+    description as a second row under it.
     """
     tab = tab_cls()
-    unexplained = []
-    for form in _rows(tab):
-        for i, widget in enumerate(form):
-            if isinstance(widget, ThemedTextLabel) or widget is None:
-                continue
-            following = form[i + 1 : i + 3]
-            if not any(isinstance(w, ThemedTextLabel) for w in following):
-                unexplained.append(f"{tab_cls.__name__} row {i}: {widget!r}")
+    rows = tab.findChildren(SettingRow)
+    assert rows, f"{tab_cls.__name__} draws no setting rows"
+    unexplained = [row.title for row in rows if not row.summary.text().strip() or row.summary.isHidden()]
     assert not unexplained, "settings rows with no visible description: " + ", ".join(unexplained)
+    assert not [f for f in tab.findChildren(QFormLayout) if f.rowCount()], "a settings row built the old way"
 
 
-@pytest.mark.parametrize("tab_cls", [GeneralTab, BotTab, ThemeTab])
+# Not the Game tab: its two card columns carry CardColumn's own centered heading.
+@pytest.mark.parametrize("tab_cls", [GeneralTab, BotTab, CanvasTab, AuthoringTab, ThemeTab])
 def test_every_settings_section_is_a_rule_heading(qapp, tab_cls):
     """A section is a heading with a rule, not a bold line of text.
 
@@ -259,9 +238,9 @@ def test_the_safety_delay_setting_and_option_read_the_same(qapp):
     }
     assert declared == {bot_options.SAFETY_DELAY_DESCRIPTION}
 
-    tab = BotTab()
-    hints = [w.text() for form in _rows(tab) for w in form if isinstance(w, ThemedTextLabel)]
-    assert bot_options.SAFETY_DELAY_DESCRIPTION in hints
+    row = BotTab().row("Default Safety Delay")
+    assert row.details is not None
+    assert row.details.text() == bot_options.SAFETY_DELAY_DESCRIPTION
 
 
 # ---------------------------------------------------------------------------
@@ -364,17 +343,34 @@ def test_the_form_tabs_scroll_rather_than_setting_the_dialogs_height(qapp, scree
         "Theme": False,
         "Game": False,
     }
-    # The point of wrapping: the tallest tab no longer sets the dialog's height.
-    assert dlg.height() < BotTab().sizeHint().height()
+    # The point of wrapping: the tallest tab no longer sets the dialog's height. Read at
+    # its tallest -- every description shown and every group open.
+    tallest = BotTab()
+    tallest.set_descriptions_shown(True)
+    for group in tallest.groups:
+        group.set_collapsed(False)
+    assert dlg.height() < tallest.sizeHint().height()
 
 
 def test_a_wrapped_tab_still_applies_what_was_typed_into_it(qapp):
     """A bare QScrollArea in the tab bar would silently discard the whole tab."""
     tab = BotTab()
     wrapper = ScrollableTab(tab)
-    _field(tab, "Default Safety Delay:").setValue(4.5)
+    _field(tab, "Default Safety Delay").setValue(4.5)
 
     wrapper.apply()
 
     assert SettingsManager.instance().default_safety_delay == 4.5
     assert wrapper.content is tab
+
+
+@pytest.mark.parametrize(
+    ("tab_cls", "title"),
+    [(GeneralTab, "Maximize on open"), (CanvasTab, "Snap nodes to grid")],
+)
+def test_a_fresh_install_starts_with_these_on(qapp, tab_cls, title):
+    """Both default to on, and on a fresh install the row is at its default, unmarked."""
+    row = tab_cls().row(title)
+
+    assert row.control.isChecked()
+    assert not row.is_changed

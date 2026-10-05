@@ -111,7 +111,7 @@ NODE_SPEC = NodeSpec(
         "relaunched as though its game had crashed, and the bot carries on from its recovery "
         "state. If that player cannot be relaunched, because no account is linked or no "
         "password is saved, the bot stops and says so.\n\n"
-        "You may not need this node at all: Settings → Bot → 'Relog players every' does "
+        "You may not need this node at all: Settings → Bot → 'Relog interval' does "
         "the same job on a timer, and can also bring back a player too broken to use its own "
         "menu. Use the node when the moment matters — after a fixed number of passes, or on a "
         "FAILURE transition as a last resort before giving up."
