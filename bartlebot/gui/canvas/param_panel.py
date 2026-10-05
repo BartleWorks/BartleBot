@@ -37,6 +37,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -53,9 +54,18 @@ from bartlebot import zone_names
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
+from bartlebot.gui.menu_utils import popup_menu
+from bartlebot.gui.sidebar.option_gutter import (
+    HelpToggle,
+    OverrideBar,
+    RevertButton,
+    build_gutter_row,
+    keep_slot_when_hidden,
+)
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
@@ -71,6 +81,7 @@ from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.setup_steps import value_empty
 from bartlebot.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
@@ -240,19 +251,71 @@ def parse_xyz_text(text: str) -> dict[str, float]:
     return out
 
 
-class _FillButton(ActionButton):
-    """An ``ActionButton`` that updates its label on hover to reflect fill options.
+#: The glob hint every zone field carries, in its placeholder and, whole, in its tooltip.
+#: It used to be a line of its own under every zone field, boxed in red while empty (#142).
+ZONE_PLACEHOLDER = "Zone path; * matches any part"
+ZONE_GLOB_HELP = "Glob patterns supported: * matches any sequence, ? matches one character."
 
-    - 0 players connected  → "Fill current"  (no-op click)
-    - 1 player connected   → "Fill current"  (direct fill, no menu)
-    - 2+ players connected → "Fill current ▾"  (dropdown)
+
+#: ``settings.json``'s switch behind Show / Hide descriptions, shared with the option
+#: surfaces: folding the prose away is a property of the reader, not of the surface.
+SHOW_DESCRIPTIONS_SETTING = "show_option_descriptions"
+
+
+def _read_show_descriptions() -> bool:
+    try:
+        return bool(SettingsManager.instance().get("general", SHOW_DESCRIPTIONS_SETTING, default=False))
+    except Exception:
+        logger.exception("Failed to read whether descriptions are shown")
+        return False
+
+
+def write_show_descriptions(shown: bool) -> None:
+    """Remember Show / Hide descriptions for every surface that folds its prose."""
+    try:
+        SettingsManager.instance().set("general", SHOW_DESCRIPTIONS_SETTING, value=shown)
+    except Exception:
+        logger.exception("Failed to remember whether descriptions are shown")
+
+
+def _describe(value: Any) -> str:
+    """A default as Reset's tooltip names it."""
+    if value is None or value == "" or value == []:
+        return "empty"
+    if isinstance(value, bool):
+        return "on" if value else "off"
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value)
+    return str(value)
+
+
+def _row_action(icon_name: str, tooltip: str) -> ActionButton:
+    """An action at the end of a field: its glyph alone, with the verb in the tooltip.
+
+    The compact row (#142) puts what used to be a full-width row of labeled buttons
+    under a field at its end instead, as Unity's object picker and Houdini's select
+    arrow do. Still an ``ActionButton`` -- the same frame and weight the labeled ones
+    had -- and always drawn, never revealed on hover: on a tool surface a hidden verb
+    is one nobody finds (the launch cards' ``pins_chrome`` reasoning).
+    """
+    button = ActionButton(icon_name, "", fill=False)
+    button.setToolTip(tooltip)
+    return button
+
+
+class _FillButton(ActionButton):
+    """Fill current, at the end of a field: the glyph, and a ``▾`` while a click asks which player.
+
+    - 0 players connected  → glyph alone (no-op click)
+    - 1 player connected   → glyph alone (direct fill, no menu)
+    - 2+ players connected → glyph and ``▾`` (dropdown)
 
     ``download`` for the glyph, matching ``_NavZoneField``'s own fill button: both mean
     "take this from a connected player", and they sit on the same panel.
     """
 
     def __init__(self, get_clients: Callable[[], list], parent=None):
-        super().__init__("download", "", parent=parent)
+        super().__init__("download", "", fill=False, parent=parent)
         self._get_clients = get_clients
         self._refresh_label()
 
@@ -261,7 +324,7 @@ class _FillButton(ActionButton):
         super().enterEvent(event)
 
     def _refresh_label(self) -> None:
-        self.setText(picker_label("Fill current", len(self._get_clients())))
+        self.setText(picker_label("", len(self._get_clients())).strip())
 
 
 def _format_axis(value: Any) -> str:
@@ -281,6 +344,8 @@ class _AxisEdit(QLineEdit):
     """
 
     coordinate_pasted = pyqtSignal(dict)
+    #: A right-click, at this global point: the field puts its own menu up.
+    menu_requested = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -302,6 +367,10 @@ class _AxisEdit(QLineEdit):
                 return
         super().keyPressEvent(event)
 
+    def contextMenuEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self.menu_requested.emit(event.globalPos())
+        event.accept()
+
     def number(self) -> float | None:
         """The box's value, or None while it is blank or holds an unfinished number such as "-"."""
         if not self.hasAcceptableInput():
@@ -313,14 +382,20 @@ class _AxisEdit(QLineEdit):
 
 
 class _XyzField(ThemedMixin, QWidget):
-    """An 'xyz' param: X, Y and Z boxes over the Copy / Paste / Fill current / TP row.
+    """An 'xyz' param: X, Y and Z boxes, then Fill current and TP at the end of the line.
+
+    Copy and Paste are on each box's right-click menu, as Unity's and Blender's fields
+    keep them, and Ctrl+V of a whole coordinate into any box still fills all three. The
+    two that reach into the game stay drawn as buttons (#142).
 
     Unlike the spinboxes it replaced, it can be blank, which is how a coordinate nobody
     has filled in looks and is stored: ``value()`` is None and ``get_params`` writes
     nothing for it. Partly filled, or holding an unfinished number, it is invalid: the
-    offending boxes are marked and ``value()`` is None too, so a half-typed coordinate
-    is never saved. A required field is also marked while blank or all-zero -- (0, 0, 0)
-    is what an unset coordinate was saved as before this, never a real position.
+    offending boxes are marked at once and ``value()`` is None too, so a half-typed
+    coordinate is never saved. A required field blank or all-zero -- (0, 0, 0) is what
+    an unset coordinate was saved as before this, never a real position -- is marked only
+    once the form says to show it (``set_required_shown``): left empty after being
+    touched, or after a refused save.
 
     A field nobody has edited hands back exactly the dict it loaded, so opening and
     saving a bot rewrites no coordinate.
@@ -333,53 +408,35 @@ class _XyzField(ThemedMixin, QWidget):
     ):
         super().__init__(parent)
         self._required = required
+        self._required_shown = False
         self._get_clients = get_clients
         self._loaded = value if isinstance(value, dict) else None
         self._quiet = False
         if help_text:
             self.setToolTip(help_text)
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(2)
-        boxes_row = QHBoxLayout()
-        boxes_row.setContentsMargins(0, 0, 0, 0)
-        boxes_row.setSpacing(4)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
         self._edits: dict[str, _AxisEdit] = {}
         for axis in _AXES:
             lbl = QLabel(axis.upper())
-            lbl.setFixedWidth(12)
             edit = _AxisEdit()
             edit.setText(_format_axis(self._loaded.get(axis)) if self._loaded else "")
             edit.textChanged.connect(self._on_text_changed)
             edit.coordinate_pasted.connect(self.set_coordinate)
-            boxes_row.addWidget(lbl)
-            boxes_row.addWidget(edit, 1)
+            edit.menu_requested.connect(lambda pos, e=edit: self._show_box_menu(e, pos))
+            row.addWidget(lbl)
+            row.addWidget(edit, 1)
             self._edits[axis] = edit
-        outer.addLayout(boxes_row)
         self._loaded_texts = self.texts()
-        # Full-width segmented action bar — all buttons equal width, uniform height.
-        # Every button carries a glyph: a row where some do and others do not reads
-        # as two kinds of control rather than one.
-        btns_row = QHBoxLayout()
-        btns_row.setContentsMargins(0, 0, 0, 0)
-        btns_row.setSpacing(2)
-        self._copy_btn = ActionButton("copy", "Copy")
-        self._copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
-        self._copy_btn.clicked.connect(self._copy)
-        btns_row.addWidget(self._copy_btn, 1)
-        paste_btn = ActionButton("paste", "Paste")
-        paste_btn.setToolTip("Paste XYZ from clipboard (JSON, x, y, z or XYZ(x, y, z) format)")
-        paste_btn.clicked.connect(self._paste)
-        btns_row.addWidget(paste_btn, 1)
         fill_btn = _FillButton(self._get_clients)
-        fill_btn.setToolTip("Fill from a connected player's live position")
+        fill_btn.setToolTip("Fill current: a connected player's live position. Right-click a box to copy or paste.")
         fill_btn.clicked.connect(lambda _checked, b=fill_btn: self._show_fill_menu(b))
-        btns_row.addWidget(fill_btn, 1)
-        self._tp_btn = ActionButton("teleport", "TP")
-        self._tp_btn.setToolTip("Teleport all connected players to these coordinates")
+        row.addWidget(fill_btn)
+        self._tp_btn = _row_action("teleport", "Teleport all connected players to these coordinates")
         self._tp_btn.clicked.connect(lambda _checked: asyncio.ensure_future(self._teleport()))
-        btns_row.addWidget(self._tp_btn, 1)
-        outer.addLayout(btns_row)
+        row.addWidget(self._tp_btn)
+        self._fill_btn = fill_btn
         self._update_buttons()
         self.refresh_theme_styles()
 
@@ -388,12 +445,45 @@ class _XyzField(ThemedMixin, QWidget):
         return self._edits[axis]
 
     @property
-    def copy_button(self) -> QPushButton:
-        return self._copy_btn
+    def fill_button(self) -> QPushButton:
+        return self._fill_btn
 
     @property
     def teleport_button(self) -> QPushButton:
         return self._tp_btn
+
+    def can_copy(self) -> bool:
+        """Whether the boxes hold a whole coordinate, which is what Copy and TP need."""
+        return self.value() is not None
+
+    def box_menu(self, edit: QLineEdit) -> QMenu:
+        """A box's right-click menu, built but not shown: Copy XYZ and Paste XYZ, then the box's own."""
+        menu = popup_menu(edit)
+        copy = menu.addAction(svg_icon("copy", 16), "Copy XYZ")
+        copy.setToolTip("Copy this coordinate to the clipboard as JSON")
+        copy.setEnabled(self.can_copy())
+        copy.triggered.connect(self._copy)
+        paste = menu.addAction(svg_icon("paste", 16), "Paste XYZ")
+        paste.setToolTip("Paste a coordinate: JSON, x, y, z or XYZ(x, y, z)")
+        paste.triggered.connect(self._paste)
+        menu.addSeparator()
+        standard = edit.createStandardContextMenu()
+        for action in standard.actions():
+            action.setParent(menu)
+            menu.addAction(action)
+        standard.deleteLater()
+        return menu
+
+    def _show_box_menu(self, edit: QLineEdit, pos) -> None:
+        # A synchronous slot, so exec() is safe here -- see the qasync rule in gui/CLAUDE.md.
+        self.box_menu(edit).exec(pos)
+
+    def set_required_shown(self, shown: bool) -> None:
+        """Mark a blank required coordinate, or stop: the form decides when it is shown."""
+        if shown == self._required_shown:
+            return
+        self._required_shown = shown
+        self.apply_theme_styles()
 
     def value(self) -> dict | None:
         """The coordinate to store, or None when there is none: blank, or invalid."""
@@ -406,14 +496,19 @@ class _XyzField(ThemedMixin, QWidget):
 
     def marked_axes(self) -> set[str]:
         """The axes whose box carries the error border."""
+        required = self._required and self._required_shown
         filled = {axis for axis, edit in self._edits.items() if edit.text().strip()}
         if not filled:
-            return set(_AXES) if self._required else set()
+            return set(_AXES) if required else set()
         marked = {axis for axis in filled if self._edits[axis].number() is None}
         marked |= set(_AXES) - filled
-        if not marked and self._required and not any(self._edits[axis].number() for axis in _AXES):
+        if not marked and required and not any(self._edits[axis].number() for axis in _AXES):
             return set(_AXES)
         return marked
+
+    def is_blank(self) -> bool:
+        """Whether a required field would call this empty: blank, or all zero."""
+        return not any(self._edits[axis].number() for axis in _AXES)
 
     def set_coordinate(self, values: dict) -> None:
         """Set the axes *values* names, rounded to two decimals; the others keep their boxes."""
@@ -455,9 +550,7 @@ class _XyzField(ThemedMixin, QWidget):
         self.changed.emit()
 
     def _update_buttons(self) -> None:
-        complete = self.value() is not None
-        self._copy_btn.setEnabled(complete)
-        self._tp_btn.setEnabled(complete)
+        self._tp_btn.setEnabled(self.can_copy())
 
     def _copy(self) -> None:
         value = self.value()
@@ -522,11 +615,10 @@ class _ZoneLineEdit(QLineEdit):
 
 
 class _ZoneWidget(QWidget):
-    """Zone string field with autocomplete + a 'Fill from Player' dropdown button.
+    """Zone string field with autocomplete, and Fill current at the end of the line.
 
-    Wraps a ``_ZoneLineEdit`` and adds a compact button row so users can
-    populate the field from a connected player's current zone without
-    switching to the sidebar.
+    The glob hint is the placeholder and, whole, the tooltip: it used to be a line of
+    its own under every zone field, and boxed in red while the field was empty (#142).
     """
 
     textChanged = pyqtSignal(str)
@@ -540,22 +632,19 @@ class _ZoneWidget(QWidget):
         super().__init__(parent)
         self._get_clients = get_clients
 
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(2)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
 
         self._edit = _ZoneLineEdit(get_suggestions)
-        outer.addWidget(self._edit)
+        self._edit.setPlaceholderText(ZONE_PLACEHOLDER)
+        self._edit.setToolTip(ZONE_GLOB_HELP)
+        row.addWidget(self._edit, 1)
 
-        fill_btn = _FillButton(get_clients)
-        fill_btn.setToolTip("Fill from a connected player's current zone")
-        fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
-        outer.addWidget(fill_btn)
-
-        hint = QLabel("Glob patterns supported: * matches any sequence, ? matches one character")
-        hint.setStyleSheet(f"font-size: {THEME.font_subtext_px}px; color: gray;")
-        hint.setWordWrap(True)
-        outer.addWidget(hint)
+        self.fill_btn = _FillButton(get_clients)
+        self.fill_btn.setToolTip("Fill current: a connected player's current zone")
+        self.fill_btn.clicked.connect(lambda _: self._show_fill_menu(self.fill_btn))
+        row.addWidget(self.fill_btn)
 
         self._edit.textChanged.connect(self.textChanged)
 
@@ -563,11 +652,20 @@ class _ZoneWidget(QWidget):
     # Public interface (matches QLineEdit enough for form integration)
     # ------------------------------------------------------------------
 
+    @property
+    def line_edit(self) -> QLineEdit:
+        """The text box itself, which carries the error border."""
+        return self._edit
+
     def text(self) -> str:
         return self._edit.text()
 
     def setText(self, text: str) -> None:
         self._edit.setText(text)
+
+    def setToolTip(self, text: str) -> None:  # noqa: N802 - Qt override
+        """The param's help, then the glob hint: both are about what to type."""
+        self._edit.setToolTip(f"{text}\n\n{ZONE_GLOB_HELP}" if text else ZONE_GLOB_HELP)
 
     # ------------------------------------------------------------------
     # Fill from player
@@ -614,7 +712,7 @@ _NAV_TASKS: set[asyncio.Task] = set()
 
 
 class _NavZoneField(QWidget):
-    """A 'nav_zone' param: the zone picker, then Fill current and Go side by side beneath it.
+    """A 'nav_zone' param: the zone picker, then Fill current and Go to zone at the end of its line.
 
     Fill sets the zone from a connected player's current zone, as the zone and xyz fields do. Go
     runs the same navigation the Sync In Zone node runs, so a bot can be authored from wherever the
@@ -630,22 +728,20 @@ class _NavZoneField(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(4)
 
+        line = QHBoxLayout()
+        line.setContentsMargins(0, 0, 0, 0)
+        line.setSpacing(4)
+        outer.addLayout(line)
         self.picker = NavZoneButton(get_suggested)
         self.picker.changed.connect(self.changed)
-        outer.addWidget(self.picker)
-
-        btns_row = QHBoxLayout()
-        btns_row.setContentsMargins(0, 0, 0, 0)
-        btns_row.setSpacing(4)
-        self.fill_btn = ActionButton("download", "Fill current")
-        self.fill_btn.setToolTip("Fill from a connected player's current zone")
+        line.addWidget(self.picker, 1)
+        self.fill_btn = _FillButton(get_clients)
+        self.fill_btn.setToolTip("Fill current: a connected player's current zone")
         self.fill_btn.clicked.connect(self._show_fill_menu)
-        btns_row.addWidget(self.fill_btn, 1)
-        self.go_btn = ActionButton("play", "Go to zone")
-        self.go_btn.setToolTip("Take all connected players to this zone now")
+        line.addWidget(self.fill_btn)
+        self.go_btn = _row_action("play", "Go to zone: take all connected players there now")
         self.go_btn.clicked.connect(self._on_go)
-        btns_row.addWidget(self.go_btn, 1)
-        outer.addLayout(btns_row)
+        line.addWidget(self.go_btn)
 
         # Why the last fill was refused; cleared by the next pick or fill.
         self.notice = ThemedTextLabel(color="error", css=f"font-size: {THEME.font_small_px}px;")
@@ -865,6 +961,25 @@ class _HoverRow(QWidget):
 
 
 class _DynamicParamForm(ThemedMixin, QWidget):
+    """The rows of a node's params, or of a subgraph node's inputs: one row builder for both.
+
+    Every row is a head line and a control, behind the ``[bar][reset][?]`` gutter the
+    option surfaces use (#142, after #138). The head line is the name, the required
+    marker, and whatever chip the row wears -- a link, a setup step. Actions that act on
+    a field sit at the end of its control line, and prose folds behind the ``?``.
+
+    The gutter's middle slot is Reset, and what it resets to depends on where the form
+    is. On a subgraph node's page (``resettable`` given) it drops this node's value so
+    the definition's default applies again, and the bar is lit while there is one to
+    drop. On a node's page it puts the node type's default back; a param with no default
+    has nothing to go back to, and the bar is never lit, as on Options.
+
+    An empty required field is marked -- its asterisk and border in the error color --
+    only once it has been touched and left empty, or after a refused save
+    (``show_required_errors``): a freshly placed node is not a wall of red before the
+    user has done anything. "N to fill" on the card says what is left in the meantime.
+    """
+
     changed = pyqtSignal()
     # (param key) from a row's Link button, on a node shown in a definition document.
     # The form only reports; the canvas links the param and reloads.
@@ -877,36 +992,58 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     # of a template draft.
     step_add_requested = pyqtSignal(str)
     step_remove_requested = pyqtSignal(str)
+    # The set of empty required fields shown in red changed, without any value changing:
+    # a field was left empty, or a refused save asked for all of them.
+    required_shown_changed = pyqtSignal()
+
+    #: Between rows: the rows carry no margin of their own, so the gutter's buttons
+    #: top-align with the head line.
+    ROW_SPACING_PX = 10
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._form = QVBoxLayout(self)
-        self._form.setContentsMargins(6, 6, 6, 6)
-        self._form.setSpacing(4)
+        self._form.setContentsMargins(0, 0, 0, 0)
+        self._form.setSpacing(self.ROW_SPACING_PX)
         self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
         # Per-row controls, all THEME-colored: in a definition, a Link button that
-        # shows on hover, or for a linked param its chip; on a subgraph node, a Reset
-        # for a value changed from the definition's.
+        # shows on hover, or for a linked param its chip.
         self._link_btns: dict[str, QToolButton] = {}
         self._link_chips: dict[str, _LinkChip] = {}
         self._step_chips: dict[str, NeutralChip] = {}
         self._step_btns: dict[str, QToolButton] = {}
         self._fill_labels: dict[str, QLabel] = {}
-        self._reset_btns: dict[str, QToolButton] = {}
         self._hover_rows: dict[str, _HoverRow] = {}
+        # The gutter, per row.
+        self._rows: dict[str, QWidget] = {}
+        self._bars: dict[str, OverrideBar] = {}
+        self._reverts: dict[str, RevertButton] = {}
+        self._helps: dict[str, HelpToggle] = {}
+        self._descriptions: dict[str, QLabel] = {}
+        self._row_actions: dict[str, QPushButton] = {}
+        self._fields: dict[str, ParamField] = {}
         self._schema: list = []
+        # None on a node's page; the keys this node set, on a subgraph node's page.
+        self._resettable: set[str] | None = None
+        self._linked: set[str] = set()
+        # Empty required fields whose emptiness is drawn in the error color.
+        self._shown_required: set[str] = set()
+        self._show_descriptions = _read_show_descriptions()
         # Every label load_schema builds that carries a THEME color, cleared and
         # refilled alongside _widgets. Field labels keep their ParamField because the
         # required marker is a color baked into *rich text* rather than a stylesheet,
         # so restyling one means rebuilding its text.
-        self._field_labels: list[tuple[QLabel, Any, bool]] = []
+        self._field_labels: list[tuple[QLabel, Any]] = []
         self._muted_labels: list[QLabel] = []
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
         self._get_default_scales: Callable[[], Any] = lambda: None
+        app = QApplication.instance()
+        if app is not None:
+            app.focusChanged.connect(self._on_focus_changed)
 
     def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
         """Pass a callable returning the Scales an unset 'scales' param means in the open bot."""
@@ -928,11 +1065,12 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         linkable: bool = False,
         links: dict[str, str] | None = None,
         promoted_group: str | None = None,
-        resettable: set[str] | frozenset[str] = frozenset(),
+        resettable: set[str] | frozenset[str] | None = None,
         field_types: dict[str, str] | None = None,
         fill_hints: dict[str, str] | None = None,
         step_chips: dict[str, str] | None = None,
         step_addable: bool = False,
+        row_actions: dict[str, tuple[str, str, Callable[[], None]]] | None = None,
     ) -> None:
         """Rebuild the form for *schema* showing *params*.
 
@@ -948,49 +1086,59 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         that shows while the row is hovered; a row in *links* (key -> what it is linked
         to) shows a chip instead, which turns into Unlink on hover. On a node promoted to
         an input group, every row is linked to *promoted_group* and its chip is locked.
-        On a subgraph node's form, a key in *resettable* has a Reset beside it. A key in
-        *field_types* is drawn as that type rather than its own: a linked param takes
-        the strictest type of what it is linked with, so a ``zone`` linked to a
-        ``nav_zone`` gets the destination picker. The
-        controls wrap the row rather than the widget ``_make_widget`` returns, so every
-        widget type gets them without knowing.
+        *resettable* makes this a subgraph node's form: a key in it has a value this node
+        set, which Reset drops. Left None, Reset puts the node type's default back.
+        A key in *field_types* is drawn as that type rather than its own: a linked param
+        takes the strictest type of what it is linked with, so a ``zone`` linked to a
+        ``nav_zone`` gets the destination picker. *row_actions* (key -> ``(icon, tooltip,
+        callback)``) adds one more action at the end of that row's control line -- the
+        wiki import on a fight's page. The controls wrap the row rather than the widget
+        ``_make_widget`` returns, so every widget type gets them without knowing.
         """
         self._suppress = True
         # Remove everything except the trailing stretch.
         while self._form.count() > 1:
             item = self._form.takeAt(0)
             if item.widget():
-                item.widget().deleteLater()
-        self._widgets.clear()
-        self._required_widgets.clear()
+                discard_widget(item.widget())
+        for store in (
+            self._widgets,
+            self._required_widgets,
+            self._link_btns,
+            self._link_chips,
+            self._step_chips,
+            self._step_btns,
+            self._fill_labels,
+            self._hover_rows,
+            self._rows,
+            self._bars,
+            self._reverts,
+            self._helps,
+            self._descriptions,
+            self._row_actions,
+            self._fields,
+        ):
+            store.clear()
         self._field_labels.clear()
         self._muted_labels.clear()
-        self._link_btns.clear()
-        self._link_chips.clear()
-        self._step_chips.clear()
-        self._step_btns.clear()
-        self._fill_labels.clear()
-        self._reset_btns.clear()
-        self._hover_rows.clear()
+        self._shown_required.clear()
+        self._resettable = set(resettable) if resettable is not None else None
         # As drawn: a field's type can be narrowed by a link, and a fill-in is required.
         self._schema = []
         links = links or {}
+        self._linked = set(links)
         field_types = field_types or {}
         fill_hints = fill_hints or {}
         step_chips = step_chips or {}
-        insert_idx = 0
+        row_actions = row_actions or {}
+        descriptions: list[tuple[QLabel, HelpToggle]] = []
         for field in schema:
             if field_types.get(field.key, field.type) != field.type:
                 field = replace(field, type=field_types[field.key])
             if field.key in fill_hints:
                 field = replace(field, required=True, placeholder=f"Fill in: {fill_hints[field.key]}")
             self._schema.append(field)
-            label_w = QLabel()
-            label_w.setTextFormat(Qt.TextFormat.RichText)
-            self._field_labels.append((label_w, field, insert_idx > 0))
-            self._style_field_label(label_w, field, insert_idx > 0)
-            if field.help:
-                label_w.setToolTip(field.help)
+            self._fields[field.key] = field
             val = params.get(field.key, field.default)
             widget = self._make_widget(
                 field.type,
@@ -1004,7 +1152,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             self._widgets[field.key] = widget
             if field.required:
                 self._required_widgets[field.key] = widget
-            display_w = widget
             row_btns: list[QWidget] = []
             link_btn: QToolButton | None = None
             if promoted_group is not None:
@@ -1027,8 +1174,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             elif linkable:
                 link_btn = self._make_link_button(field.key)
                 row_btns.append(link_btn)
-            if field.key in resettable:
-                row_btns.append(self._make_reset_button(field.key))
             if field.key in step_chips:
                 step_chip = NeutralChip(
                     step_chips[field.key],
@@ -1041,76 +1186,90 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 # Takes the Link button's slot and its hover: a draft is never a definition.
                 link_btn = self._make_step_button(field.key)
                 row_btns.append(link_btn)
+
+            # The body: the head line, then the control, then whatever folds under it.
+            # Label and widget are one hover target, so pointing at the field itself
+            # shows its Link button, not only pointing at its label.
+            body: QWidget = _HoverRow(link_btn) if link_btn is not None else QWidget()
+            if link_btn is not None:
+                self._hover_rows[field.key] = body  # type: ignore[assignment]
+            col = QVBoxLayout(body)
+            col.setContentsMargins(0, 0, 0, 0)
+            col.setSpacing(3)
+            head = QHBoxLayout()
+            head.setContentsMargins(0, 0, 0, 0)
+            head.setSpacing(8)
+            col.addLayout(head)
             if field.type == "bool":
-                container = _HoverRow(link_btn)
-                if link_btn is not None:
-                    self._hover_rows[field.key] = container
-                row = QHBoxLayout(container)
-                row.setContentsMargins(0, 0, 0, 0)
-                row.setSpacing(8)
-                row.addWidget(label_w)
-                row.addStretch()
-                row.addWidget(display_w)
-                for row_btn in row_btns:
-                    row.addWidget(row_btn)
-                self._form.insertWidget(insert_idx, container)
-                insert_idx += 1
+                # A bool has no separate label: its own caption is the name, so the
+                # checkbox *is* the head line and the whole row fits on it.
+                widget.setText(field.label)
+                head.addWidget(widget)
             else:
-                if link_btn is not None:
-                    # Label and widget in one hover target, so pointing at the field
-                    # itself shows its Link button, not only pointing at its label.
-                    block = _HoverRow(link_btn)
-                    self._hover_rows[field.key] = block
-                    block_col = QVBoxLayout(block)
-                    block_col.setContentsMargins(0, 0, 0, 0)
-                    block_col.setSpacing(4)
-                    head = QWidget()
-                    head_row = QHBoxLayout(head)
-                    head_row.setContentsMargins(0, 0, 0, 0)
-                    head_row.setSpacing(8)
-                    head_row.addWidget(label_w)
-                    head_row.addStretch()
-                    for row_btn in row_btns:
-                        head_row.addWidget(row_btn)
-                    block_col.addWidget(head)
-                    block_col.addWidget(display_w)
-                    self._form.insertWidget(insert_idx, block)
-                    insert_idx += 1
+                label_w = QLabel()
+                label_w.setTextFormat(Qt.TextFormat.RichText)
+                if field.help:
+                    label_w.setToolTip(field.help)
+                self._field_labels.append((label_w, field))
+                head.addWidget(label_w)
+            head.addStretch(1)
+            for row_btn in row_btns:
+                head.addWidget(row_btn)
+            if field.type != "bool":
+                if field.key in row_actions:
+                    icon, tip, callback = row_actions[field.key]
+                    line = QHBoxLayout()
+                    line.setContentsMargins(0, 0, 0, 0)
+                    line.setSpacing(4)
+                    col.addLayout(line)
+                    line.addWidget(widget, 1)
+                    action = _row_action(icon, tip)
+                    action.clicked.connect(lambda _=False, cb=callback: cb())
+                    self._row_actions[field.key] = action
+                    line.addWidget(action)
                 else:
-                    if row_btns:
-                        head = QWidget()
-                        head_row = QHBoxLayout(head)
-                        head_row.setContentsMargins(0, 0, 0, 0)
-                        head_row.setSpacing(8)
-                        head_row.addWidget(label_w)
-                        head_row.addStretch()
-                        for row_btn in row_btns:
-                            head_row.addWidget(row_btn)
-                        self._form.insertWidget(insert_idx, head)
-                    else:
-                        self._form.insertWidget(insert_idx, label_w)
-                    self._form.insertWidget(insert_idx + 1, display_w)
-                    insert_idx += 2
+                    col.addWidget(widget)
             if field.key in fill_hints and field.type not in ("str", "text"):
                 # A picker, a coordinate or a list has no placeholder to carry it.
                 fill_lbl = QLabel(field.placeholder)
                 self._muted_labels.append(fill_lbl)
                 self._fill_labels[field.key] = fill_lbl
-                fill_lbl.setStyleSheet(f"color: {THEME.text_muted};")
                 fill_lbl.setWordWrap(True)
-                self._form.insertWidget(insert_idx, fill_lbl)
-                insert_idx += 1
-            if field.default_hint and not field.required:
-                hint_lbl = QLabel(f"Default: {field.default_hint}")
-                self._muted_labels.append(hint_lbl)
-                hint_lbl.setStyleSheet(f"color: {THEME.text_muted};")
-                hint_lbl.setWordWrap(True)
-                self._form.insertWidget(insert_idx, hint_lbl)
-                insert_idx += 1
+                col.addWidget(fill_lbl)
+            prose = self._description_text(field)
+            description = None
+            if prose:
+                # At the base font: the one piece of prose on the row, and on screen
+                # only when asked for -- the option surfaces' rule.
+                description = ThemedTextLabel(prose, color="text_muted")
+                description.setWordWrap(True)
+                col.addWidget(description)
+                self._descriptions[field.key] = description
+
+            bar = OverrideBar()
+            revert = RevertButton()
+            revert.clicked.connect(lambda _=False, k=field.key: self._on_reset(k))
+            help_btn = HelpToggle()
+            help_btn.setToolTip("Show what this field does")
+            outer = build_gutter_row(bar, revert, help_btn, body)
+            self._form.insertWidget(len(self._rows), outer)
+            self._rows[field.key] = outer
+            self._bars[field.key] = bar
+            self._reverts[field.key] = revert
+            self._helps[field.key] = help_btn
+            # Visibility only now that the row has a parent: see "Never show a widget
+            # before it has a parent" in gui/CLAUDE.md.
+            if description is None:
+                keep_slot_when_hidden(help_btn)
+            else:
+                help_btn.setChecked(self._show_descriptions)
+                help_btn.toggled.connect(description.setVisible)
+                descriptions.append((description, help_btn))
+        for description, help_btn in descriptions:
+            description.setVisible(help_btn.isChecked())
         if not schema:
             placeholder = QLabel("This node type has no parameters.")
             self._muted_labels.append(placeholder)
-            placeholder.setStyleSheet(f"color: {THEME.text_muted};")
             self._form.insertWidget(0, placeholder)
         # Wire disabled_by: disable the target widget when the controller is "active".
         # For QCheckBox controllers: active = checked.
@@ -1146,13 +1305,187 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         # built, so this is where its styling is first applied. It also covers
         # _validate_required_fields, which apply_theme_styles re-runs.
         self.refresh_theme_styles()
+        self._refresh_rows()
+
+    @staticmethod
+    def _description_text(field: Any) -> str:
+        """What a row's ``?`` folds out: the param's help, then what an unset one does."""
+        parts = [field.help] if field.help else []
+        if field.default_hint and not field.required:
+            parts.append(f"Default: {field.default_hint}")
+        return "\n\n".join(parts)
+
+    # -- the gutter -------------------------------------------------------
+
+    def _default_of(self, field: Any) -> tuple[bool, Any]:
+        """Whether *field* has a default Reset can put back on a node's page, and what it is.
+
+        A required param whose default is its blank has none: it is something the
+        author has to fill in, and Reset would only empty it.
+        """
+        if field.default is None or (field.required and value_empty(field.type, field.default)):
+            return False, None
+        return True, field.default
+
+    @staticmethod
+    def _agrees(field: Any, value: Any, default: Any) -> bool:
+        """Whether *value* is *default*, the way a reader would say it: blank is blank, 3 is 3.0."""
+        if value_empty(field.type, value) and value_empty(field.type, default):
+            return True
+        if isinstance(value, bool) or isinstance(default, bool):
+            return value is default or value == default and type(value) is type(default)
+        if isinstance(value, int | float) and isinstance(default, int | float):
+            return float(value) == float(default)
+        return value == default
+
+    def _refresh_rows(self) -> None:
+        """Set every row's bar, Reset and red state from the values the form holds now.
+
+        Called after every value edit: it touches the chrome, never rebuilds a row, so
+        nothing moves under the pointer -- a spin box rebuilt on its first arrow click
+        loses the second.
+        """
+        params = self.get_params()
+        for key, field in self._fields.items():
+            revert, bar = self._reverts.get(key), self._bars.get(key)
+            if revert is None or bar is None:
+                continue
+            if self._resettable is not None:
+                mine = key in self._resettable
+                bar.set_active(mine)
+                revert.setEnabled(mine)
+                revert.setToolTip(
+                    "Changed here. Reset to follow the subgraph's default" if mine else "Already the subgraph's default"
+                )
+                continue
+            bar.set_active(False)
+            if key in self._linked:
+                revert.setEnabled(False)
+                revert.setToolTip("Linked: the input it is linked to sets this value")
+                continue
+            has_default, default = self._default_of(field)
+            if not has_default:
+                revert.setEnabled(False)
+                revert.setToolTip("No default: this param has to be set")
+                continue
+            at_default = self._agrees(field, params.get(key), default)
+            revert.setEnabled(not at_default)
+            revert.setToolTip("Already the default" if at_default else f"Reset to the default: {_describe(default)}")
+
+    def _on_reset(self, key: str) -> None:
+        if self._resettable is not None:
+            self.reset_requested.emit(key)
+            return
+        field = self._fields.get(key)
+        if field is None:
+            return
+        has_default, default = self._default_of(field)
+        if not has_default:
+            return
+        self._suppress = True
+        try:
+            self._set_widget_value(key, default)
+        finally:
+            self._suppress = False
+        self._emit_changed()
+
+    def _set_widget_value(self, key: str, value: Any) -> None:
+        """Put *value* into *key*'s widget, as if the user had set it."""
+        w = self._widgets.get(key)
+        if isinstance(w, _XyzField):
+            if isinstance(value, dict):
+                w.set_coordinate(value)
+            else:
+                w.set_texts(("", "", ""))
+        elif isinstance(w, QPlainTextEdit):
+            w.setPlainText(str(value or ""))
+        elif isinstance(w, PlayerListWidget | PlayerSlotWidget):
+            w.set_value(value)
+        elif isinstance(w, _StrListLineEdit):
+            w.setText(format_list_text([str(v) for v in value]) if isinstance(value, list) else str(value or ""))
+        elif isinstance(w, _NavZoneField | ScalesButton):
+            w.set_value(str(value or ""))
+        elif isinstance(w, _ZoneWidget | QLineEdit):
+            w.setText(str(value or ""))
+        elif isinstance(w, RatioSpinBox):
+            w.set_ratio(float(value))
+        elif isinstance(w, QSpinBox):
+            w.setValue(int(value))
+        elif isinstance(w, QDoubleSpinBox):
+            w.setValue(float(value))
+        elif isinstance(w, QCheckBox):
+            w.setChecked(bool(value))
+
+    # -- descriptions -----------------------------------------------------
+
+    def set_descriptions_visible(self, shown: bool) -> None:
+        """Show or fold every row's description at once, as Show / Hide descriptions do."""
+        self._show_descriptions = shown
+        for help_btn in self._helps.values():
+            if not help_btn.isHidden():
+                help_btn.setChecked(shown)
+
+    @property
+    def descriptions_visible(self) -> bool:
+        return self._show_descriptions
+
+    def description(self, key: str) -> QLabel | None:
+        """The prose *key*'s ``?`` folds out, or None for a row with none."""
+        return self._descriptions.get(key)
+
+    # -- required fields ---------------------------------------------------
+
+    def _empty(self, key: str) -> bool:
+        widget = self._required_widgets.get(key)
+        if widget is None:
+            return False
+        if isinstance(widget, _XyzField):
+            return widget.is_blank()
+        field = self._fields.get(key)
+        return field is not None and value_empty(field.type, self.get_params().get(key))
+
+    def show_required_errors(self) -> None:
+        """Draw every empty required field in the error color: a save was refused for them."""
+        before = set(self._shown_required)
+        self._shown_required = set(self._required_widgets)
+        if self._shown_required != before:
+            self.refresh_theme_styles()
+            self.required_shown_changed.emit()
+
+    def required_errors_shown(self) -> bool:
+        """Whether some empty required field here is drawn in the error color."""
+        return any(self._empty(key) for key in self._shown_required)
+
+    def required_shown(self, key: str) -> bool:
+        """Whether *key*'s emptiness is drawn in the error color, were it empty."""
+        return key in self._shown_required
+
+    def to_fill(self) -> int:
+        """How many required fields here are still empty."""
+        return sum(1 for key in self._required_widgets if self._empty(key))
+
+    def _on_focus_changed(self, old, new) -> None:
+        """A required field left empty is shown red once focus leaves its row -- the NN/g "on blur" rule."""
+        if old is None or self._suppress:
+            return
+        for key, row in list(self._rows.items()):
+            if key not in self._required_widgets or key in self._shown_required:
+                continue
+            try:
+                left = row.isAncestorOf(old) and not (new is not None and row.isAncestorOf(new))
+            except RuntimeError:
+                return  # the form was rebuilt or destroyed under the event
+            if left and self._empty(key):
+                self._shown_required.add(key)
+                self.refresh_theme_styles()
+                self.required_shown_changed.emit()
 
     def _make_link_button(self, key: str) -> QToolButton:
         btn = QToolButton()
         btn.setAutoRaise(True)
         btn.setIconSize(QSize(14, 14))
         btn.setFocusPolicy(Qt.FocusPolicy.TabFocus)
-        btn.setToolTip("Link to subgraph input\u2026")
+        btn.setToolTip("Link to subgraph input…")
         btn.clicked.connect(lambda _=None, k=key: self.link_requested.emit(k))
         self._link_btns[key] = btn
         return btn
@@ -1162,7 +1495,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         btn.setAutoRaise(True)
         btn.setIconSize(QSize(14, 14))
         btn.setFocusPolicy(Qt.FocusPolicy.TabFocus)
-        btn.setToolTip("Add to setup step\u2026")
+        btn.setToolTip("Add to setup step…")
         btn.clicked.connect(lambda _=None, k=key: self.step_add_requested.emit(k))
         self._step_btns[key] = btn
         return btn
@@ -1171,14 +1504,23 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         """One row's Add to setup step button, shown on hover in a template draft, or None."""
         return self._step_btns.get(key)
 
-    def _make_reset_button(self, key: str) -> QToolButton:
-        btn = QToolButton()
-        btn.setAutoRaise(True)
-        btn.setIconSize(QSize(12, 12))
-        btn.setToolTip("Changed here. Reset to follow the subgraph's default")
-        btn.clicked.connect(lambda _=None, k=key: self.reset_requested.emit(k))
-        self._reset_btns[key] = btn
-        return btn
+    def reset_button(self, key: str) -> RevertButton | None:
+        """The Reset in *key*'s gutter. Every row has one; it is enabled while it can act."""
+        return self._reverts.get(key)
+
+    def override_bar(self, key: str) -> OverrideBar | None:
+        return self._bars.get(key)
+
+    def help_button(self, key: str) -> HelpToggle | None:
+        return self._helps.get(key)
+
+    def row(self, key: str) -> QWidget | None:
+        """*key*'s whole row, gutter and all."""
+        return self._rows.get(key)
+
+    def row_action(self, key: str) -> QPushButton | None:
+        """The extra action ``row_actions`` put at the end of *key*'s control line, or None."""
+        return self._row_actions.get(key)
 
     def link_button(self, key: str) -> QToolButton | None:
         """One row's Link button, shown on hover, or None."""
@@ -1187,9 +1529,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     def link_chip(self, key: str) -> _LinkChip | None:
         """One linked row's chip, or None."""
         return self._link_chips.get(key)
-
-    def reset_button(self, key: str) -> QToolButton | None:
-        return self._reset_btns.get(key)
 
     def hover_row(self, key: str) -> _HoverRow | None:
         return self._hover_rows.get(key)
@@ -1215,6 +1554,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         """The required ``ParamField``s the form was last built from."""
         return [f for f in self._schema if f.required]
 
+    @property
+    def schema(self) -> list:
+        """The ``ParamField``s as drawn: a linked type narrowed, a fill-in required."""
+        return list(self._schema)
+
     def set_param_value(self, key: str, value) -> None:
         """Set one param's widget from outside, as if the user had typed it.
 
@@ -1227,58 +1571,41 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         w.setText(str(value))
 
     def _validate_required_fields(self) -> None:
-        """Apply or clear a red border on required input widgets based on whether they are empty."""
-        for widget in self._required_widgets.values():
+        """Draw the error border on each empty required field whose emptiness is shown."""
+        for key, widget in self._required_widgets.items():
             if isinstance(widget, _XyzField):
-                continue  # marks its own boxes, including a partly filled optional one
-            if isinstance(widget, QPlainTextEdit):
-                display_w = widget
-                empty = not widget.toPlainText().strip()
-            elif isinstance(widget, _ZoneWidget):
-                display_w = widget
-                empty = not widget.text().strip()
-            elif isinstance(widget, QLineEdit):
-                display_w = widget
-                empty = not widget.text().strip()
-            elif isinstance(widget, PlayerListWidget):
-                display_w = widget
-                empty = len(widget.get_value()) == 0
-            elif isinstance(widget, PlayerSlotWidget):
-                display_w = widget
-                empty = widget.get_value() == 0
-            else:
-                # QSpinBox, QDoubleSpinBox, QCheckBox — always have a value
-                display_w = widget
-                empty = False
-            display_w.setStyleSheet(f"border: 1px solid {THEME.error};" if empty else "")
+                # Marks its own boxes, including a partly filled optional one.
+                widget.set_required_shown(key in self._shown_required)
+                continue
+            red = key in self._shown_required and self._empty(key)
+            target = widget.line_edit if isinstance(widget, _ZoneWidget) else widget
+            set_style_sheet(target, f"border: 1px solid {THEME.error};" if red else "")
 
-    @staticmethod
-    def _style_field_label(label: QLabel, field: Any, spaced: bool) -> None:
+    def _style_field_label(self, label: QLabel, field: Any) -> None:
         """Set a field label's text and color together.
 
-        They cannot be separated: the required marker is a ``<span>`` carrying
-        ``THEME.error`` inside the label's own text, so a theme switch has to rewrite
-        the text, not just the stylesheet. Nothing in the guard test can see that —
-        it looks for setStyleSheet, and this is setText.
+        They cannot be separated: the required marker is a ``<span>`` carrying its
+        color inside the label's own text, so a theme switch has to rewrite the text,
+        not just the stylesheet. Nothing in the guard test can see that -- it looks for
+        setStyleSheet, and this is setText. The marker is muted until the field's
+        emptiness is shown, then ``THEME.error``.
         """
         text = field.label
         if field.required:
-            text += f" <span style='color:{THEME.error}'>*</span>"
+            red = field.key in self._shown_required and self._empty(field.key)
+            text += f" <span style='color:{THEME.error if red else THEME.text_muted}'>*</span>"
         label.setText(text)
-        muted = f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600;"
-        label.setStyleSheet(muted + (" margin-top: 8px;" if spaced else ""))
+        set_style_sheet(label, f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600;")
 
     def apply_theme_styles(self) -> None:
-        for label, field, spaced in self._field_labels:
-            self._style_field_label(label, field, spaced)
+        for label, field in self._field_labels:
+            self._style_field_label(label, field)
         for label in self._muted_labels:
-            label.setStyleSheet(f"color: {THEME.text_muted};")
+            set_style_sheet(label, f"color: {THEME.text_muted};")
         for btn in self._link_btns.values():
             btn.setIcon(svg_icon("hook", 14))
         for btn in self._step_btns.values():
             btn.setIcon(svg_icon("plus", 14))
-        for btn in self._reset_btns.values():
-            btn.setIcon(svg_icon("revert", 12))
         # The red border on an empty required field is THEME.error, and is applied
         # outside load_schema — re-running the check is what re-derives it.
         self._validate_required_fields()
@@ -1468,7 +1795,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
     def _emit_changed(self, *_) -> None:
         if not self._suppress:
+            # The labels too: a filled field's marker goes back to muted at once ("reward early").
+            for label, field in self._field_labels:
+                self._style_field_label(label, field)
             self._validate_required_fields()
+            self._refresh_rows()
             self.changed.emit()
 
     def set_str(self, key: str, value: str) -> None:

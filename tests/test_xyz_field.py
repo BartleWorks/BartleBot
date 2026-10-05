@@ -168,17 +168,26 @@ def test_a_box_accepts_only_a_number_with_two_decimals(qapp, text, state):
 # ---------------------------------------------------------------------------
 
 
-def test_a_blank_required_coordinate_marks_every_box(qapp):
+def test_a_blank_required_coordinate_is_not_marked_before_it_is_left_empty(qapp):
+    """A freshly placed node is not a wall of red before anyone has touched it (#142)."""
     field = _form([_REQUIRED], {}).widget("spot")
 
-    assert field.marked_axes() == {"x", "y", "z"}
+    assert field.marked_axes() == set()
+
+
+def test_a_blank_required_coordinate_marks_every_box_once_shown(qapp):
+    form = _form([_REQUIRED], {})
+    form.show_required_errors()
+
+    assert form.widget("spot").marked_axes() == {"x", "y", "z"}
 
 
 def test_an_all_zero_required_coordinate_is_marked(qapp):
     """(0, 0, 0) is what an unset coordinate was saved as before; never a real position."""
-    field = _form([_REQUIRED], {"spot": {"x": 0.0, "y": 0.0, "z": 0.0}}).widget("spot")
+    form = _form([_REQUIRED], {"spot": {"x": 0.0, "y": 0.0, "z": 0.0}})
+    form.show_required_errors()
 
-    assert field.marked_axes() == {"x", "y", "z"}
+    assert form.widget("spot").marked_axes() == {"x", "y", "z"}
 
 
 def test_a_filled_required_coordinate_is_not_marked(qapp):
@@ -272,17 +281,39 @@ def test_copy_writes_the_coordinate_as_json(qapp, clipboard):
     assert clipboard.text() == '{"x": 1.5, "y": 2.0, "z": -3.25}'
 
 
+def _copy_action(field):
+    return next(a for a in field.box_menu(field.axis_edit("x")).actions() if a.text() == "Copy XYZ")
+
+
 def test_copy_and_teleport_need_a_complete_coordinate(qapp):
     field = _form([_OPTIONAL], {}).widget("spot")
-    assert not field.copy_button.isEnabled()
+    assert not _copy_action(field).isEnabled()
     assert not field.teleport_button.isEnabled()
 
     _type(field, "1", "2", "")
-    assert not field.copy_button.isEnabled()
+    assert not _copy_action(field).isEnabled()
 
     field.axis_edit("z").setText("3")
-    assert field.copy_button.isEnabled()
+    assert _copy_action(field).isEnabled()
     assert field.teleport_button.isEnabled()
+
+
+def test_copy_and_paste_are_on_each_boxs_menu_ahead_of_its_own(qapp):
+    """They left the button row (#142) for the right-click menu, as Unity and Blender keep them."""
+    field = _form([_OPTIONAL], {"spot": {"x": 1.0, "y": 2.0, "z": 3.0}}).widget("spot")
+
+    texts = [a.text() for a in field.box_menu(field.axis_edit("y")).actions()]
+
+    assert texts[:2] == ["Copy XYZ", "Paste XYZ"]
+    assert len(texts) > 3, "the box's own Undo / Cut / Copy / Paste follow the separator"
+
+
+def test_fill_current_and_teleport_sit_on_the_boxes_line(qapp):
+    field = _form([_OPTIONAL], {}).widget("spot")
+    line = field.layout()
+
+    assert all(line.indexOf(w) >= 0 for w in (field.axis_edit("x"), field.fill_button, field.teleport_button))
+    assert field.teleport_button.text() == "", "the glyph alone; the verb is in the tooltip"
 
 
 # ---------------------------------------------------------------------------

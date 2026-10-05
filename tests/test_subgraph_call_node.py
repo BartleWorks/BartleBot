@@ -232,13 +232,16 @@ def test_a_changed_input_can_be_reset_to_the_default(canvas):
     _select(canvas, canvas.scene.node_items["state_1"])
     _select(canvas, canvas.scene.node_items[REGION])
     reset = page.form(None).reset_button("hub")
-    assert reset is not None
+    assert reset is not None and reset.isEnabled()
+    assert page.form(None).override_bar("hub").active, "the bar says the value is this node's"
     reset.click()
     region = canvas.config.regions[0]
     assert "hub" not in region.source.inputs
     hub = next(s for s in canvas.config.states if s.id == m("hub"))
     assert hub.params["zone"] == "WizardCity/Hub"
-    assert page.form(None).reset_button("hub") is None
+    # Every row keeps its Reset slot (#142); it grays out rather than vanishing.
+    assert not page.form(None).reset_button("hub").isEnabled()
+    assert not page.form(None).override_bar("hub").active
 
 
 def test_a_new_subgraph_node_follows_the_definitions_defaults(canvas):
