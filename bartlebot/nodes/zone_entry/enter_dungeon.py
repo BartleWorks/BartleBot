@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     ENTER_TEAMUP_BUTTON_PATH,
@@ -17,7 +17,7 @@ from bartlebot.nodes.paths import (
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
 )
-from bartlebot.option_groups import GROUP_DUNGEON, GROUP_GENERAL, GROUP_TEAM
+from bartlebot.option_groups import GROUP_DUNGEON, GROUP_TEAM
 
 #: Option names, so the safety dialog and the tests name them from one place.
 OPTION_TEAM_UP = "Team-Up"
@@ -132,18 +132,7 @@ NODE_SPEC = NodeSpec(
     ],
     required_bot_options=[
         player_realms.SPEC,
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
         BotOptionSpec(
             name=OPTION_CHALLENGE_MODE,
             group=GROUP_DUNGEON,

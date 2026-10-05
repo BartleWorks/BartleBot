@@ -80,8 +80,8 @@ SOURCE_LEVELS: tuple[str, ...] = (SOURCE_OVERRIDE, SOURCE_BOT_FILE, SOURCE_APP_S
 #: value after the bot-options split, and one value described twice is how two descriptions come to
 #: disagree -- ``test_the_safety_delay_setting_and_option_read_the_same`` is the guard.
 SAFETY_DELAY_DESCRIPTION = (
-    "Seconds to allow for game-server responses when waiting for prompts or menus. "
-    "Increase on high-latency connections."
+    "Seconds to allow the game server to answer an action before treating it as failed: "
+    "a prompt or menu opening, a zone change, a mark. Increase on high-latency connections."
 )
 
 # Bot options that also exist as an app setting, and the ``general`` key holding it.
@@ -303,8 +303,8 @@ def required_option_specs(config, specs=None) -> dict:
 
     Ordered by the states that ask for them, so a composed list reads in the
     order the bot uses them.  Where two nodes declare the same option with
-    different text -- Safety Delay has three variants -- the first state wins,
-    which is the same rule ``BotMachine._option_spec`` follows.
+    different text, the first state wins, which is the same rule
+    ``BotMachine._option_spec`` follows.
 
     A spec carrying ``required_when`` is required only by a state whose param of
     that name is on: an option the author has said their dungeon does not offer is
@@ -489,9 +489,9 @@ def orphaned_flag_options(config, specs=None) -> list[tuple]:
 def option_specs_for(config, specs=None) -> dict:
     """``{name: BotOptionSpec}`` reachable from *config*, its own nodes first.
 
-    Several nodes declare Safety Delay with slightly different text, so which one
-    answers matters: the bot's own graph is the honest source, and the rest of the
-    registry is only a fallback for an option whose node has since been cut.
+    Two nodes can declare one option with different text, so which one answers
+    matters: the bot's own graph is the honest source, and the rest of the registry
+    is only a fallback for an option whose node has since been cut.
     """
     out: dict = dict(required_option_specs(config, specs))
     for spec in _all_specs(specs).values():

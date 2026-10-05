@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from wizwalker import Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     JEWEL_INVENTORY_SPACE_PATH,
@@ -24,7 +24,7 @@ from bartlebot.nodes.paths import (
     quicksell_item_checkbox_path,
     quicksell_item_title_path,
 )
-from bartlebot.option_groups import GROUP_GENERAL, GROUP_QUICKSELL
+from bartlebot.option_groups import GROUP_QUICKSELL
 
 logger = logging.getLogger(__name__)
 
@@ -106,18 +106,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("FAILURE", "The quicksell UI did not appear or the sell could not be completed."),
     ],
     required_bot_options=[
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
         BotOptionSpec(
             name=OPTION_ENABLED,
             group=GROUP_QUICKSELL,

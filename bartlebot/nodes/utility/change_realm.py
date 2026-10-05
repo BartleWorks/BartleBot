@@ -46,7 +46,7 @@ from dataclasses import dataclass
 
 from bartlebot import player_realms, realms, sightings
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT, TRIGGER_TIMEOUT
 from bartlebot.nodes.utility import realm_list
 from bartlebot.nodes.utility.realm_list import REALMS_PER_PAGE
@@ -115,18 +115,7 @@ NODE_SPEC = NodeSpec(
     ],
     required_bot_options=[
         player_realms.SPEC,
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
         BotOptionSpec(
             name=OPTION_FAVORITE_REALM,
             group=GROUP_GENERAL,

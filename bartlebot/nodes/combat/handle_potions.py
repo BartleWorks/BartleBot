@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat import scaled_ratios
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     POTION_BUY_PATH,
     POTION_EXIT_PATH,
@@ -115,18 +115,7 @@ NODE_SPEC = NodeSpec(
                 "Off, they keep farming without potions."
             ),
         ),
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=5,
 )
