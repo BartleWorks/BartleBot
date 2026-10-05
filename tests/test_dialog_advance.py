@@ -181,3 +181,27 @@ async def test_first_wait_no_longer_applies_once_dialogue_has_opened(_fast_polls
     assert await nh.advance_dialogue_until_clear([client], 0.01, 10.0, first_wait=5.0)
     assert loop.time() - start < 2.5
     assert client.dialogue.pages == []
+
+
+async def test_each_player_gets_the_first_wait_for_its_own_window(_fast_polls):
+    """One player's window opening early does not cut short another's animation."""
+    early, late = FakeClient(), FakeClient()
+    Dialogue(early, [TALK])
+    Dialogue(late, [])
+    loop = asyncio.get_running_loop()
+    loop.call_later(0.15, late.dialogue.pages.append, TALK)
+
+    assert await nh.advance_dialogue_until_clear([early, late], 0.01, 5.0, first_wait=0.3)
+    assert late.send_key.called, "the late window was seen and advanced, not missed"
+    assert late.dialogue.pages == []
+
+
+async def test_a_player_whose_window_never_opens_still_gets_the_whole_first_wait(_fast_polls):
+    talker, silent = FakeClient(), FakeClient()
+    Dialogue(talker, [TALK])
+    Dialogue(silent, [])
+    loop = asyncio.get_running_loop()
+
+    start = loop.time()
+    assert await nh.advance_dialogue_until_clear([talker, silent], 0.01, 5.0, first_wait=0.2)
+    assert loop.time() - start >= 0.2
