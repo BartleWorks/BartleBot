@@ -761,13 +761,13 @@ def test_a_linked_row_left_blank_is_not_marked_as_a_required_input_left_empty(pr
     region.source.inputs["tp_a.zone"] = ""
     promoted_doc._on_region_property_changed()
     promoted_doc._show_call_page(region)
-    assert page.section("node_tp_a").shows_error, "blank and unlinked: this node's own gap"
+    assert page.to_fill("node_tp_a") == 1, "blank and unlinked: this node's own gap"
 
     promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
     assert _zone_of(promoted_doc, "tp_a") == ""
-    assert not page.section("node_tp_a").shows_error
+    assert page.to_fill("node_tp_a") == 0
     assert promoted_doc.validation_errors() == []
 
     promoted_doc.unlink_nested_input("in1", "tp_a.zone")
-    assert page.section("node_tp_a").shows_error
+    assert page.to_fill("node_tp_a") == 1
     assert any("Required param 'zone' is empty" in e for e in promoted_doc.validation_errors())

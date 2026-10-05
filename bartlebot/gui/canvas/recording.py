@@ -487,3 +487,32 @@ _REGISTRY: dict[str, _Workflow] = {
 #: Frozenset of node_type strings that have a recording workflow.
 #: Derived automatically from ``_REGISTRY`` — do not edit by hand.
 RECORDABLE_NODES: frozenset[str] = frozenset(_REGISTRY)
+
+
+def recorded_keys(node_type: str) -> list[str]:
+    """The param keys Record may fill on a *node_type* node, or [] for one it cannot record.
+
+    What a page says Record fills, before anything is recorded, and what decides a node
+    reads "Not recorded" (#142).
+    """
+    workflow = _REGISTRY.get(node_type)
+    return workflow.keys() if workflow is not None else []
+
+
+def recording_hint(node_type: str, schema, params) -> str:
+    """The line at the top of a recordable node's card while nothing is recording.
+
+    "Not recorded. Record fills From Zone, Sigil XYZ and Dungeon Zone." until any of
+    those is set, then what a second recording would replace.
+    """
+    keys = recorded_keys(node_type)
+    fields = [f for f in schema if f.key in keys]
+    if not fields:
+        return ""
+    names = [f.label for f in fields]
+    listed = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+    from bartlebot.setup_steps import field_empty  # noqa: PLC0415 - keeps this module's imports light
+
+    if all(field_empty(f, params) for f in fields):
+        return f"Not recorded. Record fills {listed}."
+    return f"Recording again replaces {listed}."
