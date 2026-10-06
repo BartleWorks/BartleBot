@@ -424,11 +424,6 @@
   ],
   "options": [
     {
-      "name": "Skip to boss",
-      "type": "bool",
-      "default": true
-    },
-    {
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
