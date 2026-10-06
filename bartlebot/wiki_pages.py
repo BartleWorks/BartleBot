@@ -1,4 +1,4 @@
-"""References to Wizard101 Central pages, and turning them back into URLs.
+"""References to Wizard101 Central Wiki pages, and turning them back into URLs.
 
 A bot records where its drops came from so the table can be refreshed later. What
 it records is a **page title** — ``Creature:Lost Soul`` — never a URL. The

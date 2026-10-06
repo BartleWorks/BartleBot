@@ -1,6 +1,6 @@
 """Survey the trailing "(...)" suffixes on drop names across the bot library.
 
-A Wizard101 Central page cannot list two items under one title, so it disambiguates
+A Wizard101 Central Wiki page cannot list two items under one title, so it disambiguates
 variants with a suffix — "(60, Death)", "(Level 90+)", "(Triangle)". The game does
 not need to, and mostly does not show them. Anything matching item names against
 text read off the game's UI has to work in the in-game form, which

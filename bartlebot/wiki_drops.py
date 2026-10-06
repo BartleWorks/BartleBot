@@ -1,4 +1,4 @@
-"""Turn a Wizard101 Central item name into the name the game itself displays.
+"""Turn a Wizard101 Central Wiki item name into the name the game itself displays.
 
 The two are not the same, and the difference is load-bearing. A wiki page cannot
 hold two entries under one title, so it disambiguates by appending the attribute
