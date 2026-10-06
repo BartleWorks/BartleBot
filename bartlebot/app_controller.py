@@ -52,7 +52,13 @@ from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
 from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode
 from bartlebot.subgraph_store import SubgraphLibrary, count_subgraph_uses, source_label
-from bartlebot.subgraphs import ComposeReport, compose_bot, config_to_definition, definition_to_config
+from bartlebot.subgraphs import (
+    ComposeReport,
+    compose_bot,
+    config_to_definition,
+    definition_change,
+    definition_to_config,
+)
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
@@ -1206,8 +1212,12 @@ class AppController(QObject):
     def _save_definition(self) -> bool:
         """Write the open definition to the library as its next version. False when refused or cancelled.
 
-        Refused while the document has errors: a definition that cannot compose must
-        not reach the bots that link it. A shipped definition is saved as the user's
+        Only a change to what runs makes a new version (#158): a definition identical
+        to the library's copy is not written at all, and one that differs only in
+        layout (:func:`~bartlebot.subgraphs.definition_change`) is written at the
+        version it has. Refused while
+        the document has errors: a definition that cannot compose must not reach the
+        bots that link it. A shipped definition is saved as the user's
         own copy, which shadows it until reverted -- asked first, since from then on
         the shipped one's updates stop arriving.
         """
@@ -1219,6 +1229,20 @@ class AppController(QObject):
         library = self._subgraph_library
         library.reload()
         sid = config.definition.id
+        try:
+            defn = config_to_definition(config)
+        except ValueError as exc:
+            QMessageBox.critical(self._window, "Save to Library", str(exc))
+            return False
+        stored = library.get(sid)
+        change = definition_change(stored, defn) if stored is not None else "content"
+        if change == "none":
+            # Nothing to write: a new version would send every linking bot an update
+            # that changes nothing, and a built-in one would gain a copy that shadows it.
+            config.definition.version = stored.version
+            self._mark_definition_saved(config)
+            logger.info("Subgraph '%s' is unchanged; kept version %d", config.name, stored.version)
+            return True
         if library.origin(sid) == Origin.SHIPPED and not dev_mode():
             reply = QMessageBox.question(
                 self._window,
@@ -1231,25 +1255,26 @@ class AppController(QObject):
             )
             if reply != QMessageBox.StandardButton.Save:
                 return False
-        stored = library.get(sid)
-        version = max(config.definition.version, stored.version if stored is not None else 0) + 1
-        try:
-            defn = config_to_definition(config, version=version)
-        except ValueError as exc:
-            QMessageBox.critical(self._window, "Save to Library", str(exc))
-            return False
+        if change == "layout":
+            version = stored.version
+        else:
+            version = max(config.definition.version, stored.version if stored is not None else 0) + 1
+        defn = defn.model_copy(update={"version": version})
         try:
             library.save(defn)
         except Exception as exc:
             QMessageBox.critical(self._window, "Save to Library", f"Could not save '{config.name}':\n\n{exc}")
             return False
         config.definition.version = version
+        self._mark_definition_saved(config)
+        logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
+        return True
+
+    def _mark_definition_saved(self, config: BotConfig) -> None:
         self._has_unsaved_changes = False
         self._clean_snapshot = _file_snapshot(config)
         self._delete_autosave(stem=self._autosave_stem())
         self._refresh_definition_context()
-        logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
-        return True
 
     def _refused_for_errors(self, config: BotConfig, title: str) -> bool:
         """Say what blocks saving the open definition, if anything does. True when it is refused."""

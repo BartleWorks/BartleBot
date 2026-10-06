@@ -39,6 +39,7 @@ from bartlebot.subgraphs import (
     compose_bot,
     config_to_definition,
     convert_region_to_instance,
+    definition_change,
     definition_ports,
     definition_problems,
     definition_to_config,
@@ -1363,3 +1364,56 @@ def test_demoting_the_inner_node_leaves_a_warning_on_the_outer_link(library):
     library.save(sync_players_definition(version=2))
     errors, warnings = definition_problems(config, NODE_PARAM_SCHEMAS, library)
     assert errors == [] and len(warnings) == 1
+
+
+# ---------------------------------------------------------------------------
+# What a save changed (#158)
+# ---------------------------------------------------------------------------
+
+
+def _moved(defn: SubgraphDefinition, state_id: str) -> SubgraphDefinition:
+    moved = defn.model_copy(deep=True)
+    next(s for s in moved.states if s.id == state_id).position = {"x": -40.0, "y": 999.0}
+    return moved
+
+
+def test_a_definition_unchanged_but_for_its_version_is_no_change():
+    assert definition_change(sync_players_definition(), sync_players_definition(version=4)) == "none"
+
+
+def test_moving_a_node_is_a_layout_change():
+    defn = sync_players_definition()
+    assert definition_change(defn, _moved(defn, "wisps")) == "layout"
+
+
+def test_a_plain_region_is_layout():
+    defn = sync_players_definition()
+    grouped = defn.model_copy(deep=True)
+    grouped.regions.append(RegionModel(id="r1", label="Gather", members=["relog", "gather"], color=2))
+    assert definition_change(defn, grouped) == "layout"
+    recolored = grouped.model_copy(deep=True)
+    recolored.regions[0].color = 5
+    assert definition_change(grouped, recolored) == "layout"
+
+
+def test_moving_a_nested_instance_is_a_layout_change():
+    defn = _outer_definition()
+    moved = defn.model_copy(deep=True)
+    moved.regions[0].source.anchor = {"x": 0.0, "y": 400.0}
+    assert definition_change(defn, moved) == "layout"
+
+
+def test_a_param_an_edge_or_a_name_is_a_content_change():
+    defn = sync_players_definition()
+    param = _moved(defn, "wisps")
+    next(s for s in param.states if s.id == "wisps").params["timeout"] = 45
+    assert definition_change(defn, param) == "content", "a layout change alongside does not hide it"
+    edge = defn.model_copy(deep=True)
+    edge.transitions = edge.transitions[:-1]
+    assert definition_change(defn, edge) == "content"
+    renamed = defn.model_copy(update={"name": "Regroup"})
+    assert definition_change(defn, renamed) == "content"
+    nested = _outer_definition()
+    relinked = nested.model_copy(deep=True)
+    relinked.regions[0].source.inputs = {"hub": "Krokotopia/Hub"}
+    assert definition_change(nested, relinked) == "content"

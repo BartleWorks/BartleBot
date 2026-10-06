@@ -231,6 +231,47 @@ def test_save_bumps_the_version_and_back_recomposes_the_bot(harness, library):
     assert canvas.mode == BotMode.EDIT
 
 
+def test_saving_an_unchanged_definition_keeps_its_version(harness, library, monkeypatch):
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: asked.append(a))
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    written = []
+    monkeypatch.setattr(library, "save", written.append)
+    assert harness._save_definition()
+    assert not written
+    assert library.get(SYNC_ID).version == 1
+    assert canvas.config.definition.version == 1
+    assert not harness._has_unsaved_changes
+    assert not asked, "nothing to save, so a built-in one is not offered a copy"
+
+
+def test_saving_a_moved_node_writes_it_and_keeps_the_version(harness, library):
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    wisps = next(s for s in canvas.config.states if s.id == "wisps")
+    wisps.position = {"x": -40.0, "y": 999.0}
+    canvas.config_changed.emit()
+    assert harness._save_definition()
+    stored = library.get(SYNC_ID)
+    assert stored.version == 1
+    assert next(s for s in stored.states if s.id == "wisps").position == {"x": -40.0, "y": 999.0}
+    assert not harness._has_unsaved_changes
+
+
+def test_an_edit_undone_before_saving_keeps_the_version(harness, library):
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    wisps = next(s for s in canvas.config.states if s.id == "wisps")
+    before = wisps.params.get("timeout")
+    wisps.params["timeout"] = 45
+    canvas.config_changed.emit()
+    wisps.params["timeout"] = before
+    canvas.config_changed.emit()
+    assert harness._save_definition()
+    assert library.get(SYNC_ID).version == 1
+
+
 def test_save_is_refused_while_the_definition_has_errors(harness, library, monkeypatch):
     refused = []
     monkeypatch.setattr(QMessageBox, "critical", lambda *a, **k: refused.append(a))
