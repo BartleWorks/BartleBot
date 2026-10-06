@@ -790,6 +790,57 @@ group, and Role. What a card *says* is `bartlebot/param_cards.py`, which needs n
   ("recovery · not drawn"), and an unrouted return nothing covers, in the warning
   color. Each return's description is behind its row's `?`.
 
+## The signature page is a list with a detail editor (#155)
+
+A definition's page with nothing selected (`canvas/signature_page.py`) is #142's cards --
+Description, Ports, Inputs, one fold surface for every definition -- and the Inputs card is
+one tree: the ungrouped inputs, each input group with its members indented, and each
+promoted node as its heading alone. Selecting a line opens its editor in place under it,
+one at a time. `bartlebot/signature_tree.py` is the half that needs no Qt.
+
+- **Membership lives in one place, the tree.** An input belongs to the nearest group
+  heading above it, so a drag (or Alt+Up/Down) is the only thing that moves an input into
+  or out of a group. Do not add a per-input group dropdown or a per-group member list back:
+  that was the page before, with one fact editable in two places. The menu's *Move to
+  group* is the same move, not a second control.
+- **The tree is derived, never stored.** `signature_tree.reorder` writes an arrangement
+  back to `inputs` and `panels`; the widget holds no copy of the order or the membership,
+  so undo and autosave carry every change through `BotConfig.definition`.
+- **What a drop may do is `signature_tree.allowed`**, handed to `DragReorder` as `accepts`,
+  with `carried` as `carry`: no input under a promoted node, no move that changes another
+  input's group, a heading travels with its members. The keyboard steps past a refused slot
+  by the same rule, so the two cannot disagree.
+- **The editor is part of the line's item**, so the lines stay contiguous in the layout --
+  what `DragReorder` needs -- and **pressing a grip closes it**, so a drag moves one-line
+  items. Selection is page state that survives a rebuild and leaving the page; an input
+  linked from a node's page comes back selected.
+- **The tree is one Tab stop.** Up/Down move the keyboard's place, Enter/Space open,
+  Alt+Up/Down move, the Menu key opens the line's menu.
+- **Selecting reaches into the canvas without selecting there.** The page asks the canvas
+  to light what the selection sets (`EditScene.set_link_lit`, a ring beneath the search
+  ring) and a link row to center its node (`BotCanvas.center_on`). A selection would swap
+  the page for the node's, the trip back Setup was moved out of Properties to avoid.
+  Leaving the page for any other puts the lights out.
+- **An unlinked input is an error, but only in `subgraphs.definition_problems`**, which
+  blocks saving -- never in the structural rules a definition *file* is held to, or a file
+  holding one would stop loading. Unlinking an input's last param is an ordinary step.
+
+## Every drag-reordered list takes the keyboard too
+
+A drag is not reachable from the keyboard, so every list `DragReorder` hosts also takes
+**Alt+Up / Alt+Down** and offers **Move up / Move down** first in a card's right-click menu
+(#155). Both go through `DragReorder.move`, the path a drop takes, so a host needs nothing
+for it; `set_cards` hands each card the route (`CardFrame.set_reorder_route`). A new card
+list gets it by using `DragReorder` -- do not give one its own arrows.
+
+- **The route holds the engine and the card weakly.** A card keeps its route, and a strong
+  reference closed a cycle the collector broke by clearing the engine's attributes while
+  Qt still had it filtering the grips' events -- an `AttributeError` in `eventFilter`, in
+  an unrelated test, only under `-n auto`.
+- **A Move entry's keys are text in its label** (`add_move_actions`), never the action's
+  shortcut: the card already owns Alt+Up as a `QShortcut`, and two bindings for one key
+  are ambiguous, so Qt fires neither.
+
 ## Which panel owns what
 
 `LeftSidebar` is the bot's configuration and nothing else, and its tabs are
@@ -812,7 +863,8 @@ or its collapsed node; label, color, Collapse / Expand -- disabled with the reas
 `collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, its inputs and input groups as cards with
 Record on a promoted node's band, roles by entry port, Open definition, Detach -- see the
 section above), or in a definition document with nothing selected
-the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
+the *signature* (`canvas/signature_page.py`: ports, and the inputs as a tree with a detail
+editor -- see the section above). A definition's node
 page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
 subgraph node (**Promote to input group** / **Demote**). A subgraph node nested in a
 definition offers the same **Link** on each of its named inputs
