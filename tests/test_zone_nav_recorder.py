@@ -159,10 +159,30 @@ def test_a_world_gate_is_reported_as_one():
 def test_the_hub_button_graying_out_makes_it_the_hub_button():
     [t] = _feed(
         Recorder(),
-        [_at(0.0, _A, 0, hub_enabled=True), _at(0.2, _A, 0, hub_enabled=False), _load(0.4, 0), _at(3, _B, 0)],
+        [
+            _at(0.0, _A, 0, hub_enabled=True),
+            _at(0.2, _A, 0, hub_enabled=False, teleport_cooldown=25.0),
+            _load(0.4, 0),
+            _at(3, _B, 0),
+        ],
     )
 
     assert t.kind == HUB
+
+
+def test_the_hub_button_graying_out_with_no_timer_does_not_make_a_walk_a_hub_use():
+    """The pre-load HUD hide grays the button without a countdown, with the speedhack off too."""
+    [t] = _feed(
+        Recorder(),
+        [
+            _at(0.0, _A, 0, hub_enabled=True),
+            _at(0.2, _A, 50, hub_enabled=False, teleport_cooldown=None),
+            _load(0.4, 50),
+            _at(3, _B, 0),
+        ],
+    )
+
+    assert t.kind == WALK
 
 
 def test_a_button_already_cooling_down_does_not_make_a_walk_a_hub_use():
