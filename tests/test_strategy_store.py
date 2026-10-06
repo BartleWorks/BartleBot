@@ -60,9 +60,9 @@ def test_list_player_strategies(tmp_path: Path):
 
 def test_delete_player_strategy(tmp_path: Path):
     pcs = PlayerCombatStrategy(name="Del", dsl="")
-    save_player_strategy(pcs, tmp_path)
+    loaded_with = save_player_strategy(pcs, tmp_path)
     assert len(list_player_strategies(tmp_path)) == 1
-    delete_player_strategy(pcs.id, tmp_path)
+    delete_player_strategy(pcs.id, tmp_path, expected=loaded_with)
     assert list_player_strategies(tmp_path) == []
 
 
@@ -89,8 +89,8 @@ def test_list_duel_strategies_empty(tmp_path: Path):
 
 def test_delete_duel_strategy(tmp_path: Path):
     dcs = DuelCombatStrategy(name="D")
-    save_duel_strategy(dcs, tmp_path)
-    delete_duel_strategy(dcs.id, tmp_path)
+    loaded_with = save_duel_strategy(dcs, tmp_path)
+    delete_duel_strategy(dcs.id, tmp_path, expected=loaded_with)
     assert list_duel_strategies(tmp_path) == []
 
 
@@ -214,10 +214,12 @@ def test_delete_reverts_user_copy_to_shipped(tmp_path: Path):
     save_duel_strategy(original, shipped)
 
     edited = original.model_copy(update={"name": "Edited"})
-    save_duel_strategy(edited, root=shipped, user_root=user)
+    loaded_with = save_duel_strategy(edited, root=shipped, user_root=user)
     assert load_duel_strategy(original.id, root=shipped, user_root=user).name == "Edited"
 
-    delete_duel_strategy(original.id, root=shipped, user_root=user)  # only the user copy is deleted
+    delete_duel_strategy(
+        original.id, root=shipped, user_root=user, expected=loaded_with
+    )  # only the user copy is deleted
     assert load_duel_strategy(original.id, root=shipped, user_root=user).name == "Shipped"
 
 
