@@ -1,0 +1,1145 @@
+{
+  "id": "762cb8fb-2721-4bb7-96f4-20dd7719e286",
+  "name": "Celestial Pyramid",
+  "description": "Endlessly completes Celestial Pyramid in Selenopolis",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "3 Moon Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ammut",
+      "category": "Spellements"
+    },
+    {
+      "name": "Avatar's Boots of Bad Blood",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Boots of Payback",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Boots of Reprisal",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Boots of Retribution",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Boots of Revenge",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Boots of Vengeance",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Boots of Wrath",
+      "category": "Boots"
+    },
+    {
+      "name": "Avatar's Cards of Bad Blood",
+      "category": "Decks"
+    },
+    {
+      "name": "Avatar's Cards of Payback",
+      "category": "Decks"
+    },
+    {
+      "name": "Avatar's Cards of Reprisal",
+      "category": "Decks"
+    },
+    {
+      "name": "Avatar's Cards of Retribution",
+      "category": "Decks"
+    },
+    {
+      "name": "Avatar's Cards of Revenge",
+      "category": "Decks"
+    },
+    {
+      "name": "Avatar's Cards of Vengeance",
+      "category": "Decks"
+    },
+    {
+      "name": "Avatar's Cards of Wrath",
+      "category": "Decks"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (170)"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chameleon Clash",
+      "category": "Spellements"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (170)"
+    },
+    {
+      "name": "Fish Fin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Flawless Blocking Citrine +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Onyx +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Opal +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Peridot +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Heqet",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Kountry-Krok Butter",
+      "category": "Snacks"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Life Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (170)"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Manifest Boots of Bad Blood",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Boots of Payback",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Boots of Reprisal",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Boots of Retribution",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Boots of Revenge",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Boots of Vengeance",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Boots of Wrath",
+      "category": "Boots"
+    },
+    {
+      "name": "Manifest Cards of Bad Blood",
+      "category": "Decks"
+    },
+    {
+      "name": "Manifest Cards of Payback",
+      "category": "Decks"
+    },
+    {
+      "name": "Manifest Cards of Reprisal",
+      "category": "Decks"
+    },
+    {
+      "name": "Manifest Cards of Retribution",
+      "category": "Decks"
+    },
+    {
+      "name": "Manifest Cards of Revenge",
+      "category": "Decks"
+    },
+    {
+      "name": "Manifest Cards of Vengeance",
+      "category": "Decks"
+    },
+    {
+      "name": "Manifest Cards of Wrath",
+      "category": "Decks"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Selenopolis Blended Grove Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Selenopolis Field of Reeds Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Selenopolis Garden Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shu",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Taweret",
+      "category": "Spellements"
+    },
+    {
+      "name": "Unearthly Blocking Jade +57",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Blocking Sapphire +61",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Amethyst +525",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Citrine +670",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Jade +775",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Onyx +650",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Peridot +595",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Ruby +595",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Sapphire +735",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Mending Opal +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Dungeon",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Avatar's",
+        "Unearthly Health"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.999938308534,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999938308534,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+        "xyz": {
+          "x": 20413.85,
+          "y": -22.19,
+          "z": 2013.95
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Celestial Pyramid",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+        "dungeon_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z04_Pyramid",
+        "dungeon_name": "Celestial Pyramid",
+        "sigil_xyz": {
+          "x": 20989.63,
+          "y": 199.36,
+          "z": 2007.16
+        },
+        "reset_xyz": {
+          "x": 20413.85,
+          "y": -22.19,
+          "z": 2013.95
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "interact",
+      "label": "Interact with Data Console",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z04_Pyramid",
+        "interact_xyz": {
+          "x": 347.43,
+          "y": -1195.05,
+          "z": -2.31
+        },
+        "reset_xyz": {
+          "x": 90.13,
+          "y": -1846.24,
+          "z": -2.31
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "teleport_to_coordinates",
+      "label": "Follow the Old Quack",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z04_Pyramid",
+        "xyz": {
+          "x": 1.12,
+          "y": 2787.24,
+          "z": 374.8
+        }
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat Drake Lockley",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_SE_Duck_Adventurer_A_01",
+        "wiki_page": "Creature:Drake_Lockley_(Standard)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "interact",
+      "label": "Interact with Data Console",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z04_Pyramid",
+        "interact_xyz": {
+          "x": 544.98,
+          "y": 5093.55,
+          "z": 374.8
+        },
+        "reset_xyz": {
+          "x": 177.53,
+          "y": 4671.43,
+          "z": 374.8
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Next Room",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z04_Pyramid",
+        "xyz": {
+          "x": -5.97,
+          "y": 9088.0,
+          "z": 751.83
+        }
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Old Quack",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_SE_Duck_Librarian_B_01",
+        "wiki_page": "Creature:Old_Quack_(Standard)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Last Room",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z04_Pyramid",
+        "xyz": {
+          "x": 41.44,
+          "y": 15671.43,
+          "z": 1131.96
+        }
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "handle_combat",
+      "label": "Defeat Loon Knight",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_SE_Duck_Moon_A_01",
+        "wiki_page": "Creature:Loon Knight (Standard)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.999938308534,
+          "y": 0.00021952501634925348
+        }
+      }
+    },
+    {
+      "id": "0054d687",
+      "label": "Drake Lockley",
+      "members": [
+        "state_6",
+        "state_8",
+        "state_5",
+        "state_3",
+        "state_9",
+        "state_7",
+        "state_4"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "eaabbf1b",
+      "label": "Old Quack",
+      "members": [
+        "state_10",
+        "state_13",
+        "state_12",
+        "state_11"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "79e54b88",
+      "label": "Loon Knight",
+      "members": [
+        "state_14",
+        "state_16",
+        "state_15"
+      ],
+      "color": 5,
+      "collapsed": true
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
+}

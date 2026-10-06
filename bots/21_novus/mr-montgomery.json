@@ -1,0 +1,965 @@
+{
+  "id": "b9949d42-0506-4f83-b257-c4efc0885913",
+  "name": "Mr. Montgomery",
+  "description": "Endlessly defeats Mr. Montgomery in Doom Moon, Novus",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "1 Dream Water",
+      "category": "Reagents"
+    },
+    {
+      "name": "2 Dream Water",
+      "category": "Reagents"
+    },
+    {
+      "name": "Balance Accurate Pin (100)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balance Conversion Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balance Conversion Pin (170)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balanceblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bell Pepper Steak",
+      "category": "Snacks"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bold Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Bold Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cleanse Charm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cruel Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Cruel Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Accurate Pin (100)",
+      "category": "Pins"
+    },
+    {
+      "name": "Death Conversion Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Death Conversion Pin (170)",
+      "category": "Pins"
+    },
+    {
+      "name": "Death Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deathblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Deft Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Deft Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Dragon Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Elemental Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Elemental Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Empower",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Evil Carrot",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fabled Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fabled Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Feint",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fell Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fell Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fern Jelly",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fervid Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fervid Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fierce Dream Reaver Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fierce Dream Warper Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fire Accurate Pin (100)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Conversion Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Conversion Pin (170)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fish Fin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Flaming Carrot",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flaming Pineapple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flawless Blocking Amethyst +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Amethyst +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Citrine +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Jade +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Onyx +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Peridot +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Peridot +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Ruby +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Sapphire +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Sapphire +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glowing Dragon Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Biscuit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grrnadier",
+      "category": "Spellements"
+    },
+    {
+      "name": "Heavenly Bubblegum",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hex",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ice Accurate Pin (110)",
+      "category": "Pins"
+    },
+    {
+      "name": "Ice Conversion Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Ice Conversion Pin (170)",
+      "category": "Pins"
+    },
+    {
+      "name": "Iceblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Life Accurate Pin (100)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lifeblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Marleybone Picture",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Marzipan Maize",
+      "category": "Snacks"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Myth Accurate Pin (100)",
+      "category": "Pins"
+    },
+    {
+      "name": "Myth Conversion Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Myth Conversion Pin (170)",
+      "category": "Pins"
+    },
+    {
+      "name": "Mythblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "PB Cookie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Phantasmania!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pierce",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Popsicle",
+      "category": "Snacks"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Spirit Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Accurate Pin (80)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Conversion Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Conversion Pin (170)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tamales",
+      "category": "Snacks"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
+    },
+    {
+      "name": "Turmeric",
+      "category": "Reagents"
+    },
+    {
+      "name": "Unearthly Blocking Amethyst +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Blocking Citrine +53",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Blocking Jade +57",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Blocking Onyx +56",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Blocking Peridot +49",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Blocking Ruby +52",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Amethyst +525",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Jade +775",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Peridot +595",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Ruby +595",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Sapphire +735",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Mending Opal +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wallaru Billabong Resort Com Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Billabong Resort Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Doom Moon Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Doom Moon Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Eucalyptus Forest Com Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Eucalyptus Forest Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Outback Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Outback Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Ranch Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru The Dreaming Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Wobbegong Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Boss",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Reaver",
+        "Unearthly Health",
+        "Accurate Pin"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Novus/NV_Z07_DoomMoon"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Engineering",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Novus/NV_Z07_DoomMoon",
+        "dungeon_zone": "Novus/Interiors/NV_Z07_I01_EngineeringWing",
+        "dungeon_name": "Engineering",
+        "sigil_xyz": {
+          "x": -1627.09,
+          "y": 1590.66,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -1875.39,
+          "y": 1033.47,
+          "z": -14.97
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Mr. Montgomery",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "WL_Dog_NavyCaptain_A_01",
+        "wiki_page": "Creature:Mr. Montgomery (Standard)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit Engineering",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Novus/Interiors/NV_Z07_I01_EngineeringWing",
+        "to_zone": "Novus/NV_Z07_DoomMoon",
+        "xyz": {
+          "x": 1.37,
+          "y": 790.01,
+          "z": -5.67
+        },
+        "reset_xyz": {
+          "x": 22.75,
+          "y": 182.12,
+          "z": -18.81
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Mr. Montgomery",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Novus/Interiors/NV_Z07_I01_EngineeringWing",
+        "xyz": {
+          "x": -0.47,
+          "y": -12755.3,
+          "z": -18.81
+        }
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "sleep",
+      "label": "Wait for Mr. Montgomery to load",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 1.0,
+        "use_safety_delay": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Novus/NV_Z07_DoomMoon"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
+}

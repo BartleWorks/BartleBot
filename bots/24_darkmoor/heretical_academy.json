@@ -10,8 +10,11 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
+    "Reagents",
     "Spellements",
-    "Dungeon"
+    "Dungeon",
+    "Challenge Mode"
   ],
   "options": [
     {
@@ -107,8 +110,6 @@
       "params": {
         "from_zone": "Darkmoor/DM_Z05_ScholomanceEntrance",
         "dungeon_zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "offers_challenge_mode": false,
-        "offers_team_up": false,
         "dungeon_name": "Heretical Academy",
         "sigil_xyz": {
           "x": 8690.85,
@@ -119,7 +120,9 @@
           "x": 8654.82,
           "y": 1627.78,
           "z": 909.08
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
       }
     },
     {

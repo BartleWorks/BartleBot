@@ -1,0 +1,1849 @@
+{
+  "id": "5a3b4edb-f78a-4766-b344-480fdc072dd7",
+  "name": "Mother Sunn",
+  "description": "Endlessly defeats Mother Sunn in Tomb of the Forgotten, Selenopolis",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Ammut",
+      "category": "Spellements"
+    },
+    {
+      "name": "Anubis",
+      "category": "Spellements"
+    },
+    {
+      "name": "Avatar's Blade of Bad Blood",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Blade of Payback",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Blade of Reprisal",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Blade of Retribution",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Blade of Revenge",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Blade of Vengeance",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Blade of Wrath",
+      "category": "Athames"
+    },
+    {
+      "name": "Avatar's Seal of Bad Blood",
+      "category": "Rings"
+    },
+    {
+      "name": "Avatar's Seal of Payback",
+      "category": "Rings"
+    },
+    {
+      "name": "Avatar's Seal of Reprisal",
+      "category": "Rings"
+    },
+    {
+      "name": "Avatar's Seal of Retribution",
+      "category": "Rings"
+    },
+    {
+      "name": "Avatar's Seal of Revenge",
+      "category": "Rings"
+    },
+    {
+      "name": "Avatar's Seal of Vengeance",
+      "category": "Rings"
+    },
+    {
+      "name": "Avatar's Seal of Wrath",
+      "category": "Rings"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Crushing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Disabling Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (170)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (170)"
+    },
+    {
+      "name": "Balance Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (170)"
+    },
+    {
+      "name": "Balance Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (170)"
+    },
+    {
+      "name": "Balance Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (170)"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chameleon Clash",
+      "category": "Spellements"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Crushing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Crushing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Crushing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (170)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (170)"
+    },
+    {
+      "name": "Death Disabling Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (170)"
+    },
+    {
+      "name": "Death Disabling Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (170)"
+    },
+    {
+      "name": "Death Disabling Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (170)"
+    },
+    {
+      "name": "Death Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (170)"
+    },
+    {
+      "name": "Death Disabling Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (170)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (170)"
+    },
+    {
+      "name": "Death Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (170)"
+    },
+    {
+      "name": "Death Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (170)"
+    },
+    {
+      "name": "Death Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (170)"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Crushing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (170)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (160)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (160)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (160)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (160)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (160)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (160)"
+    },
+    {
+      "name": "Fire Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (170)"
+    },
+    {
+      "name": "Fire Disabling Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (170)"
+    },
+    {
+      "name": "Fire Disabling Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (170)"
+    },
+    {
+      "name": "Fire Disabling Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (170)"
+    },
+    {
+      "name": "Fire Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (170)"
+    },
+    {
+      "name": "Fire Disabling Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (170)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (170)"
+    },
+    {
+      "name": "Fire Punishing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (170)"
+    },
+    {
+      "name": "Fire Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (170)"
+    },
+    {
+      "name": "Fire Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (170)"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grrnadier",
+      "category": "Spellements"
+    },
+    {
+      "name": "Heqet",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (170)"
+    },
+    {
+      "name": "Ice Crushing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (170)"
+    },
+    {
+      "name": "Ice Crushing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (170)"
+    },
+    {
+      "name": "Ice Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (170)"
+    },
+    {
+      "name": "Ice Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (170)"
+    },
+    {
+      "name": "Ice Crushing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (170)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (170)"
+    },
+    {
+      "name": "Ice Disabling Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (170)"
+    },
+    {
+      "name": "Ice Disabling Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (170)"
+    },
+    {
+      "name": "Ice Disabling Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (170)"
+    },
+    {
+      "name": "Ice Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (170)"
+    },
+    {
+      "name": "Ice Disabling Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Ice Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (170)"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Legendary Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Life Crushing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Crushing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Disabling Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (170)"
+    },
+    {
+      "name": "Life Punishing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (170)"
+    },
+    {
+      "name": "Life Punishing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (170)"
+    },
+    {
+      "name": "Life Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (170)"
+    },
+    {
+      "name": "Life Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (170)"
+    },
+    {
+      "name": "Life Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (170)"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Manifest Blade of Bad Blood",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Blade of Payback",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Blade of Reprisal",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Blade of Retribution",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Blade of Revenge",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Blade of Vengeance",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Blade of Wrath",
+      "category": "Athames"
+    },
+    {
+      "name": "Manifest Seal of Bad Blood",
+      "category": "Rings"
+    },
+    {
+      "name": "Manifest Seal of Payback",
+      "category": "Rings"
+    },
+    {
+      "name": "Manifest Seal of Reprisal",
+      "category": "Rings"
+    },
+    {
+      "name": "Manifest Seal of Retribution",
+      "category": "Rings"
+    },
+    {
+      "name": "Manifest Seal of Revenge",
+      "category": "Rings"
+    },
+    {
+      "name": "Manifest Seal of Vengeance",
+      "category": "Rings"
+    },
+    {
+      "name": "Manifest Seal of Wrath",
+      "category": "Rings"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Moon Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (170)"
+    },
+    {
+      "name": "Myth Disabling Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (170)"
+    },
+    {
+      "name": "Myth Disabling Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (170)"
+    },
+    {
+      "name": "Myth Disabling Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (170)"
+    },
+    {
+      "name": "Myth Disabling Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (170)"
+    },
+    {
+      "name": "Myth Disabling Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (170)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (170)"
+    },
+    {
+      "name": "Myth Punishing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (170)"
+    },
+    {
+      "name": "Myth Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (170)"
+    },
+    {
+      "name": "Myth Punishing Pin (170, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (170)"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phantasmania!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shu",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Crushing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (160)"
+    },
+    {
+      "name": "Storm Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (160)"
+    },
+    {
+      "name": "Storm Crushing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (160)"
+    },
+    {
+      "name": "Storm Crushing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (160)"
+    },
+    {
+      "name": "Storm Crushing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (160)"
+    },
+    {
+      "name": "Storm Crushing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (160)"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Life)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (170)"
+    },
+    {
+      "name": "Storm Punishing Pin (170, Death)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (170)"
+    },
+    {
+      "name": "Storm Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (170)"
+    },
+    {
+      "name": "Storm Punishing Pin (170, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (170)"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Taweret",
+      "category": "Spellements"
+    },
+    {
+      "name": "Thoth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    },
+    {
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Housing",
+    "Boss",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Avatar's"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Crypt of Ra",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten",
+        "dungeon_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z06I12_CryptOfRa_Int",
+        "dungeon_name": "Crypt of Ra",
+        "sigil_xyz": {
+          "x": -24219.93,
+          "y": 33642.78,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -23999.08,
+          "y": 33127.96,
+          "z": 1.0
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat boss",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_SE_Mander_MummyF_A_02",
+        "wiki_page": "Creature:Mother Sunn (Standard)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit Crypt of Ra",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z06I12_CryptOfRa_Int",
+        "to_zone": "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten",
+        "xyz": {
+          "x": -3986.73,
+          "y": 33684.73,
+          "z": 0.1
+        },
+        "reset_xyz": {
+          "x": -3342.33,
+          "y": 33684.73,
+          "z": 0.1
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Mother Sunn",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z06I12_CryptOfRa_Int",
+        "xyz": {
+          "x": 11470.3,
+          "y": 33681.96,
+          "z": 0.1
+        }
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "sleep",
+      "label": "Sleep",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 1.0,
+        "use_safety_delay": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
+}
