@@ -1,536 +1,711 @@
 {
   "id": "8d2430a2-cceb-4123-b09a-85617b70b0df",
   "name": "Oakheart",
-  "description": "Defeats Oakheart",
+  "description": "Endlessly defeats Oakheart in Village of Sorrow, Mooshu",
   "version": "1.0",
   "clients": "all",
   "initial": "t_sync_players_1_state_2",
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Adroit Opal"
+      "name": "Adroit Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Ape Grapes"
+      "name": "Ape Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Athame of Attention"
+      "name": "Athame of Attention",
+      "category": "Athames"
     },
     {
-      "name": "Athame of the Lotus"
+      "name": "Athame of the Lotus",
+      "category": "Athames"
     },
     {
-      "name": "Balance-Eye Citrine"
+      "name": "Balance-Eye Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-Off Citrine"
+      "name": "Balance-Off Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Banana Peel Opal"
+      "name": "Banana Peel Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Benign Cap"
+      "name": "Benign Cap",
+      "category": "Hats"
     },
     {
-      "name": "Black Mantle"
+      "name": "Black Mantle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blemished Damage Amethyst +11"
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Jade +11"
+      "name": "Blemished Damage Jade +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Onyx +11"
+      "name": "Blemished Damage Onyx +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Peridot +11"
+      "name": "Blemished Damage Peridot +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Sapphire +11"
+      "name": "Blemished Damage Sapphire +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Citrine +21"
+      "name": "Blemished Defense Citrine +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Opal +11"
+      "name": "Blemished Defense Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Health Opal +40"
+      "name": "Blemished Health Opal +40",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished PIP Opal +4%"
+      "name": "Blemished PIP Opal +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Blended Wool Footwraps"
+      "name": "Blended Wool Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Blended Wool Tunic"
+      "name": "Blended Wool Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Boost Opal"
+      "name": "Boost Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Boots of Chimes"
+      "name": "Boots of Chimes",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Commotion"
+      "name": "Boots of Commotion",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Cooperation"
+      "name": "Boots of Cooperation",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Melodies"
+      "name": "Boots of Melodies",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Cap of the Lithe"
+      "name": "Cap of the Lithe",
+      "category": "Hats"
     },
     {
-      "name": "Cat Tail"
+      "name": "Cat Tail",
+      "category": "Reagents"
     },
     {
-      "name": "Charge Opal"
+      "name": "Charge Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cherry Blossom Tree"
+      "name": "Cherry Blossom Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Cloak"
+      "name": "Cloak",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cloak of Rhyming"
+      "name": "Cloak of Rhyming",
+      "category": "Robes"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Colossus"
+      "name": "Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Concordant Headwraps"
+      "name": "Concordant Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of Discord"
+      "name": "Cowl of Discord",
+      "category": "Hats"
     },
     {
-      "name": "Crunch Apple"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Death-Giver Onyx"
+      "name": "Death-Giver Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Deck of the Lotus"
+      "name": "Deck of the Lotus",
+      "category": "Decks"
     },
     {
-      "name": "Dragonflies"
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Earthquake"
+      "name": "Earthquake",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Effervescent Opal"
+      "name": "Effervescent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Euphonic Cloak"
+      "name": "Euphonic Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Fire-Boon Ruby"
+      "name": "Fire-Boon Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Giver Ruby"
+      "name": "Fire-Giver Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Amethyst +4%"
+      "name": "Flawed Accurate Amethyst +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Jade +4%"
+      "name": "Flawed Accurate Jade +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Onyx +4%"
+      "name": "Flawed Accurate Onyx +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Opal +2%"
+      "name": "Flawed Accurate Opal +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Peridot +4%"
+      "name": "Flawed Accurate Peridot +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Ruby +4%"
+      "name": "Flawed Accurate Ruby +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Sapphire +4%"
+      "name": "Flawed Accurate Sapphire +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Amethyst +19"
+      "name": "Flawed Defense Amethyst +19",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Citrine +19"
+      "name": "Flawed Defense Citrine +19",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Jade +19"
+      "name": "Flawed Defense Jade +19",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Peridot +19"
+      "name": "Flawed Defense Peridot +19",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Ruby +19"
+      "name": "Flawed Defense Ruby +19",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Sapphire +19"
+      "name": "Flawed Defense Sapphire +19",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +34"
+      "name": "Flawed Health Opal +34",
+      "category": "Jewels"
     },
     {
-      "name": "Footwraps of Anthems"
+      "name": "Footwraps of Anthems",
+      "category": "Boots"
     },
     {
-      "name": "Footwraps of Chants"
+      "name": "Footwraps of Chants",
+      "category": "Boots"
     },
     {
-      "name": "Forest Spirit's Cap of Belief"
+      "name": "Forest Spirit's Cap of Belief",
+      "category": "Hats"
     },
     {
-      "name": "Forest Spirit's Careful Boots"
+      "name": "Forest Spirit's Careful Boots",
+      "category": "Boots"
     },
     {
-      "name": "Forest Spirit's Cloak"
+      "name": "Forest Spirit's Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Friendly Shoes"
+      "name": "Friendly Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Gallant Shroud"
+      "name": "Gallant Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Garment of Dilemma"
+      "name": "Garment of Dilemma",
+      "category": "Robes"
     },
     {
-      "name": "Garment of Watchfulness"
+      "name": "Garment of Watchfulness",
+      "category": "Robes"
     },
     {
-      "name": "Garments of Chants"
+      "name": "Garments of Chants",
+      "category": "Robes"
     },
     {
-      "name": "Giant"
+      "name": "Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gold Miner Opal"
+      "name": "Gold Miner Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Golden Peanut"
+      "name": "Golden Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Squash"
+      "name": "Golden Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Hat of Enthusiasm"
+      "name": "Hat of Enthusiasm",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Nimble"
+      "name": "Hat of the Nimble",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Triad"
+      "name": "Hat of the Triad",
+      "category": "Hats"
     },
     {
-      "name": "Headwraps of Resonance"
+      "name": "Headwraps of Resonance",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Sandcastles"
+      "name": "Helm of Sandcastles",
+      "category": "Hats"
     },
     {
-      "name": "Hood of the Resolute"
+      "name": "Hood of the Resolute",
+      "category": "Hats"
     },
     {
-      "name": "Humongofrog Peridot"
+      "name": "Humongofrog Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern Sapphire"
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Imperial Banner"
+      "name": "Imperial Banner",
+      "category": "Housing Items"
     },
     {
-      "name": "Industrial Slippers"
+      "name": "Industrial Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Iron"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Kraken Amethyst"
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Krokotillian"
+      "name": "Krokotillian",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Watermelon"
+      "name": "Large Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Life-Away Jade"
+      "name": "Life-Away Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Light-As-Air Hat"
+      "name": "Light-As-Air Hat",
+      "category": "Hats"
     },
     {
-      "name": "Long Lantern"
+      "name": "Long Lantern",
+      "category": "Housing Items"
     },
     {
-      "name": "Lunar Tablet"
+      "name": "Lunar Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Mask of Impression"
+      "name": "Mask of Impression",
+      "category": "Hats"
     },
     {
-      "name": "Meteor Strike Ruby"
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "MooShu Haunted Theme"
+      "name": "MooShu Haunted Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Fig"
+      "name": "Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Painful Cowl"
+      "name": "Painful Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Pest Zapper"
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Potted Bobtail"
+      "name": "Potted Bobtail",
+      "category": "Housing Items"
     },
     {
-      "name": "Potted Cattail"
+      "name": "Potted Cattail",
+      "category": "Housing Items"
     },
     {
-      "name": "Power Play Citrine"
+      "name": "Power Play Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Profound Hat"
+      "name": "Profound Hat",
+      "category": "Hats"
     },
     {
-      "name": "Profound Robes"
+      "name": "Profound Robes",
+      "category": "Robes"
     },
     {
-      "name": "Profound Slippers"
+      "name": "Profound Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Pyrite"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Reshuffle"
+      "name": "Reshuffle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ring of the Naturewalker"
+      "name": "Ring of the Naturewalker",
+      "category": "Rings"
     },
     {
-      "name": "Robe of Conceit"
+      "name": "Robe of Conceit",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Consideration"
+      "name": "Robe of Consideration",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Chipper"
+      "name": "Robe of the Chipper",
+      "category": "Robes"
     },
     {
-      "name": "Robes of Struggling"
+      "name": "Robes of Struggling",
+      "category": "Robes"
     },
     {
-      "name": "Robes of the Triad"
+      "name": "Robes of the Triad",
+      "category": "Robes"
     },
     {
-      "name": "Ruby Blade of the Forest"
+      "name": "Ruby Blade of the Forest",
+      "category": "Wands"
     },
     {
-      "name": "Sandals of Exertion"
+      "name": "Sandals of Exertion",
+      "category": "Boots"
     },
     {
-      "name": "Sandals of Sympathy"
+      "name": "Sandals of Sympathy",
+      "category": "Boots"
     },
     {
-      "name": "Satyr"
+      "name": "Satyr",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seraph"
+      "name": "Seraph",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seraph Jade"
+      "name": "Seraph Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Sharp Opal"
+      "name": "Sharp Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Shoes of Preoccupation"
+      "name": "Shoes of Preoccupation",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Song"
+      "name": "Shoes of Song",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Struggling"
+      "name": "Shoes of Struggling",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of the Whim"
+      "name": "Shoes of the Whim",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Woe"
+      "name": "Shoes of Woe",
+      "category": "Boots"
     },
     {
-      "name": "Shroud of Afterthoughts"
+      "name": "Shroud of Afterthoughts",
+      "category": "Hats"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Skeletal Pirate Onyx"
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Slippers of the Eager"
+      "name": "Slippers of the Eager",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of the Opus"
+      "name": "Slippers of the Opus",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of Yodels"
+      "name": "Slippers of Yodels",
+      "category": "Boots"
     },
     {
-      "name": "Slow Motion Opal"
+      "name": "Slow Motion Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sniper"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Spirit's Flowering Choker"
+      "name": "Spirit's Flowering Choker",
+      "category": "Amulets"
     },
     {
-      "name": "Spirit's Ring of Deep Thought"
+      "name": "Spirit's Ring of Deep Thought",
+      "category": "Rings"
     },
     {
-      "name": "Spirit's Slippers of the Muse"
+      "name": "Spirit's Slippers of the Muse",
+      "category": "Boots"
     },
     {
-      "name": "Sprightly Garments"
+      "name": "Sprightly Garments",
+      "category": "Robes"
     },
     {
-      "name": "Sprightly Slippers"
+      "name": "Sprightly Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Square Root"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Stone Marker"
+      "name": "Stone Marker",
+      "category": "Housing Items"
     },
     {
-      "name": "Storm-Giver Amethyst"
+      "name": "Storm-Giver Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Proof Amethyst"
+      "name": "Storm-Proof Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stormzilla"
+      "name": "Stormzilla",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Strong"
+      "name": "Strong",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tanto of Fire"
+      "name": "Tanto of Fire",
+      "category": "Athames"
     },
     {
-      "name": "Time of Legend"
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tormented Mask"
+      "name": "Tormented Mask",
+      "category": "Hats"
     },
     {
-      "name": "Tough"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Treant"
+      "name": "Treant",
+      "category": "Pets"
     },
     {
-      "name": "Tree Obelisk"
+      "name": "Tree Obelisk",
+      "category": "Housing Items"
     },
     {
-      "name": "Tree Stage Set"
+      "name": "Tree Stage Set",
+      "category": "Housing Items"
     },
     {
-      "name": "Tunic of Preoccupation"
+      "name": "Tunic of Preoccupation",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Soul-Searching"
+      "name": "Tunic of Soul-Searching",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Cooperation"
+      "name": "Vestment of Cooperation",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Tribulations"
+      "name": "Vestment of Tribulations",
+      "category": "Robes"
     },
     {
-      "name": "Vexing Tunic"
+      "name": "Vexing Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Vigilant Cap"
+      "name": "Vigilant Cap",
+      "category": "Hats"
     },
     {
-      "name": "Warbled Hat"
+      "name": "Warbled Hat",
+      "category": "Hats"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Wooden Skeleton Key"
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "Woodwalker"
+      "name": "Woodwalker",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Yellow and Blue Chest"
+      "name": "Yellow and Blue Chest",
+      "category": "Housing Items"
     },
     {
-      "name": "Zippy Shroud"
+      "name": "Zippy Shroud",
+      "category": "Hats"
     }
   ],
   "authors": "BartleBot",
@@ -539,7 +714,18 @@
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Forest Spirit's Cap of Belief",
+        "Forest Spirit's Careful Boots",
+        "Forest Spirit's Cloak",
+        "Ruby Blade of the Forest"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -630,7 +816,7 @@
       },
       "params": {
         "enemy": "Treant-MSBoss-L54",
-        "wiki_page": "",
+        "wiki_page": "Creature:Oakheart",
         "use_default_strategy": false,
         "max_duration": 0.0
       }

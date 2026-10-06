@@ -1,473 +1,619 @@
 {
   "id": "31aac867-868b-4c8d-b64c-c48e929893db",
-  "name": "Crimson Fields (Yakedo + War Oni)",
-  "description": "Completes the entire Crimson Fields dungeon, optionally defeating Yakedo.",
+  "name": "Crimson Fields",
+  "description": "Endlessly completes the Crimson Fields in Mooshu, optionally defeating Yakedo.",
   "version": "2.0",
   "clients": "all",
   "initial": "t_sync_players_1_state_2",
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Abstract Shroud"
+      "name": "Abstract Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Abstract Vestment"
+      "name": "Abstract Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Accurate"
+      "name": "Accurate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ape Grapes"
+      "name": "Ape Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Balefrost"
+      "name": "Balefrost",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Bell Pagoda"
+      "name": "Bell Pagoda",
+      "category": "Housing Items"
     },
     {
-      "name": "Benign Slippers"
+      "name": "Benign Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Blemished Damage Onyx +11"
+      "name": "Blemished Damage Onyx +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Ruby +11"
+      "name": "Blemished Damage Ruby +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Opal +11"
+      "name": "Blemished Defense Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Health Opal +40"
+      "name": "Blemished Health Opal +40",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Mana Opal +17"
+      "name": "Blemished Mana Opal +17",
+      "category": "Jewels"
     },
     {
-      "name": "Blended Wool Cap"
+      "name": "Blended Wool Cap",
+      "category": "Hats"
     },
     {
-      "name": "Blight Hound"
+      "name": "Blight Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Bodkin of the Hearty"
+      "name": "Bodkin of the Hearty",
+      "category": "Athames"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of the Lithe"
+      "name": "Boots of the Lithe",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Cap of Consideration"
+      "name": "Cap of Consideration",
+      "category": "Hats"
     },
     {
-      "name": "Cap of the Verse"
+      "name": "Cap of the Verse",
+      "category": "Hats"
     },
     {
-      "name": "Cloak of Deliberation"
+      "name": "Cloak of Deliberation",
+      "category": "Robes"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of Fiction"
+      "name": "Cowl of Fiction",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Tact"
+      "name": "Cowl of Tact",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Watchfulness"
+      "name": "Cowl of Watchfulness",
+      "category": "Hats"
     },
     {
-      "name": "Crossed Naginata Spears"
+      "name": "Crossed Naginata Spears",
+      "category": "Housing Items"
     },
     {
-      "name": "Crunch Apple"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Death Ninja"
+      "name": "Death Ninja",
+      "category": "Pets"
     },
     {
-      "name": "Deck of the Lotus"
+      "name": "Deck of the Lotus",
+      "category": "Decks"
     },
     {
-      "name": "Diseased Wildclaw"
+      "name": "Diseased Wildclaw",
+      "category": "Pets"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Spellements"
     },
     {
-      "name": "Fancy Bench"
+      "name": "Fancy Bench",
+      "category": "Housing Items"
     },
     {
-      "name": "Fancy Lantern"
+      "name": "Fancy Lantern",
+      "category": "Housing Items"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Fire-Giver Ruby"
+      "name": "Fire-Giver Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Firewing"
+      "name": "Firewing",
+      "category": "Pets"
     },
     {
-      "name": "Flawed Accurate Jade +4%"
+      "name": "Flawed Accurate Jade +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Sapphire +18"
+      "name": "Flawed Defense Sapphire +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +32"
+      "name": "Flawed Health Opal +32",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Mending Opal +2%"
+      "name": "Flawed Mending Opal +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Footwraps of Generations"
+      "name": "Footwraps of Generations",
+      "category": "Boots"
     },
     {
-      "name": "Footwraps of Predicament"
+      "name": "Footwraps of Predicament",
+      "category": "Boots"
     },
     {
-      "name": "Friendly Garments"
+      "name": "Friendly Garments",
+      "category": "Robes"
     },
     {
-      "name": "Friendly Helm"
+      "name": "Friendly Helm",
+      "category": "Hats"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Garment of Dilemma"
+      "name": "Garment of Dilemma",
+      "category": "Robes"
     },
     {
-      "name": "Garment of Sandcastles"
+      "name": "Garment of Sandcastles",
+      "category": "Robes"
     },
     {
-      "name": "Garments of Predicament"
+      "name": "Garments of Predicament",
+      "category": "Robes"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Golden Peanut"
+      "name": "Golden Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Squash"
+      "name": "Golden Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Grand Imperial Banner"
+      "name": "Grand Imperial Banner",
+      "category": "Housing Items"
     },
     {
-      "name": "Green Sword Display"
+      "name": "Green Sword Display",
+      "category": "Housing Items"
     },
     {
-      "name": "Gripping Boots"
+      "name": "Gripping Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hanging Naginata Spear"
+      "name": "Hanging Naginata Spear",
+      "category": "Housing Items"
     },
     {
-      "name": "Haskarr's Barbarish Cap"
+      "name": "Haskarr's Barbarish Cap",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Observant"
+      "name": "Hat of the Observant",
+      "category": "Hats"
     },
     {
-      "name": "Heedful Headwraps"
+      "name": "Heedful Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Humongofrog Peridot"
+      "name": "Humongofrog Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Spellements"
     },
     {
-      "name": "Ice Wyvern Sapphire"
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Immolate"
+      "name": "Immolate",
+      "category": "Spellements"
     },
     {
-      "name": "Indoor Shrine"
+      "name": "Indoor Shrine",
+      "category": "Housing Items"
     },
     {
-      "name": "Indulgent Boots"
+      "name": "Indulgent Boots",
+      "category": "Boots"
     },
     {
-      "name": "Indulgent Vestment"
+      "name": "Indulgent Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Invigorating Signet"
+      "name": "Invigorating Signet",
+      "category": "Rings"
     },
     {
-      "name": "Kraken"
+      "name": "Kraken",
+      "category": "Spellements"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Watermelon"
+      "name": "Large Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Light-As-Air Cloak"
+      "name": "Light-As-Air Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Light-As-Air Slippers"
+      "name": "Light-As-Air Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Lyrical Footwraps"
+      "name": "Lyrical Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Lyrical Garments"
+      "name": "Lyrical Garments",
+      "category": "Robes"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Magma Spider"
+      "name": "Magma Spider",
+      "category": "Pets"
     },
     {
-      "name": "Minotaur"
+      "name": "Minotaur",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Moodha Bust"
+      "name": "Moodha Bust",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Battle Theme"
+      "name": "MooShu Battle Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Haunted Theme"
+      "name": "MooShu Haunted Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Mystical Theme"
+      "name": "MooShu Mystical Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu War Theme"
+      "name": "MooShu War Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Pigs"
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Nunu's Mask of the Twisted"
+      "name": "Nunu's Mask of the Twisted",
+      "category": "Hats"
     },
     {
-      "name": "Pagoda Brazier"
+      "name": "Pagoda Brazier",
+      "category": "Housing Items"
     },
     {
-      "name": "Pest Zapper"
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Phoenix"
+      "name": "Phoenix",
+      "category": "Spellements"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Problematic Headwraps"
+      "name": "Problematic Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Professor Wu"
+      "name": "Professor Wu",
+      "category": "Housing Items"
     },
     {
-      "name": "Proficient Shoes"
+      "name": "Proficient Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Pyrite"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "rank 1-5 elemental spellements"
+      "name": "Red Samoorai Armor",
+      "category": "Housing Items"
     },
     {
-      "name": "Red Samoorai Armor"
+      "name": "Robe of Hinderance",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Hinderance"
+      "name": "Robe of the Verse",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Verse"
+      "name": "Ruby Ring of Focus",
+      "category": "Rings"
     },
     {
-      "name": "Ruby Ring of Focus"
+      "name": "Samoorai",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Samoorai"
+      "name": "Sanctuary",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sanctuary"
+      "name": "Sandals of the Determined",
+      "category": "Boots"
     },
     {
-      "name": "Sandals of the Determined"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Scarab"
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scarecrow"
+      "name": "Seraph Jade",
+      "category": "Jewels"
     },
     {
-      "name": "School design gear"
+      "name": "Small Woodpile",
+      "category": "Housing Items"
     },
     {
-      "name": "Seraph Jade"
+      "name": "Snow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Small Woodpile"
+      "name": "Soji Screen Art",
+      "category": "Housing Items"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Soji Screen Art"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Stone Base",
+      "category": "Housing Items"
     },
     {
-      "name": "Square Root"
+      "name": "Stone Dog Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Stone Base"
+      "name": "Stone Pedestal Base",
+      "category": "Housing Items"
     },
     {
-      "name": "Stone Dog Statue"
+      "name": "Storm Shark",
+      "category": "Spellements"
     },
     {
-      "name": "Stone Pedestal Base"
+      "name": "Stormzilla",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Shark"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Stormzilla"
+      "name": "Tall Boulder",
+      "category": "Housing Items"
     },
     {
-      "name": "Sunbird"
+      "name": "Thunder Snake",
+      "category": "Spellements"
     },
     {
-      "name": "Tall Boulder"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Tormented Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Tin"
+      "name": "Tunic of Impression",
+      "category": "Robes"
     },
     {
-      "name": "Tormented Cloak"
+      "name": "Vestment of Fiction",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Impression"
+      "name": "Vestment of the Eager",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Fiction"
+      "name": "Vigilant Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Vestment of the Eager"
+      "name": "War Oni's Astute Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Vigilant Sandals"
+      "name": "War Oni's Disillusioned Hat",
+      "category": "Hats"
     },
     {
-      "name": "War Oni's Astute Tunic"
+      "name": "War Oni's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "War Oni's Disillusioned Hat"
+      "name": "War Oni's Gripping Garments",
+      "category": "Robes"
     },
     {
-      "name": "War Oni's Footwraps"
+      "name": "War Oni's Gripping Helm",
+      "category": "Hats"
     },
     {
-      "name": "War Oni's Gripping Garments"
+      "name": "War Oni's Tempestial Circle",
+      "category": "Amulets"
     },
     {
-      "name": "War Oni's Gripping Helm"
+      "name": "War Torn Cowl of Awareness",
+      "category": "Hats"
     },
     {
-      "name": "War Oni's Tempestial Circle"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "War Torn Cowl of Awareness"
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wooden Skeleton Key"
+      "name": "Yakedo's Abstract Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Wyldfire"
+      "name": "Yakedo's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Yakedo's Abstract Shoes"
+      "name": "Yakedo's Brainstorming Robe",
+      "category": "Robes"
     },
     {
-      "name": "Yakedo's Boots"
+      "name": "Yakedo's Cap of Premise",
+      "category": "Hats"
     },
     {
-      "name": "Yakedo's Brainstorming Robe"
+      "name": "Yakedo's Hypothetical Helm",
+      "category": "Hats"
     },
     {
-      "name": "Yakedo's Cap of Premise"
+      "name": "Yakedo's Hypothetical Robe",
+      "category": "Robes"
     },
     {
-      "name": "Yakedo's Hypothetical Helm"
+      "name": "Yakedo's Rational Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Yakedo's Hypothetical Robe"
+      "name": "Yakedo's Sandals of Belief",
+      "category": "Boots"
     },
     {
-      "name": "Yakedo's Rational Cloak"
+      "name": "Yakedo's Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Yakedo's Sandals of Belief"
+      "name": "Yakedo's Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Yakedo's Shroud"
-    },
-    {
-      "name": "Yakedo's Slippers"
-    },
-    {
-      "name": "Zippy Tunic"
+      "name": "Zippy Tunic",
+      "category": "Robes"
     }
   ],
   "authors": "BartleBot",
@@ -585,7 +731,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 18920,
+        "x": 20240.0,
         "y": -90.0
       },
       "params": {
@@ -640,8 +786,8 @@
       "node_type": "interact",
       "label": "Raise first flag",
       "position": {
-        "x": 3080,
-        "y": 0.0
+        "x": 3080.0,
+        "y": 90.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -666,8 +812,8 @@
       "node_type": "interact",
       "label": "Raise second flag",
       "position": {
-        "x": 3520,
-        "y": 0.0
+        "x": 3520.0,
+        "y": 90.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -692,8 +838,8 @@
       "node_type": "interact",
       "label": "Raise third flag",
       "position": {
-        "x": 3960,
-        "y": 0.0
+        "x": 3960.0,
+        "y": 90.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -718,8 +864,8 @@
       "node_type": "interact",
       "label": "Raise fourth flag",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 4400.0,
+        "y": 90.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1089,7 +1235,8 @@
           "x": -34277.64,
           "y": 26092.55,
           "z": 53.96
-        }
+        },
+        "stagger": true
       }
     },
     {
@@ -1126,7 +1273,8 @@
           "x": 19.43,
           "y": -996.3,
           "z": -100.0
-        }
+        },
+        "stagger": true
       }
     },
     {
@@ -1298,8 +1446,9 @@
       },
       "params": {
         "enemy": "Pig-War-Warrior-LXX",
-        "use_bot_default": false,
-        "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
+        "wiki_page": "Creature:Yakedo",
+        "use_default_strategy": true,
+        "max_duration": 600.0
       }
     },
     {
@@ -1307,7 +1456,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 15840,
+        "x": 17160.0,
         "y": 0.0
       },
       "params": {
@@ -1332,7 +1481,7 @@
       "node_type": "enter_zone",
       "label": "Enter Katsumori's Dojo",
       "position": {
-        "x": 16280,
+        "x": 17600.0,
         "y": -90.0
       },
       "params": {
@@ -1347,7 +1496,8 @@
           "x": -68.52,
           "y": 68188.27,
           "z": 79.6
-        }
+        },
+        "stagger": true
       }
     },
     {
@@ -1355,7 +1505,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Katsumori",
       "position": {
-        "x": 16720,
+        "x": 18040.0,
         "y": -90.0
       },
       "params": {
@@ -1369,7 +1519,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Cancel invulnerability",
       "position": {
-        "x": 17160,
+        "x": 18480.0,
         "y": -90.0
       },
       "params": {
@@ -1386,7 +1536,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 17600,
+        "x": 18920.0,
         "y": -90.0
       },
       "params": {
@@ -1398,13 +1548,14 @@
       "node_type": "handle_combat",
       "label": "Defeat War Oni",
       "position": {
-        "x": 18040,
+        "x": 19360.0,
         "y": -90.0
       },
       "params": {
         "enemy": "Oni-War-MSBoss-L50",
-        "use_bot_default": true,
-        "combat_config": ""
+        "wiki_page": "Creature:War Oni",
+        "use_default_strategy": true,
+        "max_duration": 600.0
       }
     },
     {
@@ -1412,7 +1563,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 18480,
+        "x": 19800.0,
         "y": -90.0
       },
       "params": {
@@ -1428,7 +1579,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
-        "x": 16280,
+        "x": 15400.0,
         "y": 90.0
       },
       "params": {
@@ -1445,7 +1596,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 16720,
+        "x": 15840.0,
         "y": 90.0
       },
       "params": {
@@ -1457,7 +1608,7 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 17160,
+        "x": 16280.0,
         "y": 90.0
       },
       "params": {
@@ -1471,7 +1622,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Leave battlefield",
       "position": {
-        "x": 17600,
+        "x": 16720.0,
         "y": 90.0
       },
       "params": {
@@ -1547,151 +1698,6 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Defeat Yakedo",
-          "negate": false
-        }
-      ],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_10",
       "dest": "state_11",
       "when": "SUCCESS",
@@ -1722,59 +1728,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_13",
       "dest": "state_14",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_8",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1815,76 +1771,6 @@
       "source": "state_17",
       "dest": "state_18",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_14",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1944,6 +1830,16 @@
       "trigger": "advance",
       "source": "state_23",
       "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_26",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2017,6 +1913,66 @@
     },
     {
       "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Yakedo",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_45",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_47",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_36",
       "dest": "state_35",
       "when": "SUCCESS",
@@ -2027,8 +1983,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_36",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_34",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2039,6 +2005,41 @@
       "trigger": "advance",
       "source": "state_39",
       "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_37",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Yakedo",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2097,338 +2098,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_26",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
-      "dest": "state_39",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_35",
-      "dest": "state_39",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_39",
-      "dest": "state_37",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_38",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_38",
-      "dest": "state_34",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_34",
-      "dest": "state_47",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_47",
-      "dest": "state_39",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_19",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_20",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_21",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_22",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_27",
-      "dest": "state_27",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_28",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_29",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_30",
-      "dest": "state_30",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_31",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_36",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_35",
-      "dest": "state_35",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_32",
-      "dest": "state_32",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
-      "dest": "state_33",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_41",
-      "dest": "state_41",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_37",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_34",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_47",
-      "dest": "state_47",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_44",
-      "dest": "state_44",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_42",
-      "dest": "state_42",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_32",
-      "dest": "state_45",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_45",
       "dest": "state_33",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_3",
-      "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2447,9 +2118,139 @@
     },
     {
       "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2470,6 +2271,36 @@
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_37",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2522,7 +2353,8 @@
         "state_6",
         "state_7"
       ],
-      "color": 4
+      "color": 4,
+      "collapsed": true
     },
     {
       "id": "1dd88d62",
@@ -2531,9 +2363,11 @@
         "state_11",
         "state_13",
         "state_12",
-        "state_10"
+        "state_10",
+        "state_9"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
     },
     {
       "id": "f3b0741c",
@@ -2541,9 +2375,11 @@
       "members": [
         "state_17",
         "state_15",
-        "state_16"
+        "state_16",
+        "state_14"
       ],
-      "color": 6
+      "color": 6,
+      "collapsed": true
     },
     {
       "id": "69392b51",
@@ -2551,9 +2387,11 @@
       "members": [
         "state_23",
         "state_24",
-        "state_26"
+        "state_26",
+        "state_22"
       ],
-      "color": 2
+      "color": 2,
+      "collapsed": true
     },
     {
       "id": "e70fe9f0",
@@ -2565,16 +2403,19 @@
         "state_41",
         "state_43"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
     },
     {
       "id": "f9304d0c",
       "label": "Defeat Yakedo",
       "members": [
         "state_33",
-        "state_32"
+        "state_32",
+        "state_45"
       ],
-      "color": 5
+      "color": 5,
+      "collapsed": true
     },
     {
       "id": "b250a028",
@@ -2585,7 +2426,32 @@
         "state_37",
         "state_34"
       ],
-      "color": 1
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "dce05fa2",
+      "label": "Talk to Scouts",
+      "members": [
+        "state_19",
+        "state_20",
+        "state_21",
+        "state_18"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "de2da923",
+      "label": "Use Cairns",
+      "members": [
+        "state_27",
+        "state_30",
+        "state_28",
+        "state_29"
+      ],
+      "color": 1,
+      "collapsed": true
     }
   ],
   "template": {

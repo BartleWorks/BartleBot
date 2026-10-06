@@ -8,310 +8,412 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Admirable Shoes"
+      "name": "Admirable Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Alluring Robes"
+      "name": "Alluring Robes",
+      "category": "Robes"
     },
     {
-      "name": "Angled Gravemarker"
+      "name": "Angled Gravemarker",
+      "category": "Housing Items"
     },
     {
-      "name": "Artificial Robe"
+      "name": "Artificial Robe",
+      "category": "Robes"
     },
     {
-      "name": "Bewitching Shoes"
+      "name": "Bewitching Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Blizzard Sapphire"
+      "name": "Blizzard Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Boots of the Nucleus"
+      "name": "Boots of the Nucleus",
+      "category": "Boots"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Cap of the Unicorn"
+      "name": "Cap of the Unicorn",
+      "category": "Hats"
     },
     {
-      "name": "Caramel Popcorn"
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
     },
     {
-      "name": "Cat Burglar's Cap"
+      "name": "Cat Burglar's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Chipped Accurate Citrine +3%"
+      "name": "Chipped Accurate Citrine +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Accurate Onyx +3%"
+      "name": "Chipped Accurate Onyx +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Damage Onyx +8"
+      "name": "Chipped Damage Onyx +8",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Jade +15"
+      "name": "Chipped Defense Jade +15",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Ruby +15"
+      "name": "Chipped Defense Ruby +15",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Health Opal +25"
+      "name": "Chipped Health Opal +25",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Path Opal"
+      "name": "Clear Path Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cloak of Clarity"
+      "name": "Cloak of Clarity",
+      "category": "Robes"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Crossbone Gravestone"
+      "name": "Crossbone Gravestone",
+      "category": "Housing Items"
     },
     {
-      "name": "Dexterous Vest"
+      "name": "Dexterous Vest",
+      "category": "Robes"
     },
     {
-      "name": "Double Wall Lamp"
+      "name": "Double Wall Lamp",
+      "category": "Housing Items"
     },
     {
-      "name": "Dryad"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Exacting Boots"
+      "name": "Exacting Boots",
+      "category": "Boots"
     },
     {
-      "name": "Exquisite Slippers"
+      "name": "Exquisite Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Feline's Invigorating Robe"
+      "name": "Feline's Invigorating Robe",
+      "category": "Robes"
     },
     {
-      "name": "Feline's Whimsical Robe"
+      "name": "Feline's Whimsical Robe",
+      "category": "Robes"
     },
     {
-      "name": "Flawed Damage Sapphire +10"
+      "name": "Flawed Damage Sapphire +10",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Amethyst +17"
+      "name": "Flawed Defense Amethyst +17",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Citrine +17"
+      "name": "Flawed Defense Citrine +17",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Onyx +17"
+      "name": "Flawed Defense Onyx +17",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Peridot +17"
+      "name": "Flawed Defense Peridot +17",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +26"
+      "name": "Flawed Health Opal +26",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed PIP Opal +3%"
+      "name": "Flawed PIP Opal +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Footwraps of Anguish"
+      "name": "Footwraps of Anguish",
+      "category": "Boots"
     },
     {
-      "name": "Garment of the Supreme"
+      "name": "Garment of the Supreme",
+      "category": "Robes"
     },
     {
-      "name": "Gummy Bloodbat"
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
     },
     {
-      "name": "Heck Hound"
+      "name": "Heck Hound",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Iron"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Jerrycan"
+      "name": "Jerrycan",
+      "category": "Housing Items"
     },
     {
-      "name": "Jinxed Hat"
+      "name": "Jinxed Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Magnificent Boots"
+      "name": "Magnificent Boots",
+      "category": "Boots"
     },
     {
-      "name": "Marleybone Theme 3"
+      "name": "Marleybone Theme 3",
+      "category": "Housing Items"
     },
     {
-      "name": "Marleybonian Pilot Painting"
+      "name": "Marleybonian Pilot Painting",
+      "category": "Housing Items"
     },
     {
-      "name": "Medium Fish"
+      "name": "Medium Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Mist Wood"
+      "name": "Mist Wood",
+      "category": "Reagents"
     },
     {
-      "name": "Myth-Proof Peridot"
+      "name": "Myth-Proof Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Park Bench (Inactive)"
+      "name": "Park Bench (Inactive)",
+      "category": "Housing Items"
     },
     {
-      "name": "Polished Garments"
+      "name": "Polished Garments",
+      "category": "Robes"
     },
     {
-      "name": "Premium Footwraps"
+      "name": "Premium Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Rat Magician"
+      "name": "Rat Magician",
+      "category": "Pets"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Ring of Clarity"
+      "name": "Ring of Clarity",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Effect"
+      "name": "Ring of Effect",
+      "category": "Rings"
     },
     {
-      "name": "Ring of the Unicorn"
+      "name": "Ring of the Unicorn",
+      "category": "Rings"
     },
     {
-      "name": "Robe of the Bubble"
+      "name": "Robe of the Bubble",
+      "category": "Robes"
     },
     {
-      "name": "Sandals of Delusion"
+      "name": "Sandals of Delusion",
+      "category": "Boots"
     },
     {
-      "name": "Sandstorm"
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Satyr"
+      "name": "Satyr",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scrap Iron"
+      "name": "Scrap Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Shaman's Hat"
+      "name": "Shaman's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Shoes of the Devoted"
+      "name": "Shoes of the Devoted",
+      "category": "Boots"
     },
     {
-      "name": "Silent Canine Cowl"
+      "name": "Silent Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Slippers of Predominance"
+      "name": "Slippers of Predominance",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of the Worrier"
+      "name": "Slippers of the Worrier",
+      "category": "Boots"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Spirit Armor"
+      "name": "Spirit Armor",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sprockets' Amulet"
+      "name": "Sprockets' Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Sprockets' Basking Athame"
+      "name": "Sprockets' Basking Athame",
+      "category": "Athames"
     },
     {
-      "name": "Sprockets' Charming Shoes"
+      "name": "Sprockets' Charming Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Sprockets' Enticing Boots"
+      "name": "Sprockets' Enticing Boots",
+      "category": "Boots"
     },
     {
-      "name": "Sprockets' Equivalent Robe"
+      "name": "Sprockets' Equivalent Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sprockets' Hat of the Feline"
+      "name": "Sprockets' Hat of the Feline",
+      "category": "Hats"
     },
     {
-      "name": "Sprockets' Invigorating Hat"
+      "name": "Sprockets' Invigorating Hat",
+      "category": "Hats"
     },
     {
-      "name": "Sprockets' Marvelous Boots"
+      "name": "Sprockets' Marvelous Boots",
+      "category": "Boots"
     },
     {
-      "name": "Sprockets' Medicinal Ring"
+      "name": "Sprockets' Medicinal Ring",
+      "category": "Rings"
     },
     {
-      "name": "Sprockets' Shoes of Ideals"
+      "name": "Sprockets' Shoes of Ideals",
+      "category": "Boots"
     },
     {
-      "name": "Sprockets' Slippers"
+      "name": "Sprockets' Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Sprockets' Urbane Cowl"
+      "name": "Sprockets' Urbane Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Sprockets' Vestment"
+      "name": "Sprockets' Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Sprockets's Cultured Cap"
+      "name": "Sprockets's Cultured Cap",
+      "category": "Hats"
     },
     {
-      "name": "Sprockets's Robe"
+      "name": "Sprockets's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sprockets's Victorian Vest"
+      "name": "Sprockets's Victorian Vest",
+      "category": "Robes"
     },
     {
-      "name": "Square Watermelon"
+      "name": "Square Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Stinky Cheese"
+      "name": "Stinky Cheese",
+      "category": "Snacks"
     },
     {
-      "name": "Super-Pass Opal"
+      "name": "Super-Pass Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Superstitious Canine Cowl"
+      "name": "Superstitious Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tunic of Symmetry"
+      "name": "Tunic of Symmetry",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of the Clever"
+      "name": "Tunic of the Clever",
+      "category": "Robes"
     },
     {
-      "name": "Vest of Predominance"
+      "name": "Vest of Predominance",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Expertise"
+      "name": "Vestment of Expertise",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of the Sun"
+      "name": "Vestment of the Sun",
+      "category": "Robes"
     },
     {
-      "name": "Watchman's Athame"
+      "name": "Watchman's Athame",
+      "category": "Athames"
     },
     {
-      "name": "Wheat Cracker"
+      "name": "Wheat Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Winter Canine Cowl"
+      "name": "Winter Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Wisp Bonus Opal"
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Wyldfire Ruby"
+      "name": "Wyldfire Ruby",
+      "category": "Jewels"
     }
   ],
   "authors": "BartleBot",
@@ -325,6 +427,15 @@
       "name": "Skip to boss",
       "type": "bool",
       "default": true
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Sprockets' Charming Shoes",
+        "Sprockets' Shoes of Ideals",
+        "Sprockets's Victorian Vest"
+      ]
     }
   ],
   "states": [
@@ -412,12 +523,12 @@
       "node_type": "handle_combat",
       "label": "Defeat Sprockets",
       "position": {
-        "x": 2200,
+        "x": 2640.0,
         "y": 0.0
       },
       "params": {
         "enemy": "Golem-Brass-MBBoss-L48",
-        "wiki_page": "",
+        "wiki_page": "Creature:Sprockets",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -427,8 +538,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2640,
-        "y": -90.0
+        "x": 3080.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -444,8 +555,8 @@
       "node_type": "enter_zone",
       "label": "Exit Counterweight East",
       "position": {
-        "x": 3080,
-        "y": -90.0
+        "x": 3520.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
@@ -485,8 +596,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Spawn Sprockets",
       "position": {
-        "x": 2640,
-        "y": 90.0
+        "x": 2200.0,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
@@ -503,16 +614,6 @@
       "trigger": "advance",
       "source": "t_1",
       "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_3",
-      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -611,35 +712,10 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_4",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_3",
       "dest": "state_15",
       "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Skip to boss",
-          "negate": false
-        }
-      ],
+      "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
