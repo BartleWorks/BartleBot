@@ -56,12 +56,21 @@ Profile strategies have ids like any other entry, and are linked with the existi
 
 ## Two roots, and why writes only ever go to one
 
-`strategy_store` resolves against an **ordered pair** of roots:
+`strategy_store` resolves against an **ordered pair** of roots, and which pair depends on the kind:
 
-| root | from | read | written |
-|---|---|---|---|
-| shipped | `project_root()` — the install directory | yes | **never** |
-| user | `%APPDATA%/Bartleby/BartleBot`, via `bartlebot.shared.vendor.product_dir` | yes, and wins | always |
+| kind | shipped root (read, **never** written) | user root (read and wins, always written) |
+|---|---|---|
+| duel strategies, player strategies, deck presets | the install directory with the newest shared Official set (`shared.official_set`) | `%APPDATA%/Bartleby`, via `shared.vendor.vendor_dir` |
+| Bot Combat Strategies | `project_root()`, the install directory | `%APPDATA%/Bartleby/BartleBot`, via `shared.vendor.product_dir` |
+
+**The first three are one library for every product by the vendor** (#168): BartleBuddy reads and writes the same `%APPDATA%/Bartleby/strategies/`, beside `accounts.json`. Their models and their store live in `bartlebot/shared/` (`strategy_models`, `strategy_library`), which imports nothing from `bartlebot` outside itself, and `strategy_store` is BartleBot's facade over them. Bot Combat Strategies stay BartleBot's own, since only BartleBot has bots. `store_roots.resolve_shared_roots` gives the library's pair; in developer mode both are the repo, whatever else is installed.
+
+**Which shipped copy.** Each product ships the shared Official set in its own install directory, pinned from one source. With two installed, `official_set.shipped_root` reads both products' install keys under `HKCU\Software\Bartleby\<product>` (`InstallDir`, `SharedSetVersion`, written by #27's installer) and uses the higher set version, whole, never mixing items from two sets; on a tie, or once the other product is uninstalled, our own. `SHARED_SET_VERSION` is raised whenever a shared Official item changes. The registry is read through `InstallRegistry`, and the suite swaps in an empty one.
+
+**Two products, one file.** Every write to the shared library checks first (`shared/strategy_library.py`):
+
+- A load hands back each entry's **fingerprint**, the SHA-256 of its user-root file as read, or `None` when it has none, and a save or delete passes it as `expected`. If the file changed since, nothing is written and `ChangedOnDisk` is raised. A save with no fingerprint expects no user file, which is what creating one means. `StrategyWorkingSet` holds each entry's fingerprint and lists a refused write in `conflicts`; the dialog then asks per entry, **Save mine as a copy** (the default; `keep_as_copy`) or **Use theirs** (`reload`). A refused delete can only be reloaded.
+- Each library file carries a **`format`**, left out while it is 1, so no file written before it existed changes. A file in a format newer than `LIBRARY_FORMAT` loads read-only, since the models drop fields they don't know; its editors are locked, Delete and Duplicate are disabled, and `NewerFormat` refuses any write.
 
 Every read merges the two with the user copy winning; every write and every delete touches only the user root. A user editing a shipped strategy therefore produces an **override**, not a fork: same id, user copy wins, shipped file untouched and still updatable. Deleting the user copy of a shipped id is not a delete at all — it is *revert to default*, and `Origin` / `origin_of()` exist so a surface can tell the two apart and say the honest word on the button.
 

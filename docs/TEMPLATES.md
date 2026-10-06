@@ -40,8 +40,27 @@ templates/                 beside subgraphs/ and strategies/
 
 `bartlebot/template_store.py` is the whole of it, Qt-free. A template is found by the id
 in its `template.json`, which the draft and every version carry as their own `id`, so a
-rename never moves a folder. Only the shipped root is read for now; the folder goes through
-`store_roots`, so user templates are not ruled out.
+rename never moves a folder.
+
+`templates/` is read under both roots (`store_roots.resolve_roots`, #168): the Official
+templates shipped in the install directory, and the user's own under
+`%APPDATA%/Bartleby/BartleBot`. Each `Template` carries its `origin`.
+
+- **`save_draft` and `release` write only to the user root.** An Official template's draft
+  is never saved (`PermissionError`) and Release refuses it: only an app release changes
+  one.
+- **A template is copied, so it never overrides.** A user-root folder declaring an Official
+  template's id is ignored with a warning, and the Official one is used. Customizing an
+  Official template is a fork with a new id (Stage 6 of `docs/SHARED_CONTENT.md`).
+- **Everything that reads templates goes through the store**, so `setup_steps.steps_for`,
+  `template_diff.load_update`, `template_diff.latest_versions` and
+  `new_bot.starting_points` see both roots. Their caches key on both folders.
+- With `BARTLEBOT_DEV` set the two roots are one directory, the repo's, and every template
+  reads as the user's; that is how the maintainer authors the shipped ones.
+
+`test_templates_shipped` guards what ships: every index entry's file exists and still has
+its recorded hash, and every shipped bot made from a template resolves against the shipped
+templates alone.
 
 Two fields on `BotConfig` carry the rest, both `None` by default so they stay out of every
 file that does not use them:
