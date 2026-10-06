@@ -1403,7 +1403,18 @@ def test_moving_a_nested_instance_is_a_layout_change():
     assert definition_change(defn, moved) == "layout"
 
 
-def test_a_param_an_edge_or_a_name_is_a_content_change():
+def test_a_name_or_a_description_alone_keeps_the_version():
+    defn = sync_players_definition()
+    assert definition_change(defn, defn.model_copy(update={"name": "Regroup"})) == "meta"
+    assert definition_change(defn, defn.model_copy(update={"description": "Elsewhere."})) == "meta"
+    moved = _moved(defn, "wisps").model_copy(update={"name": "Regroup"})
+    assert definition_change(defn, moved) == "meta", "a layout change beside a rename keeps the version too"
+    param = _moved(defn, "wisps").model_copy(update={"name": "Regroup"})
+    next(s for s in param.states if s.id == "wisps").params["timeout"] = 45
+    assert definition_change(defn, param) == "content", "a rename does not hide a change to what runs"
+
+
+def test_a_param_or_an_edge_is_a_content_change():
     defn = sync_players_definition()
     param = _moved(defn, "wisps")
     next(s for s in param.states if s.id == "wisps").params["timeout"] = 45
@@ -1411,8 +1422,6 @@ def test_a_param_an_edge_or_a_name_is_a_content_change():
     edge = defn.model_copy(deep=True)
     edge.transitions = edge.transitions[:-1]
     assert definition_change(defn, edge) == "content"
-    renamed = defn.model_copy(update={"name": "Regroup"})
-    assert definition_change(defn, renamed) == "content"
     nested = _outer_definition()
     relinked = nested.model_copy(deep=True)
     relinked.regions[0].source.inputs = {"hub": "Krokotopia/Hub"}

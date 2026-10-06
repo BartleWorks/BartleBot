@@ -136,6 +136,8 @@ _PAUSED = "paused"
 
 #: Why a built-in subgraph's Delete is grayed out: the store only ever removes the user's copy.
 _BUILT_IN_SUBGRAPH_TIP = "Built-in subgraphs can't be deleted. Open one and Save as… to make a copy of your own."
+#: Why a built-in subgraph's Rename is grayed out: its name is the shipped file's (#160).
+_BUILT_IN_RENAME_TIP = "Built-in subgraphs can't be renamed. Open one and Save as… to make a copy of your own."
 
 
 def _status_dot_color(state: str) -> str:
@@ -614,6 +616,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     #: (subgraph id): a Subgraphs card's Delete, or Revert for a modified built-in.
     #: The controller asks, deletes and refreshes; the panel only offers it.
     delete_subgraph_requested = pyqtSignal(str)
+    #: (subgraph id): a Subgraphs card's Rename. The controller asks for the name and writes it.
+    rename_subgraph_requested = pyqtSignal(str)
 
     _RECENT = "Recent"
     _ALL = "All"
@@ -1073,11 +1077,17 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         Delete removes the user's file, so what it says depends on where the definition
         is (:class:`~bartlebot.store_roots.Origin`): a custom one is deleted, a modified
-        built-in is reverted, and an unedited built-in has nothing to remove.
+        built-in is reverted, and an unedited built-in has nothing to remove. Rename is
+        offered on the user's own definitions only, never on a built-in, modified or not.
         """
         menu = popup_menu(self)
         menu.setToolTipsVisible(True)
         origin = self._subgraph_library.origin(subgraph_id) if self._subgraph_library is not None else None
+        rename = menu.addAction("Rename…")
+        if origin is not Origin.USER:
+            rename.setEnabled(False)
+            rename.setToolTip(_BUILT_IN_RENAME_TIP)
+        rename.triggered.connect(lambda: self.rename_subgraph_requested.emit(subgraph_id))
         if origin is Origin.SHIPPED_OVERRIDE:
             act = menu.addAction("Revert to Built-in…")
         else:
@@ -1215,6 +1225,8 @@ class BotCanvas(QWidget):
     # (subgraph id): delete a definition from the library, or revert a modified built-in --
     # from a card in the library's Subgraphs folder. The controller asks and deletes.
     delete_subgraph_requested = pyqtSignal(str)
+    # (subgraph id): rename a definition, from its card in the library's Subgraphs folder.
+    rename_subgraph_requested = pyqtSignal(str)
     # A definition document's way out, and its save: (then go back).
     definition_back_requested = pyqtSignal()
     definition_save_requested = pyqtSignal(bool)
@@ -1602,6 +1614,7 @@ class BotCanvas(QWidget):
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
         self._placeholder.open_subgraph_requested.connect(self.open_definition_requested)
         self._placeholder.delete_subgraph_requested.connect(self.delete_subgraph_requested)
+        self._placeholder.rename_subgraph_requested.connect(self.rename_subgraph_requested)
         self._placeholder.show()
         # Bar B is the *bot's* header, so with no bot there is nothing for it to say
         # and nothing its buttons can act on. Shown anyway it read as a second strip
@@ -1717,13 +1730,20 @@ class BotCanvas(QWidget):
         )
 
     def set_definition_context(
-        self, path: list[str], *, origin: str = "", used_by: int = 0, can_revert: bool = False
+        self,
+        path: list[str],
+        *,
+        origin: str = "",
+        used_by: int = 0,
+        can_revert: bool = False,
+        can_rename: bool = True,
     ) -> None:
         """Name the documents under the open definition, and what the header says about it.
 
         ``path`` is their names, outermost first -- the crumb's segments before this
         one. ``can_revert`` says it is a modified built-in, which the crumb offers to
-        put back.
+        put back. ``can_rename`` says the name is the user's to change: not on a
+        built-in one, modified or not, whose name is the shipped file's (#160).
         """
         if self._config is None or not self._config.is_definition:
             return
@@ -1732,6 +1752,7 @@ class BotCanvas(QWidget):
         self._refresh_crumb()
         # Re-read, since a save moved the version the header's pill shows.
         self._toolbar.set_config(self._config)
+        self._toolbar.set_name_locked(None if can_rename else _BUILT_IN_RENAME_TIP)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._toolbar.set_definition_info(origin, used_by)
         self._reposition_banner()
@@ -1909,6 +1930,7 @@ class BotCanvas(QWidget):
         panel.open_subgraph_requested.connect(dlg.accept)
         panel.open_subgraph_requested.connect(self.open_definition_requested)
         panel.delete_subgraph_requested.connect(self.delete_subgraph_requested)
+        panel.rename_subgraph_requested.connect(self.rename_subgraph_requested)
         panel.new_bot_requested.connect(dlg.reject)
         panel.new_bot_requested.connect(self.new_bot_requested)
         panel.open_bot_requested.connect(dlg.reject)

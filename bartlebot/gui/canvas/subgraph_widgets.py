@@ -434,10 +434,16 @@ class ViewFrame(ThemedMixin, QWidget):
 
 
 class SubgraphMetaDialog(QDialog):
-    """Name and description for a definition about to be created from a region."""
+    """Name and description for a definition: one about to be created, or one being renamed."""
 
     def __init__(
-        self, parent: QWidget | None = None, *, name: str = "", description: str = "", title: str | None = None
+        self,
+        parent: QWidget | None = None,
+        *,
+        name: str = "",
+        description: str = "",
+        title: str | None = None,
+        commit_text: str = "Save",
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title or "Save Region as Reusable Subgraph")
@@ -449,7 +455,7 @@ class SubgraphMetaDialog(QDialog):
         form = QFormLayout()
         form.addRow("Name", self._name)
         form.addRow("Description", self._description)
-        footer = dialog_footer(self, commit_text="Save")
+        footer = dialog_footer(self, commit_text=commit_text)
         self._ok = footer.commit
         self._name.textChanged.connect(lambda t: self._ok.setEnabled(bool(t.strip())))
         self._ok.setEnabled(bool(name.strip()))

@@ -340,6 +340,7 @@ class AppController(QObject):
         w.bot_canvas.definition_save_as_requested.connect(lambda: self._save_definition_as())
         w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
         w.bot_canvas.delete_subgraph_requested.connect(lambda sid: self._delete_subgraph(sid))
+        w.bot_canvas.rename_subgraph_requested.connect(lambda sid: self._rename_subgraph(sid))
         w.bot_canvas.document_back_requested.connect(self._back_to_document)
         w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
         w.bot_canvas.template_release_requested.connect(lambda: self._release_template())
@@ -1197,7 +1198,11 @@ class AppController(QObject):
         origin = self._subgraph_library.origin(config.definition.id)
         used_by = self._bots_linking(config.definition.id)
         self._window.bot_canvas.set_definition_context(
-            path, origin=source_label(origin), used_by=used_by, can_revert=origin == Origin.SHIPPED_OVERRIDE
+            path,
+            origin=source_label(origin),
+            used_by=used_by,
+            can_revert=origin == Origin.SHIPPED_OVERRIDE,
+            can_rename=origin == Origin.USER,
         )
 
     def _bots_linking(self, subgraph_id: str) -> int:
@@ -1285,6 +1290,50 @@ class AppController(QObject):
             canvas.set_compose_report(report)
         return True
 
+    def _rename_subgraph(self, subgraph_id: str) -> bool:
+        """Rename a definition, and edit its description, from its card in the library. False when refused or cancelled.
+
+        Written at the version it has: a bot links the id, and an instance keeps the
+        label it was given when it was placed, so nothing that links it changes and
+        none of them is offered an update (:func:`~bartlebot.subgraphs.definition_change`).
+        The user's own definitions only. A built-in one's name is the shipped file's,
+        and renaming it would make a copy that stops its updates arriving -- in dev
+        mode every definition is the user's, so that is where a built-in is renamed.
+        Refused while the definition is open, whose header renames it instead.
+        """
+        library = self._subgraph_library
+        library.reload()
+        defn = library.get(subgraph_id)
+        if defn is None or library.origin(subgraph_id) is not Origin.USER:
+            return False
+        title = "Rename Subgraph"
+        if subgraph_id in self._open_definition_ids():
+            QMessageBox.information(
+                self._window, title, f"'{defn.name}' is open. Rename it there, in its header in Edit mode."
+            )
+            return False
+        from bartlebot.gui.canvas.subgraph_widgets import SubgraphMetaDialog  # noqa: PLC0415
+
+        dlg = SubgraphMetaDialog(
+            self._window, name=defn.name, description=defn.description or "", title=title, commit_text="Rename"
+        )
+        if not dlg.exec():
+            return False
+        if (dlg.name, dlg.description) == (defn.name, defn.description):
+            return False
+        renamed = defn.model_copy(update={"name": dlg.name, "description": dlg.description})
+        try:
+            library.save(renamed)
+        except OSError as exc:
+            QMessageBox.critical(self._window, title, f"Could not rename '{defn.name}':\n\n{exc}")
+            return False
+        if renamed.name != defn.name:
+            logger.info("Renamed subgraph '%s' to '%s'", defn.name, renamed.name)
+        else:
+            logger.info("Changed the description of subgraph '%s'", defn.name)
+        self._window.bot_canvas.refresh_subgraph_listing()
+        return True
+
     def _on_definition_save_requested(self, then_back: bool) -> None:
         if self._save_definition() and then_back:
             self._definition_back()
@@ -1294,8 +1343,8 @@ class AppController(QObject):
 
         Only a change to what runs makes a new version (#158): a definition identical
         to the library's copy is not written at all, and one that differs only in
-        layout (:func:`~bartlebot.subgraphs.definition_change`) is written at the
-        version it has. Refused while
+        layout or in name and description (:func:`~bartlebot.subgraphs.definition_change`)
+        is written at the version it has. Refused while
         the document has errors: a definition that cannot compose must not reach the
         bots that link it. A shipped definition is saved as the user's
         own copy, which shadows it until reverted -- asked first, since from then on
@@ -1335,7 +1384,7 @@ class AppController(QObject):
             )
             if reply != QMessageBox.StandardButton.Save:
                 return False
-        if change == "layout":
+        if change in ("layout", "meta"):
             version = stored.version
         else:
             version = max(config.definition.version, stored.version if stored is not None else 0) + 1

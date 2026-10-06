@@ -264,6 +264,19 @@ update — and refuses while the definition is open as a document. With `BARTLEB
 set the roots are one directory, so every definition is custom and Delete removes the
 repo's file, which git then shows.
 
+A definition is renamed two ways (#160): *Rename…* on the same card menu, which edits the
+name and description in a dialog (`AppController._rename_subgraph`, refused while the
+definition is open), or the open document's header name in Edit mode, then Save to
+library. Either writes at the version it has: `definition_change` calls a changed name
+or description `"meta"`, which, like `"layout"`, reaches no bot's run — a bot links the
+id. The file moves to the new name's slug, since the filename is a name. Nothing that
+links it follows the rename: an instance's label is the bot's own, set from the name
+when it was placed, and its region page shows the new name beside it; its region id
+keeps the old slug too, which is never parsed. Rename is the user's own definitions
+only. A built-in's name is the shipped file's, so the card's item is grayed out and the
+header's name stays a label in Edit mode, modified built-in or not; it is renamed with
+`BARTLEBOT_DEV` set, where every definition is the user's.
+
 A shipped definition is authored with `BARTLEBOT_DEV` set, which makes the project root
 the user root as well: one copy, written where git sees it. Authoring without it is how
 the first shipped definitions were lost — saved to `%APPDATA%`, where they shadowed the
