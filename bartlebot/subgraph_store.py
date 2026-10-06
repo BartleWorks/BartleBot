@@ -166,6 +166,20 @@ class SubgraphLibrary:
     def origin(self, subgraph_id: str) -> Origin:
         return origin_of(subgraph_id, self._root, self._user_root)
 
+    def nesting(self, subgraph_id: str) -> list[SubgraphDefinition]:
+        """The definitions that link ``subgraph_id`` directly, by name.
+
+        What deleting it reaches besides the bots that link it: each of these stops
+        composing, so a bot linking one runs its snapshot, as for a missing one.
+        """
+        found = [
+            d
+            for d in self._by_id.values()
+            if d.id != subgraph_id
+            and any(r.source is not None and r.source.subgraph_id == subgraph_id for r in d.regions)
+        ]
+        return sorted(found, key=lambda d: d.name.casefold())
+
     def save(self, defn: SubgraphDefinition) -> None:
         """Write ``defn`` to the user root and refresh the cache to match."""
         save_subgraph(defn, self._root, self._user_root)

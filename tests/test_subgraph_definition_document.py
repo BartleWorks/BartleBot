@@ -354,6 +354,128 @@ def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
     panel.deleteLater()
 
 
+def _subgraph_cards(panel):
+    from bartlebot.gui.canvas.bot_canvas import _BotCard  # noqa: PLC0415
+
+    return [c for c in panel.findChildren(_BotCard) if c.isVisibleTo(panel)]
+
+
+def _show_subgraphs(panel):
+    keys = [panel._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(panel._cat_list.count())]
+    panel._cat_list.setCurrentRow(keys.index(panel._SUBGRAPHS_KEY))
+
+
+def test_a_right_click_on_a_subgraph_card_does_not_open_it(qapp, library):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(library)
+    panel.refresh()
+    _show_subgraphs(panel)
+    opened = []
+    panel.open_subgraph_requested.connect(opened.append)
+    QTest.mouseClick(_subgraph_cards(panel)[0], Qt.MouseButton.RightButton)
+    assert opened == []
+    panel.deleteLater()
+
+
+def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_path):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    lib = SubgraphLibrary(shipped, user)
+    sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
+    lib.reload()
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(lib)
+    asked = []
+    panel.delete_subgraph_requested.connect(asked.append)
+
+    built_in = panel.subgraph_menu(SYNC_ID).actions()
+    assert [a.text() for a in built_in] == ["Delete Subgraph…"]
+    assert not built_in[0].isEnabled() and "can't be deleted" in built_in[0].toolTip()
+
+    lib.save(sync_players_definition(version=2))
+    (modified,) = panel.subgraph_menu(SYNC_ID).actions()
+    assert modified.text() == "Revert to Built-in…" and modified.isEnabled()
+
+    custom = sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"})
+    lib.save(custom)
+    (delete,) = panel.subgraph_menu("mine").actions()
+    assert delete.text() == "Delete Subgraph…" and delete.isEnabled()
+    delete.trigger()
+    assert asked == ["mine"]
+    panel.deleteLater()
+
+
+def test_deleting_a_subgraph_says_who_links_it_and_leaves_them_their_snapshot(harness, library, monkeypatch):
+    from tests.test_subgraphs import _outer_with_snapshot  # noqa: PLC0415
+
+    library.save(_outer_with_snapshot(library).model_copy(update={"name": "Boss outer"}))
+    asked = []
+
+    def answer(*a, **k):
+        asked.append(a[2])
+        return QMessageBox.StandardButton.Ok
+
+    monkeypatch.setattr(QMessageBox, "question", answer)
+    canvas = _canvas(harness)
+    bot = canvas.config
+    assert harness._delete_subgraph(SYNC_ID)
+    assert "1 bot and the subgraph 'Boss outer'" in asked[0]
+    assert library.get(SYNC_ID) is None
+    assert canvas.config is bot, "the open bot keeps its snapshot"
+    assert canvas.compose_report.regions[REGION].kind == "missing"
+
+
+def test_deleting_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
+    assert not harness._delete_subgraph(SYNC_ID)
+    assert library.get(SYNC_ID) is not None
+
+
+def test_an_open_definition_is_not_deleted(harness, library, monkeypatch):
+    told = []
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
+    _canvas(harness).open_definition_of(REGION)
+    assert not harness._delete_subgraph(SYNC_ID)
+    assert told and library.get(SYNC_ID) is not None
+
+
+def test_deleting_a_modified_built_in_reverts_it(qapp, tmp_path, monkeypatch):
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
+    lib = SubgraphLibrary(shipped, user)
+    lib.save(sync_players_definition(version=2))
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
+    canvas = BotCanvas()
+    h = ControllerHarness(canvas, lib)
+    assert h._delete_subgraph(SYNC_ID)
+    assert lib.get(SYNC_ID).version == 1
+    assert not h._delete_subgraph(SYNC_ID), "an unedited built-in has nothing to delete"
+    assert lib.get(SYNC_ID) is not None
+    canvas.prepare_for_shutdown()
+
+
+def test_the_library_stays_in_the_subgraphs_folder_after_a_delete(qapp, library):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    library.save(sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"}))
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(library)
+    panel.refresh()
+    _show_subgraphs(panel)
+    assert len(_subgraph_cards(panel)) == 2
+    library.delete("mine")
+    panel.refresh(keep_category=True)
+    assert panel._cat_list.currentItem().data(Qt.ItemDataRole.UserRole) == panel._SUBGRAPHS_KEY
+    assert len(_subgraph_cards(panel)) == 1
+    panel.deleteLater()
+
+
 def test_undo_keeps_the_node_selected(doc):
     doc.select_state("wisps")
     doc.link_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float"))

@@ -254,6 +254,16 @@ so the region page can say honestly whether removing a definition deletes or rev
 A definition's file is named after it (`subgraphs/sync-players.json`) and found by the id
 inside, like a strategy's — "Filenames are names, ids are inside" in `COMBAT_CONFIG.md`.
 
+A definition leaves the library from its card in the Bot Library's Subgraphs folder
+(right-click, #161), and the menu says which of the three it is: *Delete Subgraph…* on a
+custom one, *Revert to Built-in…* on a modified built-in, and a grayed-out Delete on an
+unedited built-in, which has no user file to remove. `AppController._delete_subgraph`
+asks first, naming the bots and the other definitions that link it — they are not
+broken, since each keeps its snapshot and composes as `missing`, but none gets another
+update — and refuses while the definition is open as a document. With `BARTLEBOT_DEV`
+set the roots are one directory, so every definition is custom and Delete removes the
+repo's file, which git then shows.
+
 A shipped definition is authored with `BARTLEBOT_DEV` set, which makes the project root
 the user root as well: one copy, written where git sees it. Authoring without it is how
 the first shipped definitions were lost — saved to `%APPDATA%`, where they shadowed the
