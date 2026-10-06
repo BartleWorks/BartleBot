@@ -1085,6 +1085,18 @@ def test_definition_problems_reports_structure_and_types(library):
     assert warnings == [], "an idle Exit is the node's own error, not the signature's"
 
 
+def test_an_input_linked_to_nothing_blocks_saving_but_still_loads(library):
+    """Unlinking an input's last param is a step while editing, so the file still loads;
+    saving it is refused, since a subgraph node would offer an input that does nothing."""
+    config = definition_to_config(sync_players_definition())
+    config.definition.inputs.append(SubgraphInput(name="loose", label="Loose end", type="str"))
+    errors, _warnings = definition_problems(config, NODE_PARAM_SCHEMAS, library)
+    assert errors == ["input 'Loose end' is linked to nothing; link a param to it or delete it"]
+    # The structural rules a definition file is held to do not include it.
+    defn = config_to_definition(config)
+    assert [i.name for i in defn.inputs if not i.bindings] == ["loose"]
+
+
 def test_a_zone_and_a_nav_zone_can_share_an_input():
     """The Stage 3 lattice in use: the input is typed the narrower of the two."""
     from bartlebot.subgraphs import binding_type
