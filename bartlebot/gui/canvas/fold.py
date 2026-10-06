@@ -8,8 +8,13 @@ nothing, and expanding is an exact reverse.
 
 A column is hidden when it lies inside a collapsed region's span -- past the
 column its node is drawn in -- and nothing drawn occupies it. Rows follow the
-same rule on their own. A gap outside every collapsed span is the author's and
-is never touched, and a column another visible node shares stays, gap and all.
+same rule on their own, with one more condition: hiding a row must not bring a
+node into contact with one drawn above it in its column. A collapsed node grows
+20px a port row, so from three it is taller than a row can hold, and the row under
+it stays open when something sits below it -- only then, and only in that case,
+since a node is never wider than a column and a tall one far away touches nothing
+(#159). A gap outside every collapsed span is the author's and is never touched,
+and a column another visible node shares stays, gap and all.
 
 The map is derived from what the scene draws every time it is built and never
 stored, like display ids: undo, a recompose or a paste rebuilds it with the scene.
@@ -60,12 +65,6 @@ class FoldMap:
         """The row a center ``y`` lies in; rows are centered on multiples of ``row_h``."""
         return math.floor(y / self.row_h + 0.5)
 
-    def rows_covered(self, y: float, height: float) -> range:
-        """Rows a body centered on ``y`` and ``height`` tall reaches into."""
-        top = math.floor((y - height / 2) / self.row_h + 0.5)
-        bottom = math.ceil((y + height / 2) / self.row_h - 0.5)
-        return range(top, max(top, bottom) + 1)
-
     # -- building ------------------------------------------------------
 
     def span_of(self, positions: Iterable[tuple[float, float]]) -> Span | None:
@@ -90,19 +89,42 @@ class FoldMap:
         ``occupied`` is ``(x, y, height)`` in stored coordinates for every item that
         is drawn: ordinary nodes, call nodes, and each collapsed node at its span's
         top-left cell. Nothing hidden is ever occupied, so no drawn item is lost.
+
+        Rows are hidden top to bottom, each only if it leaves every pair of nodes
+        in one column -- the only nodes a body can reach -- at least as far apart as
+        their heights need, or as they already were if the author put them closer.
+        Which rows between two nodes are hidden does not matter, only how many.
         """
         base = cls(col_w, row_h)
-        used_cols: set[int] = set()
-        used_rows: set[int] = set()
-        for x, y, height in occupied:
-            used_cols.add(base.col_of(x))
-            used_rows.update(base.rows_covered(y, height))
+        occupied = list(occupied)
+        used_cols = {base.col_of(x) for x, _, _ in occupied}
+        used_rows = {base.row_of(y) for _, y, _ in occupied}
         cols: set[int] = set()
-        rows: set[int] = set()
+        candidates: set[int] = set()
         for span in spans:
             cols.update(c for c in range(span.col0 + 1, span.col1 + 1) if c not in used_cols)
-            rows.update(r for r in range(span.row0 + 1, span.row1 + 1) if r not in used_rows)
-        return cls(col_w, row_h, tuple(sorted(cols)), tuple(sorted(rows)))
+            candidates.update(r for r in range(span.row0 + 1, span.row1 + 1) if r not in used_rows)
+
+        # (upper row, lower row, distance apart, distance they need) per pair in a column.
+        by_col: dict[int, list[tuple[float, float]]] = {}
+        for x, y, height in occupied:
+            by_col.setdefault(base.col_of(x), []).append((y, height))
+        pairs: list[tuple[int, int, float, float]] = []
+        for column in by_col.values():
+            column.sort()
+            for i, (y0, h0) in enumerate(column):
+                for y1, h1 in column[i + 1 :]:
+                    gap = y1 - y0
+                    pairs.append((base.row_of(y0), base.row_of(y1), gap, min(gap, (h0 + h1) / 2)))
+        hidden_between = [0] * len(pairs)
+        rows: list[int] = []
+        for r in sorted(candidates):
+            spanning = [i for i, (top, bottom, _, _) in enumerate(pairs) if top < r < bottom]
+            if all(pairs[i][2] - (hidden_between[i] + 1) * row_h >= pairs[i][3] for i in spanning):
+                rows.append(r)
+                for i in spanning:
+                    hidden_between[i] += 1
+        return cls(col_w, row_h, tuple(sorted(cols)), tuple(rows))
 
     # -- mapping -------------------------------------------------------
 

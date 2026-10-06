@@ -48,10 +48,34 @@ def test_a_two_row_region_hides_its_second_row_too():
     assert fold.to_display(5 * W, 2 * H) == (3 * W, H)
 
 
-def test_a_row_a_tall_node_reaches_into_stays():
-    tall = [(0.0, 0.0, 70.0), (W, 0.0, 170.0)]  # 170 tall, centered on row 0: reaches rows -1..1
+def test_a_tall_node_with_nothing_below_it_in_its_column_keeps_no_row():
+    """Rows are global, but a body only reaches the nodes in its own column (#159)."""
+    tall = [(0.0, 0.0, 70.0), (W, 0.0, 170.0), (0.0, 3 * H, 70.0)]  # the node below is in another column
     fold = _fold([Span(2, 2, 0, 2)], tall)
-    assert fold.hidden_rows == (2,)
+    assert fold.hidden_rows == (1, 2)
+
+
+def _over_a_node(height: float) -> FoldMap:
+    """A collapsed node ``height`` tall over three rows, with an ordinary node in its column just below."""
+    return _fold([Span(0, 0, 0, 2)], [(0.0, 0.0, height), (0.0, 3 * H, 70.0)])
+
+
+def test_a_one_or_two_port_collapsed_node_over_a_node_hides_every_row_between():
+    assert _over_a_node(72.0).hidden_rows == (1, 2)
+    assert _over_a_node(92.0).hidden_rows == (1, 2)  # 9px clear of the node below
+    assert _over_a_node(92.0).to_display(0.0, 3 * H) == (0.0, H)
+
+
+def test_a_three_port_collapsed_node_over_a_node_keeps_the_row_it_needs():
+    """112px over a 70px node one row down would overlap it by a pixel, so one row stays."""
+    fold = _over_a_node(112.0)
+    assert len(fold.hidden_rows) == 1
+    assert fold.to_display(0.0, 3 * H) == (0.0, 2 * H)
+
+
+def test_a_tall_node_keeps_only_as_many_rows_as_it_needs():
+    fold = _fold([Span(2, 2, 0, 3)], [(W, 0.0, 170.0), (W, 3 * H, 70.0)])  # needs 120 apart: one row of three
+    assert fold.hidden_rows == (1,)
 
 
 def test_an_authors_gap_outside_any_collapsed_span_is_kept():

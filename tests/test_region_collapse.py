@@ -391,6 +391,31 @@ def test_a_region_dropped_just_before_a_node_expands_clear_of_it(canvas):
     assert len(set(cells.values())) == len(cells)
 
 
+def test_a_two_port_region_dropped_above_a_node_hides_its_rows_until_expanded(canvas):
+    """#159: its node is 92px, taller than a row, which used to hold the row under it open."""
+    config = canvas.config
+    for sid, (c, r) in {"a4": (3, 1), "a5": (3, 2)}.items():  # the region over three rows, two columns
+        next(s for s in config.states if s.id == sid).position = {"x": c * W, "y": r * 90.0}
+    config.transitions.append(_t("a4", "a1", "FAILURE"))  # a second exit: two port rows
+    canvas.setup(config)
+    canvas.enter_edit_mode()
+    canvas.set_region_collapsed("r1", True)
+    items = canvas.scene.node_items
+    assert items["r1"].body_height > 90
+    below = items["a8"].pos() + QPointF(0, 2 * 90.0)
+    items["a8"].setPos(below)  # two rows down, at column 5
+    canvas.scene.flush_positions()
+    r1 = items["r1"]
+    r1.setPos(QPointF(below.x(), below.y() - 90.0 - (r1.body_height - items["a8"].body_height) / 2))
+    canvas.scene.flush_positions()
+    center = {did: items[did].pos().y() + items[did].body_height / 2 for did in ("r1", "a8")}
+    assert center["a8"] - center["r1"] == 90.0  # still one row apart on screen
+    canvas.set_region_collapsed("r1", False)
+    cells = {s.id: _cell_of(canvas.config, s.id) for s in canvas.config.states}
+    assert cells["a8"][1] == cells["a5"][1] + 1
+    assert len(set(cells.values())) == len(cells)
+
+
 def test_a_node_inserted_in_front_of_a_collapsed_region_moves_its_span_with_it(canvas):
     canvas.set_region_collapsed("r1", True)
     new_id = canvas.scene.insert_state_on_edge(_edge(canvas, "a2", "SUCCESS", "r1"), "sleep")
