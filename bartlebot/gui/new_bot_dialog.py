@@ -51,6 +51,7 @@ from bartlebot.gui.widgets.card_art_tile import ArtIconView, art_icon
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX, PickerButton, PickerRow
+from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import tag_icon
 from bartlebot.gui.widgets.tags_field import TagsField
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -63,6 +64,7 @@ from bartlebot.new_bot import (
     library_folders,
     unique_file_name,
 )
+from bartlebot.store_roots import Origin
 
 _BLANK_NAME = "Blank bot"
 _BLANK_BLURB = "An empty canvas. Build the graph yourself."
@@ -121,8 +123,11 @@ class StartCard(ThemedMixin, QFrame):
         tooltip: str = "",
         icon: QIcon | None = None,
         glyph: str = "",
+        source: Origin | None = None,
         parent: QWidget | None = None,
     ) -> None:
+        """``source`` is where a template comes from, shown as its Source pill (#149);
+        ``None`` for the blank bot, which comes from nowhere."""
         super().__init__(parent)
         self._selected = False
         self._hovered = False
@@ -149,7 +154,17 @@ class StartCard(ThemedMixin, QFrame):
         row.addLayout(text, 1)
         self._name = QLabel(name)
         self._name.setFont(THEME.ui_font(THEME.font_body_px + 1, bold=True))
-        text.addWidget(self._name)
+        self._source_pill: QLabel | None = None
+        if source is None:
+            text.addWidget(self._name)
+        else:
+            heading = QHBoxLayout()
+            heading.setContentsMargins(0, 0, 0, 0)
+            heading.setSpacing(6)
+            text.addLayout(heading)
+            heading.addWidget(self._name, 1)
+            self._source_pill = source_pill(source)
+            heading.addWidget(self._source_pill, 0, Qt.AlignmentFlag.AlignVCenter)
         self._blurb = QLabel(blurb)
         self._blurb.setFont(THEME.ui_font(THEME.font_small_px))
         self._blurb.setWordWrap(True)
@@ -161,6 +176,11 @@ class StartCard(ThemedMixin, QFrame):
     @property
     def name(self) -> str:
         return self._name.text()
+
+    @property
+    def source_text(self) -> str:
+        """What the card's Source pill says; "" for the blank bot, which has none."""
+        return self._source_pill.text() if self._source_pill is not None else ""
 
     @property
     def selected(self) -> bool:
@@ -439,7 +459,13 @@ class NewBotDialog(QDialog):
             full = point.blurb.strip()
             icon = tag_icon(point.icon_tag) if point.icon_tag else None
             self._cards.append(
-                StartCard(point.name, point.summary, tooltip=full if full != point.summary else "", icon=icon)
+                StartCard(
+                    point.name,
+                    point.summary,
+                    tooltip=full if full != point.summary else "",
+                    icon=icon,
+                    source=point.origin,
+                )
             )
         for index, card in enumerate(self._cards):
             card.chosen.connect(lambda i=index: self._select(i))

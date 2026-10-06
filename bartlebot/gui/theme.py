@@ -128,7 +128,7 @@ class _Theme:
     # medallion, and the ring vanished against the gold. 7.4:1 against ``pill_text``.
     pill_activity_bg: str = "#6a3fa0"
     # A strategy that belongs to one combat profile rather than the library (#118). Its
-    # own hue on purpose: not the accent, which the built-in source pills wear; not the
+    # own hue on purpose: not the accent, which the Official source pills wear; not the
     # error red, which marks a DSL that does not parse; not the Role tags' purple. 5.3:1
     # against ``pill_text``.
     pill_profile_bg: str = "#00796b"

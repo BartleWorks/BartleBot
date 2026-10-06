@@ -28,6 +28,7 @@ from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (r
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
+from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
@@ -118,6 +119,20 @@ STRATEGY_VOCABULARY = TagVocabulary(
     {SOURCE: "pill_neutral_bg", ROLE: "pill_activity_bg"},
     ("strategy", "strategies"),
 )
+
+
+#: The Source filter on the lists of bots and subgraphs (#149): Official, Official
+#: (modified), Custom. The strategy dialog's Source group with the same words and color,
+#: minus its Profile entry, which only a strategy can have. The noun is the list's.
+SOURCE_VOCABULARY = TagVocabulary(
+    {SOURCE: tuple(SOURCE_LABELS[o] for o in LISTED_ORIGINS)},
+    {SOURCE: "pill_neutral_bg"},
+)
+
+
+def source_vocabulary(noun: tuple[str, str]) -> TagVocabulary:
+    """:data:`SOURCE_VOCABULARY`, counting ``noun`` -- ("bot", "bots"), ("subgraph", "subgraphs")."""
+    return TagVocabulary(SOURCE_VOCABULARY.groups, SOURCE_VOCABULARY.accents, noun)
 
 
 def tag_sections(

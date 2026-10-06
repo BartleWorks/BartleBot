@@ -442,8 +442,9 @@ def _save_as_controller(config, refreshed=None, rebound=None):
         _refresh_template_context=lambda: None,
         _window=SimpleNamespace(
             set_bot_name=lambda *a: None,
+            set_save_enabled=lambda *a, **k: None,
             update_recent_menu=lambda *a: None,
-            bot_canvas=SimpleNamespace(refresh_placeholder=lambda: None),
+            bot_canvas=SimpleNamespace(refresh_placeholder=lambda: None, set_read_only=lambda _read_only: None),
             left_sidebar=SimpleNamespace(
                 refresh_options=lambda cfg: (refreshed if refreshed is not None else []).append(cfg.id),
                 rebind_identity=lambda: (rebound if rebound is not None else []).append(config.id),

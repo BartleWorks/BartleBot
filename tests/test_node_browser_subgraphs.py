@@ -75,7 +75,7 @@ def test_the_detail_panel_describes_the_subgraph(qapp, library, tmp_path, monkey
     assert panel._shown[0] == "subgraph"
     joined = " ".join(w.text() for w in panel.widget().findChildren(QLabel))
     assert "Used by 1 bot" in joined
-    assert "Source: Custom" in joined
+    assert "Custom" in joined, "the Source pill"
     assert "7 states" in joined
 
 
@@ -94,3 +94,25 @@ def test_the_empty_tab_says_how_to_fill_it(qapp, tmp_path):
     dlg = NodeBrowserDialog(mode="add", subgraph_library=SubgraphLibrary(tmp_path / "empty"))
     dlg._tab_bar.setCurrentIndex(_tab_index(dlg, "Subgraphs"))
     assert "Save Region as Reusable Subgraph" in dlg._empty_label.text()
+
+
+def test_the_source_filter_is_offered_on_the_subgraphs_tab_and_narrows_it(qapp, tmp_path):
+    """Official or the user's own, in the words every list uses (#149)."""
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    SubgraphLibrary(shipped).save(sync_players_definition())
+    mine = sync_players_definition().model_copy(update={"id": "mine", "name": "My sync"})
+    SubgraphLibrary(user).save(mine)
+    dlg = NodeBrowserDialog(mode="add", subgraph_library=SubgraphLibrary(shipped, user))
+
+    assert not dlg.source_filter_visible, "a node type has no source to filter by"
+    dlg._tab_bar.setCurrentIndex(_tab_index(dlg, "Subgraphs"))
+    assert dlg.source_filter_visible
+    assert set(dlg.offered_node_types) == {subgraph_key(SYNC_ID), subgraph_key("mine")}
+
+    dlg.set_source_filter(["Official"])
+    assert dlg.offered_node_types == [subgraph_key(SYNC_ID)]
+    dlg.set_source_filter(["Custom"])
+    assert dlg.offered_node_types == [subgraph_key("mine")]
+    dlg._search.setText("sync")
+    offered = [k for k in dlg.offered_node_types if k.startswith("subgraph:")]
+    assert offered == [subgraph_key("mine")], "a search's subgraphs are filtered too"

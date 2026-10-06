@@ -325,6 +325,20 @@ class TemplateRef(BaseModel):
     version: int
 
 
+class ForkedFrom(BaseModel):
+    """The Official bot a user's copy was made from (Make my own copy, #149).
+
+    ``sha256`` is the Official bot's content hash when the copy was made
+    (:func:`bartlebot.bot_fork.content_sha256`), so a later release that changes the
+    Official bot can be told apart from one that does not. Written once, by the copy,
+    and never by a load or a save; Save As copies it unchanged, since a copy of a copy
+    came from the same Official bot.
+    """
+
+    id: str
+    sha256: str
+
+
 class SetupTarget(BaseModel):
     """One field a setup step asks the user to fill: a *fill-in*. Exactly one of three kinds.
 
@@ -409,6 +423,8 @@ class BotConfig(BaseModel):
     definition: DefinitionMeta | None = None
     # Set only on a bot made from a template (New Bot), naming it and the base version.
     template: TemplateRef | None = None
+    # Set only on a user's copy of an Official bot, naming the bot it was made from.
+    forked_from: ForkedFrom | None = None
     # Set only on a template's draft or a released version of it, never on a bot.
     template_meta: TemplateMeta | None = None
 

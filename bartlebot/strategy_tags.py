@@ -6,9 +6,9 @@ Adding a tag is a code change, for the same reason it is there.
 
 Two kinds of group, and the difference is where the value comes from:
 
-- **Source** (Built-in / Built-in (modified) / Custom) is *derived* from the working
+- **Source** (Official / Official (modified) / Custom) is *derived* from the working
   set's :meth:`~bartlebot.strategy_workset.StrategyWorkingSet.status` and never
-  stored. Stored, it would go stale on the first edit of a built-in, and a user copy
+  stored. Stored, it would go stale on the first edit of an Official one, and a user copy
   would claim to be one. Its words are :data:`bartlebot.store_roots.SOURCE_LABELS`, so
   a filter chip always says what the pill on the card it matches says. The one
   exception is :data:`PROFILE_SOURCE`, for an entry that belongs to the active combat
@@ -39,7 +39,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from bartlebot.shared.strategy_models import ROLE_TAGS, normalize_role_tags
-from bartlebot.store_roots import SOURCE_LABELS, Origin
+from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.strategy_store import StrategyKind
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ PROFILE_SOURCE = "Profile"
 #: entry is never listed.
 SOURCE_TAGS: tuple[str, ...] = (
     PROFILE_SOURCE,
-    *(SOURCE_LABELS[o] for o in (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE, Origin.USER)),
+    *(SOURCE_LABELS[o] for o in LISTED_ORIGINS),
 )
 
 #: Every group, in presentation order.

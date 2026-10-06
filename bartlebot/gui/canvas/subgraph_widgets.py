@@ -144,7 +144,7 @@ class CrumbBar(ThemedMixin, QWidget):
     clicked to step back to it (``segment_clicked`` carries its index). The close
     button steps out one level. In a definition it carries the three verbs that save
     it: *Save* is the one this surface expects (``PRIMARY``), *Save as…* and, for a
-    modified built-in, *Revert*. Their labels are short on purpose, since the bar sits
+    modified Official one, *Revert*. Their labels are short on purpose, since the bar sits
     over the canvas and every character it grows by hides the graph.
 
     The bar only draws; which segments, and what a click does, is ``BotCanvas``'s.
@@ -178,7 +178,7 @@ class CrumbBar(ThemedMixin, QWidget):
         self._save_as_btn = ActionButton("save_as", "Save as…", fill=False)
         self._save_as_btn.setToolTip("Save a copy as a new subgraph, and go on editing the copy")
         self._revert_btn = ActionButton("revert", "Revert", fill=False)
-        self._revert_btn.setToolTip("Revert to the built-in version of this subgraph")
+        self._revert_btn.setToolTip("Revert to the Official version of this subgraph")
         self._release_btn = ActionButton("upload", "Release…", fill=False)
         self._release_btn.setToolTip("Release the saved draft as the template's next version, which New Bot offers")
         self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12, tint=IconTint.ON_ACCENT)

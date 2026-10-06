@@ -59,6 +59,7 @@ from bartlebot.shared.vendor import product_dir, vendor_dir
 
 __all__ = [
     "DEV_ENV_VAR",
+    "LISTED_ORIGINS",
     "SOURCE_LABELS",
     "Origin",
     "declared_id",
@@ -86,15 +87,21 @@ def dev_mode() -> bool:
     return os.environ.get(DEV_ENV_VAR, "") not in ("", "0")
 
 
-#: What every surface calls where an item comes from. One map for both libraries, so a
-#: subgraph and a combat strategy never describe the same origin in two vocabularies.
-#: "Custom" rather than "User": it is the user's own, and the pill has to say so in one word.
+#: What every surface calls where an item comes from: bots, templates, subgraphs and
+#: strategies alike, so no two of them describe the same origin in two vocabularies.
+#: "Official" means shipped, which means tested and proven in game: it is worked out from
+#: the root a file is in, never read from the file, so nothing a user receives can claim
+#: it (#149). "Custom" rather than "User": it is the user's own, in one word.
 SOURCE_LABELS = {
-    Origin.SHIPPED: "Built-in",
-    Origin.SHIPPED_OVERRIDE: "Built-in (modified)",
+    Origin.SHIPPED: "Official",
+    Origin.SHIPPED_OVERRIDE: "Official (modified)",
     Origin.USER: "Custom",
     Origin.MISSING: "Missing",
 }
+
+#: The origins a list can show, in the order a Source filter offers them. Missing is not
+#: one: a missing item is never listed.
+LISTED_ORIGINS: tuple[Origin, ...] = (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE, Origin.USER)
 
 
 def source_label(origin: Origin) -> str:

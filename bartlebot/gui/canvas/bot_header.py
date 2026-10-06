@@ -352,7 +352,7 @@ class BotHeader(ThemedMixin, QWidget):
         # and the header starts there with no bot loaded.
         self._label_mode = True
         # Why the name stays a label even in Edit mode, or None when it is editable:
-        # a built-in definition's name is the shipped file's (#160). Every set_config
+        # an Official definition's name is the shipped file's (#160). Every set_config
         # clears it, and set_definition_context sets it again for a definition.
         self._name_locked: str | None = None
         # Last status handed to set_status, replayed on a theme switch: the dot's

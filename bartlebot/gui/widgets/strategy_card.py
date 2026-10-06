@@ -21,9 +21,9 @@ from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.flow_layout import flow_container
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
-from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, ProfilePill, TagPill
-from bartlebot.store_roots import SOURCE_LABELS, Origin
+from bartlebot.gui.widgets.tag_pill import ProfilePill, TagPill
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 from bartlebot.strategy_tags import PROFILE_SOURCE
 
@@ -47,21 +47,6 @@ def profile_pill(profile_name: str) -> QLabel:
     pill = ProfilePill(PROFILE_SOURCE)
     pill.setToolTip(f"Belongs to the combat profile '{profile_name}' only")
     return pill
-
-
-def source_pill(source: Origin) -> QLabel:
-    """The pill naming where a strategy comes from, weighted like ``ActionButton``.
-
-    A built-in is filled with the accent (``PRIMARY``), a modified built-in outlined in
-    it (``SECONDARY``) and anything else gray (``TERTIARY``). All three are the same
-    height, so a card does not change size when an edit turns one into another.
-    """
-    text = SOURCE_LABELS[source]
-    if source is Origin.SHIPPED:
-        return AccentPill(text, filled=True)
-    if source is Origin.SHIPPED_OVERRIDE:
-        return AccentPill(text)
-    return NeutralPill(text)
 
 
 class StrategyCard(QWidget):
@@ -127,7 +112,7 @@ class StrategyCard(QWidget):
             elif summary.source is not None:
                 # Always shown, and a pill of words rather than a glyph: no icon says
                 # "ships with the app" unaided (#124). Three weights, on ActionButton's
-                # model: a built-in filled with the accent, a modified built-in outlined
+                # model: an Official one filled with the accent, a modified one outlined
                 # in it, and a custom one gray.
                 pill = source_pill(summary.source)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)

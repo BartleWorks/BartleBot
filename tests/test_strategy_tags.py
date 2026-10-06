@@ -127,7 +127,7 @@ def test_tags_or_within_a_group():
 def test_tags_and_across_groups():
     facets = StrategyFacets(tags=frozenset({"Hitter", "Custom"}))
     assert facets_match(facets, StrategyFilter(tags=frozenset({"Hitter", "Custom"})))
-    assert not facets_match(facets, StrategyFilter(tags=frozenset({"Hitter", "Built-in"})))
+    assert not facets_match(facets, StrategyFilter(tags=frozenset({"Hitter", "Official"})))
 
 
 def test_an_entry_with_no_role_fails_a_role_filter():
@@ -168,12 +168,12 @@ def test_school_and_tags_combine():
 
 def test_counts_answer_what_each_value_alone_would_show():
     entries = [
-        StrategyFacets(tags=frozenset({"Hitter", "Built-in"}), slot_schools=_f({"Storm"}), player_range=(1, 2)),
+        StrategyFacets(tags=frozenset({"Hitter", "Official"}), slot_schools=_f({"Storm"}), player_range=(1, 2)),
         StrategyFacets(tags=frozenset({"Custom"}), slot_schools=(ANY,), player_range=(2, 4)),
         StrategyFacets(tags=frozenset({"Custom"})),  # a deck: no slots, no range
     ]
     counts = count_facets(entries, ("Storm", "Life"))
 
-    assert counts.tags == {"Hitter": 1, "Built-in": 1, "Custom": 2}
+    assert counts.tags == {"Hitter": 1, "Official": 1, "Custom": 2}
     assert counts.schools == {"Storm": 2, "Life": 1}
     assert counts.team_sizes == {1: 1, 2: 2, 3: 1, 4: 1}

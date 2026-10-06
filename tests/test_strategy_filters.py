@@ -41,7 +41,7 @@ CUSTOM = SOURCE_LABELS[Origin.USER]
 
 @pytest.fixture
 def roots(tmp_path, monkeypatch):
-    """A separate shipped and user root, so Built-in and Custom both exist."""
+    """A separate shipped and user root, so Official and Custom both exist."""
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     for root in (shipped, user):
         (root / "strategies" / "player").mkdir(parents=True)

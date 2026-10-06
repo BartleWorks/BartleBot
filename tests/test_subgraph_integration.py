@@ -43,6 +43,10 @@ class ControllerHarness:
             "_delete_autosave",
             "_autosave_path",
             "_on_config_changed",
+            "_mark_unsaved",
+            "_enable_save_actions",
+            "_read_only_open",
+            "_make_own_copy",
             "_on_run_requested",
             "_on_elixir_probe_done",
             "_finish_run_request",
@@ -83,6 +87,7 @@ class ControllerHarness:
         self._elixir_probe = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
+        self._official_open = False
         self._has_unsaved_changes = False
         self._clean_snapshot = None
         self._rewards_declined_for = None
