@@ -67,7 +67,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.widgets.picker_popup import PickerRow
 from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
-from tests.drag_helpers import drag_card, press_and_move, release, show
+from tests.drag_helpers import drag_card, menu_move, press_and_move, release, show
 
 
 @pytest.fixture
@@ -1554,7 +1554,9 @@ def test_deck_card_kebab_opens_the_same_menu_right_click_does(qapp):
     assert not card._kebab_btn.isHidden()
 
     menu = card._build_verbs_menu()
-    assert [action.text() for action in menu.actions()] == _verb_labels(card)
+    texts = [action.text().split("\t")[0] for action in menu.actions() if not action.isSeparator()]
+    # A deck card is in an ordered list, so the menu leads with the keyboard route (#155).
+    assert texts == ["Move up", "Move down", *_verb_labels(card)]
 
 
 def test_the_archmastery_override_is_named_in_the_card(qapp):
@@ -2020,6 +2022,25 @@ def test_dragging_a_strategy_card_moves_it_and_saves_the_order(qapp, store):
     assert _saved_state_order(bcs) == [["state_3"], ["state_1"], ["state_2"]]
 
 
+def test_move_up_in_a_strategy_cards_menu_moves_it_and_saves_the_order(qapp, store):
+    tab, bcs = _three_strategy_tab(qapp)
+    panels = tab._group_panels()
+
+    assert not menu_move(panels[0], "Move up"), "the Default card above is not part of the order"
+    assert menu_move(panels[2], "Move up")
+
+    assert _card_titles(tab) == [["A"], ["C"], ["B"]]
+    assert _saved_state_order(bcs) == [["state_1"], ["state_3"], ["state_2"]]
+
+
+def test_a_locked_strategy_card_greys_out_its_move_entries(qapp, store):
+    tab, _bcs = _three_strategy_tab(qapp)
+    tab.set_editable(False)
+
+    assert not menu_move(tab._group_panels()[1], "Move up")
+    assert not menu_move(tab._group_panels()[1], "Move down")
+
+
 def test_nothing_can_be_dragged_above_the_default_card(qapp, store):
     tab, bcs = _three_strategy_tab(qapp)
     first = tab._group_panels()[0]
@@ -2132,6 +2153,15 @@ def test_dragging_a_deck_gives_it_to_another_player(qapp, store):
     assert section.card(3) is moved
     assert [section.card(slot).slot for slot in range(1, 5)] == [1, 2, 3, 4]
     assert moved._name.player == 3
+
+
+def test_move_down_in_a_deck_cards_menu_gives_it_to_the_next_player(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+
+    assert menu_move(section.card(1), "Move down")
+
+    assert _deck_names(tab._bcs.player_decks) == {1: "Two", 2: "One", 3: "Three"}
 
 
 def test_a_deck_card_says_which_player_it_is_while_it_is_still_moving(qapp, store):
