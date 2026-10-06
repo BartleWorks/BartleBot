@@ -351,6 +351,80 @@ def test_a_drop_in_the_folded_view_is_stored_on_a_kept_column(canvas):
     assert next(s for s in canvas.config.states if s.id == "a8").position == {"x": 5 * W, "y": 180.0}
 
 
+def _cell_of(config: BotConfig, sid: str) -> tuple[int, int]:
+    pos = next(s for s in config.states if s.id == sid).position
+    return round(pos["x"] / W), round(pos["y"] / 90.0)
+
+
+def test_two_side_by_side_regions_moved_together_expand_side_by_side(canvas):
+    """#159: dragged together, they used to expand on top of each other, each from where its node landed."""
+    canvas.config.regions.append(RegionModel(id="r2", label="Last", members=["a6", "a7", "a8"], color=3))
+    canvas.setup(canvas.config)
+    canvas.enter_edit_mode()
+    canvas.set_region_collapsed("r1", True)
+    canvas.set_region_collapsed("r2", True)
+    items = canvas.scene.node_items
+    assert (_drawn_x(canvas, "r1"), _drawn_x(canvas, "r2")) == (2 * W, 3 * W)
+    for did in ("r1", "r2"):  # two cells left, two rows down, as one drag
+        items[did].setPos(items[did].pos() + QPointF(-2 * W, 2 * 90.0))
+    canvas.scene.flush_positions()
+    assert (_drawn_x(canvas, "r1"), _drawn_x(canvas, "r2")) == (0.0, W)  # drawn where they were dropped
+    assert _drawn_x(canvas, "a2") == W
+    canvas.set_region_collapsed("r1", False)
+    canvas.set_region_collapsed("r2", False)
+    cells = {s.id: _cell_of(canvas.config, s.id) for s in canvas.config.states}
+    assert [cells[f"a{i}"] for i in range(3, 9)] == [(c, 2) for c in range(6)]
+    assert len(set(cells.values())) == len(cells)
+
+
+def test_a_region_dropped_just_before_a_node_expands_clear_of_it(canvas):
+    canvas.set_region_collapsed("r1", True)
+    items = canvas.scene.node_items
+    items["a8"].setPos(items["a8"].pos() + QPointF(0, 90.0))  # a row down, drawn at column 5
+    canvas.scene.flush_positions()
+    items["r1"].setPos(QPointF(4 * W, items["r1"].pos().y() + 90.0))  # the empty cell in front of it
+    canvas.scene.flush_positions()
+    assert [_drawn_x(canvas, s) for s in ("a6", "a7", "r1", "a8")] == [3 * W, 4 * W, 4 * W, 5 * W]
+    canvas.set_region_collapsed("r1", False)
+    cells = {s.id: _cell_of(canvas.config, s.id) for s in canvas.config.states}
+    assert [cells[s] for s in ("a3", "a4", "a5", "a8")] == [(4, 1), (5, 1), (6, 1), (7, 1)]
+    assert len(set(cells.values())) == len(cells)
+
+
+def test_a_two_port_region_dropped_above_a_node_hides_its_rows_until_expanded(canvas):
+    """#159: its node is 92px, taller than a row, which used to hold the row under it open."""
+    config = canvas.config
+    for sid, (c, r) in {"a4": (3, 1), "a5": (3, 2)}.items():  # the region over three rows, two columns
+        next(s for s in config.states if s.id == sid).position = {"x": c * W, "y": r * 90.0}
+    config.transitions.append(_t("a4", "a1", "FAILURE"))  # a second exit: two port rows
+    canvas.setup(config)
+    canvas.enter_edit_mode()
+    canvas.set_region_collapsed("r1", True)
+    items = canvas.scene.node_items
+    assert items["r1"].body_height > 90
+    below = items["a8"].pos() + QPointF(0, 2 * 90.0)
+    items["a8"].setPos(below)  # two rows down, at column 5
+    canvas.scene.flush_positions()
+    r1 = items["r1"]
+    r1.setPos(QPointF(below.x(), below.y() - 90.0 - (r1.body_height - items["a8"].body_height) / 2))
+    canvas.scene.flush_positions()
+    center = {did: items[did].pos().y() + items[did].body_height / 2 for did in ("r1", "a8")}
+    assert center["a8"] - center["r1"] == 90.0  # still one row apart on screen
+    canvas.set_region_collapsed("r1", False)
+    cells = {s.id: _cell_of(canvas.config, s.id) for s in canvas.config.states}
+    assert cells["a8"][1] == cells["a5"][1] + 1
+    assert len(set(cells.values())) == len(cells)
+
+
+def test_a_node_inserted_in_front_of_a_collapsed_region_moves_its_span_with_it(canvas):
+    canvas.set_region_collapsed("r1", True)
+    new_id = canvas.scene.insert_state_on_edge(_edge(canvas, "a2", "SUCCESS", "r1"), "sleep")
+    assert new_id is not None
+    canvas.set_region_collapsed("r1", False)
+    cells = {s.id: _cell_of(canvas.config, s.id)[0] for s in canvas.config.states}
+    assert [cells[s] for s in ("a1", "a2", new_id, "a3", "a4", "a5", "a6", "a7", "a8")] == list(range(9))
+
+
 def test_deleting_the_collapsed_node_deletes_what_it_holds(canvas):
     canvas.set_region_collapsed("r1", True)
     assert canvas.scene.remove_instance("r1", confirm=False)

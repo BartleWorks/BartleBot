@@ -115,3 +115,13 @@ async def test_a_snapshot_puts_the_player_list_back(interact_panel):
     form.restore(saved)
 
     assert form.players("interact_clients") == [1, 2]
+
+
+async def test_a_label_still_at_its_types_name_takes_the_new_recording(interact_panel):
+    """A new node starts named after its type; that name was never chosen, so Record may replace it."""
+    canvas = interact_panel("Interact", _labels_it("Interact with Cyrus Drake"))
+
+    canvas.param_panel.start_record("p1")
+    await _settle()
+
+    assert canvas.config.states[0].label == "Interact with Cyrus Drake"

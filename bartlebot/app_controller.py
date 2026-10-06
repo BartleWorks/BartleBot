@@ -52,7 +52,13 @@ from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
 from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode
 from bartlebot.subgraph_store import SubgraphLibrary, count_subgraph_uses, source_label
-from bartlebot.subgraphs import ComposeReport, compose_bot, config_to_definition, definition_to_config
+from bartlebot.subgraphs import (
+    ComposeReport,
+    compose_bot,
+    config_to_definition,
+    definition_change,
+    definition_to_config,
+)
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
@@ -333,6 +339,8 @@ class AppController(QObject):
         w.bot_canvas.definition_save_requested.connect(self._on_definition_save_requested)
         w.bot_canvas.definition_save_as_requested.connect(lambda: self._save_definition_as())
         w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
+        w.bot_canvas.delete_subgraph_requested.connect(lambda sid: self._delete_subgraph(sid))
+        w.bot_canvas.rename_subgraph_requested.connect(lambda sid: self._rename_subgraph(sid))
         w.bot_canvas.document_back_requested.connect(self._back_to_document)
         w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
         w.bot_canvas.template_release_requested.connect(lambda: self._release_template())
@@ -1139,11 +1147,7 @@ class AppController(QObject):
         if defn is None:
             QMessageBox.warning(self._window, "Open Definition", "That subgraph is not in the library.")
             return False
-        open_ids = {f.doc.config.definition.id for f in self._doc_stack if f.doc.config.definition is not None}
-        current = self._loaded_config
-        if current is not None and current.definition is not None:
-            open_ids.add(current.definition.id)
-        if subgraph_id in open_ids:
+        if subgraph_id in self._open_definition_ids():
             QMessageBox.information(
                 self._window, "Open Definition", f"'{defn.name}' is already open: go back to it to edit it."
             )
@@ -1192,12 +1196,143 @@ class AppController(QObject):
             return
         path = [frame.doc.config.name for frame in self._doc_stack]
         origin = self._subgraph_library.origin(config.definition.id)
+        used_by = self._bots_linking(config.definition.id)
+        self._window.bot_canvas.set_definition_context(
+            path,
+            origin=source_label(origin),
+            used_by=used_by,
+            can_revert=origin == Origin.SHIPPED_OVERRIDE,
+            can_rename=origin == Origin.USER,
+        )
+
+    def _bots_linking(self, subgraph_id: str) -> int:
+        """How many bot files in the library link ``subgraph_id``."""
         sm = SettingsManager.instance()
         bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
-        used_by = count_subgraph_uses(bots_dir).get(config.definition.id, 0)
-        self._window.bot_canvas.set_definition_context(
-            path, origin=source_label(origin), used_by=used_by, can_revert=origin == Origin.SHIPPED_OVERRIDE
+        return count_subgraph_uses(bots_dir).get(subgraph_id, 0)
+
+    def _open_definition_ids(self) -> set[str]:
+        """The ids of every definition open as a document, on top or set aside under it."""
+        configs = [f.doc.config for f in self._doc_stack]
+        if self._loaded_config is not None:
+            configs.append(self._loaded_config)
+        return {c.definition.id for c in configs if c.definition is not None}
+
+    def _delete_subgraph(self, subgraph_id: str) -> bool:
+        """Delete a definition from the library, from its card there. False when refused or cancelled.
+
+        Deleting removes the user's file only (:mod:`bartlebot.store_roots`), so a
+        modified built-in is reverted rather than deleted, and an unedited one has
+        nothing to delete. What linked the definition is never broken by it: a bot keeps
+        the snapshot it was saved with and runs that, flagged ``missing``, as does a bot
+        linking another definition that nested it (docs/SUBGRAPHS.md). It is still
+        asked first, naming them, because from then on none of them gets an update.
+        Refused while the definition is open, since the document would save it back.
+        """
+        library = self._subgraph_library
+        library.reload()
+        defn = library.get(subgraph_id)
+        origin = library.origin(subgraph_id)
+        if defn is None or origin not in (Origin.USER, Origin.SHIPPED_OVERRIDE):
+            return False
+        revert = origin is Origin.SHIPPED_OVERRIDE
+        title = "Revert to Built-in" if revert else "Delete Subgraph"
+        verb = "revert" if revert else "delete"
+        if subgraph_id in self._open_definition_ids():
+            QMessageBox.information(self._window, title, f"'{defn.name}' is open. Close it first, then {verb} it.")
+            return False
+        if revert:
+            # The id stays, so whatever links it follows the built-in from its next compose.
+            text = (
+                f"Revert '{defn.name}' to the built-in version?\n\n"
+                "Your changes to it are lost, and every bot linking it uses the built-in version "
+                "from now on. This can't be undone."
+            )
+        else:
+            text = f"Delete '{defn.name}' from the library?"
+            users = []
+            if n := self._bots_linking(subgraph_id):
+                users.append(f"{n} bot{'s' if n != 1 else ''}")
+            users.extend(f"the subgraph '{d.name}'" for d in library.nesting(subgraph_id))
+            if users:
+                listed = users[0] if len(users) == 1 else f"{', '.join(users[:-1])} and {users[-1]}"
+                text += (
+                    f"\n\nIt is used by {listed}. Each keeps running the copy it was last saved with, "
+                    "flagged as a missing subgraph, and gets no more changes to it."
+                )
+            text += "\n\nThis can't be undone."
+        reply = QMessageBox.question(
+            self._window,
+            title,
+            text,
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
         )
+        if reply != QMessageBox.StandardButton.Ok:
+            return False
+        try:
+            library.delete(subgraph_id)
+        except OSError as exc:
+            QMessageBox.critical(self._window, title, f"Could not {verb} '{defn.name}':\n\n{exc}")
+            return False
+        # A recovery file holds edits to a definition that is no longer there to take them.
+        self._delete_autosave(stem=f"{_DEFINITION_AUTOSAVE_PREFIX}{subgraph_id}")
+        if revert:
+            logger.info("Reverted subgraph '%s' to the built-in version", defn.name)
+        else:
+            logger.info("Deleted subgraph '%s' from the library", defn.name)
+        canvas = self._window.bot_canvas
+        canvas.refresh_subgraph_listing()
+        if self._loaded_config is not None:
+            # The open document's banner says what its links compose to now. Its config
+            # follows at the next open or run, as for any library change.
+            _, report = self._compose(self._loaded_config)
+            canvas.set_compose_report(report)
+        return True
+
+    def _rename_subgraph(self, subgraph_id: str) -> bool:
+        """Rename a definition, and edit its description, from its card in the library. False when refused or cancelled.
+
+        Written at the version it has: a bot links the id, and an instance keeps the
+        label it was given when it was placed, so nothing that links it changes and
+        none of them is offered an update (:func:`~bartlebot.subgraphs.definition_change`).
+        The user's own definitions only. A built-in one's name is the shipped file's,
+        and renaming it would make a copy that stops its updates arriving -- in dev
+        mode every definition is the user's, so that is where a built-in is renamed.
+        Refused while the definition is open, whose header renames it instead.
+        """
+        library = self._subgraph_library
+        library.reload()
+        defn = library.get(subgraph_id)
+        if defn is None or library.origin(subgraph_id) is not Origin.USER:
+            return False
+        title = "Rename Subgraph"
+        if subgraph_id in self._open_definition_ids():
+            QMessageBox.information(
+                self._window, title, f"'{defn.name}' is open. Rename it there, in its header in Edit mode."
+            )
+            return False
+        from bartlebot.gui.canvas.subgraph_widgets import SubgraphMetaDialog  # noqa: PLC0415
+
+        dlg = SubgraphMetaDialog(
+            self._window, name=defn.name, description=defn.description or "", title=title, commit_text="Rename"
+        )
+        if not dlg.exec():
+            return False
+        if (dlg.name, dlg.description) == (defn.name, defn.description):
+            return False
+        renamed = defn.model_copy(update={"name": dlg.name, "description": dlg.description})
+        try:
+            library.save(renamed)
+        except OSError as exc:
+            QMessageBox.critical(self._window, title, f"Could not rename '{defn.name}':\n\n{exc}")
+            return False
+        if renamed.name != defn.name:
+            logger.info("Renamed subgraph '%s' to '%s'", defn.name, renamed.name)
+        else:
+            logger.info("Changed the description of subgraph '%s'", defn.name)
+        self._window.bot_canvas.refresh_subgraph_listing()
+        return True
 
     def _on_definition_save_requested(self, then_back: bool) -> None:
         if self._save_definition() and then_back:
@@ -1206,8 +1341,12 @@ class AppController(QObject):
     def _save_definition(self) -> bool:
         """Write the open definition to the library as its next version. False when refused or cancelled.
 
-        Refused while the document has errors: a definition that cannot compose must
-        not reach the bots that link it. A shipped definition is saved as the user's
+        Only a change to what runs makes a new version (#158): a definition identical
+        to the library's copy is not written at all, and one that differs only in
+        layout or in name and description (:func:`~bartlebot.subgraphs.definition_change`)
+        is written at the version it has. Refused while
+        the document has errors: a definition that cannot compose must not reach the
+        bots that link it. A shipped definition is saved as the user's
         own copy, which shadows it until reverted -- asked first, since from then on
         the shipped one's updates stop arriving.
         """
@@ -1219,6 +1358,20 @@ class AppController(QObject):
         library = self._subgraph_library
         library.reload()
         sid = config.definition.id
+        try:
+            defn = config_to_definition(config)
+        except ValueError as exc:
+            QMessageBox.critical(self._window, "Save to Library", str(exc))
+            return False
+        stored = library.get(sid)
+        change = definition_change(stored, defn) if stored is not None else "content"
+        if change == "none":
+            # Nothing to write: a new version would send every linking bot an update
+            # that changes nothing, and a built-in one would gain a copy that shadows it.
+            config.definition.version = stored.version
+            self._mark_definition_saved(config)
+            logger.info("Subgraph '%s' is unchanged; kept version %d", config.name, stored.version)
+            return True
         if library.origin(sid) == Origin.SHIPPED and not dev_mode():
             reply = QMessageBox.question(
                 self._window,
@@ -1231,25 +1384,26 @@ class AppController(QObject):
             )
             if reply != QMessageBox.StandardButton.Save:
                 return False
-        stored = library.get(sid)
-        version = max(config.definition.version, stored.version if stored is not None else 0) + 1
-        try:
-            defn = config_to_definition(config, version=version)
-        except ValueError as exc:
-            QMessageBox.critical(self._window, "Save to Library", str(exc))
-            return False
+        if change in ("layout", "meta"):
+            version = stored.version
+        else:
+            version = max(config.definition.version, stored.version if stored is not None else 0) + 1
+        defn = defn.model_copy(update={"version": version})
         try:
             library.save(defn)
         except Exception as exc:
             QMessageBox.critical(self._window, "Save to Library", f"Could not save '{config.name}':\n\n{exc}")
             return False
         config.definition.version = version
+        self._mark_definition_saved(config)
+        logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
+        return True
+
+    def _mark_definition_saved(self, config: BotConfig) -> None:
         self._has_unsaved_changes = False
         self._clean_snapshot = _file_snapshot(config)
         self._delete_autosave(stem=self._autosave_stem())
         self._refresh_definition_context()
-        logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
-        return True
 
     def _refused_for_errors(self, config: BotConfig, title: str) -> bool:
         """Say what blocks saving the open definition, if anything does. True when it is refused."""

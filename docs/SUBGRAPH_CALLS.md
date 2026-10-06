@@ -1,14 +1,16 @@
 # Subgraph calls
 
-The successor epic to #37. **The plan lives on one page:**
+The successor epic to #37. **The plan is on one page:**
 https://claude.ai/artifact/66pY2mPVrPYosopv1yaNNe
 
-Read it before any subgraph work. It is the only copy — nothing here duplicates it — and
-it carries the stage status, so a stage that lands is marked done there rather than here.
-It is a private claude.ai page: open it signed in as the maintainer, or, from a Claude Code
-session, read it with the Artifact tool's `read` action.
+**Complete on 2026-10-06, and no longer maintained.** Every stage is done, the library
+rewrite (#59) included; some rewritten bots are still to be tested in the game. The page is
+now the record of why subgraphs work as they do, and of each stage's "As built"
+deviations, so read it when a design question comes up. Don't update it: a later fix is
+not added there. The page is private on claude.ai: open it signed in as the maintainer, or,
+from a Claude Code session, read it with the Artifact tool's `read` action.
 
-What it covers, in the order the work lands:
+What it covers, in the order the work landed:
 
 | stage | what |
 |---|---|

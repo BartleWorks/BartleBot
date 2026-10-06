@@ -231,6 +231,47 @@ def test_save_bumps_the_version_and_back_recomposes_the_bot(harness, library):
     assert canvas.mode == BotMode.EDIT
 
 
+def test_saving_an_unchanged_definition_keeps_its_version(harness, library, monkeypatch):
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: asked.append(a))
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    written = []
+    monkeypatch.setattr(library, "save", written.append)
+    assert harness._save_definition()
+    assert not written
+    assert library.get(SYNC_ID).version == 1
+    assert canvas.config.definition.version == 1
+    assert not harness._has_unsaved_changes
+    assert not asked, "nothing to save, so a built-in one is not offered a copy"
+
+
+def test_saving_a_moved_node_writes_it_and_keeps_the_version(harness, library):
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    wisps = next(s for s in canvas.config.states if s.id == "wisps")
+    wisps.position = {"x": -40.0, "y": 999.0}
+    canvas.config_changed.emit()
+    assert harness._save_definition()
+    stored = library.get(SYNC_ID)
+    assert stored.version == 1
+    assert next(s for s in stored.states if s.id == "wisps").position == {"x": -40.0, "y": 999.0}
+    assert not harness._has_unsaved_changes
+
+
+def test_an_edit_undone_before_saving_keeps_the_version(harness, library):
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    wisps = next(s for s in canvas.config.states if s.id == "wisps")
+    before = wisps.params.get("timeout")
+    wisps.params["timeout"] = 45
+    canvas.config_changed.emit()
+    wisps.params["timeout"] = before
+    canvas.config_changed.emit()
+    assert harness._save_definition()
+    assert library.get(SYNC_ID).version == 1
+
+
 def test_save_is_refused_while_the_definition_has_errors(harness, library, monkeypatch):
     refused = []
     monkeypatch.setattr(QMessageBox, "critical", lambda *a, **k: refused.append(a))
@@ -310,6 +351,242 @@ def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
     assert len(cards) == 1
     QTest.mouseClick(cards[0], Qt.MouseButton.LeftButton)
     assert opened == [SYNC_ID]
+    panel.deleteLater()
+
+
+def _subgraph_cards(panel):
+    from bartlebot.gui.canvas.bot_canvas import _BotCard  # noqa: PLC0415
+
+    return [c for c in panel.findChildren(_BotCard) if c.isVisibleTo(panel)]
+
+
+def _show_subgraphs(panel):
+    keys = [panel._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(panel._cat_list.count())]
+    panel._cat_list.setCurrentRow(keys.index(panel._SUBGRAPHS_KEY))
+
+
+def test_a_right_click_on_a_subgraph_card_does_not_open_it(qapp, library):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(library)
+    panel.refresh()
+    _show_subgraphs(panel)
+    opened = []
+    panel.open_subgraph_requested.connect(opened.append)
+    QTest.mouseClick(_subgraph_cards(panel)[0], Qt.MouseButton.RightButton)
+    assert opened == []
+    panel.deleteLater()
+
+
+def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_path):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    lib = SubgraphLibrary(shipped, user)
+    sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
+    lib.reload()
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(lib)
+    asked = []
+    panel.delete_subgraph_requested.connect(asked.append)
+
+    built_in = panel.subgraph_menu(SYNC_ID).actions()
+    assert [a.text() for a in built_in] == ["Rename…", "Delete Subgraph…"]
+    assert not built_in[1].isEnabled() and "can't be deleted" in built_in[1].toolTip()
+
+    lib.save(sync_players_definition(version=2))
+    _, modified = panel.subgraph_menu(SYNC_ID).actions()
+    assert modified.text() == "Revert to Built-in…" and modified.isEnabled()
+
+    custom = sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"})
+    lib.save(custom)
+    _, delete = panel.subgraph_menu("mine").actions()
+    assert delete.text() == "Delete Subgraph…" and delete.isEnabled()
+    delete.trigger()
+    assert asked == ["mine"]
+    panel.deleteLater()
+
+
+def test_a_subgraph_cards_rename_is_offered_on_the_users_own_only(qapp, tmp_path):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    lib = SubgraphLibrary(shipped, user)
+    sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
+    lib.reload()
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(lib)
+    asked = []
+    panel.rename_subgraph_requested.connect(asked.append)
+
+    rename = panel.subgraph_menu(SYNC_ID).actions()[0]
+    assert rename.text() == "Rename…"
+    assert not rename.isEnabled() and "can't be renamed" in rename.toolTip()
+    lib.save(sync_players_definition(version=2))
+    assert not panel.subgraph_menu(SYNC_ID).actions()[0].isEnabled(), "a modified built-in is still built in"
+
+    lib.save(sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"}))
+    rename = panel.subgraph_menu("mine").actions()[0]
+    assert rename.isEnabled()
+    rename.trigger()
+    assert asked == ["mine"]
+    panel.deleteLater()
+
+
+def _answer_meta_dialog(monkeypatch, name, description=None):
+    """Stand in for the name and description dialog: accept it with these, or cancel it if ``name`` is None."""
+    from bartlebot.gui.canvas import subgraph_widgets  # noqa: PLC0415
+
+    shown = []
+
+    class Answer:
+        def __init__(self, parent=None, **kwargs):
+            shown.append(kwargs)
+            self.name, self.description = name, description
+
+        def exec(self):
+            return name is not None
+
+    monkeypatch.setattr(subgraph_widgets, "SubgraphMetaDialog", Answer)
+    return shown
+
+
+def test_renaming_a_subgraph_keeps_its_version_and_offers_no_update(harness, library, monkeypatch, tmp_path):
+    shown = _answer_meta_dialog(monkeypatch, "Regroup", "Everyone in one place.")
+    canvas = _canvas(harness)
+    bot = canvas.config
+    assert harness._rename_subgraph(SYNC_ID)
+    assert shown[0]["name"] == "Sync players", "the dialog starts from the current name"
+    stored = library.get(SYNC_ID)
+    assert (stored.name, stored.description, stored.version) == ("Regroup", "Everyone in one place.", 1)
+    assert [p.name for p in (tmp_path / "library" / "subgraphs").glob("*.json")] == ["regroup.json"]
+    composed, report = harness._compose(bot)
+    assert report.regions[REGION].kind == "linked"
+    assert composed.model_dump() == bot.model_dump(), "the bot links the id, and its label stays its own"
+
+
+def test_renaming_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
+    _answer_meta_dialog(monkeypatch, None)
+    assert not harness._rename_subgraph(SYNC_ID)
+    assert library.get(SYNC_ID).name == "Sync players"
+
+
+def test_an_open_definition_is_renamed_in_its_header_not_its_card(harness, library, monkeypatch):
+    told = []
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
+    shown = _answer_meta_dialog(monkeypatch, "Regroup")
+    _canvas(harness).open_definition_of(REGION)
+    assert not harness._rename_subgraph(SYNC_ID)
+    assert told and not shown
+    assert library.get(SYNC_ID).name == "Sync players"
+
+
+def test_a_built_in_subgraph_is_not_renamed(qapp, tmp_path, monkeypatch):
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
+    lib = SubgraphLibrary(shipped, user)
+    shown = _answer_meta_dialog(monkeypatch, "Regroup")
+    canvas = BotCanvas()
+    h = ControllerHarness(canvas, lib)
+    assert not h._rename_subgraph(SYNC_ID)
+    lib.save(sync_players_definition(version=2))
+    assert not h._rename_subgraph(SYNC_ID), "nor a modified one"
+    assert not shown and lib.get(SYNC_ID).name == "Sync players"
+    canvas.prepare_for_shutdown()
+
+
+def test_renaming_in_the_header_saves_at_the_same_version(harness, library):
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    assert canvas.header.name_editable
+    canvas.config.name = "Regroup"
+    canvas.config_changed.emit()
+    assert harness._save_definition()
+    stored = library.get(SYNC_ID)
+    assert (stored.name, stored.version) == ("Regroup", 1)
+    assert harness._definition_back()
+    region = next(r for r in canvas.config.regions if r.id == REGION)
+    assert region.label == "Sync players", "an instance keeps the label it was placed with"
+    assert region.source.version == 1
+
+
+def test_a_built_in_definitions_name_stays_a_label_in_edit_mode(doc):
+    header = doc.header
+    doc.set_definition_context(["Farm"], can_rename=False)
+    assert not header.name_editable
+    assert "can't be renamed" in header.name_tooltip
+    doc.set_definition_context(["Farm"], can_rename=True)
+    assert header.name_editable
+
+
+def test_deleting_a_subgraph_says_who_links_it_and_leaves_them_their_snapshot(harness, library, monkeypatch):
+    from tests.test_subgraphs import _outer_with_snapshot  # noqa: PLC0415
+
+    library.save(_outer_with_snapshot(library).model_copy(update={"name": "Boss outer"}))
+    asked = []
+
+    def answer(*a, **k):
+        asked.append(a[2])
+        return QMessageBox.StandardButton.Ok
+
+    monkeypatch.setattr(QMessageBox, "question", answer)
+    canvas = _canvas(harness)
+    bot = canvas.config
+    assert harness._delete_subgraph(SYNC_ID)
+    assert "1 bot and the subgraph 'Boss outer'" in asked[0]
+    assert library.get(SYNC_ID) is None
+    assert canvas.config is bot, "the open bot keeps its snapshot"
+    assert canvas.compose_report.regions[REGION].kind == "missing"
+
+
+def test_deleting_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
+    assert not harness._delete_subgraph(SYNC_ID)
+    assert library.get(SYNC_ID) is not None
+
+
+def test_an_open_definition_is_not_deleted(harness, library, monkeypatch):
+    told = []
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
+    _canvas(harness).open_definition_of(REGION)
+    assert not harness._delete_subgraph(SYNC_ID)
+    assert told and library.get(SYNC_ID) is not None
+
+
+def test_deleting_a_modified_built_in_reverts_it(qapp, tmp_path, monkeypatch):
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
+    lib = SubgraphLibrary(shipped, user)
+    lib.save(sync_players_definition(version=2))
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
+    canvas = BotCanvas()
+    h = ControllerHarness(canvas, lib)
+    assert h._delete_subgraph(SYNC_ID)
+    assert lib.get(SYNC_ID).version == 1
+    assert not h._delete_subgraph(SYNC_ID), "an unedited built-in has nothing to delete"
+    assert lib.get(SYNC_ID) is not None
+    canvas.prepare_for_shutdown()
+
+
+def test_the_library_stays_in_the_subgraphs_folder_after_a_delete(qapp, library):
+    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+
+    library.save(sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"}))
+    panel = _BotLibraryPanel()
+    panel.set_subgraph_library(library)
+    panel.refresh()
+    _show_subgraphs(panel)
+    assert len(_subgraph_cards(panel)) == 2
+    library.delete("mine")
+    panel.refresh(keep_category=True)
+    assert panel._cat_list.currentItem().data(Qt.ItemDataRole.UserRole) == panel._SUBGRAPHS_KEY
+    assert len(_subgraph_cards(panel)) == 1
     panel.deleteLater()
 
 

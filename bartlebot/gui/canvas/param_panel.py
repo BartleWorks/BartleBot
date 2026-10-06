@@ -80,7 +80,13 @@ from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
-from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.nodes.registry import (
+    NODE_CATEGORIES,
+    NODE_PARAM_SCHEMAS,
+    NODE_REGISTRY,
+    NODE_SPECS,
+    node_display_name,
+)
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.setup_steps import value_empty
 from bartlebot.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
@@ -2824,6 +2830,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._suppress = True
         self._node_id_lbl.setText(state.id)
         self._node_label_edit.setText(state.label or "")
+        self._node_label_edit.setPlaceholderText(node_display_name(state.node_type))
         idx = self._node_type_combo.findData(state.node_type, Qt.ItemDataRole.UserRole)
         if idx >= 0:
             self._node_type_combo.setCurrentIndex(idx)
@@ -3228,8 +3235,18 @@ class _ParamPanel(ThemedMixin, QWidget):
         self.properties_changed.emit()
 
     def _on_label_editing_finished(self) -> None:
-        if not self._suppress and self._state is not None:
-            self.label_committed.emit()
+        if self._suppress or self._state is None:
+            return
+        # An emptied label goes back to the type's name, the placeholder it showed:
+        # left empty, the canvas would draw the node's id instead.
+        if not (self._state.label or "").strip():
+            self.edit_starting.emit("Edit params")
+            self._state.label = node_display_name(self._state.node_type)
+            self._suppress = True
+            self._node_label_edit.setText(self._state.label)
+            self._suppress = False
+            self.properties_changed.emit()
+        self.label_committed.emit()
 
     def _on_node_help(self) -> None:
         """Open the node browser in view mode for the currently displayed node type."""
@@ -3248,6 +3265,14 @@ class _ParamPanel(ThemedMixin, QWidget):
             return
         self.structural_property_changed.emit("Change Node Type")
         self._cancel_record()
+        # A label still at its type's name was never chosen, so it follows the type;
+        # one the author typed stays.
+        if (self._state.label or "").strip() in ("", node_display_name(self._state.node_type)):
+            self._state.label = node_display_name(node_type)
+            self._suppress = True
+            self._node_label_edit.setText(self._state.label)
+            self._suppress = False
+        self._node_label_edit.setPlaceholderText(node_display_name(node_type))
         self._state.node_type = node_type
         self._state.params = {}
         schema = NODE_PARAM_SCHEMAS.get(node_type, [])
@@ -3504,14 +3529,15 @@ class _ParamPanel(ThemedMixin, QWidget):
             self.start_record(clients[index])
 
     def _try_set_label(self, label: str) -> None:
-        """Auto-populate the node label if it is empty or one an earlier recording wrote.
+        """Auto-populate the node label if it is empty, its type's name, or one an earlier recording wrote.
 
         A label the author typed is never replaced.
         """
         if self._state is None:
             return
         current = (self._state.label or "").strip()
-        if current == label or (current and not recording.is_recorded_label(current)):
+        unchosen = not current or current == node_display_name(self._state.node_type)
+        if current == label or not (unchosen or recording.is_recorded_label(current)):
             return
         self.edit_starting.emit("Edit params")
         self._state.label = label

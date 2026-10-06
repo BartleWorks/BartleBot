@@ -631,3 +631,12 @@ def test_every_insert_site_in_every_shipped_bot_is_collision_free(canvas):
         checked += 1
 
     assert checked > 0
+
+
+def test_an_inserted_node_is_named_what_the_node_browser_calls_its_type(canvas):
+    c = canvas(_out_config())
+
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "sleep")
+
+    assert next(s for s in c.config.states if s.id == new_id).label == "Sleep"
+    assert c.scene.node_items[new_id].label == "Sleep"

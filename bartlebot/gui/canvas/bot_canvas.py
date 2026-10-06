@@ -31,6 +31,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -98,10 +99,10 @@ from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
-from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import dev_mode
+from bartlebot.store_roots import Origin, dev_mode
 from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
@@ -132,6 +133,11 @@ _TB_EDIT = 1  # toolbar stack index for Edit mode
 _IDLE = "idle"
 _RUNNING = "running"
 _PAUSED = "paused"
+
+#: Why a built-in subgraph's Delete is grayed out: the store only ever removes the user's copy.
+_BUILT_IN_SUBGRAPH_TIP = "Built-in subgraphs can't be deleted. Open one and Save as… to make a copy of your own."
+#: Why a built-in subgraph's Rename is grayed out: its name is the shipped file's (#160).
+_BUILT_IN_RENAME_TIP = "Built-in subgraphs can't be renamed. Open one and Save as… to make a copy of your own."
 
 
 def _status_dot_color(state: str) -> str:
@@ -581,7 +587,9 @@ class _BotCard(ThemedMixin, QWidget):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        self.open_requested.emit(self._meta.subgraph_id or str(self._meta.path.resolve()))
+        # The left button only: a right-click is the card's menu, where it has one.
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.open_requested.emit(self._meta.subgraph_id or str(self._meta.path.resolve()))
         super().mousePressEvent(event)
 
 
@@ -605,6 +613,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     open_bot_requested = pyqtSignal()
     open_recent_requested = pyqtSignal(str)  # path
     open_subgraph_requested = pyqtSignal(str)  # subgraph id
+    #: (subgraph id): a Subgraphs card's Delete, or Revert for a modified built-in.
+    #: The controller asks, deletes and refreshes; the panel only offers it.
+    delete_subgraph_requested = pyqtSignal(str)
+    #: (subgraph id): a Subgraphs card's Rename. The controller asks for the name and writes it.
+    rename_subgraph_requested = pyqtSignal(str)
 
     _RECENT = "Recent"
     _ALL = "All"
@@ -795,8 +808,14 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     def _read_meta(self, path: Path) -> "_BotMeta | None":
         return _read_bot_meta(path, library=self._subgraph_library)
 
-    def refresh(self) -> None:
-        """Rescan recent files and bots/ directory, rebuild UI."""
+    def refresh(self, *, keep_category: bool = False) -> None:
+        """Rescan recent files and bots/ directory, rebuild UI.
+
+        Lands on the first category, unless ``keep_category`` and the one selected is
+        still listed -- after a subgraph is deleted, say, so the user stays in the folder.
+        """
+        current = self._cat_list.currentItem()
+        kept = current.data(Qt.ItemDataRole.UserRole) if keep_category and current is not None else None
         self._listed = True
         sm = SettingsManager.instance()
         recent_paths = sm.recent_bot_files
@@ -881,8 +900,9 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # always changes it and the currentRowChanged connection builds the cards --
         # calling _on_category_row_changed by hand as well built every card twice, the
         # first set torn down again before anything could paint it.
-        if self._cat_list.count() > 0:
-            self._cat_list.setCurrentRow(0)
+        keys = [self._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._cat_list.count())]
+        if keys:
+            self._cat_list.setCurrentRow(keys.index(kept) if kept in keys else 0)
         else:
             self._show_cards([])
 
@@ -1043,9 +1063,43 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 card.open_requested.connect(
                     self.open_subgraph_requested if meta.subgraph_id else self.open_recent_requested
                 )
+                if meta.subgraph_id:
+                    card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+                    card.customContextMenuRequested.connect(
+                        lambda pos, c=card, sid=meta.subgraph_id: self._show_subgraph_menu(c, sid, pos)
+                    )
             card.set_matched_drops((matched_drops or {}).get(meta.path))
             layout.insertWidget(i, card)
             card.show()
+
+    def subgraph_menu(self, subgraph_id: str) -> QMenu:
+        """The menu a Subgraphs card shows on a right-click. Public so a test can read it.
+
+        Delete removes the user's file, so what it says depends on where the definition
+        is (:class:`~bartlebot.store_roots.Origin`): a custom one is deleted, a modified
+        built-in is reverted, and an unedited built-in has nothing to remove. Rename is
+        offered on the user's own definitions only, never on a built-in, modified or not.
+        """
+        menu = popup_menu(self)
+        menu.setToolTipsVisible(True)
+        origin = self._subgraph_library.origin(subgraph_id) if self._subgraph_library is not None else None
+        rename = menu.addAction("Rename…")
+        if origin is not Origin.USER:
+            rename.setEnabled(False)
+            rename.setToolTip(_BUILT_IN_RENAME_TIP)
+        rename.triggered.connect(lambda: self.rename_subgraph_requested.emit(subgraph_id))
+        if origin is Origin.SHIPPED_OVERRIDE:
+            act = menu.addAction("Revert to Built-in…")
+        else:
+            act = menu.addAction("Delete Subgraph…")
+            if origin is not Origin.USER:
+                act.setEnabled(False)
+                act.setToolTip(_BUILT_IN_SUBGRAPH_TIP)
+        act.triggered.connect(lambda: self.delete_subgraph_requested.emit(subgraph_id))
+        return menu
+
+    def _show_subgraph_menu(self, card: QWidget, subgraph_id: str, pos) -> None:
+        self.subgraph_menu(subgraph_id).exec(card.mapToGlobal(pos))
 
 
 # ---------------------------------------------------------------------------
@@ -1168,6 +1222,11 @@ class BotCanvas(QWidget):
     # (subgraph id): open a definition as a document -- from a call node, or from the
     # Subgraphs folder of the library. The controller owns the document stack.
     open_definition_requested = pyqtSignal(str)
+    # (subgraph id): delete a definition from the library, or revert a modified built-in --
+    # from a card in the library's Subgraphs folder. The controller asks and deletes.
+    delete_subgraph_requested = pyqtSignal(str)
+    # (subgraph id): rename a definition, from its card in the library's Subgraphs folder.
+    rename_subgraph_requested = pyqtSignal(str)
     # A definition document's way out, and its save: (then go back).
     definition_back_requested = pyqtSignal()
     definition_save_requested = pyqtSignal(bool)
@@ -1554,6 +1613,8 @@ class BotCanvas(QWidget):
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
         self._placeholder.open_subgraph_requested.connect(self.open_definition_requested)
+        self._placeholder.delete_subgraph_requested.connect(self.delete_subgraph_requested)
+        self._placeholder.rename_subgraph_requested.connect(self.rename_subgraph_requested)
         self._placeholder.show()
         # Bar B is the *bot's* header, so with no bot there is nothing for it to say
         # and nothing its buttons can act on. Shown anyway it read as a second strip
@@ -1669,13 +1730,20 @@ class BotCanvas(QWidget):
         )
 
     def set_definition_context(
-        self, path: list[str], *, origin: str = "", used_by: int = 0, can_revert: bool = False
+        self,
+        path: list[str],
+        *,
+        origin: str = "",
+        used_by: int = 0,
+        can_revert: bool = False,
+        can_rename: bool = True,
     ) -> None:
         """Name the documents under the open definition, and what the header says about it.
 
         ``path`` is their names, outermost first -- the crumb's segments before this
         one. ``can_revert`` says it is a modified built-in, which the crumb offers to
-        put back.
+        put back. ``can_rename`` says the name is the user's to change: not on a
+        built-in one, modified or not, whose name is the shipped file's (#160).
         """
         if self._config is None or not self._config.is_definition:
             return
@@ -1684,6 +1752,7 @@ class BotCanvas(QWidget):
         self._refresh_crumb()
         # Re-read, since a save moved the version the header's pill shows.
         self._toolbar.set_config(self._config)
+        self._toolbar.set_name_locked(None if can_rename else _BUILT_IN_RENAME_TIP)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._toolbar.set_definition_info(origin, used_by)
         self._reposition_banner()
@@ -1824,6 +1893,17 @@ class BotCanvas(QWidget):
         """Rebuild the recent files list in the placeholder."""
         self._placeholder.refresh()
 
+    def refresh_subgraph_listing(self) -> None:
+        """Re-list the library after a definition left it, staying in the folder each panel shows.
+
+        The placeholder while it shows -- ``close_bot`` lists it afresh before showing it
+        again -- and the library dialog's panel while that dialog is up.
+        """
+        if self._placeholder.isVisibleTo(self):
+            self._placeholder.refresh(keep_category=True)
+        if self._library_dialog_panel is not None:
+            self._library_dialog_panel.refresh(keep_category=True)
+
     def library_folder(self) -> str | None:
         """The library folder the user is looking at, by its name on disk, or ``None``.
 
@@ -1849,6 +1929,8 @@ class BotCanvas(QWidget):
         panel.set_subgraph_library(self._subgraph_library)
         panel.open_subgraph_requested.connect(dlg.accept)
         panel.open_subgraph_requested.connect(self.open_definition_requested)
+        panel.delete_subgraph_requested.connect(self.delete_subgraph_requested)
+        panel.rename_subgraph_requested.connect(self.rename_subgraph_requested)
         panel.new_bot_requested.connect(dlg.reject)
         panel.new_bot_requested.connect(self.new_bot_requested)
         panel.open_bot_requested.connect(dlg.reject)
@@ -2323,7 +2405,7 @@ class BotCanvas(QWidget):
 
         new_id = self._scene.insert_state_at_output_port(anchor[0], anchor[1], node_type)
         if new_id is None:
-            name = node_type.replace("_", " ").title()
+            name = node_display_name(node_type)
             return None, f"{name} could not be added after the selected node. Select a different node."
         if node_type == "enter_zone":
             next(s for s in self._scene.config.states if s.id == new_id).params["stagger"] = True
@@ -3307,7 +3389,7 @@ class BotCanvas(QWidget):
             pid, n = f"node_{state_id}", 2
             while pid in taken:
                 pid, n = f"node_{state_id}_{n}", n + 1
-            label = state.label or state.node_type.replace("_", " ").title()
+            label = state.label or node_display_name(state.node_type)
             meta.panels.append(SubgraphPanel(id=pid, kind="node", label=label, member=state_id))
         else:
             self._begin_definition_edit("Demote")

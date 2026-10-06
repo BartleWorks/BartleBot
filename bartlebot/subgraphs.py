@@ -1328,6 +1328,46 @@ def config_to_definition(config: BotConfig, *, version: int | None = None) -> Su
     )
 
 
+DefinitionChange = Literal["none", "layout", "meta", "content"]
+
+
+def definition_change(old: SubgraphDefinition, new: SubgraphDefinition) -> DefinitionChange:
+    """How ``new`` differs from ``old``, version aside: not at all, in layout only, in name, or in content.
+
+    Layout is what only the definition document draws: where each node and nested
+    instance sits, and the plain regions, which are never composed. A change there
+    reaches no bot's run, so a save that makes only one keeps the version (#158).
+    Neither does a rename (#160): ``"meta"`` is a changed name or description,
+    with or without a layout change beside it, and keeps the version too. A bot
+    links the id, and an instance's label is the bot's own.
+    """
+    if old.model_dump(mode="json", exclude={"version"}) == new.model_dump(mode="json", exclude={"version"}):
+        return "none"
+    old_runs, new_runs = _without_layout(old), _without_layout(new)
+    if old_runs == new_runs:
+        return "layout"
+    return "meta" if _without_meta(old_runs) == _without_meta(new_runs) else "content"
+
+
+def _without_meta(data: dict) -> dict:
+    return {k: v for k, v in data.items() if k not in ("name", "description")}
+
+
+def _without_layout(defn: SubgraphDefinition) -> dict:
+    data = defn.model_dump(mode="json", exclude={"version"})
+    for state in data["states"]:
+        state.pop("position", None)
+    linked = []
+    for region in data["regions"]:
+        if region.get("source") is None:
+            continue
+        region.pop("collapsed", None)
+        region["source"].pop("anchor", None)
+        linked.append(region)
+    data["regions"] = linked
+    return data
+
+
 def definition_problems(
     config: BotConfig,
     schemas: Mapping[str, Sequence[object]],

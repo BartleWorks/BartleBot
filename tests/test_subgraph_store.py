@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from bartlebot.bot.schema import SUBGRAPH_ENTRY, StateModel, SubgraphDefinition, TransitionModel
+from bartlebot.bot.schema import (
+    SUBGRAPH_ENTRY,
+    RegionModel,
+    StateModel,
+    SubgraphDefinition,
+    SubgraphSource,
+    TransitionModel,
+)
 from bartlebot.paths import project_root
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import (
@@ -105,6 +112,20 @@ def test_a_fixed_file_clears_its_error(tmp_path):
     lib.reload()
     assert lib.error_for("sg-a") is None
     assert lib.get("sg-a") is not None
+
+
+def test_nesting_names_the_definitions_that_link_one_directly(tmp_path):
+    lib = SubgraphLibrary(tmp_path)
+    lib.save(_defn("inner", "Inner"))
+    for sg_id, name, links in (("outer", "Outer", "inner"), ("also", "also outer", "inner"), ("top", "Top", "outer")):
+        defn = _defn(sg_id, name)
+        defn.regions = [
+            RegionModel(id="r", label="R", members=["s"], color=1, source=SubgraphSource(subgraph_id=links, version=1))
+        ]
+        lib.save(defn)
+    assert [d.name for d in lib.nesting("inner")] == ["also outer", "Outer"], "by name, and only directly"
+    assert [d.id for d in lib.nesting("outer")] == ["top"]
+    assert lib.nesting("top") == []
 
 
 def test_every_linked_bot_resolves_under_the_shipped_root_alone():

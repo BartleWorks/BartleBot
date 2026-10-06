@@ -153,6 +153,10 @@ class _Swappable(QWidget):
         self.setVisible(True)
         self.updateGeometry()
 
+    @property
+    def showing_label(self) -> bool:
+        return self._showing_label
+
     def hide_both(self) -> None:
         """Take no space at all.  For the version pill on a bot with no version."""
         self.setVisible(False)
@@ -347,6 +351,10 @@ class BotHeader(ThemedMixin, QWidget):
         # Which half of every metadata slot is on show.  Run mode is the label side,
         # and the header starts there with no bot loaded.
         self._label_mode = True
+        # Why the name stays a label even in Edit mode, or None when it is editable:
+        # a built-in definition's name is the shipped file's (#160). Every set_config
+        # clears it, and set_definition_context sets it again for a definition.
+        self._name_locked: str | None = None
         # Last status handed to set_status, replayed on a theme switch: the dot's
         # color is a THEME value the caller resolved, so this widget cannot
         # re-derive it without being told again.
@@ -538,6 +546,7 @@ class BotHeader(ThemedMixin, QWidget):
 
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
+        self.set_name_locked(None)
         if config is None or config.template is None:
             # The chip names a bot's template; the controller sets it again for one that has one.
             self.set_template_origin(None)
@@ -604,6 +613,13 @@ class BotHeader(ThemedMixin, QWidget):
         self._file_lbl.setText("· subgraph")
         self._definition_lbl.setText(" · ".join([*([origin] if origin else []), uses]))
 
+    def set_name_locked(self, reason: str | None) -> None:
+        """Keep the name a label in Edit mode too, with ``reason`` as its tooltip. ``None`` unlocks it."""
+        self._name_locked = reason
+        self._name_lbl.setToolTip(reason or "")
+        if not self._label_mode:
+            self._set_label_mode(False)
+
     def set_editable(self, editable: bool) -> None:
         if self._config is None:
             return
@@ -619,6 +635,16 @@ class BotHeader(ThemedMixin, QWidget):
     @property
     def name_text(self) -> str:
         return self._name_lbl.text()
+
+    @property
+    def name_editable(self) -> bool:
+        """Whether the name is on show as its editor, not its label."""
+        return not self._name_slot.showing_label
+
+    @property
+    def name_tooltip(self) -> str:
+        """Why the name cannot be edited, when it is locked; otherwise empty."""
+        return self._name_lbl.toolTip()
 
     @property
     def byline_text(self) -> str:
@@ -700,8 +726,8 @@ class BotHeader(ThemedMixin, QWidget):
         would take the field out from under them.
         """
         self._label_mode = label_mode
-        for slot in (self._name_slot, self._authors_slot):
-            if label_mode:
+        for slot, locked in ((self._name_slot, self._name_locked is not None), (self._authors_slot, False)):
+            if label_mode or locked:
                 slot.show_label()
             else:
                 slot.show_editor()
