@@ -256,8 +256,8 @@ inside, like a strategy's — "Filenames are names, ids are inside" in `COMBAT_C
 
 A definition leaves the library from its card in the Bot Library's Subgraphs folder
 (right-click, #161), and the menu says which of the three it is: *Delete Subgraph…* on a
-custom one, *Revert to Built-in…* on a modified built-in, and a grayed-out Delete on an
-unedited built-in, which has no user file to remove. `AppController._delete_subgraph`
+custom one, *Revert to Official…* on a modified Official one, and a grayed-out Delete on an
+unedited Official one, which has no user file to remove. `AppController._delete_subgraph`
 asks first, naming the bots and the other definitions that link it — they are not
 broken, since each keeps its snapshot and composes as `missing`, but none gets another
 update — and refuses while the definition is open as a document. With `BARTLEBOT_DEV`
@@ -273,8 +273,8 @@ id. The file moves to the new name's slug, since the filename is a name. Nothing
 links it follows the rename: an instance's label is the bot's own, set from the name
 when it was placed, and its region page shows the new name beside it; its region id
 keeps the old slug too, which is never parsed. Rename is the user's own definitions
-only. A built-in's name is the shipped file's, so the card's item is grayed out and the
-header's name stays a label in Edit mode, modified built-in or not; it is renamed with
+only. An Official one's name is the shipped file's, so the card's item is grayed out and the
+header's name stays a label in Edit mode, modified or not; it is renamed with
 `BARTLEBOT_DEV` set, where every definition is the user's.
 
 A shipped definition is authored with `BARTLEBOT_DEV` set, which makes the project root
