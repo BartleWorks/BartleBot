@@ -1,6 +1,6 @@
 """Survey the drop categories used across the bot library.
 
-Drop categories come from whatever heading the Wizard101 Central page grouped an
+Drop categories come from whatever heading the Wizard101 Central Wiki page grouped an
 item under, so the vocabulary is discovered rather than declared.  Two things go
 wrong quietly:
 

@@ -1336,8 +1336,13 @@ def definition_problems(
     """``(errors, warnings)`` for a definition document; an error blocks saving it.
 
     Errors: the structural rules (:func:`~bartlebot.bot.schema.definition_structure_errors`),
-    a binding whose type is incompatible with the others it shares a value with, and
-    a definition that would contain itself. An Exit nothing leads into is the node's
+    a binding whose type is incompatible with the others it shares a value with, an
+    input linked to nothing, and a definition that would contain itself. The unlinked
+    input is checked here rather than with the structural rules so that a file holding
+    one still loads: unlinking an input's last param is an ordinary step while editing,
+    and the signature page is where the input is relinked or deleted. It still blocks
+    saving, because a subgraph node would offer the input and setting it would do
+    nothing. An Exit nothing leads into is the node's
     own error, found with the rest of node validation, as an Entry's missing edge is.
     ``schemas`` maps node type to its ``ParamField``s (the registry's
     ``NODE_PARAM_SCHEMAS``; passed in so this module stays registry-free). A required
@@ -1362,6 +1367,8 @@ def definition_problems(
     warnings: list[str] = []
     instances = {r.id: r for r in config.regions if r.source is not None}
     for inp in meta.inputs:
+        if not inp.bindings:
+            errors.append(f"input '{inp.label or inp.name}' is linked to nothing; link a param to it or delete it")
         types = [t for b in inp.bindings if b.region is None and (t := field_type(b.state, b.param)) is not None]
         for b in inp.bindings:
             if b.region is None or library is None:

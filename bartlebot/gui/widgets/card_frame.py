@@ -104,7 +104,7 @@ from enum import Enum
 from typing import NamedTuple
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPixmap
+from PyQt6.QtGui import QColor, QPainter, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
@@ -120,6 +120,7 @@ from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.drag_reorder import MOVE_DOWN_KEYS, MOVE_UP_KEYS, add_move_actions
 from bartlebot.gui.widgets.icon_button import IconButton
 
 _FACE_BTN_SIZE = 22
@@ -401,6 +402,10 @@ class CardFrame(ThemedMixin, QWidget):
         # activates on release and only if the pointer stayed put, so that the drag its
         # column turns a press-and-move into cannot also activate what it was reordering.
         self._press_pos: QPoint | None = None
+        # The keyboard route to a reorder, handed over by the list's ``DragReorder``: a
+        # move and the test for whether one is possible. None on a card in no ordered list.
+        self._reorder: tuple[Callable[[int], object], Callable[[int], bool]] | None = None
+        self._move_shortcuts: list[QShortcut] = []
 
     # ------------------------------------------------------------------
     # What the surface decides
@@ -524,6 +529,33 @@ class CardFrame(ThemedMixin, QWidget):
         the card's half of that arrangement.
         """
         return self._grip
+
+    def set_reorder_route(self, move: Callable[[int], object], can_move: Callable[[int], bool]) -> None:
+        """Take the keyboard route to a reorder: Alt+Up/Down, and Move up/down in the menu.
+
+        Called by ``DragReorder.set_cards`` for every card it can pick up, so a card in an
+        ordered list gets the route with nothing from its host. The shortcuts are the
+        card's own and fire while focus is anywhere inside it -- a face button reached by
+        Tab, a field being typed in -- and a click on the body gives the card focus, so
+        a card picked out by mouse can then be moved by key.
+
+        Alt+Down is also what opens a combo box on some styles. No card holds one: a
+        form control on a surface that activates on click is a hole in its hit target
+        (the module docstring), and this is one more reason to keep it that way.
+        """
+        self._reorder = (move, can_move)
+        if self._move_shortcuts:
+            return
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        for keys, step in ((MOVE_UP_KEYS, -1), (MOVE_DOWN_KEYS, 1)):
+            shortcut = QShortcut(keys, self)
+            shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+            shortcut.activated.connect(lambda s=step: self._move_by(s))
+            self._move_shortcuts.append(shortcut)
+
+    def _move_by(self, step: int) -> None:
+        if self._reorder is not None:
+            self._reorder[0](step)
 
     @property
     def is_dragging(self) -> bool:
@@ -741,11 +773,18 @@ class CardFrame(ThemedMixin, QWidget):
         (:meth:`_open_verbs_menu`, off the kebab button) so the two cannot list different
         things. Returns None for a card with no verbs, which both callers take as "there
         is nothing to show".
+
+        A card in an ordered list leads with Move up and Move down -- the keyboard route
+        to the drag, and a discoverable one -- each greyed at the end it cannot pass.
         """
         verbs = self._verbs()
-        if not verbs:
+        if not verbs and self._reorder is None:
             return None
         menu = popup_menu(self)
+        if self._reorder is not None:
+            add_move_actions(menu, *self._reorder)
+            if verbs:
+                menu.addSeparator()
         for verb in verbs:
             action = (
                 menu.addAction(svg_icon(verb.icon, size=14), verb.label) if verb.icon else menu.addAction(verb.label)

@@ -267,7 +267,7 @@ class StepCard(CardFrame):
             name = WrappingElidedLabel(fight.label, parent=self._body)
             name.setToolTip(f"Imported from {fight.page}" if fight.page else "Nothing imported for this fight yet")
             button = ActionButton("download", "Import…", fill=False, parent=self._body)
-            button.setToolTip(f"Import the drops of '{fight.label}' from its Wizard101 Central page")
+            button.setToolTip(f"Import the drops of '{fight.label}' from its Wizard101 Central Wiki page")
             button.clicked.connect(lambda _=False, sid=fight.state_id: self.import_requested.emit(sid))
             self._import_buttons[fight.state_id] = button
             row.addWidget(name, 1)

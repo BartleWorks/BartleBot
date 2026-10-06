@@ -23,7 +23,9 @@ It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
 change on the canvas is left unrepainted. The window show tracer
 (`bartlebot/gui/window_show_trace.py`, for #120) logs a WARNING for every stray top-level
-window, ours or the game clients', with the Python stack for ours.
+window, ours or the game clients', with the Python stack for ours. The press tracer
+(`bartlebot/gui/canvas/press_trace.py`, for #126) logs at DEBUG every press over the
+canvas that some other widget took instead of the viewport.
 
 ## Build / Test / Lint
 

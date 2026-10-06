@@ -398,7 +398,7 @@ class CallNodePage(QWidget):
             self._add_role_card()
             self._inputs_note.setVisible(not self._forms)
             self._refresh_cards()
-            self._apply_folds(panels)
+            self._apply_folds()
 
             fights = [
                 s.label or (local_id(region.id, s.id) or s.id)
@@ -503,18 +503,13 @@ class CallNodePage(QWidget):
         members = set(self._region.members)
         return self._config.initial in members, self._config.recovery_state in members
 
-    def _apply_folds(self, panels) -> None:
+    def _apply_folds(self) -> None:
         """Fold the cards as the reader left them, or by what they still need."""
         assert self._region is not None and self._region.source is not None
         groups = [g for g in self._cards if g != param_cards.ROLE]
         incomplete = [g for g in groups if self.to_fill(g)]
         initial, recovery = self._holds_role()
-        defaults = param_cards.call_page_fold_defaults(
-            groups,
-            incomplete=incomplete,
-            starts_closed=[p.id for p in panels if p.default_closed],
-            holds_role=initial or recovery,
-        )
+        defaults = param_cards.call_page_fold_defaults(groups, incomplete=incomplete, holds_role=initial or recovery)
         self._folds.set_store(
             UiStateFoldStore(param_cards.call_page_surface(self._region.source.subgraph_id), defaults)
         )

@@ -727,10 +727,14 @@ class EditScene(QGraphicsScene):
         if self._region_manager is not None:
             self._region_manager.teardown()
             self._region_manager = None
-        self.clear()
+        # The maps are emptied before the items are deleted, not after: clearing a
+        # scene with a selection emits selectionChanged, and whatever answers it --
+        # the properties panel changing page, which puts out the link rings (#155) --
+        # must not find the maps still naming items Qt has just freed.
         self._node_items.clear()
         self._edge_items.clear()
         self._edge_models.clear()
+        self.clear()
         self._call_of = {}
         self._fold_ports = {}
         self._fold = FoldMap(GRID_W, GRID_H)
@@ -1156,6 +1160,20 @@ class EditScene(QGraphicsScene):
         rid = self._call_of.get(state_id)
         node = self._node_items.get(rid) if rid is not None else None
         return node if isinstance(node, FoldedNodeItem) else None
+
+    def item_for(self, some_id: str) -> NodeItem | None:
+        """The node *some_id* is drawn as: a state id, a member's folded node, or a region's."""
+        return self._node_items.get(some_id) or self._node_items.get(self.display_id(some_id))
+
+    def set_link_lit(self, ids) -> None:
+        """Light exactly the nodes *ids* are drawn as, and no others (#155).
+
+        *ids* are state ids or a nested subgraph node's region id, as the signature
+        page's selected input names what it sets.
+        """
+        lit = {item for i in ids if (item := self.item_for(i)) is not None}
+        for node in self._node_items.values():
+            node.set_link_lit(node in lit)
 
     def ports_of(self, region_id: str) -> FoldPorts | None:
         """The ports a folded region's node shows, or None when it is not drawn folded."""
@@ -1966,6 +1984,14 @@ class EditScene(QGraphicsScene):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        grabber = self.mouseGrabberItem()
+        if grabber is not None and event.buttons() == Qt.MouseButton.NoButton:
+            # #126: a grab outliving its release takes every later press.
+            logger.debug(
+                "Mouse grab survived release: %s (%s)",
+                getattr(grabber, "state_id", None) or type(grabber).__name__,
+                "in this scene" if grabber.scene() is self else "not in this scene",
+            )
         self._flush_positions()
 
     def _offer_new_exit(self, src: NodeItem, when: str, scene_pos: QPointF) -> None:

@@ -57,6 +57,19 @@ def release(qapp, card: QWidget, dy: int) -> None:
     QTest.qWait(CARD_SETTLE_MS * 2)
 
 
+def menu_move(card: QWidget, label: str) -> bool:
+    """Pick *label* ("Move up" or "Move down") from *card*'s right-click menu.
+
+    The keyboard route to a reorder (#155). Returns whether the entry was enabled, and
+    triggers it only if it was -- a greyed entry is one the user cannot pick.
+    """
+    menu = card._build_verbs_menu()
+    action = next(a for a in menu.actions() if a.text().split("\t")[0] == label)
+    if action.isEnabled():
+        action.trigger()
+    return action.isEnabled()
+
+
 def row_height(cards: list[QWidget], spacing: int) -> int:
     """One card plus the gap under it -- how far a drag travels to pass one."""
     return cards[0].height() + spacing

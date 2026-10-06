@@ -33,6 +33,7 @@ from bartlebot.gui.game_embed.card_columns import CARD_SETTLE_MS, CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard
 from bartlebot.gui.settings.accounts_tab import reorder_accounts, reorder_launch_profiles
 from bartlebot.settings_manager import SettingsManager
+from tests.drag_helpers import menu_move
 
 ACCOUNTS = [
     {"username": "one@example.com", "alias": "One"},
@@ -125,6 +126,19 @@ def test_dragging_a_card_down_past_one_reports_the_new_order(qapp):
 
     assert seen == [[1, 0, 2]]
     assert host  # held: the column dies with it
+
+
+def test_move_down_in_a_cards_menu_reports_the_new_order(qapp):
+    """The keyboard route to the same reorder (#155): the host cannot tell it from a drop."""
+    host, column = _column(qapp)
+    seen: list[list] = []
+    column.reordered.connect(seen.append)
+
+    assert not menu_move(column.cards[0], "Move up")
+    assert menu_move(column.cards[0], "Move down")
+
+    assert seen == [[1, 0, 2]]
+    assert host
 
 
 def test_dragging_a_card_to_the_foot_of_the_column_reports_it_last(qapp):

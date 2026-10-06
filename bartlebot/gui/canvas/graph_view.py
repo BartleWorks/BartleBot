@@ -4,12 +4,16 @@ GraphView    — base view used by both the editor and the read-only run view.
 _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
+import logging
+
 from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen, QTransform, QWheelEvent
 from PyQt6.QtWidgets import QApplication, QGraphicsItem, QGraphicsScene, QGraphicsView
 
 from bartlebot.gui.theme import THEME
 from bartlebot.settings_manager import SettingsManager
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # GraphView — reusable zoomable/pannable view
@@ -238,9 +242,21 @@ class GraphView(QGraphicsView):
         if not self._user_zoomed:
             self.fit_scene()
 
+    @property
+    def space_held(self) -> bool:
+        """Whether Space is down over the view, which turns a left-drag into a pan."""
+        return self._space_held
+
+    @property
+    def panning(self) -> bool:
+        """Whether a Space + left-drag pan is under way."""
+        return self._pan_origin is not None
+
     # Space + left-drag panning
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            # #126: a press with no release leaves every left-click panning.
+            logger.debug("Space pan: held")
             self._space_held = True
             if self._pan_origin is None:
                 self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
@@ -250,12 +266,19 @@ class GraphView(QGraphicsView):
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            logger.debug("Space pan: released")
             self._space_held = False
             if self._pan_origin is None:
                 self.viewport().unsetCursor()
             event.accept()
             return
         super().keyReleaseEvent(event)
+
+    def focusOutEvent(self, event) -> None:  # noqa: ANN001
+        if self._space_held:
+            # The release goes wherever focus went, so the view never hears it (#126).
+            logger.debug("Space pan: view lost focus (%s) with Space still held", event.reason().name)
+        super().focusOutEvent(event)
 
     def mousePressEvent(self, event) -> None:
         if self._space_held and event.button() == Qt.MouseButton.LeftButton:

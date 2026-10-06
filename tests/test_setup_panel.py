@@ -49,6 +49,7 @@ from bartlebot.gui.sidebar.setup_panel import (
 from bartlebot.gui.widgets.card_frame import CardMode
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.template_store import release, save_draft
+from tests.drag_helpers import menu_move
 from tests.test_subgraph_integration import ControllerHarness
 
 TEMPLATE_ID = "tpl-mob"
@@ -358,6 +359,18 @@ def test_a_drag_reorders_the_steps(panel):
     assert [s.text for s in draft.template_meta.setup] == [_DROPS.text, _ZONE.text, _MOB.text]
     assert steps == ["Reorder setup steps"], "a drop back in place is no edit"
     assert [card.text_edit.text() for card in panel.cards] == [_DROPS.text, _ZONE.text, _MOB.text]
+
+
+def test_move_down_in_a_steps_menu_reorders_the_steps(panel):
+    draft = _draft()
+    panel.show_document(draft)
+    steps: list[str] = []
+    panel.structural_change.connect(steps.append)
+
+    assert menu_move(panel.cards[0], "Move down")
+
+    assert [s.text for s in draft.template_meta.setup] == [_MOB.text, _ZONE.text, _DROPS.text]
+    assert steps == ["Reorder setup steps"]
 
 
 def test_adding_a_target_makes_a_param_a_fill_in_and_removing_it_stops(panel):

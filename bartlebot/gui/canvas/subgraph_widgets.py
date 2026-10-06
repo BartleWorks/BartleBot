@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from PyQt6.QtCore import QRectF, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPen
+from PyQt6.QtGui import QColor, QPainter, QPen, QRegion
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -43,6 +43,10 @@ NEW_INPUT = "— New input —"
 
 #: The crumb bar's link glyph, the two squares of a subgraph node's badge.
 _GLYPH_PX = 14
+
+#: The ViewFrame's border: double for a subgraph, single for a focused region.
+_DOUBLE_BORDER_PX = 6
+_SINGLE_BORDER_PX = 3
 
 
 @dataclass(frozen=True)
@@ -368,9 +372,15 @@ class ViewFrame(ThemedMixin, QWidget):
     """The border round the whole viewport while the canvas is anywhere but the plain bot.
 
     Single, in a region's color, for Focus Mode; double, in the accent, for a
-    subgraph -- its body viewed in Run mode, or its definition open. Transparent to
-    the mouse, so it never eats a click on the canvas. It holds the palette slot, not
-    the color, so a theme switch repaints it.
+    subgraph -- its body viewed in Run mode, or its definition open. It holds the
+    palette slot, not the color, so a theme switch repaints it.
+
+    It must never take a click meant for the canvas, and it is kept out of the way
+    twice. It is transparent to the mouse, which steers Qt's own hit test, and it is
+    masked to its border, which is the only thing that stops Windows when the frame
+    has a native window of its own. A native widget gets the click straight from
+    Windows, wherever its HWND is, and the transparency is never consulted: that was
+    #126, a canvas that looked read-only in Edit mode (see ``native_widgets``).
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -380,25 +390,47 @@ class ViewFrame(ThemedMixin, QWidget):
         self._slot: int | None = None
         self._double = False
         self.refresh_theme_styles()
+        self._apply_mask()
 
     def set_region(self, slot: int) -> None:
         self._slot, self._double = slot, False
         self.refresh_theme_styles()
+        self._apply_mask()
 
     def set_shared(self) -> None:
         self._slot, self._double = None, True
         self.refresh_theme_styles()
+        self._apply_mask()
 
     @property
     def is_double(self) -> bool:
         return self._double
 
+    @property
+    def border_px(self) -> int:
+        """How wide the drawn border is, and so how much of the frame its mask keeps."""
+        return _DOUBLE_BORDER_PX if self._double else _SINGLE_BORDER_PX
+
     def color(self) -> QColor:
         return THEME.region_color(self._slot) if self._slot is not None else THEME.qcolor("accent")
 
     def apply_theme_styles(self) -> None:
-        border = f"6px double {self.color().name()}" if self._double else f"3px solid {self.color().name()}"
+        border = (
+            f"{self.border_px}px double {self.color().name()}"
+            if self._double
+            else f"{self.border_px}px solid {self.color().name()}"
+        )
         set_style_sheet(self, f"ViewFrame {{ border: {border}; border-radius: 2px; background: transparent; }}")
+
+    def resizeEvent(self, event) -> None:  # noqa: ANN001
+        super().resizeEvent(event)
+        self._apply_mask()
+
+    def _apply_mask(self) -> None:
+        """Keep only the border: everything inside it belongs to the canvas."""
+        outer = self.rect()
+        w = self.border_px
+        self.setMask(QRegion(outer).subtracted(QRegion(outer.adjusted(w, w, -w, -w))))
 
 
 class SubgraphMetaDialog(QDialog):

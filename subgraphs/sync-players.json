@@ -9,7 +9,6 @@
       "id": "node_state_2",
       "kind": "node",
       "label": "Sync in zone",
-      "default_closed": false,
       "member": "state_2",
       "bindings": {}
     }

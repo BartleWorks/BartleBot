@@ -638,12 +638,13 @@ def test_unlinking_a_nested_input_keeps_the_value_and_the_outer_input(outer_doc)
 
 def test_the_signature_page_lists_and_unlinks_a_nested_link(outer_doc):
     outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
-    from PyQt6.QtWidgets import QLabel  # noqa: PLC0415
+    from bartlebot.gui.widgets.link_button import LinkButton  # noqa: PLC0415
 
     outer_doc.param_panel.show_signature(outer_doc.config)
     page = outer_doc.param_panel.signature_page
+    page.select("i:zone")
 
-    assert "linked to Inner · Hub" in [lbl.text() for lbl in page.findChildren(QLabel)]
+    assert "Inner · Hub" in [b.text() for b in page.item("i:zone").detail.findChildren(LinkButton)]
     page._unbind("zone", None, "hub", "in1")
     assert _input(outer_doc, "zone").bindings == []
 
@@ -724,12 +725,14 @@ def test_a_linked_promoted_row_is_the_outer_inputs_default_both_ways(promoted_do
 
 
 def test_the_signature_page_names_a_promoted_row_by_its_group(promoted_doc):
-    from PyQt6.QtWidgets import QLabel  # noqa: PLC0415
+    from bartlebot.gui.widgets.link_button import LinkButton  # noqa: PLC0415
 
     promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
     promoted_doc.param_panel.show_signature(promoted_doc.config)
-    texts = [lbl.text() for lbl in promoted_doc.param_panel.signature_page.findChildren(QLabel)]
-    assert any(t.startswith("linked to Inner \u00b7 First hop \u203a ") for t in texts)
+    page = promoted_doc.param_panel.signature_page
+    page.select("i:first")
+    texts = [b.text() for b in page.item("i:first").detail.findChildren(LinkButton)]
+    assert any(t.startswith("Inner \u00b7 First hop \u203a ") for t in texts)
 
 
 def test_the_link_dialog_suggests_the_rows_own_key_as_the_new_inputs_name(promoted_doc, monkeypatch):
@@ -772,3 +775,272 @@ def test_a_linked_row_left_blank_is_not_marked_as_a_required_input_left_empty(pr
     promoted_doc.unlink_nested_input("in1", "tp_a.zone")
     assert page.to_fill("node_tp_a") == 1
     assert any("Required param 'zone' is empty" in e for e in promoted_doc.validation_errors())
+
+
+# ---------------------------------------------------------------------------
+# The signature page: a list of inputs with a detail editor (#155)
+# ---------------------------------------------------------------------------
+
+
+def _page(doc):
+    doc.param_panel.show_signature(doc.config)
+    return doc.param_panel.signature_page
+
+
+def _labels(page) -> list[str]:
+    return [("  " if line.row.member else "") + line.label_text for line in page.lines]
+
+
+def _menu_action(menu, text):
+    for action in menu.actions():
+        if action.text().split("\t")[0] == text:
+            return action
+        if action.menu() is not None:
+            found = _menu_action(action.menu(), text)
+            if found is not None:
+                return found
+    return None
+
+
+def test_the_inputs_are_one_line_each_and_a_line_opens_its_editor_in_place(doc):
+    page = _page(doc)
+    assert _labels(page) == ["World", "Hub"]
+    assert page.lines[1].meta_text.endswith("links"), "hub sets more than one param"
+
+    page.select("i:hub")
+    assert page.item("i:hub").detail is not None
+    page.select("i:world")
+    assert page.item("i:hub").detail is None, "only one editor is open at a time"
+    assert page.item("i:world").detail is not None
+
+
+def test_typing_a_label_renames_the_line_without_rebuilding_it(doc):
+    from PyQt6.QtWidgets import QLineEdit  # noqa: PLC0415
+
+    page = _page(doc)
+    page.select("i:hub")
+    line = page.item("i:hub")
+    label = line.detail.findChildren(QLineEdit)[0]
+
+    label.setText("Hub zone")
+
+    assert page.item("i:hub") is line, "a typed edit leaves the page alone"
+    assert line.label_text == "Hub zone"
+    assert _input(doc, "hub").label == "Hub zone"
+
+
+def test_moving_an_input_past_a_group_heading_puts_it_in_the_group(doc):
+    page = _page(doc)
+    page._add_panel()
+    group = next(p for p in _meta(doc).panels if p.kind == "inputs")
+    assert _labels(page) == ["World", "Hub", "Group 1"]
+
+    page.item("i:hub").route[0](1)
+
+    assert _input(doc, "hub").panel == group.id
+    assert _labels(page) == ["World", "Group 1", "  Hub"]
+    doc.undo()
+    assert _input(doc, "hub").panel is None
+
+
+def test_alt_down_in_the_tree_moves_the_line_the_keyboard_is_on(doc):
+    page = _page(doc)
+    QTest.keyClick(page.tree, Qt.Key.Key_Down)  # onto the first line
+    QTest.keyClick(page.tree, Qt.Key.Key_Down, Qt.KeyboardModifier.AltModifier)
+
+    assert [i.name for i in _meta(doc).inputs] == ["hub", "world"]
+    assert _labels(page) == ["Hub", "World"]
+
+
+def test_enter_in_the_tree_opens_the_line_the_keyboard_is_on(doc):
+    page = _page(doc)
+    QTest.keyClick(page.tree, Qt.Key.Key_Down)
+    QTest.keyClick(page.tree, Qt.Key.Key_Down)
+    QTest.keyClick(page.tree, Qt.Key.Key_Return)
+    assert page.selected == "i:hub"
+    QTest.keyClick(page.tree, Qt.Key.Key_Space)
+    assert page.selected is None
+
+
+def test_an_input_cannot_go_under_a_promoted_node(doc):
+    assert doc.set_node_promoted("wisps", True)
+    page = _page(doc)
+    assert [line.row.kind for line in page.lines] == ["input", "input", "node"]
+
+    assert not page.item("i:hub").route[1](1), "only a promoted node is below hub"
+    move_down = _menu_action(page.item_menu("i:hub"), "Move down")
+    assert not move_down.isEnabled()
+
+
+def test_a_promoted_node_is_its_heading_alone_and_its_editor_demotes_it(doc):
+    assert doc.set_node_promoted("wisps", True)
+    page = _page(doc)
+    node = next(p for p in _meta(doc).panels if p.kind == "node")
+    page.select(f"g:{node.id}")
+    assert page.item(f"g:{node.id}").meta_text.endswith("params · promoted node")
+
+    _menu_action(page.item_menu(f"g:{node.id}"), "Demote").trigger()
+
+    assert not any(p.kind == "node" for p in _meta(doc).panels)
+
+
+def test_move_to_group_in_the_menu_and_delete_input(doc):
+    page = _page(doc)
+    page._add_panel()
+    group = next(p for p in _meta(doc).panels if p.kind == "inputs")
+
+    _menu_action(page.item_menu("i:world"), "Group 1").trigger()
+    assert _input(doc, "world").panel == group.id
+    assert not _menu_action(page.item_menu("i:world"), "Group 1").isEnabled(), "already there"
+
+    _menu_action(page.item_menu("i:world"), "Delete input").trigger()
+    assert not any(i.name == "world" for i in _meta(doc).inputs)
+
+
+def test_deleting_a_group_keeps_its_inputs_with_the_ungrouped_ones(doc):
+    page = _page(doc)
+    page._add_panel()
+    group = next(p for p in _meta(doc).panels if p.kind == "inputs")
+    page.move_input_to_group("world", group.id)
+    assert _labels(page) == ["Hub", "Group 1", "  World"]
+
+    _menu_action(page.item_menu(f"g:{group.id}"), "Delete group").trigger()
+
+    assert _labels(page) == ["Hub", "World"]
+    assert _input(doc, "world").panel is None
+
+
+def test_pressing_a_grip_closes_the_open_editor(doc):
+    page = _page(doc)
+    page.select("i:hub")
+    page.item("i:world").grip.pressed.emit()
+    assert page.selected is None
+    assert page.item("i:hub").detail is None
+
+
+def test_selecting_an_input_asks_the_canvas_to_light_what_it_sets(doc):
+    page = _page(doc)
+    lit: list[list] = []
+    page.highlight_requested.connect(lit.append)
+
+    page.select("i:hub")
+    page.select(None)
+
+    assert set(lit[0]) == {b.state for b in _input(doc, "hub").bindings}
+    assert lit[-1] == []
+
+
+def test_a_link_row_centers_its_node_without_selecting_it(doc):
+    from bartlebot.gui.widgets.link_button import LinkButton  # noqa: PLC0415
+
+    page = _page(doc)
+    page.select("i:world")
+    centered: list[str] = []
+    page.center_requested.connect(centered.append)
+
+    page.item("i:world").detail.findChildren(LinkButton)[0].click()
+
+    assert centered == ["gate"]
+    assert doc.param_panel.showing_signature
+
+
+def test_an_input_linked_while_away_comes_back_selected(doc):
+    page = _page(doc)
+    assert doc.link_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float", default=30.0))
+
+    page = _page(doc)
+
+    assert page.selected == "i:wait"
+    assert page.item("i:wait").detail is not None
+
+
+def test_the_open_editor_survives_a_rebuild(doc):
+    page = _page(doc)
+    page.select("i:hub")
+    first = _input(doc, "hub").bindings[0]
+
+    page._unbind("hub", first.state, first.param)
+
+    assert page.selected == "i:hub"
+    assert page.item("i:hub").detail is not None
+
+
+def test_an_unlinked_input_says_so_and_blocks_saving(doc):
+    page = _page(doc)
+    _input(doc, "world").bindings = []
+    page = _page(doc)
+
+    assert page.item("i:world").meta_text.endswith("not linked")
+    assert any("linked to nothing" in e for e in doc.validation_errors())
+
+
+def test_ports_reorder_from_their_menu(doc):
+    from bartlebot.bot.schema import SUBGRAPH_ENTRY  # noqa: PLC0415
+
+    page = _page(doc)
+    names = [line.name_edit.text() for line in page.port_lines(SUBGRAPH_ENTRY)]
+    assert names == ["Start", "Hub"]
+
+    _menu_action(page.port_menu(SUBGRAPH_ENTRY, 0), "Move down").trigger()
+
+    entries = [s.label for s in doc.config.states if s.node_type == SUBGRAPH_ENTRY]
+    assert entries == ["Hub", "Start"]
+    assert [line.name_edit.text() for line in page.port_lines(SUBGRAPH_ENTRY)] == ["Hub", "Start"]
+
+
+def test_the_description_folds_once_written(doc):
+    from bartlebot import param_cards  # noqa: PLC0415
+
+    assert doc.config.description, "the fixture has one"
+    page = _page(doc)
+    assert page.folds.cards[param_cards.DESCRIPTION].is_collapsed is True
+    assert page.folds.cards[param_cards.PORTS].is_collapsed is False
+    assert page.folds.cards[param_cards.INPUTS].is_collapsed is False
+
+
+def test_building_the_signature_page_never_shows_a_parentless_widget(doc, parentless_shows):
+    assert doc.set_node_promoted("wisps", True)
+    parentless_shows.clear()
+    page = _page(doc)
+    page._add_panel()
+    for line in page.lines:
+        page.select(f"{'i' if line.row.kind == 'input' else 'g'}:{line.row.key}")
+    assert parentless_shows == []
+
+
+def _lit(doc) -> set[str]:
+    return {key for key, node in doc.scene.node_items.items() if node.is_link_lit}
+
+
+def test_selecting_an_input_lights_what_it_sets_and_leaving_the_page_puts_it_out(doc):
+    page = _page(doc)
+    page.select("i:hub")
+    assert _lit(doc) == {b.state for b in _input(doc, "hub").bindings}
+    assert doc.scene.selectedItems() == [], "lit, not selected"
+
+    doc.select_state("wisps")
+
+    assert _lit(doc) == set()
+
+
+def test_coming_back_to_the_page_lights_its_selection_again(doc):
+    page = _page(doc)
+    page.select("i:world")
+    doc.select_state("wisps")
+    doc.scene.clearSelection()
+
+    assert doc.param_panel.showing_signature
+    assert _lit(doc) == {"gate"}
+
+
+def test_a_link_row_brings_its_node_into_view_without_selecting_it(doc):
+    page = _page(doc)
+    page.select("i:world")
+    doc.view.centerOn(-5000, -5000)
+
+    page.center_requested.emit("gate")
+
+    node = doc.scene.node_items["gate"]
+    assert doc.view.mapToScene(doc.view.viewport().rect()).boundingRect().intersects(node.sceneBoundingRect())
+    assert doc.scene.selectedItems() == []
+    assert doc.param_panel.showing_signature

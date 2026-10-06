@@ -44,13 +44,42 @@ settled into its slot, with the cards already standing where they now belong, an
 host decides what the order means: a settings list rewritten, a deck handed to another
 player, a purely cosmetic sort. Reported as a permutation of the list last handed to
 :meth:`DragReorder.set_cards` -- which is also the host's cue to hand it the new one.
+
+THE KEYBOARD ROUTE
+
+A drag is not reachable from the keyboard, so every list it reorders also takes
+**Alt+Up / Alt+Down** and offers **Move up / Move down** in each card's right-click menu
+(#155). Both go through :meth:`DragReorder.move`, which takes the same path a drop does
+-- the same slide, the same ``previewed`` and ``reordered`` -- so a host cannot tell a
+keyboard move from a short drag and needs nothing of its own for it. ``set_cards`` hands
+each card the route (``CardFrame.set_reorder_route``); the card owns the shortcut and the
+menu entries, since both are about the card that has focus or was right-clicked. When a
+host answers ``reordered`` by rebuilding its cards, the next ``set_cards`` puts focus back
+on the moved card's replacement, so Alt+Down can be pressed again without reaching for the
+mouse.
+
+A TREE IN ONE COLUMN
+
+Two hooks let a host draw something more structured than a flat list, and are what the
+signature page's inputs tree is built on (``bartlebot/signature_tree.py``):
+
+- **carry** -- a card that picks up the cards after it, as a group heading takes its
+  members. The run travels as one block, behind one placeholder its own height.
+- **accepts** -- a veto on a slot. Handed the order a move would make and the block that
+  moved, it answers whether that order is legal. A refused slot is skipped: during a drag
+  the hole stays where it last was allowed, and a keyboard move steps on past it.
+
+Both default to off, which is a plain list.
 """
 
 from __future__ import annotations
 
+import weakref
+from collections.abc import Callable
+
 from PyQt6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPen
-from PyQt6.QtWidgets import QApplication, QBoxLayout, QScrollArea, QSizePolicy, QWidget
+from PyQt6.QtGui import QColor, QKeySequence, QPainter, QPen
+from PyQt6.QtWidgets import QApplication, QBoxLayout, QMenu, QScrollArea, QSizePolicy, QWidget
 
 from bartlebot.gui.offscreen_warmup import warm_offscreen_render
 from bartlebot.gui.theme import THEME
@@ -80,6 +109,26 @@ AUTOSCROLL_INTERVAL_MS = 16
 # have to look for.
 PLACEHOLDER_BORDER_WIDTH = 2
 PLACEHOLDER_RADIUS = 4
+
+# The keyboard route's two verbs, as every reorderable list names them.
+MOVE_UP = "Move up"
+MOVE_DOWN = "Move down"
+MOVE_UP_KEYS = QKeySequence("Alt+Up")
+MOVE_DOWN_KEYS = QKeySequence("Alt+Down")
+
+
+def add_move_actions(menu: QMenu, move: Callable[[int], object], can_move: Callable[[int], bool]) -> None:
+    """Put Move up and Move down on *menu*, each greyed when there is nowhere to go.
+
+    The keys are written into the label's shortcut column rather than set as the action's
+    shortcut. The card or tree that built the menu already owns Alt+Up and Alt+Down as
+    shortcuts; a second binding on a menu action that outlives its popup makes the two
+    ambiguous, and Qt then fires neither.
+    """
+    for label, keys, step in ((MOVE_UP, MOVE_UP_KEYS, -1), (MOVE_DOWN, MOVE_DOWN_KEYS, 1)):
+        action = menu.addAction(f"{label}\t{keys.toString(QKeySequence.SequenceFormat.NativeText)}")
+        action.setEnabled(can_move(step))
+        action.triggered.connect(lambda _=False, s=step: move(s))
 
 
 class DropPlaceholder(QWidget):
@@ -186,6 +235,17 @@ class DragReorder(QObject):
         self._warmup.setSingleShot(True)
         self._warmup.timeout.connect(self._warm_offscreen_render)
         self._shown_host: QWidget | None = None
+        # The host's two hooks for a list that is a tree -- see the module docstring.
+        self._accepts: Callable[[list[QWidget], list[QWidget]], bool] | None = None
+        self._carry: Callable[[QWidget], int] | None = None
+        # The block in the air: the card pressed, then whatever it carries. One card for a
+        # plain list. Each one's distance below the first is taken at lift and held, as
+        # the x and the width are.
+        self._lifted: list[QWidget] = []
+        self._lift_offsets: dict[QWidget, int] = {}
+        # Where a keyboard move left the moved card, for a host that answers ``reordered``
+        # by rebuilding: the next ``set_cards`` gives focus to the card in this slot.
+        self._focus_after: int | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -221,6 +281,115 @@ class DragReorder(QObject):
             if grip is not None:
                 grip.installEventFilter(self)
                 self._grips[grip] = card
+                if hasattr(card, "set_reorder_route"):
+                    card.set_reorder_route(*self._route_for(card))
+        self._restore_focus()
+
+    def _route_for(self, card: QWidget) -> tuple[Callable[[int], bool], Callable[[int], bool]]:
+        """The move and the can-move a card is handed, holding neither the card nor this.
+
+        Weakly, because a card keeps its route: a strong reference here closes a cycle
+        (engine, cards, route, engine) that the garbage collector breaks by clearing this
+        object's attributes while Qt still has it installed as the grips' event filter --
+        the next event then lands in ``eventFilter`` on an object with no ``_grips``.
+        """
+        engine, target = weakref.ref(self), weakref.ref(card)
+
+        def move(step: int) -> bool:
+            e, c = engine(), target()
+            return e is not None and c is not None and e.move(c, step)
+
+        def can_move(step: int) -> bool:
+            e, c = engine(), target()
+            return e is not None and c is not None and e.can_move(c, step)
+
+        return move, can_move
+
+    def set_rules(
+        self,
+        *,
+        accepts: Callable[[list[QWidget], list[QWidget]], bool] | None = None,
+        carry: Callable[[QWidget], int] | None = None,
+    ) -> None:
+        """Make the list a tree: *carry* says how many cards follow a card it lifts, and
+        *accepts* vetoes an order. See the module docstring. Both None is a plain list."""
+        self._accepts = accepts
+        self._carry = carry
+
+    def can_move(self, card: QWidget, step: int) -> bool:
+        """Whether :meth:`move` would move *card* -- what greys out Move up or Move down."""
+        return self._step_order(card, step) is not None
+
+    def move(self, card: QWidget, step: int) -> bool:
+        """Move *card* one slot up (*step* -1) or down (+1): the keyboard's drag.
+
+        Carries what *card* carries and steps on past any slot ``accepts`` refuses, then
+        reports exactly as a drop does -- the cards slide, ``previewed`` goes out, and
+        ``reordered`` follows at once, there being no flight to wait for. False when there
+        is nowhere to go, the card's grip is locked, or a drag is under way.
+        """
+        order = self._step_order(card, step)
+        if order is None:
+            return False
+        layout = self._layout
+        offset = min(layout.indexOf(c) for c in self._cards)
+        before = {c: c.pos() for c in self._cards}
+        self._cards = order
+        for index, c in enumerate(order):
+            layout.insertWidget(offset + index, c)
+        layout.activate()
+        for c, origin in before.items():
+            self._animate(c, origin, c.pos(), CARD_SHIFT_MS)
+        focus = QApplication.focusWidget()
+        if focus is not None and (focus is card or card.isAncestorOf(focus)):
+            self._focus_after = order.index(card)
+        self.previewed.emit(list(order))
+        self._commit_order()
+        # A host that keeps its cards still has the focus where it was; only a rebuild
+        # needs it put back, and the rebuild's ``set_cards`` is what does that.
+        focus = QApplication.focusWidget()
+        if focus is not None and any(c is focus or c.isAncestorOf(focus) for c in self._cards):
+            self._focus_after = None
+        return True
+
+    def _step_order(self, card: QWidget, step: int) -> list[QWidget] | None:
+        """The order a keyboard move of *card* would make, or None for no move."""
+        if self.is_busy or card not in self._cards:
+            return None
+        grip = getattr(card, "grip", None)
+        if grip is None or not grip.isEnabled():
+            return None
+        start = self._cards.index(card)
+        block = self._cards[start : start + 1 + self._carried(card)]
+        rest = [c for c in self._cards if c not in block]
+        target = start + step
+        while 0 <= target <= len(rest):
+            order = rest[:target] + block + rest[target:]
+            if order != self._cards and (self._accepts is None or self._accepts(order, block)):
+                return order
+            target += step
+        return None
+
+    def _carried(self, card: QWidget) -> int:
+        """How many of the cards after *card* travel with it, clamped to the list."""
+        if self._carry is None:
+            return 0
+        after = len(self._cards) - self._cards.index(card) - 1
+        return max(0, min(self._carry(card), after))
+
+    def _restore_focus(self) -> None:
+        """After a keyboard move and a rebuild, give focus to the moved card's replacement.
+
+        An empty list keeps the request: a rebuild that clears the engine first
+        (``set_cards([])``) and hands the new cards over after is still one rebuild.
+        """
+        if self._focus_after is None or not self._cards:
+            return
+        index, self._focus_after = self._focus_after, None
+        focus = QApplication.focusWidget()
+        if focus is not None and any(c is focus or c.isAncestorOf(focus) for c in self._cards):
+            return
+        self._cards[min(index, len(self._cards) - 1)].setFocus(Qt.FocusReason.OtherFocusReason)
 
     def watch_for_show(self, host: QWidget) -> None:
         """Warm *host*'s window's offscreen render path the first time *host* is shown.
@@ -254,10 +423,12 @@ class DragReorder(QObject):
         """
         self._autoscroll.stop()
         self._pop_cursor()
-        lifted = self._settling or (self._press_card if self._dragging else None)
+        lifted = list(self._lifted) if (self._settling or self._dragging) else []
         self._press_card = None
         self._dragging = False
         self._settling = None
+        self._lifted = []
+        self._lift_offsets = {}
         for anim in self._anims.values():
             anim.stop()
         self._anims = {}
@@ -267,8 +438,9 @@ class DragReorder(QObject):
         self._layout.removeWidget(self._placeholder)
         self._placeholder.deleteLater()
         self._placeholder = None
-        if lifted is not None and hasattr(lifted, "set_dragging"):
-            lifted.set_dragging(False)
+        for card in lifted:
+            if hasattr(card, "set_dragging"):
+                card.set_dragging(False)
         if self._cards != self._baseline:
             self._cards = list(self._baseline)
             self.previewed.emit(list(self._cards))
@@ -380,7 +552,13 @@ class DragReorder(QObject):
         self._area = self._find_scroll_area()
         self._drag_x = card.x()
         self._drag_width = card.width()
-        self._placeholder = DropPlaceholder(card.height(), self._container())
+        start = self._cards.index(card)
+        self._lifted = self._cards[start : start + 1 + self._carried(card)]
+        self._lift_offsets = {c: c.y() - card.y() for c in self._lifted}
+        last = self._lifted[-1]
+        # A carried block's hole is the whole run, gaps included: what closes up behind
+        # it is the distance from the first card's top to the last card's bottom.
+        self._placeholder = DropPlaceholder(last.y() + last.height() - card.y(), self._container())
         # Shown by hand, and only ever after the parent it was constructed with. A
         # QBoxLayout skips a hidden widget outright rather than reserving its space, so a
         # placeholder left unshown holds nothing open: the list closes up by one card
@@ -388,17 +566,20 @@ class DragReorder(QObject):
         # row out of place. (Constructed parented, per the never-show-a-parentless-widget
         # rule -- an unparented show here would be a card-sized window on the desktop.)
         self._placeholder.show()
-        layout.removeWidget(card)
+        for lifted in self._lifted:
+            layout.removeWidget(lifted)
         layout.insertWidget(index, self._placeholder)
         layout.activate()
-        # Raised after the placeholder is in, so the card is above every sibling it is
-        # about to travel over -- including the hole it just left.
-        card.raise_()
-        card.resize(self._drag_width, card.height())
+        # Raised after the placeholder is in, so the cards are above every sibling they
+        # are about to travel over -- including the hole they just left.
+        for lifted in self._lifted:
+            lifted.raise_()
+            lifted.resize(self._drag_width, lifted.height())
         self._dragging = True
         self._remember_slots(card)
-        if hasattr(card, "set_dragging"):
-            card.set_dragging(True)
+        for lifted in self._lifted:
+            if hasattr(lifted, "set_dragging"):
+                lifted.set_dragging(True)
         self._push_cursor()
         self._autoscroll.start()
 
@@ -440,7 +621,10 @@ class DragReorder(QObject):
         if self._placeholder is None:
             self._finish_drop(card)
             return
-        anim = self._animate(card, card.pos(), self._placeholder.pos(), CARD_SETTLE_MS)
+        home = self._placeholder.pos()
+        for carried in self._lifted[1:]:
+            self._animate(carried, carried.pos(), home + QPoint(0, self._lift_offsets[carried]), CARD_SETTLE_MS)
+        anim = self._animate(card, card.pos(), home, CARD_SETTLE_MS)
         if anim is None:
             self._finish_drop(card)
             return
@@ -466,15 +650,18 @@ class DragReorder(QObject):
         self._anims = {}
 
         layout = self._layout
+        lifted, self._lifted, self._lift_offsets = self._lifted or [card], [], {}
         if self._placeholder is not None:
             index = layout.indexOf(self._placeholder)
             layout.removeWidget(self._placeholder)
             self._placeholder.deleteLater()
             self._placeholder = None
-            layout.insertWidget(index, card)
+            for k, landed in enumerate(lifted):
+                layout.insertWidget(index + k, landed)
         layout.activate()
-        if hasattr(card, "set_dragging"):
-            card.set_dragging(False)
+        for landed in lifted:
+            if hasattr(landed, "set_dragging"):
+                landed.set_dragging(False)
         self._commit_order()
 
     def _push_cursor(self) -> None:
@@ -521,14 +708,22 @@ class DragReorder(QObject):
         """
         self._last_global = global_pos
         y = self._container().mapFromGlobal(global_pos).y() - self._grab_offset
-        card.move(self._drag_x, y)
+        block = self._lifted or [card]
+        for lifted in block:
+            lifted.move(self._drag_x, y + self._lift_offsets.get(lifted, 0))
 
         target = self._index_at(card)
         current = self._cards.index(card)
         if target == current:
             return
-        before = {other: other.pos() for other in self._cards if other is not card}
-        self._cards.insert(target, self._cards.pop(current))
+        rest = [c for c in self._cards if c not in block]
+        order = rest[:target] + block + rest[target:]
+        if self._accepts is not None and not self._accepts(order, list(block)):
+            # A refused slot: the hole stays where it last was allowed, and letting go
+            # here lands the block there.
+            return
+        before = {other: other.pos() for other in rest}
+        self._cards = order
         layout = self._layout
         layout.removeWidget(self._placeholder)
         layout.insertWidget(self._offset + target, self._placeholder)
@@ -542,8 +737,9 @@ class DragReorder(QObject):
         self.previewed.emit(list(self._cards))
 
     def _remember_slots(self, dragged: QWidget) -> None:
-        """Record where every other card has just been laid out."""
-        self._slots = {card: card.pos() for card in self._cards if card is not dragged}
+        """Record where every card not in the air has just been laid out."""
+        block = self._lifted or [dragged]
+        self._slots = {card: card.pos() for card in self._cards if card not in block}
 
     def _animate(self, card: QWidget, origin: QPoint, destination: QPoint, duration: int) -> QPropertyAnimation | None:
         """Slide *card* from *origin* to *destination* instead of letting it appear there.
@@ -596,16 +792,24 @@ class DragReorder(QObject):
         Clamped to the cards rather than allowed off either end: whatever sits before or
         after the run is not part of the ordered list, so a drag past the last card lands
         in the last card's slot.
+
+        A carried block is measured by the middle of the whole block, and counted against
+        the cards outside it: the slot is where the block goes among the rest.
         """
-        middle = dragged.y() + dragged.height() // 2
+        block = self._lifted or [dragged]
+        last = block[-1]
+        height = last.y() + last.height() - dragged.y()
+        middle = dragged.y() + height // 2
         index = 0
+        rest = 0
         for card in self._cards:
-            if card is dragged:
+            if card in block:
                 continue
+            rest += 1
             top = self._slots.get(card, card.pos()).y()
             if middle >= top + card.height() // 2:
                 index += 1
-        return max(0, min(index, len(self._cards) - 1))
+        return max(0, min(index, rest))
 
     # ------------------------------------------------------------------
     # Auto-scroll

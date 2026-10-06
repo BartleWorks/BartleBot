@@ -146,7 +146,7 @@ class FoldedNodeItem(NodeItem):
 
     def boundingRect(self) -> QRectF:
         margin = PORT_R + 1
-        top = 8 if self._is_search_match else margin
+        top = 8 if self.has_ring else margin
         return QRectF(-margin - 8, -top, NODE_W + margin + PORT_R + 9, self._height + top * 2)
 
     def center(self) -> QPointF:
@@ -281,8 +281,8 @@ class FoldedNodeItem(NodeItem):
         rect = self._node_rect()
         lod = option.levelOfDetailFromTransform(painter.worldTransform())
 
-        if self._is_search_match:
-            ring = THEME.qcolor("search_match_current" if self._is_search_current else "search_match_other")
+        ring = self._ring_color()
+        if ring is not None:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(ring))
             painter.drawRoundedRect(rect.adjusted(-7, -7, 7, 7), _CALL_RADIUS + 5, _CALL_RADIUS + 5)
@@ -547,8 +547,8 @@ class PortNodeItem(NodeItem):
         accent = THEME.qcolor("accent")
         rect = self._node_rect()
         selected = self._interactive and self.isSelected()
-        if self._is_search_match:
-            ring = THEME.qcolor("search_match_current" if self._is_search_current else "search_match_other")
+        ring = self._ring_color()
+        if ring is not None:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(ring))
             painter.drawRoundedRect(rect.adjusted(-7, -7, 7, 7), NODE_H / 2 + 7, NODE_H / 2 + 7)

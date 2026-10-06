@@ -27,7 +27,7 @@ class XYZModel(BaseModel):
 class DropModel(BaseModel):
     """One item a bot can drop, as the wiki names it and as the game names it.
 
-    ``category`` is whatever the Wizard101 Central page grouped the item under
+    ``category`` is whatever the Wizard101 Central Wiki page grouped the item under
     ("Reagents", "Hats", …). It is None for drops added by hand and for every bot
     written before drops carried a category — there is no way to derive it after
     the fact, so those simply stay uncategorized until the bot is re-imported.
@@ -224,7 +224,6 @@ class SubgraphPanel(BaseModel):
     id: str
     kind: Literal["inputs", "node"] = "inputs"
     label: str | None = None
-    default_closed: bool = False
     member: str | None = None
     bindings: dict[str, list[SubgraphInputBinding]] = Field(default_factory=dict)
 

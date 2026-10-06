@@ -576,10 +576,16 @@ def qapp_cls():
     platform's 9pt and every later test measured at the token, which surfaced as three
     modules failing under ``-n auto`` and passing alone — a worker-order flake of the
     kind "One QApplication per worker" in tests/CLAUDE.md is about.
+
+    The app's Qt attributes are set here too, before the app exists, as ``bartlebot.py``
+    sets them: which widgets turn native depends on them (#126).
     """
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
 
+    from bartlebot.gui.native_widgets import keep_siblings_alien  # noqa: PLC0415
     from bartlebot.gui.theme import THEME  # noqa: PLC0415
+
+    keep_siblings_alien()
 
     class _AppFontApplication(QApplication):
         def __init__(self, argv):

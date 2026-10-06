@@ -20,7 +20,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     REMOVE_VERB,
 )
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor, move_item
-from tests.drag_helpers import drag_card, row_height, show
+from tests.drag_helpers import drag_card, menu_move, row_height, show
 from tests.picker_helpers import pick
 
 
@@ -385,6 +385,14 @@ def test_dragging_a_row_down_past_one_reorders_the_config(qapp):
 
     assert [a.dsl for a in config.player_assignments] == ["two", "one", "three"]
     assert seen == [True]
+
+
+def test_move_down_in_a_rows_menu_reorders_the_config(qapp):
+    config, editor = _three_row_editor()
+
+    assert menu_move(editor.cards[0], "Move down")
+
+    assert [a.dsl for a in config.player_assignments] == ["two", "one", "three"]
 
 
 def test_dragging_a_row_to_the_top_puts_it_first(qapp):

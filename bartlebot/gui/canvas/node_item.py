@@ -32,6 +32,9 @@ _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 _BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal)
 _BADGE_GAP = 4  # gap between adjacent badge circles
 _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
+# How strongly a link ring (#155) is drawn: the accent, but well short of the solid
+# search ring and the selection's border, so the three never read as one state.
+_LINK_RING_ALPHA = 110
 
 # What a port with no edge on it does anyway. A marked port is drawn as a filled
 # badge in place of the plain dot, reusing the node-badge color and glyph of
@@ -272,6 +275,7 @@ class NodeItem(QGraphicsItem):
         self._edges: list = []
         self._is_search_match: bool = False
         self._is_search_current: bool = False
+        self._is_link_lit: bool = False
         self._snap_enabled: bool = False
         self.setZValue(1)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
@@ -309,7 +313,7 @@ class NodeItem(QGraphicsItem):
         # Never zero: the body's outline is stroked on its edge, so half the widest
         # pen (2.5, the run highlight) plus antialiasing lies outside the body.
         margin = PORT_R + 1 if (self._interactive or self._port_marks) else 2
-        if self._is_search_match:
+        if self.has_ring:
             margin = max(margin, 8)
         nr = self._node_rect()
         badged = self._is_initial or self._is_terminal or self._is_recovery
@@ -525,6 +529,38 @@ class NodeItem(QGraphicsItem):
         self._is_search_current = is_current
         self.update()
 
+    def set_link_lit(self, lit: bool) -> None:
+        """Light this node as one the signature page's selected input sets (#155).
+
+        A ring in the accent, drawn where the search ring is and beneath it in rank: a
+        reach from the properties panel into the canvas that is not a selection, because
+        selecting a node would open that node's page in place of the signature page.
+        """
+        if self._is_link_lit == lit:
+            return
+        self.prepareGeometryChange()
+        self._is_link_lit = lit
+        self.update()
+
+    @property
+    def is_link_lit(self) -> bool:
+        return self._is_link_lit
+
+    @property
+    def has_ring(self) -> bool:
+        """Whether a ring is drawn round the body, which the bounding rect has to hold."""
+        return self._is_search_match or self._is_link_lit
+
+    def _ring_color(self) -> QColor | None:
+        """The ring round the body: a search match's, else a link's, else none."""
+        if self._is_search_match:
+            return THEME.qcolor("search_match_current" if self._is_search_current else "search_match_other")
+        if self._is_link_lit:
+            color = THEME.qcolor("accent")
+            color.setAlpha(_LINK_RING_ALPHA)
+            return color
+        return None
+
     def _update_tooltip(self) -> None:
         lines = list(self._reasons) if (self._is_error or self._is_warning) else []
         self.setToolTip("\n".join(lines))
@@ -656,12 +692,10 @@ class NodeItem(QGraphicsItem):
         nr = self._node_rect()
         lod = option.levelOfDetailFromTransform(painter.worldTransform())
 
-        # Search match ring — drawn first as a solid filled rect so it sits
+        # Search match or link ring — drawn first as a solid filled rect so it sits
         # behind the node background with no gap.
-        if self._is_search_match:
-            ring_color = (
-                THEME.qcolor("search_match_current") if self._is_search_current else THEME.qcolor("search_match_other")
-            )
+        ring_color = self._ring_color()
+        if ring_color is not None:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(ring_color))
             painter.drawRoundedRect(

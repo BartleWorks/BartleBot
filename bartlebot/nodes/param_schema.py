@@ -117,7 +117,7 @@ class ParamField:
                       user's value to live; both are gone. A value the user owns is a **bot option**
                       with a null declaration — see bartlebot/bot_options.py — which reaches every node
                       in the bot at once instead of once per node that thought to offer it.
-                      "wiki_page" records the Wizard101 Central page a node's data came from. Editor-only —
+                      "wiki_page" records the Wizard101 Central Wiki page a node's data came from. Editor-only —
                       no node reads it at run time. Stored as a bare page title, never a URL; resolve it
                       through bartlebot.wiki_pages.resolve_wiki_page() and never by hand.
         label:        Human-readable form label.

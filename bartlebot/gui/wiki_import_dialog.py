@@ -1,4 +1,4 @@
-"""Dialog for importing drop items from a Wizard101 Central wiki page."""
+"""Dialog for importing drop items from a Wizard101 Central Wiki page."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 _WIKI_PREFIX = f"https://{_WIKI_HOST}/wiki/"
 
 # Wiki namespaces that represent obtainable in-game items.
-# "Item" covers most gear on Wizard101 Central (hats, robes, boots, athames, rings, wands…).
+# "Item" covers most gear on Wizard101 Central Wiki (hats, robes, boots, athames, rings, wands…).
 # "Jewel" covers socket jewels. "House" covers housing items and plantable seeds.
 _ITEM_NAMESPACES = {
     "Item",
@@ -124,7 +124,7 @@ def _text_before_first_link(tag) -> str:
 def _parse_drops(html: str) -> dict[str, list[str]]:
     """Parse a wiki creature page; return drops grouped by category.
 
-    Tries the Wizard101 Central ``div.drop-category`` template first (where the
+    Tries the Wizard101 Central Wiki ``div.drop-category`` template first (where the
     category label sits in the next-sibling of the *preceding* drop-category div).
     Falls back to grouping items under the nearest preceding h2/h3/h4 heading for
     other wiki page formats.
@@ -135,7 +135,7 @@ def _parse_drops(html: str) -> dict[str, list[str]]:
     content = soup.find("div", id="mw-content-text") or soup
     result: dict[str, list[str]] = {}
 
-    # --- Primary: Wizard101 Central drop-category template ---
+    # --- Primary: Wizard101 Central Wiki drop-category template ---
     drop_divs = content.find_all("div", class_="drop-category")
     if drop_divs:
         for i, div in enumerate(drop_divs):

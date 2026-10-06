@@ -1,11 +1,13 @@
 """Regression tests: popups must keep a top-level transient parent.
 
-Embedding a game client makes its tile a native window, and Qt promotes the
-tile's siblings (the sidebar, the canvas) to native windows of their own.  A
-menu parented to a button inside one of those then hands Qt a non-top-level
-``QWidgetWindow`` as transient parent, which Qt refuses with
+Embedding a game client makes its tile a native window, and its ancestors with it
+(the game view, the splitter).  A menu parented to a button inside one of those then
+hands Qt a non-top-level ``QWidgetWindow`` as transient parent, which Qt refuses with
 
-    QWidgetWindow(0x..., name="LeftSidebarClassWindow") must be a top level window.
+    QWidgetWindow(0x..., name="GameViewClassWindow") must be a top level window.
+
+Qt would promote the tile's *siblings* too, but the app turns that off
+(``native_widgets``, #126), and so does this suite's QApplication.
 
 Real widget tests (QApplication required), in the style of
 test_initial_state_warnings.  The first test pins the Qt behavior the fix works
@@ -33,26 +35,28 @@ from bartlebot.gui.menu_utils import anchor_menu_to_window, popup_menu
 
 
 class _Harness:
-    """A tab widget promoted to a native — but not top level — window.
+    """A game view made native — but not top level — by the tile embedded in it.
 
-    The same shape as the main window: a splitter holding the sidebar next to
-    the widget the game client is embedded into.
+    The same shape as the main window: a splitter holding the sidebar next to the
+    game view, which holds a tile and a button of its own, as ``GameView`` holds its
+    overlay button.
     """
 
     def __init__(self):
         self.window = QMainWindow()
         splitter = QSplitter()
         self.tabs = QTabWidget()
-        page = QWidget()
-        layout = QVBoxLayout(page)
+        self.tabs.addTab(QWidget(), "Tab")
+        self.game_view = QWidget()
+        layout = QVBoxLayout(self.game_view)
         self.button = QPushButton("menu")
-        layout.addWidget(self.button)
-        self.tabs.addTab(page, "Tab")
         self.tile = QWidget()
+        layout.addWidget(self.button)
+        layout.addWidget(self.tile)
         splitter.addWidget(self.tabs)
-        splitter.addWidget(self.tile)
+        splitter.addWidget(self.game_view)
         self.window.setCentralWidget(splitter)
-        self.tile.winId()  # what ClientTile.embed() does — promotes the sibling too
+        self.tile.winId()  # what ClientTile.embed() does — makes its ancestors native
 
 
 _PUMP_TIMEOUT = 2.0
@@ -82,9 +86,15 @@ def _pump_until(predicate: Callable[[], bool], timeout: float = _PUMP_TIMEOUT) -
 @pytest.fixture
 def harness(qapp):
     h = _Harness()
-    if h.tabs.windowHandle() is None:
-        pytest.skip("Qt did not promote the sibling to a native window on this platform")
+    if h.game_view.windowHandle() is None:
+        pytest.skip("Qt did not make the tile's ancestor native on this platform")
     return h
+
+
+def test_the_tiles_siblings_stay_alien(harness):
+    """The promotion #126 came from, turned off: the sidebar beside the game view is not native."""
+    assert harness.tabs.windowHandle() is None
+    assert harness.button.windowHandle() is None
 
 
 def _popup_warnings(menu: QMenu) -> list[str]:
