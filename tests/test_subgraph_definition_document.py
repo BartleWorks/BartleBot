@@ -397,7 +397,7 @@ def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_p
 
     lib.save(sync_players_definition(version=2))
     _, modified = panel.subgraph_menu(SYNC_ID).actions()
-    assert modified.text() == "Revert to Built-in…" and modified.isEnabled()
+    assert modified.text() == "Revert to Official…" and modified.isEnabled()
 
     custom = sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"})
     lib.save(custom)
@@ -639,8 +639,8 @@ def test_every_surface_names_the_source_the_same_way():
     from bartlebot.store_roots import Origin  # noqa: PLC0415
     from bartlebot.subgraph_store import source_label  # noqa: PLC0415
 
-    assert source_label(Origin.SHIPPED) == "Source: Built-in"
-    assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Built-in (modified)"
+    assert source_label(Origin.SHIPPED) == "Source: Official"
+    assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Official (modified)"
     assert source_label(Origin.USER) == "Source: Custom"
 
 

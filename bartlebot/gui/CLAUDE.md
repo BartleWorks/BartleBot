@@ -896,7 +896,7 @@ default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgra
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or
 focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
-except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / Custom" (`store_roots.source_label`, shared with the combat strategy cards); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
+except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Official / Official (modified) / Custom" (`store_roots.source_label`, shared with the combat strategy cards); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
 version read-only and no tags; line 2 says where it comes from and how many bots use it.
 **Line 2 stays in a definition** and the hidden tag field keeps its slot, so the bar is
 the same height in both documents — hiding the row made every step in or out move the
@@ -904,6 +904,23 @@ graph 22px, and the bar was caught mid-change on screen. Open a document straigh
 its mode with `setup(config, mode=...)`, never `setup` then `enter_edit_mode`, which
 laid the canvas out in Run mode first.
 `docs/SUBGRAPHS.md` has the flow.
+
+## Source: Official, Official (modified), Custom
+
+Every list of bots, templates, subgraphs or strategies says where each item comes from,
+in **the same three words** (`store_roots.SOURCE_LABELS`) and **the same pill**
+(`widgets/source_pill.source_pill`): Official filled with the accent, a modified one
+outlined in it, Custom gray (#149). Never "Built-in", which says where a file is rather
+than what it promises: Official means shipped, and so tested in game. It is worked out
+from the root a file is in (`bot_roots.is_shipped`, `Origin`) and never read from the
+file. A list long enough to need it has a Source filter beside it, offering the same
+words (`tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
+Subgraphs folder, and the node browser's Subgraphs tab. New Bot's gallery has pills only.
+
+**An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
+way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
+and the controller offers Make my own copy (`gui/make_copy_dialog.py`). A new way into
+Edit mode must go through `enter_edit_mode` too, and check the mode after it.
 
 ## One crumb bar, and the levels behind it
 
@@ -933,8 +950,8 @@ then the selection, and only then the definition — so a stray Esc never lands 
 Save / Discard prompt. An earlier segment steps straight back to it, prompting at each
 definition closed on the way (`AppController._back_to_document`).
 
-A definition's crumb carries **Save**, **Save as…** and, only for a Built-in
-(modified), **Revert**. The labels are short on purpose: the bar sits over the graph.
+A definition's crumb carries **Save**, **Save as…** and, only for an Official
+(modified) one, **Revert**. The labels are short on purpose: the bar sits over the graph.
 Save is `PRIMARY` with `on_accent=True`, which swaps its fill and text, because an
 accent-filled button on an accent bar drew weaker than the tertiary ones beside it.
 Save as makes the document the copy, at a new id and version 1, and Revert deletes the

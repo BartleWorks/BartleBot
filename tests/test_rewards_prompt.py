@@ -108,6 +108,7 @@ def _controller(config: BotConfig, path) -> SimpleNamespace:
         _last_save_path=str(path),
         _has_unsaved_changes=True,
         _rewards_declined_for=None,
+        _read_only_open=lambda: False,
         _delete_autosave=lambda *a: None,
         exits=exits,
         _window=SimpleNamespace(

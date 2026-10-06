@@ -45,10 +45,13 @@ from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.gui.widgets.source_pill import source_pill
+from bartlebot.gui.widgets.tag_picker import TagPickerButton, source_vocabulary
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import Origin
+from bartlebot.store_roots import SOURCE_LABELS, Origin
+from bartlebot.strategy_tags import SOURCE
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses, source_label
 from bartlebot.subgraphs import entry_nodes, exit_nodes, port_name
 
@@ -235,7 +238,10 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         title_label.setStyleSheet(f"color: {THEME.text};")
         title_row.addWidget(title_label, 1)
         title_row.addWidget(_Chip("Subgraph", THEME.accent, THEME.chip_text))
-        title_row.addWidget(_Chip(source_label(origin), THEME.border, THEME.text))
+        # The pill every list of subgraphs, bots and strategies wears (#149).
+        pill = source_pill(origin)
+        pill.setToolTip(source_label(origin))
+        title_row.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(title_row)
 
         key_label = QLabel(f"{defn.id} \u00b7 version {defn.version}")
@@ -648,6 +654,27 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self._on_search_changed)
 
+        # ── Source filter (#149) ──────────────────────────────────
+        # Subgraphs only, so shown on their tab only: a node type comes from the app
+        # itself and has no source to filter by.
+        self._source_picker: TagPickerButton | None = None
+        if self._library is not None:
+            picker = TagPickerButton(
+                title=SOURCE,
+                placeholder=SOURCE,
+                group=SOURCE,
+                vocabulary=source_vocabulary(("subgraph", "subgraphs")),
+            )
+            picker.setToolTip("Filter subgraphs by where they come from: Official, or your own")
+            counts: dict[str, int] = {}
+            for sid in self._library.ids():
+                word = SOURCE_LABELS[self._library.origin(sid)]
+                counts[word] = counts.get(word, 0) + 1
+            picker.set_counts(counts)
+            picker.selection_changed.connect(lambda _keys: self._refresh_listing())
+            picker.setVisible(False)
+            self._source_picker = picker
+
         # ── Tab bar ───────────────────────────────────────────────
         self._tab_bar = QTabBar()
         self._tab_bar.setExpanding(False)
@@ -716,7 +743,12 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         root = QVBoxLayout(self)
         root.setContentsMargins(10, 10, 10, 10)
         root.setSpacing(6)
-        root.addWidget(self._search)
+        search_row = QHBoxLayout()
+        search_row.setSpacing(6)
+        search_row.addWidget(self._search, 1)
+        if self._source_picker is not None:
+            search_row.addWidget(self._source_picker, 0)
+        root.addLayout(search_row)
         root.addWidget(self._tab_bar)
         root.addWidget(splitter, 1)
         root.addLayout(btn_row)
@@ -791,8 +823,9 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         self._list.clear()
         for nt in node_types:
             if is_subgraph_key(nt):
-                defn = self._library.get(nt[len(SUBGRAPH_KEY_PREFIX) :]) if self._library is not None else None
-                if defn is not None:
+                sid = nt[len(SUBGRAPH_KEY_PREFIX) :]
+                defn = self._library.get(sid) if self._library is not None else None
+                if defn is not None and self._source_passes(sid):
                     self._list.addItem(_SubgraphListItem(defn))
                 continue
             if nt not in NODE_SPECS:
@@ -800,6 +833,29 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             if self._allowed_node_types is not None and nt not in self._allowed_node_types:
                 continue
             self._list.addItem(_NodeListItem(nt))
+
+    def _source_passes(self, subgraph_id: str) -> bool:
+        """Whether the Source filter lets a subgraph through: always, while nothing is selected."""
+        chosen = self._source_picker.tags() if self._source_picker is not None else []
+        return not chosen or SOURCE_LABELS[self._library.origin(subgraph_id)] in chosen
+
+    def _refresh_listing(self) -> None:
+        """List again after the Source filter changed: the search's results, or the tab's."""
+        if self._search.text():
+            self._on_search_changed(self._search.text())
+        else:
+            self._on_tab_changed(self._tab_bar.currentIndex())
+
+    def set_source_filter(self, words: list[str]) -> None:
+        """Select Source words as the picker would. For the tests, and for nothing else to need the picker."""
+        if self._source_picker is not None:
+            self._source_picker.set_selection(words)
+            self._refresh_listing()
+
+    @property
+    def source_filter_visible(self) -> bool:
+        """Whether the Source filter is offered: on the Subgraphs tab only."""
+        return self._source_picker is not None and not self._source_picker.isHidden()
 
     @property
     def offered_node_types(self) -> list[str]:
@@ -824,7 +880,9 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         if self._search.text():
             # While searching, tabs are visually inactive — ignore
             return
-        _, node_types = self._tabs_data[index]
+        label, node_types = self._tabs_data[index]
+        if self._source_picker is not None:
+            self._source_picker.setVisible(label == "Subgraphs")
         self._populate_list(node_types)
 
         if self._list.count() == 0:
@@ -867,7 +925,9 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         if self._library is not None:
             for sid in self._library.ids():
                 defn = self._library.get(sid)
-                if defn is not None and (query in defn.name.lower() or query in (defn.description or "").lower()):
+                if defn is None or not self._source_passes(sid):
+                    continue
+                if query in defn.name.lower() or query in (defn.description or "").lower():
                     matches.append(subgraph_key(sid))
 
         if matches:

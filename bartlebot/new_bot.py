@@ -30,7 +30,7 @@ from bartlebot import template_store
 from bartlebot.bot.schema import BotConfig, TemplateRef
 from bartlebot.bot_folders import UNBADGED_FOLDERS
 from bartlebot.bot_tags import normalize_tags
-from bartlebot.store_roots import slugify
+from bartlebot.store_roots import Origin, slugify
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,8 @@ class StartingPoint:
     template_id: str
     version: int
     config: BotConfig
+    #: Official for a template that ships, Custom for the user's own: the card's Source pill.
+    origin: Origin = Origin.USER
 
     @property
     def name(self) -> str:
@@ -99,7 +101,7 @@ def starting_points(root: str | Path | None = None, user_root: str | Path | None
         except Exception:
             logger.warning("Not offering template %s: v%d does not load", template.name, version, exc_info=True)
             continue
-        points.append(StartingPoint(template_id=template.id, version=version, config=config))
+        points.append(StartingPoint(template_id=template.id, version=version, config=config, origin=template.origin))
     return points
 
 

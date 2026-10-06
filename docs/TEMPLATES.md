@@ -67,7 +67,8 @@ file that does not use them:
 
 - `template: {id, version}` is set only on a bot made from a template. **It is written in
   exactly two places: New Bot and Finish review.** Never on load, never by a migration.
-  Save As copies it unchanged, since a copy of a bot has the same base.
+  Save As copies it unchanged, since a copy of a bot has the same base, and so does Make
+  my own copy.
 - `template_meta: {blurb, setup}` is set only on a draft or a version, never on a bot.
 
 `templates/**` is `-text` in `.gitattributes`, and a template's files are written with LF
@@ -138,6 +139,10 @@ three kinds: a node param, a subgraph node's input, or the bot's `drops`.
 ## Updates
 
 When a template releases a version newer than a bot's base, the bot is offered a review.
+**Except an Official bot**, which is read-only and gets its updates from the app (#149):
+`_refresh_template_context` hands the canvas no update for one, and its library row never
+says one is available. Developer mode never marks a bot Official, so the maintainer still
+reviews the shipped bots against a new release.
 `bartlebot/template_diff.py` is the Qt-free half.
 
 The diff compares three configs: **base**, **theirs** (the latest version) and **mine**

@@ -568,7 +568,7 @@ class AccentPill(QLabel):
 
     ``filled=True`` is the heavier rung, filled with the accent -- ``ActionButton``'s
     ``PRIMARY`` to the outline's ``SECONDARY``. The strategy cards' source pill uses both,
-    so the three sources read as three weights: a built-in filled, a modified built-in
+    so the three sources read as three weights: an Official one filled, a modified one
     outlined, a custom one gray.
     """
 

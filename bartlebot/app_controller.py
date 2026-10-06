@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QM
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import (
+    bot_fork,
     bot_roots,
     group_manager,
     new_bot,
@@ -41,6 +42,8 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
+from bartlebot.gui.make_copy_dialog import TITLE as MAKE_COPY_TITLE
+from bartlebot.gui.make_copy_dialog import MakeCopyDialog
 from bartlebot.gui.new_bot_dialog import NewBotDialog
 from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.window_show_trace import WindowShowTracer
@@ -176,6 +179,9 @@ class AppController(QObject):
         self._current_machine: BotMachine | None = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
+        # Whether the open bot is an Official one, opened from the install directory: it
+        # is never edited or saved in place, and Edit mode offers Make my own copy (#149).
+        self._official_open: bool = False
         # One view of the subgraph library for the session, reloaded on every open and
         # before every run so a definition edited on disk reaches the bot that links it.
         self._subgraph_library = SubgraphLibrary()
@@ -346,6 +352,7 @@ class AppController(QObject):
         w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
         w.bot_canvas.template_release_requested.connect(lambda: self._release_template())
         w.bot_canvas.template_close_requested.connect(lambda: self._close_bot())
+        w.bot_canvas.copy_requested.connect(lambda: self._make_own_copy())
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
         # Ctrl+R records from the game window last in focus, as Bar A's buttons act on it.
         w.bot_canvas.set_preferred_player_getter(
@@ -702,8 +709,8 @@ class AppController(QObject):
                 logger.info("Subgraph region '%s' updated to library version %s", label, version)
             canvas.replace_config(composed, "Update subgraphs")
             self._loaded_config = composed
-            self._has_unsaved_changes = True
-            self._window.set_save_enabled(True)
+            # An Official bot runs the refreshed regions without anything to save (#149).
+            self._mark_unsaved()
         canvas.set_compose_report(report)
         labels = {r.id: (r.label or r.id) for r in composed.regions}
         cycles = [(labels.get(rid, rid), s.reasons) for rid, s in report.regions.items() if s.kind == "cycle"]
@@ -784,7 +791,12 @@ class AppController(QObject):
         self._loaded_config = config
         self._last_save_path = path
         self._rewards_declined_for = None
+        # An Official bot is read-only and only ever opens in Run mode (#149).
+        self._official_open = not config.is_template and bot_roots.is_shipped(path)
+        if self._official_open:
+            mode = BotMode.RUN
         self._window.set_bot_name(config.name, self._file_label(config, path))
+        self._window.bot_canvas.set_read_only(self._official_open)
         self._window.bot_canvas.setup(config, mode=mode)
         # After setup and compose, which the open does not count as edits either.
         self._clean_snapshot = _file_snapshot(config)
@@ -792,7 +804,7 @@ class AppController(QObject):
         self._refresh_template_context()
         self._window.left_sidebar.set_config(config)
         self._window.right_sidebar.set_config(config)
-        self._window.set_save_enabled(True)
+        self._enable_save_actions()
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
         if not config.is_template:
@@ -826,6 +838,7 @@ class AppController(QObject):
         self._delete_autosave()
         self._loaded_config = None
         self._last_save_path = None
+        self._official_open = False
         self._has_unsaved_changes = False
         self._clean_snapshot = None
         self._rewards_declined_for = None
@@ -875,6 +888,10 @@ class AppController(QObject):
             return False
         if self._loaded_config.is_definition:
             return self._save_definition()
+        if self._read_only_open():
+            # An Official bot is never changed, so there is nothing to write: Save As
+            # makes a plain copy, and Edit mode offers Make my own copy (#149).
+            return False
         if self._last_save_path is None:
             return self._save_bot_as()
         if not self._loaded_config.is_template and not bot_roots.may_write(self._last_save_path):
@@ -952,6 +969,10 @@ class AppController(QObject):
         self._has_unsaved_changes = False
         self._clean_snapshot = _file_snapshot(self._loaded_config)
         self._delete_autosave(old_save_path)
+        # The copy is the user's own: editable, and saved in place from now on.
+        self._official_open = False
+        self._window.bot_canvas.set_read_only(False)
+        self._window.set_save_enabled(True)
         self._window.set_bot_name(self._loaded_config.name, Path(path).name)
         self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         self._window.bot_canvas.refresh_placeholder()
@@ -967,6 +988,47 @@ class AppController(QObject):
         # update waiting against the bot's id, so under the new one it had neither, and
         # a copy of a half set up bot lost its Setup errors until it was reopened.
         self._refresh_template_context()
+        return True
+
+    def _make_own_copy(self) -> bool:
+        """Make my own copy of the open Official bot, and open the copy in Edit mode (#149).
+
+        Asked when Edit mode is asked for on an Official bot. The copy is a fork
+        (:mod:`bartlebot.bot_fork`): a new id recording the Official bot's, in the user's
+        own folder, written at once as New Bot writes a new bot. Unlike Save As, it takes
+        every option value, Bot Combat Strategy and the active pick with it, so it runs
+        exactly as the Official bot did. False when cancelled or nothing was written.
+        """
+        config, path = self._loaded_config, self._last_save_path
+        if config is None or path is None or not self._read_only_open():
+            return False
+        dialog = MakeCopyDialog(config.name, self._window)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return False
+        try:
+            # The file as it ships, not the composed copy in memory: its hash is the record.
+            official = BotConfig.load(path)
+            fork, _report = self._compose(bot_fork.make_fork(official, dialog.name))
+            target = bot_fork.fork_path(path, bot_roots.user_bots_dir(), _world_folder(path))
+            target.parent.mkdir(parents=True, exist_ok=True)
+            fork.save(target)
+        except Exception as e:
+            logger.exception("Could not make a copy of %s", path)
+            QMessageBox.critical(self._window, MAKE_COPY_TITLE, f"Could not make your copy:\n\n{e}")
+            return False
+        logger.info("Made a copy of the Official bot '%s' at %s", official.name, target)
+        try:
+            bot_fork.carry_over(official.id, fork.id, SettingsManager.instance())
+        except Exception:
+            # The copy exists and opens; what did not come with it is the user's to set again.
+            logger.exception("Could not carry the option values and combat setup over to the copy")
+            QMessageBox.warning(
+                self._window,
+                MAKE_COPY_TITLE,
+                "Your copy was made, but not all of its option values and Bot Combat Strategies "
+                "could be copied from the Official bot. See the log for details.",
+            )
+        self._open_bot(str(target), mode=BotMode.EDIT)
         return True
 
     # ------------------------------------------------------------------
@@ -1052,7 +1114,10 @@ class AppController(QObject):
                     config.template.version if origin else None,
                     origin.latest_version if origin else None,
                 )
-                canvas.set_template_update(template_diff.load_update(config, self._templates_root))
+                # An Official bot gets its updates from the app, never through the review
+                # (#149). Developer mode never marks one Official, so its maintainer still can.
+                update = None if self._official_open else template_diff.load_update(config, self._templates_root)
+                canvas.set_template_update(update)
             return
         template = self._open_template()
         if template is None:
@@ -1233,7 +1298,7 @@ class AppController(QObject):
         """Delete a definition from the library, from its card there. False when refused or cancelled.
 
         Deleting removes the user's file only (:mod:`bartlebot.store_roots`), so a
-        modified built-in is reverted rather than deleted, and an unedited one has
+        modified Official one is reverted rather than deleted, and an unedited one has
         nothing to delete. What linked the definition is never broken by it: a bot keeps
         the snapshot it was saved with and runs that, flagged ``missing``, as does a bot
         linking another definition that nested it (docs/SUBGRAPHS.md). It is still
@@ -1247,16 +1312,16 @@ class AppController(QObject):
         if defn is None or origin not in (Origin.USER, Origin.SHIPPED_OVERRIDE):
             return False
         revert = origin is Origin.SHIPPED_OVERRIDE
-        title = "Revert to Built-in" if revert else "Delete Subgraph"
+        title = "Revert to Official" if revert else "Delete Subgraph"
         verb = "revert" if revert else "delete"
         if subgraph_id in self._open_definition_ids():
             QMessageBox.information(self._window, title, f"'{defn.name}' is open. Close it first, then {verb} it.")
             return False
         if revert:
-            # The id stays, so whatever links it follows the built-in from its next compose.
+            # The id stays, so whatever links it follows the Official one from its next compose.
             text = (
-                f"Revert '{defn.name}' to the built-in version?\n\n"
-                "Your changes to it are lost, and every bot linking it uses the built-in version "
+                f"Revert '{defn.name}' to the Official version?\n\n"
+                "Your changes to it are lost, and every bot linking it uses the Official version "
                 "from now on. This can't be undone."
             )
         else:
@@ -1289,7 +1354,7 @@ class AppController(QObject):
         # A recovery file holds edits to a definition that is no longer there to take them.
         self._delete_autosave(stem=f"{_DEFINITION_AUTOSAVE_PREFIX}{subgraph_id}")
         if revert:
-            logger.info("Reverted subgraph '%s' to the built-in version", defn.name)
+            logger.info("Reverted subgraph '%s' to the Official version", defn.name)
         else:
             logger.info("Deleted subgraph '%s' from the library", defn.name)
         canvas = self._window.bot_canvas
@@ -1307,9 +1372,9 @@ class AppController(QObject):
         Written at the version it has: a bot links the id, and an instance keeps the
         label it was given when it was placed, so nothing that links it changes and
         none of them is offered an update (:func:`~bartlebot.subgraphs.definition_change`).
-        The user's own definitions only. A built-in one's name is the shipped file's,
+        The user's own definitions only. An Official one's name is the shipped file's,
         and renaming it would make a copy that stops its updates arriving -- in dev
-        mode every definition is the user's, so that is where a built-in is renamed.
+        mode every definition is the user's, so that is where an Official one is renamed.
         Refused while the definition is open, whose header renames it instead.
         """
         library = self._subgraph_library
@@ -1378,7 +1443,7 @@ class AppController(QObject):
         change = definition_change(stored, defn) if stored is not None else "content"
         if change == "none":
             # Nothing to write: a new version would send every linking bot an update
-            # that changes nothing, and a built-in one would gain a copy that shadows it.
+            # that changes nothing, and an Official one would gain a copy that shadows it.
             config.definition.version = stored.version
             self._mark_definition_saved(config)
             logger.info("Subgraph '%s' is unchanged; kept version %d", config.name, stored.version)
@@ -1387,8 +1452,8 @@ class AppController(QObject):
             reply = QMessageBox.question(
                 self._window,
                 "Save to Library",
-                f"'{config.name}' is built in. Saving makes a modified copy of it, which every bot "
-                "linking it uses from now on, in place of the built-in one's updates.\n\n"
+                f"'{config.name}' is Official. Saving makes a modified copy of it, which every bot "
+                "linking it uses from now on, in place of the Official one's updates.\n\n"
                 "Save the modified copy?",
                 QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
                 QMessageBox.StandardButton.Save,
@@ -1470,10 +1535,10 @@ class AppController(QObject):
         return True
 
     def _revert_definition(self) -> bool:
-        """Discard the user's copy of a built-in definition, and show the built-in one. False when cancelled.
+        """Discard the user's copy of an Official definition, and show the Official one. False when cancelled.
 
         Deleting the user copy is the revert (:mod:`bartlebot.store_roots`). Every bot
-        linking it follows the built-in one from its next compose, and unsaved edits
+        linking it follows the Official one from its next compose, and unsaved edits
         in the document go with the copy, so it asks first.
         """
         config = self._loaded_config
@@ -1485,9 +1550,9 @@ class AppController(QObject):
             return False
         reply = QMessageBox.question(
             self._window,
-            "Revert to Built-in",
-            f"Revert '{config.name}' to the built-in version?\n\n"
-            "Your changes to it are lost, and every bot linking it uses the built-in version "
+            "Revert to Official",
+            f"Revert '{config.name}' to the Official version?\n\n"
+            "Your changes to it are lost, and every bot linking it uses the Official version "
             "from now on. This can't be undone.",
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel,
@@ -1498,12 +1563,12 @@ class AppController(QObject):
         shipped = library.get(sid)
         if shipped is None:
             QMessageBox.critical(
-                self._window, "Revert to Built-in", f"The built-in '{config.name}' could not be loaded."
+                self._window, "Revert to Official", f"The Official '{config.name}' could not be loaded."
             )
             return False
         self._delete_autosave(stem=self._autosave_stem())
         self._reshow_definition(shipped)
-        logger.info("Reverted subgraph '%s' to the built-in version %d", shipped.name, shipped.version)
+        logger.info("Reverted subgraph '%s' to the Official version %d", shipped.name, shipped.version)
         return True
 
     def _reshow_definition(self, defn) -> None:
@@ -1555,6 +1620,7 @@ class AppController(QObject):
         if not self._doc_stack:
             self._loaded_config = None
             self._last_save_path = None
+            self._official_open = False
             self._has_unsaved_changes = False
             self._clean_snapshot = None
             canvas.close_bot()
@@ -1578,6 +1644,9 @@ class AppController(QObject):
             self._loaded_config = composed
             self._has_unsaved_changes = True
         canvas.set_compose_report(report)
+        if self._read_only_open():
+            # An Official bot has nothing to save: what composed differently is shown, not kept.
+            self._has_unsaved_changes = False
         loaded = self._loaded_config
         if loaded.is_definition:
             self._refresh_definition_context()
@@ -1591,7 +1660,7 @@ class AppController(QObject):
             self._window.set_bot_name(loaded.name, self._file_label(loaded, self._last_save_path))
             self._refresh_template_context()
             self._window.set_start_enabled(self._start_enabled())
-        self._window.set_save_enabled(True)
+        self._enable_save_actions()
         self._window.set_close_enabled(True)
 
     def _close_definitions(self) -> bool:
@@ -2459,13 +2528,34 @@ class AppController(QObject):
         skip it either way, and this still saves the recompose and the description's
         own round trip.
         """
+        self._mark_unsaved()
+
+    def _mark_unsaved(self) -> None:
+        """Raise the unsaved flag and enable Save -- except on an Official bot, which is never saved (#149)."""
+        if self._read_only_open():
+            return
         self._has_unsaved_changes = True
         self._window.set_save_enabled(True)
 
+    def _enable_save_actions(self) -> None:
+        """Enable Save and Save As for the open document. On an Official bot only Save As,
+        which makes a copy: there is nothing of its own to save."""
+        if self._read_only_open():
+            self._window.set_save_enabled(False, save_as=True)
+        else:
+            self._window.set_save_enabled(True)
+
+    def _read_only_open(self) -> bool:
+        """Whether the document on top is an Official bot. A definition opened over one is not."""
+        config = self._loaded_config
+        return self._official_open and config is not None and not config.is_definition
+
     def _on_config_changed(self) -> None:
-        self._has_unsaved_changes = True
-        self._window.set_save_enabled(True)
         canvas_config = self._window.bot_canvas.config
+        if canvas_config is not None:
+            # First, so the flag below is raised for the document now on top.
+            self._loaded_config = canvas_config
+        self._mark_unsaved()
         if canvas_config is not None and canvas_config.is_definition:
             # No sidebars to follow and no options to compose: a definition has neither.
             self._loaded_config = canvas_config
@@ -2676,6 +2766,10 @@ class AppController(QObject):
             config, report = self._compose(config)
             self._loaded_config = config
             self._last_save_path = str(original_path) if original_path else None
+            # Unsaved edits to recover, so never read-only: a Save of an Official bot's
+            # becomes Save As, into the user's own folder.
+            self._official_open = False
+            self._window.bot_canvas.set_read_only(False)
             display_name = self._file_label(config, original_path) if original_path else "Untitled (recovered)"
             self._window.set_bot_name(config.name, display_name)
             self._window.bot_canvas.setup(config, mode=BotMode.EDIT)

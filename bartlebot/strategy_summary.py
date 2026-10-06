@@ -194,7 +194,7 @@ class StrategySummary:
     #: other kind. The facet already says it in words; this is for a surface that draws
     #: the order as colored pills and has to leave that facet out when it does.
     combat_order: tuple[int, ...] = ()
-    #: Built-in, modified or custom, for a surface that shows it; None where the question
+    #: Official, modified or custom, for a surface that shows it; None where the question
     #: does not arise. Supplied by whoever knows the working set — the summarize_*
     #: functions see one entry and cannot tell (#124).
     source: Origin | None = None

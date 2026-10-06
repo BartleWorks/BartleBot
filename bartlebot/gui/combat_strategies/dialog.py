@@ -207,9 +207,9 @@ ADD_TO_LIBRARY_TEXT = "Add to library"
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
-#: Why Delete is grayed out on an unedited built-in: removing only touches the user
+#: Why Delete is grayed out on an unedited Official one: removing only touches the user
 #: root, so the entry would be back on the next open (#124).
-_BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to make a copy of your own."
+_BUILT_IN_DELETE_TIP = "Official strategies can't be deleted. Duplicate one to make a copy of your own."
 #: Why New and Duplicate are grayed out in the profile editor before a profile exists.
 _NO_PROFILE_TIP = "Create a combat profile for this bot first"
 #: What an entry from a file in a newer format says, and why it can't be edited or deleted.
@@ -884,7 +884,7 @@ class _KindPage(QWidget):
         Not ``card.sizeHint()``: its height wraps the name at whatever width Qt's own
         guess for a word-wrapped label picks, not at the column's. A name that fits on
         one line was still given a two-line row, and the card spread the slack between
-        its lines -- so an edit that turned the source pill into the wider "Built-in
+        its lines -- so an edit that turned the source pill into the wider "Official
         (modified)", really wrapping the name, visibly tightened the card's spacing.
 
         The width asked for is only the card's minimum: a list row fills the viewport
@@ -1238,7 +1238,7 @@ class CombatStrategyDialog(QDialog):
         self.setMinimumSize(880, 560)
         # Wider than the minimum so the card sidebar isn't fighting the detail
         # pane for space by default — see issue #44 — and wide enough that a card
-        # carrying the longest source pill, "Built-in (modified)", fits the column.
+        # carrying the longest source pill, "Official (modified)", fits the column.
         self.resize(1200, 720)
 
         layout = QVBoxLayout(self)

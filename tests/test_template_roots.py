@@ -61,6 +61,23 @@ def test_both_roots_are_listed_each_with_its_origin(roots):
     assert [p.template_id for p in starting_points(shipped, user)] == ["t-mine", "t-official"]
 
 
+def test_new_bot_shows_each_templates_source_and_none_on_the_blank_bot(qapp, roots, tmp_path):
+    """Every surface listing templates says where each comes from, in the same words (#149)."""
+    from bartlebot.gui.new_bot_dialog import NewBotDialog  # noqa: PLC0415
+
+    shipped, user = roots
+    _released(shipped, "t-official", name="Official Farmer")
+    _released(user, "t-mine", name="My Farmer")
+
+    cards = NewBotDialog(starting_points(shipped, user), tmp_path / "bots").cards
+
+    assert {c.name: c.source_text for c in cards} == {
+        "Blank bot": "",
+        "My Farmer": "Custom",
+        "Official Farmer": "Official",
+    }
+
+
 def test_a_user_template_declaring_an_official_id_is_ignored_with_a_warning(roots, caplog):
     shipped, user = roots
     _released(shipped, "t-same", name="Official")

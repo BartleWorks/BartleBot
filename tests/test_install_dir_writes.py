@@ -112,14 +112,16 @@ def _answer_save_as(monkeypatch, path: Path) -> list[str]:
     return offered
 
 
-def test_saving_an_official_bot_saves_a_copy_in_the_users_folder(install, harness, monkeypatch):
+def test_save_as_on_an_official_bot_saves_a_copy_in_the_users_folder(install, harness, monkeypatch):
     shipped = install / "bots" / "04_mooshu" / "jade-oni.json"
     before = shipped.read_bytes()
     target = bot_roots.user_bots_dir() / "04_mooshu" / "jade-oni.json"
     offered = _answer_save_as(monkeypatch, target)
     harness._open_bot(str(shipped))
 
-    assert harness._save_bot()
+    assert not harness._save_bot(), "an Official bot is read-only: Save has nothing to write (#149)"
+    assert offered == []
+    assert harness._save_bot_as()
 
     assert offered == [str(target)], "Save As opens on the same world folder and name, in the user's folder"
     assert shipped.read_bytes() == before

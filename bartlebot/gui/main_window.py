@@ -481,9 +481,11 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda _checked, p=path: self.open_recent_requested.emit(p))
             self._recent_menu.addAction(action)
 
-    def set_save_enabled(self, enabled: bool) -> None:
+    def set_save_enabled(self, enabled: bool, *, save_as: bool | None = None) -> None:
+        """Enable Save, and Save As with it unless *save_as* says otherwise: an Official bot
+        has nothing to save, but Save As still makes a copy of it."""
         self.action_save.setEnabled(enabled)
-        self.action_save_as.setEnabled(enabled)
+        self.action_save_as.setEnabled(enabled if save_as is None else save_as)
 
     def set_close_enabled(self, enabled: bool) -> None:
         self.action_close.setEnabled(enabled)
