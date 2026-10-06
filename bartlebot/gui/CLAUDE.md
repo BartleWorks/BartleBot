@@ -121,11 +121,17 @@ menu built per invocation, `anchor_menu_to_window(QMenu(btn))` for a long-lived 
 handed to `QToolButton.setMenu()`.
 
 Qt gives a popup the `QWindow` of its parent's nearest *native* ancestor as transient
-parent. Embedding a game client makes `ClientTile` native, and Qt then promotes its
-siblings — the left sidebar, the canvas — to native windows of their own. A menu
-parented to a button inside one resolves to a `QWidgetWindow` that is not top level,
-which Qt refuses outright: `... must be a top level window`, leaving the popup
-with no transient parent at all.
+parent. Embedding a game client makes `ClientTile` native, and its ancestors with it —
+`GameView`, its panel, the splitter. A menu parented to a button inside one resolves
+to a `QWidgetWindow` that is not top level, which Qt refuses outright: `... must be a
+top level window`, leaving the popup with no transient parent at all.
+
+Qt would also promote every *sibling* of those to a native window — the left sidebar,
+the canvas — and `bartlebot.py` turns that off with `AA_DontCreateNativeWidgetSiblings`
+(`gui/native_widgets.py`). Leave it on. With promotion on, this helper's reparenting
+made every child of the canvas's view native, and a native `ViewFrame` took every
+click on the canvas (#126). A widget that has to draw over the tiles asks for its own
+native window with `WA_NativeWindow`, as `GameView`'s overlay button does.
 
 The helper swaps the menu onto its top-level window on `aboutToShow` and hands it back
 on `aboutToHide`. The swap cannot happen at construction: a menu built in a widget's

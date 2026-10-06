@@ -2,9 +2,11 @@
 
 Qt gives a popup the ``QWindow`` of its parent's *nearest native ancestor* as
 transient parent.  Embedding a game client makes its tile a native window, and
-Qt then promotes the tile's siblings — the left sidebar, the canvas — to native
-windows of their own.  A menu parented to a button inside one of those resolves
-to a ``QWidgetWindow`` that is not top level, which Qt refuses:
+its ancestors with it — the game view, the splitter.  (Qt would promote their
+siblings too, the left sidebar and the canvas, but ``native_widgets`` turns that
+off: with it on, the reparenting below made the canvas's overlays native, #126.)
+A menu parented to a button inside one of those resolves to a ``QWidgetWindow``
+that is not top level, which Qt refuses:
 
     QWidgetWindow(0x..., name="LeftSidebarClassWindow") must be a top level window.
 

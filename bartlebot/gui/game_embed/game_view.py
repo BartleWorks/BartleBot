@@ -332,6 +332,9 @@ class GameView(ThemedMixin, QWidget):
         self._overlay_btn.setAutoRaise(True)
         self._overlay_btn.setFixedSize(_OVERLAY_BTN_SIZE, _OVERLAY_BTN_SIZE)
         self._overlay_btn.clicked.connect(self._on_overlay_clicked)
+        # Drawn over the tiles, which are native: an alien widget would be painted under
+        # them. Native by request, since siblings are no longer promoted (native_widgets).
+        self._overlay_btn.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
         self._overlay_btn.setVisible(False)
         self._overlay_btn.raise_()
 
@@ -581,6 +584,11 @@ class GameView(ThemedMixin, QWidget):
     @property
     def has_detached(self) -> bool:
         return bool(self._detached_hwnds)
+
+    @property
+    def overlay_button(self) -> QToolButton:
+        """The detach-all / re-attach-all button drawn over the tiles."""
+        return self._overlay_btn
 
     @property
     def pending_slots(self) -> dict[int, str]:
