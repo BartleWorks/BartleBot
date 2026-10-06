@@ -1984,6 +1984,14 @@ class EditScene(QGraphicsScene):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        grabber = self.mouseGrabberItem()
+        if grabber is not None and event.buttons() == Qt.MouseButton.NoButton:
+            # #126: a grab outliving its release takes every later press.
+            logger.debug(
+                "Mouse grab survived release: %s (%s)",
+                getattr(grabber, "state_id", None) or type(grabber).__name__,
+                "in this scene" if grabber.scene() is self else "not in this scene",
+            )
         self._flush_positions()
 
     def _offer_new_exit(self, src: NodeItem, when: str, scene_pos: QPointF) -> None:

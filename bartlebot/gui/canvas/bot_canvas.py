@@ -74,6 +74,7 @@ from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel, instance_key_field
+from bartlebot.gui.canvas.press_trace import PressTracer
 from bartlebot.gui.canvas.repaint_trace import RepaintTracer
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
@@ -1251,6 +1252,8 @@ class BotCanvas(QWidget):
         self._view = _EditView(self._scene)
         # #73: log any item change Qt never repainted. Developer builds only.
         self._repaint_tracer = RepaintTracer(self._view) if dev_mode() else None
+        # #126: log presses over the viewport that some other widget took. Developer builds only.
+        self._press_tracer = PressTracer(self._view.viewport()) if dev_mode() else None
         self._param_panel = _ParamPanel()
         # An unset Scales param means the open bot's world's, so its picker says which that is.
         self._param_panel.set_default_scales_getter(lambda: scales.default_for(self._config))
@@ -1585,6 +1588,8 @@ class BotCanvas(QWidget):
         self._edit_baseline = config.model_dump()
         self._apply_mode(mode)
         self.mode_changed.emit(mode)
+        if config.is_definition:
+            self._log_input_state_later(f"opened definition {config.name!r}")
 
     def _load(self, config: BotConfig, report: ComposeReport) -> None:
         """Bind every surface to ``config``: what ``setup`` and ``restore_document`` share."""
@@ -1659,6 +1664,9 @@ class BotCanvas(QWidget):
         self._edit_baseline = doc.edit_baseline
         self._apply_mode(doc.mode)
         self.mode_changed.emit(doc.mode)
+        self._log_input_state_later(
+            f"restored {'definition' if doc.config.is_definition else 'bot'} {doc.config.name!r}"
+        )
 
     def set_definition_context(
         self, path: list[str], *, origin: str = "", used_by: int = 0, can_revert: bool = False
@@ -1899,8 +1907,12 @@ class BotCanvas(QWidget):
     def eventFilter(self, obj, event) -> bool:
         if obj is self._view.viewport() and event.type() == QEvent.Type.Resize:
             self._reposition_banner()
-        elif obj is self._view.viewport() and event.type() == QEvent.Type.MouseButtonPress and self._levels:
-            self._log_focus_click(event)
+        elif (
+            obj is self._view.viewport()
+            and event.type() == QEvent.Type.MouseButtonPress
+            and (self._levels or self.is_definition)
+        ):
+            self._log_input_click(event)
         elif obj is self._view:
             if event.type() == QEvent.Type.Resize:
                 self._reposition_banner()
@@ -2450,7 +2462,7 @@ class BotCanvas(QWidget):
             camera = self._view.camera_state()
         self._levels.append(_ViewLevel("region", region_id, camera))
         self._sync_opened()
-        self._log_focus_state(f"entered region {region_id} (collapsed={self._scene.is_region_collapsed(region_id)})")
+        self._log_input_state(f"entered region {region_id} (collapsed={self._scene.is_region_collapsed(region_id)})")
         # Frame the region. Hiding everything else is what made the canvas look empty
         # without explanation: the camera never moved, so a region that was small
         # or off to one side stayed small and off to one side while the rest vanished.
@@ -2487,17 +2499,32 @@ class BotCanvas(QWidget):
         logger.debug("Focus Mode: stepped out of %s %s (depth now %d)", level.kind, level.region_id, len(self._levels))
         return True
 
-    def _log_focus_state(self, what: str) -> None:
+    def _input_context(self) -> str:
+        """What else could be taking the canvas's input: diagnostics for #126."""
+        grabber = QWidget.mouseGrabber()
+        focus = QApplication.focusWidget()
+        popup = QApplication.activePopupWidget()
+        modal = QApplication.activeModalWidget()
+        return (
+            f"space_held={self._view.space_held} panning={self._view.panning} "
+            f"widget_grabber={type(grabber).__name__ if grabber is not None else None} "
+            f"focus={type(focus).__name__ if focus is not None else None} "
+            f"popup={type(popup).__name__ if popup is not None else None} "
+            f"modal={type(modal).__name__ if modal is not None else None}"
+        )
+
+    def _log_input_state(self, what: str) -> None:
         """Record what a click on the canvas would meet now: diagnostics for #126."""
         vp = self._view.viewport()
         center = vp.rect().center()
         on_top = QApplication.widgetAt(vp.mapToGlobal(center))
         shown = [n for n in self._scene.node_items.values() if n.isVisible()]
         logger.debug(
-            "Focus Mode: %s; mode=%s depth=%d scene_interactive=%s view_interactive=%s grabber=%s "
-            "shown_nodes=%d selectable=%d widget_at_viewport_center=%s%s",
+            "Canvas input: %s; mode=%s definition=%s depth=%d scene_interactive=%s view_interactive=%s "
+            "grabber=%s shown_nodes=%d selectable=%d widget_at_viewport_center=%s%s %s",
             what,
             self._mode.name,
+            self.is_definition,
             len(self._levels),
             self._scene.interactive,
             self._view.isInteractive(),
@@ -2506,30 +2533,47 @@ class BotCanvas(QWidget):
             sum(1 for n in shown if n.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable),
             type(on_top).__name__ if on_top is not None else None,
             "" if on_top is vp else " (NOT the viewport)",
+            self._input_context(),
         )
 
-    def _log_focus_click(self, event) -> None:
-        """A press on the viewport while focused: what was under it, and whether it selected anything (#126)."""
+    def _log_input_state_later(self, what: str) -> None:
+        """``_log_input_state`` once the event under way has finished: a double-click opens a definition mid-event."""
+
+        def log() -> None:
+            try:
+                self._log_input_state(what)
+            except RuntimeError:
+                pass  # the canvas went first
+
+        QTimer.singleShot(0, log)
+
+    def _log_input_click(self, event) -> None:
+        """A press on the viewport while focused or in a definition: what was under it, and what it selected (#126)."""
         pos = event.position().toPoint()
         items = self._view.items(pos)
         top = items[0] if items else None
         logger.debug(
-            "Focus Mode click: button=%s items=%s top_flags=%s grabber=%s scene_interactive=%s view_interactive=%s",
+            "Canvas click: button=%s items=%s top_flags=%s grabber=%s scene_interactive=%s view_interactive=%s %s",
             event.button().name,
             [getattr(i, "state_id", None) or type(i).__name__ for i in items[:4]],
             int(top.flags().value) if top is not None else None,
             type(self._scene.mouseGrabberItem()).__name__ if self._scene.mouseGrabberItem() else None,
             self._scene.interactive,
             self._view.isInteractive(),
+            self._input_context(),
         )
-        QTimer.singleShot(
-            0,
-            lambda: logger.debug(
-                "Focus Mode click: after press selected=%s grabber=%s",
-                [getattr(i, "state_id", None) or type(i).__name__ for i in self._scene.selectedItems()],
-                type(self._scene.mouseGrabberItem()).__name__ if self._scene.mouseGrabberItem() else None,
-            ),
-        )
+
+        def after() -> None:
+            try:
+                logger.debug(
+                    "Canvas click: after press selected=%s grabber=%s",
+                    [getattr(i, "state_id", None) or type(i).__name__ for i in self._scene.selectedItems()],
+                    type(self._scene.mouseGrabberItem()).__name__ if self._scene.mouseGrabberItem() else None,
+                )
+            except RuntimeError:
+                pass  # the canvas went first
+
+        QTimer.singleShot(0, after)
 
     def step_out_to(self, depth: int) -> None:
         """Step out until ``depth`` levels are left: 0 is the open document itself."""
@@ -3959,6 +4003,8 @@ class BotCanvas(QWidget):
         """
         self._tick_timer.stop()
         self._validation_timer.stop()
+        if self._press_tracer is not None:
+            self._press_tracer.stop()
         was_blocked = self._scene.signalsBlocked()
         self._scene.blockSignals(True)
         try:
