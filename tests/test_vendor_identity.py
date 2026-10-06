@@ -79,9 +79,11 @@ def test_shared_layer_imports_nothing_product_specific():
     """The rule that keeps the shared layer extractable, in ``bartlebot/shared``.
 
     A fourth repo consumed as a pinned dependency, or an installable package, is only
-    possible while nothing here reaches into the GUI or the FSM. One import of
+    possible while nothing here reaches into the rest of BartleBot. One import of
     ``gui.theme`` is all it would take — which is exactly how ``account_slots`` came to
-    be split out of ``gui/account_accent`` in the first place.
+    be split out of ``gui/account_accent`` in the first place. Not only the GUI and the
+    FSM: a helper like ``store_roots`` or ``paths`` would make extracting the layer a
+    rewrite instead of a move (#168).
     """
     forbidden: list[str] = []
     for path in SHARED.rglob("*.py"):
@@ -94,7 +96,10 @@ def test_shared_layer_imports_nothing_product_specific():
             else:
                 continue
             for name in names:
-                if name.startswith(("bartlebot.gui", "bartlebot.bot", "bartlebot.nodes")) or name == "PyQt6":
+                product = name.startswith("bartlebot") and not (
+                    name == "bartlebot.shared" or name.startswith("bartlebot.shared.")
+                )
+                if product or name.startswith("PyQt6"):
                     forbidden.append(f"{path.name} imports {name}")
 
     assert forbidden == []
@@ -120,6 +125,10 @@ def test_the_shared_layer_has_no_stray_files():
         "__init__.py",
         "account_slots.py",
         "account_store.py",
+        "official_set.py",
+        "store_files.py",
+        "strategy_library.py",
+        "strategy_models.py",
         "vendor.py",
     }
 

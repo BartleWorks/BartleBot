@@ -221,15 +221,12 @@ def describe_target(config: BotConfig, target: SetupTarget) -> str:
 
 
 @lru_cache(maxsize=64)
-def _released_steps(templates_dir: str, template_id: str, version: int) -> tuple[SetupStep, ...]:
-    # Cached for good: a released version never changes. Keyed on the folder so a
+def _released_steps(shipped_dir: str, user_dir: str, template_id: str, version: int) -> tuple[SetupStep, ...]:
+    # Cached for good: a released version never changes. Keyed on the folders so a
     # test's store on a tmp_path never answers for the shipped one.
     from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
 
-    template = next(
-        (t for t in template_store.list_templates(Path(templates_dir).parent) if t.id == template_id),
-        None,
-    )
+    template = template_store.find_template(template_id, Path(shipped_dir).parent, Path(user_dir).parent)
     if template is None:
         raise LookupError(f"no template {template_id}")
     meta = BotConfig.load(template.version_path(version)).template_meta
@@ -252,9 +249,9 @@ def steps_for(
         return []
     from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
 
-    folder = str(template_store.templates_dir(root, user_root))
+    folders = tuple(str(d) for d in template_store.templates_dirs(root, user_root))
     try:
-        return list(_released_steps(folder, config.template.id, config.template.version))
+        return list(_released_steps(*folders, config.template.id, config.template.version))
     except Exception:
         logger.debug(
             "No setup steps for %s: template %s v%d is not in the store",
@@ -342,7 +339,8 @@ def file_reads_library(
     from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
 
     try:
-        steps = _released_steps(str(template_store.templates_dir(root, user_root)), ref["id"], ref["version"])
+        folders = tuple(str(d) for d in template_store.templates_dirs(root, user_root))
+        steps = _released_steps(*folders, ref["id"], ref["version"])
     except Exception:
         return False
     return reads_library(steps)

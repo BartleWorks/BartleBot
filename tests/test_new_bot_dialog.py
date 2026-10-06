@@ -20,6 +20,7 @@ from bartlebot.gui.new_bot_dialog import NewBotDialog
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.tag_pill import TagChip
 from bartlebot.new_bot import BotDetails, starting_points
+from bartlebot.settings_manager import SettingsManager
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.template_store import release, save_draft
 from tests.test_subgraph_integration import ControllerHarness
@@ -396,16 +397,24 @@ def test_a_bot_that_cannot_be_written_is_not_opened(harness, tmp_path, monkeypat
 
 def test_new_bot_opens_on_the_open_bots_folder(harness, tmp_path, monkeypatch):
     bots_dir = tmp_path / "bots"
+    SettingsManager.instance().set("canvas", "bot_library_path", value=str(bots_dir))
     path = bots_dir / "13_aquila" / "lamia.json"
     _answer(monkeypatch, None, BotDetails(name="Lamia"), path)
     harness._new_bot()
 
-    assert harness._new_bot_folder(bots_dir) == "13_aquila"
-    assert harness._new_bot_folder(tmp_path / "elsewhere") is None
+    assert harness._new_bot_folder() == "13_aquila"
 
 
-def test_new_bot_opens_on_no_folder_with_nothing_to_go_by(harness, tmp_path):
-    assert harness._new_bot_folder(tmp_path / "bots") is None
+def test_a_bot_outside_the_library_gives_new_bot_no_folder(harness, tmp_path, monkeypatch):
+    SettingsManager.instance().set("canvas", "bot_library_path", value=str(tmp_path / "bots"))
+    _answer(monkeypatch, None, BotDetails(name="Lamia"), tmp_path / "elsewhere" / "13_aquila" / "lamia.json")
+    harness._new_bot()
+
+    assert harness._new_bot_folder() is None
+
+
+def test_new_bot_opens_on_no_folder_with_nothing_to_go_by(harness):
+    assert harness._new_bot_folder() is None
 
 
 def test_the_library_panel_names_the_folder_it_is_showing(qapp):

@@ -161,12 +161,13 @@ def unique_file_name(stem: str, folder: str | Path) -> str:
     return name
 
 
-def library_folders(bots_dir: str | Path) -> list[str]:
+def library_folders(*bots_dirs: str | Path) -> list[str]:
     """The bot library's folders a new bot can be saved in, in the library's order.
 
     By folder name, so the numbers set the order (see :mod:`bartlebot.bot_folders`).
     Empty ones are listed too, unlike in the library panel: a new bot is how one fills.
+    Every folder in any of ``bots_dirs``, so a user's own folder, empty on a first run,
+    still offers every world the shipped one has (:mod:`bartlebot.bot_roots`).
     """
-    base = Path(bots_dir)
-    names = {p.name for p in base.iterdir() if p.is_dir()} if base.is_dir() else set()
+    names = {p.name for d in map(Path, bots_dirs) if d.is_dir() for p in d.iterdir() if p.is_dir()}
     return sorted(n for n in names if n not in UNBADGED_FOLDERS and not n.startswith((".", "_")))

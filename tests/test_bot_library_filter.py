@@ -339,10 +339,12 @@ def _write_bot(folder: Path, name: str) -> None:
 
 
 @pytest.fixture
-def library(tmp_path):
-    from bartlebot import card_art  # noqa: PLC0415
+def library(tmp_path, monkeypatch):
+    from bartlebot import bot_roots, card_art  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
+    # The user's folder alone: the shipped bots would add every world the repo has.
+    monkeypatch.setattr(bot_roots, "shipped_bots_dir", lambda: tmp_path / "no-shipped-bots")
     bots = tmp_path / "bots"
     _write_bot(bots / "04_mooshu", "Jade Oni")
     _write_bot(bots / "31_four_dungeons", "Graveyard")

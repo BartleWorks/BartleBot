@@ -137,7 +137,7 @@ from bartlebot.strategy_tags import (
     facets_match,
     normalize_strategy_tags,
 )
-from bartlebot.strategy_workset import PROFILE_KINDS, SharedUse, StrategyWorkingSet
+from bartlebot.strategy_workset import PROFILE_KINDS, Conflict, SharedUse, StrategyWorkingSet
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +212,8 @@ _DELETE_TEXT = "Delete"
 _BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to make a copy of your own."
 #: Why New and Duplicate are grayed out in the profile editor before a profile exists.
 _NO_PROFILE_TIP = "Create a combat profile for this bot first"
+#: What an entry from a file in a newer format says, and why it can't be edited or deleted.
+NEWER_FORMAT_NOTE = "Saved by a newer version of BartleBot or BartleBuddy. Update BartleBot to edit it."
 
 #: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from
 #: the splitter between them. Two numbers rather than one because the splitter handle is
@@ -1007,6 +1009,10 @@ class _KindPage(QWidget):
                 self._editor.load(entry, self._ws.players_for_duel(entry.id))
             else:
                 self._editor.load(entry)
+        # Per entry, not per page: one saved by a newer version is read-only wherever it is.
+        editable = self._editable and not self._ws.is_read_only(self._kind, self._selected_id)
+        self._about.set_editable(editable)
+        self._editor.set_editable(editable)
         self._about.setVisible(entry is not None)
         self._scroll.setVisible(entry is not None)
         self._empty_lbl.setVisible(entry is None)
@@ -1019,7 +1025,9 @@ class _KindPage(QWidget):
         """New needs somewhere to put its entry; Duplicate also needs something to copy."""
         room = not self._show_profile or self._ws.profile is not None
         self._new_btn.setEnabled(room)
-        self._dup_btn.setEnabled(room and self._ws.get(self._kind, self._selected_id) is not None)
+        # Not one saved by a newer version: the copy would be in that format too, and refused at Save.
+        copyable = self._ws.get(self._kind, self._selected_id) is not None
+        self._dup_btn.setEnabled(room and copyable and not self._ws.is_read_only(self._kind, self._selected_id))
         tip = "" if room else _NO_PROFILE_TIP
         self._new_btn.setToolTip(tip)
         self._dup_btn.setToolTip(tip)
@@ -1042,6 +1050,11 @@ class _KindPage(QWidget):
         revert = status is Origin.SHIPPED_OVERRIDE
         built_in = status is Origin.SHIPPED
         self._set_delete_button(revert=revert, built_in=built_in)
+        if self._ws.is_read_only(self._kind, entry.id):
+            self._del_btn.setEnabled(False)
+            self._del_btn.setToolTip(NEWER_FORMAT_NOTE)
+            self._about.set_notes(usage, NEWER_FORMAT_NOTE)
+            return
         if revert:
             note = "Your copy of a strategy BartleBot ships — reverting restores the original."
         elif built_in:
@@ -1339,6 +1352,10 @@ class CombatStrategyDialog(QDialog):
         # Asked before the commit, which baselines everything and so forgets what was new.
         self._selected_was_created = self._ws.was_created(self._pick_kind, self._selected_id)
         self._ws.commit()
+        if self._ws.conflicts:
+            self._resolve_conflicts(self._ws.conflicts)
+            # Writes the copies the user chose to keep; a reloaded entry has nothing to write.
+            self._ws.commit()
         if self._ws.is_dirty:
             # commit() logs and skips a failed write, leaving the entry dirty.
             # Closing anyway would lose it silently.
@@ -1350,6 +1367,55 @@ class CombatStrategyDialog(QDialog):
             )
             return
         self.accept()
+
+    def _resolve_conflicts(self, conflicts: list[Conflict]) -> None:
+        """Ask about each write Save refused, then redraw every tab on what was chosen.
+
+        Another program (BartleBuddy, which shares this library) changed the file since
+        this dialog loaded it, so writing would have lost its change. The user keeps
+        theirs as a copy, the default because nothing is lost, or reloads the other
+        program's. A file in a newer format, or a refused delete, can only be reloaded.
+        """
+        for conflict in conflicts:
+            name = f"“{conflict.name}”"
+            if conflict.newer_format:
+                QMessageBox.information(
+                    self,
+                    "Saved by a newer version",
+                    f"{name} was saved by a newer version of BartleBot or BartleBuddy, so your changes to it "
+                    "can't be saved. Update BartleBot to edit it.",
+                )
+                self._ws.reload(conflict.kind, conflict.uuid)
+                continue
+            if conflict.deleted:
+                QMessageBox.information(
+                    self,
+                    "Changed by another program",
+                    f"{name} was changed by another program while this window was open, so it was not "
+                    "removed. Its new version is shown now.",
+                )
+                self._ws.reload(conflict.kind, conflict.uuid)
+                continue
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle("Changed by another program")
+            box.setText(
+                f"{name} was changed by another program while this window was open, so your changes to it "
+                "were not saved."
+            )
+            copy = box.addButton("Save mine as a copy", QMessageBox.ButtonRole.AcceptRole)
+            box.addButton("Use theirs", QMessageBox.ButtonRole.DestructiveRole)
+            box.setDefaultButton(copy)
+            box.setEscapeButton(copy)
+            box.exec()
+            if box.clickedButton() is copy:
+                self._ws.keep_as_copy(conflict.kind, conflict.uuid)
+            else:
+                self._ws.reload(conflict.kind, conflict.uuid)
+        for page in self._pages.values():
+            page.rebuild_list()
+            # The editor may hold an object reload just replaced.
+            page.select(page.selected_id())
 
     def _confirm_shared_edits(self, uses: list[SharedUse]) -> bool:
         """Ask once, at Save, before an edit reaches places the user can't see (#118).

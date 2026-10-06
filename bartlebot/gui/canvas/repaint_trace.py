@@ -50,7 +50,7 @@ from PyQt6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer
 from PyQt6.QtGui import QColor, QPainter, QPen, QRegion
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsView
 
-from bartlebot.paths import project_root
+from bartlebot.logging_setup import session_log_dir
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +189,7 @@ class RepaintTracer(QObject):
         self, view: QGraphicsView, deadline: float = OWED_DEADLINE_S, screenshot_dir: Path | None = None
     ) -> None:
         super().__init__(view)
-        self._screenshot_dir = screenshot_dir or project_root() / "logs" / "repaint"
+        self._screenshot_dir = screenshot_dir or session_log_dir() / "repaint"
         self._view = view
         self._ledger = RepaintLedger(deadline)
         self._names: dict[int, str] = {}

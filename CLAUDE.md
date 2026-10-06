@@ -8,12 +8,15 @@ Wizard101 bot automation app. Python 3.13+, PyQt6, qasync, transitions FSM.
 uv run python bartlebot.py
 ```
 
-To author shipped subgraphs or combat strategies, run with `BARTLEBOT_DEV=1`. That
-points the store's user root at the repo, so a save lands in `subgraphs/` or
-`strategies/` where git sees it, instead of in an `%APPDATA%` copy that silently
-shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears it,
-and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
-definition that only exists on your machine. It also adds File › Edit Template…, the
+To author shipped bots, templates, subgraphs or combat strategies, run with
+`BARTLEBOT_DEV=1`. That points every store's user root at the repo, so a save lands in
+`bots/`, `templates/`, `subgraphs/` or `strategies/` where git sees it, instead of in an
+`%APPDATA%` copy that shadows the repo's or, for a bot or template, is never seen by
+anyone else. `bartlebot/store_roots.py` has the detail, and `bartlebot/bot_roots.py` the
+bots' part; logs stay in the repo's `logs/` too. The suite clears it, and
+`test_every_linked_bot_resolves_under_the_shipped_root_alone` and
+`test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone` catch
+a definition or template that only exists on your machine. It also adds File › Edit Template…, the
 only way into a template's draft under `templates/`; only Release on the draft's crumb
 writes a version users are offered (`bartlebot/template_store.py`). New Bot copies the
 latest released version into a new bot, records it in the bot's `template`, and saves
@@ -170,11 +173,19 @@ times stopping a legitimate PvE farm mid-fight.
 `SettingsManager` singleton, persisted to `%APPDATA%/Bartleby/BartleBot/settings.json`.
 Credentials go through `keyring` (Windows Credential Manager), never to disk.
 
+**Nothing the app writes goes in the install directory** (the project root), which an
+update replaces whole. It holds the Official content, read-only: bots, templates,
+subgraphs and strategies. The user's own, and every override, log, autosave and setting,
+go under `%APPDATA%/Bartleby`. A new store takes its default path from `store_roots`, and
+`test_install_dir_writes` lists every default write path.
+
 `Bartleby` is the **vendor**, not this product: three products are planned under it, and
 the accounts, launch profiles and stored passwords belong to the user rather than to any
 one of them. So `%APPDATA%/Bartleby/` is the vendor root, per-product data sits beneath it,
-and the shared account records live at the root itself in `accounts.json`
-(`bartlebot/shared/`, which imports nothing from `gui/` or `bot/`). The prefix is defined
+and what every product shares lives at the root itself: the account records in
+`accounts.json`, and the library of duel strategies, player strategies and decks in
+`strategies/` (`docs/COMBAT_CONFIG.md`). Their code is in `bartlebot/shared/`, which imports
+nothing from `bartlebot` outside itself, so it can become a library of its own. The prefix is defined
 once, in `bartlebot/shared/vendor.py`, and imported — never spelled out again, on disk or
 in Credential Manager. `The-World-Tree` is the GitHub organization and is a separate
 string on purpose: it is developer-facing and carries none of the trademark exposure a
@@ -206,7 +217,8 @@ logger = logging.getLogger(__name__)
 ```
 
 Configured in `bartlebot/logging_setup.py` — per-session timestamped files in
-`logs/`, 10 most recent kept, plus a bridge handler for the in-app log widget.
+`%APPDATA%/Bartleby/BartleBot/logs/` (the repo's `logs/` in developer mode), 10 most
+recent kept, plus a bridge handler for the in-app log widget.
 
 - Pass `logging.WARNING`, the int constant, not `"WARNING"`.
 - `machine.log()` is the node-facing API and files the record under the running

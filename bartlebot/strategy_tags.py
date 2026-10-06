@@ -38,6 +38,7 @@ import logging
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from bartlebot.shared.strategy_models import ROLE_TAGS, normalize_role_tags
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_store import StrategyKind
 
@@ -56,12 +57,6 @@ SOURCE_TAGS: tuple[str, ...] = (
     *(SOURCE_LABELS[o] for o in (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE, Origin.USER)),
 )
 
-ROLE_TAGS: tuple[str, ...] = (
-    "Hitter",  # deals the damage the fight is won with
-    "Support",  # blades, traps and feints for someone else's hit
-    "Healer",  # keeps the team up
-)
-
 #: Every group, in presentation order.
 STRATEGY_TAG_GROUPS: dict[str, tuple[str, ...]] = {SOURCE: SOURCE_TAGS, ROLE: ROLE_TAGS}
 
@@ -69,7 +64,9 @@ STRATEGY_TAG_GROUPS: dict[str, tuple[str, ...]] = {SOURCE: SOURCE_TAGS, ROLE: RO
 STORED_GROUPS: tuple[str, ...] = (ROLE,)
 STORED_TAGS: tuple[str, ...] = tuple(t for g in STORED_GROUPS for t in STRATEGY_TAG_GROUPS[g])
 
-_STORED_ORDER: dict[str, int] = {tag: i for i, tag in enumerate(STORED_TAGS)}
+#: Coerce a file's raw ``tags`` into valid, ordered, de-duplicated stored tags. The stored
+#: group is Role alone, whose vocabulary is the shared library's, since its files carry it.
+normalize_strategy_tags = normalize_role_tags
 
 #: Which groups each tab offers. Duels carry no role.
 KIND_GROUPS: dict[StrategyKind, tuple[str, ...]] = {
@@ -93,26 +90,6 @@ def strategy_tag_group(tag: str) -> str:
         if tag in tags:
             return group
     return ""
-
-
-def normalize_strategy_tags(raw: object) -> list[str]:
-    """Coerce a file's raw ``tags`` into valid, ordered, de-duplicated stored tags.
-
-    Tolerant for the reason :func:`bartlebot.bot_tags.normalize_tags` is: this runs on
-    every load, and raising would make a hand-edited file refuse to open. A derived
-    tag written into a file by hand is dropped the same way an unknown one is.
-    """
-    if not isinstance(raw, list):
-        return []
-    seen: set[str] = set()
-    for entry in raw:
-        if not isinstance(entry, str):
-            continue
-        if entry not in _STORED_ORDER:
-            logger.warning("ignoring unknown strategy tag %r (not in STORED_TAGS)", entry)
-            continue
-        seen.add(entry)
-    return sorted(seen, key=_STORED_ORDER.__getitem__)
 
 
 def team_label(n: int) -> str:

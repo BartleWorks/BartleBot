@@ -287,13 +287,17 @@ class NewBotDialog(QDialog):
         parent: QWidget | None = None,
         *,
         initial_folder: str | None = None,
+        folder_sources: tuple[str | Path, ...] = (),
     ) -> None:
+        """``bots_dir`` is where the bot is written: the user's own folder. ``folder_sources``
+        are other folders whose world folders are offered too, the shipped one's above all."""
         super().__init__(parent)
         self.setWindowTitle("New Bot")
         self.setMinimumSize(600, 460)
         # Wide enough that a card's blurb is two or three lines, so the gallery fits.
         self.resize(720, 520)
         self._bots_dir = Path(bots_dir)
+        self._folder_sources = tuple(Path(d) for d in folder_sources)
         #: Parallel to the cards: ``None`` is the blank bot.
         self._points: list[StartingPoint | None] = [None, *points]
         self._start_index = 0
@@ -471,7 +475,7 @@ class NewBotDialog(QDialog):
         self._tags.set_editable(True)
         form.addRow("Tags", self._tags)
 
-        folders = library_folders(self._bots_dir)
+        folders = library_folders(self._bots_dir, *self._folder_sources)
         self._folder = FolderPicker(folders)
         if folders:
             self._folder.set_folder(initial_folder if initial_folder in folders else folders[0])

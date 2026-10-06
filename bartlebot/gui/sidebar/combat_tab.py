@@ -84,7 +84,6 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from functools import partial
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
@@ -98,6 +97,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import bot_roots
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
@@ -149,7 +149,6 @@ from bartlebot.gui.widgets.player_pills import PlayerBadge
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
-from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
     StrategyKind,
@@ -1393,8 +1392,7 @@ class CombatTab(QWidget):
             if config is not None and bot_id == config.id:
                 return config.name
             if not names:
-                configured = Path(SettingsManager.instance().get("canvas", "bot_library_path", default="bots"))
-                names.update(read_bot_names(configured if configured.is_absolute() else project_root() / configured))
+                names.update(read_bot_names(*bot_roots.library_dirs()))
             return names.get(bot_id)
 
         return lookup

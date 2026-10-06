@@ -9,12 +9,14 @@ a node under it, which a later update would otherwise apply to.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig
 from bartlebot.paths import project_root
-from bartlebot.template_store import DRAFT_FILE, TEMPLATE_ID_PREFIX, list_templates, sha256_matches
+from bartlebot.template_store import DRAFT_FILE, TEMPLATE_ID_PREFIX, find_template, list_templates, sha256_matches
 
 _TEMPLATES = list_templates(project_root())
 
@@ -35,6 +37,35 @@ def test_every_shipped_template_has_a_draft_and_a_release(template):
     assert (template.folder / DRAFT_FILE).is_file()
     assert template.latest_version is not None, f"{template.name} has never been released"
     assert [v.version for v in template.index.versions] == list(range(1, template.latest_version + 1))
+
+
+@pytest.mark.parametrize("template", _TEMPLATES, ids=lambda t: t.folder.name)
+def test_every_index_entry_names_a_file_that_exists(template):
+    missing = [v.file for v in template.index.versions if not (template.folder / v.file).is_file()]
+
+    assert not missing, f"{template.name}: the index lists files that are not there: {missing}"
+
+
+def test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone():
+    """What a clean install sees: a shipped bot's base version must ship too (#168).
+
+    A template authored without ``BARTLEBOT_DEV`` lands in ``%APPDATA%``, where the bots
+    made from it resolve on the author's machine and nowhere else.
+    """
+    shipped = project_root()
+    refs = []
+    for path in sorted((shipped / "bots").rglob("*.json")):
+        ref = json.loads(path.read_text(encoding="utf-8")).get("template")
+        if isinstance(ref, dict):
+            refs.append((path.name, ref["id"], ref["version"]))
+    assert refs, "no shipped bot is made from a template, so this guard checks nothing"
+    unresolved = []
+    for name, template_id, version in refs:
+        template = find_template(template_id, shipped, shipped)
+        if template is None or template.index.entry(version) is None:
+            unresolved.append(f"{name} -> {template_id} v{version}")
+
+    assert not unresolved, f"bots made from a template that does not ship: {unresolved}"
 
 
 @pytest.mark.parametrize("template", _TEMPLATES, ids=lambda t: t.folder.name)
