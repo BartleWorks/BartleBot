@@ -77,6 +77,9 @@ Players are named by number in every log line (P1, P2), never by name.
 4. **Join.** Each helper runs `combat_runner.join_fight` to its fight's center, retrying every
    `COMBAT_TP_RETRY_INTERVAL` and giving up at `ENTER_COMBAT_TIMEOUT`, or once the fight is over.
    A helper a port has already landed in the duel is not teleported.
+   A center the game will not let a player stand on (an obstacle the fight cleared leaves its spot
+   invalid) puts the helper straight back where it started; that marks the center blocked for the
+   whole fight, and every later attempt teleports to a player already in it instead (#157).
 5. **Hold the fighter's first cast** until every helper for its fight is in or has given up, or
    `AMBIENT_HELP_HOLD` (20s) has passed since the **anchor**: the later of the fighter's first
    `planning` phase and the most recent join, since each join restarts the game's timer. If the

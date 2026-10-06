@@ -87,6 +87,135 @@ async def test_a_center_is_never_shared_across_realms():
 
 
 # ---------------------------------------------------------------------------
+# A center that cannot be stood on (#157)
+# ---------------------------------------------------------------------------
+
+_START = XYZ(10.0, 20.0, 30.0)
+_SEAT = XYZ(520.0, 600.0, 0.0)
+
+
+async def _fight_with(machine, *members, seat=_SEAT) -> FightCenter:
+    fight = FightCenter()
+    for i, member in enumerate(members):
+        member.in_battle.return_value = True
+        member.body.position.return_value = seat
+        await fight.publish(machine, member, i)
+    return fight
+
+
+def _put_back_from_the_center(client, *, joins_at=None):
+    """The game puts *client* back on _START after a teleport to the center; *joins_at* gets it in."""
+    client.body.position.return_value = _START
+
+    async def teleport(where):
+        if joins_at is not None and tuple(where) == tuple(joins_at):
+            client.in_battle.return_value = True
+            return
+        # Seen at the center for one read, then back where it started.
+        client.body.position.side_effect = [where, *([_START] * 1000)]
+
+    client.teleport.side_effect = teleport
+
+
+async def test_a_center_that_puts_the_client_back_is_blocked_and_it_joins_by_a_player():
+    machine = FakeMachine()
+    fighter, helper = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    _put_back_from_the_center(helper, joins_at=_SEAT)
+
+    assert await join_fight(machine, helper, 1, fight, timeout=1.0) is True
+    targets = [tuple(c.args[0]) for c in helper.teleport.await_args_list]
+    assert targets == [(500.0, 600.0, 0.0), tuple(_SEAT)]
+    assert fight.is_center_blocked(helper)
+    assert any("put it back where it started" in msg for msg, _ in machine.logs)
+
+
+async def test_once_the_center_is_blocked_a_later_joiner_goes_straight_to_a_player():
+    machine = FakeMachine()
+    fighter, late = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    fight.mark_center_blocked(late)
+    late.teleport.side_effect = lambda _where: setattr(late.in_battle, "return_value", True)
+
+    assert await join_fight(machine, late, 1, fight, timeout=1.0) is True
+    (where,) = late.teleport.await_args.args
+    assert tuple(where) == tuple(_SEAT)
+
+
+async def test_a_client_that_never_seems_to_move_does_not_block_the_center():
+    """Back on the start with no move seen is not the sign: the teleport may simply not have landed."""
+    machine = FakeMachine()
+    fighter, helper = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    helper.body.position.return_value = _START
+
+    assert await join_fight(machine, helper, 1, fight, timeout=0.05) is False
+    assert not fight.is_center_blocked(helper)
+    assert all(tuple(c.args[0]) == (500.0, 600.0, 0.0) for c in helper.teleport.await_args_list)
+
+
+async def test_a_client_left_somewhere_else_does_not_block_the_center():
+    machine = FakeMachine()
+    fighter, helper = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    helper.body.position.return_value = _START
+
+    async def teleport(where):
+        helper.body.position.side_effect = [where, *([XYZ(11.0, 20.0, 30.0)] * 1000)]
+
+    helper.teleport.side_effect = teleport
+
+    assert await join_fight(machine, helper, 1, fight, timeout=0.05) is False
+    assert not fight.is_center_blocked(helper)
+
+
+async def test_a_center_that_works_never_falls_back_to_a_player():
+    machine = FakeMachine()
+    fighter, helper = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    helper.body.position.return_value = _START
+    helper.teleport.side_effect = lambda _where: setattr(helper.in_battle, "return_value", True)
+
+    assert await join_fight(machine, helper, 1, fight, timeout=1.0) is True
+    assert helper.teleport.await_count == 1
+    assert not fight.is_center_blocked(helper)
+
+
+async def test_each_attempt_after_a_blocked_center_tries_the_next_player():
+    machine = FakeMachine()
+    first, second, late = FakeClient(), FakeClient(), FakeClient()
+    fight = await _fight_with(machine, first, second)
+    second.body.position.return_value = XYZ(480.0, 600.0, 0.0)
+    fight.mark_center_blocked(late)
+
+    await join_fight(machine, late, 1, fight, timeout=0.03)
+    targets = [tuple(c.args[0]) for c in late.teleport.await_args_list]
+    assert targets[:2] == [tuple(_SEAT), (480.0, 600.0, 0.0)]
+
+
+async def test_a_player_whose_position_cannot_be_read_is_passed_over():
+    machine = FakeMachine()
+    first, second, late = FakeClient(), FakeClient(), FakeClient()
+    fight = await _fight_with(machine, first, second)
+    first.body.position.side_effect = RuntimeError("unreadable")
+    fight.mark_center_blocked(late)
+
+    assert tuple(await fight.member_position(late)) == tuple(_SEAT)
+
+
+async def test_with_no_player_position_readable_a_blocked_center_is_tried_again():
+    machine = FakeMachine()
+    fighter, late = FakeClient(), FakeClient()
+    fight = await _fight_with(machine, fighter)
+    fighter.body.position.side_effect = RuntimeError("unreadable")
+    fight.mark_center_blocked(late)
+
+    await join_fight(machine, late, 1, fight, timeout=0.02)
+    (where,) = late.teleport.await_args.args
+    assert tuple(where) == (500.0, 600.0, 0.0)
+
+
+# ---------------------------------------------------------------------------
 # mob_clearance
 # ---------------------------------------------------------------------------
 
