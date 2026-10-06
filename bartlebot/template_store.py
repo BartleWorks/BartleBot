@@ -37,11 +37,15 @@ Template-owned ids
     unprefixed instance ids, so a node a later template version adds can never take an
     id the bot already has.
 
-Only the shipped root is read and written for now. Before 1.0.0 the maintainer is the
-only author, and only with ``BARTLEBOT_DEV`` set, where the two roots are one directory
-anyway. User templates would add the user root the way :mod:`bartlebot.subgraph_store`
-does, and nothing here rules that out: the root goes through
-:func:`bartlebot.store_roots.resolve_roots`, and templates are found by id.
+Two roots
+    Templates are read from ``templates/`` under both roots
+    (:func:`bartlebot.store_roots.resolve_roots`): the Official ones shipped in the
+    install directory, and the user's own. :func:`save_draft` and :func:`release` write
+    only to the user root. A template is copied into a bot rather than linked, so a user
+    template never overrides an Official one: a user-root folder declaring an Official
+    template's id is ignored, with a warning, and the Official template is used. Before
+    1.0.0 the maintainer is the only author, with ``BARTLEBOT_DEV`` set, where the two
+    roots are one directory and every template reads as the user's.
 
 No Qt and no settings here: a test builds a store on a ``tmp_path``.
 """
@@ -62,7 +66,7 @@ from pydantic import BaseModel, Field
 
 from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig, atomic_write_json
-from bartlebot.store_roots import resolve_roots, slugify
+from bartlebot.store_roots import Origin, resolve_roots, slugify
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import outermost_linked_regions
 
@@ -120,6 +124,9 @@ class Template:
     index: TemplateIndex
     #: From the latest released version, or the draft before the first release.
     name: str
+    #: :attr:`Origin.SHIPPED` for an Official template, :attr:`Origin.USER` for one under
+    #: the user root, which is every template when the two roots are one directory.
+    origin: Origin = Origin.USER
 
     @property
     def id(self) -> str:
@@ -142,10 +149,18 @@ class Template:
         return self.folder / entry.file
 
 
+TEMPLATES_DIRNAME = "templates"
+
+
+def templates_dirs(root: str | Path | None = None, user_root: str | Path | None = None) -> tuple[Path, Path]:
+    """The ``(shipped, user)`` ``templates/`` folders; the same folder twice when the roots are one."""
+    shipped, user = resolve_roots(root, user_root)
+    return shipped / TEMPLATES_DIRNAME, user / TEMPLATES_DIRNAME
+
+
 def templates_dir(root: str | Path | None = None, user_root: str | Path | None = None) -> Path:
-    """The ``templates/`` folder the store reads: the shipped root's, for now (see the module docstring)."""
-    shipped, _user = resolve_roots(root, user_root)
-    return shipped / "templates"
+    """The ``templates/`` folder the store writes: the user root's."""
+    return templates_dirs(root, user_root)[1]
 
 
 def _name_in(path: Path) -> str | None:
@@ -158,7 +173,7 @@ def _name_in(path: Path) -> str | None:
     return name if isinstance(name, str) else None
 
 
-def _read(folder: Path) -> Template | None:
+def _read(folder: Path, origin: Origin) -> Template | None:
     """The template in ``folder``, or ``None`` if it has no readable index."""
     index_path = folder / INDEX_FILE
     if not index_path.is_file():
@@ -170,23 +185,40 @@ def _read(folder: Path) -> Template | None:
         return None
     latest = index.latest
     named_by = folder / latest.file if latest is not None else folder / DRAFT_FILE
-    return Template(folder=folder, index=index, name=_name_in(named_by) or folder.name)
+    return Template(folder=folder, index=index, name=_name_in(named_by) or folder.name, origin=origin)
 
 
 def list_templates(root: str | Path | None = None, user_root: str | Path | None = None) -> list[Template]:
-    """Every template under the store, sorted by name. A folder with no readable index is skipped."""
-    base = templates_dir(root, user_root)
-    if not base.is_dir():
-        return []
+    """Every template under both roots, sorted by name. A folder with no readable index is skipped.
+
+    Of two folders declaring one id, the first read wins, the shipped root's before the
+    user's: an Official template is never shadowed (see the module docstring).
+    """
+    shipped_dir, user_dir = templates_dirs(root, user_root)
+    if shipped_dir == user_dir:
+        bases = [(user_dir, Origin.USER)]
+    else:
+        bases = [(shipped_dir, Origin.SHIPPED), (user_dir, Origin.USER)]
     found: dict[str, Template] = {}
-    for folder in sorted(p for p in base.iterdir() if p.is_dir()):
-        template = _read(folder)
-        if template is None:
+    for base, origin in bases:
+        if not base.is_dir():
             continue
-        if template.id in found:
-            logger.warning("Two template folders declare id %s; ignoring %s", template.id, folder.name)
-            continue
-        found[template.id] = template
+        for folder in sorted(p for p in base.iterdir() if p.is_dir()):
+            template = _read(folder, origin)
+            if template is None:
+                continue
+            prior = found.get(template.id)
+            if prior is None:
+                found[template.id] = template
+            elif prior.origin is Origin.SHIPPED and origin is Origin.USER:
+                logger.warning(
+                    "Ignoring template folder %s: it declares the id of the Official template %s, "
+                    "and an Official template is never overridden",
+                    folder,
+                    prior.name,
+                )
+            else:
+                logger.warning("Two template folders declare id %s; ignoring %s", template.id, folder.name)
     return sorted(found.values(), key=lambda t: t.name.lower())
 
 
@@ -199,7 +231,7 @@ def find_template(
 def _require(template_id: str, root: str | Path | None, user_root: str | Path | None) -> Template:
     template = find_template(template_id, root, user_root)
     if template is None:
-        raise FileNotFoundError(f"No template declares id {template_id} under {templates_dir(root, user_root)}")
+        raise FileNotFoundError(f"No template declares id {template_id} under {templates_dirs(root, user_root)}")
     return template
 
 
@@ -224,13 +256,16 @@ def load_draft(template_id: str, root: str | Path | None = None, user_root: str 
 def save_draft(config: BotConfig, root: str | Path | None = None, user_root: str | Path | None = None) -> Path:
     """Write ``config`` as the draft of the template its ``id`` names. Returns the path written.
 
-    A template the store does not have yet gets a folder named from ``config.name``,
-    numbered past one already taken, and an index with nothing released. Never writes a
-    version: only Release does that.
+    A template the store does not have yet gets a folder under the user root named from
+    ``config.name``, numbered past one already taken, and an index with nothing released.
+    Never writes a version: only Release does that. Raises ``PermissionError`` for an
+    Official template, which only an app release changes.
     """
     if not config.is_template:
         raise ValueError(f"{config.name!r} has no template_meta, so it is a bot, not a template draft")
     template = find_template(config.id, root, user_root)
+    if template is not None and template.origin is Origin.SHIPPED:
+        raise PermissionError(f"{template.name} is an Official template, which only an app release changes")
     if template is not None:
         folder = template.folder
     else:
@@ -297,6 +332,8 @@ def release_problems(
     :func:`bartlebot.setup_steps.draft_problems`.
     """
     problems = list(canvas_errors)
+    if template.origin is Origin.SHIPPED:
+        problems.append("It is an Official template, which only an app release changes.")
     stray = template.folder / f"v{next_version(template)}.json"
     if stray.exists():
         # A release that failed between its two writes left it. Nothing under a

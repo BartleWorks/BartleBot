@@ -270,23 +270,29 @@ def load_update(
 
 
 @lru_cache(maxsize=8)
-def _latest_versions(folder: str, stamp: tuple) -> dict[str, int]:
+def _latest_versions(shipped_dir: str, user_dir: str, stamp: tuple) -> dict[str, int]:
     del stamp  # only keys the cache: a release rewrites an index, which moves its mtime
     return {
         t.id: t.latest_version
-        for t in template_store.list_templates(Path(folder).parent)
+        for t in template_store.list_templates(Path(shipped_dir).parent, Path(user_dir).parent)
         if t.latest_version is not None
     }
 
 
 def latest_versions(root: str | Path | None = None, user_root: str | Path | None = None) -> Mapping[str, int]:
-    """Template id to its latest released version, cached until an index file changes."""
-    folder = template_store.templates_dir(root, user_root)
+    """Template id to its latest released version, cached until an index file changes in either root."""
+    shipped_dir, user_dir = template_store.templates_dirs(root, user_root)
     try:
-        stamp = tuple(sorted((str(p), p.stat().st_mtime_ns) for p in folder.glob(f"*/{template_store.INDEX_FILE}")))
+        stamp = tuple(
+            sorted(
+                (str(p), p.stat().st_mtime_ns)
+                for folder in {shipped_dir, user_dir}
+                for p in folder.glob(f"*/{template_store.INDEX_FILE}")
+            )
+        )
     except OSError:
         return {}
-    return _latest_versions(str(folder), stamp)
+    return _latest_versions(str(shipped_dir), str(user_dir), stamp)
 
 
 def behind_in_file(
