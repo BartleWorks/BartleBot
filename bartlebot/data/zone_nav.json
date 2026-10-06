@@ -6186,13 +6186,20 @@
         },
         "Novus/NV_Z07_DoomMoon": {
           "arrivals": {
-            "Novus/NV_Z01_Conatus": {"x": 11.21, "y": -2115.61, "z": -3.03}
+            "Novus/NV_Z01_Conatus": {"x": 11.21, "y": -2115.61, "z": -3.03},
+            "Novus/Interiors/NV_Z07_I03_DoomMoonBridge": {"x": -10.29, "y": 159.94, "z": -14.97}
           }
         },
         "Novus/NV_Z03_PuertoNuovo_MQ": {
           "label": "Banana Jungle",
           "arrivals": {
             "Novus/NV_Z03_PuertoNuovo_VA": {"x": -6217.18, "y": 2842.4, "z": -2890.69}
+          }
+        },
+        "Novus/Interiors/NV_Z07_I03_DoomMoonBridge": {
+          "label": "Doom Moon Bridge",
+          "arrivals": {
+            "Novus/NV_Z07_DoomMoon": {"x": -1677.97, "y": 603.49, "z": 5.38}
           }
         }
       },
@@ -6347,6 +6354,25 @@
           "to": "Novus/NV_Z05_LaVilleRose",
           "interact_xyz": {"x": 543.2, "y": -1879.82, "z": 25.53},
           "reset_xyz": {"x": 206.94, "y": -1943.6, "z": -61.57},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Novus/Interiors/NV_Z07_I03_DoomMoonBridge",
+          "to": "Novus/NV_Z07_DoomMoon",
+          "xyz": {"x": -1922.13, "y": 953.68, "z": 5.38},
+          "reset_xyz": {"x": -1732.26, "y": 693.37, "z": 5.38},
+          "volume": "TeleportVol_To_AnteChamber",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Novus/NV_Z07_DoomMoon",
+          "to": "Novus/Interiors/NV_Z07_I03_DoomMoonBridge",
+          "xyz": {"x": -2.03, "y": 837.38, "z": -1.93},
+          "volume": "Activator Volume ToBridge",
           "verified": true,
           "source": "recorded"
         }
@@ -6534,7 +6560,8 @@
         },
         "Darkmoor/DM_Z01_Graveholm": {
           "arrivals": {
-            "Darkmoor/DM_Z00_OutsidersCamp": {"x": 10647.87, "y": -6039.7, "z": 2.0}
+            "Darkmoor/DM_Z00_OutsidersCamp": {"x": 10647.87, "y": -6039.7, "z": 2.0},
+            "Darkmoor/Interiors/DM_Z01I11_ParliamentOfNightThroneRoom": {"x": -2911.74, "y": 1773.55, "z": 272.0}
           }
         },
         "Darkmoor/DM_Z02_MortalPlain": {
@@ -6554,9 +6581,35 @@
             "Darkmoor/DM_Z03_HowlingLands": {"x": 176.04, "y": -1009.89, "z": 1.0},
             "Darkmoor/DM_Z04_BlackLagoon": {"x": 176.04, "y": -1009.89, "z": 1.0}
           }
+        },
+        "Darkmoor/Interiors/DM_Z01I11_ParliamentOfNightThroneRoom": {
+          "label": "Parliament of Night",
+          "arrivals": {
+            "Darkmoor/DM_Z01_Graveholm": {"x": 12.25, "y": 962.44, "z": 184.86}
+          }
         }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Darkmoor/Interiors/DM_Z01I11_ParliamentOfNightThroneRoom",
+          "to": "Darkmoor/DM_Z01_Graveholm",
+          "xyz": {"x": -16.62, "y": -182.04, "z": 184.86},
+          "reset_xyz": {"x": -7.36, "y": 185.64, "z": 184.86},
+          "volume": "TeleportVol_TeleportSource_Exit_to_Graveholm_01",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Darkmoor/DM_Z01_Graveholm",
+          "to": "Darkmoor/Interiors/DM_Z01I11_ParliamentOfNightThroneRoom",
+          "xyz": {"x": -2309.09, "y": 1428.03, "z": 560.64},
+          "volume": "TeleportVol_TeleportSource_To_ParliamentOfNight_Entrance_01",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": [
         {
           "zones": {
