@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import bot_roots
 from bartlebot.bot.schema import PORT_NODE_TYPES, SubgraphDefinition
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -46,7 +47,6 @@ from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
-from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses, source_label
@@ -990,10 +990,7 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
     def _used_by(self, subgraph_id: str) -> int:
         """How many bot files in the library link ``subgraph_id``; the scan runs once per dialog."""
         if self._use_counts is None:
-            from bartlebot.gui.canvas.bot_canvas import _resolve_bots_dir  # noqa: PLC0415
-
-            configured = SettingsManager.instance().get("canvas", "bot_library_path", default="bots")
-            self._use_counts = count_subgraph_uses(_resolve_bots_dir(configured, project_root()))
+            self._use_counts = count_subgraph_uses(*bot_roots.library_dirs())
         return self._use_counts.get(subgraph_id, 0)
 
     def _on_add(self) -> None:

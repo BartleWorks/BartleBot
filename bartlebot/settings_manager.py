@@ -355,6 +355,11 @@ class SettingsManager:
         d.mkdir(parents=True, exist_ok=True)
         return d
 
+    @property
+    def settings_path(self) -> Path:
+        """The file these settings are read from and saved to."""
+        return self._path
+
     @classmethod
     def instance(cls) -> SettingsManager:
         if cls._instance is None:

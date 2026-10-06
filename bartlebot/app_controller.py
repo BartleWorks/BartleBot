@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QM
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import (
+    bot_roots,
     group_manager,
     new_bot,
     option_values,
@@ -37,7 +38,7 @@ from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas import recording
-from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bots_dir
+from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.new_bot_dialog import NewBotDialog
@@ -182,7 +183,7 @@ class AppController(QObject):
         self._templates_root: Path | None = None
         if dev_mode():
             logger.warning(
-                "%s is set: subgraphs and combat strategies are read from and saved to %s",
+                "%s is set: bots, templates, subgraphs and combat strategies are read from and saved to %s",
                 DEV_ENV_VAR,
                 project_root(),
             )
@@ -732,13 +733,14 @@ class AppController(QObject):
         """
         if not self._close_definitions():
             return False
-        sm = SettingsManager.instance()
-        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
+        # Written to the user's own folder, offering every world folder either root has.
+        bots_dir = bot_roots.user_bots_dir()
         dialog = NewBotDialog(
             new_bot.starting_points(self._templates_root),
             bots_dir,
             self._window,
-            initial_folder=self._new_bot_folder(bots_dir),
+            initial_folder=self._new_bot_folder(),
+            folder_sources=(bot_roots.shipped_bots_dir(),),
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return False
@@ -754,15 +756,12 @@ class AppController(QObject):
         self._open_bot(str(path), mode=BotMode.EDIT)
         return True
 
-    def _new_bot_folder(self, bots_dir: Path) -> str | None:
+    def _new_bot_folder(self) -> str | None:
         """The library folder New Bot opens on: the one being looked at, else the open bot's."""
         looking_at = self._window.bot_canvas.library_folder()
         if looking_at is not None:
             return looking_at
-        if self._last_save_path is None:
-            return None
-        parent = Path(self._last_save_path).resolve().parent
-        return parent.name if parent.parent == Path(bots_dir).resolve() else None
+        return _world_folder(self._last_save_path)
 
     def _open_bot(self, path: str | None = None, *, mode: BotMode = BotMode.RUN) -> None:
         if not self._close_definitions():
@@ -878,6 +877,10 @@ class AppController(QObject):
             return self._save_definition()
         if self._last_save_path is None:
             return self._save_bot_as()
+        if not self._loaded_config.is_template and not bot_roots.may_write(self._last_save_path):
+            # An Official bot, or one recovered from a crash in it: the install directory is
+            # replaced by every update, so the save goes to a copy in the user's own folder.
+            return self._save_bot_as()
         if not self._confirm_rewards_tags():
             return False
         try:
@@ -909,11 +912,21 @@ class AppController(QObject):
                 "A template draft is only saved in place. Release it to make a version New Bot offers.",
             )
             return False
-        path, _ = QFileDialog.getSaveFileName(self._window, "Save Bot As", "", "Bot Files (*.json)")
+        path, _ = QFileDialog.getSaveFileName(
+            self._window, "Save Bot As", str(_save_as_start(self._last_save_path)), "Bot Files (*.json)"
+        )
         if not path:
             return False
         if not path.endswith(".json"):
             path += ".json"
+        if not bot_roots.may_write(path):
+            QMessageBox.information(
+                self._window,
+                "Save Bot As",
+                "That folder belongs to BartleBot's installation, which every update replaces, "
+                "so a bot saved there would be lost. Choose a folder of your own.",
+            )
+            return False
         # After the file dialog, not before: cancelling the dialog should ask nothing.
         if not self._confirm_rewards_tags():
             return False
@@ -1207,9 +1220,7 @@ class AppController(QObject):
 
     def _bots_linking(self, subgraph_id: str) -> int:
         """How many bot files in the library link ``subgraph_id``."""
-        sm = SettingsManager.instance()
-        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
-        return count_subgraph_uses(bots_dir).get(subgraph_id, 0)
+        return count_subgraph_uses(*bot_roots.library_dirs()).get(subgraph_id, 0)
 
     def _open_definition_ids(self) -> set[str]:
         """The ids of every definition open as a document, on top or set aside under it."""
@@ -2686,6 +2697,32 @@ class AppController(QObject):
                     c["autosave_path"].unlink()
                 except OSError:
                     pass
+
+
+def _world_folder(path: str | Path | None) -> str | None:
+    """The library folder ``path`` is in, under either root, or None for one outside the library."""
+    if path is None:
+        return None
+    parent = Path(path).resolve().parent
+    roots = {d.resolve() for d in bot_roots.library_dirs()}
+    return parent.name if parent.parent in roots else None
+
+
+def _save_as_start(last_save_path: str | Path | None) -> Path:
+    """Where Save As opens: the user's own folder, in the open bot's world folder, under its file name.
+
+    The user's folder rather than the open file's, which may be an Official bot's in the
+    install directory, where nothing may be written (#168).
+    """
+    folder = bot_roots.user_bots_dir()
+    world = _world_folder(last_save_path)
+    if world is not None:
+        folder = folder / world
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        logger.debug("Could not create %s", folder, exc_info=True)
+    return folder / Path(last_save_path).name if last_save_path else folder
 
 
 def _changed_linked_regions(before: BotConfig, after: BotConfig) -> list[tuple[str, str]]:

@@ -79,18 +79,17 @@ def origin_of(subgraph_id: str, root: str | Path | None = None, user_root: str |
     return origin_in(_subgraph_dir, subgraph_id, shipped, user)
 
 
-def count_subgraph_uses(bots_dir: str | Path) -> dict[str, int]:
-    """``{subgraph id: number of bot files linking it}`` under ``bots_dir``, recursively.
+def count_subgraph_uses(*bots_dirs: str | Path) -> dict[str, int]:
+    """``{subgraph id: number of bot files linking it}`` under every one of ``bots_dirs``, recursively.
 
     Read from the raw JSON rather than through ``BotConfig`` so an unloadable bot
     costs a skipped file, not an exception, and so a bot on an older schema still
-    counts. What the node browser's "Used by N bots" reads, once per dialog.
+    counts. What the node browser's "Used by N bots" reads, once per dialog. The
+    library's folders are :func:`bartlebot.bot_roots.library_dirs`.
     """
     counts: dict[str, int] = {}
-    root = Path(bots_dir)
-    if not root.is_dir():
-        return counts
-    for path in sorted(root.rglob("*.json")):
+    paths = {p for d in bots_dirs if Path(d).is_dir() for p in Path(d).rglob("*.json")}
+    for path in sorted(paths):
         try:
             with path.open(encoding="utf-8") as f:
                 data = json.load(f)

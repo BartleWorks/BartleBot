@@ -202,14 +202,14 @@ def duplicate_profile(bcs: BotCombatStrategy, name: str) -> BotCombatStrategy:
     return copy
 
 
-def read_bot_names(bots_dir: str | Path) -> dict[str, str]:
-    """``{bot id: bot name}`` for every bot file under *bots_dir*, for naming a profile's bot.
+def read_bot_names(*bots_dirs: str | Path) -> dict[str, str]:
+    """``{bot id: bot name}`` for every bot file under each of *bots_dirs*, for naming a profile's bot.
 
     Read raw rather than through ``BotConfig``: only two fields are wanted, from every bot
     in the library, and a file that does not parse is simply left out.
     """
     names: dict[str, str] = {}
-    for path in Path(bots_dir).rglob("*.json"):
+    for path in (p for d in bots_dirs for p in Path(d).rglob("*.json")):
         try:
             with path.open(encoding="utf-8") as f:
                 data = json.load(f)

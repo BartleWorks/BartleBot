@@ -42,7 +42,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_summary, card_art, scales, setup_steps, template_diff
+from bartlebot import bot_roots, bot_summary, card_art, scales, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -100,7 +100,6 @@ from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
-from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin, dev_mode
 from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
@@ -351,18 +350,6 @@ def _read_bot_meta(
         return None
 
 
-def _resolve_bots_dir(configured: str, root: Path) -> Path:
-    """Resolve the configured bot library path against the project root.
-
-    The setting (default ``"bots"``) is meant relative to the project, not to
-    wherever the process happened to be launched from — resolving it against
-    the cwd silently emptied the library for anyone who launched elsewhere.
-    An absolute override is returned unchanged.
-    """
-    configured_path = Path(configured)
-    return configured_path if configured_path.is_absolute() else root / configured_path
-
-
 #: The category list's geometry. Wide enough for the longest caption the shipped folders
 #: have ("Housing Gauntlet") beside a 32px badge with the scrollbar showing -- which it
 #: does once icons make every row 42px tall. ``test_bot_folders`` measures it.
@@ -404,7 +391,7 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     intersects whatever the tags left.
 
     Pure, and at module level, so the filtering can be tested without a QApplication
-    — same reasoning as ``_resolve_bots_dir``.
+    — same reasoning as :mod:`bartlebot.bot_roots`.
     """
     q = query.strip().casefold()
     wanted: dict[str, set[str]] = {}
@@ -824,21 +811,18 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._all_metas = []
         self._category_map = {}
 
-        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
-        if bots_dir.is_dir():
-            # By folder name, so the numbers set the order -- the same order Explorer
-            # shows, which is the game's badge page order (see bot_folders).
-            for subdir in sorted(bots_dir.iterdir()):
-                if not subdir.is_dir():
-                    continue
-                metas = [m for f in sorted(subdir.glob("*.json")) if (m := self._read_meta(f))]
-                if metas:
-                    self._category_map[subdir.name] = metas
-                    self._all_metas.extend(metas)
-            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := self._read_meta(f))]
-            if root_metas:
-                self._category_map[self._OTHER_KEY] = root_metas
-                self._all_metas.extend(root_metas)
+        # The Official bots and the user's own, as one library (bot_roots). By folder
+        # name, so the numbers set the order -- the same order Explorer shows, which is
+        # the game's badge page order (see bot_folders).
+        for entry in bot_roots.library_files(bot_roots.shipped_bots_dir(), bot_roots.user_bots_dir()):
+            meta = self._read_meta(entry.path)
+            if meta is None:
+                continue
+            self._category_map.setdefault(entry.folder or self._OTHER_KEY, []).append(meta)
+            self._all_metas.append(meta)
+        if self._OTHER_KEY in self._category_map:
+            # Files at the top of the library are listed after every world folder.
+            self._category_map[self._OTHER_KEY] = self._category_map.pop(self._OTHER_KEY)
 
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := self._read_meta(Path(p)))]
