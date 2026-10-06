@@ -16,7 +16,6 @@ from dataclasses import replace
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -260,9 +259,6 @@ class SignaturePage(ThemedMixin, QWidget):
                 title = QLineEdit(panel.label or "")
                 title.setPlaceholderText("Group heading")
                 title.textChanged.connect(lambda text, p=panel.id: self._set_panel(p, "label", text.strip() or None))
-            closed = QCheckBox("Starts closed")
-            closed.setChecked(panel.default_closed)
-            closed.toggled.connect(lambda on, p=panel.id: self._set_panel(p, "default_closed", on))
             up = _icon("arrow_up", "Move up")
             down = _icon("arrow_down", "Move down")
             up.setEnabled(i > 0)
@@ -274,7 +270,7 @@ class SignaturePage(ThemedMixin, QWidget):
             else:
                 remove = _icon("trash", "Delete this group; its inputs stay, in no group", danger=True)
             remove.clicked.connect(lambda _=False, p=panel.id: self._delete_panel(p))
-            layout.addWidget(self._row(title, closed, up, down, remove))
+            layout.addWidget(self._row(title, up, down, remove))
             if panel.kind == "inputs":
                 self._group_members(panel)
             for key, extra in panel.bindings.items():

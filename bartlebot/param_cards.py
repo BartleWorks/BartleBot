@@ -69,18 +69,22 @@ def call_page_fold_defaults(
     groups: Iterable[str],
     *,
     incomplete: Iterable[str] = (),
-    starts_closed: Iterable[str] = (),
     holds_role: bool = False,
 ) -> dict[str, bool]:
     """Whether each card on a subgraph node's page starts collapsed.
 
-    A card holding an empty required field opens, unless its author marked the group
-    "Starts closed"; every other card folds to its summary. The band's "N to fill"
-    count stays on screen either way, so a fold never hides what is left to do. Role
-    follows the node page's rule.
+    A card holding an empty required field opens; every other card folds to its
+    summary. Role follows the node page's rule.
+
+    There is no author setting to keep a card folded. Input groups used to carry
+    "Starts closed", but a complete card folds anyway, so the setting only ever
+    changed anything for a card with a field still to fill -- hiding exactly the
+    field the user had to find. An author wanting tuning knobs out of the way puts
+    them in a group of their own (an "Advanced" group of optional inputs is always
+    complete, so it always starts folded).
     """
-    incomplete, starts_closed = set(incomplete), set(starts_closed)
-    defaults = {group: not (group in incomplete and group not in starts_closed) for group in groups}
+    incomplete = set(incomplete)
+    defaults = {group: group not in incomplete for group in groups}
     defaults[ROLE] = not holds_role
     return defaults
 

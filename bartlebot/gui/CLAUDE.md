@@ -779,9 +779,11 @@ group, and Role. What a card *says* is `bartlebot/param_cards.py`, which needs n
 - **Folds are the reader's, in `ui_state.json`** (`UiStateFoldStore`). The node page is
   one surface with four groups, the same on every node. A subgraph node page is a
   surface per definition, never per placed node; a card the reader has not touched
-  starts open while it holds an empty required field (unless its author marked it
-  Starts closed) and folded once complete -- decided when the page is built, never while
-  the user is working in it. Role opens on a node that holds a role.
+  starts open while it holds an empty required field and folded once complete --
+  decided when the page is built, never while the user is working in it. Role opens on
+  a node that holds a role. There is no author setting to keep a card folded: input
+  groups had "Starts closed", and since a complete card folds anyway it only ever hid a
+  field still to fill (#155).
 - **Connections is Returns merged in.** Every route off the node by return value, from
   `param_cards.outgoing_routes`, which follows the engine's rules: a stop, a node with
   no edges, the unrouted FAILURE that goes to the recovery state with no edge drawn

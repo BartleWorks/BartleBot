@@ -224,7 +224,6 @@ class SubgraphPanel(BaseModel):
     id: str
     kind: Literal["inputs", "node"] = "inputs"
     label: str | None = None
-    default_closed: bool = False
     member: str | None = None
     bindings: dict[str, list[SubgraphInputBinding]] = Field(default_factory=dict)
 

@@ -38,11 +38,6 @@ def test_a_subgraph_card_with_an_empty_required_field_starts_open_and_a_complete
     assert folds == {"inputs": True, "enter": False, "sync": False, pc.ROLE: True}
 
 
-def test_starts_closed_keeps_an_incomplete_card_folded():
-    folds = pc.call_page_fold_defaults(["enter"], incomplete=["enter"], starts_closed=["enter"])
-    assert folds["enter"] is True
-
-
 def test_each_definition_is_a_surface_of_its_own():
     assert pc.call_page_surface("sync-players") != pc.call_page_surface("run-a-dungeon")
     assert pc.call_page_surface("sync-players") != pc.NODE_PAGE_SURFACE
