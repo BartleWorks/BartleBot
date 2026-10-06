@@ -1,7 +1,7 @@
 {
   "id": "52d63d38-9b42-4d3a-8051-e652b1508354",
   "name": "Achaelos",
-  "description": "Endlessly farms Achaelos",
+  "description": "Endlessly farms Achaelos in Crustacean Empire, Celestia",
   "version": "1.0",
   "clients": "all",
   "initial": "t_sync_players_1_state_2",

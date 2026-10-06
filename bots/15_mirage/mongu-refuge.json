@@ -633,8 +633,7 @@
   "tags": [
     "Jewels",
     "Reagents",
-    "Boss",
-    "Team-Up"
+    "Boss"
   ],
   "options": [
     {
@@ -704,14 +703,12 @@
       "node_type": "enter_dungeon",
       "label": "Enter Mongu Refuge",
       "position": {
-        "x": 2200,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "from_zone": "Mirage/MR_Z04_RubalWastes",
         "dungeon_zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
-        "offers_challenge_mode": false,
-        "offers_team_up": true,
         "dungeon_name": "Mongu Refuge",
         "sigil_xyz": {
           "x": 4082.19,
@@ -722,7 +719,9 @@
           "x": 3841.56,
           "y": 3466.43,
           "z": -2088.67
-        }
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": false
       }
     },
     {
@@ -730,7 +729,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Mongu brothers",
       "position": {
-        "x": 3080,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -745,7 +744,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3520,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -762,7 +761,7 @@
       "node_type": "enter_zone",
       "label": "Exit Mongu Refuge",
       "position": {
-        "x": 3960,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -799,28 +798,11 @@
       }
     },
     {
-      "id": "state_13",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to dungeon entrance",
-      "position": {
-        "x": 1760,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Mirage/MR_Z04_RubalWastes",
-        "xyz": {
-          "x": 3884.07,
-          "y": 3497.69,
-          "z": -2088.67
-        }
-      }
-    },
-    {
       "id": "state_6",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to final room",
       "position": {
-        "x": 2640,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -926,26 +908,6 @@
     },
     {
       "trigger": "advance",
-      "source": "t_7",
-      "dest": "state_13",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_3",
       "dest": "state_6",
       "when": "SUCCESS",
@@ -958,6 +920,16 @@
       "trigger": "advance",
       "source": "state_6",
       "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
