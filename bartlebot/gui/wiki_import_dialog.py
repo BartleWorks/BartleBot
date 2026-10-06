@@ -1,4 +1,4 @@
-"""Dialog for importing drop items from a Wizard101 Central Wiki wiki page."""
+"""Dialog for importing drop items from a Wizard101 Central Wiki page."""
 
 from __future__ import annotations
 
