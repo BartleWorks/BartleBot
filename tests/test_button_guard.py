@@ -73,11 +73,6 @@ ALLOWED_PUSH_BUTTONS: dict[str, str] = {
         "reports orphaned nodes and reads as a badge beside the error pill; button "
         "chrome would make a passive count look like an action."
     ),
-    "canvas/param_panel.py:_conn_toggle_btn": (
-        "The '▾ Connections' disclosure toggle. It belongs to the section-heading "
-        "vocabulary — a twisty over a group of rows — not to the button vocabulary, "
-        "and drawn as a verb the heading would compete with the rows under it."
-    ),
 }
 
 # ---------------------------------------------------------------------------

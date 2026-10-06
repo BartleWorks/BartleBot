@@ -1113,6 +1113,9 @@ class AppController(QObject):
     def _show_release_refused(self, name: str, problems: Sequence[str]) -> None:
         listed = "\n".join(f"\u2022 {p}" for p in problems[:12])
         more = f"\n\u2026and {len(problems) - 12} more" if len(problems) > 12 else ""
+        # The page on screen draws what it is missing in red: a refused release, like a
+        # refused save, is the moment to say so rather than before (#142).
+        self._window.bot_canvas.param_panel.show_required_errors()
         QMessageBox.critical(self._window, "Release", f"{name} can't be released yet:\n\n{listed}{more}")
 
     # ------------------------------------------------------------------
@@ -1255,6 +1258,7 @@ class AppController(QObject):
             return False
         listed = "\n".join(f"\u2022 {e}" for e in errors[:12])
         more = f"\n\u2026and {len(errors) - 12} more" if len(errors) > 12 else ""
+        self._window.bot_canvas.param_panel.show_required_errors()
         QMessageBox.critical(self._window, title, f"Fix these before saving '{config.name}':\n\n{listed}{more}")
         return True
 

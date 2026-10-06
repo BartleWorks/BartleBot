@@ -62,7 +62,8 @@ def test_the_required_marker_color_is_rebuilt(qapp, theme):
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
-    label, _field, _spaced = form._field_labels[0]
+    form.show_required_errors()  # the marker is muted until the field's emptiness is shown
+    label, _field = form._field_labels[0]
     assert THEME.error in label.text()
     light_error = THEME.error
 
@@ -77,37 +78,34 @@ def test_field_labels_recolor(qapp, theme):
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
-    before = [lbl.styleSheet() for lbl, _, _ in form._field_labels]
+    before = [lbl.styleSheet() for lbl, _ in form._field_labels]
 
     _switch(qapp, form, theme, "dark")
 
-    assert [lbl.styleSheet() for lbl, _, _ in form._field_labels] != before
+    assert [lbl.styleSheet() for lbl, _ in form._field_labels] != before
 
 
-def test_the_second_field_keeps_its_top_margin(qapp, theme):
-    """The margin distinguishes the first field from the rest, and is part of the
-    same string as the color — so a careless restyle drops the spacing."""
+def test_no_field_label_carries_a_margin_of_its_own(qapp, theme):
+    """Rows are spaced by the form's layout (#142): a margin on the head line would push
+    it below the gutter's buttons, which top-align with the row."""
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
 
     _switch(qapp, form, theme, "dark")
 
-    first, second = (lbl.styleSheet() for lbl, _, _ in form._field_labels)
-    assert "margin-top" not in first
-    assert "margin-top: 8px" in second
+    assert not any("margin" in lbl.styleSheet() for lbl, _ in form._field_labels)
 
 
-def test_the_default_hint_recolors(qapp, theme):
+def test_the_default_hint_folds_behind_the_rows_question_mark(qapp, theme):
+    """It was a muted line of its own under the field; it is the end of the row's description now."""
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
-    assert form._muted_labels, "the optional field should have produced a hint label"
-    before = form._muted_labels[0].styleSheet()
 
-    _switch(qapp, form, theme, "dark")
-
-    assert form._muted_labels[0].styleSheet() != before
+    assert form.description("note").text() == "Default: empty"
+    assert not form.help_button("note").isHidden()
+    assert form.help_button("zone").isHidden(), "nothing to fold out, so the slot is kept but empty"
 
 
 def test_the_empty_required_border_is_re_derived(qapp, theme):
@@ -117,6 +115,8 @@ def test_the_empty_required_border_is_re_derived(qapp, theme):
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
     zone = form.widget("zone")
+    assert THEME.error not in zone.styleSheet(), "not before it has been left empty"
+    form.show_required_errors()
     assert THEME.error in zone.styleSheet(), "an empty required field should be marked"
     light_error = THEME.error
 
@@ -209,11 +209,10 @@ def test_the_node_type_category_headers_recolor(qapp, theme):
     assert panel._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
 
 
-def test_the_idle_page_and_section_titles_recolor(qapp, theme):
+def test_the_idle_page_and_status_line_recolor(qapp, theme):
     panel = _panel(theme)
     before = [
         panel._idle_lbl.styleSheet(),
-        panel._returns_title.styleSheet(),
         panel._record_status_lbl.styleSheet(),
         panel._flags_lbl.styleSheet(),
     ]
@@ -223,7 +222,6 @@ def test_the_idle_page_and_section_titles_recolor(qapp, theme):
 
     after = [
         panel._idle_lbl.styleSheet(),
-        panel._returns_title.styleSheet(),
         panel._record_status_lbl.styleSheet(),
         panel._flags_lbl.styleSheet(),
     ]

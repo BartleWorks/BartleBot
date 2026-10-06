@@ -325,9 +325,10 @@ def test_undo_keeps_the_node_selected(doc):
 def test_the_promote_button_turns_into_demote(doc):
     doc.select_state("hub")
     button = doc.param_panel.promote_button
-    assert button.text() == "Promote to input group"
+    assert button.toolTip().startswith("Promote to input group")
     doc.set_node_promoted("hub", True)
-    assert button.text() == "Demote"
+    assert button.toolTip().startswith("Demote")
+    assert doc.param_panel.node_cards["params"].summary_parts[0].text == "Promoted"
     button.click()
     assert not [p for p in _meta(doc).panels if p.kind == "node"]
 
@@ -479,7 +480,7 @@ def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
     assert doc.link_param("nav", "zone", shared=(panel.id, "zone"))
     assert promoted_param_type(doc.config, panel, "zone", NODE_PARAM_SCHEMAS) == "nav_zone"
     doc.select_state("mark")
-    assert doc.param_panel._record_row.isVisibleTo(doc.param_panel)
+    assert doc.param_panel._record_btn.isVisibleTo(doc.param_panel)
 
 
 def test_record_into_a_destination_picker_is_never_refused(qapp):
@@ -761,13 +762,13 @@ def test_a_linked_row_left_blank_is_not_marked_as_a_required_input_left_empty(pr
     region.source.inputs["tp_a.zone"] = ""
     promoted_doc._on_region_property_changed()
     promoted_doc._show_call_page(region)
-    assert page.section("node_tp_a").shows_error, "blank and unlinked: this node's own gap"
+    assert page.to_fill("node_tp_a") == 1, "blank and unlinked: this node's own gap"
 
     promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
     assert _zone_of(promoted_doc, "tp_a") == ""
-    assert not page.section("node_tp_a").shows_error
+    assert page.to_fill("node_tp_a") == 0
     assert promoted_doc.validation_errors() == []
 
     promoted_doc.unlink_nested_input("in1", "tp_a.zone")
-    assert page.section("node_tp_a").shows_error
+    assert page.to_fill("node_tp_a") == 1
     assert any("Required param 'zone' is empty" in e for e in promoted_doc.validation_errors())
