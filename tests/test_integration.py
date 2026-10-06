@@ -54,7 +54,7 @@ _BOTS_DIR = Path(__file__).parent.parent / "bots"
 
 async def test_real_bot_config_loads_and_round_trips(tmp_path):
     """Load a real bot file, save it to a temp path, reload it, and compare key fields."""
-    src = _BOTS_DIR / "04_mooshu" / "crimson_fields.json"
+    src = _BOTS_DIR / "04_mooshu" / "crimson-fields.json"
     config = BotConfig.load(src)
     dest = tmp_path / "roundtrip.json"
     config.save(dest)
@@ -178,7 +178,7 @@ async def test_botmachine_constructs_from_real_bot_config():
     Exercises the full path: BotConfig.load() → to_machine_config() → BotMachine()
     and verifies that the machine starts at the correct initial state.
     """
-    src = _BOTS_DIR / "04_mooshu" / "crimson_fields.json"
+    src = _BOTS_DIR / "04_mooshu" / "crimson-fields.json"
     config = BotConfig.load(src)
     mc = config.to_machine_config()
 
@@ -627,9 +627,9 @@ async def test_stop_while_machine_is_paused_with_real_config():
 
     Integration-level counterpart to test_machine.py::test_stop_while_paused_exits_cleanly.
     Uses the full BotConfig.load() → to_machine_config() → BotMachine path with the
-    real crimson_fields.json bot file.
+    real crimson-fields.json bot file.
     """
-    src = _BOTS_DIR / "04_mooshu" / "crimson_fields.json"
+    src = _BOTS_DIR / "04_mooshu" / "crimson-fields.json"
     config = BotConfig.load(src)
     mc = config.to_machine_config()
     machine = BotMachine(clients=[], config=mc, node_registry=NODE_REGISTRY, bot_config=config)
@@ -719,7 +719,7 @@ def _all_bot_files() -> list[Path]:
 
 
 def _rel(path: Path) -> str:
-    """``bots/04_mooshu/crimson_fields.json`` or ``templates/boss-farmer/draft.json``, for a message."""
+    """``bots/04_mooshu/crimson-fields.json`` or ``templates/boss-farmer/draft.json``, for a message."""
     return path.relative_to(_BOTS_DIR.parent).as_posix()
 
 

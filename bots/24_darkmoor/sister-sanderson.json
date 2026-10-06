@@ -599,8 +599,12 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
+    "Reagents",
     "Spellements",
+    "Housing",
     "Boss",
+    "Challenge Mode",
     "Team-Up"
   ],
   "options": [
@@ -677,8 +681,6 @@
       "params": {
         "from_zone": "Darkmoor/DM_Z01_Graveholm",
         "dungeon_zone": "Darkmoor/Interiors/DM_Z01I17_SandersonHouse",
-        "offers_challenge_mode": false,
-        "offers_team_up": true,
         "dungeon_name": "Sanderson House",
         "sigil_xyz": {
           "x": 6630.18,
@@ -689,7 +691,9 @@
           "x": 6157.12,
           "y": 3635.8,
           "z": 2.0
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
       }
     },
     {

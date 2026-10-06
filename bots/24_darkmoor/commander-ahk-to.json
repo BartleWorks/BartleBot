@@ -1,0 +1,591 @@
+{
+  "id": "63bab9cd-b4b5-48e3-b7c2-f76437038254",
+  "name": "Commander Ahk'To",
+  "description": "Endlessly defeats Commander Ahk'To in Graveholm, Darkmoor",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Anubis",
+      "category": "Spellements"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Broken Branch Loss Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Broken Branch Luckless Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Broken Branch Neglect Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Broken Branch Panic Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Broken Branch Rage Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Broken Branch Sorrow Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Broken Branch Terror Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chameleon Clash",
+      "category": "Spellements"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dagger of False Promises",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of the Burnt Forest",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of the Changing Tide",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of the Coldhearted",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of the Doomed",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of the Living Lie",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of the Turning Wheel",
+      "category": "Athames"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Disabling Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (170)"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Flawless Blocking Onyx +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Opal +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Ruby +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fortified Bread",
+      "category": "Snacks"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Golden Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Lifeblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Myth Crushing Pin (170, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (170)"
+    },
+    {
+      "name": "Myth Punishing Pin (170, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (170)"
+    },
+    {
+      "name": "Nested Fury",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phantasmania!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rusalka's Wrath",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Shu",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snowball Barrage",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Crushing Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (170)"
+    },
+    {
+      "name": "Storm Disabling Pin (170, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (170)"
+    },
+    {
+      "name": "Storm Punishing Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (150)"
+    },
+    {
+      "name": "Taweret",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Chariot",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Emperor",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Hierophant",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Tower",
+      "category": "Spellements"
+    },
+    {
+      "name": "The World",
+      "category": "Spellements"
+    },
+    {
+      "name": "Thoth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Unearthly Health Amethyst +525",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Citrine +670",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Jade +775",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Onyx +650",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Peridot +595",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Health Ruby +595",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wheel of Fortune",
+      "category": "Spellements"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
+  "tags": [
+    "Spellements",
+    "Boss",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z01_Graveholm"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Gargoyle Watchhouse",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Darkmoor/DM_Z01_Graveholm",
+        "dungeon_zone": "Darkmoor/Interiors/DM_Z01I04_GargoyleWatchtower",
+        "dungeon_name": "Gargoyle Watchhouse",
+        "sigil_xyz": {
+          "x": -244.76,
+          "y": 5047.21,
+          "z": 302.0
+        },
+        "reset_xyz": {
+          "x": -1011.39,
+          "y": 5095.94,
+          "z": 302.0
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Commander Ahk'To",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "DM_Gargoyle_CommanderF_A_01",
+        "wiki_page": "Creature:Commander Ahk'To (Standard)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit Gargoyle Watchhouse",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Darkmoor/Interiors/DM_Z01I04_GargoyleWatchtower",
+        "to_zone": "Darkmoor/DM_Z01_Graveholm",
+        "xyz": {
+          "x": 0.1,
+          "y": -25.93,
+          "z": 1.0
+        },
+        "reset_xyz": {
+          "x": 0.1,
+          "y": 411.47,
+          "z": 1.0
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Darkmoor/DM_Z01_Graveholm"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
+}

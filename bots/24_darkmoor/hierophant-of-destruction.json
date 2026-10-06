@@ -789,8 +789,11 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
+    "Reagents",
     "Spellements",
     "Boss",
+    "Challenge Mode",
     "Team-Up"
   ],
   "options": [
@@ -869,8 +872,6 @@
       "params": {
         "from_zone": "Darkmoor/DM_Z04_BlackLagoon",
         "dungeon_zone": "Darkmoor/Interiors/DM_Z04I08_BogOfVengeance",
-        "offers_challenge_mode": false,
-        "offers_team_up": true,
         "dungeon_name": "Bog of Vengeance",
         "sigil_xyz": {
           "x": -9154.1,
@@ -881,7 +882,9 @@
           "x": -8577.4,
           "y": -2012.5,
           "z": 2.0
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
       }
     },
     {

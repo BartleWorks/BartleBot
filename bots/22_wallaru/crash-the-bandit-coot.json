@@ -1,0 +1,938 @@
+{
+  "id": "d6883e18-3d81-4afe-af45-49330c9272d8",
+  "name": "Crash the Bandit Coot",
+  "description": "Endlessly defeats Crash the Bandit Coot in Wobbegong Territory, Wallaru",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "1 Dream Water",
+      "category": "Reagents"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Death)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balanceblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bell Pepper Steak",
+      "category": "Snacks"
+    },
+    {
+      "name": "Black Sun Seeds",
+      "category": "Snacks"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bold Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Bold Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Carrot",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cleanse Charm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cruel Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Cruel Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Resist Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Deathblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Deft Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Deft Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragon Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Empower",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Evil Carrot",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fabled Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fabled Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Feint",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fell Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fell Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fern Jelly",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fervid Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fervid Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fierce Dream Reaver Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fierce Dream Warper Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fireblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fish Fin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Flaming Jalapeno",
+      "category": "Snacks"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glowing Dragon Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Biscuit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grrnadier",
+      "category": "Spellements"
+    },
+    {
+      "name": "Heavenly Bubblegum",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hex",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Iceblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lava Guava",
+      "category": "Snacks"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Legendary Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Life Blocking Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lifeblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mythblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Orange Jalapeno",
+      "category": "Snacks"
+    },
+    {
+      "name": "PB Cookie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Phantasmania!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Popsicle",
+      "category": "Snacks"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Reshuffle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Salty Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Scales",
+      "category": "Reagents"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Balance",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Death",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Fire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Ice",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Life",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Myth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scion of Storm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spicy Chips",
+      "category": "Snacks"
+    },
+    {
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Spirit Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Resist Pin (130, Death)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tamales",
+      "category": "Snacks"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
+    },
+    {
+      "name": "Turmeric",
+      "category": "Reagents"
+    },
+    {
+      "name": "Wallaru Billabong Resort Com Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Billabong Resort Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Doom Moon Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Doom Moon Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Eucalyptus Forest Com Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Eucalyptus Forest Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Outback Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Outback Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Ranch Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Starry Sky Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru The Dreaming Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Wobbegong Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wallaru Wobbegong Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wild Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Wrath's Grape Juice",
+      "category": "Snacks"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Reagents",
+    "Spellements",
+    "Housing",
+    "Boss",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Reaver"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Wallaru/WL_Z05_Wobbegong_JT"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.25,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Crash's Cave",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "dungeon_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
+        "dungeon_name": "Crash's Cave",
+        "sigil_xyz": {
+          "x": -5997.44,
+          "y": -2107.52,
+          "z": 196.93
+        },
+        "reset_xyz": {
+          "x": -5942.12,
+          "y": -2693.45,
+          "z": 193.83
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Crash the Bandit Coot",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "WL_Dingo_Crash_A_01",
+        "wiki_page": "Creature:Crash the Bandit Coot (Standard)",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit Crash's Cave",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
+        "to_zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "stagger": false,
+        "xyz": {
+          "x": 595.54,
+          "y": -12194.17,
+          "z": -976.91
+        },
+        "reset_xyz": {
+          "x": 1110.46,
+          "y": -11332.11,
+          "z": -976.89
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Wallaru/WL_Z05_Wobbegong_JT"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
+}
