@@ -50,7 +50,7 @@ from bartlebot.gui.canvas.edge_item import (
     bridge_y_below,
     is_above_routed,
 )
-from bartlebot.gui.canvas.fold import FoldMap
+from bartlebot.gui.canvas.fold import FoldMap, Placed, Span, settle_move
 from bartlebot.gui.canvas.graph_view import GraphView
 from bartlebot.gui.canvas.node_item import (
     GRID_H,
@@ -517,11 +517,6 @@ _LINK_STATE_FOR_KIND = {
 }
 
 
-def _moved(old: dict, new: dict) -> bool:
-    """Whether a stored position really changed, not just by the fold's round trip."""
-    return abs(float(old["x"]) - new["x"]) > 1e-6 or abs(float(old["y"]) - new["y"]) > 1e-6
-
-
 def member_warnings(reasons: list[str]) -> list[str]:
     """A member's warnings worth rolling up onto its call node.
 
@@ -975,24 +970,23 @@ class EditScene(QGraphicsScene):
     def _build_fold(self, placed: list[tuple[NodeItem, float, float]], folded: list[RegionModel]) -> FoldMap:
         """The fold for what is drawn: every collapsed plain region's span, closed up around what is visible."""
         assert self._config is not None
-        base = FoldMap(GRID_W, GRID_H)
-        by_id = {s.id: s for s in self._config.states}
-        spans = []
-        for region in folded:
-            if region.source is not None:
-                continue
-            positions = [
-                (float(p["x"]), float(p["y"]))
-                for m in region.members
-                if (s := by_id.get(m)) is not None and (p := s.position) is not None
-            ]
-            span = base.span_of(positions)
-            if span is not None:
-                spans.append(span)
+        spans = [span for region in folded if (span := self._span_of(region)) is not None]
         if not spans:
-            return base
+            return FoldMap(GRID_W, GRID_H)
         occupied = [(x, y, node.body_height) for node, x, y in placed]
         return FoldMap.build(spans, occupied, col_w=GRID_W, row_h=GRID_H)
+
+    def _span_of(self, region: RegionModel) -> Span | None:
+        """A collapsed plain region's members' extent in grid cells; None for an instance or no placed member."""
+        if self._config is None or region.source is not None:
+            return None
+        members = set(region.members)
+        positions = [
+            (float(p["x"]), float(p["y"]))
+            for s in self._config.states
+            if s.id in members and (p := s.position) is not None
+        ]
+        return FoldMap(GRID_W, GRID_H).span_of(positions)
 
     # ------------------------------------------------------------------
     # Stored positions and where they are drawn
@@ -3532,6 +3526,10 @@ class EditScene(QGraphicsScene):
     def _flush_positions(self) -> None:
         """Write where every item now sits back into the model, through the fold.
 
+        What moved is settled as one move (``fold.settle_move``), never item by item:
+        a collapsed region carries its hidden columns and rows with it, and gets whole
+        ones opened where it lands, so its members never land on anything (#159).
+
         A call node's position is its instance's ``anchor``, and a collapsed region's is
         its members' top-left; either way the members follow it by the same delta --
         nested instances' anchors included -- since an instance's members sit at
@@ -3539,27 +3537,33 @@ class EditScene(QGraphicsScene):
         """
         if self._config is None:
             return
-        # Compute all position changes before mutating so about_to_change fires
-        # against the unmodified config (snapshot captures current positions).
-        updates: dict[str, dict] = {}
+        items: list[Placed] = []
         for state in self._config.states:
             node = self._node_items.get(state.id)
-            if node is None:
-                continue
-            new_pos = self.stored_position(node.scenePos(), node.body_height)
-            if state.position is None or _moved(state.position, new_pos):
-                updates[state.id] = new_pos
-        anchor_moves: list[tuple[RegionModel, float, float]] = []
+            if node is not None:
+                items.append(self._placed(state.id, node, state.position))
+        regions: dict[str, tuple[RegionModel, dict]] = {}
         for rid, node in self.folded_nodes().items():
             region = self._region_by_id(rid)
             if region is None:
                 continue
             anchor = region_anchor(self._config, region)
-            new_anchor = self.stored_position(node.scenePos(), node.body_height)
-            dx = round(new_anchor["x"] - float(anchor["x"]), 3)
-            dy = round(new_anchor["y"] - float(anchor["y"]), 3)
-            if dx or dy:
-                anchor_moves.append((region, dx, dy))
+            regions[rid] = (region, anchor)
+            items.append(self._placed(rid, node, anchor, self._span_of(region)))
+        settled = settle_move(self._fold, items)
+        # Compute all position changes before mutating so about_to_change fires
+        # against the unmodified config (snapshot captures current positions).
+        updates: dict[str, dict] = {}
+        anchor_moves: list[tuple[RegionModel, float, float]] = []
+        for key, (x, y) in settled.items():
+            if key in regions:
+                region, anchor = regions[key]
+                dx = round(x - float(anchor["x"]), 3)
+                dy = round(y - float(anchor["y"]), 3)
+                if dx or dy:
+                    anchor_moves.append((region, dx, dy))
+            else:
+                updates[key] = {"x": x, "y": y}
         if not updates and not anchor_moves:
             return
         self._pre_edit("Move Node")
@@ -3580,6 +3584,21 @@ class EditScene(QGraphicsScene):
         self._refresh_folds()
         self._update_scene_rect()
         self.graph_changed.emit()
+
+    def _placed(self, key: str, node: NodeItem, stored: dict | None, span: Span | None = None) -> Placed:
+        """``node`` as ``settle_move`` reads it: where it is stored, and where it was dropped if it moved."""
+        top_left = node.scenePos()
+        if stored is not None:
+            drawn = self.drawn_position(stored, node.body_height)
+            if abs(drawn.x() - top_left.x()) < 1e-3 and abs(drawn.y() - top_left.y()) < 1e-3:
+                return Placed(key, (float(stored["x"]), float(stored["y"])), node.body_height, span)
+        return Placed(
+            key,
+            None if stored is None else (float(stored["x"]), float(stored["y"])),
+            node.body_height,
+            span,
+            (top_left.x(), top_left.y() + node.body_height / 2),
+        )
 
     @property
     def region_items(self) -> dict[str, RegionItem]:

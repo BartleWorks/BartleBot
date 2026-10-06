@@ -722,6 +722,17 @@ expanded one and the folded view has no gap. Stepping into a collapsed region op
 (`set_expanded`), which makes its members visible and so unfolds its columns with
 nothing more.
 
+**A move is the one exception: never convert moved items through the map one by one**
+(#159). The map is not a translation -- hidden columns between two items make one drag
+a different stored distance for each -- so two side-by-side collapsed regions dragged
+together expanded on top of each other, and so did one shifted by an insert's
+`_open_column_at`. `_flush_positions` hands everything drawn to `fold.settle_move`,
+which cuts and pastes a moved region the way an editor moves a folded block: the hidden
+lines it leaves are deleted, and its span is opened as whole columns and rows where it
+lands. Both are hidden, so the screen shows exactly what was dropped, and the stored
+layout stays a valid expanded one -- the invariant `auto_layout` keeps. It has to hold at
+the drop: Run mode's collapses are never written, so an expand has nowhere to make room.
+
 **Collapsing works in both modes, and means something different in each.** In Edit
 mode it sets the region's saved flag, as one undoable step. In Run mode it is a view:
 `EditScene`'s collapse overrides sit over the saved flags, are never written, and are

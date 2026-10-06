@@ -13,6 +13,15 @@ is never touched, and a column another visible node shares stays, gap and all.
 
 The map is derived from what the scene draws every time it is built and never
 stored, like display ids: undo, a recompose or a paste rebuilds it with the scene.
+
+**A move is settled here too** (#159), by :func:`settle_move`, never by converting
+each moved item through the map on its own. The map is not a translation: the
+hidden lines between two items make a drag of one cell on screen several in the
+stored layout for one of them and not the other, which pulled two side-by-side
+collapsed regions on top of each other. Instead a collapsed region moves the way a
+folded block of code is cut and pasted: the hidden lines it leaves are deleted and
+its own are inserted, whole, wherever it lands, so nothing ever lies inside its
+expanded span and the screen shows exactly what was dropped.
 """
 
 from __future__ import annotations
@@ -112,6 +121,117 @@ class FoldMap:
         return x + _skip(self.hidden_cols, self.col_of(x)) * self.col_w, y + (
             _skip(self.hidden_rows, self.row_of(y)) * self.row_h
         )
+
+
+@dataclass(frozen=True)
+class Placed:
+    """One drawn item, for :func:`settle_move`. Positions are ``(left x, center y)``, as stored."""
+
+    key: str
+    stored: tuple[float, float] | None
+    height: float
+    # A collapsed region's members' extent; its node sits at the span's top-left.
+    span: Span | None = None
+    # Where it was dropped, in the fold's drawn coordinates; None if it did not move.
+    drawn_to: tuple[float, float] | None = None
+
+
+def settle_move(fold: FoldMap, items: Iterable[Placed]) -> dict[str, tuple[float, float]]:
+    """The stored position of every drawn item a move changes, keyed as given.
+
+    ``fold`` is the one the move was drawn through, and ``items`` everything drawn,
+    moved or not. A collapsed region is cut and pasted, a whole line at a time:
+
+    1. The hidden columns and rows a moved region leaves behind are deleted, unless a
+       region staying put also spans them. They were hidden, so nothing on screen moves.
+    2. Every moved item is stored where it was dropped, read through the fold of what
+       stayed put -- the screen the drop was aimed at.
+    3. Each moved region gets its expanded span back as whole columns after its own
+       column, and whole rows after its own row, less what a region staying on that
+       line already holds open. They are empty and inside its span, so they are hidden.
+
+    The caller moves a collapsed node's members by the delta of its position.
+    """
+    items = list(items)
+    moved = [p for p in items if p.drawn_to is not None]
+    if not moved:
+        return {}
+    still = [p for p in items if p.drawn_to is None and p.stored is not None]
+    col_w, row_h = fold.col_w, fold.row_h
+
+    moved_spans = [p.span for p in moved if p.span is not None]
+    still_spans = [p.span for p in still if p.span is not None]
+    del_cols = [
+        c
+        for c in fold.hidden_cols
+        if any(s.col0 < c <= s.col1 for s in moved_spans) and not any(s.col0 <= c <= s.col1 for s in still_spans)
+    ]
+    del_rows = [
+        r
+        for r in fold.hidden_rows
+        if any(s.row0 < r <= s.row1 for s in moved_spans) and not any(s.row0 <= r <= s.row1 for s in still_spans)
+    ]
+
+    pos: dict[str, tuple[float, float]] = {}
+    spans: dict[str, Span] = {}
+    for p in still:
+        assert p.stored is not None
+        x, y = p.stored
+        pos[p.key] = (
+            x - bisect_left(del_cols, fold.col_of(x)) * col_w,
+            y - bisect_left(del_rows, fold.row_of(y)) * row_h,
+        )
+        if p.span is not None:
+            dc, dr = bisect_left(del_cols, p.span.col0), bisect_left(del_rows, p.span.row0)
+            spans[p.key] = Span(p.span.col0 - dc, p.span.col1 - dc, p.span.row0 - dr, p.span.row1 - dr)
+
+    left = FoldMap.build(spans.values(), [(*pos[p.key], p.height) for p in still], col_w=col_w, row_h=row_h)
+    for p in moved:
+        assert p.drawn_to is not None
+        x, y = left.to_stored(*p.drawn_to)
+        pos[p.key] = (x, y)
+        if p.span is not None:
+            c, r = fold.col_of(x), fold.row_of(y)
+            spans[p.key] = Span(c, c + p.span.col1 - p.span.col0, r, r + p.span.row1 - p.span.row0)
+
+    moving = {p.key for p in moved}
+    _open_lines(pos, spans, moving, fold, vertical=False)
+    _open_lines(pos, spans, moving, fold, vertical=True)
+
+    changed = {}
+    for p in items:
+        new = pos.get(p.key)
+        if new is not None and (p.stored is None or new != p.stored):
+            changed[p.key] = new
+    return changed
+
+
+def _open_lines(
+    pos: dict[str, tuple[float, float]], spans: dict[str, Span], moving: set[str], fold: FoldMap, *, vertical: bool
+) -> None:
+    """Insert the whole columns (or rows) each moved region's span needs past its own line, in place."""
+    need: dict[int, int] = {}
+    held: dict[int, int] = {}
+    for key, s in spans.items():
+        line, extent = (s.row0, s.row1 - s.row0) if vertical else (s.col0, s.col1 - s.col0)
+        need[line] = max(need.get(line, 0), extent)
+        if key not in moving:
+            held[line] = max(held.get(line, 0), extent)
+    # Right to left (bottom to top), so a line not yet handled is never shifted off itself.
+    for line in sorted(need, reverse=True):
+        n = need[line] - held.get(line, 0)
+        if n <= 0:
+            continue
+        for key, (x, y) in pos.items():
+            if vertical and fold.row_of(y) > line:
+                pos[key] = (x, y + n * fold.row_h)
+            elif not vertical and fold.col_of(x) > line:
+                pos[key] = (x + n * fold.col_w, y)
+        for key, s in spans.items():
+            if vertical and s.row0 > line:
+                spans[key] = Span(s.col0, s.col1, s.row0 + n, s.row1 + n)
+            elif not vertical and s.col0 > line:
+                spans[key] = Span(s.col0 + n, s.col1 + n, s.row0, s.row1)
 
 
 def _skip(hidden: tuple[int, ...], index: int) -> int:
