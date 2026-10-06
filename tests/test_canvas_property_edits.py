@@ -313,3 +313,84 @@ def test_undo_takes_back_the_whole_typing_burst_and_redo_restores_it(qapp):
 
     canvas.redo()
     assert canvas.config.states[0].params["zone"] == "Z/Two"
+
+
+# ---------------------------------------------------------------------------
+# The label a node starts with
+# ---------------------------------------------------------------------------
+
+
+def _switch_type(canvas, state, node_type):
+    panel = canvas.param_panel
+    config = canvas.scene.config
+    panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
+    panel.node_type_combo.setCurrentIndex(panel.node_type_combo.findData(node_type, Qt.ItemDataRole.UserRole))
+
+
+@pytest.mark.parametrize("label", [None, "Change Realm"])
+def test_a_label_still_at_its_types_name_follows_a_type_change(qapp, label):
+    canvas = _canvas(qapp, _config())
+    state = canvas.scene.config.states[0]
+    state.label = label
+
+    _switch_type(canvas, state, "click_path")
+
+    assert state.label == "Click Path"
+    assert canvas.param_panel.node_label_edit.text() == "Click Path"
+    assert canvas.scene.node_items["a"].label == "Click Path"
+
+
+def test_a_label_the_author_typed_survives_a_type_change(qapp):
+    canvas = _canvas(qapp, _config())
+    state = canvas.scene.config.states[0]
+    state.label = "Hop to the Commons"
+
+    _switch_type(canvas, state, "click_path")
+
+    assert state.label == "Hop to the Commons"
+
+
+def test_the_title_placeholder_is_the_node_types_name(qapp):
+    """#156: an emptied title still says what goes in it, and follows a type change."""
+    canvas = _canvas(qapp, _config())
+    state = canvas.scene.config.states[0]
+    panel = canvas.param_panel
+    config = canvas.scene.config
+    panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
+
+    assert panel.node_label_edit.placeholderText() == "Change Realm"
+    state.label = "Hop to the Commons"
+    _switch_type(canvas, state, "click_path")
+    assert panel.node_label_edit.placeholderText() == "Click Path"
+
+
+def test_an_emptied_label_takes_back_its_types_name_when_left(qapp):
+    """Left empty, the canvas would draw the node's id while the field showed the type's name."""
+    canvas = _canvas(qapp, _config())
+    state = canvas.scene.config.states[0]
+    state.label = "Hop to the Commons"
+    panel = canvas.param_panel
+    config = canvas.scene.config
+    panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
+
+    panel.node_label_edit.setText("")
+    panel.node_label_edit.editingFinished.emit()
+
+    assert state.label == "Change Realm"
+    assert panel.node_label_edit.text() == "Change Realm"
+    assert canvas.scene.node_items["a"].label == "Change Realm"
+
+
+def test_restoring_an_emptied_label_is_undone_with_the_edit(qapp):
+    canvas = _canvas(qapp, _config())
+    state = canvas.scene.config.states[0]
+    state.label = "Hop to the Commons"
+    panel = canvas.param_panel
+    config = canvas.scene.config
+    panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
+
+    panel.node_label_edit.setText("")
+    panel.node_label_edit.editingFinished.emit()
+    canvas.undo()
+
+    assert canvas.config.states[0].label == "Hop to the Commons"

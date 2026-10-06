@@ -121,6 +121,17 @@ NODE_SPECS: dict[str, NodeSpec] = {
 # Convenience alias — param schemas derived from NODE_SPECS so there is one source of truth
 NODE_PARAM_SCHEMAS: dict[str, list[ParamField]] = {k: v.params for k, v in NODE_SPECS.items()}
 
+
+def node_display_name(node_type: str) -> str:
+    """What the node browser calls a node type, and the label a new node of it starts with.
+
+    Examples:
+        enter_zone_via_list → "Enter Zone Via List"
+        handle_combat       → "Handle Combat"
+    """
+    return node_type.replace("_", " ").title()
+
+
 # Ordered category groupings used by the GUI dropdown.
 # Node types within each category are sorted alphabetically.
 NODE_CATEGORIES: list[tuple[str, list[str]]] = [

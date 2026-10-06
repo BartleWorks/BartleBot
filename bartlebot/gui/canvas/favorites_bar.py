@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
-from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.nodes.registry import NODE_SPECS, node_display_name
 from bartlebot.settings_manager import SettingsManager
 
 _SLOT_MIME = "application/x-bartlebot-favorites-slot"
@@ -31,10 +31,6 @@ _SLOT_GAP = 4
 def _slot_key_label(slot: int) -> str:
     """Return the display key character for a 0-based slot index."""
     return str(slot + 1) if slot < 9 else "0"
-
-
-def _humanize(node_type: str) -> str:
-    return node_type.replace("_", " ").title()
 
 
 class _SlotButton(ThemedMixin, QPushButton):
@@ -57,9 +53,9 @@ class _SlotButton(ThemedMixin, QPushButton):
         self._node_type = node_type
         key = self._key
         if node_type:
-            label = f"{key}  {_humanize(node_type)}"
+            label = f"{key}  {node_display_name(node_type)}"
             spec = NODE_SPECS.get(node_type)
-            tip = f"[{key}] {_humanize(node_type)}"
+            tip = f"[{key}] {node_display_name(node_type)}"
             if spec and spec.description:
                 tip += f"\n{spec.description}"
             tip += "\n\nDrag to rearrange"

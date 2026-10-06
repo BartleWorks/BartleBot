@@ -99,7 +99,7 @@ from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
-from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin, dev_mode
@@ -2405,7 +2405,7 @@ class BotCanvas(QWidget):
 
         new_id = self._scene.insert_state_at_output_port(anchor[0], anchor[1], node_type)
         if new_id is None:
-            name = node_type.replace("_", " ").title()
+            name = node_display_name(node_type)
             return None, f"{name} could not be added after the selected node. Select a different node."
         if node_type == "enter_zone":
             next(s for s in self._scene.config.states if s.id == new_id).params["stagger"] = True
@@ -3389,7 +3389,7 @@ class BotCanvas(QWidget):
             pid, n = f"node_{state_id}", 2
             while pid in taken:
                 pid, n = f"node_{state_id}_{n}", n + 1
-            label = state.label or state.node_type.replace("_", " ").title()
+            label = state.label or node_display_name(state.node_type)
             meta.panels.append(SubgraphPanel(id=pid, kind="node", label=label, member=state_id))
         else:
             self._begin_definition_edit("Demote")

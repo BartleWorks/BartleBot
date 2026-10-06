@@ -66,7 +66,7 @@ from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
-from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS, node_display_name
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
 from bartlebot.subgraphs import (
     ComposeReport,
@@ -1790,12 +1790,13 @@ class EditScene(QGraphicsScene):
         state = StateModel(
             id=state_id,
             node_type=node_type,
+            label=node_display_name(node_type),
             position=self.stored_position(pos),
             params=default_params,
         )
         self._config.states.append(state)
         returns = _node_returns(node_type)
-        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True, node_type=node_type)
+        node = NodeItem(state_id, state.label, interactive=True, returns=returns, is_terminal=True, node_type=node_type)
         node.set_snap_enabled(self._snap_enabled)
         node.setPos(pos)
         self.addItem(node)
@@ -3310,17 +3311,19 @@ class EditScene(QGraphicsScene):
         """
         new_id = self.mint_state_id(st.id for st in self._config.states)
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
+        label = node_display_name(node_type)
         self._config.states.append(
             StateModel(
                 id=new_id,
                 node_type=node_type,
+                label=label,
                 position=self.stored_position(pos),
                 params=default_params,
             )
         )
         node = NodeItem(
             new_id,
-            None,
+            label,
             interactive=True,
             returns=_node_returns(node_type),
             is_terminal=True,

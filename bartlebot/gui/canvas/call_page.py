@@ -177,6 +177,7 @@ class CallNodePage(QWidget):
         layout.addStretch(1)
 
         self._label_edit.textChanged.connect(self._on_label_changed)
+        self._label_edit.editingFinished.connect(self._on_label_editing_finished)
         self._initial_combo.currentIndexChanged.connect(lambda _i: self._on_role_chosen("initial"))
         self._recovery_combo.currentIndexChanged.connect(lambda _i: self._on_role_chosen("recovery_state"))
         self._open_btn.clicked.connect(lambda: self._region and self.open_definition_requested.emit(self._region.id))
@@ -341,6 +342,7 @@ class CallNodePage(QWidget):
             self._status_lbl.setText("\n".join(reasons))
             self._status_lbl.setVisible(bool(reasons))
             self._label_edit.setText(region.label)
+            self._label_edit.setPlaceholderText(name)
 
             while self._cards_layout.count():
                 item = self._cards_layout.takeAt(0)
@@ -666,6 +668,15 @@ class CallNodePage(QWidget):
         self.edit_starting.emit("Rename subgraph")
         self._region.label = text.strip()
         self.changed.emit()
+
+    def _on_label_editing_finished(self) -> None:
+        """An emptied label goes back to the definition's name, the placeholder it showed.
+
+        Empty text is never written, so without this the region would keep whatever
+        the label was one keystroke before it emptied.
+        """
+        if not self._suppress and self._region is not None and not self._label_edit.text().strip():
+            self._label_edit.setText(self._label_edit.placeholderText())
 
     def _on_role_chosen(self, field: str) -> None:
         if self._suppress:

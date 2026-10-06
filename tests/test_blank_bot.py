@@ -95,3 +95,12 @@ def test_deleting_the_last_node_leaves_a_blank_bot_that_still_loads(canvas, tmp_
     path = tmp_path / "emptied.json"
     canvas.config.save(path)
     assert BotConfig.load(path).states == []
+
+
+def test_a_new_node_is_named_what_the_node_browser_calls_its_type(canvas):
+    """#156: a new node used to be unlabeled, so the canvas showed its ``state_N`` id."""
+    new_id = canvas.scene.create_state_at("teleport_to_world_hub", QPointF(0, 0))
+
+    state = next(s for s in canvas.config.states if s.id == new_id)
+    assert state.label == "Teleport To World Hub"
+    assert canvas.scene.node_items[new_id].label == "Teleport To World Hub"

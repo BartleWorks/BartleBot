@@ -151,3 +151,14 @@ def test_showing_the_page_never_shows_a_parentless_widget(canvas, parentless_sho
     _page(canvas)
 
     assert parentless_shows == []
+
+
+def test_an_emptied_title_shows_the_definitions_name_and_takes_it_back_when_left(canvas):
+    page = _page(canvas)
+    page.label_edit.setText("Regroup")
+    page.label_edit.setText("")
+
+    assert page.label_edit.placeholderText() == "Sync players"
+    page.label_edit.editingFinished.emit()
+    assert page.label_edit.text() == "Sync players"
+    assert next(r for r in canvas.config.regions if r.id == REGION).label == "Sync players"

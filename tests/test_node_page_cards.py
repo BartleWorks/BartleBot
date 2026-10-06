@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import QScrollArea
 from bartlebot import param_cards
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.theme import THEME
 from bartlebot.option_groups import summary_text
 from bartlebot.ui_state import UiState
 
@@ -140,3 +141,13 @@ def test_showing_a_node_never_shows_a_parentless_widget(qapp, parentless_shows):
     panel.show_state(fight, [fight], [], "fight", None)
 
     assert parentless_shows == []
+
+
+def test_an_unlabeled_nodes_title_field_is_outlined_without_hover_or_focus(qapp):
+    """#156: the outline was hover- and focus-only, so an empty title drew nothing to click."""
+    panel = _panel(qapp, StateModel(id="enter", node_type="enter_dungeon"))
+    edit = panel.node_label_edit
+    assert edit.text() == ""
+    base_rule = edit.styleSheet().split("}")[0]
+    assert f"border: 1px solid {THEME.border}" in base_rule
+    assert "transparent" not in edit.styleSheet()

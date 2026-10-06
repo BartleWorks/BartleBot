@@ -22,12 +22,14 @@ from bartlebot.param_cards import to_fill_text
 
 
 class TitleEdit(ThemedMixin, QLineEdit):
-    """A node's label as the page's title: heading-sized, and a field only when reached for.
+    """A node's label as the page's title: heading-sized, and outlined like every other field.
 
     The name used to appear three times on the subgraph node's page -- the title, the
     line under it and a Label row -- and twice on a node's. It is once now, and it is
-    the field: the outline shows on hover and focus, so it reads as a title until it is
-    edited.
+    the field. The outline used to show only on hover and focus, so an unlabeled node's
+    page had nothing to click (#156); it is always drawn now, as the page is an inspector
+    and every other field on it is outlined too. The page sets the placeholder: the name
+    the node started with, so an emptied field still says what goes in it.
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -41,9 +43,11 @@ class TitleEdit(ThemedMixin, QLineEdit):
         self.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
         set_style_sheet(
             self,
-            f"QLineEdit {{ background: transparent; color: {THEME.text}; border: 1px solid transparent;"
-            f" border-radius: 3px; padding: 1px 3px; }}"
-            f"QLineEdit:hover, QLineEdit:focus {{ border-color: {THEME.border}; background: {THEME.bg}; }}",
+            # A stylesheet ``color`` overrides the palette's placeholder color with the
+            # text color at half alpha, so the muted one is restated here.
+            f"QLineEdit {{ background: {THEME.bg}; color: {THEME.text}; placeholder-text-color: {THEME.text_muted};"
+            f" border: 1px solid {THEME.border}; border-radius: 3px; padding: 1px 3px; }}"
+            f"QLineEdit:focus {{ border-color: {THEME.accent}; }}",
         )
 
 

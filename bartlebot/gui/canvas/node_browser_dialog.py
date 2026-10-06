@@ -45,7 +45,7 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
-from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
+from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin
@@ -66,16 +66,6 @@ def is_subgraph_key(key: str) -> bool:
 # ---------------------------------------------------------------------------
 
 _CONDITION_TYPES = {"check_level_scaling", "check_zone"}
-
-
-def _humanize(node_type: str) -> str:
-    """Convert snake_case node key to a readable label.
-
-    Examples:
-        enter_zone_via_list → "Enter Zone Via List"
-        handle_combat       → "Handle Combat"
-    """
-    return node_type.replace("_", " ").title()
 
 
 def _is_condition(node_type: str) -> bool:
@@ -298,7 +288,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         for st in defn.states:
             if st.id in ports:
                 continue
-            row = QLabel(f"{st.label or st.id} \u2014 {_humanize(st.node_type)}")
+            row = QLabel(f"{st.label or st.id} \u2014 {node_display_name(st.node_type)}")
             row.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
             layout.addWidget(row)
         layout.addStretch()
@@ -319,7 +309,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
         # ── Title row ──────────────────────────────────────────────
         title_row = QHBoxLayout()
-        title_label = QLabel(_humanize(node_type))
+        title_label = QLabel(node_display_name(node_type))
         title_font = THEME.ui_font(THEME.font_body_px + 9, bold=True)
         title_label.setFont(title_font)
         title_label.setStyleSheet(f"color: {THEME.text};")
@@ -479,7 +469,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
             see_row = QHBoxLayout()
             for related_type in spec.see_also:
-                btn = LinkButton(_humanize(related_type))
+                btn = LinkButton(node_display_name(related_type))
                 if on_see_also:
                     btn.clicked.connect(lambda _checked, t=related_type: on_see_also(t))
                 see_row.addWidget(btn)
@@ -577,7 +567,7 @@ class _NodeListItem(QListWidgetItem):
     def __init__(self, node_type: str) -> None:
         super().__init__()
         self._node_type = node_type
-        self.setText(_humanize(node_type))
+        self.setText(node_display_name(node_type))
         self.setData(Qt.ItemDataRole.UserRole, node_type)
         self.setData(Qt.ItemDataRole.UserRole + 1, node_type)  # for key display
         self.setToolTip(node_type)
@@ -898,7 +888,7 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         """Return True if any searchable field in the spec contains query."""
         if query in node_type:
             return True
-        if query in _humanize(node_type).lower():
+        if query in node_display_name(node_type).lower():
             return True
         if query in spec.description.lower():
             return True
