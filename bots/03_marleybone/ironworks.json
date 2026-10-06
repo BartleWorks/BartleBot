@@ -8,670 +8,888 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Affable Cloak"
+      "name": "Affable Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Animated Canine Cloak"
+      "name": "Animated Canine Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Artificial Headwrap"
+      "name": "Artificial Headwrap",
+      "category": "Hats"
     },
     {
-      "name": "Athame of Chivalry"
+      "name": "Athame of Chivalry",
+      "category": "Athames"
     },
     {
-      "name": "Athame of the Sleuth"
+      "name": "Athame of the Sleuth",
+      "category": "Athames"
     },
     {
-      "name": "Ball of Yellow Yarn"
+      "name": "Ball of Yellow Yarn",
+      "category": "Housing Items"
     },
     {
-      "name": "Bandit's Footwraps"
+      "name": "Bandit's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Banshee Onyx"
+      "name": "Banshee Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Barkford"
+      "name": "Barkford",
+      "category": "Housing Items"
     },
     {
-      "name": "Biting Garment"
+      "name": "Biting Garment",
+      "category": "Robes"
     },
     {
-      "name": "Black Mantle"
+      "name": "Black Mantle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of Fabrication"
+      "name": "Boots of Fabrication",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Heartache"
+      "name": "Boots of Heartache",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Sparking Energy"
+      "name": "Boots of Sparking Energy",
+      "category": "Boots"
     },
     {
-      "name": "Brady's Boots of the Cultured"
+      "name": "Brady's Boots of the Cultured",
+      "category": "Boots"
     },
     {
-      "name": "Brady's Conventional Ring"
+      "name": "Brady's Conventional Ring",
+      "category": "Rings"
     },
     {
-      "name": "Brady's Deck of the Kraken"
+      "name": "Brady's Deck of the Kraken",
+      "category": "Decks"
     },
     {
-      "name": "Brady's Distressed Deck"
+      "name": "Brady's Distressed Deck",
+      "category": "Decks"
     },
     {
-      "name": "Brady's Formal Slippers"
+      "name": "Brady's Formal Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Brady's Frigid Garment"
+      "name": "Brady's Frigid Garment",
+      "category": "Robes"
     },
     {
-      "name": "Brady's Hat of Extinction"
+      "name": "Brady's Hat of Extinction",
+      "category": "Hats"
     },
     {
-      "name": "Brady's Hat of History"
+      "name": "Brady's Hat of History",
+      "category": "Hats"
     },
     {
-      "name": "Brady's Hat of Reverence"
+      "name": "Brady's Hat of Reverence",
+      "category": "Hats"
     },
     {
-      "name": "Brady's Provincial Kris"
+      "name": "Brady's Provincial Kris",
+      "category": "Athames"
     },
     {
-      "name": "Brady's Provincial Ring"
+      "name": "Brady's Provincial Ring",
+      "category": "Rings"
     },
     {
-      "name": "Brady's Robe of the Cyclops"
+      "name": "Brady's Robe of the Cyclops",
+      "category": "Robes"
     },
     {
-      "name": "Brady's Solar Cowl"
+      "name": "Brady's Solar Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Brady's Staff of Intensity"
+      "name": "Brady's Staff of Intensity",
+      "category": "Wands"
     },
     {
-      "name": "Brady's Stylish Sandals"
+      "name": "Brady's Stylish Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Cap of Expertise"
+      "name": "Cap of Expertise",
+      "category": "Hats"
     },
     {
-      "name": "Cap of Poise"
+      "name": "Cap of Poise",
+      "category": "Hats"
     },
     {
-      "name": "Cap of Symmetry"
+      "name": "Cap of Symmetry",
+      "category": "Hats"
     },
     {
-      "name": "Caramel Popcorn"
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
     },
     {
-      "name": "Cat Burglar's Shoes"
+      "name": "Cat Burglar's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Charming Garment"
+      "name": "Charming Garment",
+      "category": "Robes"
     },
     {
-      "name": "Chipped Damage Sapphire +7"
+      "name": "Chipped Damage Sapphire +7",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Opal +7"
+      "name": "Chipped Defense Opal +7",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Opal +8"
+      "name": "Chipped Defense Opal +8",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Health Opal +21"
+      "name": "Chipped Health Opal +21",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Health Opal +23"
+      "name": "Chipped Health Opal +23",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +10"
+      "name": "Chipped Mana Opal +10",
+      "category": "Jewels"
     },
     {
-      "name": "Cloak of Civility"
+      "name": "Cloak of Civility",
+      "category": "Robes"
     },
     {
-      "name": "Comedian's Robe"
+      "name": "Comedian's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of Diplomacy"
+      "name": "Cowl of Diplomacy",
+      "category": "Hats"
     },
     {
-      "name": "Cracked Damage Opal +3"
+      "name": "Cracked Damage Opal +3",
+      "category": "Jewels"
     },
     {
-      "name": "Crumpled Newspaper"
+      "name": "Crumpled Newspaper",
+      "category": "Housing Items"
     },
     {
-      "name": "Cyclops Peridot"
+      "name": "Cyclops Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Dandy Hat"
+      "name": "Dandy Hat",
+      "category": "Hats"
     },
     {
-      "name": "Dawdle Opal"
+      "name": "Dawdle Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Debonair Garments"
+      "name": "Debonair Garments",
+      "category": "Robes"
     },
     {
-      "name": "Dirk of Nobles"
+      "name": "Dirk of Nobles",
+      "category": "Athames"
     },
     {
-      "name": "Distinct Slippers"
+      "name": "Distinct Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Distinguished Robe"
+      "name": "Distinguished Robe",
+      "category": "Robes"
     },
     {
-      "name": "Distressing Garment"
+      "name": "Distressing Garment",
+      "category": "Robes"
     },
     {
-      "name": "Dryad"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Effective Opal"
+      "name": "Effective Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Empty Tin Cans"
+      "name": "Empty Tin Cans",
+      "category": "Housing Items"
     },
     {
-      "name": "Enticing Robe"
+      "name": "Enticing Robe",
+      "category": "Robes"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Spellements"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snowman (Tier 2b)"
+      "name": "Evil Snowman Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Evil Snowman Sapphire"
+      "name": "Finely Finished Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Finely Finished Cloak"
+      "name": "Finely Finished Mask",
+      "category": "Hats"
     },
     {
-      "name": "Finely Finished Mask"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fishbones",
+      "category": "Housing Items"
     },
     {
-      "name": "Fishbones"
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Damage Opal +5"
+      "name": "Flawed Health Opal +29",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +29"
+      "name": "Flawed Health Opal +30",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +30"
+      "name": "Flawed Resilient Opal +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Resilient Opal +2%"
+      "name": "Footwraps of Dreamland",
+      "category": "Boots"
     },
     {
-      "name": "Footwraps of Dreamland"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Giant"
+      "name": "Grandiose Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Grandiose Headwraps"
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
     },
     {
-      "name": "Gummy Bloodbat"
+      "name": "Headwrap of the Affected",
+      "category": "Hats"
     },
     {
-      "name": "Headwrap of the Affected"
+      "name": "Headwraps of Preference",
+      "category": "Hats"
     },
     {
-      "name": "Headwraps of Preference"
+      "name": "Healer Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Healer Opal"
+      "name": "Helm of Intolerance",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Intolerance"
+      "name": "High Statue Base",
+      "category": "Housing Items"
     },
     {
-      "name": "High Statue Base"
+      "name": "Ice-Proof Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Proof Sapphire"
+      "name": "Immolate",
+      "category": "Spellements"
     },
     {
-      "name": "Immolate"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Iron"
+      "name": "Jolting Boots",
+      "category": "Boots"
     },
     {
-      "name": "Jolting Boots"
+      "name": "Kraken",
+      "category": "Spellements"
     },
     {
-      "name": "Kraken"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Lead"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Leather Straps"
+      "name": "Life-Shot Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Shot Jade"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lightning Bats (Tier 2b)"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Locust Swarm Citrine"
+      "name": "Marleybone Dance Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Marleybone Dance Theme"
+      "name": "Marleybone Theme 1",
+      "category": "Housing Items"
     },
     {
-      "name": "Marleybone Theme 1"
+      "name": "Marleybonian Street Sign",
+      "category": "Housing Items"
     },
     {
-      "name": "Marleybonian Street Sign"
+      "name": "Masterful Canine Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Masterful Canine Cloak"
+      "name": "Masterful Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Masterful Canine Cowl"
+      "name": "Medium Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Medium Fish"
+      "name": "Medium Purple Rug",
+      "category": "Housing Items"
     },
     {
-      "name": "Medium Purple Rug"
+      "name": "Metal Wall Lamp",
+      "category": "Housing Items"
     },
     {
-      "name": "Metal Wall Lamp"
+      "name": "Monstrous",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Monstrous"
+      "name": "Nailed Boards",
+      "category": "Housing Items"
     },
     {
-      "name": "Nailed Boards"
+      "name": "Nails O'Leary's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Nails O'Leary's Footwraps"
+      "name": "Nails O'Leary's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Nails O'Leary's Shoes"
+      "name": "Nails' Band of Stasis",
+      "category": "Rings"
     },
     {
-      "name": "Nails' Band of Stasis"
+      "name": "Nails' Debonair Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Nails' Debonair Slippers"
+      "name": "Nails' Hat of Parity",
+      "category": "Hats"
     },
     {
-      "name": "Nails' Hat of Parity"
+      "name": "Nails' Helm of the Clever",
+      "category": "Hats"
     },
     {
-      "name": "Nails' Helm of the Clever"
+      "name": "Nails' Medical Hat",
+      "category": "Hats"
     },
     {
-      "name": "Nails' Medical Hat"
+      "name": "Nails' Obligatory Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Nails' Obligatory Sandals"
+      "name": "Nails' Singed Headwrap",
+      "category": "Hats"
     },
     {
-      "name": "Nails' Singed Headwrap"
+      "name": "Nails' Singed Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Nails' Singed Tunic"
+      "name": "Nails' Smooth Spun Boots",
+      "category": "Boots"
     },
     {
-      "name": "Nails' Smooth Spun Boots"
+      "name": "Nails' Soothing Helm",
+      "category": "Hats"
     },
     {
-      "name": "Nails' Soothing Helm"
+      "name": "Nails' Sophisticated Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Nails' Sophisticated Shoes"
+      "name": "Nails' Tunic of Equation",
+      "category": "Robes"
     },
     {
-      "name": "Nails' Tunic of Equation"
+      "name": "Nails' Tunic of Reverence",
+      "category": "Robes"
     },
     {
-      "name": "Nails' Tunic of Reverence"
+      "name": "Nails' Vestment of Invention",
+      "category": "Robes"
     },
     {
-      "name": "Nails' Vestment of Invention"
+      "name": "Nails' Vestment of the Mender",
+      "category": "Robes"
     },
     {
-      "name": "Nails' Vestment of the Mender"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Nickel"
+      "name": "O'Leary Jinxed Staff",
+      "category": "Wands"
     },
     {
-      "name": "O'Leary Jinxed Staff"
+      "name": "O'Leary's Briney Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "O'Leary's Briney Amulet"
+      "name": "O'Leary's Deck of Unicorns",
+      "category": "Decks"
     },
     {
-      "name": "O'Leary's Deck of Unicorns"
+      "name": "O'Leary's Deck of Winter",
+      "category": "Decks"
     },
     {
-      "name": "O'Leary's Deck of Winter"
+      "name": "O'Leary's Forest Band",
+      "category": "Rings"
     },
     {
-      "name": "O'Leary's Forest Band"
+      "name": "O'Leary's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "O'Leary's Vestment"
+      "name": "Old Smokey's Band",
+      "category": "Rings"
     },
     {
-      "name": "Old Smokey's Band"
+      "name": "Old Smokey's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Old Smokey's Boots"
+      "name": "Old Smokey's Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Old Smokey's Dagger"
+      "name": "Old Smokey's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Old Smokey's Footwraps"
+      "name": "Old Smokey's Formal Cap",
+      "category": "Hats"
     },
     {
-      "name": "Old Smokey's Formal Cap"
+      "name": "Old Smokey's Froggy Loop",
+      "category": "Amulets"
     },
     {
-      "name": "Old Smokey's Froggy Loop"
+      "name": "Old Smokey's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Old Smokey's Hat"
+      "name": "Old Smokey's Noble Hat",
+      "category": "Hats"
     },
     {
-      "name": "Old Smokey's Noble Hat"
+      "name": "Old Smokey's Proficient Hat",
+      "category": "Hats"
     },
     {
-      "name": "Old Smokey's Proficient Hat"
+      "name": "Old Smokey's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Old Smokey's Vestment"
+      "name": "Open Furnace",
+      "category": "Housing Items"
     },
     {
-      "name": "Open Furnace"
+      "name": "Pops O'Leary Shifty Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Pops O'Leary Shifty Dagger"
+      "name": "Pops O'Leary Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Pops O'Leary Slippers"
+      "name": "Pops O'Leary's Savvy Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Pops O'Leary's Savvy Shoes"
+      "name": "Pops O'Leary's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Pops O'Leary's Shoes"
+      "name": "Pops O'Leary's Sun Visor",
+      "category": "Hats"
     },
     {
-      "name": "Pops O'Leary's Sun Visor"
+      "name": "Pops' Band of Stability",
+      "category": "Rings"
     },
     {
-      "name": "Pops' Band of Stability"
+      "name": "Pops' Deck of Stasis",
+      "category": "Decks"
     },
     {
-      "name": "Pops' Deck of Stasis"
+      "name": "Pops' Headwrap of Equity",
+      "category": "Hats"
     },
     {
-      "name": "Pops' Headwrap of Equity"
+      "name": "Pops' Icy Hat of the Feline",
+      "category": "Hats"
     },
     {
-      "name": "Pops' Icy Hat of the Feline"
+      "name": "Pops' Puzzling Cap",
+      "category": "Hats"
     },
     {
-      "name": "Pops' Puzzling Cap"
+      "name": "Pops' Sandals of Expertise",
+      "category": "Boots"
     },
     {
-      "name": "Pops' Sandals of Expertise"
+      "name": "Pops' Skillful Boots",
+      "category": "Boots"
     },
     {
-      "name": "Pops' Skillful Boots"
+      "name": "Pops' Theraputic Hat",
+      "category": "Hats"
     },
     {
-      "name": "Pops' Theraputic Hat"
+      "name": "Pops' Tunic of Severity",
+      "category": "Robes"
     },
     {
-      "name": "Pops' Tunic of Severity"
+      "name": "Pops' Tunic of Subtlety",
+      "category": "Robes"
     },
     {
-      "name": "Pops' Tunic of Subtlety"
+      "name": "Pops' Uniform of Horrors",
+      "category": "Robes"
     },
     {
-      "name": "Pops' Uniform of Horrors"
+      "name": "Pops' Vest of Invigoration",
+      "category": "Robes"
     },
     {
-      "name": "Pops' Vest of Invigoration"
+      "name": "Pops's Band of the Mender",
+      "category": "Rings"
     },
     {
-      "name": "Pops's Band of the Mender"
+      "name": "Power Enfused Blade",
+      "category": "Athames"
     },
     {
-      "name": "Power Enfused Blade"
+      "name": "Power Play",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Power Play"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Pyrite"
+      "name": "Rainslicker",
+      "category": "Robes"
     },
     {
-      "name": "Rainslicker"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Remarkable Robe",
+      "category": "Robes"
     },
     {
-      "name": "Remarkable Robe"
+      "name": "Ring of Rejuvenation",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Rejuvenation"
+      "name": "Robe of Paramount",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Paramount"
+      "name": "Robe of Politeness",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Politeness"
+      "name": "Robe of the Aristocrat",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Aristocrat"
+      "name": "Sandals of Dedication",
+      "category": "Boots"
     },
     {
-      "name": "Sandals of Dedication"
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sandstorm"
+      "name": "Satyr",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Satyr"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Scarab"
+      "name": "Scorpion (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorpion (Tier 2b)"
+      "name": "Scrap Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Scrap Iron"
+      "name": "Shoes of Bottled Anger",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Bottled Anger"
+      "name": "Shoes of Certainty",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Certainty"
+      "name": "Shoes of Humanity",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Humanity"
+      "name": "Shoes of the Breakneck",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of the Breakneck"
+      "name": "Short Roof Vent",
+      "category": "Housing Items"
     },
     {
-      "name": "Short Roof Vent"
+      "name": "Shroud of Predominance",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of Predominance"
+      "name": "Slippers of Tranquility",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of Tranquility"
+      "name": "Smokey's Clever Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Smokey's Clever Dagger"
+      "name": "Smokey's Cultured Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Smokey's Cultured Cloak"
+      "name": "Smokey's Emotional Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Smokey's Emotional Shoes"
+      "name": "Smokey's Genteel Vest",
+      "category": "Robes"
     },
     {
-      "name": "Smokey's Genteel Vest"
+      "name": "Smokey's Intense Band",
+      "category": "Rings"
     },
     {
-      "name": "Smokey's Intense Band"
+      "name": "Smokey's Pompous Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Smokey's Pompous Cloak"
+      "name": "Smokey's Pompous Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Smokey's Pompous Dagger"
+      "name": "Smokey's Robe of Integrity",
+      "category": "Robes"
     },
     {
-      "name": "Smokey's Robe of Integrity"
+      "name": "Smokey's Sandals of Clarity",
+      "category": "Boots"
     },
     {
-      "name": "Smokey's Sandals of Clarity"
+      "name": "Smokey's Staff of the Sun",
+      "category": "Wands"
     },
     {
-      "name": "Smokey's Staff of the Sun"
+      "name": "Smooth Spun Hat",
+      "category": "Hats"
     },
     {
-      "name": "Smooth Spun Hat"
+      "name": "Sneak's Frightful Hat",
+      "category": "Hats"
     },
     {
-      "name": "Sneak's Frightful Hat"
+      "name": "Sneak's Frosty Headwrap",
+      "category": "Hats"
     },
     {
-      "name": "Sneak's Frosty Headwrap"
+      "name": "Sneak's Robe of Parity",
+      "category": "Robes"
     },
     {
-      "name": "Sneak's Robe of Parity"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sniper"
+      "name": "Snow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Snow Serpent (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Serpent (Tier 2b)"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spirit Armor",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Spirit Armor"
+      "name": "Sprite Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Sprite Jade"
+      "name": "Square Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Square Watermelon"
+      "name": "Stack of 3 Books",
+      "category": "Housing Items"
     },
     {
-      "name": "Stack of 3 Books"
+      "name": "Staff of the Ice Wyvern",
+      "category": "Wands"
     },
     {
-      "name": "Staff of the Ice Wyvern"
+      "name": "Stinky Cheese",
+      "category": "Snacks"
     },
     {
-      "name": "Stinky Cheese"
+      "name": "Storm Shark",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Shark"
+      "name": "Storm Shark (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Shark (Tier 2b)"
+      "name": "Storm Shark Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm Shark Amethyst"
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Trap"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Sunbird"
+      "name": "Sunbird (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sunbird (Tier 2b)"
+      "name": "Sunbird Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Sunbird Ruby"
+      "name": "Tall Crate",
+      "category": "Housing Items"
     },
     {
-      "name": "Tall Crate"
+      "name": "The Sneak's Noble Shoes",
+      "category": "Boots"
     },
     {
-      "name": "The Sneak's Noble Shoes"
+      "name": "The Sneak's Phobic Robe",
+      "category": "Robes"
     },
     {
-      "name": "The Sneak's Phobic Robe"
+      "name": "The Sneak's Puzzling Robes",
+      "category": "Robes"
     },
     {
-      "name": "The Sneak's Puzzling Robes"
+      "name": "Thunder Snake",
+      "category": "Spellements"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tin"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tough"
+      "name": "Urbane Robe",
+      "category": "Robes"
     },
     {
-      "name": "Urbane Robe"
+      "name": "Vestment of Fright",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Fright"
-    },
-    {
-      "name": "Wheat Cracker"
+      "name": "Wheat Cracker",
+      "category": "Snacks"
     }
   ],
   "authors": "BartleBot",
@@ -703,6 +921,26 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to defeat Pops O'Leary. CAN be skipped to."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Nails' Obligatory Sandals",
+        "Nails' Medical Hat",
+        "Nails' Debonair Slippers",
+        "Old Smokey's Formal Cap",
+        "Old Smokey's Hat",
+        "Old Smokey's Footwraps",
+        "Smokey's Cultured Cloak",
+        "Smokey's Genteel Vest",
+        "Old Smokey's Boots",
+        "Brady's Solar Cowl",
+        "The Sneak's Puzzling Robes",
+        "Brady's Hat of Extinction",
+        "Pops O'Leary's Sun Visor",
+        "Pops O'Leary's Shoes"
+      ]
     }
   ],
   "states": [
@@ -901,7 +1139,7 @@
       },
       "params": {
         "enemy": "Cat-Thug-Green-MBBoss-L42",
-        "wiki_page": "",
+        "wiki_page": "Creature:Pops O'Leary",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -970,7 +1208,7 @@
       },
       "params": {
         "enemy": "Golem-Steel-MBBoss-L43",
-        "wiki_page": "",
+        "wiki_page": "Creature:Old Smokey",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -1133,7 +1371,7 @@
       },
       "params": {
         "enemy": "Cat-Thug-Blue-MBBoss-L38",
-        "wiki_page": "",
+        "wiki_page": "Creature:Nails O'Leary",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -1359,7 +1597,7 @@
       },
       "params": {
         "enemy": "Cat-Burglar-Yellow-MBBoss-L39",
-        "wiki_page": "",
+        "wiki_page": "Creature:Brady the Sneak",
         "use_default_strategy": false,
         "max_duration": 0.0
       }

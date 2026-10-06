@@ -8,742 +8,812 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Air Dales Sign"
+      "name": "Air Dales Sign",
+      "category": "Housing Items"
     },
     {
-      "name": "Alluring Boots"
+      "name": "Alluring Robes",
+      "category": "Robes"
     },
     {
-      "name": "Alluring Robes"
+      "name": "Altar with Candles",
+      "category": "Housing Items"
     },
     {
-      "name": "Altar with Candles"
+      "name": "Artificial Robe",
+      "category": "Robes"
     },
     {
-      "name": "Amulet of Chilled Creatures"
+      "name": "Attentive Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Angled Gravemarker"
+      "name": "Azoth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Animated Canine Cowl"
+      "name": "Banshee Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Aristocrat's Dagger"
+      "name": "Boots of the Elements",
+      "category": "Boots"
     },
     {
-      "name": "Artificial Robe"
+      "name": "Boots of the Nucleus",
+      "category": "Boots"
     },
     {
-      "name": "Attentive Opal"
+      "name": "Brisk Cap",
+      "category": "Hats"
     },
     {
-      "name": "Azoth"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Banshee Onyx"
+      "name": "Brown Rat Magician",
+      "category": "Pets"
     },
     {
-      "name": "Blue Knotted Rug"
+      "name": "Cap of the Unicorn",
+      "category": "Hats"
     },
     {
-      "name": "Boots of the Elements"
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
     },
     {
-      "name": "Boots of the Nucleus"
+      "name": "Cat Burglar's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Brisk Cap"
+      "name": "Charged Knife",
+      "category": "Athames"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Chipped Accurate Jade +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Brown Rat Magician"
+      "name": "Chipped Damage Amethyst +8",
+      "category": "Jewels"
     },
     {
-      "name": "Cap of the Inventor"
+      "name": "Chipped Damage Sapphire +8",
+      "category": "Jewels"
     },
     {
-      "name": "Cap of the Unicorn"
+      "name": "Clanker's Boots of Lucidity",
+      "category": "Boots"
     },
     {
-      "name": "Caramel Popcorn"
+      "name": "Clanker's Choker of Bones",
+      "category": "Amulets"
     },
     {
-      "name": "Cat Burglar's Cap"
+      "name": "Clanker's Convulsive Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Charged Knife"
+      "name": "Clanker's Deck of Mending",
+      "category": "Decks"
     },
     {
-      "name": "Chipped Accurate Jade +3%"
+      "name": "Clanker's Dirk of Endurance",
+      "category": "Athames"
     },
     {
-      "name": "Chipped Damage Amethyst +8"
+      "name": "Clanker's Enigmatic Staff",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Damage Sapphire +8"
+      "name": "Clanker's Exquisite Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Clanker's Boots of Lucidity"
+      "name": "Clanker's High Quality Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Clanker's Choker of Bones"
+      "name": "Clanker's Irritating Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Clanker's Convulsive Shoes"
+      "name": "Clanker's Lifeline Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Clanker's Deck of Mending"
+      "name": "Clanker's Magnificent Hat",
+      "category": "Hats"
     },
     {
-      "name": "Clanker's Dirk of Endurance"
+      "name": "Clanker's Noteworthy Robe",
+      "category": "Robes"
     },
     {
-      "name": "Clanker's Enigmatic Staff"
+      "name": "Clanker's Premium Cap",
+      "category": "Hats"
     },
     {
-      "name": "Clanker's Exquisite Cloak"
+      "name": "Clanker's Provoked Boots",
+      "category": "Boots"
     },
     {
-      "name": "Clanker's High Quality Cowl"
+      "name": "Clanker's Refined Cap",
+      "category": "Hats"
     },
     {
-      "name": "Clanker's Irritating Shoes"
+      "name": "Clanker's Ring of Symmetry",
+      "category": "Rings"
     },
     {
-      "name": "Clanker's Lifeline Dagger"
+      "name": "Clanker's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Clanker's Magnificent Hat"
+      "name": "Clanker's Soothing Ring",
+      "category": "Rings"
     },
     {
-      "name": "Clanker's Noteworthy Robe"
+      "name": "Clanker's Trapdoor",
+      "category": "Housing Items"
     },
     {
-      "name": "Clanker's Premium Cap"
+      "name": "Clanker's Vest of Certainty",
+      "category": "Robes"
     },
     {
-      "name": "Clanker's Provoked Boots"
+      "name": "Cloak",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Clanker's Refined Cap"
+      "name": "Cloak of Fascination",
+      "category": "Robes"
     },
     {
-      "name": "Clanker's Ring of Symmetry"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Clanker's Robe"
+      "name": "Cyclops Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Clanker's Soothing Ring"
+      "name": "Dawdle Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Clanker's Trapdoor"
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Clanker's Vest of Certainty"
+      "name": "Dexterous Vest",
+      "category": "Robes"
     },
     {
-      "name": "Cloak"
+      "name": "Distinguished Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Cloak of Clarity"
+      "name": "Doctor's Robe of Aurora",
+      "category": "Robes"
     },
     {
-      "name": "Cloak of Fascination"
+      "name": "Doctor's Robe of the Kraken",
+      "category": "Robes"
     },
     {
-      "name": "Closed Furnace"
+      "name": "Doctor's Surgical Knife",
+      "category": "Athames"
     },
     {
-      "name": "Copper"
+      "name": "Doctor's Urbane Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Crossbone Gravestone"
+      "name": "Doctor's Visor of Severity",
+      "category": "Hats"
     },
     {
-      "name": "Cyclops Peridot"
+      "name": "Dr. Von's Affable Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Dawdle Opal"
+      "name": "Dr. Von's Shrouded Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Death-Shot Onyx"
+      "name": "Drain Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Deck of Intensity"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deck of the Aurora"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Delicate Slippers"
+      "name": "Electrified Kris",
+      "category": "Athames"
     },
     {
-      "name": "Dexterous Vest"
+      "name": "Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Distinguished Slippers"
+      "name": "Evil Snowman",
+      "category": "Spellements"
     },
     {
-      "name": "Doctor's Robe of Aurora"
+      "name": "Evil Snowman Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Doctor's Robe of the Kraken"
+      "name": "Exacting Boots",
+      "category": "Boots"
     },
     {
-      "name": "Doctor's Surgical Knife"
+      "name": "Exclusive Boots",
+      "category": "Boots"
     },
     {
-      "name": "Doctor's Urbane Shoes"
+      "name": "Fancy Garments",
+      "category": "Robes"
     },
     {
-      "name": "Doctor's Visor of Severity"
+      "name": "Feline's Invigorating Robe",
+      "category": "Robes"
     },
     {
-      "name": "Dr. Von's Affable Shoes"
+      "name": "Feline's Somber Robe",
+      "category": "Robes"
     },
     {
-      "name": "Dr. Von's Shrouded Tunic"
+      "name": "Fire Cat",
+      "category": "Spellements"
     },
     {
-      "name": "Drain Opal"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Dryad"
+      "name": "Fire Elf (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Flawed Damage Amethyst +10",
+      "category": "Jewels"
     },
     {
-      "name": "Electrified Kris"
+      "name": "Flawed Damage Jade +10",
+      "category": "Jewels"
     },
     {
-      "name": "Energy Opal"
+      "name": "Flawed Damage Onyx +10",
+      "category": "Jewels"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Flawed Defense Opal +9",
+      "category": "Jewels"
     },
     {
-      "name": "Evil Snowman Sapphire"
+      "name": "Flawed Health Opal +26",
+      "category": "Jewels"
     },
     {
-      "name": "Exacting Boots"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Exclusive Boots"
+      "name": "Frost Beetle (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Exclusive Cap"
+      "name": "Galvanic Glaive",
+      "category": "Athames"
     },
     {
-      "name": "Exquisite Slippers"
+      "name": "Garment of the Supreme",
+      "category": "Robes"
     },
     {
-      "name": "Fancy Garments"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Fancy Slippers"
+      "name": "Glowing Canine Hat",
+      "category": "Hats"
     },
     {
-      "name": "Feline's Charged Hat"
+      "name": "Grandiose Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Feline's Fiery Robe"
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
     },
     {
-      "name": "Feline's Invigorating Robe"
+      "name": "Hat of Rising Stakes",
+      "category": "Hats"
     },
     {
-      "name": "Feline's Somber Robe"
+      "name": "High Quality Boots",
+      "category": "Boots"
     },
     {
-      "name": "Feline's Whimsical Robe"
+      "name": "High Quality Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Fire Cat"
+      "name": "Ice Wyvern",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Elf"
+      "name": "Immolate",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Elf (Tier 2b)"
+      "name": "Informant's Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Fire Trap"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Flawed Accurate Opal +2%"
+      "name": "Katzenstein's Athame",
+      "category": "Athames"
     },
     {
-      "name": "Flawed Damage Amethyst +10"
+      "name": "Katzenstein's Band",
+      "category": "Rings"
     },
     {
-      "name": "Flawed Damage Jade +10"
+      "name": "Katzenstein's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Flawed Damage Onyx +10"
+      "name": "Katzenstein's Facemask",
+      "category": "Hats"
     },
     {
-      "name": "Flawed Damage Opal +5"
+      "name": "Katzenstein's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Flawed Defense Opal +9"
+      "name": "Katzenstein's Necklace",
+      "category": "Amulets"
     },
     {
-      "name": "Flawed Health Opal +26"
+      "name": "Katzenstein's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Flawed Resilient Opal +2%"
+      "name": "Katzenstein's Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Flowering Canine Cloak"
+      "name": "Katzenstein's Tragic Helm",
+      "category": "Hats"
     },
     {
-      "name": "Flowering Canine Cowl"
+      "name": "Katzenstein's Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Large Maroon Rug",
+      "category": "Housing Items"
     },
     {
-      "name": "Frost Beetle (Tier 2b)"
+      "name": "Large Stone Fountain",
+      "category": "Housing Items"
     },
     {
-      "name": "Galvanic Glaive"
+      "name": "Lava Spider",
+      "category": "Pets"
     },
     {
-      "name": "Garment of the Supreme"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Life-Proof Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Genteel Cap"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Giant"
+      "name": "Locust Swarm Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Glowing Canine Cowl"
+      "name": "Magma Spider",
+      "category": "Pets"
     },
     {
-      "name": "Glowing Canine Hat"
+      "name": "Magnificent Boots",
+      "category": "Boots"
     },
     {
-      "name": "Grandiose Sandals"
+      "name": "Marleybone Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Gummy Bloodbat"
+      "name": "Marleybone Dance Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Hat of Rising Stakes"
+      "name": "Marleybone Pet Derby Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "High Quality Boots"
+      "name": "Marvelous Shroud",
+      "category": "Robes"
     },
     {
-      "name": "High Quality Cloak"
+      "name": "Mechanical Ring",
+      "category": "Rings"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Medium Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Immolate"
+      "name": "Newspaper Page",
+      "category": "Housing Items"
     },
     {
-      "name": "Informant's Dirk"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Iron"
+      "name": "Noteworthy Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Katzenstein's Athame"
+      "name": "Old Smokey's Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Katzenstein's Band"
+      "name": "Opportunists' Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Katzenstein's Boots"
+      "name": "Ore",
+      "category": "Reagents"
     },
     {
-      "name": "Katzenstein's Facemask"
+      "name": "Pacify",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Katzenstein's Helm"
+      "name": "Pixie Queen 29 (No Card)",
+      "category": "Pets"
     },
     {
-      "name": "Katzenstein's Necklace"
+      "name": "Polished Garments",
+      "category": "Robes"
     },
     {
-      "name": "Katzenstein's Robe"
+      "name": "Precious Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Katzenstein's Slippers"
+      "name": "Premium Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Katzenstein's Tragic Helm"
+      "name": "Puddle Stompers",
+      "category": "Boots"
     },
     {
-      "name": "Katzenstein's Tunic"
+      "name": "Puppetmaster's Costume",
+      "category": "Robes"
     },
     {
-      "name": "Kraken"
+      "name": "Puppetmaster's Facade",
+      "category": "Hats"
     },
     {
-      "name": "Large Maroon Rug"
+      "name": "Puppetmaster's Footwear",
+      "category": "Boots"
     },
     {
-      "name": "Large Stone Fountain"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Lava Spider"
+      "name": "Quick-Witted Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Lead"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Life-Proof Jade"
+      "name": "Remarkable Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Robe of Superiority",
+      "category": "Robes"
     },
     {
-      "name": "Locust Swarm Citrine"
+      "name": "Robe of the Bubble",
+      "category": "Robes"
     },
     {
-      "name": "Magma Spider"
+      "name": "Sandals of Delusion",
+      "category": "Boots"
     },
     {
-      "name": "Magnificent Boots"
+      "name": "Sandals of Paramount",
+      "category": "Boots"
     },
     {
-      "name": "Marleybone Combat Theme"
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Marleybone Dance Theme"
+      "name": "Satyr",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Marleybone Pet Derby Theme"
+      "name": "Satyr Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Marvelous Shroud"
+      "name": "Savvy Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Mechanical Ring"
+      "name": "Shaman's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Medium Fish"
+      "name": "Shaman's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Mugsy's Robe of Equity"
+      "name": "Shoes of Sentiments",
+      "category": "Boots"
     },
     {
-      "name": "Mysterious Band"
+      "name": "Shoes of the Chimera",
+      "category": "Boots"
     },
     {
-      "name": "Newspaper Page"
+      "name": "Shoes of the Devoted",
+      "category": "Boots"
     },
     {
-      "name": "Nickel"
+      "name": "Shoes of the Exceptional",
+      "category": "Boots"
     },
     {
-      "name": "Noteworthy Slippers"
+      "name": "Shoes of the Windless",
+      "category": "Boots"
     },
     {
-      "name": "Old Smokey's Dagger"
+      "name": "Short Metal Fence",
+      "category": "Housing Items"
     },
     {
-      "name": "Opportunists' Sandals"
+      "name": "Shortblade of Flowers",
+      "category": "Athames"
     },
     {
-      "name": "Ore"
+      "name": "Skeletal Pirate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pacify"
+      "name": "Slippers of Gusto",
+      "category": "Boots"
     },
     {
-      "name": "Pixie Queen 29 (No Card)"
+      "name": "Slippers of the Worrier",
+      "category": "Boots"
     },
     {
-      "name": "Pleasing Sandals"
+      "name": "Smogger's Affected Boots",
+      "category": "Boots"
     },
     {
-      "name": "Polished Garments"
+      "name": "Smogger's Auto Radiator",
+      "category": "Housing Items"
     },
     {
-      "name": "Precious Cap"
+      "name": "Smogger's Charged Robe",
+      "category": "Robes"
     },
     {
-      "name": "Precious Cloak"
+      "name": "Smogger's Cowl of Courtesy",
+      "category": "Hats"
     },
     {
-      "name": "Premium Footwraps"
+      "name": "Smogger's Formal Robe",
+      "category": "Robes"
     },
     {
-      "name": "Puddle Stompers"
+      "name": "Smogger's Germane Boots",
+      "category": "Boots"
     },
     {
-      "name": "Puppetmaster's Costume"
+      "name": "Smogger's Hat of Politeness",
+      "category": "Hats"
     },
     {
-      "name": "Puppetmaster's Facade"
+      "name": "Smogger's Noble Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Puppetmaster's Footwear"
+      "name": "Smogger's Sand Choker",
+      "category": "Amulets"
     },
     {
-      "name": "Pyrite"
+      "name": "Smogger's Shoes of Agony",
+      "category": "Boots"
     },
     {
-      "name": "Quick-Witted Opal"
+      "name": "Smogger's Shoes of Atlantis",
+      "category": "Boots"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Smogger's Shroud of Poise",
+      "category": "Hats"
     },
     {
-      "name": "Remarkable Sandals"
+      "name": "Snow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Ring of Effect"
+      "name": "Spectral Blast Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Robe of Superiority"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Robe of the Bubble"
+      "name": "Spirit Armor",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sandals of Delusion"
+      "name": "Square Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Sandals of Paramount"
+      "name": "Stable Salacot",
+      "category": "Hats"
     },
     {
-      "name": "Sandstorm"
+      "name": "Stein",
+      "category": "Housing Items"
     },
     {
-      "name": "Satyr"
+      "name": "Stinky Cheese",
+      "category": "Snacks"
     },
     {
-      "name": "Satyr Jade"
+      "name": "Storm Serpent",
+      "category": "Pets"
     },
     {
-      "name": "Savvy Vestment"
+      "name": "Storm Shark",
+      "category": "Spellements"
     },
     {
-      "name": "Shaman's Hat"
+      "name": "Storm Shark (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Shaman's Uniform"
+      "name": "Storm Shark Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Shoes of Sentiments"
+      "name": "Storm-Proof Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Shoes of the Chimera"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Shoes of the Devoted"
+      "name": "Superstitious Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Shoes of the Exceptional"
+      "name": "Tall Meter Stand",
+      "category": "Housing Items"
     },
     {
-      "name": "Shoes of the Windless"
+      "name": "The Troll Hunter",
+      "category": "Hats"
     },
     {
-      "name": "Short Metal Fence"
+      "name": "Thinker's Ring",
+      "category": "Rings"
     },
     {
-      "name": "Shortblade of Flowers"
+      "name": "Thinker's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Thunder Snake",
+      "category": "Spellements"
     },
     {
-      "name": "Slippers of Gusto"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Slippers of Predominance"
+      "name": "Tin Can",
+      "category": "Housing Items"
     },
     {
-      "name": "Slippers of the Worrier"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Small Smoke Stack"
+      "name": "Tri-Gage Meter Stand",
+      "category": "Housing Items"
     },
     {
-      "name": "Smogger's Affected Boots"
+      "name": "Tunic of Chivalry",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Auto Radiator"
+      "name": "Tunic of Symmetry",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Charged Robe"
+      "name": "Vestment of Assistance",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Cowl of Courtesy"
+      "name": "Vestment of Expertise",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Formal Robe"
+      "name": "Vestment of Stability",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Germane Boots"
+      "name": "Vestment of the Beacon",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Hat of Politeness"
+      "name": "Vestment of the Enigma",
+      "category": "Robes"
     },
     {
-      "name": "Smogger's Noble Vestment"
+      "name": "Watchman's Athame",
+      "category": "Athames"
     },
     {
-      "name": "Smogger's Sand Choker"
+      "name": "Wheat Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Smogger's Shoes of Agony"
+      "name": "Wide Meter Stand",
+      "category": "Housing Items"
     },
     {
-      "name": "Smogger's Shoes of Atlantis"
+      "name": "Winter Canine Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Smogger's Shroud of Poise"
+      "name": "Wooden Propellor",
+      "category": "Housing Items"
     },
     {
-      "name": "Smooth Spun Cloak"
-    },
-    {
-      "name": "Sniper"
-    },
-    {
-      "name": "Snow Serpent"
-    },
-    {
-      "name": "Spectral Blast Citrine"
-    },
-    {
-      "name": "Spider Silk"
-    },
-    {
-      "name": "Spirit Armor"
-    },
-    {
-      "name": "Square Watermelon"
-    },
-    {
-      "name": "Stable Salacot"
-    },
-    {
-      "name": "Staff of the Ice Wyvern"
-    },
-    {
-      "name": "Stein"
-    },
-    {
-      "name": "Stinky Cheese"
-    },
-    {
-      "name": "Storm Serpent"
-    },
-    {
-      "name": "Storm Shark"
-    },
-    {
-      "name": "Storm Shark (Tier 2b)"
-    },
-    {
-      "name": "Storm Shark Amethyst"
-    },
-    {
-      "name": "Storm-Proof Amethyst"
-    },
-    {
-      "name": "Sunbird"
-    },
-    {
-      "name": "Superstitious Canine Cowl"
-    },
-    {
-      "name": "Tall Meter Stand"
-    },
-    {
-      "name": "The Troll Hunter"
-    },
-    {
-      "name": "Thinker's Ring"
-    },
-    {
-      "name": "Thinker's Robe"
-    },
-    {
-      "name": "Thunder Snake"
-    },
-    {
-      "name": "Tin"
-    },
-    {
-      "name": "Tin Can"
-    },
-    {
-      "name": "Tough"
-    },
-    {
-      "name": "Tri-Gage Meter Stand"
-    },
-    {
-      "name": "Tunic of Chivalry"
-    },
-    {
-      "name": "Tunic of Symmetry"
-    },
-    {
-      "name": "Tunic of the Clever"
-    },
-    {
-      "name": "Uniform of the Inventor"
-    },
-    {
-      "name": "Uniform of the Proficient"
-    },
-    {
-      "name": "Vestment of Assistance"
-    },
-    {
-      "name": "Vestment of Expertise"
-    },
-    {
-      "name": "Vestment of Stability"
-    },
-    {
-      "name": "Vestment of the Beacon"
-    },
-    {
-      "name": "Vestment of the Enigma"
-    },
-    {
-      "name": "Vestment of the Sun"
-    },
-    {
-      "name": "Victorian Hat"
-    },
-    {
-      "name": "Watchman's Athame"
-    },
-    {
-      "name": "Wheat Cracker"
-    },
-    {
-      "name": "Wide Meter Stand"
-    },
-    {
-      "name": "Winter Canine Cowl"
-    },
-    {
-      "name": "Wooden Propellor"
-    },
-    {
-      "name": "Wyldfire Ruby"
+      "name": "Wyldfire Ruby",
+      "category": "Jewels"
     }
   ],
   "authors": "BartleBot",
@@ -769,6 +839,31 @@
       "type": "bool",
       "default": false,
       "description": "Whether or not to defeat Smogger, an optional side boss that drops school design gear. CAN be skipped to."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Smogger's Noble Vestment",
+        "Smogger's Formal Robe",
+        "Smogger's Hat of Politeness",
+        "Smogger's Germane Boots",
+        "Smogger's Shroud of Poise",
+        "Smogger's Shoes of Agony",
+        "Smogger's Charged Robe",
+        "Smogger's Cowl of Courtesy",
+        "Smogger's Affected Boots",
+        "Smogger's Shoes of Atlantis",
+        "Clanker's High Quality Cowl",
+        "Clanker's Convulsive Shoes",
+        "Clanker's Premium Cap",
+        "Clanker's Boots of Lucidity",
+        "Clanker's Noteworthy Robe",
+        "Katzenstein's Tunic",
+        "Katzenstein's Slippers",
+        "Katzenstein's Helm",
+        "Katzenstein's Robe"
+      ]
     }
   ],
   "states": [
@@ -910,7 +1005,8 @@
         "enemy": "Golem-Steel-MBBoss-LXX",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Smogger"
       }
     },
     {
@@ -942,7 +1038,8 @@
         "enemy": "Cat-Scratcher-Doctor-MBBoss-L50",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Dr. Von Katzenstein"
       }
     },
     {
@@ -1257,7 +1354,8 @@
         "enemy": "Spider-Golem-MBBoss-L42",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Clanker"
       }
     },
     {

@@ -9,9 +9,11 @@ HOW A KIND IS DETECTED
     kind alike.
 
     list    the zone-list window was open
-    hub     the hub button was enabled, then disabled just before loading (clicking it starts
-            the cooldown; a button already cooling down never reads enabled, so it cannot
-            false-positive). Not trusted at all while the speedhack was on for that last
+    hub     the hub button was enabled, then disabled just before loading with a cooldown
+            timer reading above zero (clicking it starts the cooldown; a button already
+            cooling down never reads enabled, so it cannot false-positive). A disabled
+            button with no readable timer is the game's pre-load HUD hide, not a click,
+            and records as a walk or object. Not trusted at all while the speedhack was on for that last
             sample: the game's own pre-load HUD hide reads as this exact pattern under the
             speedhack (confirmed live: 9 straight enabled reads then one disabled read, on
             every plain walk, only once the speedhack was switched on) even though no button
@@ -175,7 +177,7 @@ def _classify(before: list[Sample], came_from: str, arrival: Sample) -> Transiti
 
     if any(s.list_open for s in recent):
         kind = LIST
-    elif not last.hub_enabled and not last.speed_boosted and any(s.hub_enabled for s in recent):
+    elif _clicked_hub(last, recent):
         kind = HUB
     elif any(s.prompt for s in recent):
         kind = OBJECT
@@ -185,6 +187,17 @@ def _classify(before: list[Sample], came_from: str, arrival: Sample) -> Transiti
     prompt_xyz, pre_prompt_xyz = _prompt_points(before)
     far = next((s.xyz for s in reversed(before) if distance(s.xyz, last.xyz) >= RESET_DISTANCE), None)
     return Transition(kind, came_from, arrival.zone, last.xyz, prompt_xyz, pre_prompt_xyz, far, arrival.xyz)
+
+
+def _clicked_hub(last: Sample, recent: list[Sample]) -> bool:
+    """True when the hub button was enabled, then grayed with a cooldown ticking on the last sample.
+
+    The cooldown is what a click leaves and the game's pre-load HUD hide does not: that hide
+    grays the button too, but with no timer to read, so a disabled button alone is not enough.
+    """
+    if last.hub_enabled or last.speed_boosted or not any(s.hub_enabled for s in recent):
+        return False
+    return bool(last.teleport_cooldown)
 
 
 def _prompt_points(samples: list[Sample]) -> tuple[XYZ | None, XYZ | None]:

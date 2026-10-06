@@ -1,7 +1,7 @@
 {
   "id": "feb2fbe4-3441-48eb-9363-832e4586dba6",
   "name": "Queen Calypso",
-  "description": "Endlessly farms Queen Calypso",
+  "description": "Endlessly farms Queen Calypso in Crustacean Empire, Celestia",
   "version": "1.0",
   "clients": "all",
   "initial": "sync_players_1_state_2",

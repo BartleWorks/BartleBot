@@ -824,6 +824,8 @@ class _Fight:
     center: object
     members: list = field(default_factory=list)
     """Every client seen in battle in this fight, the publisher first."""
+    center_blocked: bool = False
+    """The center put a client back where it started instead of into the fight (#157)."""
 
 
 class FightCenter:
@@ -842,6 +844,12 @@ class FightCenter:
     record of who shares a realm: a center on another realm is the coordinates of a fight the
     client is not in, and teleporting there starts a second one. Each group then publishes a
     center of its own.
+
+    Some centers cannot be stood on (#157). A zone can have an obstacle in its duel area that
+    the fight clears, and the spot it took stays invalid afterwards: a player teleported there
+    is put straight back at its last valid position, outside the circle. Once a client sees
+    that, the center is marked blocked for the whole fight, and every later attempt aims at a
+    player already in it instead. A seat is a spot inside the circle a player stands on.
     """
 
     def __init__(self, share: Callable[[object, object], bool] | None = None):
@@ -859,6 +867,29 @@ class FightCenter:
         for fight in self._fights:
             if self._shares(fight, client):
                 return fight
+        return None
+
+    def is_center_blocked(self, client) -> bool:
+        """Whether the center *client* would aim at is known to put players back where they started."""
+        fight = self._fight_for(client)
+        return fight is not None and fight.center_blocked
+
+    def mark_center_blocked(self, client) -> None:
+        """Record that the center *client* aims at cannot be stood on, for every client joining that fight."""
+        if (fight := self._fight_for(client)) is not None:
+            fight.center_blocked = True
+
+    async def member_position(self, client, skip: int = 0):
+        """Where a player in *client*'s fight stands, or None when no member's position can be read.
+
+        *skip* rotates which member comes first, so successive attempts try each in turn; a
+        member whose position cannot be read is passed over for the next.
+        """
+        fight = self._fight_for(client)
+        members = [m for m in fight.members if m is not client] if fight is not None else []
+        for i in range(len(members)):
+            if (where := await _position(members[(skip + i) % len(members)])) is not None:
+                return where
         return None
 
     def groups(self) -> list[list]:
@@ -945,7 +976,10 @@ async def join_fight(
     """Teleport *client* into a fight, retrying every COMBAT_TP_RETRY_INTERVAL until it is in battle.
 
     Once *fight* has a center for the client, each attempt teleports there, and a client that
-    gets in first publishes its own center for the rest. Before that, *find_target* says what
+    gets in first publishes its own center for the rest. A center that puts the client back
+    exactly where it started is marked blocked (see FightCenter), and from then on attempts aim
+    at a player in the fight instead, a different one each time, or at the center again when
+    no member's position can be read. Before that, *find_target* says what
     to aim at: handle_combat passes its find-the-mob, which is how a fight starts at all. The
     ambient watcher passes nothing, so a client only ever teleports to a published center: a
     teleport to "the closest mob" could start a second fight.
@@ -965,24 +999,33 @@ async def join_fight(
     deadline = loop.time() + timeout
     attempt = 0
     target_lost = False
-    aimed_at_center = False
+    aimed_at = None
+    member_attempts = 0
     waiting_noted = False
     while True:
         attempt += 1
+        start = None  # where the client stood before a teleport to the center, to see it put back
         if (center := fight.center_for(client)) is not None:
             if await fight.is_over(client):
                 machine.log(f"Client {index}: the fight ended before it could join", logging.DEBUG)
                 return False
-            if not aimed_at_center:
-                machine.log(f"Client {index}: teleporting to the fight center on attempt {attempt}", logging.DEBUG)
-                aimed_at_center = True
-            before = await _position(client) if attempt > 1 else None
+            target, aim = center, "the fight center"
+            if fight.is_center_blocked(client):
+                if (seat := await fight.member_position(client, member_attempts)) is not None:
+                    target, aim = seat, "a player in the fight"
+                    member_attempts += 1
+            if aim != aimed_at:
+                machine.log(f"Client {index}: teleporting to {aim} on attempt {attempt}", logging.DEBUG)
+                aimed_at = aim
+            before = await _position(client)
             try:
-                await client.teleport(center)
+                await client.teleport(target)
             except Exception as exc:
-                machine.log(f"Client {index}: teleport to the fight center failed ({exc!r})", logging.DEBUG)
+                machine.log(f"Client {index}: teleport to {aim} failed ({exc!r})", logging.DEBUG)
             else:
-                await _log_re_teleport(machine, client, index, attempt, before)
+                await _log_re_teleport(machine, client, index, attempt, before if attempt > 1 else None)
+                if target is center:
+                    start = before
         elif find_target is None:
             if not waiting_noted:
                 machine.log(f"Client {index}: no fight center yet; waiting without teleporting", logging.DEBUG)
@@ -1002,12 +1045,28 @@ async def join_fight(
             await client.tp_to(target)
             await _log_re_teleport(machine, client, index, attempt, before)
 
-        # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time)
+        # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time). After a
+        # teleport to the center, also watch for the game putting the client back where it
+        # started: seen away from the start, then on it exactly. No distance threshold: the game
+        # restores the stored last valid position, so the coordinates come back identical.
         retry_at = min(loop.time() + COMBAT_TP_RETRY_INTERVAL, deadline)
+        moved = False
         while loop.time() < retry_at:
             if await client.in_battle():
                 await fight.publish(machine, client, index)
                 return True
+            if start is not None and (now := await _position(client)) is not None:
+                if not _same_place(now, start):
+                    moved = True
+                elif moved:
+                    if not fight.is_center_blocked(client):  # known already if no seat could be read
+                        fight.mark_center_blocked(client)
+                        machine.log(
+                            f"Client {index}: the fight center put it back where it started;"
+                            " joining by a player in the fight instead",
+                            logging.INFO,
+                        )
+                    break
             await asyncio.sleep(POLL_INTERVAL)
 
         if loop.time() >= deadline:
@@ -1031,6 +1090,11 @@ async def _log_re_teleport(machine, client, index: int, attempt: int, before) ->
             f"Client {index}: not in battle; re-teleport {attempt} moved {before.distance(after):.1f} units",
             logging.DEBUG,
         )
+
+
+def _same_place(a, b) -> bool:
+    """Whether two positions are identical. XYZ defines no equality of its own."""
+    return tuple(a) == tuple(b)
 
 
 async def _position(client):
