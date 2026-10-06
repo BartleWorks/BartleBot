@@ -2329,6 +2329,11 @@ class _ParamPanel(ThemedMixin, QWidget):
     remove_setup_target_requested = pyqtSignal(str, str)
     add_port_requested = pyqtSignal(str)  # SUBGRAPH_ENTRY / SUBGRAPH_EXIT
     delete_port_requested = pyqtSignal(str)  # state ID
+    # The signature page reaching into the canvas without selecting anything (#155): the
+    # nodes its selected item sets, to light (empty when it no longer shows), and one node
+    # to bring into view. State ids, or a nested subgraph node's region id.
+    link_highlight_requested = pyqtSignal(list)
+    center_node_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -2618,6 +2623,13 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._signature_page.changed.connect(self.definition_changed)
         self._signature_page.add_port_requested.connect(self.add_port_requested)
         self._signature_page.delete_port_requested.connect(self.delete_port_requested)
+        self._signature_page.highlight_requested.connect(self.link_highlight_requested)
+        self._signature_page.center_requested.connect(self.center_node_requested)
+        # The signature page is the only one that lights anything, so leaving it for any
+        # other page puts the lights out; coming back, it names its selection again.
+        self._stack.currentChanged.connect(
+            lambda index: index != _PAGE_SIGNATURE and self.link_highlight_requested.emit([])
+        )
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_label_edit.editingFinished.connect(self._on_label_editing_finished)

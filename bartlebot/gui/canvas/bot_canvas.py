@@ -1196,6 +1196,9 @@ class BotCanvas(QWidget):
         self._run_state = _IDLE
         self._start_time: float | None = None
         self._active_state: str | None = None
+        # What the signature page's selection lights (#155), kept so a rebuilt scene
+        # puts the rings back.
+        self._link_lit: list[str] = []
         self._run_externally_enabled: bool = False
         self._n_validation_errors: int = 0
         # Per-linked-region outcome of the last compose, set by the controller after
@@ -1521,6 +1524,8 @@ class BotCanvas(QWidget):
         self._toolbar.template_chip_clicked.connect(self.setup_tab_requested)
         self._param_panel.add_port_requested.connect(self._on_add_port_requested)
         self._param_panel.delete_port_requested.connect(self._on_delete_port_requested)
+        self._param_panel.link_highlight_requested.connect(self._on_link_highlight_requested)
+        self._param_panel.center_node_requested.connect(self.center_on)
         self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
         self._scene.open_definition_requested.connect(self.open_definition_of)
         self._scene.selectionChanged.connect(self._on_selection_changed)
@@ -2588,6 +2593,7 @@ class BotCanvas(QWidget):
         self._scene.refresh_region_states(self._compose_report)
         if self._active_state:
             self._set_node_active(self._active_state, True)
+        self._scene.set_link_lit(self._link_lit)
         self._refresh_collapse_buttons()
         self._apply_levels()
 
@@ -3459,6 +3465,25 @@ class BotCanvas(QWidget):
         pid = self._scene.add_port_node(node_type, self._scene.find_empty_grid_cell(self._canvas_origin()))
         if pid is not None and self._param_panel.showing_signature and self._config is not None:
             self._param_panel.show_signature(self._config)
+
+    def _on_link_highlight_requested(self, ids: list) -> None:
+        self._link_lit = list(ids)
+        self._scene.set_link_lit(self._link_lit)
+
+    @property
+    def link_lit(self) -> list[str]:
+        """What the signature page has asked to light: state ids, or nested subgraph nodes' region ids."""
+        return list(self._link_lit)
+
+    def center_on(self, some_id: str) -> None:
+        """Bring the node *some_id* is drawn as into the middle of the view, selecting nothing.
+
+        The signature page's link rows ask for this rather than ``select_state``: a
+        selection would replace the page with the node's own.
+        """
+        node = self._scene.item_for(some_id)
+        if node is not None:
+            self._view.centerOn(node)
 
     def _on_delete_port_requested(self, state_id: str) -> None:
         self._undo_mgr.cancel_debounce()

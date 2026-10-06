@@ -1006,3 +1006,41 @@ def test_building_the_signature_page_never_shows_a_parentless_widget(doc, parent
     for line in page.lines:
         page.select(f"{'i' if line.row.kind == 'input' else 'g'}:{line.row.key}")
     assert parentless_shows == []
+
+
+def _lit(doc) -> set[str]:
+    return {key for key, node in doc.scene.node_items.items() if node.is_link_lit}
+
+
+def test_selecting_an_input_lights_what_it_sets_and_leaving_the_page_puts_it_out(doc):
+    page = _page(doc)
+    page.select("i:hub")
+    assert _lit(doc) == {b.state for b in _input(doc, "hub").bindings}
+    assert doc.scene.selectedItems() == [], "lit, not selected"
+
+    doc.select_state("wisps")
+
+    assert _lit(doc) == set()
+
+
+def test_coming_back_to_the_page_lights_its_selection_again(doc):
+    page = _page(doc)
+    page.select("i:world")
+    doc.select_state("wisps")
+    doc.scene.clearSelection()
+
+    assert doc.param_panel.showing_signature
+    assert _lit(doc) == {"gate"}
+
+
+def test_a_link_row_brings_its_node_into_view_without_selecting_it(doc):
+    page = _page(doc)
+    page.select("i:world")
+    doc.view.centerOn(-5000, -5000)
+
+    page.center_requested.emit("gate")
+
+    node = doc.scene.node_items["gate"]
+    assert doc.view.mapToScene(doc.view.viewport().rect()).boundingRect().intersects(node.sceneBoundingRect())
+    assert doc.scene.selectedItems() == []
+    assert doc.param_panel.showing_signature
