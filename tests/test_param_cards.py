@@ -142,3 +142,18 @@ def test_an_edge_on_a_return_the_node_does_not_declare_is_still_listed():
         _state(), ["SUCCESS"], [_t("a", "b", "TIMEOUT"), _t("a", "c", "SUCCESS")], recovery_state=None
     )
     assert [r.when for r in routes] == ["SUCCESS", "TIMEOUT"]
+
+
+def test_the_signature_page_folds_a_written_description_and_opens_an_empty_one():
+    assert pc.signature_fold_defaults(has_description=True) == {pc.DESCRIPTION: True, pc.PORTS: False, pc.INPUTS: False}
+    assert pc.signature_fold_defaults(has_description=False)[pc.DESCRIPTION] is False
+    assert set(pc.signature_fold_defaults(has_description=True)) == set(pc.SIGNATURE_PAGE_GROUPS)
+
+
+def test_the_signature_page_summaries():
+    assert [p.text for p in pc.description_summary("\n  Enters a dungeon.\nMore")] == ["Enters a dungeon."]
+    assert [p.text for p in pc.description_summary(None)] == ["No description"]
+    assert [p.text for p in pc.ports_summary(["Start", "Rejoin"], ["Done"])] == ["Start, Rejoin → Done"]
+    assert [p.text for p in pc.ports_summary([], [])] == ["No entry → no exit"]
+    assert [p.text for p in pc.inputs_summary(6, 2, 1)] == ["6 inputs", "2 input groups", "1 promoted node"]
+    assert [p.text for p in pc.inputs_summary(1, 0, 0)] == ["1 input"]

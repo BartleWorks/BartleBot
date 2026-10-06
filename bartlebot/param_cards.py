@@ -60,6 +60,54 @@ def node_page_fold_defaults(*, holds_role: bool = False) -> dict[str, bool]:
     return {PARAMS: False, CONNECTIONS: False, NOTES: True, ROLE: not holds_role}
 
 
+#: ``ui_state.json``'s name for a definition's signature page (#155): three fixed
+#: cards, the same in every definition, so one surface -- as the node page is.
+SIGNATURE_PAGE_SURFACE = "signature_page"
+
+#: The signature page's cards, in page order. Its inputs card shares :data:`INPUTS`.
+DESCRIPTION = "description"
+PORTS = "ports"
+SIGNATURE_PAGE_GROUPS = (DESCRIPTION, PORTS, INPUTS)
+
+
+def signature_fold_defaults(*, has_description: bool) -> dict[str, bool]:
+    """Whether each signature page card starts collapsed, for a reader who never folded it.
+
+    Ports and Inputs open: they are what the page is for. Description folds to its
+    first line once it has one, and opens while it is empty, since an empty
+    description is the one thing on the card left to do.
+    """
+    return {DESCRIPTION: has_description, PORTS: False, INPUTS: False}
+
+
+def description_summary(text: str | None) -> list[SummaryPart]:
+    """A folded Description card's line: its first line, or that there is none."""
+    for line in (text or "").splitlines():
+        if line.strip():
+            return [SummaryPart(line.strip())]
+    return [SummaryPart("No description")]
+
+
+def ports_summary(entries: Iterable[str], exits: Iterable[str]) -> list[SummaryPart]:
+    """A folded Ports card's line: "Start, Rejoin → Done, Out of potions"."""
+    ins, outs = ", ".join(entries), ", ".join(exits)
+    return [SummaryPart(f"{ins or 'No entry'} → {outs or 'no exit'}")]
+
+
+def inputs_summary(inputs: int, groups: int, nodes: int) -> list[SummaryPart]:
+    """A folded Inputs card's line: "6 inputs · 2 input groups · 1 promoted node"."""
+
+    def count(n: int, word: str) -> str:
+        return f"{n} {word}{'' if n == 1 else 's'}"
+
+    parts = [SummaryPart(count(inputs, "input"))]
+    if groups:
+        parts.append(SummaryPart(count(groups, "input group")))
+    if nodes:
+        parts.append(SummaryPart(count(nodes, "promoted node")))
+    return parts
+
+
 def call_page_surface(subgraph_id: str) -> str:
     """``ui_state.json``'s name for the pages of every subgraph node of one definition."""
     return f"subgraph:{subgraph_id}"

@@ -2618,7 +2618,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._signature_page.changed.connect(self.definition_changed)
         self._signature_page.add_port_requested.connect(self.add_port_requested)
         self._signature_page.delete_port_requested.connect(self.delete_port_requested)
-        self._signature_page.select_state_requested.connect(self.select_state_requested)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_label_edit.editingFinished.connect(self._on_label_editing_finished)
