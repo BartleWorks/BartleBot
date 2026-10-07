@@ -51,8 +51,9 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import param_cards, variables, zone_names
-from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
+from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel, VariableModel
 from bartlebot.gui.canvas import recording
+from bartlebot.gui.canvas.variable_rows import AssignmentsField, ConditionRow, parse_rows
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.option_gutter import (
@@ -212,9 +213,9 @@ class _StrListLineEdit(QLineEdit):
 class _HeldParam(QLabel):
     """A param the form shows but cannot edit, handed back by get_params() exactly as it came.
 
-    For a type with no control yet: a set_variables node's ``assignments`` until their
-    row editor exists (#187), or a type this build does not know. Saving the form must
-    never drop a value just because it could not be drawn.
+    For a type this build does not know, or a set_variables node's ``assignments`` that
+    are not rows a hand edit could have left. Saving the form must never drop a value
+    just because it could not be drawn.
     """
 
     def __init__(self, value: Any, text: str):
@@ -231,8 +232,6 @@ def _held_text(field_type: str, val: Any) -> str:
         rows = variables.parse_assignments(val)
     except ValueError:
         return "(not readable: fix the rows in the bot file)"
-    if not rows:
-        return "(none yet: add rows in the bot file)"
     return "\n".join(variables.describe_assignment(r) for r in rows)
 
 
@@ -1097,6 +1096,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
         self._get_default_scales: Callable[[], Any] = lambda: None
+        self._get_variables: Callable[[], list[VariableModel]] = lambda: []
         app = QApplication.instance()
         if app is not None:
             app.focusChanged.connect(self._on_focus_changed)
@@ -1104,6 +1104,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
         """Pass a callable returning the Scales an unset 'scales' param means in the open bot."""
         self._get_default_scales = fn
+
+    def set_variables_getter(self, fn: Callable[[], list[VariableModel]]) -> None:
+        """Pass a callable returning the open bot's variable declarations, for an 'assignments' param."""
+        self._get_variables = fn
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable returning the currently hooked clients."""
@@ -1680,6 +1684,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if isinstance(w, _HeldParam):
                 if w.value is not None:
                     result[key] = w.value
+            elif isinstance(w, AssignmentsField):
+                result[key] = w.value()
             elif isinstance(w, _XyzField):
                 # Blank or invalid is absent, not (0, 0, 0): the nodes read an optional one with get().
                 if (xyz := w.value()) is not None:
@@ -1847,6 +1853,13 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 w.setToolTip(help_text)
             w.changed.connect(self._emit_changed)
             return w
+        if field_type == "assignments" and (rows := parse_rows(val)) is not None:
+            w = AssignmentsField(lambda: self._get_variables())
+            w.set_rows(rows)
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
         w = _HeldParam(val, _held_text(field_type, val))
         if help_text:
             w.setToolTip(help_text)
@@ -1940,31 +1953,31 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
 
 class _FlagConditionsWidget(ThemedMixin, QWidget):
-    """Widget that edits flag conditions on a TransitionModel.
+    """The edge panel's Conditions: rows of options and variables, in AND/OR groups.
 
-    Supports two levels of boolean logic:
-    - Each group combines its conditions internally with AND or OR.
+    Two levels of boolean logic:
+    - Each group combines its rows internally with AND or OR.
     - Multiple groups are combined with the outer AND/OR selector.
 
     Single-group display (one group, outer selector hidden) matches the old
     flat-list layout for simple cases and backward compatibility.
+
+    Each row is a :class:`~bartlebot.gui.canvas.variable_rows.ConditionRow`, which picks
+    an option or a variable from one grouped list and offers only what the variable's
+    type takes (#187).
     """
 
     changed = pyqtSignal()
 
-    _NOT_W = 52
     _REM_W = 24
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._option_names: list[str] = []
+        self._decls: list[VariableModel] = []
         self._updating: bool = False
-        # List of (group_frame, inner_op_combo, rows_layout, row_tuples_list)
-        self._groups: list[tuple[QFrame, QComboBox, QVBoxLayout, list]] = []
-        # Each group's variable rows, by id(frame), shown read-only and written back as they
-        # came. Editing them is Stage 2 of the variables plan (#187); until then a change to
-        # an edge's option rows must not lose them.
-        self._held: dict[int, list[FlagCondition]] = {}
+        # List of (group_frame, inner_op_combo, rows_layout, rows)
+        self._groups: list[tuple[QFrame, QComboBox, QVBoxLayout, list[ConditionRow]]] = []
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -2020,7 +2033,6 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
             f"  font-weight: 600; border: none; }}"
             f"#FlagSep {{ color: {THEME.border}; }}"
             f"#FlagGroupFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}"
-            f"#FlagHeld {{ color: {THEME.text_muted}; border: none; }}"
         )
 
     # ------------------------------------------------------------------
@@ -2032,10 +2044,12 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         flag_groups: list[FlagGroup],
         flag_groups_op: str,
         option_names: list[str],
+        variable_decls: list[VariableModel] | None = None,
     ) -> None:
         """Load from the new grouped FlagGroup format."""
         self._updating = True
         self._option_names = list(option_names)
+        self._decls = list(variable_decls or [])
         self._clear_all_groups()
         idx = self._groups_op_combo.findText(flag_groups_op)
         self._groups_op_combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2051,10 +2065,12 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         flags: list[FlagCondition],
         flag_op: str,
         option_names: list[str],
+        variable_decls: list[VariableModel] | None = None,
     ) -> None:
         """Load from the legacy flat flags+flag_op format (single group)."""
         self._updating = True
         self._option_names = list(option_names)
+        self._decls = list(variable_decls or [])
         self._clear_all_groups()
         self._groups_op_combo.setCurrentIndex(0)  # OR default
         self._add_group(flags=flags, op=flag_op)
@@ -2065,15 +2081,19 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         """Return the current state as (flag_groups, flag_groups_op)."""
         result: list[FlagGroup] = []
         for _frame, inner_op, _rows_layout, rows in self._groups:
-            flags = []
-            for not_cb, opt_cb, _rem in rows:
-                option = opt_cb.currentText()
-                if option:
-                    flags.append(FlagCondition(option=option, negate=not_cb.isChecked()))
-            flags += [fc.model_copy() for fc in self._held.get(id(_frame), [])]
+            flags = [fc for row in rows if (fc := row.condition()) is not None]
             if flags:
                 result.append(FlagGroup(flags=flags, op=inner_op.currentText()))
         return result, self._groups_op_combo.currentText()
+
+    @property
+    def rows(self) -> list[ConditionRow]:
+        """Every condition row, group by group."""
+        return [row for *_rest, rows in self._groups for row in rows]
+
+    def add_condition(self, group: int = 0) -> ConditionRow:
+        """Add a row to group *group*, as its Add condition button does."""
+        return self._on_add_condition(self._groups[group])
 
     # ------------------------------------------------------------------
     # Group management
@@ -2081,10 +2101,8 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
 
     def _clear_all_groups(self) -> None:
         for frame, _, _, _ in self._groups:
-            self._groups_layout.removeWidget(frame)
-            frame.deleteLater()
+            discard_widget(frame, self._groups_layout)
         self._groups.clear()
-        self._held.clear()
 
     def _add_group(self, flags: list[FlagCondition] | None = None, op: str = "AND") -> None:
         frame = QFrame()
@@ -2131,70 +2149,27 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         add_cond_btn = ActionButton("plus", "Add condition")
         frame_layout.addWidget(add_cond_btn)
 
-        row_tuples: list[tuple[QCheckBox, QComboBox, QPushButton]] = []
-        group_entry = (frame, inner_op, rows_layout, row_tuples)
+        rows: list[ConditionRow] = []
+        group_entry = (frame, inner_op, rows_layout, rows)
         self._groups.append(group_entry)
         self._groups_layout.addWidget(frame)
 
-        # Add initial condition rows
-        held: list[FlagCondition] = []
         for fc in flags or []:
-            if fc.is_variable:
-                held.append(fc)
-            else:
-                self._add_condition_row(group_entry, fc.option, fc.negate)
-        self._held[id(frame)] = held
-        for fc in held:
-            shown = QLabel(variables.describe_condition(fc))
-            shown.setObjectName("FlagHeld")
-            shown.setToolTip("A variable condition. It is edited in the bot file for now.")
-            rows_layout.addWidget(shown)
+            self._add_condition_row(group_entry, fc)
 
         # Wire signals
         inner_op.currentTextChanged.connect(self._on_any_changed)
         add_cond_btn.clicked.connect(lambda _, ge=group_entry: self._on_add_condition(ge))
         rem_group_btn.clicked.connect(lambda _, f=frame, ge=group_entry: self._on_remove_group(f, ge))
 
-    def _add_condition_row(
-        self,
-        group_entry: tuple,
-        option: str = "",
-        negate: bool = False,
-    ) -> None:
-        frame, inner_op, rows_layout, row_tuples = group_entry
-
-        row = QWidget()
-        row.setStyleSheet("QWidget { border: none; }")
-        row_layout = QHBoxLayout(row)
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(4)
-
-        not_cb = QCheckBox("NOT")
-        not_cb.setChecked(negate)
-        not_cb.setFixedWidth(self._NOT_W)
-
-        opt_combo = QComboBox()
-        opt_combo.addItems(self._option_names)
-        if option and opt_combo.findText(option) < 0:
-            opt_combo.addItem(option)
-        if option:
-            opt_combo.setCurrentText(option)
-
-        rem_btn = IconButton(
-            "dismiss", tooltip="Remove this condition", size=self._REM_W, icon_size=12, tint=IconTint.DANGER
-        )
-
-        row_layout.addWidget(not_cb)
-        row_layout.addWidget(opt_combo, 1)
-        row_layout.addWidget(rem_btn)
+    def _add_condition_row(self, group_entry: tuple, condition: FlagCondition | None = None) -> ConditionRow:
+        _frame, _inner_op, rows_layout, rows = group_entry
+        row = ConditionRow(self._option_names, self._decls, condition)
         rows_layout.addWidget(row)
-
-        t = (not_cb, opt_combo, rem_btn)
-        row_tuples.append(t)
-
-        not_cb.checkStateChanged.connect(self._on_any_changed)
-        opt_combo.currentTextChanged.connect(self._on_any_changed)
-        rem_btn.clicked.connect(lambda _=None, r=row, tup=t, ge=group_entry: self._on_remove_condition(r, tup, ge))
+        rows.append(row)
+        row.changed.connect(self._on_any_changed)
+        row.remove_requested.connect(lambda r, ge=group_entry: self._on_remove_condition(r, ge))
+        return row
 
     def _refresh_outer_op_visibility(self) -> None:
         self._outer_op_row.setVisible(len(self._groups) > 1)
@@ -2214,25 +2189,23 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
             return  # always keep at least one group
         if group_entry in self._groups:
             self._groups.remove(group_entry)
-        self._held.pop(id(frame), None)
-        self._groups_layout.removeWidget(frame)
-        frame.deleteLater()
+        discard_widget(frame, self._groups_layout)
         self._refresh_outer_op_visibility()
         if not self._updating:
             self.changed.emit()
 
-    def _on_add_condition(self, group_entry: tuple) -> None:
-        default = self._option_names[0] if self._option_names else ""
-        self._add_condition_row(group_entry, default, False)
+    def _on_add_condition(self, group_entry: tuple) -> ConditionRow:
+        # Picks the first thing listed: an option when the bot has one, else its first variable.
+        row = self._add_condition_row(group_entry)
         if not self._updating:
             self.changed.emit()
+        return row
 
-    def _on_remove_condition(self, row: QWidget, tup: tuple, group_entry: tuple) -> None:
-        _frame, _inner_op, rows_layout, row_tuples = group_entry
-        if tup in row_tuples:
-            row_tuples.remove(tup)
-        rows_layout.removeWidget(row)
-        row.deleteLater()
+    def _on_remove_condition(self, row: ConditionRow, group_entry: tuple) -> None:
+        _frame, _inner_op, rows_layout, rows = group_entry
+        if row in rows:
+            rows.remove(row)
+        discard_widget(row, rows_layout)
         if not self._updating:
             self.changed.emit()
 
@@ -2595,11 +2568,12 @@ class _ParamPanel(ThemedMixin, QWidget):
         ef.addRow("Dest", self._edge_dst_combo)
         ef.addRow("When", self._edge_when_combo)
 
-        self._flags_lbl = QLabel("Flag conditions")
+        self._flags_lbl = QLabel("Conditions")
         self._flags_lbl.setToolTip(
-            "Bot options that must be satisfied for this transition to fire.\n"
-            "Combine multiple conditions with AND (all must be true) or OR (any must be true).\n"
-            "Check NOT to invert a condition."
+            "What must hold for this edge to be taken: a bot option the user sets before the run,\n"
+            "or a variable the bot sets during it, compared with a value.\n"
+            "Combine conditions with AND (all must be true) or OR (any must be true).\n"
+            "Check NOT to invert an option; compare a variable with != instead."
         )
 
         self._flag_conditions_widget = _FlagConditionsWidget()
@@ -2786,6 +2760,10 @@ class _ParamPanel(ThemedMixin, QWidget):
     def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
         """Pass a callable returning the open bot's default Scales, for the node form."""
         self._param_form.set_default_scales_getter(fn)
+
+    def set_variables_getter(self, fn: Callable[[], list[VariableModel]]) -> None:
+        """Pass a callable returning the open bot's variable declarations, for a set_variables node's rows."""
+        self._param_form.set_variables_getter(fn)
 
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         """Pass a callable returning zone suggestions, for the node form and the region inputs form alike."""
@@ -3231,6 +3209,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         all_transitions: list[TransitionModel] | None = None,
         *,
         rewire: bool = True,
+        variable_decls: list[VariableModel] | None = None,
     ) -> None:
         """Show *transition*. Without *rewire* its ends and ``when`` are read-only: a call node's edge is rewired on the canvas."""
         self._cancel_record()
@@ -3263,12 +3242,14 @@ class _ParamPanel(ThemedMixin, QWidget):
                 transition.flag_groups,
                 transition.flag_groups_op,
                 option_names or [],
+                variable_decls,
             )
         else:
             self._flag_conditions_widget.set_conditions_flat(
                 transition.flags,
                 transition.flag_op,
                 option_names or [],
+                variable_decls,
             )
 
         for combo in (self._edge_src_combo, self._edge_dst_combo, self._edge_when_combo):

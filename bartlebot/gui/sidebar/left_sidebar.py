@@ -70,6 +70,9 @@ class LeftSidebar(QTabWidget):
     # A declaration edit is about to change the config, carrying the undo step's name.
     # Only the canvas holds the undo stack, so the request is passed up for it to snapshot.
     edit_starting = pyqtSignal(str)
+    # An option or a variable was added, renamed or deleted: what the condition and
+    # assignment rows on the Properties tab list, and the names they hold, may have moved.
+    declarations_changed = pyqtSignal()
 
     def __init__(
         self,
@@ -152,6 +155,8 @@ class LeftSidebar(QTabWidget):
         # finds, so it is a config change like an option's, and undoable like a panel edit.
         self.variables.edit_starting.connect(self.edit_starting)
         self.variables.variables_changed.connect(self.config_changed)
+        self.variables.variables_changed.connect(self.declarations_changed)
+        self.options.options_changed.connect(self.declarations_changed)
         self.option_values.app_settings_requested.connect(self.app_settings_requested)
 
         # Refresh the Combat tab's fight profile list whenever it becomes visible,

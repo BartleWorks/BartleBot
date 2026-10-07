@@ -405,6 +405,7 @@ class AppController(QObject):
         w.left_sidebar.config_changed.connect(self._on_config_changed)
         w.left_sidebar.metadata_changed.connect(self._on_metadata_changed)
         w.left_sidebar.edit_starting.connect(w.bot_canvas.note_edit_starting)
+        w.left_sidebar.declarations_changed.connect(w.bot_canvas.reshow_properties)
         w.right_sidebar.config_changed.connect(self._on_config_changed)
 
         # Deck import / apply requests from Combat tab
