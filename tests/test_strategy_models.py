@@ -421,6 +421,7 @@ def test_schools_drop_repeats_and_blanks_but_keep_the_authors_order():
 def test_tags_are_normalized_on_load():
     pcs = PlayerCombatStrategy.model_validate({"name": "x", "tags": ["Healer", "Custom", "Hitter", "Healer"]})
     assert pcs.tags == ["Hitter", "Healer"]
+    assert PlayerCombatStrategy.model_validate({"name": "x", "tags": ["Solo", "Hitter"]}).tags == ["Hitter", "Solo"]
 
 
 def test_a_deck_preset_carries_tags_and_schools(tmp_path: Path):

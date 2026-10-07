@@ -40,6 +40,7 @@ ROLE_TAGS: tuple[str, ...] = (
     "Hitter",  # deals the damage the fight is won with
     "Support",  # blades, traps and feints for someone else's hit
     "Healer",  # keeps the team up
+    "Solo",  # carries a fight alone, with no one to hand a hit or a heal to
 )
 
 _ROLE_ORDER: dict[str, int] = {tag: i for i, tag in enumerate(ROLE_TAGS)}

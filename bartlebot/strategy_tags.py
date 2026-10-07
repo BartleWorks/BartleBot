@@ -14,7 +14,7 @@ Two kinds of group, and the difference is where the value comes from:
   exception is :data:`PROFILE_SOURCE`, for an entry that belongs to the active combat
   profile (#118): its pill carries the profile's own name, which a fixed vocabulary
   cannot, so the filter says what kind of place that is instead.
-- **Role** (Hitter, Support, Healer) is *stored*, in the file's ``tags``, on Player
+- **Role** (Hitter, Support, Healer, Solo) is *stored*, in the file's ``tags``, on Player
   Strategies and Deck Presets only. A duel strategy is a whole team, so it has no
   single role, and carries no role group.
 
