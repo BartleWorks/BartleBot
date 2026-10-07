@@ -25,7 +25,9 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from bartlebot.bot.schema import BotConfig
 from bartlebot.paths import project_root
+from bartlebot.shared import content_hash
 from bartlebot.store_roots import declared_id, dev_mode, is_inside, resolve_roots
 
 logger = logging.getLogger(__name__)
@@ -131,3 +133,21 @@ def library_files(shipped_dir: Path, user_dir: Path) -> list[LibraryFile]:
             found.append(LibraryFile(path, folder, shipped))
     found.sort(key=lambda f: (f.folder is None, f.folder or "", f.path.name.lower()))
     return found
+
+
+def record_save(config: BotConfig, path: str | Path) -> None:
+    """Record in ``config``'s history what saving it to ``path`` replaces (#169).
+
+    A bot has one file and never overrides, so what a save replaces is the file at
+    ``path``, when that is this bot: the same id. Anything else there (nothing, or
+    another bot Save As is about to write over) is not this bot's past, and ``config``
+    keeps the history it has. :func:`bartlebot.shared.content_hash.record_save` has the
+    rules; ``config`` is changed in place, so the open bot says what was written.
+    """
+    stored = None
+    if Path(path).is_file() and declared_id(Path(path)) == config.id:
+        try:
+            stored = BotConfig.load(path)
+        except Exception:
+            logger.warning("Could not read %s to record what saving it replaces", path, exc_info=True)
+    content_hash.record_save(config, stored=stored)

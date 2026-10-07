@@ -32,6 +32,8 @@ from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
 
+from bartlebot.shared.content_hash import record_save
+
 logger = logging.getLogger(__name__)
 
 
@@ -146,6 +148,31 @@ def load_by_id(shipped_dir: Path, user_dir: Path, item_id: str, loader: Callable
     if path is None:
         raise FileNotFoundError(f"No file declares id {item_id} in {user_dir} or {shipped_dir}")
     return loader(path)
+
+
+def load_in(d: Path, item_id: str, loader: Callable[[Path], object]) -> object | None:
+    """``item_id``'s file in ``d``, loaded, or ``None`` when ``d`` has none or it does not load."""
+    path = find_by_id(d, item_id)
+    if path is None:
+        return None
+    try:
+        return loader(path)
+    except Exception:
+        logger.warning("Could not read %s to record what a save replaces", path, exc_info=True)
+        return None
+
+
+def record_save_in(shipped_dir: Path, user_dir: Path, item, loader: Callable[[Path], object]) -> None:
+    """Set ``item``'s history and Official base from what a save into ``user_dir`` replaces.
+
+    What every two-root store calls before it writes: see
+    :func:`bartlebot.shared.content_hash.record_save`. The two directories being one
+    (developer mode, a single-root sandbox) means nothing is Official, so nothing is
+    overridden.
+    """
+    stored = load_in(user_dir, item.id, loader)
+    shipped = None if shipped_dir == user_dir else load_in(shipped_dir, item.id, loader)
+    record_save(item, stored=stored, shipped=shipped)
 
 
 def _filename_for(d: Path, item_id: str, name: str) -> Path:

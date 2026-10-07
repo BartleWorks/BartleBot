@@ -271,6 +271,9 @@ class _BotMeta:
     #: Where it comes from: Official (shipped) or Custom, for a bot; a subgraph can also be a
     #: modified Official one. Worked out from where the file is, never read from it (#149).
     source: Origin = Origin.USER
+    #: For a subgraph overriding an Official one, whether the Official one has changed since
+    #: (#169): the pill adds "Official updated", and the card offers Revert beside it.
+    official_updated: bool = False
     #: The bot's own id, and for the user's copy of an Official bot that bot's id; "" when none.
     bot_id: str = ""
     forked_from_id: str = ""
@@ -477,10 +480,21 @@ def filter_bot_metas(
     return results, matched_drops
 
 
+def _edit_state(config: BotConfig) -> dict:
+    """What an Edit-mode session compares to tell whether it changed the bot.
+
+    Everything but ``history``: a Save in the middle of the session records one, and
+    that is not an edit to announce when the session ends (#169).
+    """
+    return config.model_dump(exclude={"history"})
+
+
 class _BotCard(ThemedMixin, QWidget):
     """Single clickable bot entry shown in the library's right panel."""
 
     open_requested = pyqtSignal(str)  # emits path string
+    #: Revert beside an "Official updated" pill was clicked; emits the subgraph id.
+    revert_requested = pyqtSignal(str)
 
     def __init__(self, meta: "_BotMeta", matched_drops: "list[str] | None" = None, parent=None) -> None:
         super().__init__(parent)
@@ -530,8 +544,18 @@ class _BotCard(ThemedMixin, QWidget):
         header.addStretch()
         # Where it comes from, at the end of the row as on a strategy card (#149): the
         # same pill, so Official reads the same on a bot as on a strategy.
-        self._source_pill = source_pill(self._meta.source)
+        self._source_pill = source_pill(self._meta.source, official_updated=self._meta.official_updated)
         header.addWidget(self._source_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+        # A modified Official subgraph whose Official one has since changed: Revert is the
+        # way to the new one, so it sits beside the pill that says so rather than only in
+        # the right-click menu (#169). The controller asks before reverting.
+        self._revert_btn: ActionButton | None = None
+        if self._meta.official_updated and self._meta.subgraph_id:
+            self._revert_btn = ActionButton("revert", "Revert…", fill=False)
+            self._revert_btn.setToolTip("Revert to the Official version; your changes are discarded")
+            sid = self._meta.subgraph_id
+            self._revert_btn.clicked.connect(lambda: self.revert_requested.emit(sid))
+            header.addWidget(self._revert_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         # Wrapping and elided: a description is user text, and one word too long for the
@@ -600,6 +624,11 @@ class _BotCard(ThemedMixin, QWidget):
     def source_text(self) -> str:
         """What the card's Source pill says."""
         return self._source_pill.text()
+
+    @property
+    def revert_button(self) -> ActionButton | None:
+        """The Revert beside an "Official updated" pill, or None on a card without one."""
+        return self._revert_btn
 
     @property
     def meta_text(self) -> str | None:
@@ -930,6 +959,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                     path=Path(f"{d.id}.json"),
                     subgraph_id=d.id,
                     source=self._subgraph_library.origin(d.id),
+                    official_updated=self._subgraph_library.official_updated(d.id),
                 )
                 for d in defns
             ]
@@ -1162,6 +1192,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                     self.open_subgraph_requested if meta.subgraph_id else self.open_recent_requested
                 )
                 if meta.subgraph_id:
+                    card.revert_requested.connect(self.delete_subgraph_requested)
                     card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
                     card.customContextMenuRequested.connect(
                         lambda pos, c=card, sid=meta.subgraph_id: self._show_subgraph_menu(c, sid, pos)
@@ -1750,7 +1781,7 @@ class BotCanvas(QWidget):
         self._load(config, ComposeReport())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
-        self._edit_baseline = config.model_dump()
+        self._edit_baseline = _edit_state(config)
         self._apply_mode(mode)
         self.mode_changed.emit(mode)
         if config.is_definition:
@@ -2399,7 +2430,7 @@ class BotCanvas(QWidget):
         if self._read_only and not self.is_definition:
             self.copy_requested.emit()
             return
-        self._edit_baseline = self._config.model_dump() if self._config is not None else None
+        self._edit_baseline = _edit_state(self._config) if self._config is not None else None
         self._apply_mode(BotMode.EDIT)
         self.mode_changed.emit(BotMode.EDIT)
 
@@ -2424,7 +2455,7 @@ class BotCanvas(QWidget):
             return False
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
-        changed = self._config is None or self._edit_baseline != self._config.model_dump()
+        changed = self._config is None or self._edit_baseline != _edit_state(self._config)
         if not saved and changed:
             self.config_changed.emit()
         return True

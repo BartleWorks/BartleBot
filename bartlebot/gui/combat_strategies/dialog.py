@@ -210,6 +210,12 @@ _DELETE_TEXT = "Delete"
 #: Why Delete is grayed out on an unedited Official one: removing only touches the user
 #: root, so the entry would be back on the next open (#124).
 _BUILT_IN_DELETE_TIP = "Official strategies can't be deleted. Duplicate one to make a copy of your own."
+#: The About pane's note on an override whose Official strategy has changed since (#169),
+#: beside the Revert button it points at.
+OFFICIAL_UPDATED_NOTE = (
+    "The Official version has changed since you made your copy. "
+    "Revert to default to use the new one; your changes are discarded."
+)
 #: Why New and Duplicate are grayed out in the profile editor before a profile exists.
 _NO_PROFILE_TIP = "Create a combat profile for this bot first"
 #: What an entry from a file in a newer format says, and why it can't be edited or deleted.
@@ -671,7 +677,11 @@ class _KindPage(QWidget):
             summary = summarize_deck(item)
         if self._ws.is_profile_entry(self._kind, item.id):
             return replace(summary, profile_name=self._ws.profile.name)
-        return replace(summary, source=self._ws.status(self._kind, item.id))
+        return replace(
+            summary,
+            source=self._ws.status(self._kind, item.id),
+            official_updated=self._ws.official_updated(self._kind, item.id),
+        )
 
     @property
     def filter_bar(self) -> StrategyFilterBar:
@@ -1055,7 +1065,9 @@ class _KindPage(QWidget):
             self._del_btn.setToolTip(NEWER_FORMAT_NOTE)
             self._about.set_notes(usage, NEWER_FORMAT_NOTE)
             return
-        if revert:
+        if revert and self._ws.official_updated(self._kind, entry.id):
+            note = OFFICIAL_UPDATED_NOTE
+        elif revert:
             note = "Your copy of a strategy BartleBot ships — reverting restores the original."
         elif built_in:
             note = "Ships with BartleBot — editing it saves your own copy."

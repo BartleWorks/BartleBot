@@ -121,14 +121,21 @@ class BotCombatStrategy(BaseModel):
     # Linked by id like any library entry, and found first — see bartlebot.combat_profile.
     duel_strategies: list[DuelCombatStrategy] = Field(default_factory=list)
     player_strategies: list[PlayerCombatStrategy] = Field(default_factory=list)
+    # Content hashes of what earlier saves replaced, newest first (#169). None ship, so
+    # there is never an Official base to record.
+    history: list[str] = Field(default_factory=list)
 
     @classmethod
     def load(cls, path: str | Path) -> BotCombatStrategy:
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
 
+    def file_dump(self) -> dict:
+        """The JSON body of this file, as :meth:`save` writes it."""
+        return self.model_dump(exclude_defaults=True)
+
     def save(self, path: str | Path) -> None:
-        atomic_write(self.model_dump(exclude_defaults=True), path)
+        atomic_write(self.file_dump(), path)
 
     def find_assignment_for_state(self, state_id: str) -> StateAssignment | None:
         """Return the StateAssignment whose stored fights name this state id, or None.

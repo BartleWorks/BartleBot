@@ -114,7 +114,7 @@ class StrategyCard(QWidget):
                 # "ships with the app" unaided (#124). Three weights, on ActionButton's
                 # model: an Official one filled with the accent, a modified one outlined
                 # in it, and a custom one gray.
-                pill = source_pill(summary.source)
+                pill = source_pill(summary.source, official_updated=summary.official_updated)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
                 self._source_pill = pill
             if favorite is not None:

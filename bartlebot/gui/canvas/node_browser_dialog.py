@@ -216,14 +216,18 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         # Scroll to top when switching nodes
         QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
 
-    def show_subgraph(self, defn: SubgraphDefinition, origin: Origin, used_by: int) -> None:
+    def show_subgraph(
+        self, defn: SubgraphDefinition, origin: Origin, used_by: int, official_updated: bool = False
+    ) -> None:
         """Replace the scroll area content with a library subgraph's summary."""
-        self._shown = ("subgraph", (defn, origin, used_by))
+        self._shown = ("subgraph", (defn, origin, used_by, official_updated))
         self._clear_pending_scroll()
-        self._build_subgraph(defn, origin, used_by)
+        self._build_subgraph(defn, origin, used_by, official_updated)
         QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
 
-    def _build_subgraph(self, defn: SubgraphDefinition, origin: Origin, used_by: int) -> None:
+    def _build_subgraph(
+        self, defn: SubgraphDefinition, origin: Origin, used_by: int, official_updated: bool = False
+    ) -> None:
         self._node_type = subgraph_key(defn.id)
         container = QWidget()
         layout = QVBoxLayout(container)
@@ -239,8 +243,10 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         title_row.addWidget(title_label, 1)
         title_row.addWidget(_Chip("Subgraph", THEME.accent, THEME.chip_text))
         # The pill every list of subgraphs, bots and strategies wears (#149).
-        pill = source_pill(origin)
-        pill.setToolTip(source_label(origin))
+        pill = source_pill(origin, official_updated=official_updated)
+        if not official_updated:
+            # A stale override's pill says why, and what Revert does, in its own tooltip.
+            pill.setToolTip(source_label(origin))
         title_row.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(title_row)
 
@@ -984,7 +990,9 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             sid = node_type[len(SUBGRAPH_KEY_PREFIX) :]
             defn = self._library.get(sid)
             if defn is not None:
-                self._detail.show_subgraph(defn, self._library.origin(sid), self._used_by(sid))
+                self._detail.show_subgraph(
+                    defn, self._library.origin(sid), self._used_by(sid), self._library.official_updated(sid)
+                )
             return
 
         spec = NODE_SPECS.get(node_type)

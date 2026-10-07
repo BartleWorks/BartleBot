@@ -11,20 +11,32 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QLabel
 
 from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill
-from bartlebot.store_roots import SOURCE_LABELS, Origin
+from bartlebot.store_roots import Origin, pill_text
+
+#: The tooltip on the pill of an override whose Official item has changed since (#169).
+OFFICIAL_UPDATED_TIP = (
+    "The Official version has changed since you made your changes. "
+    "Revert to Official to use the new one; your changes are discarded."
+)
 
 
-def source_pill(source: Origin) -> QLabel:
+def source_pill(source: Origin, *, official_updated: bool = False) -> QLabel:
     """The pill naming where an item comes from, weighted like ``ActionButton``.
 
     Always words rather than a glyph: no icon says "ships with the app, tested in game"
     unaided (#124). Official is filled with the accent (``PRIMARY``), a modified Official
     one outlined in it (``SECONDARY``) and anything else gray (``TERTIARY``). All three are
     the same height, so a card does not change size when an edit turns one into another.
+
+    ``official_updated`` marks an override whose Official item has changed since it was
+    made: the pill adds *· Official updated* and says in its tooltip what Revert does.
     """
-    text = SOURCE_LABELS[source]
+    text = pill_text(source, official_updated=official_updated)
     if source is Origin.SHIPPED:
         return AccentPill(text, filled=True)
     if source is Origin.SHIPPED_OVERRIDE:
-        return AccentPill(text)
+        pill = AccentPill(text)
+        if official_updated:
+            pill.setToolTip(OFFICIAL_UPDATED_TIP)
+        return pill
     return NeutralPill(text)

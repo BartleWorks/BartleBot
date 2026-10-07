@@ -329,7 +329,7 @@ class ForkedFrom(BaseModel):
     """The Official bot a user's copy was made from (Make my own copy, #149).
 
     ``sha256`` is the Official bot's content hash when the copy was made
-    (:func:`bartlebot.bot_fork.content_sha256`), so a later release that changes the
+    (:func:`bartlebot.shared.content_hash.content_sha256`), so a later release that changes the
     Official bot can be told apart from one that does not. Written once, by the copy,
     and never by a load or a save; Save As copies it unchanged, since a copy of a copy
     came from the same Official bot.
@@ -427,6 +427,10 @@ class BotConfig(BaseModel):
     forked_from: ForkedFrom | None = None
     # Set only on a template's draft or a released version of it, never on a bot.
     template_meta: TemplateMeta | None = None
+    # The content hashes of what earlier saves replaced, newest first (#169); see
+    # bartlebot.shared.content_hash. Left out of the file while empty, so a bot never
+    # saved since it existed is written exactly as before.
+    history: list[str] = Field(default_factory=list)
 
     @property
     def is_definition(self) -> bool:
@@ -582,6 +586,8 @@ class BotConfig(BaseModel):
 
         data = self.model_dump(exclude_none=True)
         data["options"] = [o.model_dump(exclude_none=True) for o in storable_options(self)]
+        if not data["history"]:
+            del data["history"]
         return data
 
     def save(self, path: str | Path) -> None:
@@ -764,6 +770,11 @@ class SubgraphDefinition(BaseModel):
     states: list[StateModel]
     transitions: list[TransitionModel] = Field(default_factory=list)
     regions: list[RegionModel] = Field(default_factory=list)
+    # The content hashes of what earlier saves replaced, newest first, and on a user's
+    # override of an Official definition the hash of the Official one it was made from
+    # (#169; bartlebot.shared.content_hash). Both stay out of the file while unset.
+    history: list[str] = Field(default_factory=list)
+    official_sha256: str | None = None
 
     @field_validator("id")
     @classmethod
@@ -791,5 +802,12 @@ class SubgraphDefinition(BaseModel):
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
 
+    def file_dump(self) -> dict:
+        """The JSON body of this definition, as :meth:`save` writes it."""
+        data = self.model_dump(exclude_none=True)
+        if not data["history"]:
+            del data["history"]
+        return data
+
     def save(self, path: str | Path) -> None:
-        atomic_write_json(self.model_dump(exclude_none=True), path)
+        atomic_write_json(self.file_dump(), path)

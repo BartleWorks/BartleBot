@@ -48,6 +48,7 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.shared import strategy_library as library
+from bartlebot.shared.store_files import record_save_in
 from bartlebot.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat
 from bartlebot.store_roots import (
     Origin,
@@ -183,8 +184,8 @@ def _load(kind: LibraryKind, uuid: str, root, user_root):
 
 
 def _save(kind: LibraryKind, item, root, user_root, expected: str | None) -> str:
-    _, user = _shared_roots(root, user_root)
-    return library.save(user, kind, item, expected=expected)
+    shipped, user = _shared_roots(root, user_root)
+    return library.save(user, kind, item, expected=expected, shipped=shipped)
 
 
 def _delete(kind: LibraryKind, uuid: str, root, user_root, expected: str | None) -> None:
@@ -310,7 +311,9 @@ def load_bot_strategy(
 def save_bot_strategy(
     s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> None:
-    _, user = _roots(root, user_root)
+    """Write ``s`` to the user root, recording its history into it first (:mod:`bartlebot.shared.content_hash`)."""
+    shipped, user = _roots(root, user_root)
+    record_save_in(_bot_strategy_dir(shipped), _bot_strategy_dir(user), s, BotCombatStrategy.load)
     save_by_id(_bot_strategy_dir(user), s.id, s.name, s.save)
 
 
