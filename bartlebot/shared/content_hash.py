@@ -43,6 +43,19 @@ something else -- an app update, or the other product's newer shared set taking 
 Official updated*. An override made before this existed has none, and is never said to
 be out of date: there is no record of what it was made from.
 
+THE SENT HASH
+-------------
+
+An import may write an item other than as it was sent: with its links rewritten to an
+item that came in as a copy, or as a copy itself, under a new id. Either hashes to
+something the sender's history will never hold, so the sender's next version of it
+would match as a separate edit. Such an item records ``sent_sha256``, the hash it was
+sent with, and import matches it by that hash as well as its own
+(:mod:`bartlebot.shared.share_match`). It stands for the item only while the item is
+unchanged, so :func:`record_save` keeps it through a save that changes nothing and
+drops it from one that changes the content: from then on the item is the receiver's
+own edit. It never travels in a share file.
+
 Nothing here imports from outside :mod:`bartlebot.shared`: an item is anything with a
 ``file_dump()``.
 """
@@ -58,7 +71,7 @@ from typing import Any
 HISTORY_CAP = 64
 
 #: The fields that record an item's lineage rather than its content, left out of its hash.
-HISTORY_FIELDS = frozenset({"history", "official_sha256"})
+HISTORY_FIELDS = frozenset({"history", "official_sha256", "sent_sha256"})
 
 
 def content_sha256(item: Any) -> str:
@@ -82,7 +95,7 @@ def next_history(history: Iterable[str], replaced: str, current: str) -> list[st
 
 
 def record_save(item: Any, *, stored: Any | None = None, shipped: Any | None = None) -> None:
-    """Set ``item``'s history, and its Official base if it has one, for a save about to write it.
+    """Set ``item``'s history, its Official base and its sent hash, for a save about to write it.
 
     ``stored`` is the item's file in the user root as it is now, and ``shipped`` the
     Official item of the same id; either is None when there is none, and ``shipped`` is
@@ -92,10 +105,14 @@ def record_save(item: Any, *, stored: Any | None = None, shipped: Any | None = N
     the caller's copy says what was written.
     """
     replaced = stored if stored is not None else shipped
+    current = content_sha256(item)
     if replaced is not None:
-        item.history = next_history(replaced.history, content_sha256(replaced), content_sha256(item))
+        item.history = next_history(replaced.history, content_sha256(replaced), current)
     else:
         item.history = list(item.history)[:HISTORY_CAP]
+    if "sent_sha256" in type(item).model_fields:
+        unchanged = stored is not None and content_sha256(stored) == current
+        item.sent_sha256 = stored.sent_sha256 if unchanged else None
     if "official_sha256" not in type(item).model_fields:
         return
     if shipped is None:

@@ -33,6 +33,11 @@ copy *before* it is matched: a bot's subgraph nodes, a definition's nested ones,
 duel's player links, and a Bot Combat Strategy's links and its ``bot_id``. The
 receiver's own items are never rewritten, so their bots stay on their original.
 
+An item written other than as it was sent, rewritten or a copy, records the hash it was
+sent with (``sent_sha256``), so the sender's next version of it is an Update. A conflict
+first looks for a copy an earlier version made (:func:`_earlier_copy`), which the next
+version updates in place rather than copying again.
+
 An item is written with the history it arrived with, never through ``record_save``: it
 is the sender's item, and its past is theirs (#169). A copy starts with none.
 
@@ -76,7 +81,7 @@ from bartlebot.share_export import (
     app_version,
 )
 from bartlebot.shared import strategy_library
-from bartlebot.shared.content_hash import content_sha256
+from bartlebot.shared.content_hash import content_sha256, next_history
 from bartlebot.shared.share_file import SHARE_FORMAT, ShareFile
 from bartlebot.shared.share_match import (
     CHOICES,
@@ -85,6 +90,8 @@ from bartlebot.shared.share_match import (
     Held,
     Outcome,
     copy_id,
+    copy_ids,
+    copy_outcome,
     match,
     relink_duel,
     update_message,
@@ -318,7 +325,11 @@ class Holding:
         return self.origin in (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE)
 
     def held(self) -> Held:
-        return Held(content_sha256(self.item), tuple(getattr(self.item, "history", ())))
+        return Held(
+            content_sha256(self.item),
+            tuple(getattr(self.item, "history", ())),
+            getattr(self.item, "sent_sha256", None),
+        )
 
 
 def _shared_roots(sources: Sources) -> tuple[Path, Path]:
@@ -576,6 +587,40 @@ def _as_copy(kind: str, item: Any, new_id: str, names: set[str]) -> Any:
     return copy
 
 
+def _over_copy(kind: str, item: Any, copy: Any) -> Any:
+    """``item``, a later version of what came in as ``copy``, as written over it: under its id and name.
+
+    Its history is the copy's own, with the copy as it is now added, as any save over it
+    would record.
+    """
+    history = next_history(copy.history, content_sha256(copy), content_sha256(item))
+    if kind == BOT_COMBAT_STRATEGY:
+        updated = duplicate_profile(item, copy.name)
+        updated.id = copy.id
+    else:
+        updated = item.model_copy(deep=True, update={"id": copy.id, "name": copy.name})
+    updated.history = history
+    if "official_sha256" in type(updated).model_fields:
+        updated.official_sha256 = None
+    return updated
+
+
+def _earlier_copy(sources: Sources, inc: Incoming) -> tuple[str, Outcome, Holding] | None:
+    """The copy an earlier import made of ``inc``, unchanged since: its id, what ``inc`` is to it, and the copy.
+
+    ``COPIED`` when it holds this version already, ``NEWER`` when an earlier one
+    (:func:`~bartlebot.shared.share_match.copy_outcome`). None when there is no such copy.
+    """
+    for cid in copy_ids(inc.kind, inc.id, inc.sha256, inc.history):
+        have = holding(sources, inc.kind, cid)
+        if have is None or have.read_only:
+            continue
+        outcome = copy_outcome(inc.sha256, inc.history, have.held())
+        if outcome is not None:
+            return cid, outcome, have
+    return None
+
+
 def _folder(sources: Sources, folder: str | None) -> str | None:
     """``folder`` when the receiver's library has a folder of that name, else None, for the top."""
     if not folder:
@@ -631,16 +676,25 @@ def plan_import(
                 sha,
                 inc.history,
                 held.held() if held is not None else None,
+                sent=inc.sha256,
                 official=official,
                 copied=holding(sources, inc.kind, new_id) is not None,
             )
+        # The copy an earlier import made of this item, which its next version updates.
+        earlier = _earlier_copy(sources, inc) if outcome in (Outcome.CONFLICT, Outcome.OFFICIAL) else None
+        if earlier is not None:
+            outcome, held = earlier[1], earlier[2]
         allowed = CHOICES[outcome]
         wanted = choices.get((inc.kind, inc.id))
         action = wanted if wanted in allowed else allowed[0]
         if wanted is None and outcome is Outcome.CONFLICT and (inc.kind, inc.id) in kept_links:
             action = Action.KEEP
         target = inc.id
-        if action is Action.COPY or outcome is Outcome.COPIED:
+        if earlier is not None and action is not Action.COPY:
+            # Update, Keep, or already there: the copy stands for the item, and links follow it.
+            target = earlier[0]
+            copies.setdefault(inc.kind, {})[inc.id] = target
+        elif action is Action.COPY or outcome is Outcome.COPIED:
             target = new_id
             copies.setdefault(inc.kind, {})[inc.id] = new_id
         if action is Action.COPY:
@@ -648,6 +702,10 @@ def plan_import(
                 names[inc.kind] = _names_in_use(sources, inc.kind)
             item = _as_copy(inc.kind, item, new_id, names[inc.kind])
             names[inc.kind].add(item.name)
+        elif earlier is not None and action is Action.UPDATE:
+            item = _over_copy(inc.kind, item, held.item)
+        # Written other than as sent, it remembers how it was sent, so the next version updates it.
+        item.sent_sha256 = inc.sha256 if content_sha256(item) != inc.sha256 else None
         rows.append(
             Row(
                 kind=inc.kind,
@@ -659,7 +717,9 @@ def plan_import(
                 target_id=target,
                 item=item,
                 holding=held,
-                affected=bots_affected(sources, inc.kind, inc.id) if len(allowed) > 1 else [],
+                affected=bots_affected(sources, inc.kind, earlier[0] if earlier else inc.id)
+                if len(allowed) > 1
+                else [],
                 folder=_folder(sources, inc.folder) if inc.kind == BOT else None,
             )
         )

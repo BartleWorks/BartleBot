@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot import share_export, share_import
+from bartlebot import bot_roots, share_export, share_import
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
@@ -29,7 +29,7 @@ from bartlebot.share_export import BOT, BOT_COMBAT_STRATEGY, DECK, DUEL_STRATEGY
 from bartlebot.share_import import Action, Outcome, Refused
 from bartlebot.shared import share_file
 from bartlebot.shared.content_hash import content_sha256
-from bartlebot.shared.share_match import copy_id
+from bartlebot.shared.share_match import Held, copy_id, copy_ids, copy_outcome, match
 from bartlebot.strategy_store import (
     list_all_bot_strategies,
     load_bot_strategy,
@@ -741,3 +741,132 @@ def test_a_file_from_the_other_product_keeps_the_hash_check(sender, receiver, tm
 
     with pytest.raises(Refused, match=r"Made with a newer OtherApp"):
         share_import.plan_import(share, receiver.sources())
+
+
+# ---------------------------------------------------------------------------
+# The next version of what came in changed
+# ---------------------------------------------------------------------------
+
+
+def _resave(sender: Library, bot: BotConfig, **changes) -> BotConfig:
+    """The sender's next version of ``bot``, saved in place as the app saves one, so its history holds the last."""
+    path = sender.user / "bots" / WORLD / "farm.json"
+    later = bot.model_copy(deep=True, update=changes)
+    bot_roots.record_save(later, path)
+    later.save(path)
+    return later
+
+
+def _conflicted_first_import(sender: Library, receiver: Library, tmp_path: Path):
+    """A bot linking a subgraph the receiver has their own of: the subgraph comes in as a copy, the bot on it."""
+    sender.subgraph(_defn("sg", "Their Loop"))
+    receiver.subgraph(_defn("sg", "My Loop"))
+    bot = _bot("bot-1", "Boss Farmer", "sg")
+    sender.bot(bot)
+    plan, _ = _import(receiver, _send_bot(sender, tmp_path, bot, name="first"))
+    return bot, plan.row(SUBGRAPH, "sg").target_id
+
+
+def test_a_bot_on_a_copy_records_the_hash_it_was_sent_with(sender, receiver, tmp_path):
+    bot, copy = _conflicted_first_import(sender, receiver, tmp_path)
+
+    got = receiver.bots()["bot-1"]
+    assert got.regions[0].source.subgraph_id == copy
+    assert got.sent_sha256 == content_sha256(bot)
+    assert content_sha256(got) != content_sha256(bot), "its links were rewritten"
+
+
+def test_the_next_version_of_a_bot_on_a_copy_is_an_update_not_another_copy(sender, receiver, tmp_path):
+    """The bullet from the plan: the bot comes in as Update, still on the copy, and nothing is copied twice."""
+    bot, copy = _conflicted_first_import(sender, receiver, tmp_path)
+    later = _resave(sender, bot, name="Boss Farmer, faster")
+
+    plan, _ = _import(receiver, _send_bot(sender, tmp_path, later, name="second"))
+
+    row = plan.row(BOT, "bot-1")
+    assert (row.outcome, row.action) == (Outcome.NEWER, Action.UPDATE)
+    assert plan.row(SUBGRAPH, "sg").outcome is Outcome.COPIED
+    got = receiver.bots()
+    assert list(got) == ["bot-1"], "no copy of the bot"
+    assert got["bot-1"].name == "Boss Farmer, faster"
+    assert got["bot-1"].regions[0].source.subgraph_id == copy
+    assert got["bot-1"].sent_sha256 == content_sha256(later)
+
+
+def test_a_bot_on_a_copy_the_receiver_changed_is_theirs_and_comes_in_as_a_copy(sender, receiver, tmp_path):
+    bot, _copy = _conflicted_first_import(sender, receiver, tmp_path)
+    path = next((receiver.user / "bots").rglob("*.json"))
+    mine = BotConfig.load(path)
+    mine.description = "My notes"
+    bot_roots.record_save(mine, path)
+    mine.save(path)
+    assert BotConfig.load(path).sent_sha256 is None, "a save that changes it drops the sent hash"
+    later = _resave(sender, bot, name="Boss Farmer, faster")
+
+    plan = _plan(receiver, _send_bot(sender, tmp_path, later, name="second"))
+
+    assert plan.row(BOT, "bot-1").outcome is Outcome.CONFLICT
+
+
+def test_the_next_version_of_a_copy_updates_that_copy(sender, receiver, tmp_path):
+    bot, copy = _conflicted_first_import(sender, receiver, tmp_path)
+    sender.subgraph(_defn("sg", "Their Loop, improved"))
+    receiver.bot(_bot("bot-mine", "My Farmer", copy), "mine")
+    before = load_subgraph(copy, receiver.shipped, receiver.user)
+
+    plan, _ = _import(receiver, _send_bot(sender, tmp_path, bot, name="second"))
+
+    row = plan.row(SUBGRAPH, "sg")
+    assert (row.outcome, row.action, row.target_id) == (Outcome.NEWER, Action.UPDATE, copy)
+    assert row.affected == ["Boss Farmer", "My Farmer"], "it names the bots on the copy"
+    got = load_subgraph(copy, receiver.shipped, receiver.user)
+    assert (got.id, got.name) == (copy, before.name), "the copy keeps its id and its name"
+    assert got.states == load_subgraph("sg", sender.shipped, sender.user).states
+    assert got.history == [content_sha256(before)]
+    assert got.sent_sha256 == content_sha256(load_subgraph("sg", sender.shipped, sender.user))
+    assert load_subgraph("sg", receiver.shipped, receiver.user).name == "My Loop", "the receiver's own is untouched"
+    assert sorted(receiver.sources().subgraphs.ids()) == sorted(["sg", copy]), "no second copy"
+    assert receiver.bots()["bot-1"].regions[0].source.subgraph_id == copy
+
+
+def test_importing_the_updated_copys_file_again_changes_nothing(sender, receiver, tmp_path):
+    bot, _copy = _conflicted_first_import(sender, receiver, tmp_path)
+    sender.subgraph(_defn("sg", "Their Loop, improved"))
+    path = _send_bot(sender, tmp_path, bot, name="second")
+    _import(receiver, path)
+    before = receiver.files()
+
+    plan, _ = _import(receiver, path)
+
+    assert not plan.writes_anything
+    assert plan.row(SUBGRAPH, "sg").outcome is Outcome.COPIED
+    assert receiver.files() == before
+
+
+def test_a_copy_the_receiver_changed_is_never_updated(sender, receiver, tmp_path):
+    bot, copy = _conflicted_first_import(sender, receiver, tmp_path)
+    library = receiver.sources().subgraphs
+    library.save(library.get(copy).model_copy(update={"description": "Mine now"}))
+    sender.subgraph(_defn("sg", "Their Loop, improved"))
+
+    plan = _plan(receiver, _send_bot(sender, tmp_path, bot, name="second"))
+
+    row = plan.row(SUBGRAPH, "sg")
+    assert (row.outcome, row.action) == (Outcome.CONFLICT, Action.COPY)
+    assert row.target_id not in (copy, "sg")
+
+
+def test_matching_treats_the_hash_an_item_was_sent_with_as_its_own():
+    relinked = Held("relinked", ("older",), sent_sha256="as-sent")
+
+    assert match("later", ["as-sent", "older"], relinked) is Outcome.NEWER
+    assert match("relinked-again", [], relinked, sent="as-sent") is Outcome.SAME
+    assert match("later", ["unrelated"], relinked) is Outcome.CONFLICT
+    assert match("later", ["as-sent"], Held("edited", ("relinked",))) is Outcome.CONFLICT, "edited: no sent hash"
+
+
+def test_a_copy_stands_for_its_item_only_while_unchanged():
+    assert copy_outcome("v2", ["v1"], Held("copy", (), sent_sha256="v1")) is Outcome.NEWER
+    assert copy_outcome("v2", ["v1"], Held("copy", (), sent_sha256="v2")) is Outcome.COPIED
+    assert copy_outcome("v2", ["v1"], Held("copy", ("before",))) is None
+    assert copy_ids(SUBGRAPH, "sg", "v2", ["v1", "v2"]) == [copy_id(SUBGRAPH, "sg", h) for h in ("v2", "v1")]

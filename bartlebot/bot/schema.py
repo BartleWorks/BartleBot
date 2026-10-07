@@ -445,6 +445,10 @@ class BotConfig(BaseModel):
     # bartlebot.shared.content_hash. Left out of the file while empty, so a bot never
     # saved since it existed is written exactly as before.
     history: list[str] = Field(default_factory=list)
+    # The content hash it had as its sender sent it, when an import wrote it changed:
+    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # Dropped by the next save that changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     @property
     def is_definition(self) -> bool:
@@ -792,6 +796,10 @@ class SubgraphDefinition(BaseModel):
     # (#169; bartlebot.shared.content_hash). Both stay out of the file while unset.
     history: list[str] = Field(default_factory=list)
     official_sha256: str | None = None
+    # The content hash it had as its sender sent it, when an import wrote it changed:
+    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # Dropped by the next save that changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     @field_validator("id")
     @classmethod

@@ -174,8 +174,9 @@ def record_save_in(shipped_dir: Path, user_dir: Path, item, loader: Callable[[Pa
     """
     if shipped_dir == user_dir:
         item.history = []
-        if "official_sha256" in type(item).model_fields:
-            item.official_sha256 = None
+        for lineage in ("official_sha256", "sent_sha256"):
+            if lineage in type(item).model_fields:
+                setattr(item, lineage, None)
         return
     stored = load_in(user_dir, item.id, loader)
     shipped = None if shipped_dir == user_dir else load_in(shipped_dir, item.id, loader)

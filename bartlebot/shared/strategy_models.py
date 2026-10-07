@@ -100,6 +100,10 @@ class PlayerCombatStrategy(BaseModel):
     #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
     history: list[str] = Field(default_factory=list)
     official_sha256: str | None = None
+    #: The content hash it had as its sender sent it, when an import wrote it changed: its
+    #: links rewritten to a copy, or as a copy itself (#171). Dropped by the next save that
+    #: changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     _legacy_school = model_validator(mode="before")(_schools_from_legacy)
     _schools = field_validator("schools")(_dedupe_schools)
@@ -181,6 +185,10 @@ class DeckPreset(BaseModel):
     #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
     history: list[str] = Field(default_factory=list)
     official_sha256: str | None = None
+    #: The content hash it had as its sender sent it, when an import wrote it changed: its
+    #: links rewritten to a copy, or as a copy itself (#171). Dropped by the next save that
+    #: changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     _tags = field_validator("tags", mode="before")(normalize_role_tags)
     _schools = field_validator("schools")(_dedupe_schools)
@@ -348,6 +356,10 @@ class DuelCombatStrategy(DuelConfig):
     #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
     history: list[str] = Field(default_factory=list)
     official_sha256: str | None = None
+    #: The content hash it had as its sender sent it, when an import wrote it changed: its
+    #: links rewritten to a copy, or as a copy itself (#171). Dropped by the next save that
+    #: changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     @classmethod
     def load(cls, path: str | Path) -> DuelCombatStrategy:

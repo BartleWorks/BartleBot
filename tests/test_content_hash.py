@@ -29,6 +29,7 @@ from bartlebot.shared.content_hash import (
     official_updated,
     record_save,
 )
+from bartlebot.shared.share_file import shareable_content
 from bartlebot.store_roots import Origin, pill_text
 from bartlebot.strategy_store import (
     StrategyKind,
@@ -99,6 +100,7 @@ def test_the_history_fields_are_left_out_of_the_hash(item):
     item.history = ["a" * 64]
     if "official_sha256" in type(item).model_fields:
         item.official_sha256 = "b" * 64
+    item.sent_sha256 = "c" * 64
     assert content_sha256(item) == before
     item.name = "Something else"
     assert content_sha256(item) != before
@@ -108,7 +110,7 @@ def test_the_history_fields_are_left_out_of_the_hash(item):
 def test_an_empty_history_stays_out_of_the_file(item, tmp_path):
     item.save(tmp_path / "item.json")
     data = json.loads((tmp_path / "item.json").read_text(encoding="utf-8"))
-    assert "history" not in data and "official_sha256" not in data
+    assert "history" not in data and "official_sha256" not in data and "sent_sha256" not in data
 
 
 def test_a_nested_field_named_history_is_content():
@@ -146,6 +148,26 @@ def test_record_save_without_anything_replaced_keeps_the_items_history():
     item.history = ["kept"]
     record_save(item)
     assert item.history == ["kept"] and item.official_sha256 is None
+
+
+@pytest.mark.parametrize("item", _items(), ids=lambda i: type(i).__name__)
+def test_the_sent_hash_is_kept_by_a_save_that_changes_nothing_and_dropped_by_one_that_does(item):
+    """It stands for the item as import wrote it, so an edit of the receiver's own ends it."""
+    item.sent_sha256 = "c" * 64
+    stored = item.model_copy(deep=True)
+
+    record_save(item, stored=stored)
+    assert item.sent_sha256 == "c" * 64
+
+    item.name = "Edited"
+    record_save(item, stored=stored)
+    assert item.sent_sha256 is None
+
+
+def test_a_sent_hash_never_travels_in_a_share_file():
+    item = _defn()
+    item.sent_sha256 = "c" * 64
+    assert "sent_sha256" not in shareable_content(item)
 
 
 def test_the_first_save_of_an_override_descends_from_the_official_one():

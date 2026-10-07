@@ -50,6 +50,7 @@ def make_fork(official: BotConfig, name: str) -> BotConfig:
     fork.name = name.strip() or official.name
     fork.forked_from = ForkedFrom(id=official.id, sha256=content_sha256(official))
     fork.history = []
+    fork.sent_sha256 = None
     return fork
 
 

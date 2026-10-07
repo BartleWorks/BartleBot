@@ -124,6 +124,10 @@ class BotCombatStrategy(BaseModel):
     # Content hashes of what earlier saves replaced, newest first (#169). None ship, so
     # there is never an Official base to record.
     history: list[str] = Field(default_factory=list)
+    # The content hash it had as its sender sent it, when an import wrote it changed:
+    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # Dropped by the next save that changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     @classmethod
     def load(cls, path: str | Path) -> BotCombatStrategy:

@@ -1002,8 +1002,10 @@ class AppController(QObject):
         # Its history goes too: what the original was copied from is not the copy's own past.
         old_id = self._loaded_config.id
         old_history = self._loaded_config.history
+        old_sent = self._loaded_config.sent_sha256
         self._loaded_config.id = str(uuid4())
         self._loaded_config.history = []
+        self._loaded_config.sent_sha256 = None
         try:
             self._loaded_config.save(path)
         except Exception as e:
@@ -1012,6 +1014,7 @@ class AppController(QObject):
             # every value the user has stored against it for the rest of the session.
             self._loaded_config.id = old_id
             self._loaded_config.history = old_history
+            self._loaded_config.sent_sha256 = old_sent
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
             return False
         if self._rewards_declined_for == old_id:
