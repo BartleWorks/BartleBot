@@ -3119,13 +3119,11 @@ class AppController(QObject):
         self._mark_unsaved()
         if canvas_config is not None and canvas_config.is_definition:
             # No sidebars to follow and no options to compose: a definition has neither.
-            self._loaded_config = canvas_config
             self._window.bot_canvas.refresh_initial(canvas_config.initial)
             self._window.bot_canvas.refresh_edge_flags()
             self._window.set_bot_name(canvas_config.name, "subgraph")
             return
         if canvas_config is not None:
-            self._loaded_config = canvas_config
             # Undo/redo replaces the canvas's config object; the sidebar has to
             # follow it or its edits go nowhere.  No-op the rest of the time.
             self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
