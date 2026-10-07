@@ -37,6 +37,7 @@ class ControllerHarness:
             "_new_bot",
             "_new_bot_folder",
             "_open_bot",
+            "_close_bot",
             "_save_bot",
             "_save_bot_as",
             "_do_autosave",
@@ -76,7 +77,15 @@ class ControllerHarness:
             "_back_to_document",
             "_file_label",
             "_may_edit_template",
+            "_template_roots",
+            "_user_bots_dirs",
+            "_template_gallery",
+            "_open_templates_dialog",
             "_edit_template",
+            "_new_template",
+            "_duplicate_template",
+            "_rename_template",
+            "_delete_template",
             "_open_template",
             "_refresh_template_context",
             "_release_template",
@@ -85,6 +94,7 @@ class ControllerHarness:
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library
         self._templates_root = None
+        self._templates_user_root = None
         self._elixir_probe = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None

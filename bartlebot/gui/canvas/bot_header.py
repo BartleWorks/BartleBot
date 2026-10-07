@@ -598,6 +598,15 @@ class BotHeader(ThemedMixin, QWidget):
             return
         self._tags_field.set_suggestions(suggested_tags(config.states))
 
+    def refresh_name(self) -> None:
+        """Re-read the document's name, after something other than this header changed it."""
+        if self._config is None:
+            return
+        self._suppress = True
+        self._name_lbl.setText(self._config.name or _PLACEHOLDER)
+        self._name_edit.setText(self._config.name or "")
+        self._suppress = False
+
     def refresh_tags(self) -> None:
         """Re-read the bot's tags, after something other than this header changed them."""
         if self._config is not None:

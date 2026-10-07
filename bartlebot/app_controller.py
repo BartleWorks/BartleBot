@@ -30,6 +30,7 @@ from bartlebot import (
     share_import,
     strategy_store,
     template_diff,
+    template_gallery,
     template_store,
     wizard_names,
     zone_names,
@@ -55,6 +56,7 @@ from bartlebot.gui.make_copy_dialog import MakeCopyDialog
 from bartlebot.gui.new_bot_dialog import NewBotDialog
 from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
+from bartlebot.gui.templates_dialog import TemplatesDialog, TemplatesVerb
 from bartlebot.gui.window_show_trace import WindowShowTracer
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -203,6 +205,8 @@ class AppController(QObject):
         self._subgraph_library = SubgraphLibrary()
         # Where the template store is: the project root, or a test's tmp_path.
         self._templates_root: Path | None = None
+        # The user root the template store writes, when not the default; a test's tmp_path.
+        self._templates_user_root: Path | None = None
         if dev_mode():
             logger.warning(
                 "%s is set: bots, templates, subgraphs and combat strategies are read from and saved to %s",
@@ -350,7 +354,7 @@ class AppController(QObject):
         w.action_close.triggered.connect(lambda: self._close_bot())
         w.action_save.triggered.connect(lambda: self._save_bot())
         w.action_save_as.triggered.connect(lambda: self._save_bot_as())
-        w.action_edit_template.triggered.connect(lambda: self._edit_template())
+        w.action_templates.triggered.connect(lambda: self._open_templates_dialog())
         w.action_export.triggered.connect(lambda: self._export_open_document())
         w.action_import.triggered.connect(lambda: self._import_share_file())
         w.open_recent_requested.connect(self._open_bot)
@@ -779,7 +783,7 @@ class AppController(QObject):
         # Written to the user's own folder, offering every world folder either root has.
         bots_dir = bot_roots.user_bots_dir()
         dialog = NewBotDialog(
-            new_bot.starting_points(self._templates_root),
+            new_bot.starting_points(self._templates_root, self._templates_user_root),
             bots_dir,
             self._window,
             initial_folder=self._new_bot_folder(),
@@ -844,7 +848,7 @@ class AppController(QObject):
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
         if not config.is_template:
-            # A draft is reached through Edit Template…, never as a recent bot.
+            # A draft is reached through File › Templates…, never as a recent bot.
             self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         self._window.bot_canvas.refresh_placeholder()
 
@@ -1354,42 +1358,184 @@ class AppController(QObject):
             return _DRAFT_FILE_LABEL
         return Path(path).name if path else "Untitled"
 
+    @property
+    def templates_user_root(self) -> Path | None:
+        """The user root the template store writes: None for the default. Tests point it at a ``tmp_path``."""
+        return self._templates_user_root
+
+    @templates_user_root.setter
+    def templates_user_root(self, root: Path | None) -> None:
+        self._templates_user_root = root
+
     def _may_edit_template(self, config: BotConfig, path: str) -> bool:
-        """Whether a template file may be opened for editing: only a draft, and only in dev mode. Says why not."""
-        if Path(path).name == template_store.DRAFT_FILE and dev_mode():
-            return True
-        if Path(path).name == template_store.DRAFT_FILE:
-            why = (
-                f"This is the draft of the template '{config.name}', which only its maintainer edits "
-                f"(with {DEV_ENV_VAR} set)."
-            )
-        else:
+        """Whether a template file may be opened for editing. Says why not.
+
+        Only a draft, never a released version. The user's own template's draft always;
+        an Official one's only in dev mode, where its maintainer edits it (#164).
+        """
+        if Path(path).name != template_store.DRAFT_FILE:
             why = f"This is a released version of the template '{config.name}', which is never edited."
-        QMessageBox.information(self._window, "Open Bot", f"{why}\n\nTo start a bot from a template, use New Bot.")
+            hint = "To start a bot from a template, use New Bot."
+        elif dev_mode():
+            return True
+        else:
+            template = template_store.find_template(config.id, self._templates_root, self._templates_user_root)
+            if (
+                template is not None
+                and template.origin is Origin.USER
+                and template.draft_path.resolve() == Path(path).resolve()
+            ):
+                return True
+            why = f"This is the draft of the Official template '{config.name}', which changes only with an app update."
+            hint = "To make one of your own from it, use Duplicate in File › Templates…."
+        QMessageBox.information(self._window, "Open Bot", f"{why}\n\n{hint}")
         return False
 
-    def _edit_template(self) -> bool:
-        """File › Edit Template…: pick a template and open its draft, as a bot is opened. Dev mode only."""
-        if not dev_mode():
+    def _template_roots(self) -> dict[str, Path | None]:
+        """The template store's two roots, as every store function takes them."""
+        return {"root": self._templates_root, "user_root": self._templates_user_root}
+
+    def _user_bots_dirs(self) -> tuple[Path, ...]:
+        """Where the user's own bots are: what the Templates dialog counts, and Delete names."""
+        return (bot_roots.user_bots_dir(),)
+
+    def _template_gallery(self) -> list[template_gallery.GalleryEntry]:
+        return template_gallery.gallery(self._user_bots_dirs(), dev=dev_mode(), **self._template_roots())
+
+    def _open_templates_dialog(self) -> bool:
+        """File › Templates…: every template, and the verbs that make templates of your own (#164).
+
+        Edit, New and Duplicate end the dialog and open a draft for editing; Rename and
+        Delete happen while it stays open. True when a draft was opened.
+        """
+        if not self._close_definitions():
             return False
-        templates = template_store.list_templates(self._templates_root)
-        if not templates:
-            QMessageBox.information(self._window, "Edit Template", "There are no templates to edit.")
+        dialog = TemplatesDialog(
+            self._template_gallery, self._window, rename=self._rename_template, delete=self._delete_template
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted or dialog.request is None:
             return False
-        names = [t.name for t in templates]
-        name, ok = QInputDialog.getItem(self._window, "Edit Template", "Template:", names, 0, False)
-        if not ok:
-            return False
-        template = templates[names.index(name)]
-        self._open_bot(str(template.draft_path))
+        request = dialog.request
+        if request.verb is TemplatesVerb.NEW:
+            return self._new_template()
+        if request.verb is TemplatesVerb.DUPLICATE:
+            return self._duplicate_template(request.entry.template)
+        return self._edit_template(request.entry.template)
+
+    def _edit_template(self, template: template_store.Template) -> bool:
+        """Open ``template``'s draft as the top-level document, in Edit mode. False when it did not open."""
+        open_now = self._open_template()
+        if open_now is None or open_now.id != template.id:
+            self._open_bot(str(template.draft_path), mode=BotMode.EDIT)
         return self._loaded_config is not None and self._loaded_config.id == template.id
+
+    def _new_template(self) -> bool:
+        """New: ask for a name, start a blank template of the user's own, and open its draft."""
+        name, ok = QInputDialog.getText(self._window, "New Template", "What is the template called?")
+        if not ok or not name.strip():
+            return False
+        try:
+            template = template_store.new_template(name, **self._template_roots())
+        except OSError as exc:
+            QMessageBox.critical(self._window, "New Template", f"Could not create the template:\n\n{exc}")
+            return False
+        return self._edit_template(template)
+
+    def _duplicate_template(self, source: template_store.Template) -> bool:
+        """Duplicate: fork ``source`` into a template of the user's own, and open its draft."""
+        taken = [t.name for t in template_store.list_templates(**self._template_roots())]
+        name, ok = QInputDialog.getText(
+            self._window,
+            "Duplicate Template",
+            f"What is your copy of {source.name} called?",
+            text=template_gallery.copy_name(source.name, taken),
+        )
+        if not ok or not name.strip():
+            return False
+        try:
+            fork = template_store.duplicate_template(source, name, **self._template_roots())
+        except (OSError, LookupError, ValueError) as exc:
+            QMessageBox.critical(self._window, "Duplicate Template", f"Could not copy {source.name}:\n\n{exc}")
+            return False
+        return self._edit_template(fork)
+
+    def _rename_template(self, entry: template_gallery.GalleryEntry) -> bool:
+        """Rename the user's own template. True when it was renamed.
+
+        An open draft of it takes the name too, so its next save keeps it rather than
+        writing the old one back.
+        """
+        template = entry.template
+        name, ok = QInputDialog.getText(self._window, "Rename Template", "Template name:", text=template.name)
+        name = name.strip()
+        if not ok or not name or name == template.name:
+            return False
+        try:
+            template_store.rename_template(template.id, name, **self._template_roots())
+        except (OSError, PermissionError, ValueError) as exc:
+            QMessageBox.warning(self._window, "Rename Template", f"Could not rename {template.name}:\n\n{exc}")
+            return False
+        open_draft = self._open_template()
+        if open_draft is not None and open_draft.id == template.id:
+            config = self._loaded_config
+            config.name = name
+            if not self._has_unsaved_changes:
+                self._clean_snapshot = _file_snapshot(config)
+            self._window.set_bot_name(config.name, self._file_label(config, self._last_save_path))
+            self._window.bot_canvas.refresh_name()
+        return True
+
+    def _delete_template(self, entry: template_gallery.GalleryEntry) -> bool:
+        """Delete the user's own template, after naming the bots made from it. True when it was deleted.
+
+        The bots keep running, without setup steps or update reviews. An open draft of it
+        is closed first, unsaved changes and all: they belong to what is being deleted.
+        """
+        template = entry.template
+        refused = template_store.deletion_refused(template, **self._template_roots())
+        if refused:
+            QMessageBox.information(self._window, "Delete Template", refused)
+            return False
+        bots = template_store.bots_based_on(template.id, *self._user_bots_dirs())
+        if bots:
+            listed = "\n".join(f"• {b}" for b in bots[:12])
+            more = f"\n…and {len(bots) - 12} more" if len(bots) > 12 else ""
+            made = (
+                f"These bots were made from it:\n\n{listed}{more}\n\n"
+                "They keep running, but without its setup steps or update reviews."
+            )
+        else:
+            made = "None of your bots were made from it."
+        reply = QMessageBox.warning(
+            self._window,
+            "Delete Template",
+            f"Delete {template.name}, its draft and every version released from it?\n\n{made}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return False
+        open_draft = self._open_template()
+        if open_draft is not None and open_draft.id == template.id:
+            self._has_unsaved_changes = False
+            self._close_bot()
+            if self._loaded_config is not None:
+                return False
+        try:
+            template_store.delete_template(template.id, **self._template_roots())
+        except (OSError, PermissionError) as exc:
+            QMessageBox.critical(self._window, "Delete Template", f"Could not delete {template.name}:\n\n{exc}")
+            return False
+        # A bot open now may have been made from it: its steps and review go with it.
+        self._refresh_template_context()
+        return True
 
     def _open_template(self) -> template_store.Template | None:
         """The template whose draft is the open document, or None."""
         config = self._loaded_config
         if config is None or not config.is_template or self._last_save_path is None:
             return None
-        template = template_store.find_template(config.id, self._templates_root)
+        template = template_store.find_template(config.id, self._templates_root, self._templates_user_root)
         if template is None or Path(self._last_save_path).resolve() != template.draft_path.resolve():
             return None
         return template
@@ -1407,9 +1553,11 @@ class AppController(QObject):
         if not config.is_template:
             if not config.is_definition:
                 canvas = self._window.bot_canvas
-                canvas.set_base_setup_steps(setup_steps.steps_for(config, self._templates_root))
+                canvas.set_base_setup_steps(
+                    setup_steps.steps_for(config, self._templates_root, self._templates_user_root)
+                )
                 origin = (
-                    template_store.find_template(config.template.id, self._templates_root)
+                    template_store.find_template(config.template.id, self._templates_root, self._templates_user_root)
                     if config.template is not None
                     else None
                 )
@@ -1420,14 +1568,18 @@ class AppController(QObject):
                 )
                 # An Official bot gets its updates from the app, never through the review
                 # (#149). Developer mode never marks one Official, so its maintainer still can.
-                update = None if self._official_open else template_diff.load_update(config, self._templates_root)
+                update = (
+                    None
+                    if self._official_open
+                    else template_diff.load_update(config, self._templates_root, self._templates_user_root)
+                )
                 canvas.set_template_update(update)
             return
         template = self._open_template()
         if template is None:
             self._window.bot_canvas.set_template_context(None)
             return
-        reserved = template_store.used_ids(template.id, self._templates_root)
+        reserved = template_store.used_ids(template.id, self._templates_root, self._templates_user_root)
         self._window.bot_canvas.set_template_context(template.latest_version, reserved)
 
     def _release_template(self) -> bool:
@@ -1441,7 +1593,7 @@ class AppController(QObject):
         template = self._open_template()
         if config is None or template is None:
             QMessageBox.warning(
-                self._window, "Release", "Only a template's draft, opened with Edit Template…, can be released."
+                self._window, "Release", "Only a template's draft, opened from File › Templates…, can be released."
             )
             return False
         if self._has_unsaved_changes and not _matches_clean(config, self._clean_snapshot):
@@ -1456,7 +1608,14 @@ class AppController(QObject):
                 return False
         errors = self._window.bot_canvas.validation_errors()
         draft = BotConfig.load(template.draft_path)
-        problems = template_store.release_problems(draft, template, errors, self._subgraph_library)
+        problems = template_store.release_problems(
+            draft,
+            template,
+            errors,
+            self._subgraph_library,
+            root=self._templates_root,
+            user_root=self._templates_user_root,
+        )
         if problems:
             self._show_release_refused(template.name, problems)
             return False
@@ -1471,7 +1630,12 @@ class AppController(QObject):
             return False
         try:
             entry = template_store.release(
-                template.id, note, errors, root=self._templates_root, library=self._subgraph_library
+                template.id,
+                note,
+                errors,
+                root=self._templates_root,
+                user_root=self._templates_user_root,
+                library=self._subgraph_library,
             )
         except template_store.ReleaseRefused as exc:
             self._show_release_refused(template.name, exc.problems)

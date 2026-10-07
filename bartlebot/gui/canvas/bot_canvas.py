@@ -2093,6 +2093,14 @@ class BotCanvas(QWidget):
         """Re-read the loaded bot's tags into the header, after something outside it set them."""
         self._toolbar.refresh_tags()
 
+    def refresh_name(self) -> None:
+        """Re-read the loaded document's name into the header and the crumb, after something outside them set it.
+
+        A template renamed from File › Templates… while its draft is open (#164).
+        """
+        self._toolbar.refresh_name()
+        self._refresh_crumb()
+
     def set_bot_file(self, filename: str | None) -> None:
         """Name the file the loaded bot came from, shown in the header."""
         self._toolbar.set_file(filename)
