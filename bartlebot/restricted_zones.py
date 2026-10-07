@@ -61,7 +61,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from bartlebot.bot.schema import BotConfig
+    from collections.abc import Iterable
+
+    from bartlebot.bot.schema import BotConfig, StateModel
 
 logger = logging.getLogger(__name__)
 
@@ -183,6 +185,17 @@ def _zone_param_keys(params: dict) -> list[str]:
     return [key for key in params if key == "zone" or key.endswith("_zone")]
 
 
+#: Said after the list of zones wherever a bot is refused for one: at run start, and on import.
+PVE_ONLY_TEXT = (
+    "BartleBot is for PvE. PvP zones and Beastmoon are off limits, and this is not something that can be turned off."
+)
+
+
+def describe_found(found: Iterable[tuple[str, str, Restriction]]) -> str:
+    """One bullet per restricted zone :func:`check_bot_config` found: the node, the zone, and why."""
+    return "\n".join(f"• {label}: {zone} — {hit.reason}" for label, zone, hit in found)
+
+
 def check_bot_config(config: BotConfig) -> list[tuple[str, str, Restriction]]:
     """Return (state label, zone, restriction) for every restricted zone a bot names.
 
@@ -190,8 +203,17 @@ def check_bot_config(config: BotConfig) -> list[tuple[str, str, Restriction]]:
     strictly better than catching it 250 ms after the client arrives there: the
     client never goes, so there is nothing to back out of.
     """
+    return check_states(config.states)
+
+
+def check_states(states: Iterable[StateModel]) -> list[tuple[str, str, Restriction]]:
+    """:func:`check_bot_config` for any list of states, such as a subgraph definition's.
+
+    What an import checks every bot and subgraph in a share file with (#171), so a file
+    is refused for the same reason, in the same words, as running the bot would be.
+    """
     found: list[tuple[str, str, Restriction]] = []
-    for state in config.states:
+    for state in states:
         params = state.params or {}
         for key in _zone_param_keys(params):
             value = params.get(key)

@@ -63,15 +63,21 @@ def load_subgraph(
 
 
 def save_subgraph(
-    defn: SubgraphDefinition, root: str | Path | None = None, user_root: str | Path | None = None
+    defn: SubgraphDefinition,
+    root: str | Path | None = None,
+    user_root: str | Path | None = None,
+    *,
+    record: bool = True,
 ) -> None:
     """Write to the user root only; the shipped file is never touched.
 
     Records the history and, on an override, the Official base first
     (:func:`~bartlebot.shared.store_files.record_save_in`), into ``defn`` itself.
+    ``record=False`` writes the history ``defn`` already has, as an import does (#171).
     """
     shipped, user = resolve_roots(root, user_root)
-    record_save_in(_subgraph_dir(shipped), _subgraph_dir(user), defn, SubgraphDefinition.load)
+    if record:
+        record_save_in(_subgraph_dir(shipped), _subgraph_dir(user), defn, SubgraphDefinition.load)
     save_by_id(_subgraph_dir(user), defn.id, defn.name, defn.save)
 
 
@@ -226,9 +232,23 @@ class SubgraphLibrary:
         ]
         return sorted(found, key=lambda d: d.name.casefold())
 
-    def save(self, defn: SubgraphDefinition) -> None:
-        """Write ``defn`` to the user root and refresh the cache to match."""
-        save_subgraph(defn, self._root, self._user_root)
+    @property
+    def roots(self) -> tuple[Path, Path]:
+        """``(shipped, user)``: the two roots this library reads, the same directory when nothing is Official."""
+        return resolve_roots(self._root, self._user_root)
+
+    def official(self, subgraph_id: str) -> SubgraphDefinition | None:
+        """The Official definition of ``subgraph_id``, as it ships, whatever override is over it.
+
+        When the two roots are one directory nothing is Official, and this is the one
+        definition there is, as the maintainer's developer mode has it.
+        """
+        shipped, user = self.roots
+        return self._by_id.get(subgraph_id) if shipped == user else self._shipped.get(subgraph_id)
+
+    def save(self, defn: SubgraphDefinition, *, record: bool = True) -> None:
+        """Write ``defn`` to the user root and refresh the cache to match. See :func:`save_subgraph`."""
+        save_subgraph(defn, self._root, self._user_root, record=record)
         self.reload()
 
     def delete(self, subgraph_id: str) -> None:

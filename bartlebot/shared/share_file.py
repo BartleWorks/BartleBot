@@ -68,7 +68,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 
 from bartlebot.shared.content_hash import HISTORY_FIELDS, content_sha256
 from bartlebot.shared.store_files import Origin
@@ -127,6 +127,17 @@ class PackedItem(ItemRef):
     content: dict[str, Any]
     #: Set on a user's modified copy of an Official item: the receiver gets it as a copy.
     overrides_official: bool = False
+    #: The library folder the sender keeps it in, by name, so the receiver's lands in the
+    #: same one: set on a bot only, and left out of the file when there is none. Not
+    #: content, so not hashed. An import uses it only when the receiver has that folder.
+    folder: str | None = None
+
+    @model_serializer(mode="wrap")
+    def _leave_out_no_folder(self, handler):
+        data = handler(self)
+        if data.get("folder") is None:
+            data.pop("folder", None)
+        return data
 
 
 class ShareFile(BaseModel):
@@ -210,11 +221,12 @@ class Collector:
         self.requires: list[Requirement] = []
         self.entries: list[Entry] = []
 
-    def add(self, kind: str, item: Any, origin: Origin) -> bool:
+    def add(self, kind: str, item: Any, origin: Origin, *, folder: str | None = None) -> bool:
         """Pack ``item``, or name it when it is Official. False, doing nothing, when it is already here.
 
         ``origin`` is where the sender's copy is. Missing means an item in hand that no
         store holds, such as a Bot Combat Strategy's own strategy, which is Custom.
+        ``folder`` is the library folder a packed bot is in (:attr:`PackedItem.folder`).
         """
         key = (kind, item.id)
         if key in self._seen:
@@ -233,6 +245,7 @@ class Collector:
                     history=list(item.history),
                     content=shareable_content(item),
                     overrides_official=overrides,
+                    folder=folder,
                 )
             )
             disposition = Disposition.COPY if overrides else Disposition.PACKED

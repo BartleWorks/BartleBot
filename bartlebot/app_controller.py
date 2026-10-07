@@ -1125,6 +1125,8 @@ class AppController(QObject):
         official = bot_roots.is_shipped(path)
         combat = self._active_bot_strategy(bot.id)
 
+        folder = _world_folder(path)
+
         def build(choices):
             return share_export.export_bot(
                 bot,
@@ -1132,6 +1134,7 @@ class AppController(QObject):
                 official=official,
                 combat=combat if choices.include_combat else None,
                 include_decks=choices.include_decks,
+                folder=folder,
             )
 
         return run_export(
@@ -2306,16 +2309,14 @@ class AppController(QObject):
         found = restricted_zones.check_bot_config(self._loaded_config)
         if not found:
             return True
-        lines = "\n".join(f"• {label}: {zone} — {hit.reason}" for label, zone, hit in found)
         logger.critical("Refusing to run: bot names %d restricted zone(s)", len(found))
         QMessageBox.critical(
             self._window,
             "Restricted Zone",
             "This bot cannot be run. It sends a client to a zone BartleBot does not "
             "automate:\n\n"
-            f"{lines}\n\n"
-            "BartleBot is for PvE. PvP zones and Beastmoon are off limits, and this "
-            "is not something that can be turned off.",
+            f"{restricted_zones.describe_found(found)}\n\n"
+            f"{restricted_zones.PVE_ONLY_TEXT}",
         )
         return False
 
