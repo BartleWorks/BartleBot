@@ -603,10 +603,23 @@ def plan_import(
     copies: dict[str, dict[str, str]] = {}
     names: dict[str, set[str]] = {}
     rows: list[Row] = []
-    for inc in _ordered(incoming):
+    ordered = _ordered(incoming)
+    # An item the receiver already has as it came, before any relinking, keeps its links, so a second
+    # import of the same file finds it again (#185). What it links defaults to Keep mine, not a copy.
+    pinned: set[tuple[str, str]] = set()
+    kept_links: set[tuple[str, str]] = set()
+    for inc in ordered:
+        if inc.kind not in (BOT, SUBGRAPH):
+            continue
+        have = holding(sources, inc.kind, inc.id)
+        if have is not None and not have.read_only and content_sha256(inc.item) == content_sha256(have.item):
+            pinned.add((inc.kind, inc.id))
+            kept_links |= {(SUBGRAPH, linked) for linked in _links(inc.kind, inc.item)}
+    for inc in ordered:
         # Content never carries the history: it travels beside it, and is written as it arrived.
         item = inc.item.model_copy(deep=True, update={"history": list(inc.history)})
-        _relink(inc.kind, item, copies)
+        if (inc.kind, inc.id) not in pinned:
+            _relink(inc.kind, item, copies)
         sha = content_sha256(item)
         held = holding(sources, inc.kind, inc.id)
         new_id = copy_id(inc.kind, inc.id, inc.sha256)
@@ -624,6 +637,8 @@ def plan_import(
         allowed = CHOICES[outcome]
         wanted = choices.get((inc.kind, inc.id))
         action = wanted if wanted in allowed else allowed[0]
+        if wanted is None and outcome is Outcome.CONFLICT and (inc.kind, inc.id) in kept_links:
+            action = Action.KEEP
         target = inc.id
         if action is Action.COPY or outcome is Outcome.COPIED:
             target = new_id

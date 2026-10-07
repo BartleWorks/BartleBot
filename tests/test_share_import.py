@@ -390,6 +390,24 @@ def test_keep_mine_and_replace_leave_the_imported_bot_on_the_receivers_id(sender
     assert receiver.bots()["bot-1"].regions[0].source.subgraph_id == "sg"
 
 
+def test_importing_a_file_again_after_keep_mine_writes_nothing(sender, receiver, tmp_path):
+    sender.subgraph(_defn("sg", "Their Loop"))
+    receiver.subgraph(_defn("sg", "My Loop"))
+    bot = _bot("bot-1", "Boss Farmer", "sg")
+    sender.bot(bot)
+    path = _send_bot(sender, tmp_path, bot)
+
+    _import(receiver, path, {(SUBGRAPH, "sg"): Action.KEEP})
+    before = receiver.files()
+    plan, result = _import(receiver, path)
+
+    assert plan.row(BOT, "bot-1").outcome is Outcome.SAME
+    assert plan.row(SUBGRAPH, "sg").action is Action.KEEP
+    assert not plan.writes_anything
+    assert result.rows == []
+    assert receiver.files() == before
+
+
 def test_a_choice_a_row_does_not_allow_takes_its_default(sender, receiver, tmp_path):
     bot, _ = _sender_setup(sender)
     plan = _plan(receiver, _send_bot(sender, tmp_path, bot), {(BOT, "bot-1"): Action.REPLACE})
