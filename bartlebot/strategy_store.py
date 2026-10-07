@@ -57,6 +57,7 @@ from bartlebot.store_roots import (
     load_by_id,
     merged_by_id,
     origin_in,
+    resolve_bot_strategy_roots,
     resolve_roots,
     resolve_shared_roots,
     save_by_id,
@@ -139,6 +140,7 @@ def unique_name(base: str, existing_names) -> str:
 
 
 _roots = resolve_roots
+_bot_roots = resolve_bot_strategy_roots
 _merged = merged_by_id
 
 
@@ -296,7 +298,7 @@ def list_all_bot_strategies(
     root: str | Path | None = None, user_root: str | Path | None = None
 ) -> list[BotCombatStrategy]:
     """Return every BotCombatStrategy file regardless of bot_id."""
-    shipped, user = _roots(root, user_root)
+    shipped, user = _bot_roots(root, user_root)
     by_id = _merged(_bot_strategy_dir(shipped), _bot_strategy_dir(user), BotCombatStrategy.load)
     return list(by_id.values())
 
@@ -304,7 +306,7 @@ def list_all_bot_strategies(
 def load_bot_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> BotCombatStrategy:
-    shipped, user = _roots(root, user_root)
+    shipped, user = _bot_roots(root, user_root)
     return load_by_id(_bot_strategy_dir(shipped), _bot_strategy_dir(user), uuid, BotCombatStrategy.load)  # type: ignore[return-value]
 
 
@@ -315,14 +317,14 @@ def save_bot_strategy(
 
     ``record=False`` writes the history ``s`` already has, as an import does (#171).
     """
-    shipped, user = _roots(root, user_root)
+    shipped, user = _bot_roots(root, user_root)
     if record:
         record_save_in(_bot_strategy_dir(shipped), _bot_strategy_dir(user), s, BotCombatStrategy.load)
     save_by_id(_bot_strategy_dir(user), s.id, s.name, s.save)
 
 
 def delete_bot_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
-    _, user = _roots(root, user_root)
+    _, user = _bot_roots(root, user_root)
     delete_by_id(_bot_strategy_dir(user), uuid)
 
 
@@ -372,7 +374,7 @@ _KIND_DIRS = {
 
 def _roots_for(kind: StrategyKind, root, user_root) -> tuple[Path, Path]:
     """The roots ``kind`` is stored under: BartleBot's own for a Bot Combat Strategy, else the shared library's."""
-    return _roots(root, user_root) if kind is StrategyKind.BOT else _shared_roots(root, user_root)
+    return _bot_roots(root, user_root) if kind is StrategyKind.BOT else _shared_roots(root, user_root)
 
 
 def origin_of(
