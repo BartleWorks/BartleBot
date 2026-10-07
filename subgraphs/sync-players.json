@@ -3,6 +3,9 @@
   "name": "Sync players",
   "description": "Brings every player to one zone, one realm and one area, confirmed by sight. Most bots should start with this subgraph.",
   "version": 4,
+  "tags": [
+    "Team"
+  ],
   "inputs": [],
   "panels": [
     {
@@ -114,5 +117,8 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [],
+  "history": [
+    "4a6b2507eec58e0ce0eadfdcf06c3250413c66f5461c77795e460e1ba8b1885f"
+  ]
 }
