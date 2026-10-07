@@ -905,6 +905,19 @@ its mode with `setup(config, mode=...)`, never `setup` then `enter_edit_mode`, w
 laid the canvas out in Run mode first.
 `docs/SUBGRAPHS.md` has the flow.
 
+**Variables have three editors, and each owns one thing** (#187, `docs/VARIABLES.md`):
+the declarations are the **Variables section**, under Options on the Edit-mode Options tab
+-- declarations, like options, and never the Properties page; a variable's reads are the
+edge page's **Conditions** rows; its writes are the **`assignments`** rows on a
+`set_variables` node's page (and on an edge's page in #189). The two row editors read the
+declarations the canvas hands them each time a page is shown, never a copy of their own,
+and share one value control (`widgets/variable_widgets.VariableValueField`), which only
+ever offers a value the type takes. Because the Options tab *replaces* the Properties page
+while the author declares, a declaration edit re-shows the page
+(`BotCanvas.reshow_properties`): a page left showing a renamed variable's old name writes
+it back on its next edit. A new surface that edits what a page was built from needs the
+same.
+
 ## Source: Official, Official (modified), Custom
 
 Every list of bots, templates, subgraphs or strategies says where each item comes from,
