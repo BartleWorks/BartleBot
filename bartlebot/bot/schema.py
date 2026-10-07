@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from bartlebot.bot_tags import normalize_tags
+from bartlebot.subgraph_tags import normalize_subgraph_tags
 
 #: Return values that fall through to the bot's recovery state when a node's port
 #: for them is left unrouted. Almost every failure in a graph ends up back at the
@@ -309,6 +310,11 @@ class DefinitionMeta(BaseModel):
     version: int = 1
     inputs: list[SubgraphInput] = Field(default_factory=list)
     panels: list[SubgraphPanel] = Field(default_factory=list)
+    # The definition's categories (#172). Here rather than in the document's own ``tags``,
+    # which hold bot tags and drop any other word on validation.
+    tags: list[str] = Field(default_factory=list)
+
+    _tags = field_validator("tags", mode="before")(normalize_subgraph_tags)
 
 
 class TemplateRef(BaseModel):
@@ -323,6 +329,20 @@ class TemplateRef(BaseModel):
 
     id: str
     version: int
+
+
+class ForkedFrom(BaseModel):
+    """The Official bot a user's copy was made from (Make my own copy, #149).
+
+    ``sha256`` is the Official bot's content hash when the copy was made
+    (:func:`bartlebot.shared.content_hash.content_sha256`), so a later release that changes the
+    Official bot can be told apart from one that does not. Written once, by the copy,
+    and never by a load or a save; Save As copies it unchanged, since a copy of a copy
+    came from the same Official bot.
+    """
+
+    id: str
+    sha256: str
 
 
 class SetupTarget(BaseModel):
@@ -378,6 +398,14 @@ class TemplateMeta(BaseModel):
     blurb: str = ""
     #: What a bot made from this version has to fill in before it can run.
     setup: list[SetupStep] = Field(default_factory=list)
+    #: What this template's own ids start with: its own prefix first, then each one it
+    #: inherited, back through every template it was duplicated from (#164). ``None`` for
+    #: the templates made before forks, which mint ``t_`` alone. A fork mints only under
+    #: the first, so nothing it adds can take an id its source has or could add later.
+    id_prefixes: list[str] | None = None
+    #: The template, and its released version, this one was duplicated from (#164).
+    #: ``None`` for a template started blank. Written once, by Duplicate.
+    forked_from: TemplateRef | None = None
 
 
 class BotConfig(BaseModel):
@@ -409,8 +437,18 @@ class BotConfig(BaseModel):
     definition: DefinitionMeta | None = None
     # Set only on a bot made from a template (New Bot), naming it and the base version.
     template: TemplateRef | None = None
+    # Set only on a user's copy of an Official bot, naming the bot it was made from.
+    forked_from: ForkedFrom | None = None
     # Set only on a template's draft or a released version of it, never on a bot.
     template_meta: TemplateMeta | None = None
+    # The content hashes of what earlier saves replaced, newest first (#169); see
+    # bartlebot.shared.content_hash. Left out of the file while empty, so a bot never
+    # saved since it existed is written exactly as before.
+    history: list[str] = Field(default_factory=list)
+    # The content hash it had as its sender sent it, when an import wrote it changed:
+    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # Dropped by the next save that changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     @property
     def is_definition(self) -> bool:
@@ -566,6 +604,8 @@ class BotConfig(BaseModel):
 
         data = self.model_dump(exclude_none=True)
         data["options"] = [o.model_dump(exclude_none=True) for o in storable_options(self)]
+        if not data["history"]:
+            del data["history"]
         return data
 
     def save(self, path: str | Path) -> None:
@@ -743,11 +783,23 @@ class SubgraphDefinition(BaseModel):
     name: str
     description: str | None = None
     version: int = 1
+    # What the subgraph does, from the fixed vocabulary of bartlebot.subgraph_tags (#172).
+    # Left out of the file while empty, so a definition never given one is written as before.
+    tags: list[str] = Field(default_factory=list)
     inputs: list[SubgraphInput] = Field(default_factory=list)
     panels: list[SubgraphPanel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel] = Field(default_factory=list)
     regions: list[RegionModel] = Field(default_factory=list)
+    # The content hashes of what earlier saves replaced, newest first, and on a user's
+    # override of an Official definition the hash of the Official one it was made from
+    # (#169; bartlebot.shared.content_hash). Both stay out of the file while unset.
+    history: list[str] = Field(default_factory=list)
+    official_sha256: str | None = None
+    # The content hash it had as its sender sent it, when an import wrote it changed:
+    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # Dropped by the next save that changes it, and never in a share file.
+    sent_sha256: str | None = None
 
     @field_validator("id")
     @classmethod
@@ -755,6 +807,8 @@ class SubgraphDefinition(BaseModel):
         if not value.strip():
             raise ValueError("id must not be empty")
         return value
+
+    _tags = field_validator("tags", mode="before")(normalize_subgraph_tags)
 
     @field_validator("version")
     @classmethod
@@ -775,5 +829,14 @@ class SubgraphDefinition(BaseModel):
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
 
+    def file_dump(self) -> dict:
+        """The JSON body of this definition, as :meth:`save` writes it."""
+        data = self.model_dump(exclude_none=True)
+        if not data["history"]:
+            del data["history"]
+        if not data["tags"]:
+            del data["tags"]
+        return data
+
     def save(self, path: str | Path) -> None:
-        atomic_write_json(self.model_dump(exclude_none=True), path)
+        atomic_write_json(self.file_dump(), path)

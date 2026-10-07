@@ -23,6 +23,8 @@ import logging
 from pathlib import Path
 
 from bartlebot.bot.schema import SubgraphDefinition
+from bartlebot.shared.content_hash import official_updated
+from bartlebot.shared.store_files import record_save_in
 from bartlebot.store_roots import (
     SOURCE_LABELS,  # noqa: F401  (re-exported: the subgraph surfaces import it from here)
     Origin,
@@ -61,10 +63,21 @@ def load_subgraph(
 
 
 def save_subgraph(
-    defn: SubgraphDefinition, root: str | Path | None = None, user_root: str | Path | None = None
+    defn: SubgraphDefinition,
+    root: str | Path | None = None,
+    user_root: str | Path | None = None,
+    *,
+    record: bool = True,
 ) -> None:
-    """Write to the user root only; the shipped file is never touched."""
-    _, user = resolve_roots(root, user_root)
+    """Write to the user root only; the shipped file is never touched.
+
+    Records the history and, on an override, the Official base first
+    (:func:`~bartlebot.shared.store_files.record_save_in`), into ``defn`` itself.
+    ``record=False`` writes the history ``defn`` already has, as an import does (#171).
+    """
+    shipped, user = resolve_roots(root, user_root)
+    if record:
+        record_save_in(_subgraph_dir(shipped), _subgraph_dir(user), defn, SubgraphDefinition.load)
     save_by_id(_subgraph_dir(user), defn.id, defn.name, defn.save)
 
 
@@ -79,29 +92,52 @@ def origin_of(subgraph_id: str, root: str | Path | None = None, user_root: str |
     return origin_in(_subgraph_dir, subgraph_id, shipped, user)
 
 
-def count_subgraph_uses(bots_dir: str | Path) -> dict[str, int]:
-    """``{subgraph id: number of bot files linking it}`` under ``bots_dir``, recursively.
+def _linked_ids(path: Path) -> tuple[str, set[str]] | None:
+    """``(bot name, ids of the subgraphs it links)`` from a bot file's raw JSON, or None if unreadable."""
+    try:
+        with path.open(encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    ids = {
+        r["source"]["subgraph_id"]
+        for r in (data.get("regions") or [])
+        if isinstance(r, dict) and isinstance(r.get("source"), dict) and r["source"].get("subgraph_id")
+    }
+    name = data.get("name")
+    return (name if isinstance(name, str) and name else path.stem), ids
+
+
+def _bot_files(bots_dirs) -> list[Path]:
+    return sorted({p for d in bots_dirs if Path(d).is_dir() for p in Path(d).rglob("*.json")})
+
+
+def bots_linking(subgraph_id: str, *bots_dirs: str | Path) -> list[str]:
+    """The names of the bot files under ``bots_dirs`` that link ``subgraph_id``, sorted.
+
+    Read as :func:`count_subgraph_uses` reads them. What the signature warning names
+    (:mod:`bartlebot.subgraph_signature`). A bot file with no name is named by its file.
+    """
+    names = [found[0] for path in _bot_files(bots_dirs) if (found := _linked_ids(path)) and subgraph_id in found[1]]
+    return sorted(names, key=str.casefold)
+
+
+def count_subgraph_uses(*bots_dirs: str | Path) -> dict[str, int]:
+    """``{subgraph id: number of bot files linking it}`` under every one of ``bots_dirs``, recursively.
 
     Read from the raw JSON rather than through ``BotConfig`` so an unloadable bot
     costs a skipped file, not an exception, and so a bot on an older schema still
-    counts. What the node browser's "Used by N bots" reads, once per dialog.
+    counts. What the node browser's "Used by N bots" reads, once per dialog. The
+    library's folders are :func:`bartlebot.bot_roots.library_dirs`.
     """
     counts: dict[str, int] = {}
-    root = Path(bots_dir)
-    if not root.is_dir():
-        return counts
-    for path in sorted(root.rglob("*.json")):
-        try:
-            with path.open(encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
+    for path in _bot_files(bots_dirs):
+        found = _linked_ids(path)
+        if found is None:
             continue
-        ids = {
-            r["source"]["subgraph_id"]
-            for r in (data.get("regions") or [])
-            if isinstance(r, dict) and isinstance(r.get("source"), dict) and r["source"].get("subgraph_id")
-        }
-        for sid in ids:
+        for sid in found[1]:
             counts[sid] = counts.get(sid, 0) + 1
     return counts
 
@@ -124,6 +160,7 @@ class SubgraphLibrary:
         self._root = root
         self._user_root = user_root
         self._by_id: dict[str, SubgraphDefinition] = {}
+        self._shipped: dict[str, SubgraphDefinition] = {}
         self._errors: dict[str, str] = {}
         self.reload()
 
@@ -139,6 +176,7 @@ class SubgraphLibrary:
     def reload(self) -> None:
         shipped, user = resolve_roots(self._root, self._user_root)
         by_id: dict[str, SubgraphDefinition] = {}
+        official: dict[str, SubgraphDefinition] = {}
         errors: dict[str, str] = {}
         for d in (_subgraph_dir(shipped), _subgraph_dir(user)):
             for item_id, p in index_dir(d).items():
@@ -150,7 +188,10 @@ class SubgraphLibrary:
                     continue
                 by_id[defn.id] = defn
                 errors.pop(defn.id, None)
+                if shipped != user and d == _subgraph_dir(shipped):
+                    official[defn.id] = defn
         self._by_id = by_id
+        self._shipped = official
         self._errors = errors
 
     def get(self, subgraph_id: str) -> SubgraphDefinition | None:
@@ -166,6 +207,17 @@ class SubgraphLibrary:
     def origin(self, subgraph_id: str) -> Origin:
         return origin_of(subgraph_id, self._root, self._user_root)
 
+    def official_updated(self, subgraph_id: str) -> bool:
+        """Whether ``subgraph_id`` is the user's override of an Official definition that has changed since.
+
+        As of the last reload: the override records the Official one it was made from
+        (``official_sha256``), and the Official one no longer hashes to it. Revert takes
+        the new one, and the user's changes go with the override.
+        """
+        defn = self._by_id.get(subgraph_id)
+        shipped = self._shipped.get(subgraph_id)
+        return defn is not shipped and official_updated(defn, shipped)
+
     def nesting(self, subgraph_id: str) -> list[SubgraphDefinition]:
         """The definitions that link ``subgraph_id`` directly, by name.
 
@@ -180,9 +232,23 @@ class SubgraphLibrary:
         ]
         return sorted(found, key=lambda d: d.name.casefold())
 
-    def save(self, defn: SubgraphDefinition) -> None:
-        """Write ``defn`` to the user root and refresh the cache to match."""
-        save_subgraph(defn, self._root, self._user_root)
+    @property
+    def roots(self) -> tuple[Path, Path]:
+        """``(shipped, user)``: the two roots this library reads, the same directory when nothing is Official."""
+        return resolve_roots(self._root, self._user_root)
+
+    def official(self, subgraph_id: str) -> SubgraphDefinition | None:
+        """The Official definition of ``subgraph_id``, as it ships, whatever override is over it.
+
+        When the two roots are one directory nothing is Official, and this is the one
+        definition there is, as the maintainer's developer mode has it.
+        """
+        shipped, user = self.roots
+        return self._by_id.get(subgraph_id) if shipped == user else self._shipped.get(subgraph_id)
+
+    def save(self, defn: SubgraphDefinition, *, record: bool = True) -> None:
+        """Write ``defn`` to the user root and refresh the cache to match. See :func:`save_subgraph`."""
+        save_subgraph(defn, self._root, self._user_root, record=record)
         self.reload()
 
     def delete(self, subgraph_id: str) -> None:

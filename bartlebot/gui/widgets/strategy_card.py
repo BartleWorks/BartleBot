@@ -14,18 +14,24 @@ no way to express that.
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.card_art_tile import ArtIconView
 from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.flow_layout import flow_container
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.school_picker import school_icon
+from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
-from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, ProfilePill, TagPill
-from bartlebot.store_roots import SOURCE_LABELS, Origin
+from bartlebot.gui.widgets.tag_pill import ProfilePill, TagPill
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 from bartlebot.strategy_tags import PROFILE_SOURCE
+
+#: Side of a school's medallion beside its name on a deck card, a size up from the caption.
+SCHOOL_ICON_PX = 16
 
 ADD_FAVORITE_TIP = "Add to favorites"
 REMOVE_FAVORITE_TIP = "Remove from favorites"
@@ -47,21 +53,6 @@ def profile_pill(profile_name: str) -> QLabel:
     pill = ProfilePill(PROFILE_SOURCE)
     pill.setToolTip(f"Belongs to the combat profile '{profile_name}' only")
     return pill
-
-
-def source_pill(source: Origin) -> QLabel:
-    """The pill naming where a strategy comes from, weighted like ``ActionButton``.
-
-    A built-in is filled with the accent (``PRIMARY``), a modified built-in outlined in
-    it (``SECONDARY``) and anything else gray (``TERTIARY``). All three are the same
-    height, so a card does not change size when an edit turns one into another.
-    """
-    text = SOURCE_LABELS[source]
-    if source is Origin.SHIPPED:
-        return AccentPill(text, filled=True)
-    if source is Origin.SHIPPED_OVERRIDE:
-        return AccentPill(text)
-    return NeutralPill(text)
 
 
 class StrategyCard(QWidget):
@@ -127,9 +118,9 @@ class StrategyCard(QWidget):
             elif summary.source is not None:
                 # Always shown, and a pill of words rather than a glyph: no icon says
                 # "ships with the app" unaided (#124). Three weights, on ActionButton's
-                # model: a built-in filled with the accent, a modified built-in outlined
+                # model: an Official one filled with the accent, a modified one outlined
                 # in it, and a custom one gray.
-                pill = source_pill(summary.source)
+                pill = source_pill(summary.source, official_updated=summary.official_updated)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
                 self._source_pill = pill
             if favorite is not None:
@@ -161,9 +152,13 @@ class StrategyCard(QWidget):
         if summary.description:
             self._add_sub_line(header, summary.description)
 
-        subtitle = summary.subtitle_line()
-        if subtitle:
-            self._add_sub_line(header, subtitle)
+        school_icons = [(school, school_icon(school)) for school in summary.school_names]
+        if any(icon is not None for _school, icon in school_icons):
+            self._add_school_line(header, summary, school_icons)
+        else:
+            subtitle = summary.subtitle_line()
+            if subtitle:
+                self._add_sub_line(header, subtitle)
 
         if summary.schools:
             self._add_sub_line(header, " · ".join(f"{count}× {school}" for school, count in summary.schools.items()))
@@ -207,10 +202,47 @@ class StrategyCard(QWidget):
         self._sub_lbls.append(label)
         return label
 
+    def _add_school_line(
+        self, header: QVBoxLayout, summary: StrategySummary, school_icons: list[tuple[str, QIcon | None]]
+    ) -> None:
+        """The facets line with each school drawn beside its medallion.
+
+        Only where at least one resolved: most installs have no art, and keep the plain
+        ``Fire/Ice · 36 cards`` line. A school with no icon of its own is its name alone.
+        A flow rather than a box row, so a deck of many schools wraps instead of widening the card.
+        """
+        schools_text = "/".join(summary.school_names)
+        rest = [f for f in summary.facets if f != schools_text]
+        row_box, row = flow_container(spacing=6)
+        row.setContentsMargins(0, 0, 0, 0)
+        for school, icon in school_icons:
+            bit = QWidget()
+            bit_row = QHBoxLayout(bit)
+            bit_row.setContentsMargins(0, 0, 0, 0)
+            bit_row.setSpacing(3)
+            if icon is not None:
+                view = ArtIconView(SCHOOL_ICON_PX, bit)
+                view.set_icon(icon)
+                bit_row.addWidget(view)
+            label = QLabel(school, bit)
+            bit_row.addWidget(label)
+            self._sub_lbls.append(label)
+            row.addWidget(bit)
+        if rest:
+            label = QLabel("· " + " · ".join(rest))
+            row.addWidget(label)
+            self._sub_lbls.append(label)
+        header.addWidget(row_box)
+
     @property
     def source_text(self) -> str:
         """What the source pill says, or empty when the card has none."""
         return self._source_pill.text() if self._source_pill is not None else ""
+
+    @property
+    def sub_texts(self) -> list[str]:
+        """The lines under the name, top to bottom: description, facets, schools."""
+        return [label.text() for label in self._sub_lbls]
 
     @property
     def tag_texts(self) -> list[str]:

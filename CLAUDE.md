@@ -8,16 +8,21 @@ Wizard101 bot automation app. Python 3.13+, PyQt6, qasync, transitions FSM.
 uv run python bartlebot.py
 ```
 
-To author shipped subgraphs or combat strategies, run with `BARTLEBOT_DEV=1`. That
-points the store's user root at the repo, so a save lands in `subgraphs/` or
-`strategies/` where git sees it, instead of in an `%APPDATA%` copy that silently
-shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears it,
-and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
-definition that only exists on your machine. It also adds File › Edit Template…, the
-only way into a template's draft under `templates/`; only Release on the draft's crumb
-writes a version users are offered (`bartlebot/template_store.py`). New Bot copies the
-latest released version into a new bot, records it in the bot's `template`, and saves
-the file at once (`bartlebot/new_bot.py`).
+To author shipped bots, templates, subgraphs or combat strategies, run with
+`BARTLEBOT_DEV=1`. That points every store's user root at the repo, so a save lands in
+`bots/`, `templates/`, `subgraphs/` or `strategies/` where git sees it, instead of in an
+`%APPDATA%` copy that shadows the repo's or, for a bot or template, is never seen by
+anyone else. `bartlebot/store_roots.py` has the detail, and `bartlebot/bot_roots.py` the
+bots' part; logs stay in the repo's `logs/` too. The suite clears it, and
+`test_every_linked_bot_resolves_under_the_shipped_root_alone` and
+`test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone` catch
+a definition or template that only exists on your machine. File › Templates… opens a
+template's draft for anyone, but only the user's own: dev mode is what makes the shipped
+templates under `templates/` editable, since there every template is the user's. Only
+Release on the draft's crumb writes a version users are offered
+(`bartlebot/template_store.py`). New Bot copies the latest released version into a new
+bot, records it in the bot's `template`, and saves the file at once
+(`bartlebot/new_bot.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
@@ -67,7 +72,9 @@ read on purpose.
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, a combat profile's own strategies and the profile-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — complete and no longer maintained, but still the record of the design; it supersedes several of `SUBGRAPHS.md`'s sections |
-| `docs/TEMPLATES.md` | the template store, `t_` ids, release, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
+| `docs/SHARED_CONTENT.md` | a pointer to the plan for epic #173 (user templates, Official content, and sharing bots, strategies, decks and subgraphs as files), which lives on a claude.ai page — complete and no longer maintained, but still the record of the design; the stage-to-issue table and the rules every stage keeps |
+| `docs/SHARING.md` | share files: the format, the extension and what rides inside for each kind, what never travels (settings, anything that executes), Export: where it is on each item's menu, and the summary, and Import: its ways in, what is refused, matching by id, what Import as copy rewrites, and where things go |
+| `docs/TEMPLATES.md` | the template store, template-owned ids and a fork's prefixes, release, user templates and File › Templates…, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/LIBRARY_MIGRATION.md` | the Stage 9 worksheet: where all 85 bots stand against the six released templates, per-bot tier and divergence, what the rewrite keeps and changes, and what to fix or decide before it starts |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
@@ -169,11 +176,19 @@ times stopping a legitimate PvE farm mid-fight.
 `SettingsManager` singleton, persisted to `%APPDATA%/Bartleby/BartleBot/settings.json`.
 Credentials go through `keyring` (Windows Credential Manager), never to disk.
 
+**Nothing the app writes goes in the install directory** (the project root), which an
+update replaces whole. It holds the Official content, read-only: bots, templates,
+subgraphs and strategies. The user's own, and every override, log, autosave and setting,
+go under `%APPDATA%/Bartleby`. A new store takes its default path from `store_roots`, and
+`test_install_dir_writes` lists every default write path.
+
 `Bartleby` is the **vendor**, not this product: three products are planned under it, and
 the accounts, launch profiles and stored passwords belong to the user rather than to any
 one of them. So `%APPDATA%/Bartleby/` is the vendor root, per-product data sits beneath it,
-and the shared account records live at the root itself in `accounts.json`
-(`bartlebot/shared/`, which imports nothing from `gui/` or `bot/`). The prefix is defined
+and what every product shares lives at the root itself: the account records in
+`accounts.json`, and the library of duel strategies, player strategies and decks in
+`strategies/` (`docs/COMBAT_CONFIG.md`). Their code is in `bartlebot/shared/`, which imports
+nothing from `bartlebot` outside itself, so it can become a library of its own. The prefix is defined
 once, in `bartlebot/shared/vendor.py`, and imported — never spelled out again, on disk or
 in Credential Manager. `The-World-Tree` is the GitHub organization and is a separate
 string on purpose: it is developer-facing and carries none of the trademark exposure a
@@ -205,7 +220,8 @@ logger = logging.getLogger(__name__)
 ```
 
 Configured in `bartlebot/logging_setup.py` — per-session timestamped files in
-`logs/`, 10 most recent kept, plus a bridge handler for the in-app log widget.
+`%APPDATA%/Bartleby/BartleBot/logs/` (the repo's `logs/` in developer mode), 10 most
+recent kept, plus a bridge handler for the in-app log widget.
 
 - Pass `logging.WARNING`, the int constant, not `"WARNING"`.
 - `machine.log()` is the node-facing API and files the record under the running

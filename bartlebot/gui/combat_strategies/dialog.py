@@ -98,6 +98,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QScrollArea,
     QSplitter,
@@ -108,9 +109,12 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.combat_profile import profile_players_of
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
+from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
+from bartlebot.gui.export_dialog import run_export
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
@@ -120,6 +124,7 @@ from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
 from bartlebot.store_roots import SOURCE_LABELS
 from bartlebot.strategy_store import Origin, StrategyKind
 from bartlebot.strategy_summary import (
@@ -137,7 +142,7 @@ from bartlebot.strategy_tags import (
     facets_match,
     normalize_strategy_tags,
 )
-from bartlebot.strategy_workset import PROFILE_KINDS, SharedUse, StrategyWorkingSet
+from bartlebot.strategy_workset import PROFILE_KINDS, Conflict, SharedUse, StrategyWorkingSet
 
 logger = logging.getLogger(__name__)
 
@@ -207,11 +212,22 @@ ADD_TO_LIBRARY_TEXT = "Add to library"
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
-#: Why Delete is grayed out on an unedited built-in: removing only touches the user
+#: A card's right-click (#170), and why it is off on an entry with unsaved edits.
+EXPORT_TEXT = "Export…"
+EXPORT_UNSAVED_TIP = "Save your changes first: Export sends what is saved."
+#: Why Delete is grayed out on an unedited Official one: removing only touches the user
 #: root, so the entry would be back on the next open (#124).
-_BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to make a copy of your own."
+_BUILT_IN_DELETE_TIP = "Official strategies can't be deleted. Duplicate one to make a copy of your own."
+#: The About pane's note on an override whose Official strategy has changed since (#169),
+#: beside the Revert button it points at.
+OFFICIAL_UPDATED_NOTE = (
+    "The Official version has changed since you made your copy. "
+    "Revert to default to use the new one; your changes are discarded."
+)
 #: Why New and Duplicate are grayed out in the profile editor before a profile exists.
 _NO_PROFILE_TIP = "Create a combat profile for this bot first"
+#: What an entry from a file in a newer format says, and why it can't be edited or deleted.
+NEWER_FORMAT_NOTE = "Saved by a newer version of BartleBot or BartleBuddy. Update BartleBot to edit it."
 
 #: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from
 #: the splitter between them. Two numbers rather than one because the splitter handle is
@@ -547,6 +563,9 @@ class _KindPage(QWidget):
         # viewport, so this only says so; it never hides content that had a bar.
         self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._list.currentItemChanged.connect(self._on_item_changed)
+        # Export… on a card's right-click (#170), in every mode: it changes nothing.
+        self._list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._list.customContextMenuRequested.connect(self._show_card_menu)
         # Rows are sized for the width the column actually has; see _fit_row.
         self._list.viewport().installEventFilter(self)
         box.addWidget(self._list, 1)
@@ -669,7 +688,11 @@ class _KindPage(QWidget):
             summary = summarize_deck(item)
         if self._ws.is_profile_entry(self._kind, item.id):
             return replace(summary, profile_name=self._ws.profile.name)
-        return replace(summary, source=self._ws.status(self._kind, item.id))
+        return replace(
+            summary,
+            source=self._ws.status(self._kind, item.id),
+            official_updated=self._ws.official_updated(self._kind, item.id),
+        )
 
     @property
     def filter_bar(self) -> StrategyFilterBar:
@@ -882,7 +905,7 @@ class _KindPage(QWidget):
         Not ``card.sizeHint()``: its height wraps the name at whatever width Qt's own
         guess for a word-wrapped label picks, not at the column's. A name that fits on
         one line was still given a two-line row, and the card spread the slack between
-        its lines -- so an edit that turned the source pill into the wider "Built-in
+        its lines -- so an edit that turned the source pill into the wider "Official
         (modified)", really wrapping the name, visibly tightened the card's spacing.
 
         The width asked for is only the card's minimum: a list row fills the viewport
@@ -909,6 +932,11 @@ class _KindPage(QWidget):
             self._fit_row(item, card)
         if self._note_item is not None and self._note_widget is not None:
             self._fit_row(self._note_item, self._note_widget)
+        # And move the cards to match. The view narrows its own row rectangles on a
+        # resize, but a widget set into a row keeps its old geometry until a full items
+        # layout: a tab first laid out while hidden, wider than its column turned out to
+        # be, opened with every card overhanging the column, its pill and star cut off.
+        self._list.doItemsLayout()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if obj is self._list.viewport() and event.type() == QEvent.Type.Resize:
@@ -992,6 +1020,11 @@ class _KindPage(QWidget):
             self._card_map = [(i, card if i is item else c) for i, c in self._card_map]
             return
 
+    def set_deck_link(self, link: DeckClientLink | None) -> None:
+        """Give the Deck tab its way to the game clients; any other tab has none to give."""
+        if isinstance(self._editor, DeckPresetEditor):
+            self._editor.set_link(link)
+
     # -- the detail pane ------------------------------------------------
 
     def _load_selection(self) -> None:
@@ -1007,6 +1040,10 @@ class _KindPage(QWidget):
                 self._editor.load(entry, self._ws.players_for_duel(entry.id))
             else:
                 self._editor.load(entry)
+        # Per entry, not per page: one saved by a newer version is read-only wherever it is.
+        editable = self._editable and not self._ws.is_read_only(self._kind, self._selected_id)
+        self._about.set_editable(editable)
+        self._editor.set_editable(editable)
         self._about.setVisible(entry is not None)
         self._scroll.setVisible(entry is not None)
         self._empty_lbl.setVisible(entry is None)
@@ -1019,7 +1056,9 @@ class _KindPage(QWidget):
         """New needs somewhere to put its entry; Duplicate also needs something to copy."""
         room = not self._show_profile or self._ws.profile is not None
         self._new_btn.setEnabled(room)
-        self._dup_btn.setEnabled(room and self._ws.get(self._kind, self._selected_id) is not None)
+        # Not one saved by a newer version: the copy would be in that format too, and refused at Save.
+        copyable = self._ws.get(self._kind, self._selected_id) is not None
+        self._dup_btn.setEnabled(room and copyable and not self._ws.is_read_only(self._kind, self._selected_id))
         tip = "" if room else _NO_PROFILE_TIP
         self._new_btn.setToolTip(tip)
         self._dup_btn.setToolTip(tip)
@@ -1042,7 +1081,14 @@ class _KindPage(QWidget):
         revert = status is Origin.SHIPPED_OVERRIDE
         built_in = status is Origin.SHIPPED
         self._set_delete_button(revert=revert, built_in=built_in)
-        if revert:
+        if self._ws.is_read_only(self._kind, entry.id):
+            self._del_btn.setEnabled(False)
+            self._del_btn.setToolTip(NEWER_FORMAT_NOTE)
+            self._about.set_notes(usage, NEWER_FORMAT_NOTE)
+            return
+        if revert and self._ws.official_updated(self._kind, entry.id):
+            note = OFFICIAL_UPDATED_NOTE
+        elif revert:
             note = "Your copy of a strategy BartleBot ships — reverting restores the original."
         elif built_in:
             note = "Ships with BartleBot — editing it saves your own copy."
@@ -1071,6 +1117,49 @@ class _KindPage(QWidget):
         self.rebuild_list()
         self.select(made.id)
         self.structure_changed.emit()
+
+    def card_menu(self, uuid: str) -> QMenu:
+        """The menu a card shows on a right-click. Public so a test can read it.
+
+        Export sends what is saved, so an entry with edits the dialog has not saved yet
+        says so instead.
+        """
+        menu = popup_menu(self)
+        menu.setToolTipsVisible(True)
+        act = menu.addAction(EXPORT_TEXT)
+        if self._ws.has_unsaved(self._kind, uuid):
+            act.setEnabled(False)
+            act.setToolTip(EXPORT_UNSAVED_TIP)
+        act.triggered.connect(lambda: self.export(uuid))
+        return menu
+
+    def _show_card_menu(self, pos) -> None:
+        item = self._list.itemAt(pos)
+        uuid = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if not isinstance(uuid, str) or self._ws.get(self._kind, uuid) is None:
+            return
+        self.card_menu(uuid).exec(self._list.viewport().mapToGlobal(pos))
+
+    def export_plan(self, uuid: str) -> ExportPlan | None:
+        """What exporting *uuid* would write: the entry as saved, and what it links. None if it is gone."""
+        entry = self._ws.get(self._kind, uuid)
+        if entry is None:
+            return None
+        root, user_root = self._ws.roots
+        sources = Sources(strategy_root=root, strategy_user_root=user_root)
+        if self._kind is StrategyKind.DUEL:
+            # One of the profile's own finds its links there first, as a run does.
+            profile = self._ws.profile if self._ws.is_profile_entry(self._kind, uuid) else None
+            return export_duel(entry, sources, profile=profile)
+        if self._kind is StrategyKind.PLAYER:
+            return export_player(entry, sources)
+        return export_deck(entry, sources)
+
+    def export(self, uuid: str):
+        """Export… on a card: the summary, then the file. The path written, or None."""
+        if self._ws.get(self._kind, uuid) is None:
+            return None
+        return run_export(self, lambda _choices: self.export_plan(uuid))
 
     def _on_duplicate(self) -> None:
         if self._selected_id is None:
@@ -1206,6 +1295,7 @@ class CombatStrategyDialog(QDialog):
         player_color_keys: list[int | None] | None = None,
         player_account_labels: list[str] | None = None,
         bot_name: Callable[[str], str | None] | None = None,
+        deck_link: DeckClientLink | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -1225,7 +1315,7 @@ class CombatStrategyDialog(QDialog):
         self.setMinimumSize(880, 560)
         # Wider than the minimum so the card sidebar isn't fighting the detail
         # pane for space by default — see issue #44 — and wide enough that a card
-        # carrying the longest source pill, "Built-in (modified)", fits the column.
+        # carrying the longest source pill, "Official (modified)", fits the column.
         self.resize(1200, 720)
 
         layout = QVBoxLayout(self)
@@ -1259,6 +1349,11 @@ class CombatStrategyDialog(QDialog):
         # pills simply go uncolored. See gui/widgets/player_pills.py.
         if StrategyKind.DUEL in self._pages:
             self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
+
+        # Likewise the clients a deck can be read from or put on: the caller owns them.
+        deck_page = self._pages.get(StrategyKind.DECK)
+        if deck_page is not None:
+            deck_page.set_deck_link(deck_link)
 
         start = self._pages.get(kind) or next(iter(self._pages.values()))
         self._tabs.setCurrentWidget(start)
@@ -1339,6 +1434,10 @@ class CombatStrategyDialog(QDialog):
         # Asked before the commit, which baselines everything and so forgets what was new.
         self._selected_was_created = self._ws.was_created(self._pick_kind, self._selected_id)
         self._ws.commit()
+        if self._ws.conflicts:
+            self._resolve_conflicts(self._ws.conflicts)
+            # Writes the copies the user chose to keep; a reloaded entry has nothing to write.
+            self._ws.commit()
         if self._ws.is_dirty:
             # commit() logs and skips a failed write, leaving the entry dirty.
             # Closing anyway would lose it silently.
@@ -1350,6 +1449,55 @@ class CombatStrategyDialog(QDialog):
             )
             return
         self.accept()
+
+    def _resolve_conflicts(self, conflicts: list[Conflict]) -> None:
+        """Ask about each write Save refused, then redraw every tab on what was chosen.
+
+        Another program (BartleBuddy, which shares this library) changed the file since
+        this dialog loaded it, so writing would have lost its change. The user keeps
+        theirs as a copy, the default because nothing is lost, or reloads the other
+        program's. A file in a newer format, or a refused delete, can only be reloaded.
+        """
+        for conflict in conflicts:
+            name = f"“{conflict.name}”"
+            if conflict.newer_format:
+                QMessageBox.information(
+                    self,
+                    "Saved by a newer version",
+                    f"{name} was saved by a newer version of BartleBot or BartleBuddy, so your changes to it "
+                    "can't be saved. Update BartleBot to edit it.",
+                )
+                self._ws.reload(conflict.kind, conflict.uuid)
+                continue
+            if conflict.deleted:
+                QMessageBox.information(
+                    self,
+                    "Changed by another program",
+                    f"{name} was changed by another program while this window was open, so it was not "
+                    "removed. Its new version is shown now.",
+                )
+                self._ws.reload(conflict.kind, conflict.uuid)
+                continue
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle("Changed by another program")
+            box.setText(
+                f"{name} was changed by another program while this window was open, so your changes to it "
+                "were not saved."
+            )
+            copy = box.addButton("Save mine as a copy", QMessageBox.ButtonRole.AcceptRole)
+            box.addButton("Use theirs", QMessageBox.ButtonRole.DestructiveRole)
+            box.setDefaultButton(copy)
+            box.setEscapeButton(copy)
+            box.exec()
+            if box.clickedButton() is copy:
+                self._ws.keep_as_copy(conflict.kind, conflict.uuid)
+            else:
+                self._ws.reload(conflict.kind, conflict.uuid)
+        for page in self._pages.values():
+            page.rebuild_list()
+            # The editor may hold an object reload just replaced.
+            page.select(page.selected_id())
 
     def _confirm_shared_edits(self, uses: list[SharedUse]) -> bool:
         """Ask once, at Save, before an edit reaches places the user can't see (#118).

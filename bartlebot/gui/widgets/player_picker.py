@@ -22,8 +22,12 @@ def picker_label(text: str, players: int) -> str:
     return f"{text}{MENU_MARK}" if players >= 2 else text
 
 
-def pick_player(anchor: QWidget, players: int, verb: str, on_pick: Callable[[int], None]) -> None:
+def pick_player(
+    anchor: QWidget, players: int, verb: str, on_pick: Callable[[int], None], *, preposition: str = "from"
+) -> None:
     """Call *on_pick* with the chosen player's index, asking only when there is a choice.
+
+    *preposition* is for a verb that goes the other way: "Apply to Player 2".
 
     Nothing happens with no player connected; the caller says why, if it needs to.
     """
@@ -34,6 +38,6 @@ def pick_player(anchor: QWidget, players: int, verb: str, on_pick: Callable[[int
         return
     menu = popup_menu(anchor)
     for i in range(players):
-        action = menu.addAction(f"{verb} from Player {i + 1}")
+        action = menu.addAction(f"{verb} {preposition} Player {i + 1}")
         action.triggered.connect(lambda _checked=False, idx=i: on_pick(idx))
     menu.exec(anchor.mapToGlobal(anchor.rect().bottomLeft()))

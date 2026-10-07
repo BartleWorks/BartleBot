@@ -28,7 +28,9 @@ from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (r
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
+from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
+from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
 #: are 128px (two are 64px) game art, and 20px is the smallest that stays legible.
@@ -111,13 +113,39 @@ class TagVocabulary:
 BOT_VOCABULARY = TagVocabulary(TAG_GROUPS, GROUP_ACCENT)
 
 #: The combat strategy dialog's vocabulary (#125). Source is gray, the color of the
-#: source pill on each card, so a Source chip reads as the pill it matches; Role takes
-#: the second pill hue. The noun is replaced per tab — duels, strategies, presets.
+#: source pill on each card, so a Source chip reads as the pill it matches; Role is the
+#: blue-gray, a muted tone no school wears: a role is not a school, and the purple it had
+#: was Storm's. The noun is replaced per tab — duels, strategies, presets.
 STRATEGY_VOCABULARY = TagVocabulary(
     STRATEGY_TAG_GROUPS,
-    {SOURCE: "pill_neutral_bg", ROLE: "pill_activity_bg"},
+    {SOURCE: "pill_neutral_bg", ROLE: "chip_neutral_bg"},
     ("strategy", "strategies"),
 )
+
+
+#: The Source filter on the lists of bots and subgraphs (#149): Official, Official
+#: (modified), Custom. The strategy dialog's Source group with the same words and color,
+#: minus its Profile entry, which only a strategy can have. The noun is the list's.
+SOURCE_VOCABULARY = TagVocabulary(
+    {SOURCE: tuple(SOURCE_LABELS[o] for o in LISTED_ORIGINS)},
+    {SOURCE: "pill_neutral_bg"},
+)
+
+
+#: A subgraph's categories (#172): what Bar B edits on a definition, and the Category
+#: filter beside Source on every list of subgraphs. Source is not in it, because a file
+#: never stores one; the filters take it from :func:`source_vocabulary`. Colored as the
+#: strategy dialog's Role, the other stored group beside a derived Source.
+SUBGRAPH_VOCABULARY = TagVocabulary(
+    {CATEGORY: SUBGRAPH_CATEGORIES},
+    {CATEGORY: "chip_neutral_bg"},
+    ("subgraph", "subgraphs"),
+)
+
+
+def source_vocabulary(noun: tuple[str, str]) -> TagVocabulary:
+    """:data:`SOURCE_VOCABULARY`, counting ``noun`` -- ("bot", "bots"), ("subgraph", "subgraphs")."""
+    return TagVocabulary(SOURCE_VOCABULARY.groups, SOURCE_VOCABULARY.accents, noun)
 
 
 def tag_sections(

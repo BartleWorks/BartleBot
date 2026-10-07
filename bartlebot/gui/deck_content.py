@@ -22,6 +22,10 @@ from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.spell_names import display_name
 from bartlebot.spell_schools import deck_sort_key
 
+#: The two verbs that move a deck between a game client and BartleBot, as every surface says them.
+IMPORT_DECK = "Import from client"
+APPLY_DECK = "Apply to client"
+
 
 @dataclass(frozen=True)
 class DeckContentLine:

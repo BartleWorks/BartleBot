@@ -3,8 +3,9 @@
 ``CrumbBar`` is the overlay that says where the canvas is -- Focus Mode on a region, a
 subgraph node's body viewed in Run mode, a definition open as a document, or a template
 draft -- with the path back out, and in a definition or a draft the verbs that save it. ``ViewFrame`` is the border
-round the viewport that goes with it. ``SubgraphMetaDialog`` asks for a name and
-description when a region becomes a definition, or a definition is saved as a new one.
+round the viewport that goes with it. ``SubgraphMetaDialog`` asks for a name,
+description and categories when a region becomes a definition, or a definition is saved
+as a new one, and for the first two when one is renamed from the library.
 ``LinkInputDialog`` links one node param to an existing input of a compatible type, a
 promoted node's param, or a new input. All plain Qt; the policy they drive lives in
 ``BotCanvas`` and the controller's document stack.
@@ -36,6 +37,8 @@ from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.tag_picker import SUBGRAPH_VOCABULARY
+from bartlebot.gui.widgets.tags_field import TagsField
 from bartlebot.nodes.param_schema import narrowest_type
 
 #: The combo entry that means "declare a new input" rather than bind to one.
@@ -144,7 +147,7 @@ class CrumbBar(ThemedMixin, QWidget):
     clicked to step back to it (``segment_clicked`` carries its index). The close
     button steps out one level. In a definition it carries the three verbs that save
     it: *Save* is the one this surface expects (``PRIMARY``), *Save as…* and, for a
-    modified built-in, *Revert*. Their labels are short on purpose, since the bar sits
+    modified Official one, *Revert*. Their labels are short on purpose, since the bar sits
     over the canvas and every character it grows by hides the graph.
 
     The bar only draws; which segments, and what a click does, is ``BotCanvas``'s.
@@ -178,7 +181,7 @@ class CrumbBar(ThemedMixin, QWidget):
         self._save_as_btn = ActionButton("save_as", "Save as…", fill=False)
         self._save_as_btn.setToolTip("Save a copy as a new subgraph, and go on editing the copy")
         self._revert_btn = ActionButton("revert", "Revert", fill=False)
-        self._revert_btn.setToolTip("Revert to the built-in version of this subgraph")
+        self._revert_btn.setToolTip("Revert to the Official version of this subgraph")
         self._release_btn = ActionButton("upload", "Release…", fill=False)
         self._release_btn.setToolTip("Release the saved draft as the template's next version, which New Bot offers")
         self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12, tint=IconTint.ON_ACCENT)
@@ -434,7 +437,13 @@ class ViewFrame(ThemedMixin, QWidget):
 
 
 class SubgraphMetaDialog(QDialog):
-    """Name and description for a definition: one about to be created, or one being renamed."""
+    """Name and description for a definition: one about to be created, or one being renamed.
+
+    ``categories`` adds a Category row (#172), starting with those: a definition about to
+    be created is the moment to say what it does, since every list of subgraphs filters
+    by it. ``None`` leaves the row out, as Rename does; the open definition's header
+    edits its categories.
+    """
 
     def __init__(
         self,
@@ -442,6 +451,7 @@ class SubgraphMetaDialog(QDialog):
         *,
         name: str = "",
         description: str = "",
+        categories: list[str] | None = None,
         title: str | None = None,
         commit_text: str = "Save",
     ) -> None:
@@ -455,6 +465,12 @@ class SubgraphMetaDialog(QDialog):
         form = QFormLayout()
         form.addRow("Name", self._name)
         form.addRow("Description", self._description)
+        self._categories: TagsField | None = None
+        if categories is not None:
+            self._categories = TagsField(self, vocabulary=SUBGRAPH_VOCABULARY)
+            self._categories.set_editable(True)
+            self._categories.set_tags(categories)
+            form.addRow("Category", self._categories)
         footer = dialog_footer(self, commit_text=commit_text)
         self._ok = footer.commit
         self._name.textChanged.connect(lambda t: self._ok.setEnabled(bool(t.strip())))
@@ -472,6 +488,15 @@ class SubgraphMetaDialog(QDialog):
     def description(self) -> str | None:
         text = self._description.toPlainText().strip()
         return text or None
+
+    @property
+    def categories_field(self) -> TagsField | None:
+        return self._categories
+
+    @property
+    def categories(self) -> list[str] | None:
+        """The categories chosen, in vocabulary order; ``None`` when the dialog has no Category row."""
+        return self._categories.tags() if self._categories is not None else None
 
 
 def compatible_inputs(inputs: list[SubgraphInput], param_type: str) -> list[SubgraphInput]:

@@ -89,7 +89,7 @@ from bartlebot.subgraphs import (
     taken_ids,
 )
 from bartlebot.subgraphs import detach as detach_subgraph
-from bartlebot.template_store import TEMPLATE_ID_PREFIX
+from bartlebot.template_store import own_id_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -465,7 +465,7 @@ def _dist(a: QPointF, b: QPointF) -> float:
     return math.hypot(a.x() - b.x(), a.y() - b.y())
 
 
-#: What a bot's nodes are numbered with; a template draft's are :data:`TEMPLATE_ID_PREFIX`.
+#: What a bot's nodes are numbered with; a template draft's carry its own prefix (``template_store.own_id_prefix``).
 STATE_ID_PREFIX = "state_"
 
 
@@ -1390,13 +1390,17 @@ class EditScene(QGraphicsScene):
 
     @property
     def state_id_prefix(self) -> str:
-        """``t_`` while a template draft is open, else ``state_``: a bot never mints a template-owned id."""
-        return TEMPLATE_ID_PREFIX if self._config is not None and self._config.is_template else STATE_ID_PREFIX
+        """The template's own prefix while its draft is open, else ``state_``: a bot never mints a template-owned id.
+
+        ``t_`` for a template made before forks; ``t<6 hex>_`` for one made in the app,
+        so a fork never mints an id its source has or could add (#164).
+        """
+        return own_id_prefix(self._config) if self._config is not None and self._config.is_template else STATE_ID_PREFIX
 
     @property
     def instance_id_prefix(self) -> str:
-        """``t_`` while a template draft is open, else nothing (``sync_players_1``)."""
-        return TEMPLATE_ID_PREFIX if self._config is not None and self._config.is_template else ""
+        """The template's own prefix while its draft is open, else nothing (``sync_players_1``)."""
+        return own_id_prefix(self._config) if self._config is not None and self._config.is_template else ""
 
     def mint_state_id(self, existing: Iterable[str]) -> str:
         """A fresh node id for the open document, clear of ``existing`` and the reserved ids."""

@@ -182,7 +182,8 @@ def duplicate_profile(bcs: BotCombatStrategy, name: str) -> BotCombatStrategy:
     would be harmless only until one copy was moved into the library: lookup checks the
     profile first, so the other profile's copy would then silently hide the library one.
     """
-    copy = bcs.model_copy(deep=True, update={"id": str(uuid4()), "name": name})
+    # A new item, so a fresh history too (#169): the one it was copied from is not its past.
+    copy = bcs.model_copy(deep=True, update={"id": str(uuid4()), "name": name, "history": [], "sent_sha256": None})
     id_map: dict[str, str] = {}
     for item in (*copy.duel_strategies, *copy.player_strategies):
         new_id = str(uuid4())
@@ -202,14 +203,14 @@ def duplicate_profile(bcs: BotCombatStrategy, name: str) -> BotCombatStrategy:
     return copy
 
 
-def read_bot_names(bots_dir: str | Path) -> dict[str, str]:
-    """``{bot id: bot name}`` for every bot file under *bots_dir*, for naming a profile's bot.
+def read_bot_names(*bots_dirs: str | Path) -> dict[str, str]:
+    """``{bot id: bot name}`` for every bot file under each of *bots_dirs*, for naming a profile's bot.
 
     Read raw rather than through ``BotConfig``: only two fields are wanted, from every bot
     in the library, and a file that does not parse is simply left out.
     """
     names: dict[str, str] = {}
-    for path in Path(bots_dir).rglob("*.json"):
+    for path in (p for d in bots_dirs for p in Path(d).rglob("*.json")):
         try:
             with path.open(encoding="utf-8") as f:
                 data = json.load(f)

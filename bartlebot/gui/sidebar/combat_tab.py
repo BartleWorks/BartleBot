@@ -84,7 +84,6 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from functools import partial
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
@@ -98,6 +97,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import bot_roots
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
@@ -118,8 +118,9 @@ from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.fight_keys import exposed_combat_states, heal, place
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
+from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note, deck_groups
+from bartlebot.gui.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -149,7 +150,6 @@ from bartlebot.gui.widgets.player_pills import PlayerBadge
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
-from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
     StrategyKind,
@@ -196,6 +196,7 @@ _RENAME_BCS = "Rename…"
 _NEW_BCS = "New…"
 _DUPLICATE_BCS = "Duplicate…"
 _DELETE_BCS = "Delete…"
+_EXPORT_BCS = "Export…"
 
 
 # ---------------------------------------------------------------------------
@@ -204,8 +205,8 @@ _DELETE_BCS = "Delete…"
 
 
 #: Verb labels for a deck card, shared with its menu and the tests.
-_IMPORT_DECK = "Import from client"
-_APPLY_DECK = "Apply to client"
+_IMPORT_DECK = IMPORT_DECK
+_APPLY_DECK = APPLY_DECK
 _SAVE_DECK = "Save to Library…"
 _LOAD_DECK = "Load from Library…"
 _CLEAR_DECK = "Clear deck"
@@ -778,10 +779,12 @@ class _BotStrategyBanner(CardFrame):
     section heading it used to sit under, which promised a fold over a region that only
     ever held this one row.
 
-    Three verbs reach the face and two do not. Duplicate is rare, and Delete is
-    destructive next to a body that changes the live configuration -- the rule
-    ``card_frame.py`` states for a trash icon 22px from a body click. Both are in the
-    right-click menu, which is also the keyboard route.
+    Three verbs reach the face and the rest do not. Duplicate and Export are rare, and
+    Delete is destructive next to a body that changes the live configuration -- the
+    rule ``card_frame.py`` states for a trash icon 22px from a body click. All of them
+    are in the menu, which a kebab button beside the face verbs opens as a right-click
+    does (#176): with nothing on the banner saying a menu was there, Export went
+    unfound, the finding #46 made for the deck cards.
     """
 
     FRAME_NAME = "BotStrategyBanner"
@@ -791,6 +794,7 @@ class _BotStrategyBanner(CardFrame):
     rename_requested = pyqtSignal()
     duplicate_requested = pyqtSignal()
     delete_requested = pyqtSignal()
+    export_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, mode=CardMode.MANAGE)
@@ -820,6 +824,7 @@ class _BotStrategyBanner(CardFrame):
         self._name.setFont(font)
         header.addWidget(self._name, 1)
         self._add_face_verbs(header)
+        header.addWidget(self._make_kebab_button("More Bot Combat Strategy actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         self._meta = ElidedLabel()
@@ -880,6 +885,9 @@ class _BotStrategyBanner(CardFrame):
                 CardVerb(_DUPLICATE_BCS, "copy", "Copy this strategy under a new name", self.duplicate_requested.emit)
             )
             verbs.append(CardVerb(_DELETE_BCS, "trash", "Delete this Bot Combat Strategy", self.delete_requested.emit))
+            verbs.append(
+                CardVerb(_EXPORT_BCS, "upload", "Save this strategy as a file to share", self.export_requested.emit)
+            )
         return verbs
 
     def _refuses_activation(self) -> bool:
@@ -920,6 +928,8 @@ class CombatTab(QWidget):
     apply_deck_requested = pyqtSignal(int)  # 1-based slot number
     import_all_decks_requested = pyqtSignal()
     apply_all_decks_requested = pyqtSignal()
+    #: The banner's Export… (#170), with the Bot Combat Strategy it names. The controller writes the file.
+    export_bot_strategy_requested = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -945,6 +955,7 @@ class CombatTab(QWidget):
         # Answers "which account is behind each player slot"; installed by AppController,
         # which is what holds the ClientManager. See ``set_player_account_source``.
         self._player_account_source: Callable[[], list[str | None]] | None = None
+        self._deck_link: DeckClientLink | None = None
         # The last answer pushed to the cards, so a tick that learns nothing new repaints
         # nothing. See ``refresh_player_colors``.
         self._player_colors: tuple[list[int | None], list[str]] = ([], [])
@@ -981,6 +992,9 @@ class CombatTab(QWidget):
         self._bcs_banner.rename_requested.connect(self._on_rename_bcs)
         self._bcs_banner.duplicate_requested.connect(self._on_duplicate_bcs)
         self._bcs_banner.delete_requested.connect(self._on_delete_bcs)
+        self._bcs_banner.export_requested.connect(
+            lambda: self._bcs is not None and self.export_bot_strategy_requested.emit(self._bcs)
+        )
 
         # ── Duel Combat Strategies ───────────────────────────────────
         # One section for both levels. The default card is first and always present; the
@@ -1136,6 +1150,13 @@ class CombatTab(QWidget):
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
         self.refresh_player_colors()
+
+    def set_deck_client_link(self, link: DeckClientLink | None) -> None:
+        """Install the way the combat dialog's Deck tab reaches the game clients.
+
+        Pushed by ``AppController``, which owns the clients and the one-at-a-time deck job.
+        """
+        self._deck_link = link
 
     def set_deck_busy(self, busy: bool) -> None:
         """Whether a deck import or apply is running. Pushed by ``AppController``, which
@@ -1360,6 +1381,7 @@ class CombatTab(QWidget):
             player_color_keys=color_keys,
             player_account_labels=account_labels,
             bot_name=self._bot_name_lookup(),
+            deck_link=self._deck_link,
             parent=self,
         )
         accepted = bool(dlg.exec())
@@ -1393,8 +1415,7 @@ class CombatTab(QWidget):
             if config is not None and bot_id == config.id:
                 return config.name
             if not names:
-                configured = Path(SettingsManager.instance().get("canvas", "bot_library_path", default="bots"))
-                names.update(read_bot_names(configured if configured.is_absolute() else project_root() / configured))
+                names.update(read_bot_names(*bot_roots.library_dirs()))
             return names.get(bot_id)
 
         return lookup

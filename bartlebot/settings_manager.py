@@ -20,8 +20,10 @@ from bartlebot.game_sizing import (
     required_window_size,
     screen_budget,
 )
+from bartlebot.paths import project_root
 from bartlebot.shared.account_store import AccountStore
 from bartlebot.shared.vendor import PRODUCT, product_dir, vendor_dir
+from bartlebot.store_roots import dev_mode, is_inside
 
 logger = logging.getLogger(__name__)
 
@@ -354,6 +356,11 @@ class SettingsManager:
         d = _appdata_dir() / "autosave"
         d.mkdir(parents=True, exist_ok=True)
         return d
+
+    @property
+    def settings_path(self) -> Path:
+        """The file these settings are read from and saved to."""
+        return self._path
 
     @classmethod
     def instance(cls) -> SettingsManager:
@@ -728,7 +735,17 @@ class SettingsManager:
 
     @property
     def recent_bot_files(self) -> list[str]:
-        """List of recently opened bot file paths (absolute), newest first. Non-existent paths are pruned."""
+        """List of recently opened bot file paths (absolute), newest first. Non-existent paths are pruned.
+
+        In developer mode only the files inside the project root are listed, so the user's own bots
+        stay out of sight; they stay in the stored list for the next normal run.
+        """
+        stored = self._stored_recent_bot_files()
+        if dev_mode():
+            return [p for p in stored if is_inside(p, project_root())]
+        return stored
+
+    def _stored_recent_bot_files(self) -> list[str]:
         raw: list[str] = list(self.get("recent_bot_files", default=[]))
         seen: set[str] = set()
         resolved: list[str] = []
@@ -745,11 +762,11 @@ class SettingsManager:
     def add_recent_bot_file(self, path: str) -> list[str]:
         """Prepend path to recent_bot_files, deduplicating and capping at 8. Returns updated list."""
         norm = str(Path(path).resolve())
-        recent = [p for p in self.recent_bot_files if p != norm]
+        recent = [p for p in self._stored_recent_bot_files() if p != norm]
         recent.insert(0, norm)
         self.set("recent_bot_files", value=recent[:8])
         self.save()
-        return list(self.get("recent_bot_files", default=[]))
+        return self.recent_bot_files
 
     def set_autosave_origin(self, stem: str, original_path: str) -> None:
         """Record which original bot file an auto-save stem was derived from."""

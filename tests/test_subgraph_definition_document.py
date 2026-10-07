@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import QMessageBox
 from bartlebot.bot.schema import SUBGRAPH_EXIT, StateModel, SubgraphInput
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraph_tags import SUBGRAPH_CATEGORIES
 from bartlebot.subgraphs import definition_to_config
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
@@ -392,16 +393,16 @@ def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_p
     panel.delete_subgraph_requested.connect(asked.append)
 
     built_in = panel.subgraph_menu(SYNC_ID).actions()
-    assert [a.text() for a in built_in] == ["Rename…", "Delete Subgraph…"]
+    assert [a.text() for a in built_in] == ["Rename…", "Delete Subgraph…", "", "Export…"], "Export after a rule"
     assert not built_in[1].isEnabled() and "can't be deleted" in built_in[1].toolTip()
 
     lib.save(sync_players_definition(version=2))
-    _, modified = panel.subgraph_menu(SYNC_ID).actions()
-    assert modified.text() == "Revert to Built-in…" and modified.isEnabled()
+    modified = panel.subgraph_menu(SYNC_ID).actions()[1]
+    assert modified.text() == "Revert to Official…" and modified.isEnabled()
 
     custom = sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"})
     lib.save(custom)
-    _, delete = panel.subgraph_menu("mine").actions()
+    delete = panel.subgraph_menu("mine").actions()[1]
     assert delete.text() == "Delete Subgraph…" and delete.isEnabled()
     delete.trigger()
     assert asked == ["mine"]
@@ -434,9 +435,9 @@ def test_a_subgraph_cards_rename_is_offered_on_the_users_own_only(qapp, tmp_path
     panel.deleteLater()
 
 
-def _answer_meta_dialog(monkeypatch, name, description=None):
+def _answer_meta_dialog(monkeypatch, name, description=None, categories=None):
     """Stand in for the name and description dialog: accept it with these, or cancel it if ``name`` is None."""
-    from bartlebot.gui.canvas import subgraph_widgets  # noqa: PLC0415
+    from bartlebot.gui.canvas import bot_canvas, subgraph_widgets  # noqa: PLC0415
 
     shown = []
 
@@ -444,12 +445,61 @@ def _answer_meta_dialog(monkeypatch, name, description=None):
         def __init__(self, parent=None, **kwargs):
             shown.append(kwargs)
             self.name, self.description = name, description
+            self.categories = categories if kwargs.get("categories") is not None else None
 
         def exec(self):
             return name is not None
 
     monkeypatch.setattr(subgraph_widgets, "SubgraphMetaDialog", Answer)
+    monkeypatch.setattr(bot_canvas, "SubgraphMetaDialog", Answer)
     return shown
+
+
+def test_saving_a_region_asks_for_its_categories(harness, library, monkeypatch):
+    monkeypatch.setattr("bartlebot.gui.canvas.bot_canvas.rekey_bot_strategy_states", lambda *a: 0)
+    shown = _answer_meta_dialog(monkeypatch, "Farm loop", categories=["Combat", "Utility"])
+    canvas = _canvas(harness)
+    farm = next(r for r in canvas.config.regions if r.source is None)
+
+    assert canvas.save_region_as_subgraph(farm.id)
+
+    assert shown[0]["categories"] == [], "a new definition starts with none"
+    assert library.get(canvas.config.definition.id).tags == ["Combat", "Utility"]
+    assert canvas.config.definition.tags == ["Combat", "Utility"], "the open definition's header shows them"
+
+
+def test_save_as_new_starts_from_the_originals_categories(harness, library, monkeypatch):
+    library.save(library.get(SYNC_ID).model_copy(update={"tags": ["Team"]}))
+    canvas = harness._window.bot_canvas
+    canvas.open_definition_of(REGION)
+    shown = _answer_meta_dialog(monkeypatch, "Sync, then fight", categories=["Team", "Combat"])
+
+    assert harness._save_definition_as()
+
+    assert shown[0]["categories"] == ["Team"]
+    assert library.get(canvas.config.definition.id).tags == ["Team", "Combat"]
+    assert library.get(SYNC_ID).tags == ["Team"], "the original keeps its own"
+
+
+def test_renaming_from_the_library_asks_for_no_categories(harness, library, monkeypatch):
+    shown = _answer_meta_dialog(monkeypatch, "Regroup")
+    _canvas(harness)
+
+    assert harness._rename_subgraph(SYNC_ID)
+
+    assert "categories" not in shown[0]
+
+
+def test_the_meta_dialog_offers_categories_only_when_asked(qapp, parentless_shows):
+    from bartlebot.gui.canvas.subgraph_widgets import SubgraphMetaDialog  # noqa: PLC0415
+
+    plain = SubgraphMetaDialog(name="Regroup")
+    asked = SubgraphMetaDialog(name="Regroup", categories=["Team"])
+
+    assert plain.categories is None and plain.categories_field is None
+    assert asked.categories == ["Team"]
+    assert asked.categories_field.vocabulary.groups == {"Category": SUBGRAPH_CATEGORIES}
+    assert parentless_shows == []
 
 
 def test_renaming_a_subgraph_keeps_its_version_and_offers_no_update(harness, library, monkeypatch, tmp_path):
@@ -639,8 +689,8 @@ def test_every_surface_names_the_source_the_same_way():
     from bartlebot.store_roots import Origin  # noqa: PLC0415
     from bartlebot.subgraph_store import source_label  # noqa: PLC0415
 
-    assert source_label(Origin.SHIPPED) == "Source: Built-in"
-    assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Built-in (modified)"
+    assert source_label(Origin.SHIPPED) == "Source: Official"
+    assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Official (modified)"
     assert source_label(Origin.USER) == "Source: Custom"
 
 
@@ -1321,3 +1371,17 @@ def test_a_link_row_brings_its_node_into_view_without_selecting_it(doc):
     assert doc.view.mapToScene(doc.view.viewport().rect()).boundingRect().intersects(node.sceneBoundingRect())
     assert doc.scene.selectedItems() == []
     assert doc.param_panel.showing_signature
+
+
+def test_saving_a_category_writes_it_and_keeps_the_version(harness, library):
+    """A category is metadata, like a name (#172): nothing a bot runs changes."""
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    canvas.config.definition.tags = ["Team"]
+    canvas.config_changed.emit()
+    assert harness._has_unsaved_changes
+    assert harness._save_definition()
+    stored = library.get(SYNC_ID)
+    assert stored.tags == ["Team"]
+    assert stored.version == 1
+    assert not harness._has_unsaved_changes

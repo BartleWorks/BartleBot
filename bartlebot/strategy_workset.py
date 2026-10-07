@@ -58,6 +58,18 @@ So :meth:`StrategyWorkingSet.revert` puts the shipped version back *here*, and
 content has come back to the shipped version, however it got there. A built-in is
 never removed: there is nothing under the user root to delete, and the shipped file
 would reappear on the next open anyway.
+
+ANOTHER PROGRAM CAN CHANGE A FILE WHILE THE DIALOG IS OPEN
+---------------------------------------------------------
+
+The three kinds here are the shared library, which BartleBuddy reads and writes too
+(:mod:`bartlebot.shared.strategy_library`). Each entry is held with the fingerprint it
+was loaded with, and :meth:`StrategyWorkingSet.commit` passes it to every write, so a
+file another program changed since is never overwritten. Commit records it as a
+:class:`Conflict` instead and leaves the entry dirty; the dialog then offers to
+:meth:`~StrategyWorkingSet.reload` it, discarding this session's edit, or to
+:meth:`~StrategyWorkingSet.keep_as_copy`, which keeps the edit under a new id. An entry
+from a file in a newer format is read-only (:meth:`~StrategyWorkingSet.is_read_only`).
 """
 
 from __future__ import annotations
@@ -76,17 +88,21 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.combat_profile import StrategyLookup, profile_players_of
+from bartlebot.shared.content_hash import content_sha256, official_updated
+from bartlebot.shared.strategy_library import is_newer_format
 from bartlebot.strategy_store import (
+    ChangedOnDisk,
+    NewerFormat,
     Origin,
     StrategyKind,
     delete_deck_preset,
     delete_duel_strategy,
     delete_player_strategy,
+    fingerprint,
+    library_entries,
     list_all_bot_strategies,
-    list_deck_presets,
-    list_duel_strategies,
-    list_player_strategies,
     list_shipped,
+    load_library_entry,
     origin_of,
     save_bot_strategy,
     save_deck_preset,
@@ -129,6 +145,15 @@ _FACTORIES = {
     StrategyKind.DUEL: lambda name: DuelCombatStrategy(name=name),
     StrategyKind.DECK: lambda name: DeckPreset(name=name),
 }
+
+
+def _fresh_copy(name: str) -> dict:
+    """The fields a copy of an entry gets anew: an id, a name, and no history or Official base.
+
+    A copy is a new item, as a bot's Make my own copy is: what it was copied from is not
+    its own past, and it overrides nothing (#169).
+    """
+    return {"id": str(uuid4()), "name": name, "history": [], "official_sha256": None, "sent_sha256": None}
 
 
 def _snapshot(item) -> str:
@@ -187,6 +212,19 @@ class SharedUse:
         return f"'{self.name}' is {'also ' if other else ''}used by {'; and '.join(parts)}."
 
 
+@dataclass(frozen=True)
+class Conflict:
+    """A write :meth:`StrategyWorkingSet.commit` refused, so the entry is still unsaved."""
+
+    kind: StrategyKind
+    uuid: str
+    name: str
+    #: Its file is in a format newer than this build knows, rather than changed since load.
+    newer_format: bool = False
+    #: The refused write was a delete (or a revert), not a save.
+    deleted: bool = False
+
+
 @dataclass
 class _Slot:
     """One kind's live items, plus what they looked like when they were loaded."""
@@ -200,6 +238,9 @@ class _Slot:
     #: matches the baseline: a user copy identical to the shipped one still shadows
     #: every future update to it, so reverting one is a real write.
     reverted: set[str] = field(default_factory=set)
+    #: The fingerprint each entry was loaded with: what a write expects to find. Absent
+    #: (or None) for an entry with no user file.
+    fingerprints: dict[str, str | None] = field(default_factory=dict)
 
 
 class StrategyWorkingSet:
@@ -221,11 +262,15 @@ class StrategyWorkingSet:
         shipped: dict[StrategyKind, list] | None = None,
         profile: BotCombatStrategy | None = None,
         bot_id: str | None = None,
+        fingerprints: dict[StrategyKind, dict[str, str | None]] | None = None,
     ) -> None:
         """*profile* is the active combat profile, held editable; see the module docstring.
 
         *bot_id* names the loaded bot when it has no profile yet, so the dialog can offer to
         make one. It is taken from *profile* when one is given.
+
+        *fingerprints* are what each entry was loaded with (:meth:`from_store` passes the
+        ones its load read). Without them, each is read from disk now.
         """
         self._root = root
         self._user_root = user_root
@@ -246,16 +291,21 @@ class StrategyWorkingSet:
             (StrategyKind.DECK, decks),
         ):
             slot = self._slots[kind]
+            given = (fingerprints or {}).get(kind)
             for item in loaded:
                 # Deep copies: the caller's lists are what the Combat tab is still
                 # drawing from, and an editor mutating those would change the cards
                 # behind the dialog before anything was saved.
                 slot.items[item.id] = item.model_copy(deep=True)
                 slot.baselines[item.id] = _snapshot(item)
+                slot.fingerprints[item.id] = (
+                    given.get(item.id) if given is not None else fingerprint(kind, item.id, root, user_root)
+                )
             for item in (shipped or {}).get(kind, []):
                 slot.shipped[item.id] = item
         # Read-only, and not copied: nothing here edits one.
         self._bot_strategies = list(bot_strategies or [])
+        self._conflicts: list[Conflict] = []
 
     @classmethod
     def from_store(
@@ -274,10 +324,12 @@ class StrategyWorkingSet:
         """
         bot_strategies = list_all_bot_strategies(root, user_root)
         profile = next((b for b in bot_strategies if b.id == profile_id), None) if profile_id else None
+        entries = {kind: library_entries(kind, root, user_root) for kind in EDITABLE_KINDS}
         return cls(
-            players=list_player_strategies(root, user_root),
-            duels=list_duel_strategies(root, user_root),
-            decks=list_deck_presets(root, user_root),
+            players=[e.item for e in entries[StrategyKind.PLAYER].values()],
+            duels=[e.item for e in entries[StrategyKind.DUEL].values()],
+            decks=[e.item for e in entries[StrategyKind.DECK].values()],
+            fingerprints={kind: {uuid: e.fingerprint for uuid, e in found.items()} for kind, found in entries.items()},
             bot_strategies=bot_strategies,
             root=root,
             user_root=user_root,
@@ -331,6 +383,19 @@ class StrategyWorkingSet:
         if self._profile is None:
             return list(self._bot_strategies)
         return [self._profile, *(b for b in self._bot_strategies if b.id != self._profile.id)]
+
+    @property
+    def roots(self) -> tuple[str | Path | None, str | Path | None]:
+        """``(root, user_root)``, in the strategy store's argument convention: where this set was loaded from."""
+        return self._root, self._user_root
+
+    def has_unsaved(self, kind: StrategyKind, uuid: str | None) -> bool:
+        """Whether *uuid* is new or changed since the set was loaded or last saved.
+
+        What Export asks before it sends an entry: a share file carries what is saved.
+        """
+        changes = self.changes(kind)
+        return uuid in changes.created or uuid in changes.modified
 
     # ------------------------------------------------------------------
     # The active combat profile (#118)
@@ -450,7 +515,7 @@ class StrategyWorkingSet:
         source = self.get(kind, uuid)
         if source is None:
             return None
-        copy = source.model_copy(deep=True, update={"id": str(uuid4()), "name": self.unique_name(kind, source.name)})
+        copy = source.model_copy(deep=True, update=_fresh_copy(self.unique_name(kind, source.name)))
         self._add(kind, copy, in_profile)
         return copy
 
@@ -515,7 +580,7 @@ class StrategyWorkingSet:
         shipped = slot.shipped.get(uuid)
         if shipped is None:
             return Origin.USER
-        if _snapshot(item) != _snapshot(shipped):
+        if content_sha256(item) != content_sha256(shipped):
             return Origin.SHIPPED_OVERRIDE
         if uuid in slot.reverted or _snapshot(item) != slot.baselines.get(uuid):
             # Back to the shipped content this session; Save removes the user copy.
@@ -546,7 +611,21 @@ class StrategyWorkingSet:
         slot = self._slots[kind]
         shipped = slot.shipped.get(uuid)
         item = slot.items.get(uuid)
-        return shipped is not None and item is not None and _snapshot(item) == _snapshot(shipped)
+        # Content, not every field: an override's history and Official base are its record
+        # of where it came from, and say nothing about whether it still differs (#169).
+        return shipped is not None and item is not None and content_sha256(item) == content_sha256(shipped)
+
+    def official_updated(self, kind: StrategyKind, uuid: str) -> bool:
+        """Whether ``uuid`` overrides an Official strategy that has changed since the override was made (#169).
+
+        Asked of the override as loaded: its ``official_sha256`` against the shipped one
+        held from load. True only while the entry is still an override; Revert takes the
+        new Official one, and the user's changes go with the override.
+        """
+        if self.is_profile_entry(kind, uuid) or self.status(kind, uuid) is not Origin.SHIPPED_OVERRIDE:
+            return False
+        slot = self._slots[kind]
+        return official_updated(slot.items.get(uuid), slot.shipped.get(uuid))
 
     def unique_name(self, kind: StrategyKind, base: str) -> str:
         """``base`` made unique against every live name of that kind, profile entries
@@ -619,7 +698,9 @@ class StrategyWorkingSet:
         A single failed write is logged and skipped rather than raised: the rest
         of the session's work is not forfeit because one file could not be
         written, and the entry keeps its old baseline, so it still reads as
-        modified and Save can be tried again.
+        modified and Save can be tried again. A write refused because another
+        program changed the file, or because it is in a newer format, is also
+        listed in :attr:`conflicts`, for the dialog to ask about.
 
         The active profile is written after the library and before any library
         delete. If a library write failed, the profile is not written at all: it may
@@ -627,6 +708,7 @@ class StrategyWorkingSet:
         profile without it would leave no copy anywhere.
         """
         written = self.changes()
+        self._conflicts = []
         library_failed = False
         for kind in EDITABLE_KINDS:
             slot = self._slots[kind]
@@ -636,11 +718,20 @@ class StrategyWorkingSet:
                 item = slot.items.get(uuid)
                 if item is None:
                     continue
+                expected = slot.fingerprints.get(uuid)
+                reverting = self._matches_shipped(kind, uuid)
                 try:
-                    if self._matches_shipped(kind, uuid):
-                        delete(uuid, root=self._root, user_root=self._user_root)
+                    if reverting:
+                        delete(uuid, root=self._root, user_root=self._user_root, expected=expected)
+                        slot.fingerprints.pop(uuid, None)
                     else:
-                        save(item, root=self._root, user_root=self._user_root)
+                        slot.fingerprints[uuid] = save(
+                            item, root=self._root, user_root=self._user_root, expected=expected
+                        )
+                except (ChangedOnDisk, NewerFormat) as refused:
+                    self._refused(kind, uuid, item.name, refused, deleted=reverting)
+                    library_failed = True
+                    continue
                 except Exception:
                     logger.exception("Failed to save %s strategy %s", kind.value, uuid)
                     library_failed = True
@@ -655,15 +746,77 @@ class StrategyWorkingSet:
         for kind in EDITABLE_KINDS:
             slot = self._slots[kind]
             delete = _DELETERS[kind]
+            kept: list[str] = []
             for uuid in slot.deleted:
                 try:
-                    delete(uuid, root=self._root, user_root=self._user_root)
+                    delete(uuid, root=self._root, user_root=self._user_root, expected=slot.fingerprints.get(uuid))
+                except (ChangedOnDisk, NewerFormat) as refused:
+                    # The entry itself is gone from the set; its baseline still has its name.
+                    name = json.loads(slot.baselines.get(uuid, "{}")).get("name") or uuid
+                    self._refused(kind, uuid, name, refused, deleted=True)
+                    kept.append(uuid)
+                    continue
                 except Exception:
                     logger.exception("Failed to delete %s strategy %s", kind.value, uuid)
                     continue
                 slot.baselines.pop(uuid, None)
-            slot.deleted.clear()
+                slot.fingerprints.pop(uuid, None)
+            # A refused delete stays pending, so the set still reads dirty until it is resolved.
+            slot.deleted = kept
         return written
+
+    def _refused(self, kind: StrategyKind, uuid: str, name: str, refused: Exception, *, deleted: bool) -> None:
+        logger.warning("Not saving %s strategy %s: %s", kind.value, uuid, refused)
+        self._conflicts.append(
+            Conflict(kind, uuid, name, newer_format=isinstance(refused, NewerFormat), deleted=deleted)
+        )
+
+    @property
+    def conflicts(self) -> list[Conflict]:
+        """The writes the last :meth:`commit` refused; see the module docstring."""
+        return list(self._conflicts)
+
+    def is_read_only(self, kind: StrategyKind, uuid: str | None) -> bool:
+        """Whether ``uuid`` came from a file in a newer format than this build knows, so it may not be edited."""
+        if uuid is None or self.is_profile_entry(kind, uuid):
+            return False
+        item = self._slots[kind].items.get(uuid)
+        return item is not None and is_newer_format(item)
+
+    def reload(self, kind: StrategyKind, uuid: str):
+        """Replace ``uuid`` with what is on disk now, discarding this session's edit to it. Returns it.
+
+        None when no root has it any more: another program deleted it, so it leaves the
+        list too. A surface holding the old object must reload, as after :meth:`revert`.
+        """
+        slot = self._slots[kind]
+        slot.deleted = [d for d in slot.deleted if d != uuid]
+        slot.reverted.discard(uuid)
+        self._conflicts = [c for c in self._conflicts if (c.kind, c.uuid) != (kind, uuid)]
+        try:
+            entry = load_library_entry(kind, uuid, self._root, self._user_root)
+        except FileNotFoundError:
+            for held in (slot.items, slot.baselines, slot.fingerprints):
+                held.pop(uuid, None)
+            return None
+        slot.items[uuid] = entry.item
+        slot.baselines[uuid] = _snapshot(entry.item)
+        slot.fingerprints[uuid] = entry.fingerprint
+        return entry.item
+
+    def keep_as_copy(self, kind: StrategyKind, uuid: str):
+        """Keep this session's edit to ``uuid`` as a new entry, and reload ``uuid`` from disk. Returns the copy.
+
+        The copy gets a fresh id and the next free name, as :meth:`duplicate` gives, so
+        Save writes it as a new file and nothing the other program wrote is touched.
+        """
+        source = self._slots[kind].items.get(uuid)
+        if source is None:
+            return None
+        copy = source.model_copy(deep=True, update=_fresh_copy(self.unique_name(kind, source.name)))
+        self.reload(kind, uuid)
+        self._add(kind, copy, in_profile=False)
+        return copy
 
     def _commit_profile(self) -> None:
         try:

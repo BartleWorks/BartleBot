@@ -416,6 +416,12 @@ def isolated_settings(_appdata_root, monkeypatch):
     # that takes the default roots into the working tree — see store_roots.
     monkeypatch.delenv("BARTLEBOT_DEV", raising=False)
     monkeypatch.setattr(SettingsManager, "_instance", None)
+    # Nor may another product installed on the developer's machine decide which shared
+    # Official set the suite reads (see shared.official_set).
+    from bartlebot.shared import official_set  # noqa: PLC0415
+
+    monkeypatch.setattr(official_set, "_registry", official_set.NoRegistry())
+    official_set.reset_shipped_root()
 
 
 # ---------------------------------------------------------------------------

@@ -38,6 +38,10 @@ _BOUND = (
     "_describe_skipped",
     "_warn_deck_failed",
     "_deck_failure_lines",
+    "_slot_has_client",
+    "_import_deck_for_dialog",
+    "_apply_deck_for_dialog",
+    "_answer_dialog",
 )
 
 
@@ -381,3 +385,88 @@ async def test_a_deck_job_that_raises_still_releases_the_tab():
 
     assert harness.combat_tab.set_deck_busy.call_args_list[-1] == call(False)
     assert harness._deck_task is None
+
+
+# ---------------------------------------------------------------------------
+# From the combat dialog's Deck tab: no strategy is touched, the dialog is told
+# ---------------------------------------------------------------------------
+
+
+async def test_a_dialog_import_answers_the_dialog_and_saves_no_strategy(strategy, client_decks):
+    client_decks["c1"] = _preset(4)
+    harness = DeckJobHarness(["c1"])
+    answers: list[object] = []
+
+    assert harness._import_deck_for_dialog(1, answers.append)
+    await harness._deck_task
+
+    [deck] = answers
+    assert deck.normal == {"Tempest": 4}
+    assert strategy.saves == []
+    harness.combat_tab.set_deck_busy.assert_any_call(True)
+
+
+async def test_a_dialog_import_that_fails_answers_with_the_reason_and_warns(strategy, client_decks):
+    client_decks["c1"] = TimeoutError()
+    harness = DeckJobHarness(["c1"])
+    answers: list[object] = []
+
+    harness._import_deck_for_dialog(1, answers.append)
+    await harness._deck_task
+
+    assert answers == ["timed out"]
+    assert [title for title, _body, _warn in harness.notices] == ["Deck import failed"]
+
+
+async def test_a_dialog_apply_sends_the_deck_it_was_given(apply_results):
+    harness = DeckJobHarness(["c1", "c2"])
+    answers: list[object] = []
+
+    assert harness._apply_deck_for_dialog(2, _deck(), answers.append)
+    await harness._deck_task
+
+    assert apply_results["applied"] == ["c2"]
+    assert answers == [None]
+    assert harness.notices == []
+
+
+async def test_a_dialog_apply_that_fails_answers_with_the_reason(apply_results):
+    apply_results["c1"] = RuntimeError("boom")
+    harness = DeckJobHarness(["c1"])
+    answers: list[object] = []
+
+    harness._apply_deck_for_dialog(1, _deck(), answers.append)
+    await harness._deck_task
+
+    assert len(answers) == 1 and isinstance(answers[0], str)
+    assert [title for title, _body, _warn in harness.notices] == ["Deck apply failed"]
+
+
+async def test_a_dialog_request_while_a_deck_job_runs_is_refused(client_decks):
+    harness = DeckJobHarness(["c1"])
+    harness._deck_task = MagicMock()
+
+    assert not harness._import_deck_for_dialog(1, lambda _r: None)
+    assert not harness._apply_deck_for_dialog(1, _deck(), lambda _r: None)
+
+
+async def test_a_dialog_request_for_a_slot_without_a_client_is_refused(monkeypatch):
+    import bartlebot.app_controller as ac  # noqa: PLC0415
+
+    warned = MagicMock()
+    monkeypatch.setattr(ac.QMessageBox, "warning", warned)
+    harness = DeckJobHarness(["c1"])
+
+    assert not harness._import_deck_for_dialog(2, lambda _r: None)
+    warned.assert_called_once()
+
+
+async def test_a_dialog_that_closed_before_the_answer_does_not_break_the_job(strategy, client_decks):
+    client_decks["c1"] = _preset(1)
+    harness = DeckJobHarness(["c1"])
+
+    def closed(_result):
+        raise RuntimeError("wrapped C/C++ object has been deleted")
+
+    harness._import_deck_for_dialog(1, closed)
+    await harness._deck_task  # no raise

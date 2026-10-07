@@ -63,7 +63,7 @@ from bartlebot.subgraphs import (
     outermost_linked_regions,
     reresolve_member_params,
 )
-from bartlebot.template_store import TEMPLATE_ID_PREFIX
+from bartlebot.template_store import id_prefixes, is_template_owned
 
 logger = logging.getLogger(__name__)
 
@@ -128,17 +128,18 @@ def _end(snap: _Snapshot, state_id: str) -> str | Port:
     return Port(region.id, port) if port is not None else state_id
 
 
-def _snapshot(config: BotConfig) -> _Snapshot:
+def _snapshot(config: BotConfig, prefixes: tuple[str, ...]) -> _Snapshot:
+    """``config`` as units. ``prefixes`` say which of its nodes the template owns (:attr:`TemplateUpdate.prefixes`)."""
     snap = _Snapshot(config)
     for region in outermost_linked_regions([r for r in config.regions if r.source is not None]):
         for m in region.members:
             snap.member_of[m] = region
-        if region.id.startswith(TEMPLATE_ID_PREFIX):
+        if is_template_owned(region.id, prefixes):
             snap.instances[region.id] = region
     units = snap.units
 
     for s in config.states:
-        if not s.id.startswith(TEMPLATE_ID_PREFIX) or s.id in snap.member_of:
+        if not is_template_owned(s.id, prefixes) or s.id in snap.member_of:
             continue
         snap.states[s.id] = s
         units[("node", s.id)] = s.node_type
@@ -239,6 +240,18 @@ class TemplateUpdate:
     def theirs(self) -> BotConfig:
         return self.releases[-1].config
 
+    @property
+    def prefixes(self) -> tuple[str, ...]:
+        """What the template's own ids start with, in any version: ``t_``, or a fork's lineage (#164).
+
+        The bot carries no ``template_meta``, so its versions are what say which of its
+        nodes the template owns.
+        """
+        found = dict.fromkeys(id_prefixes(self.base))
+        for release in self.releases:
+            found.update(dict.fromkeys(id_prefixes(release.config)))
+        return tuple(found)
+
 
 def load_update(
     config: BotConfig | None, root: str | Path | None = None, user_root: str | Path | None = None
@@ -270,23 +283,29 @@ def load_update(
 
 
 @lru_cache(maxsize=8)
-def _latest_versions(folder: str, stamp: tuple) -> dict[str, int]:
+def _latest_versions(shipped_dir: str, user_dir: str, stamp: tuple) -> dict[str, int]:
     del stamp  # only keys the cache: a release rewrites an index, which moves its mtime
     return {
         t.id: t.latest_version
-        for t in template_store.list_templates(Path(folder).parent)
+        for t in template_store.list_templates(Path(shipped_dir).parent, Path(user_dir).parent)
         if t.latest_version is not None
     }
 
 
 def latest_versions(root: str | Path | None = None, user_root: str | Path | None = None) -> Mapping[str, int]:
-    """Template id to its latest released version, cached until an index file changes."""
-    folder = template_store.templates_dir(root, user_root)
+    """Template id to its latest released version, cached until an index file changes in either root."""
+    shipped_dir, user_dir = template_store.templates_dirs(root, user_root)
     try:
-        stamp = tuple(sorted((str(p), p.stat().st_mtime_ns) for p in folder.glob(f"*/{template_store.INDEX_FILE}")))
+        stamp = tuple(
+            sorted(
+                (str(p), p.stat().st_mtime_ns)
+                for folder in {shipped_dir, user_dir}
+                for p in folder.glob(f"*/{template_store.INDEX_FILE}")
+            )
+        )
     except OSError:
         return {}
-    return _latest_versions(str(folder), stamp)
+    return _latest_versions(str(shipped_dir), str(user_dir), stamp)
 
 
 def behind_in_file(
@@ -480,9 +499,10 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
     ``library`` is passed to the trial :func:`apply` each change is given, so a change
     that would not leave a valid bot is reported as blocked instead of raising later.
     """
-    base = _snapshot(update.base)
-    theirs = _snapshot(update.theirs)
-    own = _snapshot(mine)
+    prefixes = update.prefixes
+    base = _snapshot(update.base, prefixes)
+    theirs = _snapshot(update.theirs, prefixes)
+    own = _snapshot(mine, prefixes)
     skip = _fill_in_keys(update.base) | _fill_in_keys(update.theirs)
 
     changed: list[Unit] = []
@@ -530,7 +550,7 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
             order.append(name)
         groups[name].append(unit)
 
-    versions = _unit_versions(update, base)
+    versions = _unit_versions(update, base, prefixes)
     changes: list[Change] = []
     for name in order:
         units = []
@@ -570,12 +590,12 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
     return changes
 
 
-def _unit_versions(update: TemplateUpdate, base: _Snapshot) -> dict[tuple, int]:
+def _unit_versions(update: TemplateUpdate, base: _Snapshot, prefixes: tuple[str, ...]) -> dict[tuple, int]:
     """Each unit's last release to change it, walking the releases in order."""
     last: dict[tuple, int] = {}
     previous = base.units
     for release in update.releases:
-        units = _snapshot(release.config).units
+        units = _snapshot(release.config, prefixes).units
         for key in {*previous, *units}:
             if previous.get(key, MISSING) != units.get(key, MISSING):
                 last[key] = release.version

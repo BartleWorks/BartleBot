@@ -22,8 +22,6 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from bartlebot.paths import project_root
-
 #: Records carrying this attribute are for the in-app log widget only and never
 #: reach the session file. Set it with ``logger.info(msg, extra=GUI_ONLY)`` on a
 #: message that restates something another logger has already written.
@@ -177,10 +175,22 @@ def prune_session_logs(log_dir: Path, keep: int = 10) -> None:
             pass
 
 
+def session_log_dir() -> Path:
+    """Where session logs go: ``logs/`` under the user root, never the install directory.
+
+    An update replaces the install directory whole, so logs there would be lost with it
+    (#168). In developer mode the user root is the repo, so they stay in its ``logs/``.
+    """
+    from bartlebot.store_roots import resolve_roots  # noqa: PLC0415 - kept off this module's import path
+
+    _shipped, user = resolve_roots(None, None)
+    return user / "logs"
+
+
 def configure_logging() -> None:
     """Call once at startup before any other bartlebot imports."""
-    log_dir = project_root() / "logs"
-    log_dir.mkdir(exist_ok=True)
+    log_dir = session_log_dir()
+    log_dir.mkdir(parents=True, exist_ok=True)
 
     session_name = datetime.datetime.now().strftime("bartlebot_%Y-%m-%d_%H-%M-%S.log")
     file_handler = logging.FileHandler(log_dir / session_name, encoding="utf-8")

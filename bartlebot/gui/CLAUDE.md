@@ -896,14 +896,74 @@ default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgra
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or
 focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
-except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / Custom" (`store_roots.source_label`, shared with the combat strategy cards); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
-version read-only and no tags; line 2 says where it comes from and how many bots use it.
-**Line 2 stays in a definition** and the hidden tag field keeps its slot, so the bar is
-the same height in both documents — hiding the row made every step in or out move the
+except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Official / Official (modified) / Custom" (`store_roots.source_label`, shared with the combat strategy cards); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
+version read-only; line 2 says where it comes from and how many bots use it, then the
+definition's categories (#172) in the same `TagsField`, handed `SUBGRAPH_VOCABULARY`.
+**Line 2 stays in a definition**, so the bar is the same height in both documents — hiding the row made every step in or out move the
 graph 22px, and the bar was caught mid-change on screen. Open a document straight into
 its mode with `setup(config, mode=...)`, never `setup` then `enter_edit_mode`, which
 laid the canvas out in Run mode first.
 `docs/SUBGRAPHS.md` has the flow.
+
+## Source: Official, Official (modified), Custom
+
+Every list of bots, templates, subgraphs or strategies says where each item comes from,
+in **the same three words** (`store_roots.SOURCE_LABELS`) and **the same pill**
+(`widgets/source_pill.source_pill`): Official filled with the accent, a modified one
+outlined in it, Custom gray (#149). Never "Built-in", which says where a file is rather
+than what it promises: Official means shipped, and so tested in game. It is worked out
+from the root a file is in (`bot_roots.is_shipped`, `Origin`) and never read from the
+file. A list long enough to need it has a Source filter beside it, offering the same
+words (`tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
+Subgraphs folder, the node browser's Subgraphs tab, and File › Templates… (#164), whose
+gallery is New Bot's cards with a last line added. New Bot's gallery has pills only.
+Beside it on both lists of subgraphs is a *Category* filter (#172); in the bot library it
+takes the bot tag pickers' place while the Subgraphs folder is selected, and a bot tag
+left selected is kept, out of sight, rather than applied to subgraphs.
+`docs/SUBGRAPHS.md` has the vocabulary.
+
+**File › Templates… decides nothing itself** (`gui/templates_dialog.py`). Which verbs a
+card allows comes from `template_gallery.GalleryEntry`, and a verb a card does not allow
+is disabled with the reason as its tooltip, in the footer row and on the card's
+right-click menu alike. Edit, New and Duplicate end the dialog with a request the
+controller acts on; Rename and Delete are callables the controller hands in, because
+either can touch the open draft, and the gallery reloads after each.
+
+A modified Official subgraph or strategy whose Official item has changed since the
+override was made reads **Official (modified) · Official updated**
+(`source_pill(..., official_updated=True)`, text from `store_roots.pill_text`), with a
+tooltip saying what Revert does (#169). The Source filter still offers only the three
+words, so the suffix never becomes a chip. Revert sits beside it: a *Revert…* button on
+the Subgraphs folder card, the definition header's Revert, the strategy dialog's
+*Revert to default* with a note in its About pane. Whether an item is out of date comes
+from `SubgraphLibrary.official_updated` and `StrategyWorkingSet.official_updated`, never
+from the widget.
+
+**Export… sits on each item's own menu** (#170): a bot or Subgraphs card's right-click
+in the library, a card's right-click in every tab of the strategy dialog, the Combat
+tab banner's menu, and File › Export… for the open bot or definition. Every one ends in
+`export_dialog.run_export`, which takes a `build(Choices)` callable rather than a plan,
+so ticking a checkbox re-gathers the file and the summary always shows what Save
+writes. Export sends what is saved: a surface that holds unsaved edits says so rather
+than exporting them (`StrategyWorkingSet.has_unsaved`, the controller's
+`_saved_for_export`). `docs/SHARING.md` has the rest.
+
+**Import has three ways in, and one path** (#171): File › Import…, a share file dropped
+anywhere on the window, and a file named on the command line. All three reach the
+controller's `_import_share_file`. A drop is caught by `gui/share_drop.ShareFileDrops`,
+an event filter on the *application*, because a drag goes to the widget under the cursor
+and the canvas, the favorites bar and the combat order list all accept drops of their
+own; any drag without a share file goes on to its widget untouched. The summary
+(`import_dialog.ImportDialog`) is built from a `build(choices)` callable, like Export's,
+so changing one row's choice re-matches the whole file: a copy rewrites the links of
+everything after it. It never asks for typed text. A rebuild runs inside a combo's own
+signal, so the old rows are `takeWidget()`-ed and `deleteLater()`-ed, never replaced by
+`setWidget`, which deletes them at once.
+
+**An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
+way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
+and the controller offers Make my own copy (`gui/make_copy_dialog.py`). A new way into
+Edit mode must go through `enter_edit_mode` too, and check the mode after it.
 
 ## One crumb bar, and the levels behind it
 
@@ -933,8 +993,8 @@ then the selection, and only then the definition — so a stray Esc never lands 
 Save / Discard prompt. An earlier segment steps straight back to it, prompting at each
 definition closed on the way (`AppController._back_to_document`).
 
-A definition's crumb carries **Save**, **Save as…** and, only for a Built-in
-(modified), **Revert**. The labels are short on purpose: the bar sits over the graph.
+A definition's crumb carries **Save**, **Save as…** and, only for an Official
+(modified) one, **Revert**. The labels are short on purpose: the bar sits over the graph.
 Save is `PRIMARY` with `on_accent=True`, which swaps its fill and text, because an
 accent-filled button on an accent bar drew weaker than the tertiary ones beside it.
 Save as makes the document the copy, at a new id and version 1, and Revert deletes the

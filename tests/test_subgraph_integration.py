@@ -37,12 +37,17 @@ class ControllerHarness:
             "_new_bot",
             "_new_bot_folder",
             "_open_bot",
+            "_close_bot",
             "_save_bot",
             "_save_bot_as",
             "_do_autosave",
             "_delete_autosave",
             "_autosave_path",
             "_on_config_changed",
+            "_mark_unsaved",
+            "_enable_save_actions",
+            "_read_only_open",
+            "_make_own_copy",
             "_on_run_requested",
             "_on_elixir_probe_done",
             "_finish_run_request",
@@ -57,6 +62,7 @@ class ControllerHarness:
             "_refresh_definition_context",
             "_on_definition_save_requested",
             "_save_definition",
+            "_confirm_signature_change",
             "_mark_definition_saved",
             "_definition_back",
             "_leave_definition",
@@ -71,7 +77,16 @@ class ControllerHarness:
             "_back_to_document",
             "_file_label",
             "_may_edit_template",
+            "_template_roots",
+            "_ask_template_name",
+            "_user_bots_dirs",
+            "_template_gallery",
+            "_open_templates_dialog",
             "_edit_template",
+            "_new_template",
+            "_duplicate_template",
+            "_rename_template",
+            "_delete_template",
             "_open_template",
             "_refresh_template_context",
             "_release_template",
@@ -80,9 +95,11 @@ class ControllerHarness:
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library
         self._templates_root = None
+        self._templates_user_root = None
         self._elixir_probe = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
+        self._official_open = False
         self._has_unsaved_changes = False
         self._clean_snapshot = None
         self._rewards_declined_for = None

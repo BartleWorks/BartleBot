@@ -30,7 +30,7 @@ from bartlebot import template_store
 from bartlebot.bot.schema import BotConfig, TemplateRef
 from bartlebot.bot_folders import UNBADGED_FOLDERS
 from bartlebot.bot_tags import normalize_tags
-from bartlebot.store_roots import slugify
+from bartlebot.store_roots import Origin, slugify
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,8 @@ class StartingPoint:
     template_id: str
     version: int
     config: BotConfig
+    #: Official for a template that ships, Custom for the user's own: the card's Source pill.
+    origin: Origin = Origin.USER
 
     @property
     def name(self) -> str:
@@ -99,7 +101,10 @@ def starting_points(root: str | Path | None = None, user_root: str | Path | None
         except Exception:
             logger.warning("Not offering template %s: v%d does not load", template.name, version, exc_info=True)
             continue
-        points.append(StartingPoint(template_id=template.id, version=version, config=config))
+        # The template's name now, which a rename since its latest release changes (#164).
+        # Only what the card shows: the bot is named on the dialog's next page.
+        config.name = template.name
+        points.append(StartingPoint(template_id=template.id, version=version, config=config, origin=template.origin))
     return points
 
 
@@ -161,12 +166,13 @@ def unique_file_name(stem: str, folder: str | Path) -> str:
     return name
 
 
-def library_folders(bots_dir: str | Path) -> list[str]:
+def library_folders(*bots_dirs: str | Path) -> list[str]:
     """The bot library's folders a new bot can be saved in, in the library's order.
 
     By folder name, so the numbers set the order (see :mod:`bartlebot.bot_folders`).
     Empty ones are listed too, unlike in the library panel: a new bot is how one fills.
+    Every folder in any of ``bots_dirs``, so a user's own folder, empty on a first run,
+    still offers every world the shipped one has (:mod:`bartlebot.bot_roots`).
     """
-    base = Path(bots_dir)
-    names = {p.name for p in base.iterdir() if p.is_dir()} if base.is_dir() else set()
+    names = {p.name for d in map(Path, bots_dirs) if d.is_dir() for p in d.iterdir() if p.is_dir()}
     return sorted(n for n in names if n not in UNBADGED_FOLDERS and not n.startswith((".", "_")))

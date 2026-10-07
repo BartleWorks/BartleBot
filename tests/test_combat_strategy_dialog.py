@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 import pytest
 from PyQt6.QtCore import Qt
+from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
 from bartlebot import store_roots
@@ -316,14 +317,14 @@ def test_a_revert_keeps_the_entry_listed_selected_and_loaded(qapp, roots):
         page._on_delete()
 
     assert page.selected_id() == pcs.id
-    assert page.card_for(pcs.id).source_text == "Built-in"
+    assert page.card_for(pcs.id).source_text == "Official"
     assert page.about._name_edit.text() == "Support"
     assert not page._del_btn.isEnabled()
 
 
 @pytest.mark.parametrize(
     ("where", "label"),
-    [("shipped", "Built-in"), ("override", "Built-in (modified)"), ("user", "Custom")],
+    [("shipped", "Official"), ("override", "Official (modified)"), ("user", "Custom")],
 )
 def test_every_card_says_where_its_entry_comes_from(qapp, roots, where, label):
     shipped, user = roots
@@ -345,7 +346,7 @@ def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):
 
     page.about._description_edit.setText("tweaked")
 
-    assert page.card_for(pcs.id).source_text == "Built-in (modified)"
+    assert page.card_for(pcs.id).source_text == "Official (modified)"
 
 
 @pytest.mark.parametrize(
@@ -353,7 +354,7 @@ def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):
     [("shipped", AccentPill, True), ("override", AccentPill, False), ("user", NeutralPill, None)],
 )
 def test_the_source_pill_is_weighted_like_a_button(qapp, roots, where, pill_type, filled):
-    """Built-in filled with the accent, modified built-in outlined in it, custom gray."""
+    """Official filled with the accent, modified Official outlined in it, custom gray."""
     shipped, user = roots
     pcs = PlayerCombatStrategy(name="Support")
     if where in ("shipped", "override"):
@@ -371,8 +372,8 @@ def test_the_source_pill_is_weighted_like_a_button(qapp, roots, where, pill_type
 
 def test_a_source_pill_edit_keeps_the_card_height(qapp, roots):
     """The filled and outlined pills are one size, so the card does not jump on an edit."""
-    assert AccentPill("Built-in", filled=True).sizeHint().height() == AccentPill("Built-in").sizeHint().height()
-    assert AccentPill("Built-in").sizeHint().height() == NeutralPill("Custom").sizeHint().height()
+    assert AccentPill("Official", filled=True).sizeHint().height() == AccentPill("Official").sizeHint().height()
+    assert AccentPill("Official").sizeHint().height() == NeutralPill("Custom").sizeHint().height()
 
 
 def _row(page, uuid):
@@ -438,6 +439,31 @@ def test_no_row_is_wider_than_the_column_even_when_its_card_cannot_fit(qapp, roo
         assert item.sizeHint().width() <= viewport
     assert page._list.horizontalScrollBar().maximum() == 0
     assert page._list.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    dlg.close()
+
+
+def test_every_card_fits_its_column_after_the_column_narrows(qapp, roots):
+    """The deck tab opened with every card overhanging its column, pill and star cut off (#170).
+
+    A list view lays its rows out once by default, so rows laid out at a wider width kept
+    it: a tab first laid out while hidden, at whatever width its page had then.
+    """
+    save_player_strategy(PlayerCombatStrategy(name="Hitter"), roots[1])
+    save_player_strategy(PlayerCombatStrategy(name="Support"), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg.page(StrategyKind.PLAYER)
+    splitter = page.findChild(QSplitter)
+    dlg.resize(1400, 720)
+    dlg.show()
+    splitter.setSizes([1000, 400])
+    qapp.processEvents()
+
+    splitter.setSizes([splitter.widget(0).minimumSizeHint().width(), 2000])
+    QTest.qWait(50)  # the relayout a resize asks for is deferred, as Qt defers every one
+
+    viewport = page._list.viewport().width()
+    for _item, card in page._card_map:
+        assert card.geometry().right() < viewport
     dlg.close()
 
 

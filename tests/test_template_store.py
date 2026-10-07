@@ -70,9 +70,9 @@ def test_saving_a_draft_again_keeps_its_folder_whatever_it_is_called_now(tmp_pat
     assert load_draft("tpl-boss", tmp_path).name == "Boss Farmer, Revised"
 
 
-def test_two_templates_with_one_name_get_two_folders(tmp_path):
+def test_two_templates_with_one_folder_name_get_two_folders(tmp_path):
     a = save_draft(_draft("tpl-a", "Boss Farmer"), tmp_path)
-    b = save_draft(_draft("tpl-b", "Boss Farmer"), tmp_path)
+    b = save_draft(_draft("tpl-b", "Boss-Farmer!"), tmp_path)
 
     assert a.parent.name == "boss-farmer"
     assert b.parent.name == "boss-farmer-2"

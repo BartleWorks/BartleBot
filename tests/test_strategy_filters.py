@@ -30,7 +30,7 @@ from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import SOURCE_LABELS, Origin
-from bartlebot.strategy_store import StrategyKind, save_player_strategy
+from bartlebot.strategy_store import StrategyKind, save_deck_preset, save_player_strategy
 from bartlebot.strategy_summary import StrategySummary
 from bartlebot.strategy_workset import StrategyWorkingSet
 from tests.picker_helpers import pick
@@ -41,7 +41,7 @@ CUSTOM = SOURCE_LABELS[Origin.USER]
 
 @pytest.fixture
 def roots(tmp_path, monkeypatch):
-    """A separate shipped and user root, so Built-in and Custom both exist."""
+    """A separate shipped and user root, so Official and Custom both exist."""
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     for root in (shipped, user):
         (root / "strategies" / "player").mkdir(parents=True)
@@ -104,11 +104,40 @@ def test_the_player_tab_offers_source_role_and_school(qapp, roots):
     assert bar.team_picker is None
 
 
-def test_the_deck_tab_offers_source_and_role_only(qapp, roots):
+def test_the_deck_tab_offers_source_role_and_school(qapp, roots):
+    """A deck's school joined the filter in #174."""
     bar = _dialog(roots)._pages[StrategyKind.DECK].filter_bar
     assert list(bar.tag_pickers) == ["Source", "Role"]
-    assert bar.school_picker is None
+    assert bar.school_picker is not None
     assert bar.team_picker is None
+
+
+def test_works_with_school_on_the_deck_tab_includes_decks_for_any_school(qapp, roots):
+    shipped, user = roots
+    storm = DeckPreset(name="Storm Deck", schools=["Storm"])
+    ice = DeckPreset(name="Ice Deck", schools=["Ice"])
+    anyone = DeckPreset(name="Anyone's Deck")
+    for preset in (storm, ice, anyone):
+        save_deck_preset(preset, root=shipped, user_root=user)
+    dlg = _dialog(roots, kind=StrategyKind.DECK)
+    page = dlg._pages[StrategyKind.DECK]
+
+    pick(page.filter_bar.school_picker, "Storm")
+
+    assert set(page.visible_ids()) == {storm.id, anyone.id}
+
+
+def test_a_decks_schools_are_picked_in_its_editor_and_shown_on_its_card(qapp, roots):
+    shipped, user = roots
+    preset = DeckPreset(name="Deck")
+    save_deck_preset(preset, root=shipped, user_root=user)
+    dlg = _dialog(roots, kind=StrategyKind.DECK, current_id=preset.id)
+    page = dlg._pages[StrategyKind.DECK]
+
+    pick(page.editor.school_picker, "Ice")
+
+    assert dlg._ws.get(StrategyKind.DECK, preset.id).schools == ["Ice"]
+    assert any("Ice" in line for line in page.card_for(preset.id).sub_texts)
 
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for the readable filenames in bartlebot.store_roots (#99).
+"""Tests for the readable filenames in bartlebot.shared.store_files (#99).
 
 Files are named after the item and found by the id inside them, so what is under
 test is that the two never disagree in a way a caller can see: a rename moves the
@@ -23,6 +23,7 @@ from bartlebot.strategy_store import (
     Origin,
     StrategyKind,
     delete_player_strategy,
+    fingerprint,
     list_player_strategies,
     load_player_strategy,
     origin_of,
@@ -35,6 +36,11 @@ from tests.test_subgraph_store import _defn
 
 def _player_dir(root: Path) -> Path:
     return root / "strategies" / "player"
+
+
+def _fp(item_id: str, *roots: Path) -> str | None:
+    """What a player strategy loads with now: the fingerprint a later save or delete passes."""
+    return fingerprint(StrategyKind.PLAYER, item_id, *roots)
 
 
 def _names(d: Path) -> list[str]:
@@ -93,7 +99,7 @@ def test_rename_moves_the_file(tmp_path):
     s = PlayerCombatStrategy(name="Old Name")
     save_player_strategy(s, tmp_path)
     s.name = "New Name"
-    save_player_strategy(s, tmp_path)
+    save_player_strategy(s, tmp_path, expected=_fp(s.id, tmp_path))
 
     assert _names(_player_dir(tmp_path)) == ["new-name.json"]
     assert load_player_strategy(s.id, tmp_path).name == "New Name"
@@ -112,9 +118,9 @@ def test_a_numbered_file_keeps_its_name_when_the_plain_one_frees_up(tmp_path):
     first, second = PlayerCombatStrategy(name="Support"), PlayerCombatStrategy(name="Support")
     save_player_strategy(first, tmp_path)
     save_player_strategy(second, tmp_path)
-    delete_player_strategy(first.id, tmp_path)
+    delete_player_strategy(first.id, tmp_path, expected=_fp(first.id, tmp_path))
 
-    save_player_strategy(second, tmp_path)
+    save_player_strategy(second, tmp_path, expected=_fp(second.id, tmp_path))
 
     assert _names(_player_dir(tmp_path)) == ["support-2.json"]
 
@@ -154,7 +160,7 @@ def test_a_legacy_id_named_file_loads_and_is_renamed_on_save(tmp_path):
     s.save(_player_dir(tmp_path) / f"{s.id}.json")
 
     assert load_player_strategy(s.id, tmp_path).name == "Legacy"
-    save_player_strategy(s, tmp_path)
+    save_player_strategy(s, tmp_path, expected=_fp(s.id, tmp_path))
     assert _names(_player_dir(tmp_path)) == ["legacy.json"]
 
 
@@ -176,7 +182,7 @@ def test_two_files_with_one_id_resolve_to_the_newer_with_a_warning(tmp_path, cap
     _age(d / f"{old.id}.json", 60)
     PlayerCombatStrategy(id=old.id, name="After").save(d / "after.json")
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.store_roots"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.shared.store_files"):
         assert load_player_strategy(old.id, tmp_path).name == "After"
     assert "declare id" in caplog.text
     assert [s.name for s in list_player_strategies(tmp_path)] == ["After"]
@@ -188,7 +194,7 @@ def test_delete_removes_every_file_declaring_the_id(tmp_path):
     s.save(d / "one.json")
     s.save(d / "two.json")
 
-    delete_player_strategy(s.id, tmp_path)
+    delete_player_strategy(s.id, tmp_path, expected=_fp(s.id, tmp_path))
 
     assert _names(d) == []
 
@@ -199,7 +205,7 @@ def test_saving_clears_a_duplicate_left_by_an_interrupted_rename(tmp_path):
     s.save(d / "old.json")
     s.save(d / "new.json")
 
-    save_player_strategy(s, tmp_path)
+    save_player_strategy(s, tmp_path, expected=_fp(s.id, tmp_path))
 
     assert _names(d) == ["new.json"]
 
@@ -242,7 +248,7 @@ def test_revert_finds_a_renamed_user_copy(tmp_path):
     save_player_strategy(original.model_copy(update={"name": "Mine"}), root=shipped, user_root=user)
     assert load_player_strategy(original.id, shipped, user).name == "Mine"
 
-    delete_player_strategy(original.id, shipped, user)
+    delete_player_strategy(original.id, shipped, user, expected=_fp(original.id, shipped, user))
 
     assert load_player_strategy(original.id, shipped, user).name == "Default"
     assert origin_of(StrategyKind.PLAYER, original.id, shipped, user) is Origin.SHIPPED

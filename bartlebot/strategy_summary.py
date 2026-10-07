@@ -194,18 +194,24 @@ class StrategySummary:
     #: other kind. The facet already says it in words; this is for a surface that draws
     #: the order as colored pills and has to leave that facet out when it does.
     combat_order: tuple[int, ...] = ()
-    #: Built-in, modified or custom, for a surface that shows it; None where the question
+    #: Official, modified or custom, for a surface that shows it; None where the question
     #: does not arise. Supplied by whoever knows the working set — the summarize_*
     #: functions see one entry and cannot tell (#124).
     source: Origin | None = None
+    #: Whether the entry overrides an Official one that has changed since (#169): its
+    #: pill then adds "Official updated". Supplied with ``source``, by the same caller.
+    official_updated: bool = False
     #: The combat profile's name when the entry belongs to that profile rather than the
     #: library (#118); None for a library entry. A card shows it in place of ``source``.
     profile_name: str | None = None
     #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
     tags: tuple[str, ...] = ()
+    #: The schools a deck is built for, in the order it lists them, for a card that draws
+    #: each beside its icon. The same schools the first facet spells out in words.
+    school_names: tuple[str, ...] = ()
     #: One school set per player slot, empty meaning any school — what the "works with"
-    #: filter asks. One slot for a Player Strategy, ``max_players`` for a duel, none for a
-    #: deck, which is never asked (#125).
+    #: filter asks. One slot for a Player Strategy or a deck (#174), ``max_players`` for a
+    #: duel (#125).
     slot_schools: tuple[frozenset[str], ...] = ()
     #: A duel's ``(min_players, max_players)``, for the team-size filter; None otherwise.
     player_range: tuple[int, int] | None = None
@@ -353,10 +359,17 @@ def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> St
 
 
 def summarize_deck(preset: DeckPreset) -> StrategySummary:
-    """Summarize a Deck Preset: how many cards it holds."""
+    """Summarize a Deck Preset: the schools it is built for, and how many cards it holds."""
     total = preset.deck.total_cards()
-    facets = [f"{total} cards"] if total else ["empty"]
+    facets = ["/".join(preset.schools)] if preset.schools else []
+    facets.append(f"{total} cards" if total else "empty")
     health = _EMPTY if preset.deck.is_empty() else _OK
     return StrategySummary(
-        name=preset.name, description=preset.description, facets=facets, health=health, tags=tuple(preset.tags)
+        name=preset.name,
+        description=preset.description,
+        facets=facets,
+        health=health,
+        tags=tuple(preset.tags),
+        school_names=tuple(preset.schools),
+        slot_schools=(frozenset(preset.schools),),
     )

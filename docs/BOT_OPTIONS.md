@@ -90,6 +90,12 @@ Four things that are load-bearing:
   identity on every load and lose every value keyed to it. Save As mints a new id
   deliberately — a fork is a different bot, and inherits neither the overrides nor
   the combat strategy.
+- **Make my own copy is the one copy that takes them (#149).** An Official bot is
+  read-only, and asking to edit one makes the user's own copy (`bartlebot/bot_fork.py`).
+  The copy is the same bot to the user, so `carry_over` copies every override and the
+  accepted quicksell sales under the new id, duplicates every Bot Combat Strategy
+  pointed at it, and maps the active pick to the duplicate. The Official bot keeps its
+  own. Running an Official bot needs no copy: every value here lives in settings.
 - **There is no prune sweep, and must not be one.** An option name is composed
   from whichever nodes are in the graph right now, on every graph edit, so cutting
   a node and pasting it back would drop the user's value in between. A dead row

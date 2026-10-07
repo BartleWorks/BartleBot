@@ -51,6 +51,7 @@ from bartlebot.gui.widgets.card_art_tile import ArtIconView, art_icon
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX, PickerButton, PickerRow
+from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import tag_icon
 from bartlebot.gui.widgets.tags_field import TagsField
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -63,6 +64,7 @@ from bartlebot.new_bot import (
     library_folders,
     unique_file_name,
 )
+from bartlebot.store_roots import Origin
 
 _BLANK_NAME = "Blank bot"
 _BLANK_BLURB = "An empty canvas. Build the graph yourself."
@@ -121,8 +123,14 @@ class StartCard(ThemedMixin, QFrame):
         tooltip: str = "",
         icon: QIcon | None = None,
         glyph: str = "",
+        source: Origin | None = None,
+        detail: str = "",
         parent: QWidget | None = None,
     ) -> None:
+        """``source`` is where a template comes from, shown as its Source pill (#149);
+        ``None`` for the blank bot, which comes from nowhere. ``detail`` is a last line in
+        small muted text, which the Templates dialog uses for a template's version and
+        bots (#164); New Bot has none."""
         super().__init__(parent)
         self._selected = False
         self._hovered = False
@@ -149,18 +157,42 @@ class StartCard(ThemedMixin, QFrame):
         row.addLayout(text, 1)
         self._name = QLabel(name)
         self._name.setFont(THEME.ui_font(THEME.font_body_px + 1, bold=True))
-        text.addWidget(self._name)
+        self._source_pill: QLabel | None = None
+        if source is None:
+            text.addWidget(self._name)
+        else:
+            heading = QHBoxLayout()
+            heading.setContentsMargins(0, 0, 0, 0)
+            heading.setSpacing(6)
+            text.addLayout(heading)
+            heading.addWidget(self._name, 1)
+            self._source_pill = source_pill(source)
+            heading.addWidget(self._source_pill, 0, Qt.AlignmentFlag.AlignVCenter)
         self._blurb = QLabel(blurb)
         self._blurb.setFont(THEME.ui_font(THEME.font_small_px))
         self._blurb.setWordWrap(True)
         text.addWidget(self._blurb)
         self._blurb.setVisible(bool(blurb))
+        self._detail = QLabel(detail)
+        self._detail.setFont(THEME.ui_font(THEME.font_small_px))
+        self._detail.setWordWrap(True)
+        text.addWidget(self._detail)
+        self._detail.setVisible(bool(detail))
         text.addStretch()
         self.refresh_theme_styles()
 
     @property
     def name(self) -> str:
         return self._name.text()
+
+    @property
+    def detail_text(self) -> str:
+        return self._detail.text()
+
+    @property
+    def source_text(self) -> str:
+        """What the card's Source pill says; "" for the blank bot, which has none."""
+        return self._source_pill.text() if self._source_pill is not None else ""
 
     @property
     def selected(self) -> bool:
@@ -194,6 +226,7 @@ class StartCard(ThemedMixin, QFrame):
         )
         set_style_sheet(self._name, f"color: {THEME.text};")
         set_style_sheet(self._blurb, f"color: {THEME.text_muted};")
+        set_style_sheet(self._detail, f"color: {THEME.text_muted};")
         if self._glyph:
             # A glyph is tinted for the theme it was rendered under, unlike art. Rendered
             # well over size, as art is held, so a scaled display draws it down from more
@@ -287,13 +320,17 @@ class NewBotDialog(QDialog):
         parent: QWidget | None = None,
         *,
         initial_folder: str | None = None,
+        folder_sources: tuple[str | Path, ...] = (),
     ) -> None:
+        """``bots_dir`` is where the bot is written: the user's own folder. ``folder_sources``
+        are other folders whose world folders are offered too, the shipped one's above all."""
         super().__init__(parent)
         self.setWindowTitle("New Bot")
         self.setMinimumSize(600, 460)
         # Wide enough that a card's blurb is two or three lines, so the gallery fits.
         self.resize(720, 520)
         self._bots_dir = Path(bots_dir)
+        self._folder_sources = tuple(Path(d) for d in folder_sources)
         #: Parallel to the cards: ``None`` is the blank bot.
         self._points: list[StartingPoint | None] = [None, *points]
         self._start_index = 0
@@ -435,7 +472,13 @@ class NewBotDialog(QDialog):
             full = point.blurb.strip()
             icon = tag_icon(point.icon_tag) if point.icon_tag else None
             self._cards.append(
-                StartCard(point.name, point.summary, tooltip=full if full != point.summary else "", icon=icon)
+                StartCard(
+                    point.name,
+                    point.summary,
+                    tooltip=full if full != point.summary else "",
+                    icon=icon,
+                    source=point.origin,
+                )
             )
         for index, card in enumerate(self._cards):
             card.chosen.connect(lambda i=index: self._select(i))
@@ -471,7 +514,7 @@ class NewBotDialog(QDialog):
         self._tags.set_editable(True)
         form.addRow("Tags", self._tags)
 
-        folders = library_folders(self._bots_dir)
+        folders = library_folders(self._bots_dir, *self._folder_sources)
         self._folder = FolderPicker(folders)
         if folders:
             self._folder.set_folder(initial_folder if initial_folder in folders else folders[0])

@@ -256,8 +256,8 @@ inside, like a strategy's — "Filenames are names, ids are inside" in `COMBAT_C
 
 A definition leaves the library from its card in the Bot Library's Subgraphs folder
 (right-click, #161), and the menu says which of the three it is: *Delete Subgraph…* on a
-custom one, *Revert to Built-in…* on a modified built-in, and a grayed-out Delete on an
-unedited built-in, which has no user file to remove. `AppController._delete_subgraph`
+custom one, *Revert to Official…* on a modified Official one, and a grayed-out Delete on an
+unedited Official one, which has no user file to remove. `AppController._delete_subgraph`
 asks first, naming the bots and the other definitions that link it — they are not
 broken, since each keeps its snapshot and composes as `missing`, but none gets another
 update — and refuses while the definition is open as a document. With `BARTLEBOT_DEV`
@@ -273,8 +273,8 @@ id. The file moves to the new name's slug, since the filename is a name. Nothing
 links it follows the rename: an instance's label is the bot's own, set from the name
 when it was placed, and its region page shows the new name beside it; its region id
 keeps the old slug too, which is never parsed. Rename is the user's own definitions
-only. A built-in's name is the shipped file's, so the card's item is grayed out and the
-header's name stays a label in Edit mode, modified built-in or not; it is renamed with
+only. An Official one's name is the shipped file's, so the card's item is grayed out and the
+header's name stays a label in Edit mode, modified or not; it is renamed with
 `BARTLEBOT_DEV` set, where every definition is the user's.
 
 A shipped definition is authored with `BARTLEBOT_DEV` set, which makes the project root
@@ -288,6 +288,120 @@ on open and before run, cached between. Pure functions receive it; tests build o
 `tmp_path`. An unloadable file is logged and treated as missing rather than raising,
 because one broken definition must not make every bot that links a different one
 unopenable.
+
+### A modified Official definition says when the Official one changes
+
+An override hides every later change to the Official definition under it, so the save
+that first makes one records `official_sha256`, the content hash of the Official
+definition it was made from (`bartlebot/shared/content_hash.py`, #169), and every later
+save keeps it. When the Official one stops hashing to it, after an app update,
+`SubgraphLibrary.official_updated()` says so, and the pill reads **Official (modified) ·
+Official updated** on the Subgraphs folder card, which puts a *Revert…* button beside it,
+on the node browser's page, and in the open definition's header, which offers Revert in
+Edit mode. Revert is the same ask-then-delete as the card's menu: the user's changes go,
+and every linking bot follows the new Official one. Comparing the two first can come
+later. An override saved before this has no base, and is never said to be out of date.
+
+Every definition also keeps a `history`: the content hashes of what earlier saves
+replaced, newest first, each once, at most 64, left out of the file while empty. The
+store records it from the file the save replaces, or, on an override's first save, from
+the Official one, so an unchanged save adds nothing and the document never has to carry
+it. The hash is of content, the definition dumped as its file would be with keys sorted
+and `history` and `official_sha256` left out; `definition_change` ignores the two fields
+too, so a recorded history never reads as an edit. Import (#171) reads the history to
+tell a newer copy of a definition from a separate edit of it.
+
+## Categories, and finding a subgraph
+
+Once users make and share subgraphs, a flat list stops working, so a definition says what
+it does with a **category** (#172), and every list of subgraphs filters by it. It has the
+shape `bartlebot/strategy_tags.py` gave combat strategies: a stored group with a fixed
+vocabulary, normalized on load, beside a **Source** group (Official, Official (modified),
+Custom) worked out from where the file is and never stored. `bartlebot/subgraph_tags.py`
+holds the vocabulary and the rule.
+
+| category | for a subgraph that |
+|---|---|
+| Zone Entry | gets into a dungeon, a gauntlet or a zone, by its door or an object |
+| Teleportation | moves across a world: to coordinates, a marked location, a friend, a hub |
+| Team | brings several players to one zone, realm and area |
+| Combat | runs a fight and what surrounds it: potions, health, wisps |
+| Interaction | talks to an NPC, clicks through a menu, collects reagents |
+| Utility | does anything else: level scaling, selling, relogging, waiting |
+
+The words are the node browser's own tabs wherever one fits, since a subgraph is a node the
+user made and is added from that dialog. **Team** is the one it lacks: a node never brings
+players together alone, and the one shipped definition, Sync players, does exactly that. It
+was chosen with one subgraph shipped and none shared yet, so expect it to grow.
+
+A definition may carry several. They are stored as `tags` in its file, after `version`,
+and left out while empty, so a definition never given one is written exactly as before. A
+word outside the vocabulary, a Source word included, is dropped on load with a warning, as
+an unknown bot tag is. In the open document they ride on `DefinitionMeta.tags`, because the
+document's own `tags` are bot tags and validation would drop any other word; Bar B's tag
+row shows them in place of a bot's, with one *Category* picker in Edit mode, beside where
+the definition comes from. *Save Region as Reusable Subgraph* and *Save as New Subgraph*
+ask for them too, beside the name and description, the second starting from the
+original's (`SubgraphMetaDialog`'s Category row); the library's Rename asks only for the
+name and description. A category change is `"meta"` to `definition_change`, like a
+rename: it keeps the version and reaches no bot's run. It does change the content hash, so
+it is recorded in the history and travels in a share file.
+
+Two lists filter by them, with the strategy dialog's rule: **OR within a group, AND across
+groups**, so "Team or Combat, and Custom".
+
+- **The Bot Library's Subgraphs folder.** Its bar shows a *Category* picker in place of
+  *Rewards* and *Activities*, which a subgraph never carries, and keeps *Source*, which
+  both lists share. A bot tag left selected stays selected, out of sight, and its chip
+  comes back with the bots; it is not applied to subgraphs, which would always come up
+  empty. Each card wears its categories, and the search box matches them.
+- **The node browser's Subgraphs tab.** *Category* and *Source* sit beside the search box
+  on that tab only, and a search's subgraphs are filtered by them too. The detail page
+  shows the categories beside the Source pill.
+
+Neither surface reuses the strategy dialog's `StrategyFilterBar`, which the issue
+suggested: it brings its own search box and chip row, and both lists already had both
+(the library) or a search shared with every node (the browser), with Source added beside
+them in #149. The new picker joins that one instead, using the same `TagPickerButton`,
+chips and pills.
+
+**Adding a category** is a code change, for the reason it is for bot tags: a library shared
+between users that drifts between spellings cannot be filtered.
+
+1. Add the word to `SUBGRAPH_CATEGORIES` in `bartlebot/subgraph_tags.py`, where its place
+   in the tuple is its place in every picker and in every file. Give it a one-line comment
+   saying what belongs in it.
+2. Keep it apart from the bot tags and the Source words:
+   `test_no_category_is_also_a_bot_tag_or_a_source_word` fails otherwise, because a shared
+   word would put a bot tag's medallion on a subgraph card.
+3. If it is not one of the node browser's tabs, add it to the set
+   `test_the_vocabulary_is_the_node_browsers_words_and_team` expects, and say why here.
+4. Add a row to the table above. Nothing is migrated: removing or renaming a word drops it
+   from every file that carries it on the next load, so never do either to a released one.
+
+## Changing a signature warns
+
+A definition's signature is what a bot linking it depends on: its inputs, whose values an
+instance stores by name, and its ports, which the bot's edges attach to. Saving a
+definition (`AppController._save_definition`) warns, naming every bot and definition that
+links it, when the save:
+
+| change | why it can break a bot |
+|---|---|
+| removes an input, or stops exposing a node | a value the bot set for it stops applying |
+| renames an input: its `name`, not its label | the bot's value is stored under the old name |
+| adds an input with no default | an instance placed before it has no value for it |
+| removes an Entry or Exit | the bot's edges to it have nowhere to go |
+| renames an Entry or Exit: its label | an edge drawn to "Done" now leaves "Failed" |
+
+`bartlebot/subgraph_signature.py` finds them. A rename is told from a removal by an added
+input driving the same params. Nothing else warns: a new label on an input, a moved node,
+a member's param, a new input with a default, a new port, a name or description. Save is
+the default, and Cancel writes nothing. It is a warning, not a refusal, the rule Home
+Assistant's blueprint guidance gives for the same reason: a bot that cannot absorb the
+change is `held` on its snapshot (see *An instance follows its definition*), so nothing
+stops running. Nothing linking the definition means nothing to warn about, so a
+definition being authored saves without the question.
 
 ## Authoring is edit in place, then push
 
@@ -424,6 +538,7 @@ states — the same thing copy does with any partial selection today.
 | **`flush_regions`** | never auto-deletes a region with `source`, even with one member |
 | **Nesting** | an instance inserted while editing another becomes an inner linked region; compose recurses; push carries it in the definition's `regions` |
 | **Node browser** | a *Subgraphs* tab whenever the dialog is given the library and no port filter; items are `subgraph:<id>` keys that `EditScene.create_state_at` routes to `insert_subgraph_instance`; the detail pane shows inputs, origin and *Used by N bots* from a raw-JSON scan of the bot library, once per dialog; Recent stays node types only |
+| **Export** (#170) | a bot's share file packs every Custom definition its instances link, nested ones included, and names every Official one; a definition exports alone as `.bbsubgraph` from its Subgraphs card or File › Export…. A modified Official definition is packed as a copy, and one missing from the library is left out, since the bot carries its snapshot. `docs/SHARING.md` |
 
 ## Out of scope
 

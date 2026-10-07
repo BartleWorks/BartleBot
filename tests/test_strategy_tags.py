@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import pytest
 
+from bartlebot.bot.strategy_models import DeckData, DeckPreset
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_store import StrategyKind
+from bartlebot.strategy_summary import summarize_deck
 from bartlebot.strategy_tags import (
     KIND_GROUPS,
     PROFILE_SOURCE,
@@ -58,9 +60,27 @@ def test_duels_have_no_role_group():
     assert ROLE in KIND_GROUPS[StrategyKind.DECK]
 
 
-def test_decks_are_not_asked_about_school_and_only_duels_about_team_size():
-    assert StrategyKind.DECK not in SCHOOL_KINDS
+def test_every_kind_is_asked_about_school_and_only_duels_about_team_size():
+    assert SCHOOL_KINDS == {StrategyKind.DUEL, StrategyKind.PLAYER, StrategyKind.DECK}
     assert TEAM_SIZE_KINDS == {StrategyKind.DUEL}
+
+
+def test_a_decks_schools_are_its_one_slot_and_its_first_facet():
+    """#174: a deck names the schools it is built for, and empty works with any."""
+    storm = summarize_deck(DeckPreset(name="D", schools=["Storm", "Ice"], deck=DeckData(normal={"Storm Lord": 2})))
+    anyone = summarize_deck(DeckPreset(name="D"))
+
+    assert storm.facets == ["Storm/Ice", "2 cards"]
+    assert storm.slot_schools == (frozenset({"Storm", "Ice"}),)
+    assert anyone.facets == ["empty"]
+    assert works_with_school(anyone.slot_schools, ["Fire"])
+    assert not works_with_school(storm.slot_schools, ["Fire"])
+
+
+def test_a_decks_schools_stay_out_of_its_file_while_empty_and_are_deduplicated(tmp_path):
+    DeckPreset(name="D").save(tmp_path / "d.json")
+    assert "schools" not in (tmp_path / "d.json").read_text(encoding="utf-8")
+    assert DeckPreset(name="D", schools=["Ice", "", "Ice", "Storm"]).schools == ["Ice", "Storm"]
 
 
 def test_every_tag_knows_its_group():
@@ -127,7 +147,7 @@ def test_tags_or_within_a_group():
 def test_tags_and_across_groups():
     facets = StrategyFacets(tags=frozenset({"Hitter", "Custom"}))
     assert facets_match(facets, StrategyFilter(tags=frozenset({"Hitter", "Custom"})))
-    assert not facets_match(facets, StrategyFilter(tags=frozenset({"Hitter", "Built-in"})))
+    assert not facets_match(facets, StrategyFilter(tags=frozenset({"Hitter", "Official"})))
 
 
 def test_an_entry_with_no_role_fails_a_role_filter():
@@ -168,12 +188,12 @@ def test_school_and_tags_combine():
 
 def test_counts_answer_what_each_value_alone_would_show():
     entries = [
-        StrategyFacets(tags=frozenset({"Hitter", "Built-in"}), slot_schools=_f({"Storm"}), player_range=(1, 2)),
+        StrategyFacets(tags=frozenset({"Hitter", "Official"}), slot_schools=_f({"Storm"}), player_range=(1, 2)),
         StrategyFacets(tags=frozenset({"Custom"}), slot_schools=(ANY,), player_range=(2, 4)),
         StrategyFacets(tags=frozenset({"Custom"})),  # a deck: no slots, no range
     ]
     counts = count_facets(entries, ("Storm", "Life"))
 
-    assert counts.tags == {"Hitter": 1, "Built-in": 1, "Custom": 2}
+    assert counts.tags == {"Hitter": 1, "Official": 1, "Custom": 2}
     assert counts.schools == {"Storm": 2, "Life": 1}
     assert counts.team_sizes == {1: 1, 2: 2, 3: 1, 4: 1}

@@ -42,7 +42,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_summary, card_art, scales, setup_steps, template_diff
+from bartlebot import bot_roots, bot_summary, card_art, scales, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -95,16 +95,18 @@ from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_picker import TagPickerButton
+from bartlebot.gui.widgets.source_pill import source_pill
+from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
-from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import Origin, dev_mode
+from bartlebot.store_roots import SOURCE_LABELS, Origin, dev_mode
 from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
+from bartlebot.strategy_tags import SOURCE
 from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES, subgraph_tag_group
 from bartlebot.subgraphs import (
     ComposeReport,
     compose_bot,
@@ -134,10 +136,16 @@ _IDLE = "idle"
 _RUNNING = "running"
 _PAUSED = "paused"
 
-#: Why a built-in subgraph's Delete is grayed out: the store only ever removes the user's copy.
-_BUILT_IN_SUBGRAPH_TIP = "Built-in subgraphs can't be deleted. Open one and Save as… to make a copy of your own."
-#: Why a built-in subgraph's Rename is grayed out: its name is the shipped file's (#160).
-_BUILT_IN_RENAME_TIP = "Built-in subgraphs can't be renamed. Open one and Save as… to make a copy of your own."
+#: Why an Official subgraph's Delete is grayed out: the store only ever removes the user's copy.
+_BUILT_IN_SUBGRAPH_TIP = "Official subgraphs can't be deleted. Open one and Save as… to make a copy of your own."
+#: Why an Official subgraph's Rename is grayed out: its name is the shipped file's (#160).
+#: A library card's right-click, for a bot or a subgraph (#170).
+EXPORT_TEXT = "Export…"
+_BUILT_IN_RENAME_TIP = "Official subgraphs can't be renamed. Open one and Save as… to make a copy of your own."
+
+#: The Edit button's tooltip, and what it says on an Official bot, which it offers to copy (#149).
+_EDIT_TIP = "Enter Edit Mode"
+_MAKE_COPY_TIP = "Official bots can't be changed. Click to make your own copy to edit."
 
 
 def _status_dot_color(state: str) -> str:
@@ -263,6 +271,23 @@ class _BotMeta:
     setup_left: int = 0
     #: Whether the bot's template has released a version newer than the one it is based on.
     update_available: bool = False
+    #: Where it comes from: Official (shipped) or Custom, for a bot; a subgraph can also be a
+    #: modified Official one. Worked out from where the file is, never read from it (#149).
+    source: Origin = Origin.USER
+    #: For a subgraph overriding an Official one, whether the Official one has changed since
+    #: (#169): the pill adds "Official updated", and the card offers Revert beside it.
+    official_updated: bool = False
+    #: The bot's own id, and for the user's copy of an Official bot that bot's id; "" when none.
+    bot_id: str = ""
+    forked_from_id: str = ""
+    #: For the user's copy of an Official bot, that bot's name, filled in by the library
+    #: once it has read every Official bot (:func:`name_forks`); "" for any other.
+    forked_from: str = ""
+
+    @property
+    def source_text(self) -> str:
+        """The Source filter's word for this entry: what its pill says."""
+        return SOURCE_LABELS[self.source]
 
 
 def _drop_names(raw: object) -> list[str]:
@@ -295,6 +320,11 @@ NO_NODES_ERROR = "This bot has no nodes yet: add one to begin"
 UPDATE_AVAILABLE_TEXT = "Template update available"
 
 
+def forked_from_text(name: str) -> str:
+    """A library row's words for the user's copy of the Official bot *name*."""
+    return f"Copy of the Official {name}"
+
+
 #: (file, template store) -> (the file's mtime, its setup steps left): see ``_setup_left``.
 _setup_left_seen: dict[tuple[str, str], tuple[int, int]] = {}
 
@@ -323,18 +353,30 @@ def _setup_left(path: Path, data: dict, templates_root: "str | Path | None", lib
 
 
 def _read_bot_meta(
-    path: Path, templates_root: "str | Path | None" = None, library: "SubgraphLibrary | None" = None
+    path: Path,
+    templates_root: "str | Path | None" = None,
+    library: "SubgraphLibrary | None" = None,
+    *,
+    shipped: bool | None = None,
 ) -> "_BotMeta | None":
     """What a library card shows for the bot file at *path*, read without building a scene.
 
     *templates_root* is where the template store is, for the setup steps a bot made
     from a template has left; ``None`` is the project's. *library* is the subgraph
     library a step on a named subgraph input is read through, as the editor reads it.
+
+    *shipped* says whether it is an Official bot, when the caller already knows;
+    otherwise it is worked out from the path (``bot_roots.is_shipped``). An Official bot
+    is never offered its template's update: it gets its updates from the app.
     """
     try:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
         description = data.get("description") or ""
+        if shipped is None:
+            shipped = bot_roots.is_shipped(path)
+        forked = data.get("forked_from")
+        forked_id = forked.get("id") if isinstance(forked, dict) else None
         return _BotMeta(
             name=data.get("name") or path.stem,
             description=description,
@@ -345,22 +387,24 @@ def _read_bot_meta(
             path=path,
             generated="" if description else (bot_summary.describe_data(data) or ""),
             setup_left=_setup_left(path, data, templates_root, library),
-            update_available=template_diff.behind_in_file(data, templates_root),
+            update_available=not shipped and template_diff.behind_in_file(data, templates_root),
+            source=Origin.SHIPPED if shipped else Origin.USER,
+            bot_id=data.get("id") if isinstance(data.get("id"), str) else "",
+            forked_from_id=forked_id if isinstance(forked_id, str) else "",
         )
     except Exception:
         return None
 
 
-def _resolve_bots_dir(configured: str, root: Path) -> Path:
-    """Resolve the configured bot library path against the project root.
+def name_forks(metas: "Iterable[_BotMeta]", official: "Iterable[_BotMeta]") -> None:
+    """Fill in ``forked_from`` on each user's copy in *metas*, from the *official* bots' names.
 
-    The setting (default ``"bots"``) is meant relative to the project, not to
-    wherever the process happened to be launched from — resolving it against
-    the cwd silently emptied the library for anyone who launched elsewhere.
-    An absolute override is returned unchanged.
+    A copy whose Official bot is not listed -- one removed by a release, which the plan
+    rules out, or a file from another install -- says nothing, rather than an id.
     """
-    configured_path = Path(configured)
-    return configured_path if configured_path.is_absolute() else root / configured_path
+    names = {m.bot_id: m.name for m in official if m.source is Origin.SHIPPED and m.bot_id}
+    for meta in metas:
+        meta.forked_from = names.get(meta.forked_from_id, "") if meta.forked_from_id else ""
 
 
 #: The category list's geometry. Wide enough for the longest caption the shipped folders
@@ -385,8 +429,21 @@ def _art_icon(path: Path | None) -> QIcon | None:
     return None if path is None else art_icon(path)
 
 
-def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
-    """Narrow *metas* by free text and by selected tag chips.
+def filter_bot_metas(
+    metas: list[_BotMeta],
+    query: str,
+    tags: set[str],
+    sources: "set[str] | frozenset[str]" = frozenset(),
+    group_of: Callable[[str], str] = tag_group,
+) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
+    """Narrow *metas* by free text, by selected tag chips and by Source.
+
+    *sources* are Source words (``SOURCE_LABELS``): an entry passes when its own is one
+    of them, or when none is selected. Source is one more group, so it ANDs with the tags.
+
+    *group_of* says which group a tag is in: the bot tags' by default, and for the
+    Subgraphs folder :func:`~bartlebot.subgraph_tags.subgraph_tag_group`, whose one
+    stored group is Category (#172). A subgraph's ``tags`` are its categories.
 
     Returns the surviving metas and, for each one the text matched by drop name, the
     drops that matched — the library card shows those so a hit on a 300-entry drop
@@ -404,17 +461,19 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     intersects whatever the tags left.
 
     Pure, and at module level, so the filtering can be tested without a QApplication
-    — same reasoning as ``_resolve_bots_dir``.
+    — same reasoning as :mod:`bartlebot.bot_roots`.
     """
     q = query.strip().casefold()
     wanted: dict[str, set[str]] = {}
     for t in tags:
-        wanted.setdefault(tag_group(t), set()).add(t)
+        wanted.setdefault(group_of(t), set()).add(t)
 
     results: list[_BotMeta] = []
     matched_drops: dict[Path, list[str]] = {}
     for m in metas:
         if any(group_tags.isdisjoint(m.tags) for group_tags in wanted.values()):
+            continue
+        if sources and m.source_text not in sources:
             continue
         drop_matches = [d for d in m.drops if q in d.casefold()]
         if q and not (
@@ -432,10 +491,21 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     return results, matched_drops
 
 
+def _edit_state(config: BotConfig) -> dict:
+    """What an Edit-mode session compares to tell whether it changed the bot.
+
+    Everything but ``history``: a Save in the middle of the session records one, and
+    that is not an edit to announce when the session ends (#169).
+    """
+    return config.model_dump(exclude={"history"})
+
+
 class _BotCard(ThemedMixin, QWidget):
     """Single clickable bot entry shown in the library's right panel."""
 
     open_requested = pyqtSignal(str)  # emits path string
+    #: Revert beside an "Official updated" pill was clicked; emits the subgraph id.
+    revert_requested = pyqtSignal(str)
 
     def __init__(self, meta: "_BotMeta", matched_drops: "list[str] | None" = None, parent=None) -> None:
         super().__init__(parent)
@@ -449,6 +519,9 @@ class _BotCard(ThemedMixin, QWidget):
         # The pills are absent from this list deliberately: TagPill and NeutralPill own
         # their own color, so there is nothing here to re-derive for them.
         self._hovered = False
+        # Selected by the library on the user's behalf -- an item just imported (#171) --
+        # and drawn as hover is, so the eye lands on it.
+        self._selected = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
         self._setup_lbl: QLabel | None = None
@@ -479,10 +552,26 @@ class _BotCard(ThemedMixin, QWidget):
 
         # One palette for a tag everywhere it appears: the dot in the picker, the chip
         # in the filter bar, this pill, and the ones in Bot Info. TagPill owns it.
+        # A subgraph's tags are its categories (#172), in their own vocabulary's color.
+        vocabulary = SUBGRAPH_VOCABULARY if self._meta.subgraph_id else BOT_VOCABULARY
         for tag in self._meta.tags:
-            header.addWidget(TagPill(tag), 0, Qt.AlignmentFlag.AlignVCenter)
+            header.addWidget(TagPill(tag, vocabulary=vocabulary), 0, Qt.AlignmentFlag.AlignVCenter)
 
         header.addStretch()
+        # Where it comes from, at the end of the row as on a strategy card (#149): the
+        # same pill, so Official reads the same on a bot as on a strategy.
+        self._source_pill = source_pill(self._meta.source, official_updated=self._meta.official_updated)
+        header.addWidget(self._source_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+        # A modified Official subgraph whose Official one has since changed: Revert is the
+        # way to the new one, so it sits beside the pill that says so rather than only in
+        # the right-click menu (#169). The controller asks before reverting.
+        self._revert_btn: ActionButton | None = None
+        if self._meta.official_updated and self._meta.subgraph_id:
+            self._revert_btn = ActionButton("revert", "Revert…", fill=False)
+            self._revert_btn.setToolTip("Revert to the Official version; your changes are discarded")
+            sid = self._meta.subgraph_id
+            self._revert_btn.clicked.connect(lambda: self.revert_requested.emit(sid))
+            header.addWidget(self._revert_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         # Wrapping and elided: a description is user text, and one word too long for the
@@ -497,6 +586,10 @@ class _BotCard(ThemedMixin, QWidget):
             layout.addWidget(self._desc_lbl)
 
         parts: list[str] = []
+        if self._meta.forked_from:
+            # A user's copy of an Official bot says which one, so the two are told apart
+            # when both are listed under the same name.
+            parts.append(forked_from_text(self._meta.forked_from))
         if self._meta.authors:
             parts.append(f"by {self._meta.authors}")
         n = len(self._meta.drops)
@@ -544,6 +637,30 @@ class _BotCard(ThemedMixin, QWidget):
         return self._update_lbl.text() if self._update_lbl is not None else None
 
     @property
+    def source_text(self) -> str:
+        """What the card's Source pill says."""
+        return self._source_pill.text()
+
+    @property
+    def selected(self) -> bool:
+        return self._selected
+
+    def set_selected(self, selected: bool) -> None:
+        """Draw the card as the library's selection, or not."""
+        self._selected = selected
+        self.refresh_theme_styles()
+
+    @property
+    def revert_button(self) -> ActionButton | None:
+        """The Revert beside an "Official updated" pill, or None on a card without one."""
+        return self._revert_btn
+
+    @property
+    def meta_text(self) -> str | None:
+        """The "copy of … · by … · N drops" line as shown, or None when the card has none."""
+        return self._meta_lbl.text() if self._meta_lbl is not None else None
+
+    @property
     def matched_drops_text(self) -> str | None:
         """The "Drops: …" line as shown, or None while it is hidden."""
         return self._match_lbl.text() if self._matched_drops else None
@@ -558,8 +675,9 @@ class _BotCard(ThemedMixin, QWidget):
         the mouse crossed it — and even then only the frame followed.
         """
         # Use #BotCard selector so border/background don't bleed into child labels
-        bg = THEME.node_fill if self._hovered else THEME.surface
-        border = THEME.accent if self._hovered else THEME.border
+        lit = self._hovered or self._selected
+        bg = THEME.node_fill if lit else THEME.surface
+        border = THEME.accent if lit else THEME.border
         self.setStyleSheet(f"#BotCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
 
         self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
@@ -613,11 +731,15 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     open_bot_requested = pyqtSignal()
     open_recent_requested = pyqtSignal(str)  # path
     open_subgraph_requested = pyqtSignal(str)  # subgraph id
-    #: (subgraph id): a Subgraphs card's Delete, or Revert for a modified built-in.
+    #: (subgraph id): a Subgraphs card's Delete, or Revert for a modified Official one.
     #: The controller asks, deletes and refreshes; the panel only offers it.
     delete_subgraph_requested = pyqtSignal(str)
     #: (subgraph id): a Subgraphs card's Rename. The controller asks for the name and writes it.
     rename_subgraph_requested = pyqtSignal(str)
+    #: (bot file path): a bot card's Export… (#170). The controller gathers and writes the file.
+    export_bot_requested = pyqtSignal(str)
+    #: (subgraph id): a Subgraphs card's Export….
+    export_subgraph_requested = pyqtSignal(str)
 
     _RECENT = "Recent"
     _ALL = "All"
@@ -625,6 +747,9 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     #: which is the bots: a definition opens as a document to edit, never to run.
     _SUBGRAPHS = "Subgraphs"
     _SUBGRAPHS_KEY = "\0subgraphs"
+    #: The search box's prompt, for the bots and for the Subgraphs folder.
+    _BOT_SEARCH = "Search bots by name, author, or drop…"
+    _SUBGRAPH_SEARCH = "Search subgraphs by name, description, or category…"
     #: Folder-name keys for the rows that are not folders. A folder can never be named
     #: with a leading NUL, so these cannot collide with one.
     _OTHER = "Other"
@@ -683,11 +808,29 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             picker.selection_changed.connect(self._on_tag_selection_changed)
             self._pickers[group] = picker
             top_layout.addWidget(picker, 0)
+        # Source is a facet beside the tags, not a tag: worked out from where each file is,
+        # never stored (#149). Its own picker and vocabulary, so it never reaches Bot Info.
+        self._source_picker = TagPickerButton(
+            title=SOURCE, placeholder=SOURCE, group=SOURCE, vocabulary=source_vocabulary(("item", "items"))
+        )
+        self._source_picker.setToolTip("Filter by where it comes from: Official, or your own")
+        self._source_picker.selection_changed.connect(self._on_tag_selection_changed)
+        # A subgraph's categories (#172) take the bot tags' place in the Subgraphs folder,
+        # where a bot tag has nothing to match: shown there and only there, before Source,
+        # which both lists share. See _show_pickers_for_folder.
+        self._category_picker = TagPickerButton(
+            title=CATEGORY, placeholder=CATEGORY, group=CATEGORY, vocabulary=SUBGRAPH_VOCABULARY
+        )
+        self._category_picker.setToolTip("Filter subgraphs by what they do")
+        self._category_picker.selection_changed.connect(self._on_tag_selection_changed)
+        self._category_picker.setVisible(False)
+        top_layout.addWidget(self._category_picker, 0)
+        top_layout.addWidget(self._source_picker, 0)
 
         # Stretch 1, not a fixed width flanked by two stretches: the search field then
         # fills whatever the two clusters leave, so it *sits* centered without being
         # anchored there, and narrowing the window shortens it instead of colliding.
-        self._search = SearchLineEdit("Search bots by name, author, or drop…")
+        self._search = SearchLineEdit(self._BOT_SEARCH)
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
@@ -805,8 +948,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if self._listed:
             self.refresh()
 
-    def _read_meta(self, path: Path) -> "_BotMeta | None":
-        return _read_bot_meta(path, library=self._subgraph_library)
+    def _read_meta(self, path: Path, *, shipped: bool | None = None) -> "_BotMeta | None":
+        return _read_bot_meta(path, library=self._subgraph_library, shipped=shipped)
 
     def refresh(self, *, keep_category: bool = False) -> None:
         """Rescan recent files and bots/ directory, rebuild UI.
@@ -824,24 +967,23 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._all_metas = []
         self._category_map = {}
 
-        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
-        if bots_dir.is_dir():
-            # By folder name, so the numbers set the order -- the same order Explorer
-            # shows, which is the game's badge page order (see bot_folders).
-            for subdir in sorted(bots_dir.iterdir()):
-                if not subdir.is_dir():
-                    continue
-                metas = [m for f in sorted(subdir.glob("*.json")) if (m := self._read_meta(f))]
-                if metas:
-                    self._category_map[subdir.name] = metas
-                    self._all_metas.extend(metas)
-            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := self._read_meta(f))]
-            if root_metas:
-                self._category_map[self._OTHER_KEY] = root_metas
-                self._all_metas.extend(root_metas)
+        # The Official bots and the user's own, as one library (bot_roots). By folder
+        # name, so the numbers set the order -- the same order Explorer shows, which is
+        # the game's badge page order (see bot_folders).
+        for entry in bot_roots.library_files(bot_roots.shipped_bots_dir(), bot_roots.user_bots_dir()):
+            meta = self._read_meta(entry.path, shipped=entry.shipped)
+            if meta is None:
+                continue
+            self._category_map.setdefault(entry.folder or self._OTHER_KEY, []).append(meta)
+            self._all_metas.append(meta)
+        if self._OTHER_KEY in self._category_map:
+            # Files at the top of the library are listed after every world folder.
+            self._category_map[self._OTHER_KEY] = self._category_map.pop(self._OTHER_KEY)
 
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := self._read_meta(Path(p)))]
+        # A user's copy of an Official bot says which one: "Copy of the Official …".
+        name_forks((*self._all_metas, *self._recent_metas), self._all_metas)
 
         self._subgraph_metas = []
         if self._subgraph_library is not None:
@@ -855,10 +997,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                     description=d.description or "",
                     authors="",
                     drops=[],
-                    tags=[],
+                    tags=list(d.tags),
                     version=str(d.version),
                     path=Path(f"{d.id}.json"),
                     subgraph_id=d.id,
+                    source=self._subgraph_library.origin(d.id),
+                    official_updated=self._subgraph_library.official_updated(d.id),
                 )
                 for d in defns
             ]
@@ -906,6 +1050,44 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         else:
             self._show_cards([])
 
+    def reveal(self, *, path: str | Path | None = None, subgraph_id: str | None = None) -> bool:
+        """Show one bot or subgraph, selected: its folder, scrolled to its card. False when it isn't listed.
+
+        What the library does after an import (#171), so the user sees where it went. The
+        search and the filters are cleared first, since either could hide it.
+        """
+        self.refresh()
+        self._search.clear()
+        self._source_picker.set_selection([])
+        self._set_tag_selection([])
+        if subgraph_id is not None:
+            key = self._SUBGRAPHS_KEY
+            meta = next((m for m in self._subgraph_metas if m.subgraph_id == subgraph_id), None)
+        else:
+            target = Path(path).resolve() if path is not None else None
+            key, meta = self._ALL_KEY, None
+            for folder, metas in self._category_map.items():
+                meta = next((m for m in metas if m.path.resolve() == target), None)
+                if meta is not None:
+                    key = folder
+                    break
+        if meta is None:
+            return False
+        keys = [self._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._cat_list.count())]
+        if key in keys:
+            self._cat_list.setCurrentRow(keys.index(key))
+        card = self._cards.get(meta.path)
+        if card is None:
+            return False
+        for other in self._cards.values():
+            other.set_selected(other is card)
+        self._cards_area.ensureWidgetVisible(card)
+        return True
+
+    def selected_card(self) -> "_BotCard | None":
+        """The card :meth:`reveal` selected, while it is listed. For the tests."""
+        return next((c for c in self._cards.values() if c.selected and c.isVisibleTo(self)), None)
+
     def current_folder(self) -> str | None:
         """The library folder the selected category row stands for, by its name on disk.
 
@@ -939,6 +1121,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         per_tag = {tag: counts.get(tag, 0) for tag in BOT_TAGS}
         for picker in self._pickers.values():
             picker.set_counts(per_tag)
+        # Bots and subgraphs both: the Source filter narrows the Subgraphs folder as well.
+        sources = Counter(m.source_text for m in (*self._all_metas, *self._subgraph_metas))
+        self._source_picker.set_counts({word: sources.get(word, 0) for word in self._source_picker.vocabulary.tags})
+        categories = Counter(t for m in self._subgraph_metas for t in m.tags)
+        self._category_picker.set_counts({word: categories.get(word, 0) for word in SUBGRAPH_CATEGORIES})
 
     def _rebuild_chips(self) -> None:
         """Show one removable chip per *selected* tag; hide the bar when none are."""
@@ -948,26 +1135,55 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 w.hide()
                 w.deleteLater()
 
-        selected = self._selected_tag_list()
+        # Only the facets of what is listed: bot tags for bots, categories in the Subgraphs
+        # folder (#172). The other kind stays selected, out of sight, and comes back with
+        # its list -- it matches nothing here, so a chip for it would only be noise.
+        if self._in_subgraphs_folder():
+            selected, vocabulary = self._selected_categories(), SUBGRAPH_VOCABULARY
+        else:
+            selected, vocabulary = self._selected_tag_list(), BOT_VOCABULARY
         for tag in selected:
             # Colored by group, matching the dot in the popup and the button it came
             # from — with two pickers feeding one chip bar, a chip has to say which.
-            chip = TagChip(tag, tooltip=f"Remove the {tag} filter")
+            chip = TagChip(tag, tooltip=f"Remove the {tag} filter", vocabulary=vocabulary)
             chip.removed.connect(self._remove_tag)
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
+        sources = self._source_picker.tags()
+        for word in sources:
+            chip = TagChip(word, tooltip=f"Remove the {word} filter", vocabulary=self._source_picker.vocabulary)
+            chip.removed.connect(self._remove_source)
+            self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
+        selected = [*selected, *sources]
 
         self._clear_btn = None
         if selected:
             # Sized to its own text at the end of the chip row, so fill=False.
             self._clear_btn = clear = ActionButton("dismiss", "Clear", fill=False)
-            clear.clicked.connect(lambda: self._set_tag_selection([]))
+            clear.clicked.connect(self._clear_filters)
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, clear)
         self.refresh_theme_styles()
 
         self._chip_bar.setVisible(bool(selected))
 
     def _remove_tag(self, tag: str) -> None:
-        self._set_tag_selection([t for t in self._selected_tag_list() if t != tag])
+        chosen = [*self._selected_tag_list(), *self._selected_categories()]
+        self._set_tag_selection([t for t in chosen if t != tag])
+
+    def _remove_source(self, word: str) -> None:
+        self._source_picker.set_selection([w for w in self._source_picker.tags() if w != word])
+        self._rebuild_chips()
+        self._apply_filter()
+
+    def _clear_filters(self) -> None:
+        """The chip bar's Clear: every tag, every category and every Source word, shown or not."""
+        self._source_picker.set_selection([])
+        self._set_tag_selection([])
+
+    def set_source_filter(self, words: Iterable[str]) -> None:
+        """Select Source words as the picker would. For the tests, and for nothing else to need the picker."""
+        self._source_picker.set_selection(list(words))
+        self._rebuild_chips()
+        self._apply_filter()
 
     def _set_tag_selection(self, tags: list[str]) -> None:
         """Change the selection and re-filter — set_selection does not emit.
@@ -978,8 +1194,30 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         """
         for group, picker in self._pickers.items():
             picker.set_selection([t for t in tags if tag_group(t) == group])
+        self._category_picker.set_selection([t for t in tags if subgraph_tag_group(t) == CATEGORY])
         self._rebuild_chips()
         self._apply_filter()
+
+    def set_category_filter(self, words: Iterable[str]) -> None:
+        """Select categories as the picker would. For the tests, and for nothing else to need the picker."""
+        self._category_picker.set_selection(list(words))
+        self._rebuild_chips()
+        self._apply_filter()
+
+    @property
+    def category_filter_visible(self) -> bool:
+        """Whether the Category filter is offered: in the Subgraphs folder only."""
+        return not self._category_picker.isHidden()
+
+    @property
+    def bot_tag_filters_visible(self) -> bool:
+        """Whether the bot tags' pickers are offered: everywhere but the Subgraphs folder."""
+        return not any(p.isHidden() for p in self._pickers.values())
+
+    def chip_texts(self) -> list[str]:
+        """What the chip bar says, in order. Public so a test can read it."""
+        items = (self._chip_layout.itemAt(i).widget() for i in range(self._chip_layout.count()))
+        return [w.tag for w in items if isinstance(w, TagChip)]
 
     def _on_tag_selection_changed(self, _keys: list) -> None:
         self._rebuild_chips()
@@ -993,6 +1231,22 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     def _selected_tags(self) -> set[str]:
         return {t for picker in self._pickers.values() for t in picker.tags()}
 
+    def _selected_categories(self) -> list[str]:
+        """Every selected subgraph category, in vocabulary order."""
+        return self._category_picker.tags()
+
+    def _in_subgraphs_folder(self) -> bool:
+        item = self._cat_list.currentItem()
+        return item is not None and item.data(Qt.ItemDataRole.UserRole) == self._SUBGRAPHS_KEY
+
+    def _show_pickers_for_folder(self) -> None:
+        """Offer the facets of what the selected row lists: bot tags, or a subgraph's categories (#172)."""
+        subgraphs = self._in_subgraphs_folder()
+        for picker in self._pickers.values():
+            picker.setVisible(not subgraphs)
+        self._category_picker.setVisible(subgraphs)
+        self._search.setPlaceholderText(self._SUBGRAPH_SEARCH if subgraphs else self._BOT_SEARCH)
+
     def _on_category_row_changed(self, row: int) -> None:
         """Switch category, keeping the filters.
 
@@ -1004,6 +1258,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         """
         if row < 0:
             return
+        self._show_pickers_for_folder()
+        self._rebuild_chips()
         self._apply_filter()
 
     def _category_metas(self) -> "list[_BotMeta]":
@@ -1028,7 +1284,13 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         list already implies — a world is one more facet — and it is what makes
         ``All`` meaningful rather than decorative.
         """
-        results, matched_drops = filter_bot_metas(self._category_metas(), self._search.text(), self._selected_tags())
+        if self._in_subgraphs_folder():
+            tags, group_of = set(self._selected_categories()), subgraph_tag_group
+        else:
+            tags, group_of = self._selected_tags(), tag_group
+        results, matched_drops = filter_bot_metas(
+            self._category_metas(), self._search.text(), tags, set(self._source_picker.tags()), group_of
+        )
         self._show_cards(results, matched_drops)
 
     def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
@@ -1048,9 +1310,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if not metas:
             # "All" is always in the list now, so its presence no longer distinguishes
             # "nothing matched" from "the library is empty". The metas do.
-            self._empty_hint = hint = QLabel(
-                "No bots match these filters." if self._all_metas else "No bots found in bots/ directory."
-            )
+            if self._in_subgraphs_folder():
+                text = "No subgraphs match these filters."
+            else:
+                text = "No bots match these filters." if self._all_metas else "No bots found in bots/ directory."
+            self._empty_hint = hint = QLabel(text)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.insertWidget(0, hint)
             self.refresh_theme_styles()
@@ -1063,10 +1327,15 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 card.open_requested.connect(
                     self.open_subgraph_requested if meta.subgraph_id else self.open_recent_requested
                 )
+                card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
                 if meta.subgraph_id:
-                    card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+                    card.revert_requested.connect(self.delete_subgraph_requested)
                     card.customContextMenuRequested.connect(
                         lambda pos, c=card, sid=meta.subgraph_id: self._show_subgraph_menu(c, sid, pos)
+                    )
+                else:
+                    card.customContextMenuRequested.connect(
+                        lambda pos, c=card, path=meta.path: self._show_bot_menu(c, path, pos)
                     )
             card.set_matched_drops((matched_drops or {}).get(meta.path))
             layout.insertWidget(i, card)
@@ -1077,8 +1346,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         Delete removes the user's file, so what it says depends on where the definition
         is (:class:`~bartlebot.store_roots.Origin`): a custom one is deleted, a modified
-        built-in is reverted, and an unedited built-in has nothing to remove. Rename is
-        offered on the user's own definitions only, never on a built-in, modified or not.
+        Official one is reverted, and an unedited Official one has nothing to remove. Rename is
+        offered on the user's own definitions only, never on an Official one, modified or not.
         """
         menu = popup_menu(self)
         menu.setToolTipsVisible(True)
@@ -1089,17 +1358,28 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             rename.setToolTip(_BUILT_IN_RENAME_TIP)
         rename.triggered.connect(lambda: self.rename_subgraph_requested.emit(subgraph_id))
         if origin is Origin.SHIPPED_OVERRIDE:
-            act = menu.addAction("Revert to Built-in…")
+            act = menu.addAction("Revert to Official…")
         else:
             act = menu.addAction("Delete Subgraph…")
             if origin is not Origin.USER:
                 act.setEnabled(False)
                 act.setToolTip(_BUILT_IN_SUBGRAPH_TIP)
         act.triggered.connect(lambda: self.delete_subgraph_requested.emit(subgraph_id))
+        menu.addSeparator()
+        menu.addAction(EXPORT_TEXT).triggered.connect(lambda: self.export_subgraph_requested.emit(subgraph_id))
         return menu
 
     def _show_subgraph_menu(self, card: QWidget, subgraph_id: str, pos) -> None:
         self.subgraph_menu(subgraph_id).exec(card.mapToGlobal(pos))
+
+    def bot_menu(self, path: Path) -> QMenu:
+        """The menu a bot card shows on a right-click. Public so a test can read it."""
+        menu = popup_menu(self)
+        menu.addAction(EXPORT_TEXT).triggered.connect(lambda: self.export_bot_requested.emit(str(path)))
+        return menu
+
+    def _show_bot_menu(self, card: QWidget, path: Path, pos) -> None:
+        self.bot_menu(path).exec(card.mapToGlobal(pos))
 
 
 # ---------------------------------------------------------------------------
@@ -1222,24 +1502,30 @@ class BotCanvas(QWidget):
     # (subgraph id): open a definition as a document -- from a call node, or from the
     # Subgraphs folder of the library. The controller owns the document stack.
     open_definition_requested = pyqtSignal(str)
-    # (subgraph id): delete a definition from the library, or revert a modified built-in --
+    # (subgraph id): delete a definition from the library, or revert a modified Official one --
     # from a card in the library's Subgraphs folder. The controller asks and deletes.
     delete_subgraph_requested = pyqtSignal(str)
     # (subgraph id): rename a definition, from its card in the library's Subgraphs folder.
     rename_subgraph_requested = pyqtSignal(str)
+    # A library card's Export… (#170): a bot file's path, or a subgraph's id.
+    export_bot_requested = pyqtSignal(str)
+    export_subgraph_requested = pyqtSignal(str)
     # A definition document's way out, and its save: (then go back).
     definition_back_requested = pyqtSignal()
     definition_save_requested = pyqtSignal(bool)
     # A crumb segment naming a document further down: (how many documents stay under it).
     document_back_requested = pyqtSignal(int)
     # The definition document's other two verbs: save a copy as a new definition, and
-    # discard a modified built-in for the shipped one.
+    # discard a modified Official one for the shipped one.
     definition_save_as_requested = pyqtSignal()
     definition_revert_requested = pyqtSignal()
     # A template draft's crumb: Save draft, Release…, and its close button.
     template_save_requested = pyqtSignal()
     template_release_requested = pyqtSignal()
     template_close_requested = pyqtSignal()
+    # Edit mode was asked for on an Official bot, which is read-only: the controller
+    # offers Make my own copy instead (#149).
+    copy_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1252,6 +1538,9 @@ class BotCanvas(QWidget):
         # The config as the current Edit session found it, so Done announces a change
         # only when there is one (#122). None when unknown, and Done then announces.
         self._edit_baseline: dict | None = None
+        # Whether the open bot is an Official one, which never enters Edit mode: asking
+        # for it asks for a copy instead. Set by the controller; see set_read_only.
+        self._read_only = False
         self._mode = BotMode.RUN
         self._run_state = _IDLE
         self._start_time: float | None = None
@@ -1291,7 +1580,7 @@ class BotCanvas(QWidget):
         # The names of the documents under this one, outermost first: a definition
         # opened from a bot has the bot's. Handed in by the controller.
         self._doc_path: list[str] = []
-        # Whether the open definition is a modified built-in, which the crumb offers to revert.
+        # Whether the open definition is a modified Official one, which the crumb offers to revert.
         self._can_revert = False
         # What a template draft's crumb says after its name: its latest released version.
         self._template_hint = ""
@@ -1325,7 +1614,7 @@ class BotCanvas(QWidget):
         self.stop_button = _icon_btn("stop", "Stop bot")
         self.stop_button.setEnabled(False)  # enabled only when running/paused
 
-        self._edit_btn = _icon_btn("pencil", "Enter Edit Mode")
+        self._edit_btn = _icon_btn("pencil", _EDIT_TIP)
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_clicked)
 
@@ -1615,6 +1904,8 @@ class BotCanvas(QWidget):
         self._placeholder.open_subgraph_requested.connect(self.open_definition_requested)
         self._placeholder.delete_subgraph_requested.connect(self.delete_subgraph_requested)
         self._placeholder.rename_subgraph_requested.connect(self.rename_subgraph_requested)
+        self._placeholder.export_bot_requested.connect(self.export_bot_requested)
+        self._placeholder.export_subgraph_requested.connect(self.export_subgraph_requested)
         self._placeholder.show()
         # Bar B is the *bot's* header, so with no bot there is nothing for it to say
         # and nothing its buttons can act on. Shown anyway it read as a second strip
@@ -1646,7 +1937,7 @@ class BotCanvas(QWidget):
         self._load(config, ComposeReport())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
-        self._edit_baseline = config.model_dump()
+        self._edit_baseline = _edit_state(config)
         self._apply_mode(mode)
         self.mode_changed.emit(mode)
         if config.is_definition:
@@ -1741,9 +2032,9 @@ class BotCanvas(QWidget):
         """Name the documents under the open definition, and what the header says about it.
 
         ``path`` is their names, outermost first -- the crumb's segments before this
-        one. ``can_revert`` says it is a modified built-in, which the crumb offers to
-        put back. ``can_rename`` says the name is the user's to change: not on a
-        built-in one, modified or not, whose name is the shipped file's (#160).
+        one. ``can_revert`` says it is a modified Official one, which the crumb offers to
+        put back. ``can_rename`` says the name is the user's to change: not on an
+        Official one, modified or not, whose name is the shipped file's (#160).
         """
         if self._config is None or not self._config.is_definition:
             return
@@ -1825,6 +2116,7 @@ class BotCanvas(QWidget):
         self._refresh_crumb()
         self._toolbar.set_config(None)
         self._active_state = None
+        self.set_read_only(False)
         self._edit_btn.setEnabled(False)
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -1880,6 +2172,14 @@ class BotCanvas(QWidget):
         """Re-read the loaded bot's tags into the header, after something outside it set them."""
         self._toolbar.refresh_tags()
 
+    def refresh_name(self) -> None:
+        """Re-read the loaded document's name into the header and the crumb, after something outside them set it.
+
+        A template renamed from File › Templates… while its draft is open (#164).
+        """
+        self._toolbar.refresh_name()
+        self._refresh_crumb()
+
     def set_bot_file(self, filename: str | None) -> None:
         """Name the file the loaded bot came from, shown in the header."""
         self._toolbar.set_file(filename)
@@ -1916,8 +2216,29 @@ class BotCanvas(QWidget):
             return self._placeholder.current_folder()
         return None
 
-    def open_library_dialog(self) -> None:
-        """Open the bot library as a modal dialog (useful when a bot is already loaded)."""
+    def reveal_in_library(self, *, path: str | Path | None = None, subgraph_id: str | None = None) -> None:
+        """Show a bot or subgraph selected in the library: the placeholder's, or the library dialog's.
+
+        After an import (#171). With a document open the library is out of sight, so the
+        library dialog opens on it.
+        """
+        if self._library_dialog_panel is not None:
+            self._library_dialog_panel.reveal(path=path, subgraph_id=subgraph_id)
+        elif self._placeholder.isVisibleTo(self):
+            self._placeholder.reveal(path=path, subgraph_id=subgraph_id)
+        else:
+            self.open_library_dialog(reveal=(path, subgraph_id))
+
+    @property
+    def library_panel(self) -> "_BotLibraryPanel":
+        """The library shown while no document is open. For the tests."""
+        return self._placeholder
+
+    def open_library_dialog(self, *, reveal: tuple | None = None) -> None:
+        """Open the bot library as a modal dialog (useful when a bot is already loaded).
+
+        ``reveal`` is ``(bot path, subgraph id)``: an item to show selected as it opens.
+        """
         from PyQt6.QtWidgets import QDialog, QVBoxLayout
 
         dlg = QDialog(self.window())
@@ -1931,6 +2252,8 @@ class BotCanvas(QWidget):
         panel.open_subgraph_requested.connect(self.open_definition_requested)
         panel.delete_subgraph_requested.connect(self.delete_subgraph_requested)
         panel.rename_subgraph_requested.connect(self.rename_subgraph_requested)
+        panel.export_bot_requested.connect(self.export_bot_requested)
+        panel.export_subgraph_requested.connect(self.export_subgraph_requested)
         panel.new_bot_requested.connect(dlg.reject)
         panel.new_bot_requested.connect(self.new_bot_requested)
         panel.open_bot_requested.connect(dlg.reject)
@@ -1939,6 +2262,8 @@ class BotCanvas(QWidget):
         panel.open_recent_requested.connect(self.open_recent_requested)
         lay.addWidget(panel)
         self._library_dialog_panel = panel
+        if reveal is not None:
+            panel.reveal(path=reveal[0], subgraph_id=reveal[1])
         try:
             dlg.exec()
         finally:
@@ -2269,11 +2594,32 @@ class BotCanvas(QWidget):
             logger.info("=== Resumed ===")
             self.resume_requested.emit()
 
+    def set_read_only(self, read_only: bool) -> None:
+        """Mark the open bot Official, and so read-only, or not.
+
+        A read-only bot stays in Run mode: every way into Edit mode -- the button, a
+        setup step, a template change -- asks for Make my own copy instead, through
+        ``copy_requested``. A definition opened on top of it is unaffected.
+        """
+        self._read_only = read_only
+        self._edit_btn.setToolTip(_MAKE_COPY_TIP if read_only else _EDIT_TIP)
+
+    @property
+    def is_read_only(self) -> bool:
+        """Whether the open bot is Official, and so is never edited in place."""
+        return self._read_only
+
     def enter_edit_mode(self) -> None:
-        """Switch to Edit mode (no-op if the bot is currently running)."""
+        """Switch to Edit mode (no-op if the bot is currently running).
+
+        On an Official bot, asks for Make my own copy instead and stays in Run mode.
+        """
         if self._run_state != _IDLE:
             return
-        self._edit_baseline = self._config.model_dump() if self._config is not None else None
+        if self._read_only and not self.is_definition:
+            self.copy_requested.emit()
+            return
+        self._edit_baseline = _edit_state(self._config) if self._config is not None else None
         self._apply_mode(BotMode.EDIT)
         self.mode_changed.emit(BotMode.EDIT)
 
@@ -2298,7 +2644,7 @@ class BotCanvas(QWidget):
             return False
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
-        changed = self._config is None or self._edit_baseline != self._config.model_dump()
+        changed = self._config is None or self._edit_baseline != _edit_state(self._config)
         if not saved and changed:
             self.config_changed.emit()
         return True
@@ -3215,10 +3561,17 @@ class BotCanvas(QWidget):
     # Subgraph authoring: save a region as one; a definition's signature
     # ------------------------------------------------------------------
 
-    def save_region_as_subgraph(self, region_id: str, *, name: str | None = None, description: str | None = None):
+    def save_region_as_subgraph(
+        self,
+        region_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        categories: list[str] | None = None,
+    ):
         """Extract an ordinary region into the user library, link the region to it, and open the definition.
 
-        Asks for a name and description unless given. The region's members are
+        Asks for a name, description and categories unless a name is given. The region's members are
         renamed to the derived form and every combat assignment of this bot that
         keyed on an old id is re-keyed through the strategy store, so nothing the
         user configured against those states falls silent. One undo step. The new
@@ -3233,16 +3586,18 @@ class BotCanvas(QWidget):
         if region is None or region.source is not None:
             return False
         if name is None:
-            dlg = SubgraphMetaDialog(self, name=region.label)
+            dlg = SubgraphMetaDialog(self, name=region.label, categories=[])
             if not dlg.exec():
                 return False
-            name, description = dlg.name, dlg.description
+            name, description, categories = dlg.name, dlg.description, dlg.categories
         work = config.model_copy(deep=True)
         try:
             defn, source = extract_definition(work, region_id, new_id=str(uuid4()), name=name, description=description)
         except ValueError as exc:
             QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
             return False
+        if categories:
+            defn = defn.model_copy(update={"tags": list(categories)})
         library.save(defn)
         instance_id = self._scene.mint_instance_id(name, work)
         id_map = convert_region_to_instance(work, region_id, defn, source, instance_id=instance_id)

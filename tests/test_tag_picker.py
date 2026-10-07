@@ -365,7 +365,7 @@ def test_sections_follow_the_vocabulary_they_are_given():
 def test_counts_use_the_vocabularys_noun():
     vocab = replace(STRATEGY_VOCABULARY, noun=("preset", "presets"))
     [(_name, rows)] = tag_sections({"Hitter": 1, "Healer": 2}, group="Role", vocabulary=vocab)
-    assert [r.meta for r in rows] == ["1 preset", "0 presets", "2 presets"]
+    assert [r.meta for r in rows] == ["1 preset", "0 presets", "2 presets", "0 presets"]
 
 
 def test_a_picker_returns_tags_in_its_own_vocabularys_order(qapp):

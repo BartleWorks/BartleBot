@@ -17,7 +17,6 @@ from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import dev_mode
 
 
 def _shorten_recent_path(path: str, root: Path) -> str:
@@ -96,12 +95,11 @@ class MainWindow(QMainWindow):
         self.action_combat_strategies = QAction("Browse Combat Strategy Library…", self)
         file_menu.addAction(self.action_combat_strategies)
 
-        # The maintainer's way into a template's draft. Only with BARTLEBOT_DEV set:
-        # before 1.0.0 nobody else authors templates, and a user starts from one
-        # through New Bot, which only ever offers released versions.
-        self.action_edit_template = QAction("Edit Template…", self)
-        self.action_edit_template.setVisible(dev_mode())
-        file_menu.addAction(self.action_edit_template)
+        # Every template, Official and the user's own, and the verbs that make and
+        # change templates of your own (#164). A user starts a bot from one through
+        # New Bot, which only ever offers released versions.
+        self.action_templates = QAction("Templates…", self)
+        file_menu.addAction(self.action_templates)
 
         self.action_close = QAction("Close Bot", self)
         self.action_close.setShortcut(QKeySequence("Ctrl+W"))
@@ -119,6 +117,19 @@ class MainWindow(QMainWindow):
         self.action_save_as.setShortcut(QKeySequence("Ctrl+Shift+S"))
         self.action_save_as.setEnabled(False)
         file_menu.addAction(self.action_save_as)
+
+        # The open bot, or the open subgraph, as a share file (#170). Every other kind
+        # exports from its own menu: a library card, the strategy dialog's cards, and the
+        # Combat tab's Bot Combat Strategy.
+        self.action_export = QAction("Export…", self)
+        self.action_export.setEnabled(False)
+        file_menu.addAction(self.action_export)
+
+        # A share file of any kind (#171), whatever is open. Dropping one on the window
+        # does the same: see gui/share_drop.py, which is why the window accepts drops.
+        self.action_import = QAction("Import…", self)
+        file_menu.addAction(self.action_import)
+        self.setAcceptDrops(True)
 
         file_menu.addSeparator()
 
@@ -250,7 +261,7 @@ class MainWindow(QMainWindow):
         setup.finish_requested.connect(self.bot_canvas.finish_template_review)
         setup.later_requested.connect(self._put_review_away)
         # Wire Browse Bot Library menu action
-        self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
+        self.action_browse_library.triggered.connect(lambda: self.bot_canvas.open_library_dialog())
         # The combat strategy dialog is owned by the Combat tab: it is the surface that
         # has to reload when the dialog closes, and routing through it keeps one caller.
         # Wrapped: ``triggered`` passes a checked flag, which would arrive as ``kind``.
@@ -481,12 +492,16 @@ class MainWindow(QMainWindow):
             action.triggered.connect(lambda _checked, p=path: self.open_recent_requested.emit(p))
             self._recent_menu.addAction(action)
 
-    def set_save_enabled(self, enabled: bool) -> None:
+    def set_save_enabled(self, enabled: bool, *, save_as: bool | None = None) -> None:
+        """Enable Save, and Save As with it unless *save_as* says otherwise: an Official bot
+        has nothing to save, but Save As still makes a copy of it."""
         self.action_save.setEnabled(enabled)
-        self.action_save_as.setEnabled(enabled)
+        self.action_save_as.setEnabled(enabled if save_as is None else save_as)
 
     def set_close_enabled(self, enabled: bool) -> None:
+        """Enable Close, and Export with it: both act on whatever document is open."""
         self.action_close.setEnabled(enabled)
+        self.action_export.setEnabled(enabled)
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""
