@@ -423,13 +423,15 @@ def test_tags_are_normalized_on_load():
     assert pcs.tags == ["Hitter", "Healer"]
 
 
-def test_a_deck_preset_carries_tags_but_no_schools(tmp_path: Path):
-    preset = DeckPreset(name="Deck", tags=["Support"])
+def test_a_deck_preset_carries_tags_and_schools(tmp_path: Path):
+    """Schools joined tags in #174; before it a deck carried none."""
+    preset = DeckPreset(name="Deck", tags=["Support"], schools=["Storm"])
     path = tmp_path / "deck.json"
     preset.save(path)
     assert json.loads(path.read_text())["tags"] == ["Support"]
-    assert DeckPreset.load(path).tags == ["Support"]
-    assert "schools" not in DeckPreset.model_fields
+    assert json.loads(path.read_text())["schools"] == ["Storm"]
+    loaded = DeckPreset.load(path)
+    assert (loaded.tags, loaded.schools) == (["Support"], ["Storm"])
 
 
 def test_slot_schools_has_one_set_per_slot_and_uncovered_slots_accept_any():
