@@ -18,6 +18,7 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
+from bartlebot.paths import project_root
 from bartlebot.variables import VariableError, apply_assignments, check, compare, run_refusal
 
 SWORDS = VariableModel(name="swords", type="int")
@@ -479,3 +480,16 @@ def test_grouped_conditions_are_read_too():
     bot.transitions[2].flags = []
     bot.transitions[2].flag_groups = [FlagGroup(flags=[_is("ghost", 1)])]
     assert any("reads 'ghost'" in t for t in _texts(check(bot).errors))
+
+
+def test_every_shipped_bot_and_template_has_nothing_to_report():
+    """No shipped bot uses a variable yet, so the new run refusal can never stop one."""
+    reported = []
+    for folder in ("bots", "templates"):
+        for path in sorted((project_root() / folder).rglob("*.json")):
+            if path.name == "template.json":  # a template's index, not a bot
+                continue
+            report = check(BotConfig.load(path))
+            if report.errors or report.warnings:
+                reported.append(path.name)
+    assert reported == []

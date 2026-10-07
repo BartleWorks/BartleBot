@@ -2,6 +2,10 @@
 
 Where a value lives, who owns it, and which of the four levels wins. The two surfaces that edit them — Option Values and Options — are documented with the rest of the sidebar in `bartlebot/gui/CLAUDE.md`.
 
+An option is the user's, chosen before the run and never changed by it. A value the bot
+learns *during* a run and reads back on its edges is a **variable**, not an option:
+`docs/VARIABLES.md`. The two share the condition rows on an edge and nothing else.
+
 ## A value the user owns is never a node param
 
 An app setting that a node param also expresses must never be applied by rewriting
