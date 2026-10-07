@@ -3329,8 +3329,20 @@ class BotCanvas(QWidget):
         self._scene.refresh_recovery(recovery_state_id)
 
     def refresh_edge_flags(self) -> None:
-        """Re-derive the dotted-pen indicator on every edge from the config."""
+        """Re-derive every edge's condition -- its dotted pen and its label -- from the config."""
         self._scene.refresh_all_edge_flags()
+
+    def note_edit_starting(self, desc: str) -> None:
+        """Take the undo snapshot for an edit a surface outside the canvas is about to make.
+
+        The Variables section is the case: its declarations are part of the config, so an
+        add, a rename or a delete is undone with everything else.
+        """
+        self._on_about_to_change(desc)
+
+    def revalidate(self) -> None:
+        """Redraw the badge and the node markers once edits pause, after one the canvas did not make."""
+        self._validation_timer.start()
 
     def _on_scene_changed(self) -> None:
         self._refresh_collapse_buttons()

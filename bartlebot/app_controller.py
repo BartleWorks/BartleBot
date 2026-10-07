@@ -404,6 +404,7 @@ class AppController(QObject):
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
         w.left_sidebar.metadata_changed.connect(self._on_metadata_changed)
+        w.left_sidebar.edit_starting.connect(w.bot_canvas.note_edit_starting)
         w.right_sidebar.config_changed.connect(self._on_config_changed)
 
         # Deck import / apply requests from Combat tab
@@ -3194,6 +3195,9 @@ class AppController(QObject):
             # surface with no way to reach the canvas.  Cheap: each edge is only
             # repainted when its own flag actually moved.
             self._window.bot_canvas.refresh_edge_flags()
+            # A declaration edit -- an option's or a variable's -- changes what validation
+            # finds without touching the graph, so nothing on the canvas would recheck it.
+            self._window.bot_canvas.revalidate()
             self._window.left_sidebar.refresh_options(self._loaded_config)
             self._window.set_bot_name(
                 self._loaded_config.name, self._file_label(self._loaded_config, self._last_save_path)
