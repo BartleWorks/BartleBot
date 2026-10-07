@@ -161,6 +161,8 @@ def test_a_share_file_dropped_anywhere_is_taken_and_any_other_drag_goes_on(qapp,
 
     assert drops.eventFilter(target, event(QDragEnterEvent, _mime(path))) is True
     assert drops.eventFilter(target, event(QDropEvent, _mime(path))) is True
+    assert dropped == [], "the Drop returns before anything is imported (#178)"
+    qapp.processEvents()
     assert [[Path(p) for p in paths] for paths in dropped] == [[Path(path)]]
     assert drops.eventFilter(target, event(QDropEvent, _mime(str(tmp_path / "farm.json")))) is False
     assert drops.eventFilter(target, QEvent(QEvent.Type.Show)) is False
