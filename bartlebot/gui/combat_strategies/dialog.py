@@ -109,6 +109,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.combat_profile import profile_players_of
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
+from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
@@ -1019,6 +1020,11 @@ class _KindPage(QWidget):
             self._card_map = [(i, card if i is item else c) for i, c in self._card_map]
             return
 
+    def set_deck_link(self, link: DeckClientLink | None) -> None:
+        """Give the Deck tab its way to the game clients; any other tab has none to give."""
+        if isinstance(self._editor, DeckPresetEditor):
+            self._editor.set_link(link)
+
     # -- the detail pane ------------------------------------------------
 
     def _load_selection(self) -> None:
@@ -1289,6 +1295,7 @@ class CombatStrategyDialog(QDialog):
         player_color_keys: list[int | None] | None = None,
         player_account_labels: list[str] | None = None,
         bot_name: Callable[[str], str | None] | None = None,
+        deck_link: DeckClientLink | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -1342,6 +1349,11 @@ class CombatStrategyDialog(QDialog):
         # pills simply go uncolored. See gui/widgets/player_pills.py.
         if StrategyKind.DUEL in self._pages:
             self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
+
+        # Likewise the clients a deck can be read from or put on: the caller owns them.
+        deck_page = self._pages.get(StrategyKind.DECK)
+        if deck_page is not None:
+            deck_page.set_deck_link(deck_link)
 
         start = self._pages.get(kind) or next(iter(self._pages.values()))
         self._tabs.setCurrentWidget(start)

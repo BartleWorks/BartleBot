@@ -118,8 +118,9 @@ from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.fight_keys import exposed_combat_states, heal, place
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
+from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note, deck_groups
+from bartlebot.gui.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -204,8 +205,8 @@ _EXPORT_BCS = "Export…"
 
 
 #: Verb labels for a deck card, shared with its menu and the tests.
-_IMPORT_DECK = "Import from client"
-_APPLY_DECK = "Apply to client"
+_IMPORT_DECK = IMPORT_DECK
+_APPLY_DECK = APPLY_DECK
 _SAVE_DECK = "Save to Library…"
 _LOAD_DECK = "Load from Library…"
 _CLEAR_DECK = "Clear deck"
@@ -954,6 +955,7 @@ class CombatTab(QWidget):
         # Answers "which account is behind each player slot"; installed by AppController,
         # which is what holds the ClientManager. See ``set_player_account_source``.
         self._player_account_source: Callable[[], list[str | None]] | None = None
+        self._deck_link: DeckClientLink | None = None
         # The last answer pushed to the cards, so a tick that learns nothing new repaints
         # nothing. See ``refresh_player_colors``.
         self._player_colors: tuple[list[int | None], list[str]] = ([], [])
@@ -1148,6 +1150,13 @@ class CombatTab(QWidget):
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
         self.refresh_player_colors()
+
+    def set_deck_client_link(self, link: DeckClientLink | None) -> None:
+        """Install the way the combat dialog's Deck tab reaches the game clients.
+
+        Pushed by ``AppController``, which owns the clients and the one-at-a-time deck job.
+        """
+        self._deck_link = link
 
     def set_deck_busy(self, busy: bool) -> None:
         """Whether a deck import or apply is running. Pushed by ``AppController``, which
@@ -1372,6 +1381,7 @@ class CombatTab(QWidget):
             player_color_keys=color_keys,
             player_account_labels=account_labels,
             bot_name=self._bot_name_lookup(),
+            deck_link=self._deck_link,
             parent=self,
         )
         accepted = bool(dlg.exec())

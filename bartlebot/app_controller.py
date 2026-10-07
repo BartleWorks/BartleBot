@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from wakepy import ActivationError, keep
@@ -42,6 +42,7 @@ from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
+from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.export_dialog import run_export
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
@@ -71,7 +72,7 @@ from bartlebot.subgraphs import (
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine, Sequence
+    from collections.abc import Callable, Coroutine, Sequence
 
     from bartlebot.bot.strategy_models import DeckData
 
@@ -401,6 +402,15 @@ class AppController(QObject):
         # taken at the moment the dialog opens. See CombatTab.set_player_account_source.
         w.left_sidebar.combat_tab.set_player_account_source(
             lambda: [self._client_manager.account_for(c) for c in self._client_manager.clients]
+        )
+
+        # What the combat dialog's Deck tab may ask of the clients. The deck job stays ours.
+        w.left_sidebar.combat_tab.set_deck_client_link(
+            DeckClientLink(
+                client_count=lambda: len(self._client_manager.clients),
+                import_deck=self._import_deck_for_dialog,
+                apply_deck=self._apply_deck_for_dialog,
+            )
         )
 
         # Client list changes → start button state. The game view is not connected here:
@@ -1844,6 +1854,50 @@ class AppController(QObject):
     def _on_apply_all_decks_requested(self) -> None:
         if self._slot_has_client(1):
             self._start_deck_job(self._apply_all_decks())
+
+    def _import_deck_for_dialog(self, slot: int, done: Callable[[DeckData | str], None]) -> bool:
+        """Read a slot's deck for the combat dialog's Deck tab, which stores it in its own preset.
+
+        Unlike Import on a deck card this touches no Bot Combat Strategy: the answer goes to
+        *done* and the dialog's Save decides whether it lasts. False if nothing started.
+        """
+        if self._deck_task is not None or not self._slot_has_client(slot):
+            return False
+
+        async def job() -> None:
+            result = await self._read_slot_deck(slot, self._client_manager.clients[slot - 1])
+            if isinstance(result, str):
+                self._warn_deck_failed("import", {slot: result})
+            self._answer_dialog(done, result)
+
+        self._start_deck_job(job())
+        return True
+
+    def _apply_deck_for_dialog(self, slot: int, deck: DeckData, done: Callable[[str | None], None]) -> bool:
+        """Put *deck*, a library preset's, on a slot's client. False if nothing started."""
+        if self._deck_task is not None or not self._slot_has_client(slot):
+            return False
+
+        async def job() -> None:
+            result = await self._apply_slot_deck(slot, self._client_manager.clients[slot - 1], deck)
+            if isinstance(result, str):
+                self._warn_deck_failed("apply", {slot: result})
+            else:
+                self._report_deck_apply(slot, result)
+            self._answer_dialog(done, result if isinstance(result, str) else None)
+
+        self._start_deck_job(job())
+        return True
+
+    @staticmethod
+    def _answer_dialog(done: Callable[[Any], None], result: object) -> None:
+        """Hand a deck job's result to the dialog that asked, which may have closed meanwhile."""
+        try:
+            done(result)
+        except RuntimeError:
+            logger.info("The dialog that asked for a deck job closed before it finished")
+        except Exception:
+            logger.exception("A deck job's answer raised")
 
     def _slot_has_client(self, slot: int) -> bool:
         """Whether *slot* has a hooked client, telling the user when it does not.
