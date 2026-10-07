@@ -16,11 +16,13 @@ anyone else. `bartlebot/store_roots.py` has the detail, and `bartlebot/bot_roots
 bots' part; logs stay in the repo's `logs/` too. The suite clears it, and
 `test_every_linked_bot_resolves_under_the_shipped_root_alone` and
 `test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone` catch
-a definition or template that only exists on your machine. It also adds File › Edit Template…, the
-only way into a template's draft under `templates/`; only Release on the draft's crumb
-writes a version users are offered (`bartlebot/template_store.py`). New Bot copies the
-latest released version into a new bot, records it in the bot's `template`, and saves
-the file at once (`bartlebot/new_bot.py`).
+a definition or template that only exists on your machine. File › Templates… opens a
+template's draft for anyone, but only the user's own: dev mode is what makes the shipped
+templates under `templates/` editable, since there every template is the user's. Only
+Release on the draft's crumb writes a version users are offered
+(`bartlebot/template_store.py`). New Bot copies the latest released version into a new
+bot, records it in the bot's `template`, and saves the file at once
+(`bartlebot/new_bot.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
@@ -72,7 +74,7 @@ read on purpose.
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — complete and no longer maintained, but still the record of the design; it supersedes several of `SUBGRAPHS.md`'s sections |
 | `docs/SHARED_CONTENT.md` | a pointer to the plan for epic #173 (user templates, Official content, and sharing bots, strategies, decks and subgraphs as files), which lives on a claude.ai page and is maintained while the work lands; the stage-to-issue table and the rules every stage keeps |
 | `docs/SHARING.md` | share files: the format, the extension and what rides inside for each kind, what never travels (settings, anything that executes), Export: where it is on each item's menu, and the summary, and Import: its ways in, what is refused, matching by id, what Import as copy rewrites, and where things go |
-| `docs/TEMPLATES.md` | the template store, `t_` ids, release, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
+| `docs/TEMPLATES.md` | the template store, template-owned ids and a fork's prefixes, release, user templates and File › Templates…, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/LIBRARY_MIGRATION.md` | the Stage 9 worksheet: where all 85 bots stand against the six released templates, per-bot tier and divergence, what the rewrite keeps and changes, and what to fix or decide before it starts |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |

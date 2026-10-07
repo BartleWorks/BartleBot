@@ -915,7 +915,15 @@ than what it promises: Official means shipped, and so tested in game. It is work
 from the root a file is in (`bot_roots.is_shipped`, `Origin`) and never read from the
 file. A list long enough to need it has a Source filter beside it, offering the same
 words (`tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
-Subgraphs folder, and the node browser's Subgraphs tab. New Bot's gallery has pills only.
+Subgraphs folder, the node browser's Subgraphs tab, and File › Templates… (#164), whose
+gallery is New Bot's cards with a last line added. New Bot's gallery has pills only.
+
+**File › Templates… decides nothing itself** (`gui/templates_dialog.py`). Which verbs a
+card allows comes from `template_gallery.GalleryEntry`, and a verb a card does not allow
+is disabled with the reason as its tooltip, in the footer row and on the card's
+right-click menu alike. Edit, New and Duplicate end the dialog with a request the
+controller acts on; Rename and Delete are callables the controller hands in, because
+either can touch the open draft, and the gallery reloads after each.
 
 A modified Official subgraph or strategy whose Official item has changed since the
 override was made reads **Official (modified) · Official updated**

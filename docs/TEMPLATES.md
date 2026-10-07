@@ -19,11 +19,12 @@ only when a person reviews it. A review reaches only the users who act on it.
 | term | meaning |
 |---|---|
 | template | a starting point for a new bot. One id, one draft, any number of released versions. |
-| draft | the maintainer's working copy, `draft.json`. Never shown to users. |
+| draft | its author's working copy, `draft.json`. Never offered by New Bot. |
 | version | an immutable copy of the draft, written only by Release, numbered 1, 2, 3… |
 | base | the version a bot was made from, or last finished reviewing against: `template.version` in the bot file. |
 | latest | the highest released version. |
-| template-owned node | a node whose id starts with `t_`. Only a draft mints these. |
+| template-owned node | a node whose id starts with one of the template's prefixes: `t_`, or a fork's (below). Only a draft mints these. |
+| fork | a template made by Duplicate from another, recording `forked_from`. |
 | setup step | one instruction a template gives the user, with the fields it asks them to fill. |
 | fill-in | a field a setup step targets. Blank in every released version. |
 | unit, change | a unit is the smallest thing the update diff compares; a change is the group of units applied or skipped together. |
@@ -33,7 +34,8 @@ only when a person reviews it. A review reaches only the users who act on it.
 ```
 templates/                 beside subgraphs/ and strategies/
   boss-farmer/             named by store_roots.slugify; cosmetic
-    template.json          the index: the template's id and every released version
+    template.json          the index: the template's id, every released version, and a
+                           name a rename gave it since the last release
     draft.json             a BotConfig with template_meta
     v1.json                a released copy of the draft, never written again
 ```
@@ -51,7 +53,7 @@ templates shipped in the install directory, and the user's own under
   one.
 - **A template is copied, so it never overrides.** A user-root folder declaring an Official
   template's id is ignored with a warning, and the Official one is used. Customizing an
-  Official template is a fork with a new id (Stage 6 of `docs/SHARED_CONTENT.md`).
+  Official template is a fork with a new id: see "User templates" below.
 - **Everything that reads templates goes through the store**, so `setup_steps.steps_for`,
   `template_diff.load_update`, `template_diff.latest_versions` and
   `new_bot.starting_points` see both roots. Their caches key on both folders.
@@ -69,34 +71,101 @@ file that does not use them:
   exactly two places: New Bot and Finish review.** Never on load, never by a migration.
   Save As copies it unchanged, since a copy of a bot has the same base, and so does Make
   my own copy.
-- `template_meta: {blurb, setup}` is set only on a draft or a version, never on a bot.
+- `template_meta: {blurb, setup, id_prefixes, forked_from}` is set only on a draft or a
+  version, never on a bot. The last two are a fork's (below), and stay out of the file
+  for a template that has neither, the six made before forks among them.
 
 `templates/**` is `-text` in `.gitattributes`, and a template's files are written with LF
 on every platform: a released file is hashed, so its bytes must not move.
 
-### `t_` ids
+### Template-owned ids, and a fork's prefixes
 
-A draft mints `t_`-prefixed ids (`t_4`, `t_sync_players_1`); a bot mints `state_N`. So a
-node a later version adds can never take an id a bot already has. The prefix comes from the
-open document: the scene mints `t_` exactly when the config has `template_meta`. An id a
-version used and a later one retired is never minted again (`template_store.used_ids`),
-because a bot based on the earlier version still has a node under it.
+A draft mints ids under its template's own prefix (`t_4`, `t_sync_players_1`); a bot
+mints `state_N` and unprefixed instance ids. So a node a later version adds can never take
+an id a bot already has. The prefix comes from the open document: the scene mints the
+template's own prefix (`template_store.own_id_prefix`) exactly when the config has
+`template_meta`. An id a version used and a later one retired is never minted again
+(`template_store.used_ids`), because a bot based on the earlier version still has a node
+under it.
+
+**Which prefix** (#164):
+
+- The six templates made before forks, the shipped ones, record none and mint `t_`.
+- A template made in the app, blank or by Duplicate, mints `t<first 6 hex of its id>_`
+  (`template_store.fork_prefix`, eight characters, never `t_`).
+- A fork also keeps every prefix it inherited, because its draft starts as a copy of its
+  source's nodes. `template_meta.id_prefixes` lists them, its own first: a fork of a fork
+  of Boss Farmer has three. `template_store.id_prefixes` reads them, and `t_` alone when
+  there are none.
+
+So nothing a fork adds can take an id its source has or could add later, and a fork of a
+fork none of its parent's. That is what keeps pulling a later Official release into a fork
+possible after 1.0.0. The prefixes are stored, not worked out from where the template is,
+because developer mode makes every template read as the user's.
+
+"Template-owned" means *under any prefix in the lineage*, everywhere: Release accepts any
+of them, and the update diff (below) takes its versions' prefixes, since the bot carries no
+`template_meta` to say.
 
 ## Authoring and release
 
-With `BARTLEBOT_DEV` set, **File › Edit Template…** opens a draft as a top-level document,
-the way a bot opens. It saves to `draft.json`; autosave and crash recovery work unchanged.
+**File › Templates…**'s Edit opens a draft as a top-level document, in Edit mode, the way
+a bot opens: the user's own templates always, and an Official one only with
+`BARTLEBOT_DEV` set, where every template is the user's anyway. Open Bot refuses an
+Official draft for the same reason, pointing at Duplicate. A draft saves to `draft.json`;
+autosave and crash recovery work unchanged.
 
 **Release is the only way a version is written.** No save produces one, so a draft cannot
 reach users by accident. `template_store.release` copies the saved draft's bytes to
 `v(N+1).json` and appends the version, its SHA-256 and a one-line note to the index, or
 writes nothing and raises `ReleaseRefused`. It refuses a draft with any canvas error, an id
-without `t_`, a retired id reused, a filled fill-in, a step with no text or no targets, or
-a blank note. It also refuses while a `vN.json` for the next number is already on disk and
+under no prefix of its lineage, a fork's id under an inherited prefix that the version it
+was duplicated from lacks, a retired id reused, a filled fill-in, a step with no text or no
+targets, or a blank note. It also refuses while a `vN.json` for the next number is already on disk and
 the index does not list it, which is what a release that failed between its two writes
 leaves: nothing under `templates/` is ever overwritten, so the stray file is removed by
 hand first. Release a version with the app's button or with `release`, never by copying a
 file.
+
+## User templates
+
+Every user makes templates of their own (#164) in **File › Templates…**
+(`gui/templates_dialog.py`, logic in `bartlebot/template_gallery.py`). It is a gallery of
+New Bot's cards, one per template, each with its Source pill and a last line giving its
+latest version, how many of the user's bots were made from it, and the template it was
+copied from. A Source filter sits beside the heading. The verbs are a footer row and a
+card's right-click menu:
+
+| verb | Official | Custom |
+|---|---|---|
+| Edit (opens the draft; the commit, and a double-click) | dev mode only | yes |
+| Duplicate | yes | yes |
+| Rename | no | yes |
+| Delete | no | yes, naming the bots made from it |
+| New | a blank template | |
+
+**A user template has the whole lifecycle** of an Official one: a draft, Release with its
+refusals and a required note, and versions that update the bots made from them through
+the same review. It lives under the user root.
+
+- **New** starts a blank draft with no nodes, as a blank bot has none, minting under its
+  own prefix. Nothing is offered by New Bot until its first release.
+- **Duplicate makes a fork**: a new id, a draft seeded from the source's latest released
+  version, and `template_meta.forked_from: {id, version}` saying which. The fork's
+  `id_prefixes` are its own and then the source's. A copy of the user's own template
+  before its first release seeds from its draft and records no `forked_from`, having no
+  released base. A same-id override was rejected: a bot's `{id, version: 2}` could then
+  mean the user's v2 or the Official v2.
+- **Rename** writes the draft's name, and the index's `name` while the latest release
+  still carries the old one; Release clears it. A name typed into the draft itself is not
+  public until released, so a draft save never writes the index, and a shipped
+  `template.json` stays byte-identical. A rename of the open draft renames the document
+  too, so its next save keeps it.
+- **Delete** removes the folder: draft and every version. The bots made from it keep
+  running, without setup steps or update reviews, as a bot shared without its template
+  does. An open draft of it is closed first. An Official template is never deleted, and
+  with one root, as in developer mode, neither is one with a release, since that folder
+  is what ships (`template_store.deletion_refused`).
 
 ## New Bot
 
@@ -150,7 +219,7 @@ The diff compares three configs: **base**, **theirs** (the latest version) and *
 
 | unit | key | value |
 |---|---|---|
-| a template-owned node | its `t_` id | its `node_type` |
+| a template-owned node | its id, under any prefix in the template's lineage | its `node_type` |
 | a param, label or stop list of one | (id, key) | the value |
 | an edge slot from one | (source, `when`, canonical flags) | `dest` |
 | a template-owned subgraph node | its region id | `subgraph_id` |
@@ -224,5 +293,6 @@ keys".
 - Every bot file round-trips byte-identical, with `template` or without.
 - Nothing writes `template`, rewrites a profile, or changes a bot file on load.
 - A released version file never changes after release.
-- A bot never mints a `t_` id, and a draft never mints anything else.
+- A bot never mints a template-owned id, and a draft mints only under its own prefix.
+- A fork never adds an id under a prefix it inherited.
 - A user is only ever offered released versions.

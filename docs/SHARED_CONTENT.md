@@ -23,7 +23,8 @@ The stages land in this order, each building only on the ones before:
 | 7 | #172 | subgraph categories |
 
 `docs/SHARING.md` is the share file's format, Export and Import, as built in Stages 4
-and 5.
+and 5. `docs/TEMPLATES.md`'s "User templates" is File › Templates… and forks, as built in
+Stage 6.
 
 All seven are in 1.0.0. After it: templates in share files (#165), the release check
 that enforces "nothing released is removed" (#166), and extracting `bartlebot/shared/` to
