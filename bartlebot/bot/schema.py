@@ -55,13 +55,6 @@ class DropModel(BaseModel):
         return self.match_name or self.name
 
 
-#: The types a bot variable can have. See docs/VARIABLES.md.
-VARIABLE_TYPES = ("bool", "int", "enum")
-
-#: Every comparison a variable condition row can make. Only the first two apply to a
-#: bool or an enum; ``bartlebot.variables`` refuses the rest on them.
-VARIABLE_COMPARES = ("==", "!=", "<", "<=", ">", ">=")
-
 #: The node type that writes variables. Named here, where the registry-free rules for a
 #: subgraph definition need it; the node is ``bartlebot/nodes/utility/set_variables.py``.
 SET_VARIABLES_NODE = "set_variables"
@@ -101,8 +94,8 @@ class VariableModel(BaseModel):
 class AssignmentModel(BaseModel):
     """One write to a variable: set it to ``value``, add ``value`` to an int, or toggle a bool.
 
-    The rows of a ``set_variables`` node's ``assignments`` param. ``value`` is unused by
-    ``toggle``, and left out of the file for it.
+    The rows of a ``set_variables`` node's ``assignments`` param, which are stored as
+    written and parsed with this. ``value`` is unused by ``toggle``.
     """
 
     variable: str
@@ -116,7 +109,8 @@ class FlagCondition(BaseModel):
     An option row is ``{option, negate}``: ``option`` is a BotOptionModel.name, and
     ``negate`` inverts the truthiness check. A variable row is ``{variable, compare,
     value}``: ``variable`` names a :class:`VariableModel`, and the row is true when its
-    current value ``compare``-s against ``value``. Exactly one of ``option`` and
+    current value ``compare``-s against ``value``. Only an int takes the four ordering
+    comparisons; ``bartlebot.variables`` refuses them on a bool or an enum. Exactly one of ``option`` and
     ``variable`` is set. Multiple FlagConditions are combined by their parent's ``op``
     field, so options and variables mix in one AND/OR expression.
 
