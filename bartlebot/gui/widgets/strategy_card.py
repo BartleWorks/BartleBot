@@ -14,18 +14,24 @@ no way to express that.
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.card_art_tile import ArtIconView
 from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.flow_layout import flow_container
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.school_picker import school_icon
 from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import ProfilePill, TagPill
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 from bartlebot.strategy_tags import PROFILE_SOURCE
+
+#: Side of a school's medallion beside its name on a deck card, a size up from the caption.
+SCHOOL_ICON_PX = 16
 
 ADD_FAVORITE_TIP = "Add to favorites"
 REMOVE_FAVORITE_TIP = "Remove from favorites"
@@ -146,9 +152,13 @@ class StrategyCard(QWidget):
         if summary.description:
             self._add_sub_line(header, summary.description)
 
-        subtitle = summary.subtitle_line()
-        if subtitle:
-            self._add_sub_line(header, subtitle)
+        school_icons = [(school, school_icon(school)) for school in summary.school_names]
+        if any(icon is not None for _school, icon in school_icons):
+            self._add_school_line(header, summary, school_icons)
+        else:
+            subtitle = summary.subtitle_line()
+            if subtitle:
+                self._add_sub_line(header, subtitle)
 
         if summary.schools:
             self._add_sub_line(header, " · ".join(f"{count}× {school}" for school, count in summary.schools.items()))
@@ -191,6 +201,38 @@ class StrategyCard(QWidget):
         header.addWidget(label)
         self._sub_lbls.append(label)
         return label
+
+    def _add_school_line(
+        self, header: QVBoxLayout, summary: StrategySummary, school_icons: list[tuple[str, QIcon | None]]
+    ) -> None:
+        """The facets line with each school drawn beside its medallion.
+
+        Only where at least one resolved: most installs have no art, and keep the plain
+        ``Fire/Ice · 36 cards`` line. A school with no icon of its own is its name alone.
+        A flow rather than a box row, so a deck of many schools wraps instead of widening the card.
+        """
+        schools_text = "/".join(summary.school_names)
+        rest = [f for f in summary.facets if f != schools_text]
+        row_box, row = flow_container(spacing=6)
+        row.setContentsMargins(0, 0, 0, 0)
+        for school, icon in school_icons:
+            bit = QWidget()
+            bit_row = QHBoxLayout(bit)
+            bit_row.setContentsMargins(0, 0, 0, 0)
+            bit_row.setSpacing(3)
+            if icon is not None:
+                view = ArtIconView(SCHOOL_ICON_PX, bit)
+                view.set_icon(icon)
+                bit_row.addWidget(view)
+            label = QLabel(school, bit)
+            bit_row.addWidget(label)
+            self._sub_lbls.append(label)
+            row.addWidget(bit)
+        if rest:
+            label = QLabel("· " + " · ".join(rest))
+            row.addWidget(label)
+            self._sub_lbls.append(label)
+        header.addWidget(row_box)
 
     @property
     def source_text(self) -> str:

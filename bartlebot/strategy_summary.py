@@ -206,6 +206,9 @@ class StrategySummary:
     profile_name: str | None = None
     #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
     tags: tuple[str, ...] = ()
+    #: The schools a deck is built for, in the order it lists them, for a card that draws
+    #: each beside its icon. The same schools the first facet spells out in words.
+    school_names: tuple[str, ...] = ()
     #: One school set per player slot, empty meaning any school — what the "works with"
     #: filter asks. One slot for a Player Strategy or a deck (#174), ``max_players`` for a
     #: duel (#125).
@@ -367,5 +370,6 @@ def summarize_deck(preset: DeckPreset) -> StrategySummary:
         facets=facets,
         health=health,
         tags=tuple(preset.tags),
+        school_names=tuple(preset.schools),
         slot_schools=(frozenset(preset.schools),),
     )

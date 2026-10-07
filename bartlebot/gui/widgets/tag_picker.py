@@ -112,11 +112,12 @@ class TagVocabulary:
 BOT_VOCABULARY = TagVocabulary(TAG_GROUPS, GROUP_ACCENT)
 
 #: The combat strategy dialog's vocabulary (#125). Source is gray, the color of the
-#: source pill on each card, so a Source chip reads as the pill it matches; Role takes
-#: the second pill hue. The noun is replaced per tab — duels, strategies, presets.
+#: source pill on each card, so a Source chip reads as the pill it matches; Role is the
+#: blue-gray, a muted tone no school wears: a role is not a school, and the purple it had
+#: was Storm's. The noun is replaced per tab — duels, strategies, presets.
 STRATEGY_VOCABULARY = TagVocabulary(
     STRATEGY_TAG_GROUPS,
-    {SOURCE: "pill_neutral_bg", ROLE: "pill_activity_bg"},
+    {SOURCE: "pill_neutral_bg", ROLE: "chip_neutral_bg"},
     ("strategy", "strategies"),
 )
 
