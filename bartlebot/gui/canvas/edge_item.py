@@ -1,11 +1,13 @@
-"""EdgeItem — directed edge between two NodeItems."""
+"""EdgeItem — directed edge between two NodeItems, and the label that says what its condition is."""
 
 import math
 
-from PyQt6.QtCore import QPointF, Qt
-from PyQt6.QtGui import QPainter, QPainterPath, QPen
+from PyQt6.QtCore import QPointF, QRectF, Qt
+from PyQt6.QtGui import QFontMetricsF, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphicsItem
 
+from bartlebot import variables
+from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.canvas.node_item import NODE_W, NodeItem
 from bartlebot.gui.theme import THEME
 
@@ -23,6 +25,10 @@ BACK_PADDING = 30  # minimum gap between backward-edge bridge and the node edges
 _BACK_PADDING = BACK_PADDING  # alias kept for internal use
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 FORWARD_PADDING = 30  # gap between forward-edge channel and source node right edge
+
+_LABEL_GAP = 4  # between a condition label and the corner it hangs from, and the line under it
+_LABEL_PAD_X = 3  # inside the label's backing, either side of the text
+_LABEL_MIN_ROOM = 24  # the narrowest a label is squeezed to; below this it shows an ellipsis alone
 
 
 def _edge_color():
@@ -113,6 +119,9 @@ class EdgeItem(QGraphicsPathItem):
         self._snap_target = False
         self._bridge_y_override = bridge_y_override
         self._has_flags = has_flags
+        # The corners the path was built through, for the condition label to hang from.
+        self._waypoints: list[QPointF] = []
+        self._label: EdgeLabelItem | None = None
 
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -169,6 +178,24 @@ class EdgeItem(QGraphicsPathItem):
             self._has_flags = has_flags
             self.update()
 
+    @property
+    def label(self) -> "EdgeLabelItem | None":
+        """The condition label, or None for an edge that has never had a condition."""
+        return self._label
+
+    def set_condition(self, text: str | None) -> None:
+        """Show *text*, the edge's whole condition, as a label near where the edge leaves its source.
+
+        None takes the label away. The label is a child item, so the repaint tracer
+        (#73) watches it like any other item on the canvas.
+        """
+        if not text and self._label is None:
+            return
+        if self._label is None:
+            self._label = EdgeLabelItem(self)
+        self._label.set_text(text or "")
+        self._place_label()
+
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
         from PyQt6.QtGui import QPainterPathStroker
@@ -182,11 +209,41 @@ class EdgeItem(QGraphicsPathItem):
 
     def _rebuild(self) -> None:
         path = QPainterPath()
+        self._waypoints = []
         if self._is_self_loop:
             self._build_self_loop(path)
         else:
             self._build_edge(path)
         self.setPath(path)
+        self._place_label()
+
+    def _place_label(self) -> None:
+        """Hang the label where this edge turns toward its destination, sized to the room that segment has.
+
+        Every edge from one port shares its first stretch, so a label there would sit on
+        top of its siblings'. The segment after the first vertical run is the edge's own:
+        above the line into the destination on a forward edge, along the bridge on a
+        backward one -- under the bridge when that runs beneath the nodes, so the label
+        keeps clear of them. A label never runs past the end of its segment; what does
+        not fit is cut, and the tooltip has the rest.
+        """
+        label = self._label
+        if label is None or not label.full_text:
+            return
+        wp = self._waypoints
+        if len(wp) < 2:
+            label.setVisible(False)
+            return
+        corner, nxt = (wp[2], wp[3]) if len(wp) >= 4 else (wp[0], wp[-1])
+        rightward = nxt.x() >= corner.x()
+        room = abs(nxt.x() - corner.x()) - 2 * _LABEL_GAP - (ARROW_SIZE if nxt is wp[-1] else 0)
+        label.fit_to(max(room, _LABEL_MIN_ROOM))
+        size = label.boundingRect()
+        x = corner.x() + _LABEL_GAP if rightward else corner.x() - _LABEL_GAP - size.width()
+        below = len(wp) == 6 and corner.y() > wp[0].y()
+        y = corner.y() + _LABEL_GAP / 2 if below else corner.y() - size.height() - _LABEL_GAP / 2
+        label.setPos(x, y)
+        label.setVisible(True)
 
     # ------------------------------------------------------------------
     # Hover events
@@ -257,6 +314,7 @@ class EdgeItem(QGraphicsPathItem):
             path.moveTo(src_pt)
             path.lineTo(dst_pt)
             _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
+            self._waypoints = [src_pt, dst_pt]
             return
         # Pin the vertical channel just past the source node's right edge.
         # For bidirectional pairs the offset shifts the channel laterally so
@@ -268,6 +326,7 @@ class EdgeItem(QGraphicsPathItem):
             QPointF(mid_x, dst_pt.y()),
             dst_pt,
         ]
+        self._waypoints = waypoints
         _draw_ortho_path(path, waypoints)
 
     def _build_directed_ortho(
@@ -297,6 +356,7 @@ class EdgeItem(QGraphicsPathItem):
                 path.moveTo(src_pt)
                 path.lineTo(dst_pt)
                 _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
+                self._waypoints = [src_pt, dst_pt]
                 return
             waypoints = [
                 src_pt,
@@ -304,6 +364,7 @@ class EdgeItem(QGraphicsPathItem):
                 QPointF(x_col, dst_pt.y()),
                 dst_pt,
             ]
+            self._waypoints = waypoints
             _draw_ortho_path(path, waypoints)
         else:
             # Ports face opposite directions: 6-point bridge path.
@@ -321,6 +382,7 @@ class EdgeItem(QGraphicsPathItem):
                 QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, dst_pt.y()),
                 dst_pt,
             ]
+            self._waypoints = waypoints
             _draw_ortho_path(path, waypoints)
 
     def _build_backward_ortho(self, path: QPainterPath, src_pt: QPointF, dst_pt: QPointF) -> None:
@@ -347,7 +409,103 @@ class EdgeItem(QGraphicsPathItem):
             QPointF(dst_pt.x() - _SELF_LOOP_ARM, dst_pt.y()),
             dst_pt,
         ]
+        self._waypoints = waypoints
         _draw_ortho_path(path, waypoints)
+
+
+# ---------------------------------------------------------------------------
+# EdgeLabelItem
+# ---------------------------------------------------------------------------
+
+
+class EdgeLabelItem(QGraphicsItem):
+    """An edge's condition as text, ``swords == 2``, with the whole of it in the tooltip (#187).
+
+    A child of its edge, placed by :meth:`EdgeItem._place_label`. Its text is cut to
+    ``variables.EDGE_LABEL_CHARS`` and then to the room its segment has; the tooltip is
+    never cut. Every change of size goes through ``prepareGeometryChange``, so the
+    old rect is repainted and the repaint tracer (#73) sees a lost repaint if one ever
+    is not. Colors are read at paint time, so a theme switch needs nothing here.
+    """
+
+    def __init__(self, edge: EdgeItem) -> None:
+        super().__init__(edge)
+        self._full = ""
+        self._shown = ""
+        self._room = float("inf")
+        # A step up from a node's type line, which is muted and secondary: on an edge the
+        # condition is the thing to read, so it is a size larger and in the text color.
+        self._font = THEME.ui_font(THEME.font_node_sub_px + 1)
+        self._metrics = QFontMetricsF(self._font)
+        self._rect = QRectF()
+        self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+
+    @property
+    def full_text(self) -> str:
+        """The edge's whole condition, as the tooltip shows it."""
+        return self._full
+
+    @property
+    def shown_text(self) -> str:
+        """What the label draws: the condition, cut to fit."""
+        return self._shown
+
+    def set_text(self, text: str) -> None:
+        if text == self._full:
+            return
+        self._full = text
+        self.setToolTip(text)
+        self._refit()
+        if not text:
+            self.setVisible(False)
+
+    def fit_to(self, room: float) -> None:
+        """Cut the text to *room* scene units wide, backing included."""
+        if room != self._room:
+            self._room = room
+            self._refit()
+
+    def _refit(self) -> None:
+        text = variables.shorten(self._full) if self._full else ""
+        width = max(0.0, self._room - 2 * _LABEL_PAD_X)
+        if text and self._metrics.horizontalAdvance(text) > width:
+            text = self._metrics.elidedText(text, Qt.TextElideMode.ElideRight, width) or "\u2026"
+        rect = QRectF(0, 0, self._metrics.horizontalAdvance(text) + 2 * _LABEL_PAD_X, self._metrics.height())
+        if text == self._shown and rect == self._rect:
+            return
+        self.prepareGeometryChange()
+        self._shown = text
+        self._rect = rect
+        self.update()
+
+    def boundingRect(self) -> QRectF:  # noqa: N802 - Qt override
+        return self._rect
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
+        if not self._shown:
+            return
+        painter.setFont(self._font)
+        lod = option.levelOfDetailFromTransform(painter.worldTransform())
+        if not text_is_legible(painter.fontMetrics().height(), lod):
+            return
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # A backing in the canvas color, so a line crossing behind the text does not strike it through.
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(THEME.qcolor("bg"))
+        painter.drawRoundedRect(self._rect, 3, 3)
+        painter.setPen(THEME.qcolor("text"))
+        painter.drawText(self._rect, Qt.AlignmentFlag.AlignCenter, self._shown)
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802 - Qt override
+        """A click on the label is a click on its edge: it selects the edge."""
+        edge = self.parentItem()
+        scene = self.scene()
+        if edge is None or scene is None:
+            return super().mousePressEvent(event)
+        if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            scene.clearSelection()
+        edge.setSelected(True)
+        event.accept()
 
 
 # ---------------------------------------------------------------------------

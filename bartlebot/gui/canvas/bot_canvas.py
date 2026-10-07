@@ -70,6 +70,8 @@ from bartlebot.gui.canvas.edit_scene import (
     _validate_node,
     authoring_anchor,
     member_warnings,
+    problem_line,
+    variable_report,
 )
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
@@ -4505,6 +4507,11 @@ class BotCanvas(QWidget):
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
         warning_lines.extend(self._orphan_flag_lines(config))
+        # Once each, here: the nodes a problem names are marked by refresh_errors, not listed again.
+        report = variable_report(config)
+        if report is not None:
+            error_lines.extend(f"Variables: {problem_line(p)}" for p in report.errors)
+            warning_lines.extend(f"Variables: {problem_line(p)}" for p in report.warnings)
         sg_errors, sg_warnings = self._subgraph_lines(config)
         error_lines.extend(sg_errors)
         warning_lines.extend(sg_warnings)

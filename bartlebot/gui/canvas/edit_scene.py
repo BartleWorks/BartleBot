@@ -30,10 +30,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import player_realms, scales, setup_steps
+from bartlebot import player_realms, scales, setup_steps, variables
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
+    SET_VARIABLES_NODE,
     SUBGRAPH_ENTRY,
     SUBGRAPH_EXIT,
     BotConfig,
@@ -430,6 +431,50 @@ def _validate_node(
             warning_reasons.append("Unreachable from initial state")
 
     return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
+
+
+def variable_report(config: BotConfig) -> variables.Report | None:
+    """What ``variables.check`` finds in a bot, or None where there is nothing for it to look at.
+
+    None for a definition, whose structure rules already refuse any use of a variable, and
+    for a bot that declares, reads and writes none -- most of them, which skips the check's
+    option composition on every validation pass.
+    """
+    if config.is_definition:
+        return None
+    if (
+        not config.variables
+        and not any(s.node_type == SET_VARIABLES_NODE for s in config.states)
+        and not any(fc.is_variable for t in config.transitions for fc in variables.condition_rows(t))
+    ):
+        return None
+    return variables.check(config)
+
+
+def variable_reasons(report: variables.Report | None) -> dict[str, tuple[list[str], list[str]]]:
+    """``{state id: (errors, warnings)}`` from a variables report, for the node markers.
+
+    A problem about no node -- two variables with one name -- is on the badge alone.
+    """
+    found: dict[str, tuple[list[str], list[str]]] = {}
+    if report is None:
+        return found
+    for problems, slot in ((report.errors, 0), (report.warnings, 1)):
+        for problem in problems:
+            for state_id in problem.states:
+                found.setdefault(state_id, ([], []))[slot].append(problem_line(problem))
+    return found
+
+
+def problem_line(problem: variables.Problem) -> str:
+    """A variables problem as the badge and a node's tooltip say it, capitalized."""
+    text = problem.text
+    return text[:1].upper() + text[1:]
+
+
+def _condition_text(models: list[TransitionModel]) -> str | None:
+    """The condition an edge is drawn with: its first transition's, which a call node's siblings share."""
+    return variables.describe_guard(models[0]) if models else None
 
 
 def _reachable_states(config: BotConfig) -> set[str]:
@@ -1086,6 +1131,7 @@ class EditScene(QGraphicsScene):
         sn, dn = self._node_items[s], self._node_items[d]
         has_flags = any(t.flags or t.flag_groups for t in models)
         edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y, has_flags=has_flags, dst_port=port)
+        edge.set_condition(_condition_text(models))
         self.addItem(edge)
         sn.add_edge(edge)
         if dn is not sn:
@@ -1231,10 +1277,12 @@ class EditScene(QGraphicsScene):
                 node.set_recovery(node_id == recovery)
 
     def refresh_edge_flags(self, transition) -> None:
-        """Refresh the dotted-pen flag indicator on the edge *transition* is drawn as."""
+        """Refresh the dotted pen and the condition label on the edge *transition* is drawn as."""
         edge = self.edge_for(transition)
         if edge is not None:
-            edge.set_has_flags(any(t.flags or t.flag_groups for t in self._edge_models.get(edge, [])))
+            models = self._edge_models.get(edge, [])
+            edge.set_has_flags(any(t.flags or t.flag_groups for t in models))
+            edge.set_condition(_condition_text(models))
 
     def refresh_all_edge_flags(self) -> None:
         """Re-derive every edge's dotted-pen indicator from the config.
@@ -1248,6 +1296,8 @@ class EditScene(QGraphicsScene):
         """
         for edge, models in self._edge_models.items():
             edge.set_has_flags(any(t.flags or t.flag_groups for t in models))
+            # A rename of an option or a variable changes the label's text without touching the edge.
+            edge.set_condition(_condition_text(models))
 
     def refresh_terminal(self) -> None:
         """Update the terminal-state badge based on current transitions."""
@@ -1291,10 +1341,18 @@ class EditScene(QGraphicsScene):
         reachable = _reachable_states(self._config)
         fills = self.fill_ins()
         rolled: dict[str, tuple[list[str], list[str]]] = {}
+        # A variable's problem marks the nodes it names, as a node's own does.
+        by_variable = variable_reasons(variable_report(self._config))
         for state in self._config.states:
             is_error, is_warning, err_reasons, warn_reasons = _validate_node(
                 state, self._config, reachable, fills, self._subgraph_library
             )
+            var_errors, var_warnings = by_variable.get(state.id, ([], []))
+            if var_errors or var_warnings:
+                err_reasons = err_reasons + var_errors
+                warn_reasons = warn_reasons + var_warnings
+                is_error = is_error or bool(var_errors)
+                is_warning = is_warning or bool(var_warnings)
             node = self._node_items.get(state.id)
             if node is not None:
                 if self._expanded and state.id in self._expanded_instance_members():
