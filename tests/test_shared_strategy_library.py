@@ -192,7 +192,7 @@ def test_the_library_is_written_at_the_vendor_root_not_the_products():
 
 def test_developer_mode_keeps_the_library_in_the_repo(monkeypatch):
     monkeypatch.setenv(DEV_ENV_VAR, "1")
-    monkeypatch.setattr(official_set, "_registry", _Keys(InstallKey("BartleBuddy", project_root().parent, 99)))
+    official_set.set_registry(_Keys(InstallKey("BartleBuddy", project_root().parent, 99)))
     assert resolve_shared_roots(None, None) == (project_root(), project_root())
 
 
@@ -207,7 +207,5 @@ class _Keys:
 def test_the_default_shipped_root_is_the_newest_installed_set(monkeypatch, tmp_path):
     buddy = tmp_path / "BartleBuddy"
     buddy.mkdir()
-    monkeypatch.setattr(
-        official_set, "_registry", _Keys(InstallKey("BartleBuddy", buddy, official_set.SHARED_SET_VERSION + 1))
-    )
+    official_set.set_registry(_Keys(InstallKey("BartleBuddy", buddy, official_set.SHARED_SET_VERSION + 1)))
     assert resolve_shared_roots(None, None) == (buddy, vendor_dir())

@@ -97,3 +97,15 @@ def test_the_windows_registry_reads_nothing_when_no_vendor_key_exists(monkeypatc
     pytest.importorskip("winreg")
     monkeypatch.setattr(official_set, "REGISTRY_KEY", r"Software\Bartleby-test-key-that-does-not-exist")
     assert official_set.WindowsRegistry().install_keys() == []
+
+
+def test_the_default_registry_is_read_once_per_session(tmp_path):
+    own = tmp_path / "own"
+    buddy = _installed(tmp_path, "BartleBuddy", SHARED_SET_VERSION + 1)
+    keys = _Keys()
+    official_set.set_registry(keys)
+    assert shipped_root(own) == own
+    keys.keys.append(buddy)  # installed while we run: the set in use does not change
+    assert shipped_root(own) == own
+    official_set.reset_shipped_root()
+    assert shipped_root(own) == buddy.install_dir
