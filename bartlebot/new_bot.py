@@ -101,6 +101,9 @@ def starting_points(root: str | Path | None = None, user_root: str | Path | None
         except Exception:
             logger.warning("Not offering template %s: v%d does not load", template.name, version, exc_info=True)
             continue
+        # The template's name now, which a rename since its latest release changes (#164).
+        # Only what the card shows: the bot is named on the dialog's next page.
+        config.name = template.name
         points.append(StartingPoint(template_id=template.id, version=version, config=config, origin=template.origin))
     return points
 

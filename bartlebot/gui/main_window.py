@@ -17,7 +17,6 @@ from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import dev_mode
 
 
 def _shorten_recent_path(path: str, root: Path) -> str:
@@ -96,12 +95,11 @@ class MainWindow(QMainWindow):
         self.action_combat_strategies = QAction("Browse Combat Strategy Library…", self)
         file_menu.addAction(self.action_combat_strategies)
 
-        # The maintainer's way into a template's draft. Only with BARTLEBOT_DEV set:
-        # before 1.0.0 nobody else authors templates, and a user starts from one
-        # through New Bot, which only ever offers released versions.
-        self.action_edit_template = QAction("Edit Template…", self)
-        self.action_edit_template.setVisible(dev_mode())
-        file_menu.addAction(self.action_edit_template)
+        # Every template, Official and the user's own, and the verbs that make and
+        # change templates of your own (#164). A user starts a bot from one through
+        # New Bot, which only ever offers released versions.
+        self.action_templates = QAction("Templates…", self)
+        file_menu.addAction(self.action_templates)
 
         self.action_close = QAction("Close Bot", self)
         self.action_close.setShortcut(QKeySequence("Ctrl+W"))

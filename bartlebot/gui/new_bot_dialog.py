@@ -124,10 +124,13 @@ class StartCard(ThemedMixin, QFrame):
         icon: QIcon | None = None,
         glyph: str = "",
         source: Origin | None = None,
+        detail: str = "",
         parent: QWidget | None = None,
     ) -> None:
         """``source`` is where a template comes from, shown as its Source pill (#149);
-        ``None`` for the blank bot, which comes from nowhere."""
+        ``None`` for the blank bot, which comes from nowhere. ``detail`` is a last line in
+        small muted text, which the Templates dialog uses for a template's version and
+        bots (#164); New Bot has none."""
         super().__init__(parent)
         self._selected = False
         self._hovered = False
@@ -170,12 +173,21 @@ class StartCard(ThemedMixin, QFrame):
         self._blurb.setWordWrap(True)
         text.addWidget(self._blurb)
         self._blurb.setVisible(bool(blurb))
+        self._detail = QLabel(detail)
+        self._detail.setFont(THEME.ui_font(THEME.font_small_px))
+        self._detail.setWordWrap(True)
+        text.addWidget(self._detail)
+        self._detail.setVisible(bool(detail))
         text.addStretch()
         self.refresh_theme_styles()
 
     @property
     def name(self) -> str:
         return self._name.text()
+
+    @property
+    def detail_text(self) -> str:
+        return self._detail.text()
 
     @property
     def source_text(self) -> str:
@@ -214,6 +226,7 @@ class StartCard(ThemedMixin, QFrame):
         )
         set_style_sheet(self._name, f"color: {THEME.text};")
         set_style_sheet(self._blurb, f"color: {THEME.text_muted};")
+        set_style_sheet(self._detail, f"color: {THEME.text_muted};")
         if self._glyph:
             # A glyph is tinted for the theme it was rendered under, unlike art. Rendered
             # well over size, as art is held, so a scaled display draws it down from more

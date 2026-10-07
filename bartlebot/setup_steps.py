@@ -233,6 +233,11 @@ def _released_steps(shipped_dir: str, user_dir: str, template_id: str, version: 
     return tuple(meta.setup) if meta is not None else ()
 
 
+def forget_released() -> None:
+    """Drop every cached version's steps: a deleted template's versions are gone (#164)."""
+    _released_steps.cache_clear()
+
+
 def steps_for(
     config: BotConfig | None, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> list[SetupStep]:

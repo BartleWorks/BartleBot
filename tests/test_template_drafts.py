@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import QInputDialog, QMessageBox
 
 from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta, TransitionModel
+from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.canvas.subgraph_widgets import CrumbMode
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.template_store import find_template, load_version, release, save_draft
@@ -74,9 +75,9 @@ def _draft_path(store) -> str:
 
 
 def _open(h, monkeypatch) -> None:
-    monkeypatch.setattr(QInputDialog, "getItem", lambda *a, **k: ("Boss Farmer", True))
-    assert h._edit_template()
-    h._window.bot_canvas.enter_edit_mode()
+    """Open the draft as File › Templates…'s Edit does: as the top-level document, in Edit mode."""
+    assert h._edit_template(find_template(TEMPLATE_ID, h._templates_root))
+    assert h._window.bot_canvas.mode is BotMode.EDIT
 
 
 # ---------------------------------------------------------------------------
@@ -122,11 +123,14 @@ def test_a_bot_offers_rewards_tags_and_shows_no_crumb(harness, tmp_path):
     assert canvas.crumb_bar.isHidden()
 
 
-def test_edit_template_is_dev_mode_only(harness, monkeypatch):
+def test_the_users_own_draft_opens_outside_dev_mode(harness, monkeypatch, store):
+    """Since #164 anyone edits their own templates; the store here is one root, so this one is Custom."""
     monkeypatch.setattr(app_controller, "dev_mode", lambda: False)
 
-    assert not harness._edit_template()
-    assert harness._loaded_config is None
+    _open(harness, monkeypatch)
+
+    assert harness._loaded_config.is_template
+    assert harness._last_save_path == _draft_path(store)
 
 
 def test_a_draft_mints_past_every_id_a_release_used(harness, dev, monkeypatch, store):
@@ -154,15 +158,17 @@ def test_open_bot_refuses_a_released_version(harness, dev, monkeypatch, store):
     assert "released version" in told[0] and "New Bot" in told[0]
 
 
-def test_open_bot_refuses_a_draft_outside_dev_mode(harness, monkeypatch, store):
+def test_open_bot_refuses_an_official_draft_outside_dev_mode(harness, monkeypatch, store, tmp_path):
+    """An Official template changes only with an app update: its draft is the maintainer's (#164)."""
     monkeypatch.setattr(app_controller, "dev_mode", lambda: False)
+    harness._templates_user_root = tmp_path / "user"
     told = []
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a[2]))
 
     harness._open_bot(_draft_path(store))
 
     assert harness._loaded_config is None
-    assert "draft" in told[0] and "New Bot" in told[0]
+    assert "Official" in told[0] and "Duplicate" in told[0]
 
 
 # ---------------------------------------------------------------------------
