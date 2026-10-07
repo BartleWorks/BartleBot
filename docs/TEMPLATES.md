@@ -160,7 +160,15 @@ the same review. It lives under the user root.
   still carries the old one; Release clears it. A name typed into the draft itself is not
   public until released, so a draft save never writes the index, and a shipped
   `template.json` stays byte-identical. A rename of the open draft renames the document
-  too, so its next save keeps it.
+  too, so its next save keeps it. With one root, as in developer mode, a template with a
+  release renames its draft alone, since a name in that index would ship with no release
+  behind it (`template_store.rename_waits_for_release`). Its card keeps the released name
+  and adds "renamed to … in draft" until the next release carries it.
+- **No two templates share a name**, compared without case, Official and Custom alike,
+  since New Bot lists both; a name a draft carries counts as well as the released one.
+  New, Duplicate and Rename ask again with what was typed, and saving a draft renamed in
+  its header to a taken name is refused (`template_store.name_clash`). The check runs only
+  when the name changes, so two templates that shared one before it still save.
 - **Delete** removes the folder: draft and every version. The bots made from it keep
   running, without setup steps or update reviews, as a bot shared without its template
   does. An open draft of it is closed first. An Official template is never deleted, and

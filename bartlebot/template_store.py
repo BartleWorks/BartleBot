@@ -311,19 +311,69 @@ def load_draft(template_id: str, root: str | Path | None = None, user_root: str 
     return BotConfig.load(_require(template_id, root, user_root).draft_path)
 
 
+class NameTaken(ValueError):
+    """Another template already has the name. The message is for the user."""
+
+
+def _names_of(template: Template) -> set[str]:
+    """Every name ``template`` goes by: the one its card shows, and its draft's when that differs."""
+    names = {template.name}
+    draft_name = _name_in(template.draft_path)
+    if draft_name:
+        names.add(draft_name)
+    return names
+
+
+def name_clash(
+    name: str, template_id: str | None = None, root: str | Path | None = None, user_root: str | Path | None = None
+) -> str | None:
+    """The name of another template that ``name`` matches without case, or ``None`` when it is free.
+
+    ``template_id`` is the template being named, whose own names never clash with it.
+    Official and Custom templates share one namespace, since New Bot lists both, and a
+    draft's name counts as well as the released one: a rename a draft carries reaches
+    the card at its next release.
+    """
+    wanted = name.strip().casefold()
+    for template in list_templates(root, user_root):
+        if template.id == template_id:
+            continue
+        for taken in _names_of(template):
+            if taken.casefold() == wanted:
+                return taken
+    return None
+
+
+def draft_name_refused(config: BotConfig, root: str | Path | None = None, user_root: str | Path | None = None) -> str:
+    """Why ``config``, a draft about to be saved, may not have its name: ``""`` when it may.
+
+    Asked only when the name differs from the one the draft on disk has, so two templates
+    that already shared a name before this rule still save.
+    """
+    template = find_template(config.id, root, user_root)
+    if template is not None and _name_in(template.draft_path) == config.name:
+        return ""
+    taken = name_clash(config.name, config.id, root, user_root)
+    return f"There is already a template called '{taken}'. Choose another name." if taken is not None else ""
+
+
 def save_draft(config: BotConfig, root: str | Path | None = None, user_root: str | Path | None = None) -> Path:
     """Write ``config`` as the draft of the template its ``id`` names. Returns the path written.
 
     A template the store does not have yet gets a folder under the user root named from
     ``config.name``, numbered past one already taken, and an index with nothing released.
     Never writes a version: only Release does that. Raises ``PermissionError`` for an
-    Official template, which only an app release changes.
+    Official template, which only an app release changes, and :class:`NameTaken` for a
+    new name another template has (:func:`draft_name_refused`).
     """
     if not config.is_template:
         raise ValueError(f"{config.name!r} has no template_meta, so it is a bot, not a template draft")
     template = find_template(config.id, root, user_root)
     if template is not None and template.origin is Origin.SHIPPED:
         raise PermissionError(f"{template.name} is an Official template, which only an app release changes")
+    refused = draft_name_refused(config, root, user_root)
+    if refused:
+        raise NameTaken(refused)
     if template is not None:
         folder = template.folder
     else:
@@ -660,8 +710,13 @@ def rename_template(
 ) -> Template:
     """Rename the user's own template now: its draft, and the index until a release carries the name.
 
-    Released files keep the name they were released with. Raises ``PermissionError`` for
-    an Official template and ``ValueError`` for a blank name.
+    Released files keep the name they were released with. When the two roots are one
+    directory, as in developer mode, a template with a release renames its draft alone:
+    that folder is what ships, so a name in its index would reach users with no release
+    behind it. Its next release carries the name (:func:`renamed_in_draft`).
+
+    Raises ``PermissionError`` for an Official template, :class:`NameTaken` for a name
+    another template has, and ``ValueError`` for a blank one.
     """
     name = name.strip()
     if not name:
@@ -672,8 +727,33 @@ def rename_template(
     draft = BotConfig.load(template.draft_path)
     draft.name = name
     save_draft(draft, root, user_root)
-    _keep_name(template, name)
+    if not rename_waits_for_release(template, root, user_root):
+        _keep_name(template, name)
     return _require(template_id, root, user_root)
+
+
+def rename_waits_for_release(
+    template: Template, root: str | Path | None = None, user_root: str | Path | None = None
+) -> bool:
+    """Whether a rename of ``template`` waits for its next release: a released template, with the roots one.
+
+    That is developer mode, where the folder is the one the app ships, and the index's
+    name would reach users before any release carried it.
+    """
+    shipped_dir, user_dir = templates_dirs(root, user_root)
+    return shipped_dir == user_dir and bool(template.index.versions)
+
+
+def renamed_in_draft(template: Template) -> str | None:
+    """The name ``template``'s draft carries when it differs from the one its card shows, else ``None``.
+
+    The card shows the latest release's name, or the index's after a rename; a name the
+    draft alone carries is one its next release will.
+    """
+    if template.latest_version is None:
+        return None
+    draft_name = _name_in(template.draft_path)
+    return draft_name if draft_name and draft_name != template.name else None
 
 
 def deletion_refused(template: Template, root: str | Path | None = None, user_root: str | Path | None = None) -> str:

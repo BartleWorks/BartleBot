@@ -938,6 +938,11 @@ class AppController(QObject):
             # An Official bot, or one recovered from a crash in it: the install directory is
             # replaced by every update, so the save goes to a copy in the user's own folder.
             return self._save_bot_as()
+        if self._loaded_config.is_template:
+            refused = template_store.draft_name_refused(self._loaded_config, **self._template_roots())
+            if refused:
+                QMessageBox.information(self._window, "Save Template", refused)
+                return False
         if not self._confirm_rewards_tags():
             return False
         try:
@@ -1445,14 +1450,32 @@ class AppController(QObject):
             self._open_bot(str(template.draft_path), mode=BotMode.EDIT)
         return self._loaded_config is not None and self._loaded_config.id == template.id
 
+    def _ask_template_name(self, title: str, label: str, text: str = "", template_id: str | None = None) -> str | None:
+        """Ask for a template's name until it is one no other template has. None when cancelled or blank.
+
+        A taken name asks again, with what was typed and a line saying whose name it is.
+        ``template_id`` is the template being renamed, whose own name is never taken.
+        """
+        prompt = label
+        while True:
+            name, ok = QInputDialog.getText(self._window, title, prompt, text=text)
+            name = name.strip()
+            if not ok or not name:
+                return None
+            taken = template_store.name_clash(name, template_id, **self._template_roots())
+            if taken is None:
+                return name
+            prompt = f"There is already a template called '{taken}'.\n\n{label}"
+            text = name
+
     def _new_template(self) -> bool:
         """New: ask for a name, start a blank template of the user's own, and open its draft."""
-        name, ok = QInputDialog.getText(self._window, "New Template", "What is the template called?")
-        if not ok or not name.strip():
+        name = self._ask_template_name("New Template", "What is the template called?")
+        if name is None:
             return False
         try:
             template = template_store.new_template(name, **self._template_roots())
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             QMessageBox.critical(self._window, "New Template", f"Could not create the template:\n\n{exc}")
             return False
         return self._edit_template(template)
@@ -1460,13 +1483,12 @@ class AppController(QObject):
     def _duplicate_template(self, source: template_store.Template) -> bool:
         """Duplicate: fork ``source`` into a template of the user's own, and open its draft."""
         taken = [t.name for t in template_store.list_templates(**self._template_roots())]
-        name, ok = QInputDialog.getText(
-            self._window,
+        name = self._ask_template_name(
             "Duplicate Template",
             f"What is your copy of {source.name} called?",
             text=template_gallery.copy_name(source.name, taken),
         )
-        if not ok or not name.strip():
+        if name is None:
             return False
         try:
             fork = template_store.duplicate_template(source, name, **self._template_roots())
@@ -1482,9 +1504,9 @@ class AppController(QObject):
         writing the old one back.
         """
         template = entry.template
-        name, ok = QInputDialog.getText(self._window, "Rename Template", "Template name:", text=template.name)
-        name = name.strip()
-        if not ok or not name or name == template.name:
+        current = template_store.renamed_in_draft(template) or template.name
+        name = self._ask_template_name("Rename Template", "Template name:", text=current, template_id=template.id)
+        if name is None or name == current:
             return False
         try:
             template_store.rename_template(template.id, name, **self._template_roots())
@@ -1499,6 +1521,13 @@ class AppController(QObject):
                 self._clean_snapshot = _file_snapshot(config)
             self._window.set_bot_name(config.name, self._file_label(config, self._last_save_path))
             self._window.bot_canvas.refresh_name()
+        if template_store.rename_waits_for_release(template, **self._template_roots()):
+            QMessageBox.information(
+                self._window,
+                "Rename Template",
+                f"The draft is now called {name}. {template.name} has been released with the app, so its "
+                "card keeps that name until you release the draft.",
+            )
         return True
 
     def _delete_template(self, entry: template_gallery.GalleryEntry) -> bool:

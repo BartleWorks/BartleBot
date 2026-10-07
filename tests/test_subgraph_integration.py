@@ -78,6 +78,7 @@ class ControllerHarness:
             "_file_label",
             "_may_edit_template",
             "_template_roots",
+            "_ask_template_name",
             "_user_bots_dirs",
             "_template_gallery",
             "_open_templates_dialog",
