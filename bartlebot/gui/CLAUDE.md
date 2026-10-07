@@ -936,6 +936,18 @@ writes. Export sends what is saved: a surface that holds unsaved edits says so r
 than exporting them (`StrategyWorkingSet.has_unsaved`, the controller's
 `_saved_for_export`). `docs/SHARING.md` has the rest.
 
+**Import has three ways in, and one path** (#171): File › Import…, a share file dropped
+anywhere on the window, and a file named on the command line. All three reach the
+controller's `_import_share_file`. A drop is caught by `gui/share_drop.ShareFileDrops`,
+an event filter on the *application*, because a drag goes to the widget under the cursor
+and the canvas, the favorites bar and the combat order list all accept drops of their
+own; any drag without a share file goes on to its widget untouched. The summary
+(`import_dialog.ImportDialog`) is built from a `build(choices)` callable, like Export's,
+so changing one row's choice re-matches the whole file: a copy rewrites the links of
+everything after it. It never asks for typed text. A rebuild runs inside a combo's own
+signal, so the old rows are `takeWidget()`-ed and `deleteLater()`-ed, never replaced by
+`setWidget`, which deletes them at once.
+
 **An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
 way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
 and the controller offers Make my own copy (`gui/make_copy_dialog.py`). A new way into

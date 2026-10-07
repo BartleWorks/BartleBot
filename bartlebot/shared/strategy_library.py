@@ -198,7 +198,13 @@ def _check(user: Path, kind: LibraryKind, item_id: str, name: str, expected: str
 
 
 def save(
-    user: Path, kind: LibraryKind, item: BaseModel, *, expected: str | None = None, shipped: Path | None = None
+    user: Path,
+    kind: LibraryKind,
+    item: BaseModel,
+    *,
+    expected: str | None = None,
+    shipped: Path | None = None,
+    record: bool = True,
 ) -> str:
     """Write ``item`` to the user root, if it still holds what ``expected`` describes. Returns the new fingerprint.
 
@@ -209,14 +215,16 @@ def save(
     ``shipped`` is the shipped root, which the history and an override's Official base
     are recorded against (:mod:`bartlebot.shared.content_hash`); leave it None when
     there is none, or when it is the user root. Recorded into ``item`` itself, and only
-    once the checks have passed.
+    once the checks have passed. ``record=False`` writes the history ``item`` already
+    has, as an import does: an item received in a share file arrives with its own (#171).
     """
     item_id, name = item.id, item.name  # type: ignore[attr-defined]
     if is_newer_format(item):
         raise NewerFormat(kind, item_id, name, item.format)  # type: ignore[attr-defined]
     _check(user, kind, item_id, name, expected)
-    shipped_dir = kind_dir(shipped if shipped is not None else user, kind)
-    record_save_in(shipped_dir, kind_dir(user, kind), item, MODELS[kind].load)  # type: ignore[attr-defined]
+    if record:
+        shipped_dir = kind_dir(shipped if shipped is not None else user, kind)
+        record_save_in(shipped_dir, kind_dir(user, kind), item, MODELS[kind].load)  # type: ignore[attr-defined]
     path = save_by_id(kind_dir(user, kind), item_id, name, item.save)  # type: ignore[attr-defined]
     return _digest(path.read_bytes())
 

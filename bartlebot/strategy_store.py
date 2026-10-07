@@ -309,11 +309,15 @@ def load_bot_strategy(
 
 
 def save_bot_strategy(
-    s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+    s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None, *, record: bool = True
 ) -> None:
-    """Write ``s`` to the user root, recording its history into it first (:mod:`bartlebot.shared.content_hash`)."""
+    """Write ``s`` to the user root, recording its history into it first (:mod:`bartlebot.shared.content_hash`).
+
+    ``record=False`` writes the history ``s`` already has, as an import does (#171).
+    """
     shipped, user = _roots(root, user_root)
-    record_save_in(_bot_strategy_dir(shipped), _bot_strategy_dir(user), s, BotCombatStrategy.load)
+    if record:
+        record_save_in(_bot_strategy_dir(shipped), _bot_strategy_dir(user), s, BotCombatStrategy.load)
     save_by_id(_bot_strategy_dir(user), s.id, s.name, s.save)
 
 

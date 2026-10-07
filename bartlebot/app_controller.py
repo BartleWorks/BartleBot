@@ -27,6 +27,7 @@ from bartlebot import (
     restricted_zones,
     setup_steps,
     share_export,
+    share_import,
     strategy_store,
     template_diff,
     template_store,
@@ -43,13 +44,17 @@ from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
+from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.export_dialog import run_export
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
+from bartlebot.gui.import_dialog import TITLE as IMPORT_TITLE
+from bartlebot.gui.import_dialog import ask_for_file, confirm_import
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.make_copy_dialog import TITLE as MAKE_COPY_TITLE
 from bartlebot.gui.make_copy_dialog import MakeCopyDialog
 from bartlebot.gui.new_bot_dialog import NewBotDialog
 from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
+from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
 from bartlebot.gui.window_show_trace import WindowShowTracer
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -275,6 +280,12 @@ class AppController(QObject):
         self._prune_dead_strategy_settings()
         self._restore_game_display_settings()
         self._check_crash_recovery()
+        # A share file dropped anywhere on the window imports it (#171); one named at
+        # launch, as a double-clicked file is (#27), once the window is up.
+        self._share_drops = ShareFileDrops(self)
+        self._share_drops.files_dropped.connect(self._import_dropped)
+        self._app.installEventFilter(self._share_drops)
+        QTimer.singleShot(0, self._import_from_arguments)
 
     def _restore_game_display_settings(self) -> None:
         """Give the game back the display settings a previous session overwrote.
@@ -341,6 +352,7 @@ class AppController(QObject):
         w.action_save_as.triggered.connect(lambda: self._save_bot_as())
         w.action_edit_template.triggered.connect(lambda: self._edit_template())
         w.action_export.triggered.connect(lambda: self._export_open_document())
+        w.action_import.triggered.connect(lambda: self._import_share_file())
         w.open_recent_requested.connect(self._open_bot)
 
         # Canvas signals
@@ -1125,6 +1137,8 @@ class AppController(QObject):
         official = bot_roots.is_shipped(path)
         combat = self._active_bot_strategy(bot.id)
 
+        folder = _world_folder(path)
+
         def build(choices):
             return share_export.export_bot(
                 bot,
@@ -1132,6 +1146,7 @@ class AppController(QObject):
                 official=official,
                 combat=combat if choices.include_combat else None,
                 include_decks=choices.include_decks,
+                folder=folder,
             )
 
         return run_export(
@@ -1162,6 +1177,163 @@ class AppController(QObject):
             lambda choices: share_export.export_bot_strategy(bcs, sources, include_decks=choices.include_decks),
             offers_decks=True,
         )
+
+    # ------------------------------------------------------------------
+    # Import (#171)
+    # ------------------------------------------------------------------
+
+    def _import_from_arguments(self) -> None:
+        """Import each share file named on the command line: how a double-clicked file arrives (#27)."""
+        for arg in self._app.arguments()[1:]:
+            if is_share_file(arg) and Path(arg).is_file():
+                self._import_share_file(arg)
+
+    def _import_dropped(self, paths: list[str]) -> None:
+        """Files dropped on the window, imported one after another."""
+        for path in paths:
+            self._import_share_file(path)
+
+    def _import_share_file(self, path: str | None = None) -> share_import.ImportResult | None:
+        """File › Import…, a dropped file, or one named at launch: the summary, then the write. What was written.
+
+        Refused files say why and write nothing. Changing a choice in the summary
+        re-matches the file, so what Import writes is what the summary showed last.
+        """
+        if path is None:
+            path = ask_for_file(self._window)
+            if path is None:
+                return None
+        sources = self._export_sources()
+        try:
+            share = share_import.read(path)
+            incoming = share_import.check(share, sources)
+        except share_import.Refused as e:
+            logger.warning("Not importing %s: %s", path, e)
+            QMessageBox.warning(self._window, IMPORT_TITLE, str(e))
+            return None
+        try:
+            plan = confirm_import(
+                self._window, lambda choices: share_import.plan_import(share, sources, choices, incoming=incoming)
+            )
+        except Exception as e:
+            logger.exception("Could not match %s against the library", path)
+            QMessageBox.critical(self._window, IMPORT_TITLE, f"Could not read what this file would change:\n\n{e}")
+            return None
+        if plan is None:
+            return None
+        reopen = self._clear_for_import(plan)
+        if reopen is False:
+            return None
+        result: share_import.ImportResult | None = None
+        try:
+            result = share_import.apply_import(plan, sources)
+        except Exception as e:
+            logger.exception("The import of %s stopped part way", path)
+            QMessageBox.critical(
+                self._window,
+                IMPORT_TITLE,
+                f"The import stopped part way, and nothing after this was written:\n\n{e}",
+            )
+        self._after_import(plan, result, reopen if isinstance(reopen, str) else None)
+        return result
+
+    def _open_document_ids(self) -> tuple[str | None, set[str]]:
+        """``(the open bot's file, the ids of every open definition)``, the bot under any definitions."""
+        configs = [frame.doc.config for frame in self._doc_stack]
+        if self._loaded_config is not None:
+            configs.append(self._loaded_config)
+        definitions = {c.definition.id for c in configs if c.is_definition}
+        bot_path = self._doc_stack[0].path if self._doc_stack else self._last_save_path
+        if self._loaded_config is not None and not self._doc_stack and self._loaded_config.is_definition:
+            bot_path = None
+        return bot_path, definitions
+
+    def _clear_for_import(self, plan: share_import.ImportPlan) -> str | bool:
+        """Make way for an import that writes over an open document. False to stop; the bot file to reopen; or True.
+
+        A definition being written over is closed first, asking about unsaved changes as
+        going back always does. The open bot is reopened afterward, unless it has unsaved
+        changes, which the import would leave out of step with its file: then nothing is written.
+        """
+        over = [r for r in plan.rows if r.action in (share_import.Action.UPDATE, share_import.Action.REPLACE)]
+        if not over:
+            return True
+        bot_path, definitions = self._open_document_ids()
+        if any(r.kind == share_export.SUBGRAPH and r.id in definitions for r in over) and not self._close_definitions():
+            return False
+        bot_row = next(
+            (
+                r
+                for r in over
+                if r.kind == share_export.BOT
+                and bot_path is not None
+                and r.holding is not None
+                and r.holding.path is not None
+                and Path(r.holding.path).resolve() == Path(bot_path).resolve()
+            ),
+            None,
+        )
+        if bot_row is None:
+            return True
+        if not self._close_definitions():
+            return False
+        if self._has_unsaved_changes and not _matches_clean(self._loaded_config, self._clean_snapshot):
+            QMessageBox.information(
+                self._window,
+                IMPORT_TITLE,
+                f"'{bot_row.name}' is open with unsaved changes, and this import would replace it. "
+                "Save or close it, then import again.",
+            )
+            return False
+        return str(bot_path)
+
+    def _after_import(
+        self, plan: share_import.ImportPlan, result: share_import.ImportResult | None, reopen: str | None
+    ) -> None:
+        """Bring every surface up to date with what was written, then show the main item where it went."""
+        self._subgraph_library.reload()
+        self._window.bot_canvas.refresh_subgraph_listing()
+        if result is None:
+            return
+        share_import.assign_active_picks(result, SettingsManager.instance())
+        if reopen is not None:
+            self._open_bot(reopen)
+        elif self._loaded_config is not None and not self._loaded_config.is_definition:
+            # A Bot Combat Strategy for the open bot: its list, and maybe its pick, changed.
+            if any(bot_id == self._loaded_config.id for _bcs, bot_id in result.strategies_added):
+                self._window.left_sidebar.rebind_identity()
+        self._select_imported(plan, result)
+
+    def _select_imported(self, plan: share_import.ImportPlan, result: share_import.ImportResult) -> None:
+        """Afterward the library selects the main item: a bot or subgraph in the bot library, a strategy in its own."""
+        main = plan.main
+        kind = plan.share.main.kind
+        target = main.target_id if main is not None else plan.share.main.id
+        if kind == share_export.BOT_COMBAT_STRATEGY:
+            # A Bot Combat Strategy is shown with its bot, unless that bot is the one open.
+            if main is None or (self._loaded_config is not None and self._loaded_config.id == main.item.bot_id):
+                return
+            kind, target = share_export.BOT, main.item.bot_id
+        if kind == share_export.BOT:
+            path = result.bot_paths.get(target)
+            if path is None:
+                found = self._export_sources().bot_file(target)
+                path = found.path if found is not None else None
+            open_bot = self._last_save_path if not self._doc_stack else self._doc_stack[0].path
+            if path is not None and not (open_bot and Path(open_bot).resolve() == Path(path).resolve()):
+                # The open bot is already in front of the user: reopened, never revealed.
+                self._window.bot_canvas.reveal_in_library(path=path)
+        elif kind == share_export.SUBGRAPH:
+            self._window.bot_canvas.reveal_in_library(subgraph_id=target)
+        else:
+            strategy_kind = {
+                share_export.DUEL_STRATEGY: strategy_store.StrategyKind.DUEL,
+                share_export.PLAYER_STRATEGY: strategy_store.StrategyKind.PLAYER,
+                share_export.DECK: strategy_store.StrategyKind.DECK,
+            }[kind]
+            self._window.left_sidebar.combat_tab.open_combat_dialog(
+                strategy_kind, DialogMode.LIBRARY, current_id=target
+            )
 
     # ------------------------------------------------------------------
     # Template drafts
@@ -2306,16 +2478,14 @@ class AppController(QObject):
         found = restricted_zones.check_bot_config(self._loaded_config)
         if not found:
             return True
-        lines = "\n".join(f"• {label}: {zone} — {hit.reason}" for label, zone, hit in found)
         logger.critical("Refusing to run: bot names %d restricted zone(s)", len(found))
         QMessageBox.critical(
             self._window,
             "Restricted Zone",
             "This bot cannot be run. It sends a client to a zone BartleBot does not "
             "automate:\n\n"
-            f"{lines}\n\n"
-            "BartleBot is for PvE. PvP zones and Beastmoon are off limits, and this "
-            "is not something that can be turned off.",
+            f"{restricted_zones.describe_found(found)}\n\n"
+            f"{restricted_zones.PVE_ONLY_TEXT}",
         )
         return False
 

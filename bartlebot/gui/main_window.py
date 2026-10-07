@@ -127,6 +127,12 @@ class MainWindow(QMainWindow):
         self.action_export.setEnabled(False)
         file_menu.addAction(self.action_export)
 
+        # A share file of any kind (#171), whatever is open. Dropping one on the window
+        # does the same: see gui/share_drop.py, which is why the window accepts drops.
+        self.action_import = QAction("Import…", self)
+        file_menu.addAction(self.action_import)
+        self.setAcceptDrops(True)
+
         file_menu.addSeparator()
 
         settings_action = QAction("Settings…", self)
@@ -257,7 +263,7 @@ class MainWindow(QMainWindow):
         setup.finish_requested.connect(self.bot_canvas.finish_template_review)
         setup.later_requested.connect(self._put_review_away)
         # Wire Browse Bot Library menu action
-        self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
+        self.action_browse_library.triggered.connect(lambda: self.bot_canvas.open_library_dialog())
         # The combat strategy dialog is owned by the Combat tab: it is the surface that
         # has to reload when the dialog closes, and routing through it keeps one caller.
         # Wrapped: ``triggered`` passes a checked flag, which would arrive as ``kind``.

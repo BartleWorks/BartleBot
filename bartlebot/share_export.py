@@ -169,19 +169,33 @@ class Sources:
             return None
         return entry.item, self.strategy_origin(kind, item_id)
 
-    def bot(self, bot_id: str) -> tuple[BotConfig, Origin] | None:
-        """The bot declaring ``bot_id`` in the library, and whether it is Official."""
-        shipped = self.bots_shipped if self.bots_shipped is not None else bot_roots.shipped_bots_dir()
-        user = self.bots_user if self.bots_user is not None else bot_roots.user_bots_dir()
-        for found in bot_roots.library_files(shipped, user):
-            if declared_id(found.path) != bot_id:
-                continue
-            try:
-                return BotConfig.load(found.path), Origin.SHIPPED if found.shipped else Origin.USER
-            except Exception:
-                logger.warning("Could not read the bot %s to export it", found.path, exc_info=True)
-                return None
-        return None
+    @property
+    def shipped_bots(self) -> Path:
+        """The Official bots' folder."""
+        return self.bots_shipped if self.bots_shipped is not None else bot_roots.shipped_bots_dir()
+
+    @property
+    def user_bots(self) -> Path:
+        """The user's own bots' folder, where an import writes one."""
+        return self.bots_user if self.bots_user is not None else bot_roots.user_bots_dir()
+
+    def bot_file(self, bot_id: str) -> bot_roots.LibraryFile | None:
+        """The library file declaring ``bot_id``: where it is, its world folder, and whether it is Official."""
+        return next(
+            (f for f in bot_roots.library_files(self.shipped_bots, self.user_bots) if declared_id(f.path) == bot_id),
+            None,
+        )
+
+    def bot(self, bot_id: str) -> tuple[BotConfig, Origin, str | None] | None:
+        """The bot declaring ``bot_id`` in the library, whether it is Official, and its world folder."""
+        found = self.bot_file(bot_id)
+        if found is None:
+            return None
+        try:
+            return BotConfig.load(found.path), Origin.SHIPPED if found.shipped else Origin.USER, found.folder
+        except Exception:
+            logger.warning("Could not read the bot %s to export it", found.path, exc_info=True)
+            return None
 
 
 @dataclass
@@ -239,8 +253,8 @@ def _collect_subgraph_links(collector: Collector, regions: Iterable[RegionModel]
             _collect_subgraph_links(collector, defn.regions, sources)
 
 
-def _collect_bot(collector: Collector, bot: BotConfig, origin: Origin, sources: Sources) -> None:
-    if collector.add(BOT, bot, origin):
+def _collect_bot(collector: Collector, bot: BotConfig, origin: Origin, folder: str | None, sources: Sources) -> None:
+    if collector.add(BOT, bot, origin, folder=folder):
         _collect_subgraph_links(collector, bot.regions, sources)
 
 
@@ -290,7 +304,8 @@ def _collect_bot_strategy(
         if found_bot is None:
             collector.note_missing(BOT, bcs.bot_id)
         else:
-            _collect_bot(collector, *found_bot, sources)
+            bot, origin, folder = found_bot
+            _collect_bot(collector, bot, origin, folder, sources)
 
 
 # ---------------------------------------------------------------------------
@@ -305,14 +320,16 @@ def export_bot(
     official: bool,
     combat: BotCombatStrategy | None = None,
     include_decks: bool = True,
+    folder: str | None = None,
 ) -> ExportPlan:
     """A bot file: ``bot`` as saved, its subgraphs, and ``combat`` when given.
 
     ``official`` says whether ``bot`` is an Official one, which is named rather than packed:
-    exporting one sends only what rides with it.
+    exporting one sends only what rides with it. ``folder`` is the library folder it is
+    in, which the file names so the receiver's copy lands in the same one.
     """
     collector = Collector(BOT, bot.id)
-    _collect_bot(collector, bot, Origin.SHIPPED if official else Origin.USER, sources)
+    _collect_bot(collector, bot, Origin.SHIPPED if official else Origin.USER, folder, sources)
     if combat is not None:
         _collect_bot_strategy(collector, combat, sources, include_decks=include_decks, follow_bot=False)
     return _plan(collector, BOT, bot.name)

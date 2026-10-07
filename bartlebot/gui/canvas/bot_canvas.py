@@ -510,6 +510,9 @@ class _BotCard(ThemedMixin, QWidget):
         # The pills are absent from this list deliberately: TagPill and NeutralPill own
         # their own color, so there is nothing here to re-derive for them.
         self._hovered = False
+        # Selected by the library on the user's behalf -- an item just imported (#171) --
+        # and drawn as hover is, so the eye lands on it.
+        self._selected = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
         self._setup_lbl: QLabel | None = None
@@ -628,6 +631,15 @@ class _BotCard(ThemedMixin, QWidget):
         return self._source_pill.text()
 
     @property
+    def selected(self) -> bool:
+        return self._selected
+
+    def set_selected(self, selected: bool) -> None:
+        """Draw the card as the library's selection, or not."""
+        self._selected = selected
+        self.refresh_theme_styles()
+
+    @property
     def revert_button(self) -> ActionButton | None:
         """The Revert beside an "Official updated" pill, or None on a card without one."""
         return self._revert_btn
@@ -652,8 +664,9 @@ class _BotCard(ThemedMixin, QWidget):
         the mouse crossed it — and even then only the frame followed.
         """
         # Use #BotCard selector so border/background don't bleed into child labels
-        bg = THEME.node_fill if self._hovered else THEME.surface
-        border = THEME.accent if self._hovered else THEME.border
+        lit = self._hovered or self._selected
+        bg = THEME.node_fill if lit else THEME.surface
+        border = THEME.accent if lit else THEME.border
         self.setStyleSheet(f"#BotCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
 
         self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
@@ -1012,6 +1025,44 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             self._cat_list.setCurrentRow(keys.index(kept) if kept in keys else 0)
         else:
             self._show_cards([])
+
+    def reveal(self, *, path: str | Path | None = None, subgraph_id: str | None = None) -> bool:
+        """Show one bot or subgraph, selected: its folder, scrolled to its card. False when it isn't listed.
+
+        What the library does after an import (#171), so the user sees where it went. The
+        search and the filters are cleared first, since either could hide it.
+        """
+        self.refresh()
+        self._search.clear()
+        self._source_picker.set_selection([])
+        self._set_tag_selection([])
+        if subgraph_id is not None:
+            key = self._SUBGRAPHS_KEY
+            meta = next((m for m in self._subgraph_metas if m.subgraph_id == subgraph_id), None)
+        else:
+            target = Path(path).resolve() if path is not None else None
+            key, meta = self._ALL_KEY, None
+            for folder, metas in self._category_map.items():
+                meta = next((m for m in metas if m.path.resolve() == target), None)
+                if meta is not None:
+                    key = folder
+                    break
+        if meta is None:
+            return False
+        keys = [self._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._cat_list.count())]
+        if key in keys:
+            self._cat_list.setCurrentRow(keys.index(key))
+        card = self._cards.get(meta.path)
+        if card is None:
+            return False
+        for other in self._cards.values():
+            other.set_selected(other is card)
+        self._cards_area.ensureWidgetVisible(card)
+        return True
+
+    def selected_card(self) -> "_BotCard | None":
+        """The card :meth:`reveal` selected, while it is listed. For the tests."""
+        return next((c for c in self._cards.values() if c.selected and c.isVisibleTo(self)), None)
 
     def current_folder(self) -> str | None:
         """The library folder the selected category row stands for, by its name on disk.
@@ -2078,8 +2129,29 @@ class BotCanvas(QWidget):
             return self._placeholder.current_folder()
         return None
 
-    def open_library_dialog(self) -> None:
-        """Open the bot library as a modal dialog (useful when a bot is already loaded)."""
+    def reveal_in_library(self, *, path: str | Path | None = None, subgraph_id: str | None = None) -> None:
+        """Show a bot or subgraph selected in the library: the placeholder's, or the library dialog's.
+
+        After an import (#171). With a document open the library is out of sight, so the
+        library dialog opens on it.
+        """
+        if self._library_dialog_panel is not None:
+            self._library_dialog_panel.reveal(path=path, subgraph_id=subgraph_id)
+        elif self._placeholder.isVisibleTo(self):
+            self._placeholder.reveal(path=path, subgraph_id=subgraph_id)
+        else:
+            self.open_library_dialog(reveal=(path, subgraph_id))
+
+    @property
+    def library_panel(self) -> "_BotLibraryPanel":
+        """The library shown while no document is open. For the tests."""
+        return self._placeholder
+
+    def open_library_dialog(self, *, reveal: tuple | None = None) -> None:
+        """Open the bot library as a modal dialog (useful when a bot is already loaded).
+
+        ``reveal`` is ``(bot path, subgraph id)``: an item to show selected as it opens.
+        """
         from PyQt6.QtWidgets import QDialog, QVBoxLayout
 
         dlg = QDialog(self.window())
@@ -2103,6 +2175,8 @@ class BotCanvas(QWidget):
         panel.open_recent_requested.connect(self.open_recent_requested)
         lay.addWidget(panel)
         self._library_dialog_panel = panel
+        if reveal is not None:
+            panel.reveal(path=reveal[0], subgraph_id=reveal[1])
         try:
             dlg.exec()
         finally:
