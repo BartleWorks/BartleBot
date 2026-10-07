@@ -87,7 +87,7 @@ bot still runs the snapshot it carries.
 
 ### Decks
 
-A deck file holds one preset: its name, description, tags and cards
+A deck file holds one preset: its name, description, tags, schools and cards
 (`share_file.shareable_deck`). The legacy `tc` field is left out. So is
 `apply_archmastery`: whether applying the deck sets the school is the owner's decision,
 and the receiver becomes the owner. A Bot Combat Strategy's own decks travel the same

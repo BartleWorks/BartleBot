@@ -40,6 +40,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     _CLEAR_DECK,
     _DELETE_BCS,
     _DUPLICATE_BCS,
+    _EXPORT_BCS,
     _IMPORT_DECK,
     _NEW_BCS,
     _NO_DECK,
@@ -1557,6 +1558,19 @@ def test_deck_card_kebab_opens_the_same_menu_right_click_does(qapp):
     texts = [action.text().split("\t")[0] for action in menu.actions() if not action.isSeparator()]
     # A deck card is in an ordered list, so the menu leads with the keyboard route (#155).
     assert texts == ["Move up", "Move down", *_verb_labels(card)]
+
+
+def test_the_bot_combat_strategy_banner_has_a_kebab_for_its_menu(qapp):
+    """#176: Duplicate, Delete and Export were right-click only, and Export went unfound."""
+    card = _BotStrategyBanner()
+    card.set_strategy(BotCombatStrategy(name="B", bot_id="bot-1"))
+
+    assert card.kebab_button is not None
+    assert not card.kebab_button.isHidden()
+    menu = card._build_verbs_menu()
+    texts = [action.text() for action in menu.actions() if not action.isSeparator()]
+    assert texts == _verb_labels(card)
+    assert _EXPORT_BCS in texts
 
 
 def test_the_archmastery_override_is_named_in_the_card(qapp):

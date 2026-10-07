@@ -198,6 +198,11 @@ class StrategyCard(QWidget):
         return self._source_pill.text() if self._source_pill is not None else ""
 
     @property
+    def sub_texts(self) -> list[str]:
+        """The lines under the name, top to bottom: description, facets, schools."""
+        return [label.text() for label in self._sub_lbls]
+
+    @property
     def tag_texts(self) -> list[str]:
         """What the tag pills say, in order."""
         return [p.tag for p in self._tag_pills]

@@ -75,9 +75,10 @@ KIND_GROUPS: dict[StrategyKind, tuple[str, ...]] = {
     StrategyKind.DECK: (SOURCE, ROLE),
 }
 
-#: Which kinds are asked about school and team size. Decks get no school: most spells
-#: can be trained on any wizard, so a deck's school is not a real constraint.
-SCHOOL_KINDS = frozenset({StrategyKind.DUEL, StrategyKind.PLAYER})
+#: Which kinds are asked about school and team size. Decks joined the first in #174: a
+#: deck is built around one school's spells, and its school is what someone looking for
+#: one asks first.
+SCHOOL_KINDS = frozenset({StrategyKind.DUEL, StrategyKind.PLAYER, StrategyKind.DECK})
 TEAM_SIZE_KINDS = frozenset({StrategyKind.DUEL})
 
 #: The team sizes a filter offers.
@@ -102,9 +103,9 @@ class StrategyFacets:
     """What the filter asks of one entry — computed once per card, not per keystroke.
 
     ``slot_schools`` holds one set per player slot the entry covers, empty meaning
-    "any school": a Player Strategy has one; a duel has one per slot up to its
+    "any school": a Player Strategy or a deck has one; a duel has one per slot up to its
     ``max_players``, where a slot no assignment covers is empty, since it falls back
-    to the built-in default. A deck has none, and is never asked.
+    to the built-in default.
     """
 
     tags: frozenset[str] = frozenset()

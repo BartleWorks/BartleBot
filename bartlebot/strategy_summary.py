@@ -207,8 +207,8 @@ class StrategySummary:
     #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
     tags: tuple[str, ...] = ()
     #: One school set per player slot, empty meaning any school — what the "works with"
-    #: filter asks. One slot for a Player Strategy, ``max_players`` for a duel, none for a
-    #: deck, which is never asked (#125).
+    #: filter asks. One slot for a Player Strategy or a deck (#174), ``max_players`` for a
+    #: duel (#125).
     slot_schools: tuple[frozenset[str], ...] = ()
     #: A duel's ``(min_players, max_players)``, for the team-size filter; None otherwise.
     player_range: tuple[int, int] | None = None
@@ -356,10 +356,16 @@ def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> St
 
 
 def summarize_deck(preset: DeckPreset) -> StrategySummary:
-    """Summarize a Deck Preset: how many cards it holds."""
+    """Summarize a Deck Preset: the schools it is built for, and how many cards it holds."""
     total = preset.deck.total_cards()
-    facets = [f"{total} cards"] if total else ["empty"]
+    facets = ["/".join(preset.schools)] if preset.schools else []
+    facets.append(f"{total} cards" if total else "empty")
     health = _EMPTY if preset.deck.is_empty() else _OK
     return StrategySummary(
-        name=preset.name, description=preset.description, facets=facets, health=health, tags=tuple(preset.tags)
+        name=preset.name,
+        description=preset.description,
+        facets=facets,
+        health=health,
+        tags=tuple(preset.tags),
+        slot_schools=(frozenset(preset.schools),),
     )

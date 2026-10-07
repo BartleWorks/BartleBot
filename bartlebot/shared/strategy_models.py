@@ -168,9 +168,13 @@ class DeckPreset(BaseModel):
     name: str
     deck: DeckData = Field(default_factory=DeckData)
     description: str = ""
-    # Stored tags — the Role group of bartlebot.strategy_tags. No schools: most spells
-    # can be trained on any wizard, so a deck's school is not a real constraint.
+    # Stored tags — the Role group of bartlebot.strategy_tags.
     tags: list[str] = Field(default_factory=list)
+    # The schools the deck is built for (#174), each one of deck_io.PIP_SCHOOLS; empty
+    # means any. Authored, never inferred from the cards: most spells can be trained on
+    # any wizard, so a card list cannot say whose deck it is. Not the archmastery school
+    # the deck captured (DeckData.archmastery_school), which is the wizard's, not the deck's.
+    schools: list[str] = Field(default_factory=list)
     #: The file format; see the module docstring.
     format: int = 1
     #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
@@ -178,6 +182,7 @@ class DeckPreset(BaseModel):
     official_sha256: str | None = None
 
     _tags = field_validator("tags", mode="before")(normalize_role_tags)
+    _schools = field_validator("schools")(_dedupe_schools)
 
     @classmethod
     def load(cls, path: str | Path) -> DeckPreset:
