@@ -4,7 +4,8 @@ Epic #173: user templates (#164), Official content (#149), and sharing bots, str
 decks and subgraphs as files. **The plan is on one page:**
 https://claude.ai/artifact/4A9XUEeoTXQAfohUHP3F1n
 
-**Ready to start on 2026-10-07, and maintained while the work lands.** The page holds the
+**All seven stages have landed. The page is complete and no longer maintained, but it is
+still the record of the design.** It holds the
 goals, the model, the lessons taken from other tools, every decision with the alternative
 it beat, and each stage's done-when. The page is private on claude.ai: open it signed in
 as the maintainer, or, from a Claude Code session, read it with the Artifact tool's
