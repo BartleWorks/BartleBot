@@ -392,6 +392,14 @@ class TemplateMeta(BaseModel):
     blurb: str = ""
     #: What a bot made from this version has to fill in before it can run.
     setup: list[SetupStep] = Field(default_factory=list)
+    #: What this template's own ids start with: its own prefix first, then each one it
+    #: inherited, back through every template it was duplicated from (#164). ``None`` for
+    #: the templates made before forks, which mint ``t_`` alone. A fork mints only under
+    #: the first, so nothing it adds can take an id its source has or could add later.
+    id_prefixes: list[str] | None = None
+    #: The template, and its released version, this one was duplicated from (#164).
+    #: ``None`` for a template started blank. Written once, by Duplicate.
+    forked_from: TemplateRef | None = None
 
 
 class BotConfig(BaseModel):
