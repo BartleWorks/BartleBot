@@ -289,6 +289,52 @@ on open and before run, cached between. Pure functions receive it; tests build o
 because one broken definition must not make every bot that links a different one
 unopenable.
 
+### A modified Official definition says when the Official one changes
+
+An override hides every later change to the Official definition under it, so the save
+that first makes one records `official_sha256`, the content hash of the Official
+definition it was made from (`bartlebot/shared/content_hash.py`, #169), and every later
+save keeps it. When the Official one stops hashing to it, after an app update,
+`SubgraphLibrary.official_updated()` says so, and the pill reads **Official (modified) ·
+Official updated** on the Subgraphs folder card, which puts a *Revert…* button beside it,
+on the node browser's page, and in the open definition's header, which offers Revert in
+Edit mode. Revert is the same ask-then-delete as the card's menu: the user's changes go,
+and every linking bot follows the new Official one. Comparing the two first can come
+later. An override saved before this has no base, and is never said to be out of date.
+
+Every definition also keeps a `history`: the content hashes of what earlier saves
+replaced, newest first, each once, at most 64, left out of the file while empty. The
+store records it from the file the save replaces, or, on an override's first save, from
+the Official one, so an unchanged save adds nothing and the document never has to carry
+it. The hash is of content, the definition dumped as its file would be with keys sorted
+and `history` and `official_sha256` left out; `definition_change` ignores the two fields
+too, so a recorded history never reads as an edit. Import (#171) reads the history to
+tell a newer copy of a definition from a separate edit of it.
+
+## Changing a signature warns
+
+A definition's signature is what a bot linking it depends on: its inputs, whose values an
+instance stores by name, and its ports, which the bot's edges attach to. Saving a
+definition (`AppController._save_definition`) warns, naming every bot and definition that
+links it, when the save:
+
+| change | why it can break a bot |
+|---|---|
+| removes an input, or stops exposing a node | a value the bot set for it stops applying |
+| renames an input: its `name`, not its label | the bot's value is stored under the old name |
+| adds an input with no default | an instance placed before it has no value for it |
+| removes an Entry or Exit | the bot's edges to it have nowhere to go |
+| renames an Entry or Exit: its label | an edge drawn to "Done" now leaves "Failed" |
+
+`bartlebot/subgraph_signature.py` finds them. A rename is told from a removal by an added
+input driving the same params. Nothing else warns: a new label on an input, a moved node,
+a member's param, a new input with a default, a new port, a name or description. Save is
+the default, and Cancel writes nothing. It is a warning, not a refusal, the rule Home
+Assistant's blueprint guidance gives for the same reason: a bot that cannot absorb the
+change is `held` on its snapshot (see *An instance follows its definition*), so nothing
+stops running. Nothing linking the definition means nothing to warn about, so a
+definition being authored saves without the question.
+
 ## Authoring is edit in place, then push
 
 There is no second document type. A definition is created from a region and edited
