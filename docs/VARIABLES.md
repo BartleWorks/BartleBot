@@ -3,8 +3,8 @@
 What a bot learns as it runs and reads back to choose its next node: the model, the
 rules the engine and validation hold it to, and when to reach for a subgraph instead.
 The plan, epic #16, lives on a claude.ai page (*Runtime flow control*); this file is the
-part of it that governs code. Stage 1 (#186) is the engine. The editors, the live values
-in Run mode and assignments on edges are Stages 2 to 4 (#187, #188, #189).
+part of it that governs code. Stage 1 (#186) is the engine and Stage 2 (#187) the editors.
+The live values in Run mode and assignments on edges are Stages 3 and 4 (#188, #189).
 
 A bot already branches on the value its last node returned. A variable is how it
 branches on something that happened earlier in the run, without copying every node in
@@ -85,7 +85,11 @@ them (`_note_variable_only_step`).
 
 `variables.check(config)` returns errors and warnings, with no Qt. An error refuses the
 run (`AppController._check_variables`, beside the restricted-zone and Player Realms
-checks); a warning is the author's. Stage 2 draws both on the canvas badge.
+checks); a warning is the author's. Both are on the canvas badge, each line headed
+`Variables:`, and an error disables Run as any other does. A problem's `states` mark those
+nodes too, so the node a condition or a write is on turns red or amber like one with a
+param missing (`edit_scene.variable_report`, `variable_reasons`). A bot that declares,
+reads and writes no variable skips the check.
 
 Errors:
 
@@ -114,6 +118,67 @@ Warnings:
   since an unrouted failure and an ambient fight both go there;
 - **a recovery that skips the reset**: a counter the recovery state reaches without
   passing a `set` of it, so a value from before the recovery carries into the run after.
+
+## Authoring
+
+Everything above can be done in the editor, without touching the file (#187). Heretical
+Academy's puzzle, built through the three editors alone, is a test
+(`test_heretical_academys_puzzle_can_be_built_without_touching_the_file`).
+
+**Declaring: the Variables section**, under Options on the Edit-mode Options tab
+(`sidebar/sections/variables_section.py`). A row is the name, then the type and where it
+starts (`Whole number · starts at 0`), behind the option rows' gutter. Add and Edit open
+one dialog: name, type, an enum's values one a line (the order is kept, and the first is
+where it starts unless another is picked), Starts at, and a description. A start that is
+the type's own is left out of the file. The dialog refuses three things, each because it
+would change routing without saying so:
+
+- **Delete, while anything uses the variable.** It names each edge and node that does
+  (`variables.uses`), and the author takes them off first. Deleting an option strips its
+  conditions in silence; a variable's conditions are the routing.
+- **A change of type, while anything uses it.** Every row reading it would compare with a
+  value the new type refuses.
+- **Removing an enum value a row compares with or sets** (`uses(..., values=...)`).
+
+A name is refused when it is blank or another variable's or an option's
+(`variables.name_problem`). **A rename is the one change that carries its references**:
+`variables.rename` rewrites both condition forms and every `set_variables` row. Every
+change goes out on `edit_starting` first, so it is one undo step like a panel edit.
+
+**Reading: the edge panel's Conditions** (`canvas/variable_rows.ConditionRow`, inside
+`param_panel._FlagConditionsWidget`). A row picks an option or a variable from one grouped
+list. A variable row offers only the comparisons its type takes
+(`variables.comparisons_for`) and its value in **`VariableValueField`**
+(`widgets/variable_widgets.py`): a checkbox for a bool, a spin box for an int, the enum's
+own values for an enum. So **no control ever offers a value the type refuses**. A
+variable cannot be negated, so the NOT box is hidden on its row, keeping its slot.
+
+**Writing: the `assignments` param type** (`variable_rows.AssignmentsField`), a
+`set_variables` node's rows: variable, the writes its type allows
+(`variables.operations_for`: set and add for an int, set and toggle for a bool, set for an
+enum), and a value unless it toggles. An add is a whole number. Stage 4 puts the same rows
+on an edge.
+
+**A row the editor only read is never rewritten.** One naming a variable the bot does not
+declare is listed and handed back as it came, and so is a value its type refuses: shown
+blank, never as a value it is not, until the author picks one. Validation is what says it
+is wrong. Assignments that are not rows at all are held untouched (`_HeldParam`).
+
+**A page follows a declaration edit.** The Options tab replaces the Properties page while
+the author declares, so an option or variable added, renamed or deleted there re-shows
+the node or edge page from the config (`BotCanvas.reshow_properties`, on
+`LeftSidebar.declarations_changed`). Left as it was, a renamed variable's old name would
+be written back on the page's next edit.
+
+**On the canvas, every conditioned edge says its condition**, options as well as
+variables: a label, `swords == 2`, with the whole expression in its tooltip
+(`variables.describe_guard`). It hangs where the edge turns toward its destination, not at
+its source port: every edge from one port shares its first stretch, so a switch's labels
+would sit on each other there. It is cut to `variables.EDGE_LABEL_CHARS`, then to the room
+its segment has, so it never runs into the destination node; the tooltip is never cut. A
+click on it selects the edge. It is a child item of the edge (`edge_item.EdgeLabelItem`),
+so the repaint tracer (#73) watches it, and every change of its size goes through
+`prepareGeometryChange`.
 
 ## Subgraphs, templates and share files
 

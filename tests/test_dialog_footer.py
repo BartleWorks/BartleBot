@@ -249,6 +249,22 @@ def _new_bot_dialog():
     return NewBotDialog([], "no-such-library")
 
 
+def _variable_dialog():
+    from bartlebot.bot.schema import BotConfig, VariableModel
+    from bartlebot.gui.sidebar.sections.variables_section import VariableDialog
+
+    config = BotConfig(
+        id="b",
+        name="b",
+        initial="",
+        recovery_state="",
+        states=[],
+        transitions=[],
+        variables=[VariableModel(name="n", type="int")],
+    )
+    return VariableDialog(config, existing=config.variables[0])
+
+
 #: (name, factory, the label Enter must reach). ``wiki_import`` is absent on purpose —
 #: its commit starts disabled and has a test of its own below.
 CONVERTED = [
@@ -263,6 +279,7 @@ CONVERTED = [
     ("safety_warning", _safety_warning_dialog, "Run Bot"),
     ("rewards_tag", _rewards_tag_dialog, "Save"),
     ("new_bot", _new_bot_dialog, "Next"),
+    ("variable", _variable_dialog, "Save"),
 ]
 
 

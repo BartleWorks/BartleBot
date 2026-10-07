@@ -11,7 +11,10 @@ the next node. The model and the rules are in ``docs/VARIABLES.md``; in short:
 
 :func:`check` returns a bot's errors and warnings. An error refuses the run
 (:func:`run_refusal`); a warning is for the author. No Qt here: the canvas badge
-(Stage 2) draws what :func:`check` returns.
+draws what :func:`check` returns, and the editors ask the authoring helpers at the
+end what a row may offer (:func:`comparisons_for`, :func:`operations_for`), how an
+edge's condition reads (:func:`describe_guard`), and what a rename or a delete has to
+find (:func:`rename`, :func:`uses`).
 """
 
 from __future__ import annotations
@@ -45,6 +48,12 @@ MAX_VARIABLE_ONLY_STEPS = 50
 
 #: The comparisons that order values, which only an int has.
 ORDERING_COMPARES = frozenset({"<", "<=", ">", ">="})
+
+#: Every comparison a condition row can make, in the order an editor offers them.
+ALL_COMPARES = ("==", "!=", "<", "<=", ">", ">=")
+
+#: The most characters an edge's label shows of its condition; its tooltip has the rest.
+EDGE_LABEL_CHARS = 28
 
 #: The param a set_variables node keeps its rows in.
 ASSIGNMENTS_PARAM = "assignments"
@@ -111,6 +120,46 @@ def describe_condition(fc: FlagCondition) -> str:
     if fc.is_variable:
         return f"{fc.variable} {fc.compare} {format_value(fc.value)}"
     return f"NOT {fc.option}" if fc.negate else str(fc.option)
+
+
+def comparisons_for(var_type: str) -> tuple[str, ...]:
+    """The comparisons a condition row may make on a variable of ``var_type``: all six on an int, equality otherwise."""
+    return ALL_COMPARES if var_type == "int" else ALL_COMPARES[:2]
+
+
+def operations_for(var_type: str) -> tuple[str, ...]:
+    """The writes an assignment row may make to a variable of ``var_type``: set, then add for an int or toggle for a bool."""
+    if var_type == "int":
+        return ("set", "add")
+    if var_type == "bool":
+        return ("set", "toggle")
+    return ("set",)
+
+
+def describe_guard(t: TransitionModel) -> str | None:
+    """An edge's whole condition as one line, ``Fast AND swords == 2``, or None for an edge without one.
+
+    Read from the form that decides at run time: the groups when there are any, the flat
+    rows otherwise. A group of several rows is bracketed only when there are several groups.
+    """
+    if t.flag_groups:
+        groups = [(g.op, g.flags) for g in t.flag_groups if g.flags]
+        outer = t.flag_groups_op
+    else:
+        groups = [(t.flag_op, t.flags)] if t.flags else []
+        outer = "OR"
+    if not groups:
+        return None
+    parts = []
+    for op, rows in groups:
+        text = f" {op} ".join(describe_condition(fc) for fc in rows)
+        parts.append(f"({text})" if len(groups) > 1 and len(rows) > 1 else text)
+    return f" {outer} ".join(parts)
+
+
+def shorten(text: str, limit: int = EDGE_LABEL_CHARS) -> str:
+    """``text`` cut to ``limit`` characters with an ellipsis, for a label whose tooltip holds the whole of it."""
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
 def describe_assignment(row: AssignmentModel) -> str:
@@ -502,3 +551,91 @@ def run_refusal(config: BotConfig, specs=None) -> str | None:
         return None
     lines = "\n".join(f"• {p.text}" for p in errors)
     return f"This bot's variables have errors to fix before it can run:\n\n{lines}"
+
+
+# ---------------------------------------------------------------------------
+# Authoring: what the editors ask before they change a declaration
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Use:
+    """One place a bot reads or writes a variable, as a refused delete names it."""
+
+    text: str
+    states: tuple[str, ...] = ()
+
+
+def _raw_assignments(params: Mapping[str, Any]) -> list[dict]:
+    """A set_variables node's rows as stored, leaving out any that is not a row."""
+    raw = params.get(ASSIGNMENTS_PARAM)
+    return [row for row in raw if isinstance(row, dict)] if isinstance(raw, list) else []
+
+
+def uses(config: BotConfig, name: str, *, values: Iterable[Any] | None = None) -> list[Use]:
+    """Every edge that reads ``name`` and every node that writes it, edges first, each in file order.
+
+    With ``values``, only the rows that compare with or set one of them: what removing an
+    enum's values would break. A row that adds or toggles holds no value to break.
+    """
+    narrow = None if values is None else list(values)
+    labels = {s.id: s.label or s.id for s in config.states}
+
+    def where(state_id: str) -> str:
+        return f"'{labels.get(state_id, state_id)}'"
+
+    found: list[Use] = []
+    for t in config.transitions:
+        if any(fc.variable == name and (narrow is None or fc.value in narrow) for fc in condition_rows(t)):
+            when = f" on {t.when}" if t.when else ""
+            found.append(Use(f"the edge from {where(t.source)} to {where(t.dest)}{when}", (t.source,)))
+    for s in config.states:
+        if s.node_type != SET_VARIABLES_NODE:
+            continue
+        rows = [r for r in _raw_assignments(s.params) if r.get("variable") == name]
+        if narrow is not None:
+            rows = [r for r in rows if r.get("op", "set") == "set" and r.get("value") in narrow]
+        if rows:
+            found.append(Use(f"the node {where(s.id)}", (s.id,)))
+    return found
+
+
+def rename(config: BotConfig, old: str, new: str) -> None:
+    """Carry every condition and assignment naming variable ``old`` over to ``new``.
+
+    The declaration itself is the caller's to rename. Both condition forms are rewritten,
+    the flat rows as well as the groups that win over them at run time, as an option's
+    rename does (``OptionsSection._rename_option``).
+    """
+    for t in config.transitions:
+        for fc in condition_rows(t):
+            if fc.variable == old:
+                fc.variable = new
+    for s in config.states:
+        if s.node_type != SET_VARIABLES_NODE:
+            continue
+        raw = s.params.get(ASSIGNMENTS_PARAM)
+        if isinstance(raw, list):
+            s.params[ASSIGNMENTS_PARAM] = [
+                {**row, "variable": new} if isinstance(row, dict) and row.get("variable") == old else row for row in raw
+            ]
+
+
+def name_problem(config: BotConfig, name: str, *, current: str | None = None, specs=None) -> str | None:
+    """Why ``name`` cannot be a variable's name in ``config``, or None.
+
+    ``current`` is the name being edited, which the variable may keep. An option's name
+    is refused too: the two share the condition rows' one list.
+    """
+    from bartlebot.bot_options import compose_options  # noqa: PLC0415 - bot_options imports the registry late
+
+    name = name.strip()
+    if not name:
+        return "A variable needs a name."
+    if name == current:
+        return None
+    if any(v.name == name for v in config.variables):
+        return f"There is already a variable named '{name}'."
+    if any(o.name == name for o in compose_options(config, specs)):
+        return f"There is already an option named '{name}'. A variable and an option cannot share a name."
+    return None

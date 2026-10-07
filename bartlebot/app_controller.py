@@ -404,6 +404,12 @@ class AppController(QObject):
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
         w.left_sidebar.metadata_changed.connect(self._on_metadata_changed)
+        w.left_sidebar.edit_starting.connect(w.bot_canvas.note_edit_starting)
+        w.left_sidebar.declarations_changed.connect(w.bot_canvas.reshow_properties)
+        # A declaration edit -- an option's or a variable's -- changes what validation finds
+        # without touching the graph, so nothing on the canvas would recheck it. Only the
+        # sidebar's: the canvas rechecks its own edits already.
+        w.left_sidebar.config_changed.connect(w.bot_canvas.revalidate)
         w.right_sidebar.config_changed.connect(self._on_config_changed)
 
         # Deck import / apply requests from Combat tab

@@ -40,6 +40,7 @@ from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
+from bartlebot.gui.sidebar.sections.variables_section import VariablesSection
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 
 if TYPE_CHECKING:
@@ -66,6 +67,12 @@ class LeftSidebar(QTabWidget):
     # window owns the settings dialog, so the request is passed up rather than
     # answered here.
     app_settings_requested = pyqtSignal()
+    # A declaration edit is about to change the config, carrying the undo step's name.
+    # Only the canvas holds the undo stack, so the request is passed up for it to snapshot.
+    edit_starting = pyqtSignal(str)
+    # An option or a variable was added, renamed or deleted: what the condition and
+    # assignment rows on the Properties tab list, and the names they hold, may have moved.
+    declarations_changed = pyqtSignal()
 
     def __init__(
         self,
@@ -91,6 +98,7 @@ class LeftSidebar(QTabWidget):
         # "nothing has been built yet" and never as a match.
         self._built_signature: tuple | None = None
         self._built_config: BotConfig | None = None
+        self._built_variables: tuple | None = None
 
         # ── The two option surfaces ─────────────────────────────────
         # Each gets the bot's full description above it, in the same position, so
@@ -100,11 +108,14 @@ class LeftSidebar(QTabWidget):
         # belongs on the declarations surface and not on the values surface.
         self.option_values = OptionValuesSection()
         self.options = OptionsSection()
+        # Under Options on the same tab: both are an author's declarations, and a variable
+        # is what the bot learns where an option is what the user chose (docs/VARIABLES.md).
+        self.variables = VariablesSection()
         self._values_desc = DescriptionSection(editable=False)
         self._options_desc = DescriptionSection(editable=True)
 
         self._values_page = self._wrap(self._values_desc, self.option_values)
-        self._options_page = self._wrap(self._options_desc, self.options)
+        self._options_page = self._wrap(self._options_desc, self.options, self.variables)
 
         # ── Combat and Properties ───────────────────────────────────
         self.combat_tab = CombatTab()
@@ -140,6 +151,12 @@ class LeftSidebar(QTabWidget):
         self._options_desc.description_changed.connect(self.metadata_changed)
         self._options_desc.description_changed.connect(self._values_desc.refresh)
         self.combat_tab.combat_config_changed.connect(self.config_changed)
+        # A variable edit changes what the graph's conditions read and what validation
+        # finds, so it is a config change like an option's, and undoable like a panel edit.
+        self.variables.edit_starting.connect(self.edit_starting)
+        self.variables.variables_changed.connect(self.config_changed)
+        self.variables.variables_changed.connect(self.declarations_changed)
+        self.options.options_changed.connect(self.declarations_changed)
         self.option_values.app_settings_requested.connect(self.app_settings_requested)
 
         # Refresh the Combat tab's fight profile list whenever it becomes visible,
@@ -166,13 +183,14 @@ class LeftSidebar(QTabWidget):
             self._apply_width_floor()
 
     @staticmethod
-    def _wrap(description: QWidget, section: QWidget) -> QScrollArea:
+    def _wrap(description: QWidget, *sections: QWidget) -> QScrollArea:
         content = QWidget()
         vbox = QVBoxLayout(content)
         vbox.setContentsMargins(8, 8, 8, 8)
         vbox.setSpacing(6)
         vbox.addWidget(description)
-        vbox.addWidget(section)
+        for section in sections:
+            vbox.addWidget(section)
         vbox.addStretch()
         scroll = QScrollArea()
         scroll.setWidget(content)
@@ -282,6 +300,10 @@ class LeftSidebar(QTabWidget):
         left bound to the replaced config edits something nothing saves.
         """
         signature = options_signature(config)
+        declared = tuple(v.model_dump_json() for v in config.variables) if config is not None else ()
+        if config is not self._built_config or declared != self._built_variables:
+            self.variables.set_config(config)
+            self._built_variables = declared
         if config is self._built_config and signature == self._built_signature:
             return
         self.option_values.set_config(config)
@@ -349,6 +371,7 @@ class LeftSidebar(QTabWidget):
 
     def set_editable(self, editable: bool) -> None:
         self.options.set_editable(editable)
+        self.variables.set_editable(editable)
         if editable == self._editable:
             return
         self._editable = editable

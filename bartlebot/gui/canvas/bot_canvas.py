@@ -70,6 +70,8 @@ from bartlebot.gui.canvas.edit_scene import (
     _validate_node,
     authoring_anchor,
     member_warnings,
+    problem_line,
+    variable_report,
 )
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
@@ -1605,6 +1607,7 @@ class BotCanvas(QWidget):
         self._param_panel = _ParamPanel()
         # An unset Scales param means the open bot's world's, so its picker says which that is.
         self._param_panel.set_default_scales_getter(lambda: scales.default_for(self._config))
+        self._param_panel.set_variables_getter(lambda: list(self._config.variables) if self._config else [])
 
         # ── Buttons ───────────────────────────────────────────────────
         self._run_pause_btn = _icon_btn("play", "Run bot")
@@ -3329,8 +3332,20 @@ class BotCanvas(QWidget):
         self._scene.refresh_recovery(recovery_state_id)
 
     def refresh_edge_flags(self) -> None:
-        """Re-derive the dotted-pen indicator on every edge from the config."""
+        """Re-derive every edge's condition -- its dotted pen and its label -- from the config."""
         self._scene.refresh_all_edge_flags()
+
+    def note_edit_starting(self, desc: str) -> None:
+        """Take the undo snapshot for an edit a surface outside the canvas is about to make.
+
+        The Variables section is the case: its declarations are part of the config, so an
+        add, a rename or a delete is undone with everything else.
+        """
+        self._on_about_to_change(desc)
+
+    def revalidate(self) -> None:
+        """Redraw the badge and the node markers once edits pause, after one the canvas did not make."""
+        self._validation_timer.start()
 
     def _on_scene_changed(self) -> None:
         self._refresh_collapse_buttons()
@@ -4492,6 +4507,11 @@ class BotCanvas(QWidget):
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
         warning_lines.extend(self._orphan_flag_lines(config))
+        # Once each, here: the nodes a problem names are marked by refresh_errors, not listed again.
+        report = variable_report(config)
+        if report is not None:
+            error_lines.extend(f"Variables: {problem_line(p)}" for p in report.errors)
+            warning_lines.extend(f"Variables: {problem_line(p)}" for p in report.warnings)
         sg_errors, sg_warnings = self._subgraph_lines(config)
         error_lines.extend(sg_errors)
         warning_lines.extend(sg_warnings)
@@ -4685,33 +4705,61 @@ class BotCanvas(QWidget):
                 self._show_state_page(state)
                 self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem):
-            models = self._scene.transitions_of(item)
-            if not models:
-                self._param_panel.show_idle()
-                return
-            trans = models[0]
-            src_state = next((st for st in config.states if st.id == trans.source), None)
-            src_returns: list[str] = []
-            if src_state:
-                spec = NODE_SPECS.get(src_state.node_type)
-                if spec:
-                    src_returns = [r.name for r in spec.returns]
-            option_names = [opt.name for opt in compose_options(config) if opt.type == "bool"]
-            # An edge on a call node is rewired on the canvas, where its port is: the
-            # dropdowns name states, and its ends are a member and a port.
-            on_call = isinstance(item.src_node, FoldedNodeItem) or isinstance(item.dst_node, FoldedNodeItem)
-            self._shown_edge_models = models
-            self._param_panel.show_transition(
-                trans,
-                src_returns,
-                option_names,
-                states=list(config.states),
-                all_transitions=config.transitions,
-                rewire=not on_call,
-            )
-            self.tab_switch.emit("properties")
+            if self._show_edge_page(item):
+                self.tab_switch.emit("properties")
         else:
             self._param_panel.show_idle()
+
+    def _show_edge_page(self, item: EdgeItem) -> bool:
+        """Put *item*'s edge on the properties panel; False, showing nothing, when it stands for no transition."""
+        config = self._scene.config
+        models = self._scene.transitions_of(item)
+        if config is None or not models:
+            self._param_panel.show_idle()
+            return False
+        trans = models[0]
+        src_state = next((st for st in config.states if st.id == trans.source), None)
+        src_returns: list[str] = []
+        if src_state:
+            spec = NODE_SPECS.get(src_state.node_type)
+            if spec:
+                src_returns = [r.name for r in spec.returns]
+        option_names = [opt.name for opt in compose_options(config) if opt.type == "bool"]
+        # An edge on a call node is rewired on the canvas, where its port is: the
+        # dropdowns name states, and its ends are a member and a port.
+        on_call = isinstance(item.src_node, FoldedNodeItem) or isinstance(item.dst_node, FoldedNodeItem)
+        self._shown_edge_models = models
+        self._param_panel.show_transition(
+            trans,
+            src_returns,
+            option_names,
+            states=list(config.states),
+            all_transitions=config.transitions,
+            rewire=not on_call,
+            variable_decls=list(config.variables),
+        )
+        return True
+
+    def reshow_properties(self) -> None:
+        """Rebuild the node or edge page on show from the config, after a declaration edit on the Options tab.
+
+        A page is built from the config when it is shown, and the Options tab replaces it
+        while the author declares. A variable renamed there has had every row naming it
+        rewritten, so a page left as it was would write the old name back on its next
+        edit; one added there would be missing from the page's lists.
+        """
+        config = self._scene.config
+        if config is None:
+            return
+        shown = self._param_panel.shown_transition
+        if shown is not None:
+            edge = self._scene.edge_for(shown)
+            if edge is not None:
+                self._show_edge_page(edge)
+            return
+        state = self._param_panel.shown_state
+        if state is not None and any(s is state for s in config.states):
+            self._show_state_page(state)
 
     def _tick(self) -> None:
         self._emit_bot_status()
