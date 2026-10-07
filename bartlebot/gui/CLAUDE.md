@@ -927,6 +927,15 @@ the Subgraphs folder card, the definition header's Revert, the strategy dialog's
 from `SubgraphLibrary.official_updated` and `StrategyWorkingSet.official_updated`, never
 from the widget.
 
+**Export… sits on each item's own menu** (#170): a bot or Subgraphs card's right-click
+in the library, a card's right-click in every tab of the strategy dialog, the Combat
+tab banner's menu, and File › Export… for the open bot or definition. Every one ends in
+`export_dialog.run_export`, which takes a `build(Choices)` callable rather than a plan,
+so ticking a checkbox re-gathers the file and the summary always shows what Save
+writes. Export sends what is saved: a surface that holds unsaved edits says so rather
+than exporting them (`StrategyWorkingSet.has_unsaved`, the controller's
+`_saved_for_export`). `docs/SHARING.md` has the rest.
+
 **An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
 way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
 and the controller offers Make my own copy (`gui/make_copy_dialog.py`). A new way into
