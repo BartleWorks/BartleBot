@@ -120,6 +120,13 @@ class MainWindow(QMainWindow):
         self.action_save_as.setEnabled(False)
         file_menu.addAction(self.action_save_as)
 
+        # The open bot, or the open subgraph, as a share file (#170). Every other kind
+        # exports from its own menu: a library card, the strategy dialog's cards, and the
+        # Combat tab's Bot Combat Strategy.
+        self.action_export = QAction("Export…", self)
+        self.action_export.setEnabled(False)
+        file_menu.addAction(self.action_export)
+
         file_menu.addSeparator()
 
         settings_action = QAction("Settings…", self)
@@ -488,7 +495,9 @@ class MainWindow(QMainWindow):
         self.action_save_as.setEnabled(enabled if save_as is None else save_as)
 
     def set_close_enabled(self, enabled: bool) -> None:
+        """Enable Close, and Export with it: both act on whatever document is open."""
         self.action_close.setEnabled(enabled)
+        self.action_export.setEnabled(enabled)
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""

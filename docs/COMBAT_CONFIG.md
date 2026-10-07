@@ -88,6 +88,8 @@ Save deletes the user copy of any Official one whose content is back to the ship
 
 Shipped strategies are authored with `BARTLEBOT_DEV` set (`bartlebot/store_roots.py`), which makes the project root the user root too, so a save lands in the repo. Without it, editing a shipped strategy produces an override that the app keeps running while the tracked file quietly goes stale.
 
+**Each strategy kind exports to a share file of its own** (#170): a duel strategy as `.bbduel`, a player strategy as `.bbplayer`, a deck as `.bbdeck` and a Bot Combat Strategy as `.bbcombat`, with every Custom strategy it links inside and every Official one named. Export… is on a card's right-click in the dialog and on the Combat tab banner's menu, and the pick and every option value stay behind. `docs/SHARING.md` has the format and what each kind carries.
+
 This is what makes a shared bot shareable. `SettingsManager.get_active_strategy(bot_id)` stores *which* strategy a bot uses, per user, in `settings.json`; the bot file never records it. The pick was always user-owned; #2 made the content user-owned too.
 
 Before this, `project_root()` was the only root, and the Combat tab autosaved into it — so a user whose roster did not match the author's edited tracked repo files that an update would overwrite, and could not share the bot without shipping their roster choices with it.

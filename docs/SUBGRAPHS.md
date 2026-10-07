@@ -470,6 +470,7 @@ states — the same thing copy does with any partial selection today.
 | **`flush_regions`** | never auto-deletes a region with `source`, even with one member |
 | **Nesting** | an instance inserted while editing another becomes an inner linked region; compose recurses; push carries it in the definition's `regions` |
 | **Node browser** | a *Subgraphs* tab whenever the dialog is given the library and no port filter; items are `subgraph:<id>` keys that `EditScene.create_state_at` routes to `insert_subgraph_instance`; the detail pane shows inputs, origin and *Used by N bots* from a raw-JSON scan of the bot library, once per dialog; Recent stays node types only |
+| **Export** (#170) | a bot's share file packs every Custom definition its instances link, nested ones included, and names every Official one; a definition exports alone as `.bbsubgraph` from its Subgraphs card or File › Export…. A modified Official definition is packed as a copy, and one missing from the library is left out, since the bot carries its snapshot. `docs/SHARING.md` |
 
 ## Out of scope
 

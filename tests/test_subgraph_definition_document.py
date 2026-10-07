@@ -392,16 +392,16 @@ def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_p
     panel.delete_subgraph_requested.connect(asked.append)
 
     built_in = panel.subgraph_menu(SYNC_ID).actions()
-    assert [a.text() for a in built_in] == ["Rename…", "Delete Subgraph…"]
+    assert [a.text() for a in built_in] == ["Rename…", "Delete Subgraph…", "", "Export…"], "Export after a rule"
     assert not built_in[1].isEnabled() and "can't be deleted" in built_in[1].toolTip()
 
     lib.save(sync_players_definition(version=2))
-    _, modified = panel.subgraph_menu(SYNC_ID).actions()
+    modified = panel.subgraph_menu(SYNC_ID).actions()[1]
     assert modified.text() == "Revert to Official…" and modified.isEnabled()
 
     custom = sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"})
     lib.save(custom)
-    _, delete = panel.subgraph_menu("mine").actions()
+    delete = panel.subgraph_menu("mine").actions()[1]
     assert delete.text() == "Delete Subgraph…" and delete.isEnabled()
     delete.trigger()
     assert asked == ["mine"]
