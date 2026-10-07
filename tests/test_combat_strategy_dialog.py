@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 import pytest
 from PyQt6.QtCore import Qt
+from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
 from bartlebot import store_roots
@@ -438,6 +439,31 @@ def test_no_row_is_wider_than_the_column_even_when_its_card_cannot_fit(qapp, roo
         assert item.sizeHint().width() <= viewport
     assert page._list.horizontalScrollBar().maximum() == 0
     assert page._list.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    dlg.close()
+
+
+def test_every_card_fits_its_column_after_the_column_narrows(qapp, roots):
+    """The deck tab opened with every card overhanging its column, pill and star cut off (#170).
+
+    A list view lays its rows out once by default, so rows laid out at a wider width kept
+    it: a tab first laid out while hidden, at whatever width its page had then.
+    """
+    save_player_strategy(PlayerCombatStrategy(name="Hitter"), roots[1])
+    save_player_strategy(PlayerCombatStrategy(name="Support"), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg.page(StrategyKind.PLAYER)
+    splitter = page.findChild(QSplitter)
+    dlg.resize(1400, 720)
+    dlg.show()
+    splitter.setSizes([1000, 400])
+    qapp.processEvents()
+
+    splitter.setSizes([splitter.widget(0).minimumSizeHint().width(), 2000])
+    QTest.qWait(50)  # the relayout a resize asks for is deferred, as Qt defers every one
+
+    viewport = page._list.viewport().width()
+    for _item, card in page._card_map:
+        assert card.geometry().right() < viewport
     dlg.close()
 
 

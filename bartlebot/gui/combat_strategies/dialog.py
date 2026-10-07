@@ -931,6 +931,11 @@ class _KindPage(QWidget):
             self._fit_row(item, card)
         if self._note_item is not None and self._note_widget is not None:
             self._fit_row(self._note_item, self._note_widget)
+        # And move the cards to match. The view narrows its own row rectangles on a
+        # resize, but a widget set into a row keeps its old geometry until a full items
+        # layout: a tab first laid out while hidden, wider than its column turned out to
+        # be, opened with every card overhanging the column, its pill and star cut off.
+        self._list.doItemsLayout()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if obj is self._list.viewport() and event.type() == QEvent.Type.Resize:
