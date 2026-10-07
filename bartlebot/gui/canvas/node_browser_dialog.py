@@ -46,13 +46,14 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.source_pill import source_pill
-from bartlebot.gui.widgets.tag_picker import TagPickerButton, source_vocabulary
+from bartlebot.gui.widgets.tag_picker import SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
+from bartlebot.gui.widgets.tag_pill import TagPill
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import SOURCE_LABELS, Origin
-from bartlebot.strategy_tags import SOURCE
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses, source_label
+from bartlebot.subgraph_tags import CATEGORY, SOURCE, SUBGRAPH_CATEGORIES, subgraph_matches
 from bartlebot.subgraphs import entry_nodes, exit_nodes, port_name
 
 
@@ -242,6 +243,9 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         title_label.setStyleSheet(f"color: {THEME.text};")
         title_row.addWidget(title_label, 1)
         title_row.addWidget(_Chip("Subgraph", THEME.accent, THEME.chip_text))
+        # Its categories (#172), as the library card shows them, so a filter's hit explains itself.
+        for tag in defn.tags:
+            title_row.addWidget(TagPill(tag, vocabulary=SUBGRAPH_VOCABULARY), 0, Qt.AlignmentFlag.AlignVCenter)
         # The pill every list of subgraphs, bots and strategies wears (#149).
         pill = source_pill(origin, official_updated=official_updated)
         if not official_updated:
@@ -660,11 +664,27 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self._on_search_changed)
 
-        # ── Source filter (#149) ──────────────────────────────────
+        # ── Category and Source filters (#172, #149) ──────────────
         # Subgraphs only, so shown on their tab only: a node type comes from the app
-        # itself and has no source to filter by.
+        # itself, and its category is the tab it is on. OR within each, AND across the
+        # two, as in the library's Subgraphs folder.
+        self._category_picker: TagPickerButton | None = None
         self._source_picker: TagPickerButton | None = None
         if self._library is not None:
+            categories = TagPickerButton(
+                title=CATEGORY, placeholder=CATEGORY, group=CATEGORY, vocabulary=SUBGRAPH_VOCABULARY
+            )
+            categories.setToolTip("Filter subgraphs by what they do")
+            per_category: dict[str, int] = dict.fromkeys(SUBGRAPH_CATEGORIES, 0)
+            for sid in self._library.ids():
+                if (defn := self._library.get(sid)) is not None:
+                    for tag in defn.tags:
+                        per_category[tag] += 1
+            categories.set_counts(per_category)
+            categories.selection_changed.connect(lambda _keys: self._refresh_listing())
+            categories.setVisible(False)
+            self._category_picker = categories
+
             picker = TagPickerButton(
                 title=SOURCE,
                 placeholder=SOURCE,
@@ -752,6 +772,8 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         search_row = QHBoxLayout()
         search_row.setSpacing(6)
         search_row.addWidget(self._search, 1)
+        if self._category_picker is not None:
+            search_row.addWidget(self._category_picker, 0)
         if self._source_picker is not None:
             search_row.addWidget(self._source_picker, 0)
         root.addLayout(search_row)
@@ -831,7 +853,7 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             if is_subgraph_key(nt):
                 sid = nt[len(SUBGRAPH_KEY_PREFIX) :]
                 defn = self._library.get(sid) if self._library is not None else None
-                if defn is not None and self._source_passes(sid):
+                if defn is not None and self._filters_pass(sid):
                     self._list.addItem(_SubgraphListItem(defn))
                 continue
             if nt not in NODE_SPECS:
@@ -840,13 +862,20 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
                 continue
             self._list.addItem(_NodeListItem(nt))
 
-    def _source_passes(self, subgraph_id: str) -> bool:
-        """Whether the Source filter lets a subgraph through: always, while nothing is selected."""
-        chosen = self._source_picker.tags() if self._source_picker is not None else []
-        return not chosen or SOURCE_LABELS[self._library.origin(subgraph_id)] in chosen
+    def _filters_pass(self, subgraph_id: str) -> bool:
+        """Whether the Category and Source filters let a subgraph through: always, while nothing is selected."""
+        chosen = [
+            *(self._category_picker.tags() if self._category_picker is not None else []),
+            *(self._source_picker.tags() if self._source_picker is not None else []),
+        ]
+        if not chosen:
+            return True
+        defn = self._library.get(subgraph_id)
+        categories = defn.tags if defn is not None else []
+        return subgraph_matches(categories, SOURCE_LABELS[self._library.origin(subgraph_id)], chosen)
 
     def _refresh_listing(self) -> None:
-        """List again after the Source filter changed: the search's results, or the tab's."""
+        """List again after a filter changed: the search's results, or the tab's."""
         if self._search.text():
             self._on_search_changed(self._search.text())
         else:
@@ -858,10 +887,21 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             self._source_picker.set_selection(words)
             self._refresh_listing()
 
+    def set_category_filter(self, words: list[str]) -> None:
+        """Select categories as the picker would. For the tests, and for nothing else to need the picker."""
+        if self._category_picker is not None:
+            self._category_picker.set_selection(words)
+            self._refresh_listing()
+
     @property
     def source_filter_visible(self) -> bool:
         """Whether the Source filter is offered: on the Subgraphs tab only."""
         return self._source_picker is not None and not self._source_picker.isHidden()
+
+    @property
+    def category_filter_visible(self) -> bool:
+        """Whether the Category filter is offered: on the Subgraphs tab only."""
+        return self._category_picker is not None and not self._category_picker.isHidden()
 
     @property
     def offered_node_types(self) -> list[str]:
@@ -887,8 +927,9 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             # While searching, tabs are visually inactive — ignore
             return
         label, node_types = self._tabs_data[index]
-        if self._source_picker is not None:
-            self._source_picker.setVisible(label == "Subgraphs")
+        for picker in (self._category_picker, self._source_picker):
+            if picker is not None:
+                picker.setVisible(label == "Subgraphs")
         self._populate_list(node_types)
 
         if self._list.count() == 0:
@@ -931,9 +972,13 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         if self._library is not None:
             for sid in self._library.ids():
                 defn = self._library.get(sid)
-                if defn is None or not self._source_passes(sid):
+                if defn is None or not self._filters_pass(sid):
                     continue
-                if query in defn.name.lower() or query in (defn.description or "").lower():
+                if (
+                    query in defn.name.lower()
+                    or query in (defn.description or "").lower()
+                    or any(query in t.lower() for t in defn.tags)
+                ):
                     matches.append(subgraph_key(sid))
 
         if matches:

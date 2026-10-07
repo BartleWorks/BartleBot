@@ -44,6 +44,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot_tags import suggested_tags
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import NeutralPill
 from bartlebot.gui.widgets.tags_field import TagsField
 
@@ -427,13 +428,14 @@ class BotHeader(ThemedMixin, QWidget):
         title_row.addStretch(1)
         _let_shrink(title)
 
-        # -- Left column, row 2: tags, or a definition's provenance -----
+        # -- Left column, row 2: tags, or a definition's provenance and categories -----
         self._tags_field = TagsField()
-        # A definition has no tags, and hiding the row for one made the bar 22px shorter
-        # in a definition than in the bot it was opened from -- so every step in or out
-        # moved the graph, and the bar was caught mid-change on screen. The row stays,
-        # carrying where the definition comes from and what uses it, and the hidden field
-        # keeps its slot so the row is exactly as tall as an untagged bot's.
+        # A definition has no bot tags, and hiding the row for one made the bar 22px
+        # shorter in a definition than in the bot it was opened from -- so every step in
+        # or out moved the graph, and the bar was caught mid-change on screen. The row
+        # stays, carrying where the definition comes from and what uses it, and the same
+        # field shows the definition's categories instead (#172), so the row is exactly
+        # as tall as a bot's. The field keeps its slot while hidden, with no document.
         policy = self._tags_field.sizePolicy()
         policy.setRetainSizeWhenHidden(True)
         self._tags_field.setSizePolicy(policy)
@@ -569,7 +571,11 @@ class BotHeader(ThemedMixin, QWidget):
             self._version_edit.setText(config.version or "")
             self._authors_edit.setText(config.authors or "")
             self._authors_lbl.setText(f"by {config.authors}" if config.authors else "")
-            self._tags_field.set_tags(config.tags)
+            # A definition's categories are on its DefinitionMeta, since the document's own
+            # tags are bot tags and validation would drop any other word.
+            is_bot = config.definition is None
+            self._tags_field.set_vocabulary(BOT_VOCABULARY if is_bot else SUBGRAPH_VOCABULARY)
+            self._tags_field.set_tags(config.tags if is_bot else config.definition.tags)
             self.refresh_tag_suggestions()
             if config.definition is not None:
                 # A definition's version is an integer the library bumps on every
@@ -578,11 +584,10 @@ class BotHeader(ThemedMixin, QWidget):
                 self._apply_version_slot()
             else:
                 self._apply_version(config.version)
-            # Tags and authors describe a bot in the library; a definition has neither.
-            # Its row 2 says where it comes from instead: see set_definition_info.
-            is_bot = config.definition is None
+            # Authors describe a bot in the library; a definition has none. Its row 2 says
+            # where it comes from, before its categories: see set_definition_info.
             self._tags_field.set_rewards_offered(not config.is_template)
-            self._tags_field.setVisible(is_bot)
+            self._tags_field.setVisible(True)
             self._definition_lbl.setVisible(not is_bot)
             if is_bot:
                 self._definition_lbl.setText("")
@@ -608,9 +613,10 @@ class BotHeader(ThemedMixin, QWidget):
         self._suppress = False
 
     def refresh_tags(self) -> None:
-        """Re-read the bot's tags, after something other than this header changed them."""
-        if self._config is not None:
-            self._tags_field.set_tags(self._config.tags)
+        """Re-read the bot's tags, or a definition's categories, after something other than this header changed them."""
+        config = self._config
+        if config is not None:
+            self._tags_field.set_tags(config.tags if config.definition is None else config.definition.tags)
 
     def set_file(self, filename: str | None) -> None:
         """Name the file the bot came from, shown beside the version."""
@@ -664,6 +670,11 @@ class BotHeader(ThemedMixin, QWidget):
         return self._file_lbl.full_text()
 
     @property
+    def tags_field(self) -> TagsField:
+        """Row 2's tags: a bot's, or a definition's categories (#172)."""
+        return self._tags_field
+
+    @property
     def definition_text(self) -> str:
         """A definition's line 2: its source and how many bots use it. Empty for a bot."""
         return self._definition_lbl.full_text()
@@ -713,8 +724,11 @@ class BotHeader(ThemedMixin, QWidget):
     def _on_tags_changed(self, tags: list) -> None:
         if self._suppress or self._config is None:
             return
-        # TagsField hands them back in BOT_TAGS order, which is what gets saved.
-        self._config.tags = list(tags)
+        # TagsField hands them back in vocabulary order, which is what gets saved.
+        if self._config.definition is not None:
+            self._config.definition.tags = list(tags)
+        else:
+            self._config.tags = list(tags)
         self.metadata_changed.emit()
 
     # ------------------------------------------------------------------

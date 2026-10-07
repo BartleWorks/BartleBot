@@ -3,6 +3,9 @@
 Shared by Bar B (``canvas/bot_header.py``), where it switches between Run and Edit mode,
 and the New Bot dialog, which only ever edits. One widget so the two cannot drift: the
 same chips, the same pickers, the same order.
+
+The vocabulary is a parameter, as the picker's is: in a subgraph definition Bar B shows
+the definition's categories instead (#172), with the same pills and the same buttons.
 """
 
 from __future__ import annotations
@@ -10,10 +13,10 @@ from __future__ import annotations
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QWidget
 
-from bartlebot.bot_tags import BOT_TAGS, REWARDS, TAG_GROUPS, tag_group
+from bartlebot.bot_tags import REWARDS
 from bartlebot.gui.sidebar.sidebar_section import value_label
 from bartlebot.gui.widgets.flow_layout import flow_container
-from bartlebot.gui.widgets.tag_picker import TagPickerButton
+from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, TagPickerButton, TagVocabulary
 from bartlebot.gui.widgets.tag_pill import SuggestedTagPill, TagChip, TagPill
 
 _PLACEHOLDER = "—"
@@ -44,8 +47,9 @@ class TagsField(QWidget):
 
     tags_changed = pyqtSignal(list)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, *, vocabulary: TagVocabulary = BOT_VOCABULARY) -> None:
         super().__init__(parent)
+        self._vocabulary = vocabulary
         self._tags: list[str] = []
         self._suggested: list[str] = []
         self._editable = False
@@ -79,31 +83,57 @@ class TagsField(QWidget):
         # the pointer where the buttons are about to arrive.  Leading, the chips grow
         # away from a stationary target instead.
         self._buttons = QWidget()
-        button_layout = QHBoxLayout(self._buttons)
-        button_layout.setContentsMargins(0, 0, 0, 0)
-        button_layout.setSpacing(4)
+        self._button_layout = QHBoxLayout(self._buttons)
+        self._button_layout.setContentsMargins(0, 0, 0, 0)
+        self._button_layout.setSpacing(4)
         self._pickers: dict[str, TagPickerButton] = {}
-        for group in TAG_GROUPS:
-            btn = TagPickerButton(title=group, group=group, caption=group)
-            btn.setToolTip(f"Choose which {group.lower()} tags this bot carries")
-            btn.selection_changed.connect(self._on_picker_changed)
-            self._pickers[group] = btn
-            button_layout.addWidget(btn)
+        self._build_pickers()
         self._pill_layout.addWidget(self._buttons)
 
         self._rebuild()
 
+    def _build_pickers(self) -> None:
+        """One picker button per group of the vocabulary, replacing any there were."""
+        for btn in self._pickers.values():
+            self._button_layout.removeWidget(btn)
+            btn.hide()
+            btn.deleteLater()
+        self._pickers = {}
+        noun = self._vocabulary.noun[0]
+        for group in self._vocabulary.groups:
+            btn = TagPickerButton(title=group, group=group, caption=group, vocabulary=self._vocabulary)
+            btn.setToolTip(f"Choose which {group.lower()} tags this {noun} carries")
+            btn.selection_changed.connect(self._on_picker_changed)
+            self._pickers[group] = btn
+            self._button_layout.addWidget(btn)
+        if REWARDS in self._pickers:
+            self._pickers[REWARDS].setVisible(self._rewards_offered)
+
     # -- public API ----------------------------------------------------
 
     def tags(self) -> list[str]:
-        """The selected tags, in ``BOT_TAGS`` order."""
+        """The selected tags, in vocabulary order."""
         return list(self._tags)
+
+    @property
+    def vocabulary(self) -> TagVocabulary:
+        return self._vocabulary
+
+    def set_vocabulary(self, vocabulary: TagVocabulary) -> None:
+        """Offer *vocabulary*'s groups instead, clearing the tags shown. Nothing is emitted."""
+        if vocabulary == self._vocabulary:
+            return
+        self._vocabulary = vocabulary
+        self._tags = []
+        self._suggested = []
+        self._build_pickers()
+        self._rebuild()
 
     def set_tags(self, tags: list[str]) -> None:
         """Show *tags* without emitting ``tags_changed``."""
-        self._tags = [t for t in BOT_TAGS if t in set(tags)]
+        self._tags = [t for t in self._vocabulary.tags if t in set(tags)]
         for group, picker in self._pickers.items():
-            picker.set_selection([t for t in self._tags if tag_group(t) == group])
+            picker.set_selection([t for t in self._tags if self._vocabulary.group_of(t) == group])
         self._rebuild()
 
     def set_suggestions(self, tags: list[str]) -> None:
@@ -121,7 +151,9 @@ class TagsField(QWidget):
         if not self._editable:
             return []
         return [
-            t for t in self._suggested if t not in self._tags and (self._rewards_offered or tag_group(t) != REWARDS)
+            t
+            for t in self._suggested
+            if t not in self._tags and (self._rewards_offered or self._vocabulary.group_of(t) != REWARDS)
         ]
 
     def set_rewards_offered(self, offered: bool) -> None:
@@ -130,7 +162,8 @@ class TagsField(QWidget):
         if offered == self._rewards_offered:
             return
         self._rewards_offered = offered
-        self._pickers[REWARDS].setVisible(offered)
+        if REWARDS in self._pickers:
+            self._pickers[REWARDS].setVisible(offered)
         self._rebuild()
 
     @property
@@ -183,7 +216,7 @@ class TagsField(QWidget):
         return self._buttons.sizeHint().height()
 
     def _on_picker_changed(self, _keys: list) -> None:
-        self._tags = [t for t in BOT_TAGS if any(t in p.tags() for p in self._pickers.values())]
+        self._tags = [t for t in self._vocabulary.tags if any(t in p.tags() for p in self._pickers.values())]
         self._rebuild()
         self.tags_changed.emit(list(self._tags))
 
@@ -207,11 +240,11 @@ class TagsField(QWidget):
         self._pill_layout.addWidget(self._buttons)
         for tag in self._tags:
             if self._editable:
-                chip = TagChip(tag)
+                chip = TagChip(tag, vocabulary=self._vocabulary)
                 chip.removed.connect(self._remove)
                 self._pill_layout.addWidget(chip)
             else:
-                self._pill_layout.addWidget(TagPill(tag))
+                self._pill_layout.addWidget(TagPill(tag, vocabulary=self._vocabulary))
         for tag in self.shown_suggestions():
             ghost = SuggestedTagPill(tag, tooltip=f"This bot's graph suggests {tag}. Click to add it.")
             ghost.clicked.connect(lambda _checked=False, t=tag: self._accept(t))
