@@ -1194,8 +1194,18 @@ class AppController(QObject):
 
     def _import_dropped(self, paths: list[str]) -> None:
         """Files dropped on the window, imported one after another."""
+        if self._import_blocked_by_run():
+            return
         for path in paths:
             self._import_share_file(path)
+
+    def _import_blocked_by_run(self) -> bool:
+        """Say to stop the bot first, and True, while one runs: an import would write what the run is using (#181)."""
+        if self._current_machine is None:
+            return False
+        logger.warning("Not importing: a bot is running")
+        QMessageBox.warning(self._window, IMPORT_TITLE, "Stop the running bot before importing. Nothing was imported.")
+        return True
 
     def _import_share_file(self, path: str | None = None) -> share_import.ImportResult | None:
         """File › Import…, a dropped file, or one named at launch: the summary, then the write. What was written.
@@ -1203,6 +1213,8 @@ class AppController(QObject):
         Refused files say why and write nothing. Changing a choice in the summary
         re-matches the file, so what Import writes is what the summary showed last.
         """
+        if self._import_blocked_by_run():
+            return None
         if path is None:
             path = ask_for_file(self._window)
             if path is None:
@@ -2740,6 +2752,7 @@ class AppController(QObject):
         self._current_machine = machine
         self._client_manager.set_machine(machine)
         self._window.set_start_enabled(False)
+        self._window.action_import.setEnabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
         self._window.right_sidebar.log_panel.on_run_started()
@@ -2775,6 +2788,7 @@ class AppController(QObject):
             self._client_manager.set_machine(None)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
+            self._window.action_import.setEnabled(True)
 
     async def _run_pre_run_setup(self) -> None:
         """Prepare every connected client before the FSM starts.
