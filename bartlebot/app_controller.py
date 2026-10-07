@@ -3365,16 +3365,13 @@ def _save_as_start(last_save_path: str | Path | None) -> Path:
     """Where Save As opens: the user's own folder, in the open bot's world folder, under its file name.
 
     The user's folder rather than the open file's, which may be an Official bot's in the
-    install directory, where nothing may be written (#168).
+    install directory, where nothing may be written (#168). The folder is not created here:
+    opening a dialog writes nothing, and the save makes it if the user keeps the path.
     """
     folder = bot_roots.user_bots_dir()
     world = _world_folder(last_save_path)
     if world is not None:
         folder = folder / world
-    try:
-        folder.mkdir(parents=True, exist_ok=True)
-    except OSError:
-        logger.debug("Could not create %s", folder, exc_info=True)
     return folder / Path(last_save_path).name if last_save_path else folder
 
 
