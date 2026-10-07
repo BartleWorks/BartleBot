@@ -778,10 +778,12 @@ class _BotStrategyBanner(CardFrame):
     section heading it used to sit under, which promised a fold over a region that only
     ever held this one row.
 
-    Three verbs reach the face and two do not. Duplicate is rare, and Delete is
-    destructive next to a body that changes the live configuration -- the rule
-    ``card_frame.py`` states for a trash icon 22px from a body click. Both are in the
-    right-click menu, which is also the keyboard route.
+    Three verbs reach the face and the rest do not. Duplicate and Export are rare, and
+    Delete is destructive next to a body that changes the live configuration -- the
+    rule ``card_frame.py`` states for a trash icon 22px from a body click. All of them
+    are in the menu, which a kebab button beside the face verbs opens as a right-click
+    does (#176): with nothing on the banner saying a menu was there, Export went
+    unfound, the finding #46 made for the deck cards.
     """
 
     FRAME_NAME = "BotStrategyBanner"
@@ -821,6 +823,7 @@ class _BotStrategyBanner(CardFrame):
         self._name.setFont(font)
         header.addWidget(self._name, 1)
         self._add_face_verbs(header)
+        header.addWidget(self._make_kebab_button("More Bot Combat Strategy actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         self._meta = ElidedLabel()

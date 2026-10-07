@@ -754,6 +754,11 @@ class CardFrame(ThemedMixin, QWidget):
         """This card's face buttons, in header order. Empty for a card with no face verbs."""
         return [button for button, _verb in self._action_btns]
 
+    @property
+    def kebab_button(self) -> QToolButton | None:
+        """The button that opens this card's menu (:meth:`_make_kebab_button`), or None on a card without one."""
+        return self._kebab_btn
+
     def action_button(self, label: str) -> QToolButton | None:
         """The face button for the verb *label*, or None when that verb is menu-only here.
 
