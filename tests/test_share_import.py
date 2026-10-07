@@ -709,3 +709,17 @@ def test_an_official_item_changed_outside_a_save_still_imports_from_an_older_sen
     share.app_version = "99.0.0"
     with pytest.raises(Refused, match=r"Made with a newer BartleBot \(99\.0\.0\)"):
         share_import.plan_import(share, receiver.sources())
+
+
+def test_a_file_from_the_other_product_keeps_the_hash_check(sender, receiver, tmp_path):
+    """No version of ours to compare with: the sender's hash must be the receiver's, or in its history."""
+    sender.ship_subgraph(_defn("official", "Sync Players", version=1))
+    receiver.ship_subgraph(_defn("official", "Sync Players", version=2))
+    bot = _bot("bot-1", "Boss Farmer", "official")
+    sender.bot(bot)
+    share = share_import.read(_send_bot(sender, tmp_path, bot))
+    share.app = "OtherApp"
+    share.app_version = "0.0.1"
+
+    with pytest.raises(Refused, match=r"Made with a newer OtherApp"):
+        share_import.plan_import(share, receiver.sources())
