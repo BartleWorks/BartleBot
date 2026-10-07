@@ -143,3 +143,25 @@ def relink_duel(duel: DuelCombatStrategy, players: Mapping[str, str]) -> None:
 def update_message(app: str, app_version: str, product: str) -> str:
     """Why a file from a newer product, or needing a newer Official item, is refused."""
     return f"Made with a newer {app} ({app_version}). Update {product}, then import again."
+
+
+def _version_key(version: str) -> tuple[int, ...]:
+    """A version's numeric parts, so ``1.10.0`` sorts after ``1.9.0``; ``0+unknown`` is ``(0,)``."""
+    parts: list[int] = []
+    for piece in version.split("+")[0].split("."):
+        digits = ""
+        for ch in piece:
+            if not ch.isdigit():
+                break
+            digits += ch
+        if not digits:
+            break
+        parts.append(int(digits))
+    return tuple(parts) or (0,)
+
+
+def version_is_newer(theirs: str, ours: str) -> bool:
+    """Whether ``theirs`` is a later version than ``ours``. An unreadable one counts as the oldest."""
+    a, b = _version_key(theirs), _version_key(ours)
+    width = max(len(a), len(b))
+    return a + (0,) * (width - len(a)) > b + (0,) * (width - len(b))

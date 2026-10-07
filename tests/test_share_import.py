@@ -691,3 +691,21 @@ def test_the_folder_travels_beside_the_content_and_is_never_hashed(sender, tmp_p
     others = share_export.export_player(PlayerCombatStrategy(id="p1", name="Hitter"), sender.sources())
     path = _export(others, tmp_path)
     assert "folder" not in json.loads(path.read_text(encoding="utf-8"))["items"][0], "left out when there is none"
+
+
+def test_an_official_item_changed_outside_a_save_still_imports_from_an_older_sender(sender, receiver, tmp_path):
+    """No history records the change: the sender's build is older, so the difference is not theirs to refuse (#179)."""
+    sender.ship_subgraph(_defn("official", "Sync Players", version=1))
+    receiver.ship_subgraph(_defn("official", "Sync Players", version=2))
+    bot = _bot("bot-1", "Boss Farmer", "official")
+    sender.bot(bot)
+    path = _send_bot(sender, tmp_path, bot)
+
+    share = share_import.read(path)
+    share.app_version = "0.0.1"
+    plan = share_import.plan_import(share, receiver.sources())
+    assert _outcomes(plan) == {(BOT, "bot-1"): Outcome.NEW}
+
+    share.app_version = "99.0.0"
+    with pytest.raises(Refused, match=r"Made with a newer BartleBot \(99\.0\.0\)"):
+        share_import.plan_import(share, receiver.sources())

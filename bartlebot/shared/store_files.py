@@ -168,8 +168,15 @@ def record_save_in(shipped_dir: Path, user_dir: Path, item, loader: Callable[[Pa
     What every two-root store calls before it writes: see
     :func:`bartlebot.shared.content_hash.record_save`. The two directories being one
     (developer mode, a single-root sandbox) means nothing is Official, so nothing is
-    overridden.
+    overridden, and the item is written with no history: the files there are the shipped
+    ones, and a history on each would change with every save and conflict across branches
+    (#182). Import decides by version, not by an Official item's history (#179).
     """
+    if shipped_dir == user_dir:
+        item.history = []
+        if "official_sha256" in type(item).model_fields:
+            item.official_sha256 = None
+        return
     stored = load_in(user_dir, item.id, loader)
     shipped = None if shipped_dir == user_dir else load_in(shipped_dir, item.id, loader)
     record_save(item, stored=stored, shipped=shipped)
