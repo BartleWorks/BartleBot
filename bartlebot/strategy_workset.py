@@ -384,6 +384,19 @@ class StrategyWorkingSet:
             return list(self._bot_strategies)
         return [self._profile, *(b for b in self._bot_strategies if b.id != self._profile.id)]
 
+    @property
+    def roots(self) -> tuple[str | Path | None, str | Path | None]:
+        """``(root, user_root)``, in the strategy store's argument convention: where this set was loaded from."""
+        return self._root, self._user_root
+
+    def has_unsaved(self, kind: StrategyKind, uuid: str | None) -> bool:
+        """Whether *uuid* is new or changed since the set was loaded or last saved.
+
+        What Export asks before it sends an entry: a share file carries what is saved.
+        """
+        changes = self.changes(kind)
+        return uuid in changes.created or uuid in changes.modified
+
     # ------------------------------------------------------------------
     # The active combat profile (#118)
     # ------------------------------------------------------------------

@@ -26,6 +26,8 @@ from bartlebot import (
     recovery_readiness,
     restricted_zones,
     setup_steps,
+    share_export,
+    strategy_store,
     template_diff,
     template_store,
     wizard_names,
@@ -40,6 +42,7 @@ from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
+from bartlebot.gui.export_dialog import run_export
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.make_copy_dialog import TITLE as MAKE_COPY_TITLE
@@ -118,6 +121,11 @@ def _file_snapshot(config: BotConfig | None) -> dict | None:
     raises it too (#122) -- so an autosave that would only restate this is skipped.
     """
     return config.file_dump() if config is not None else None
+
+
+#: Every export's title, and what it says on a template, which is shared after 1.0.0 (#165).
+EXPORT_TITLE = "Export"
+TEMPLATE_EXPORT_TEXT = "Templates can't be shared yet. Export a bot made from one instead."
 
 
 def _matches_clean(config: BotConfig | None, snapshot: dict | None) -> bool:
@@ -331,6 +339,7 @@ class AppController(QObject):
         w.action_save.triggered.connect(lambda: self._save_bot())
         w.action_save_as.triggered.connect(lambda: self._save_bot_as())
         w.action_edit_template.triggered.connect(lambda: self._edit_template())
+        w.action_export.triggered.connect(lambda: self._export_open_document())
         w.open_recent_requested.connect(self._open_bot)
 
         # Canvas signals
@@ -350,6 +359,8 @@ class AppController(QObject):
         w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
         w.bot_canvas.delete_subgraph_requested.connect(lambda sid: self._delete_subgraph(sid))
         w.bot_canvas.rename_subgraph_requested.connect(lambda sid: self._rename_subgraph(sid))
+        w.bot_canvas.export_bot_requested.connect(lambda path: self._export_bot(path))
+        w.bot_canvas.export_subgraph_requested.connect(lambda sid: self._export_subgraph(sid))
         w.bot_canvas.document_back_requested.connect(self._back_to_document)
         w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
         w.bot_canvas.template_release_requested.connect(lambda: self._release_template())
@@ -382,6 +393,7 @@ class AppController(QObject):
         w.left_sidebar.combat_tab.apply_deck_requested.connect(self._on_apply_deck_requested)
         w.left_sidebar.combat_tab.import_all_decks_requested.connect(self._on_import_all_decks_requested)
         w.left_sidebar.combat_tab.apply_all_decks_requested.connect(self._on_apply_all_decks_requested)
+        w.left_sidebar.combat_tab.export_bot_strategy_requested.connect(lambda bcs: self._export_bot_strategy(bcs))
 
         # Which account is behind each player slot, for the combat dialog's slot pills.
         # A callable rather than a pushed value: an account identity is learned some time
@@ -1035,6 +1047,111 @@ class AppController(QObject):
             )
         self._open_bot(str(target), mode=BotMode.EDIT)
         return True
+
+    # ------------------------------------------------------------------
+    # Export (#170)
+    # ------------------------------------------------------------------
+
+    def _export_sources(self) -> share_export.Sources:
+        """Where an export reads from: the session's subgraph library, reloaded, and the real stores."""
+        self._subgraph_library.reload()
+        return share_export.Sources(subgraph_library=self._subgraph_library)
+
+    def _export_open_document(self) -> Path | None:
+        """File › Export…: the open bot, or the open subgraph definition, as saved. The path written, or None."""
+        config = self._loaded_config
+        if config is None:
+            return None
+        if config.is_template:
+            QMessageBox.information(self._window, EXPORT_TITLE, TEMPLATE_EXPORT_TEXT)
+            return None
+        if not self._saved_for_export():
+            return None
+        config = self._loaded_config
+        if config.is_definition:
+            return self._export_subgraph(config.definition.id)
+        if self._last_save_path is None:
+            return None
+        return self._export_bot(self._last_save_path)
+
+    def _saved_for_export(self) -> bool:
+        """Whether the open document is saved, offering to save it first. A share file carries what is saved."""
+        if not self._has_unsaved_changes or _matches_clean(self._loaded_config, self._clean_snapshot):
+            return True
+        reply = QMessageBox.question(
+            self._window,
+            EXPORT_TITLE,
+            "Export sends what is saved. Save your changes first?",
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
+        )
+        return reply == QMessageBox.StandardButton.Save and self._save_bot()
+
+    def _active_bot_strategy(self, bot_id: str):
+        """The Bot Combat Strategy a bot's export offers: the user's active pick for it, or None.
+
+        The pick chooses what is offered and never travels itself.
+        """
+        active = SettingsManager.instance().get_active_strategy(bot_id)
+        if active is None:
+            return None
+        try:
+            bcs = strategy_store.load_bot_strategy(active)
+        except Exception:
+            logger.warning("Could not read the active Bot Combat Strategy %s to export it", active, exc_info=True)
+            return None
+        return bcs if bcs.bot_id == bot_id else None
+
+    def _export_bot(self, path: str) -> Path | None:
+        """Export… on a bot: the file at ``path``, its subgraphs, and on request its Bot Combat Strategy."""
+        try:
+            bot = BotConfig.load(path)
+        except Exception as e:
+            QMessageBox.critical(self._window, EXPORT_TITLE, f"The bot could not be read:\n\n{e}")
+            return None
+        if bot.is_template:
+            QMessageBox.information(self._window, EXPORT_TITLE, TEMPLATE_EXPORT_TEXT)
+            return None
+        sources = self._export_sources()
+        official = bot_roots.is_shipped(path)
+        combat = self._active_bot_strategy(bot.id)
+
+        def build(choices):
+            return share_export.export_bot(
+                bot,
+                sources,
+                official=official,
+                combat=combat if choices.include_combat else None,
+                include_decks=choices.include_decks,
+            )
+
+        return run_export(
+            self._window, build, combat_name=combat.name if combat else None, offers_decks=combat is not None
+        )
+
+    def _export_subgraph(self, subgraph_id: str) -> Path | None:
+        """Export… on a subgraph: the definition as saved, and the subgraphs it nests."""
+        sources = self._export_sources()
+        defn = self._subgraph_library.get(subgraph_id)
+        if defn is None:
+            QMessageBox.information(self._window, EXPORT_TITLE, "That subgraph could not be read from the library.")
+            return None
+        return run_export(self._window, lambda _choices: share_export.export_subgraph(defn, sources))
+
+    def _export_bot_strategy(self, bcs) -> Path | None:
+        """Export… on a Bot Combat Strategy: as saved, with the strategies it links, its bot, and on request its decks."""
+        try:
+            # The Combat tab writes each change as it is made, so the file is current.
+            bcs = strategy_store.load_bot_strategy(bcs.id)
+        except FileNotFoundError:
+            pass
+        except Exception:
+            logger.warning("Could not reread the Bot Combat Strategy %s to export it", bcs.id, exc_info=True)
+        sources = self._export_sources()
+        return run_export(
+            self._window,
+            lambda choices: share_export.export_bot_strategy(bcs, sources, include_decks=choices.include_decks),
+            offers_decks=True,
+        )
 
     # ------------------------------------------------------------------
     # Template drafts

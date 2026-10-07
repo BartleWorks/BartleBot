@@ -98,6 +98,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QScrollArea,
     QSplitter,
@@ -111,6 +112,8 @@ from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
+from bartlebot.gui.export_dialog import run_export
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
@@ -120,6 +123,7 @@ from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
 from bartlebot.store_roots import SOURCE_LABELS
 from bartlebot.strategy_store import Origin, StrategyKind
 from bartlebot.strategy_summary import (
@@ -207,6 +211,9 @@ ADD_TO_LIBRARY_TEXT = "Add to library"
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
+#: A card's right-click (#170), and why it is off on an entry with unsaved edits.
+EXPORT_TEXT = "Export…"
+EXPORT_UNSAVED_TIP = "Save your changes first: Export sends what is saved."
 #: Why Delete is grayed out on an unedited Official one: removing only touches the user
 #: root, so the entry would be back on the next open (#124).
 _BUILT_IN_DELETE_TIP = "Official strategies can't be deleted. Duplicate one to make a copy of your own."
@@ -555,6 +562,9 @@ class _KindPage(QWidget):
         # viewport, so this only says so; it never hides content that had a bar.
         self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._list.currentItemChanged.connect(self._on_item_changed)
+        # Export… on a card's right-click (#170), in every mode: it changes nothing.
+        self._list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._list.customContextMenuRequested.connect(self._show_card_menu)
         # Rows are sized for the width the column actually has; see _fit_row.
         self._list.viewport().installEventFilter(self)
         box.addWidget(self._list, 1)
@@ -1096,6 +1106,49 @@ class _KindPage(QWidget):
         self.rebuild_list()
         self.select(made.id)
         self.structure_changed.emit()
+
+    def card_menu(self, uuid: str) -> QMenu:
+        """The menu a card shows on a right-click. Public so a test can read it.
+
+        Export sends what is saved, so an entry with edits the dialog has not saved yet
+        says so instead.
+        """
+        menu = popup_menu(self)
+        menu.setToolTipsVisible(True)
+        act = menu.addAction(EXPORT_TEXT)
+        if self._ws.has_unsaved(self._kind, uuid):
+            act.setEnabled(False)
+            act.setToolTip(EXPORT_UNSAVED_TIP)
+        act.triggered.connect(lambda: self.export(uuid))
+        return menu
+
+    def _show_card_menu(self, pos) -> None:
+        item = self._list.itemAt(pos)
+        uuid = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if not isinstance(uuid, str) or self._ws.get(self._kind, uuid) is None:
+            return
+        self.card_menu(uuid).exec(self._list.viewport().mapToGlobal(pos))
+
+    def export_plan(self, uuid: str) -> ExportPlan | None:
+        """What exporting *uuid* would write: the entry as saved, and what it links. None if it is gone."""
+        entry = self._ws.get(self._kind, uuid)
+        if entry is None:
+            return None
+        root, user_root = self._ws.roots
+        sources = Sources(strategy_root=root, strategy_user_root=user_root)
+        if self._kind is StrategyKind.DUEL:
+            # One of the profile's own finds its links there first, as a run does.
+            profile = self._ws.profile if self._ws.is_profile_entry(self._kind, uuid) else None
+            return export_duel(entry, sources, profile=profile)
+        if self._kind is StrategyKind.PLAYER:
+            return export_player(entry, sources)
+        return export_deck(entry, sources)
+
+    def export(self, uuid: str):
+        """Export… on a card: the summary, then the file. The path written, or None."""
+        if self._ws.get(self._kind, uuid) is None:
+            return None
+        return run_export(self, lambda _choices: self.export_plan(uuid))
 
     def _on_duplicate(self) -> None:
         if self._selected_id is None:

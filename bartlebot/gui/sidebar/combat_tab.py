@@ -195,6 +195,7 @@ _RENAME_BCS = "Rename…"
 _NEW_BCS = "New…"
 _DUPLICATE_BCS = "Duplicate…"
 _DELETE_BCS = "Delete…"
+_EXPORT_BCS = "Export…"
 
 
 # ---------------------------------------------------------------------------
@@ -790,6 +791,7 @@ class _BotStrategyBanner(CardFrame):
     rename_requested = pyqtSignal()
     duplicate_requested = pyqtSignal()
     delete_requested = pyqtSignal()
+    export_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, mode=CardMode.MANAGE)
@@ -879,6 +881,9 @@ class _BotStrategyBanner(CardFrame):
                 CardVerb(_DUPLICATE_BCS, "copy", "Copy this strategy under a new name", self.duplicate_requested.emit)
             )
             verbs.append(CardVerb(_DELETE_BCS, "trash", "Delete this Bot Combat Strategy", self.delete_requested.emit))
+            verbs.append(
+                CardVerb(_EXPORT_BCS, "upload", "Save this strategy as a file to share", self.export_requested.emit)
+            )
         return verbs
 
     def _refuses_activation(self) -> bool:
@@ -919,6 +924,8 @@ class CombatTab(QWidget):
     apply_deck_requested = pyqtSignal(int)  # 1-based slot number
     import_all_decks_requested = pyqtSignal()
     apply_all_decks_requested = pyqtSignal()
+    #: The banner's Export… (#170), with the Bot Combat Strategy it names. The controller writes the file.
+    export_bot_strategy_requested = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -980,6 +987,9 @@ class CombatTab(QWidget):
         self._bcs_banner.rename_requested.connect(self._on_rename_bcs)
         self._bcs_banner.duplicate_requested.connect(self._on_duplicate_bcs)
         self._bcs_banner.delete_requested.connect(self._on_delete_bcs)
+        self._bcs_banner.export_requested.connect(
+            lambda: self._bcs is not None and self.export_bot_strategy_requested.emit(self._bcs)
+        )
 
         # ── Duel Combat Strategies ───────────────────────────────────
         # One section for both levels. The default card is first and always present; the

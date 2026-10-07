@@ -136,13 +136,20 @@ class Sources:
     Official one) and its origin, or None when nothing holds it.
     """
 
-    subgraphs: SubgraphLibrary
+    #: The session's subgraph library; None to read the real roots on first use.
+    subgraph_library: SubgraphLibrary | None = None
     #: The strategy store's roots, in its argument convention; None for the real ones.
     strategy_root: str | Path | None = None
     strategy_user_root: str | Path | None = None
     #: The two bot folders; None for the real ones.
     bots_shipped: Path | None = None
     bots_user: Path | None = None
+
+    @property
+    def subgraphs(self) -> SubgraphLibrary:
+        if self.subgraph_library is None:
+            self.subgraph_library = SubgraphLibrary()
+        return self.subgraph_library
 
     def subgraph(self, subgraph_id: str) -> tuple[SubgraphDefinition, Origin] | None:
         defn = self.subgraphs.get(subgraph_id)

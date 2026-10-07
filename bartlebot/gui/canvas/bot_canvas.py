@@ -138,6 +138,8 @@ _PAUSED = "paused"
 #: Why an Official subgraph's Delete is grayed out: the store only ever removes the user's copy.
 _BUILT_IN_SUBGRAPH_TIP = "Official subgraphs can't be deleted. Open one and Save as… to make a copy of your own."
 #: Why an Official subgraph's Rename is grayed out: its name is the shipped file's (#160).
+#: A library card's right-click, for a bot or a subgraph (#170).
+EXPORT_TEXT = "Export…"
 _BUILT_IN_RENAME_TIP = "Official subgraphs can't be renamed. Open one and Save as… to make a copy of your own."
 
 #: The Edit button's tooltip, and what it says on an Official bot, which it offers to copy (#149).
@@ -710,6 +712,10 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     delete_subgraph_requested = pyqtSignal(str)
     #: (subgraph id): a Subgraphs card's Rename. The controller asks for the name and writes it.
     rename_subgraph_requested = pyqtSignal(str)
+    #: (bot file path): a bot card's Export… (#170). The controller gathers and writes the file.
+    export_bot_requested = pyqtSignal(str)
+    #: (subgraph id): a Subgraphs card's Export….
+    export_subgraph_requested = pyqtSignal(str)
 
     _RECENT = "Recent"
     _ALL = "All"
@@ -1191,11 +1197,15 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 card.open_requested.connect(
                     self.open_subgraph_requested if meta.subgraph_id else self.open_recent_requested
                 )
+                card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
                 if meta.subgraph_id:
                     card.revert_requested.connect(self.delete_subgraph_requested)
-                    card.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
                     card.customContextMenuRequested.connect(
                         lambda pos, c=card, sid=meta.subgraph_id: self._show_subgraph_menu(c, sid, pos)
+                    )
+                else:
+                    card.customContextMenuRequested.connect(
+                        lambda pos, c=card, path=meta.path: self._show_bot_menu(c, path, pos)
                     )
             card.set_matched_drops((matched_drops or {}).get(meta.path))
             layout.insertWidget(i, card)
@@ -1225,10 +1235,21 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 act.setEnabled(False)
                 act.setToolTip(_BUILT_IN_SUBGRAPH_TIP)
         act.triggered.connect(lambda: self.delete_subgraph_requested.emit(subgraph_id))
+        menu.addSeparator()
+        menu.addAction(EXPORT_TEXT).triggered.connect(lambda: self.export_subgraph_requested.emit(subgraph_id))
         return menu
 
     def _show_subgraph_menu(self, card: QWidget, subgraph_id: str, pos) -> None:
         self.subgraph_menu(subgraph_id).exec(card.mapToGlobal(pos))
+
+    def bot_menu(self, path: Path) -> QMenu:
+        """The menu a bot card shows on a right-click. Public so a test can read it."""
+        menu = popup_menu(self)
+        menu.addAction(EXPORT_TEXT).triggered.connect(lambda: self.export_bot_requested.emit(str(path)))
+        return menu
+
+    def _show_bot_menu(self, card: QWidget, path: Path, pos) -> None:
+        self.bot_menu(path).exec(card.mapToGlobal(pos))
 
 
 # ---------------------------------------------------------------------------
@@ -1356,6 +1377,9 @@ class BotCanvas(QWidget):
     delete_subgraph_requested = pyqtSignal(str)
     # (subgraph id): rename a definition, from its card in the library's Subgraphs folder.
     rename_subgraph_requested = pyqtSignal(str)
+    # A library card's Export… (#170): a bot file's path, or a subgraph's id.
+    export_bot_requested = pyqtSignal(str)
+    export_subgraph_requested = pyqtSignal(str)
     # A definition document's way out, and its save: (then go back).
     definition_back_requested = pyqtSignal()
     definition_save_requested = pyqtSignal(bool)
@@ -1750,6 +1774,8 @@ class BotCanvas(QWidget):
         self._placeholder.open_subgraph_requested.connect(self.open_definition_requested)
         self._placeholder.delete_subgraph_requested.connect(self.delete_subgraph_requested)
         self._placeholder.rename_subgraph_requested.connect(self.rename_subgraph_requested)
+        self._placeholder.export_bot_requested.connect(self.export_bot_requested)
+        self._placeholder.export_subgraph_requested.connect(self.export_subgraph_requested)
         self._placeholder.show()
         # Bar B is the *bot's* header, so with no bot there is nothing for it to say
         # and nothing its buttons can act on. Shown anyway it read as a second strip
@@ -2067,6 +2093,8 @@ class BotCanvas(QWidget):
         panel.open_subgraph_requested.connect(self.open_definition_requested)
         panel.delete_subgraph_requested.connect(self.delete_subgraph_requested)
         panel.rename_subgraph_requested.connect(self.rename_subgraph_requested)
+        panel.export_bot_requested.connect(self.export_bot_requested)
+        panel.export_subgraph_requested.connect(self.export_subgraph_requested)
         panel.new_bot_requested.connect(dlg.reject)
         panel.new_bot_requested.connect(self.new_bot_requested)
         panel.open_bot_requested.connect(dlg.reject)

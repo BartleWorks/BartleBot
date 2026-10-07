@@ -58,7 +58,7 @@ class Roots:
 
     def sources(self) -> Sources:
         return Sources(
-            subgraphs=SubgraphLibrary(self.shipped, self.user),
+            subgraph_library=SubgraphLibrary(self.shipped, self.user),
             strategy_root=self.shipped,
             strategy_user_root=self.user,
             bots_shipped=self.shipped / "bots",
