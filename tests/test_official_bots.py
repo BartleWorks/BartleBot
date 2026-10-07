@@ -189,6 +189,23 @@ def test_save_as_leaves_a_plain_copy_that_is_the_users_to_edit(harness, official
     assert SettingsManager.instance().get("bot_option_overrides", copy.id) is None, "and takes no option values"
 
 
+def test_save_as_starts_the_copy_with_no_history_and_leaves_the_original_its_own(harness, tmp_path, monkeypatch):
+    from PyQt6.QtWidgets import QFileDialog  # noqa: PLC0415
+
+    original = bot_roots.user_bots_dir() / "original.json"
+    target = bot_roots.user_bots_dir() / "copy.json"
+    bot = _bot("mine", "Mine")
+    bot.history = ["an-older-id"]
+    bot.save(original)
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *_a: (str(target), "")))
+    harness._open_bot(str(original))
+
+    assert harness._save_bot_as()
+
+    assert BotConfig.load(target).history == []
+    assert BotConfig.load(original).history == ["an-older-id"]
+
+
 # ---------------------------------------------------------------------------
 # Make my own copy
 # ---------------------------------------------------------------------------

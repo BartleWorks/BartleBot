@@ -994,8 +994,11 @@ class AppController(QObject):
         # A fork gets its own identity. The copy would otherwise share the original's
         # id, and with it every value the user has stored against that bot -- and the
         # remembered combat strategy, which is a fork's to choose again.
+        # Its history goes too: what the original was copied from is not the copy's own past.
         old_id = self._loaded_config.id
+        old_history = self._loaded_config.history
         self._loaded_config.id = str(uuid4())
+        self._loaded_config.history = []
         try:
             self._loaded_config.save(path)
         except Exception as e:
@@ -1003,6 +1006,7 @@ class AppController(QObject):
             # loaded bot is still that bot. Keeping the minted id here would orphan
             # every value the user has stored against it for the rest of the session.
             self._loaded_config.id = old_id
+            self._loaded_config.history = old_history
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
             return False
         if self._rewards_declined_for == old_id:
