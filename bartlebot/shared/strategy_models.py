@@ -11,8 +11,9 @@ Every product by this vendor reads and writes these (``docs/SHARED_CONTENT.md``)
 they live in :mod:`bartlebot.shared` and import nothing product-specific. BartleBot's
 Bot Combat Strategy, which embeds them, stays in :mod:`bartlebot.bot.strategy_models`.
 
-Each top-level model is stored as an individual JSON file identified by UUID, and
-carries a ``format``: the version of its file format. It is left out of the file while
+Each top-level model is stored as an individual JSON file identified by UUID, keeps a
+``history`` of content hashes and, as an override of an Official one, the hash of what it
+was made from (:mod:`bartlebot.shared.content_hash`), and carries a ``format``: the version of its file format. It is left out of the file while
 it is 1, so no file written before it existed changes. A product refuses to save over a
 file whose format is newer than :data:`LIBRARY_FORMAT`, since the models drop fields
 they don't know and the save would lose them.
@@ -95,6 +96,9 @@ class PlayerCombatStrategy(BaseModel):
     tags: list[str] = Field(default_factory=list)
     #: The file format; see the module docstring.
     format: int = 1
+    #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
+    history: list[str] = Field(default_factory=list)
+    official_sha256: str | None = None
 
     _legacy_school = model_validator(mode="before")(_schools_from_legacy)
     _schools = field_validator("schools")(_dedupe_schools)
@@ -105,8 +109,12 @@ class PlayerCombatStrategy(BaseModel):
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
 
+    def file_dump(self) -> dict:
+        """The JSON body of this file, as :meth:`save` writes it."""
+        return self.model_dump(exclude_defaults=True)
+
     def save(self, path: str | Path) -> None:
-        atomic_write(self.model_dump(exclude_defaults=True), path)
+        atomic_write(self.file_dump(), path)
 
 
 class DeckData(BaseModel):
@@ -165,6 +173,9 @@ class DeckPreset(BaseModel):
     tags: list[str] = Field(default_factory=list)
     #: The file format; see the module docstring.
     format: int = 1
+    #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
+    history: list[str] = Field(default_factory=list)
+    official_sha256: str | None = None
 
     _tags = field_validator("tags", mode="before")(normalize_role_tags)
 
@@ -173,8 +184,12 @@ class DeckPreset(BaseModel):
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
 
+    def file_dump(self) -> dict:
+        """The JSON body of this file, as :meth:`save` writes it."""
+        return self.model_dump(exclude_defaults=True)
+
     def save(self, path: str | Path) -> None:
-        atomic_write(self.model_dump(exclude_defaults=True), path)
+        atomic_write(self.file_dump(), path)
 
 
 class PlayerAssignment(BaseModel):
@@ -324,14 +339,21 @@ class DuelCombatStrategy(DuelConfig):
     name: str
     #: The file format; see the module docstring.
     format: int = 1
+    #: Content hashes of what earlier saves replaced, and an override's Official base (#169).
+    history: list[str] = Field(default_factory=list)
+    official_sha256: str | None = None
 
     @classmethod
     def load(cls, path: str | Path) -> DuelCombatStrategy:
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
 
+    def file_dump(self) -> dict:
+        """The JSON body of this file, as :meth:`save` writes it."""
+        return self.model_dump(exclude_defaults=True)
+
     def save(self, path: str | Path) -> None:
-        atomic_write(self.model_dump(exclude_defaults=True), path)
+        atomic_write(self.file_dump(), path)
 
 
 def atomic_write(data: dict, path: str | Path) -> None:

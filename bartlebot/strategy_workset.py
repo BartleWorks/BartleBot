@@ -88,6 +88,7 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.combat_profile import StrategyLookup, profile_players_of
+from bartlebot.shared.content_hash import content_sha256, official_updated
 from bartlebot.shared.strategy_library import is_newer_format
 from bartlebot.strategy_store import (
     ChangedOnDisk,
@@ -144,6 +145,15 @@ _FACTORIES = {
     StrategyKind.DUEL: lambda name: DuelCombatStrategy(name=name),
     StrategyKind.DECK: lambda name: DeckPreset(name=name),
 }
+
+
+def _fresh_copy(name: str) -> dict:
+    """The fields a copy of an entry gets anew: an id, a name, and no history or Official base.
+
+    A copy is a new item, as a bot's Make my own copy is: what it was copied from is not
+    its own past, and it overrides nothing (#169).
+    """
+    return {"id": str(uuid4()), "name": name, "history": [], "official_sha256": None}
 
 
 def _snapshot(item) -> str:
@@ -492,7 +502,7 @@ class StrategyWorkingSet:
         source = self.get(kind, uuid)
         if source is None:
             return None
-        copy = source.model_copy(deep=True, update={"id": str(uuid4()), "name": self.unique_name(kind, source.name)})
+        copy = source.model_copy(deep=True, update=_fresh_copy(self.unique_name(kind, source.name)))
         self._add(kind, copy, in_profile)
         return copy
 
@@ -557,7 +567,7 @@ class StrategyWorkingSet:
         shipped = slot.shipped.get(uuid)
         if shipped is None:
             return Origin.USER
-        if _snapshot(item) != _snapshot(shipped):
+        if content_sha256(item) != content_sha256(shipped):
             return Origin.SHIPPED_OVERRIDE
         if uuid in slot.reverted or _snapshot(item) != slot.baselines.get(uuid):
             # Back to the shipped content this session; Save removes the user copy.
@@ -588,7 +598,21 @@ class StrategyWorkingSet:
         slot = self._slots[kind]
         shipped = slot.shipped.get(uuid)
         item = slot.items.get(uuid)
-        return shipped is not None and item is not None and _snapshot(item) == _snapshot(shipped)
+        # Content, not every field: an override's history and Official base are its record
+        # of where it came from, and say nothing about whether it still differs (#169).
+        return shipped is not None and item is not None and content_sha256(item) == content_sha256(shipped)
+
+    def official_updated(self, kind: StrategyKind, uuid: str) -> bool:
+        """Whether ``uuid`` overrides an Official strategy that has changed since the override was made (#169).
+
+        Asked of the override as loaded: its ``official_sha256`` against the shipped one
+        held from load. True only while the entry is still an override; Revert takes the
+        new Official one, and the user's changes go with the override.
+        """
+        if self.is_profile_entry(kind, uuid) or self.status(kind, uuid) is not Origin.SHIPPED_OVERRIDE:
+            return False
+        slot = self._slots[kind]
+        return official_updated(slot.items.get(uuid), slot.shipped.get(uuid))
 
     def unique_name(self, kind: StrategyKind, base: str) -> str:
         """``base`` made unique against every live name of that kind, profile entries
@@ -776,7 +800,7 @@ class StrategyWorkingSet:
         source = self._slots[kind].items.get(uuid)
         if source is None:
             return None
-        copy = source.model_copy(deep=True, update={"id": str(uuid4()), "name": self.unique_name(kind, source.name)})
+        copy = source.model_copy(deep=True, update=_fresh_copy(self.unique_name(kind, source.name)))
         self.reload(kind, uuid)
         self._add(kind, copy, in_profile=False)
         return copy

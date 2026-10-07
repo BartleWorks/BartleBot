@@ -61,6 +61,7 @@ class ControllerHarness:
             "_refresh_definition_context",
             "_on_definition_save_requested",
             "_save_definition",
+            "_confirm_signature_change",
             "_mark_definition_saved",
             "_definition_back",
             "_leave_definition",

@@ -54,8 +54,10 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
-from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode
-from bartlebot.subgraph_store import SubgraphLibrary, count_subgraph_uses, source_label
+from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode, pill_text
+from bartlebot.subgraph_signature import signature_changes
+from bartlebot.subgraph_signature import warning_text as signature_warning_text
+from bartlebot.subgraph_store import SubgraphLibrary, bots_linking, count_subgraph_uses
 from bartlebot.subgraphs import (
     ComposeReport,
     compose_bot,
@@ -901,6 +903,9 @@ class AppController(QObject):
         if not self._confirm_rewards_tags():
             return False
         try:
+            if not self._loaded_config.is_template:
+                # A template keeps no history: a released version is hashed by its bytes.
+                bot_roots.record_save(self._loaded_config, self._last_save_path)
             self._loaded_config.save(self._last_save_path)
             self._has_unsaved_changes = False
             self._clean_snapshot = _file_snapshot(self._loaded_config)
@@ -1275,9 +1280,12 @@ class AppController(QObject):
         path = [frame.doc.config.name for frame in self._doc_stack]
         origin = self._subgraph_library.origin(config.definition.id)
         used_by = self._bots_linking(config.definition.id)
+        # "· Official updated" on a modified Official one whose Official one has changed
+        # since, beside the Revert the header offers it in Edit mode (#169).
+        updated = self._subgraph_library.official_updated(config.definition.id)
         self._window.bot_canvas.set_definition_context(
             path,
-            origin=source_label(origin),
+            origin=f"Source: {pill_text(origin, official_updated=updated)}",
             used_by=used_by,
             can_revert=origin == Origin.SHIPPED_OVERRIDE,
             can_rename=origin == Origin.USER,
@@ -1460,6 +1468,8 @@ class AppController(QObject):
             )
             if reply != QMessageBox.StandardButton.Save:
                 return False
+        if stored is not None and not self._confirm_signature_change(stored, defn):
+            return False
         if change in ("layout", "meta"):
             version = stored.version
         else:
@@ -1473,6 +1483,34 @@ class AppController(QObject):
         config.definition.version = version
         self._mark_definition_saved(config)
         logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
+        return True
+
+    def _confirm_signature_change(self, stored, defn) -> bool:
+        """Warn before a save that changes what a linking bot depends on (#169). False when cancelled.
+
+        Asked only when the save removes or renames an input or a port, or adds an input
+        with no default (:mod:`bartlebot.subgraph_signature`), and only when a bot or
+        another definition links this one: with nothing linking it, nothing can break.
+        A warning, never a refusal: a bot that cannot take the change is held on its
+        snapshot.
+        """
+        changes = signature_changes(stored, defn)
+        if not changes:
+            return True
+        users = bots_linking(defn.id, *bot_roots.library_dirs())
+        users += [f"the subgraph '{d.name}'" for d in self._subgraph_library.nesting(defn.id)]
+        if not users:
+            return True
+        reply = QMessageBox.warning(
+            self._window,
+            "Save to Library",
+            signature_warning_text(defn.name, changes, users),
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save,
+        )
+        if reply != QMessageBox.StandardButton.Save:
+            return False
+        logger.info("Saving subgraph '%s' with %d signature change(s) used by %d", defn.name, len(changes), len(users))
         return True
 
     def _mark_definition_saved(self, config: BotConfig) -> None:

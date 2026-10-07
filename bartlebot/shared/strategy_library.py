@@ -46,7 +46,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from bartlebot.shared.store_files import delete_by_id, find_by_id, index_dir, save_by_id
+from bartlebot.shared.store_files import delete_by_id, find_by_id, index_dir, record_save_in, save_by_id
 from bartlebot.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
@@ -197,17 +197,26 @@ def _check(user: Path, kind: LibraryKind, item_id: str, name: str, expected: str
             raise NewerFormat(kind, item_id, name, file_format)
 
 
-def save(user: Path, kind: LibraryKind, item: BaseModel, *, expected: str | None = None) -> str:
+def save(
+    user: Path, kind: LibraryKind, item: BaseModel, *, expected: str | None = None, shipped: Path | None = None
+) -> str:
     """Write ``item`` to the user root, if it still holds what ``expected`` describes. Returns the new fingerprint.
 
     ``expected`` is the fingerprint the item was loaded with; ``None``, the default,
     expects no user file, as for a new item or an edit of a shipped one. Raises
     :class:`ChangedOnDisk` or :class:`NewerFormat`, having written nothing.
+
+    ``shipped`` is the shipped root, which the history and an override's Official base
+    are recorded against (:mod:`bartlebot.shared.content_hash`); leave it None when
+    there is none, or when it is the user root. Recorded into ``item`` itself, and only
+    once the checks have passed.
     """
     item_id, name = item.id, item.name  # type: ignore[attr-defined]
     if is_newer_format(item):
         raise NewerFormat(kind, item_id, name, item.format)  # type: ignore[attr-defined]
     _check(user, kind, item_id, name, expected)
+    shipped_dir = kind_dir(shipped if shipped is not None else user, kind)
+    record_save_in(shipped_dir, kind_dir(user, kind), item, MODELS[kind].load)  # type: ignore[attr-defined]
     path = save_by_id(kind_dir(user, kind), item_id, name, item.save)  # type: ignore[attr-defined]
     return _digest(path.read_bytes())
 

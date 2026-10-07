@@ -917,6 +917,16 @@ file. A list long enough to need it has a Source filter beside it, offering the 
 words (`tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
 Subgraphs folder, and the node browser's Subgraphs tab. New Bot's gallery has pills only.
 
+A modified Official subgraph or strategy whose Official item has changed since the
+override was made reads **Official (modified) · Official updated**
+(`source_pill(..., official_updated=True)`, text from `store_roots.pill_text`), with a
+tooltip saying what Revert does (#169). The Source filter still offers only the three
+words, so the suffix never becomes a chip. Revert sits beside it: a *Revert…* button on
+the Subgraphs folder card, the definition header's Revert, the strategy dialog's
+*Revert to default* with a note in its About pane. Whether an item is out of date comes
+from `SubgraphLibrary.official_updated` and `StrategyWorkingSet.official_updated`, never
+from the widget.
+
 **An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
 way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
 and the controller offers Make my own copy (`gui/make_copy_dialog.py`). A new way into

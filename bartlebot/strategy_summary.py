@@ -198,6 +198,9 @@ class StrategySummary:
     #: does not arise. Supplied by whoever knows the working set — the summarize_*
     #: functions see one entry and cannot tell (#124).
     source: Origin | None = None
+    #: Whether the entry overrides an Official one that has changed since (#169): its
+    #: pill then adds "Official updated". Supplied with ``source``, by the same caller.
+    official_updated: bool = False
     #: The combat profile's name when the entry belongs to that profile rather than the
     #: library (#118); None for a library entry. A card shows it in place of ``source``.
     profile_name: str | None = None

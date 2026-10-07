@@ -54,6 +54,7 @@ from bartlebot.bot.schema import (
     TransitionModel,
     definition_structure_errors,
 )
+from bartlebot.shared.content_hash import HISTORY_FIELDS
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SubgraphLibrary
 
@@ -1331,6 +1332,10 @@ def config_to_definition(config: BotConfig, *, version: int | None = None) -> Su
 DefinitionChange = Literal["none", "layout", "meta", "content"]
 
 
+#: What :func:`definition_change` ignores: the version it decides, and the history a save records (#169).
+_NOT_COMPARED = {"version", *HISTORY_FIELDS}
+
+
 def definition_change(old: SubgraphDefinition, new: SubgraphDefinition) -> DefinitionChange:
     """How ``new`` differs from ``old``, version aside: not at all, in layout only, in name, or in content.
 
@@ -1341,7 +1346,7 @@ def definition_change(old: SubgraphDefinition, new: SubgraphDefinition) -> Defin
     with or without a layout change beside it, and keeps the version too. A bot
     links the id, and an instance's label is the bot's own.
     """
-    if old.model_dump(mode="json", exclude={"version"}) == new.model_dump(mode="json", exclude={"version"}):
+    if old.model_dump(mode="json", exclude=_NOT_COMPARED) == new.model_dump(mode="json", exclude=_NOT_COMPARED):
         return "none"
     old_runs, new_runs = _without_layout(old), _without_layout(new)
     if old_runs == new_runs:
@@ -1354,7 +1359,7 @@ def _without_meta(data: dict) -> dict:
 
 
 def _without_layout(defn: SubgraphDefinition) -> dict:
-    data = defn.model_dump(mode="json", exclude={"version"})
+    data = defn.model_dump(mode="json", exclude=_NOT_COMPARED)
     for state in data["states"]:
         state.pop("position", None)
     linked = []

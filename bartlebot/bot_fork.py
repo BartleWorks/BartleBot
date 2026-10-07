@@ -22,8 +22,6 @@ No Qt here; the controller asks for the name and opens the result.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -32,33 +30,26 @@ from uuid import uuid4
 from bartlebot.bot.schema import BotConfig, ForkedFrom
 from bartlebot.combat_profile import duplicate_profile
 from bartlebot.new_bot import file_stem, unique_file_name
+from bartlebot.shared.content_hash import content_sha256
 from bartlebot.strategy_store import list_bot_strategies, save_bot_strategy
 
 logger = logging.getLogger(__name__)
-
-
-def content_sha256(config: BotConfig) -> str:
-    """The SHA-256 of a bot's content: what it would write, dumped with sorted keys.
-
-    Content rather than file bytes, so a file reformatted, or written by an older
-    version with a default spelled out, hashes the same as long as it says the same
-    thing. Stage 3 of the shared content plan (#169) adopts this as the one content hash.
-    """
-    text = json.dumps(config.file_dump(), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def make_fork(official: BotConfig, name: str) -> BotConfig:
     """The user's copy of ``official``: a new id, ``name``, and ``forked_from`` naming where it came from.
 
     ``official`` should be the bot as its file has it, not as composed in memory, so
-    the hash recorded is the Official file's. Everything else is copied as it is,
-    ``template`` included: a copy of a bot has the same base.
+    the hash recorded is the Official file's (:func:`~bartlebot.shared.content_hash.content_sha256`,
+    the one content hash). Everything else is copied as it is, ``template`` included: a
+    copy of a bot has the same base. Its ``history`` starts empty: the copy is a new item,
+    and ``forked_from`` is its record of where it came from.
     """
     fork = official.model_copy(deep=True)
     fork.id = str(uuid4())
     fork.name = name.strip() or official.name
     fork.forked_from = ForkedFrom(id=official.id, sha256=content_sha256(official))
+    fork.history = []
     return fork
 
 
