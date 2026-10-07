@@ -215,6 +215,27 @@ A Bot Combat Strategy that comes in as a copy also gives its own strategies new 
 their bots stay on their original. Keep mine leaves the file's links on the receiver's
 item of that id.
 
+### The next version of something that came in changed
+
+An item written other than as it was sent -- a bot whose links were rewritten to a copy,
+or a copy itself -- no longer hashes to anything in the sender's history. So it records
+`sent_sha256`, the hash it was sent with, and matching counts that as the receiver's
+hash too (`share_match.Held.hashes`). The sender's next version of the bot is then
+**Update mine**, still on the copy, rather than a conflict that copies it again.
+
+A copy is found the same way. Its id is `copy_id` of a hash the item once had, so
+`share_match.copy_ids` of the incoming item's hash and history names every copy an
+earlier version could have made. When one exists and still holds the version it was sent
+as (`share_match.copy_outcome`), the same version is *Already in your library, as a
+copy*, and a later one updates that copy, keeping its id and its name, so every bot on
+it gets the change and no second copy is made. This is only asked about when the item
+would otherwise conflict or come in as a copy of an Official one.
+
+`sent_sha256` stands for the item only while it is unchanged: a save that changes it
+drops the field (`content_hash.record_save`), since from then on it is the receiver's own
+edit, and the next version is a conflict again. Like `history` it is left out of the
+hash, and never travels in a share file.
+
 ### Where things go
 
 A bot goes to the user's own folder, in the world folder the file names when the
@@ -250,8 +271,5 @@ and says so; what was written before it stays.
   cards, hashes differently in a file than at home. A later re-send of it is matched on
   import as a separate edit, not as a newer copy, so it imports as a copy: the safe
   outcome.
-- An item whose links were rewritten to a copy hashes differently from what the sender
-  sent, so a later version of it from the same sender is matched as a conflict rather
-  than an update, and arrives as a copy again. Safe, and only after a first conflict.
 - Exporting several items at once, and a text form to paste into chat, are ideas for
   after 1.0.0.

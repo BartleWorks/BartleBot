@@ -938,6 +938,11 @@ class AppController(QObject):
             # An Official bot, or one recovered from a crash in it: the install directory is
             # replaced by every update, so the save goes to a copy in the user's own folder.
             return self._save_bot_as()
+        if self._loaded_config.is_template:
+            refused = template_store.draft_name_refused(self._loaded_config, **self._template_roots())
+            if refused:
+                QMessageBox.information(self._window, "Save Template", refused)
+                return False
         if not self._confirm_rewards_tags():
             return False
         try:
@@ -997,8 +1002,10 @@ class AppController(QObject):
         # Its history goes too: what the original was copied from is not the copy's own past.
         old_id = self._loaded_config.id
         old_history = self._loaded_config.history
+        old_sent = self._loaded_config.sent_sha256
         self._loaded_config.id = str(uuid4())
         self._loaded_config.history = []
+        self._loaded_config.sent_sha256 = None
         try:
             self._loaded_config.save(path)
         except Exception as e:
@@ -1007,6 +1014,7 @@ class AppController(QObject):
             # every value the user has stored against it for the rest of the session.
             self._loaded_config.id = old_id
             self._loaded_config.history = old_history
+            self._loaded_config.sent_sha256 = old_sent
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
             return False
         if self._rewards_declined_for == old_id:
@@ -1445,14 +1453,32 @@ class AppController(QObject):
             self._open_bot(str(template.draft_path), mode=BotMode.EDIT)
         return self._loaded_config is not None and self._loaded_config.id == template.id
 
+    def _ask_template_name(self, title: str, label: str, text: str = "", template_id: str | None = None) -> str | None:
+        """Ask for a template's name until it is one no other template has. None when cancelled or blank.
+
+        A taken name asks again, with what was typed and a line saying whose name it is.
+        ``template_id`` is the template being renamed, whose own name is never taken.
+        """
+        prompt = label
+        while True:
+            name, ok = QInputDialog.getText(self._window, title, prompt, text=text)
+            name = name.strip()
+            if not ok or not name:
+                return None
+            taken = template_store.name_clash(name, template_id, **self._template_roots())
+            if taken is None:
+                return name
+            prompt = f"There is already a template called '{taken}'.\n\n{label}"
+            text = name
+
     def _new_template(self) -> bool:
         """New: ask for a name, start a blank template of the user's own, and open its draft."""
-        name, ok = QInputDialog.getText(self._window, "New Template", "What is the template called?")
-        if not ok or not name.strip():
+        name = self._ask_template_name("New Template", "What is the template called?")
+        if name is None:
             return False
         try:
             template = template_store.new_template(name, **self._template_roots())
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             QMessageBox.critical(self._window, "New Template", f"Could not create the template:\n\n{exc}")
             return False
         return self._edit_template(template)
@@ -1460,13 +1486,12 @@ class AppController(QObject):
     def _duplicate_template(self, source: template_store.Template) -> bool:
         """Duplicate: fork ``source`` into a template of the user's own, and open its draft."""
         taken = [t.name for t in template_store.list_templates(**self._template_roots())]
-        name, ok = QInputDialog.getText(
-            self._window,
+        name = self._ask_template_name(
             "Duplicate Template",
             f"What is your copy of {source.name} called?",
             text=template_gallery.copy_name(source.name, taken),
         )
-        if not ok or not name.strip():
+        if name is None:
             return False
         try:
             fork = template_store.duplicate_template(source, name, **self._template_roots())
@@ -1482,9 +1507,9 @@ class AppController(QObject):
         writing the old one back.
         """
         template = entry.template
-        name, ok = QInputDialog.getText(self._window, "Rename Template", "Template name:", text=template.name)
-        name = name.strip()
-        if not ok or not name or name == template.name:
+        current = template_store.renamed_in_draft(template) or template.name
+        name = self._ask_template_name("Rename Template", "Template name:", text=current, template_id=template.id)
+        if name is None or name == current:
             return False
         try:
             template_store.rename_template(template.id, name, **self._template_roots())
@@ -1499,6 +1524,13 @@ class AppController(QObject):
                 self._clean_snapshot = _file_snapshot(config)
             self._window.set_bot_name(config.name, self._file_label(config, self._last_save_path))
             self._window.bot_canvas.refresh_name()
+        if template_store.rename_waits_for_release(template, **self._template_roots()):
+            QMessageBox.information(
+                self._window,
+                "Rename Template",
+                f"The draft is now called {name}. {template.name} has been released with the app, so its "
+                "card keeps that name until you release the draft.",
+            )
         return True
 
     def _delete_template(self, entry: template_gallery.GalleryEntry) -> bool:
@@ -2009,13 +2041,16 @@ class AppController(QObject):
         QMessageBox.critical(self._window, title, f"Fix these before saving '{config.name}':\n\n{listed}{more}")
         return True
 
-    def _save_definition_as(self, name: str | None = None, description: str | None = None) -> bool:
+    def _save_definition_as(
+        self, name: str | None = None, description: str | None = None, categories: list[str] | None = None
+    ) -> bool:
         """Save the open definition as a new one, and go on editing the new one. False when refused or cancelled.
 
         Save As, as for a file: the copy gets its own id at version 1, and the
         document becomes the copy. The bots linking the original -- the one this was
         opened from included -- keep linking it, since the copy is a new thing nothing
-        uses yet. Asks for a name and description unless given.
+        uses yet. Asks for a name, description and categories, starting from the
+        original's, unless a name is given; ``categories`` None keeps the original's.
         """
         config = self._loaded_config
         if config is None or config.definition is None:
@@ -2029,17 +2064,21 @@ class AppController(QObject):
                 self._window,
                 name=f"{config.name} (copy)",
                 description=config.description or "",
+                categories=list(config.definition.tags),
                 title="Save as New Subgraph",
             )
             if not dlg.exec():
                 return False
-            name, description = dlg.name, dlg.description
+            name, description, categories = dlg.name, dlg.description, dlg.categories
         try:
             defn = config_to_definition(config, version=1)
         except ValueError as exc:
             QMessageBox.critical(self._window, "Save as New Subgraph", str(exc))
             return False
-        defn = defn.model_copy(update={"id": str(uuid4()), "name": name, "description": description})
+        update = {"id": str(uuid4()), "name": name, "description": description}
+        if categories is not None:
+            update["tags"] = list(categories)
+        defn = defn.model_copy(update=update)
         try:
             self._subgraph_library.save(defn)
         except Exception as exc:

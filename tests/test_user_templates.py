@@ -23,11 +23,13 @@ from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.template_store import (
     TEMPLATE_ID_PREFIX,
+    NameTaken,
     TemplateIndex,
     bots_based_on,
     count_bots_based_on,
     delete_template,
     deletion_refused,
+    draft_name_refused,
     duplicate_template,
     find_template,
     fork_prefix,
@@ -36,10 +38,12 @@ from bartlebot.template_store import (
     list_templates,
     load_draft,
     load_version,
+    name_clash,
     new_template,
     release,
     release_problems,
     rename_template,
+    renamed_in_draft,
     save_draft,
 )
 from tests.test_subgraph_integration import ControllerHarness
@@ -329,6 +333,69 @@ def test_an_official_template_is_never_renamed(roots):
     with pytest.raises(PermissionError):
         rename_template(OFFICIAL_ID, "Mine now", root=roots[0], user_root=roots[1])
     assert _official(roots).name == "Official Farmer"
+
+
+def test_a_name_another_template_has_is_refused_without_case(roots):
+    """New, Duplicate and Rename all write through save_draft, which keeps names apart."""
+    mine = new_template("Mine", root=roots[0], user_root=roots[1])
+
+    with pytest.raises(NameTaken, match="Official Farmer"):
+        new_template("official farmer", root=roots[0], user_root=roots[1])
+    with pytest.raises(NameTaken):
+        duplicate_template(_official(roots), "MINE", root=roots[0], user_root=roots[1])
+    with pytest.raises(NameTaken):
+        rename_template(mine.id, "Official Farmer", root=roots[0], user_root=roots[1])
+
+    assert [t.name for t in list_templates(*roots)] == ["Mine", "Official Farmer"]
+    rename_template(mine.id, "MINE", root=roots[0], user_root=roots[1])
+    assert find_template(mine.id, *roots).name == "MINE", "its own name, in other case, is not taken"
+
+
+def test_a_name_a_draft_carries_is_taken_too(tmp_path):
+    """With the roots one, a released template renamed in its draft keeps the new name to itself."""
+    save_draft(_official_draft(), tmp_path)
+    release(OFFICIAL_ID, "First", root=tmp_path)
+    rename_template(OFFICIAL_ID, "Boss Sweeper", root=tmp_path)
+
+    assert name_clash("boss sweeper", root=tmp_path) == "Boss Sweeper"
+    assert name_clash("Boss Sweeper", OFFICIAL_ID, root=tmp_path) is None
+
+
+def test_a_draft_already_sharing_a_name_still_saves_until_its_name_changes(roots):
+    """A clash made before the rule never blocks a save; only taking a name does."""
+    mine = new_template("Mine", root=roots[0], user_root=roots[1])
+    draft = load_draft(mine.id, *roots)
+    draft.name = "Official Farmer"
+    draft.save(mine.draft_path)
+
+    save_draft(load_draft(mine.id, *roots), *roots)
+
+    draft.name = "official FARMER"
+    assert "Official Farmer" in draft_name_refused(draft, *roots)
+
+
+def test_with_one_root_renaming_a_released_template_waits_for_its_next_release(tmp_path):
+    """Developer mode: the index is what ships, so a rename lives in the draft until Release."""
+    save_draft(_official_draft(), tmp_path)
+    release(OFFICIAL_ID, "First", root=tmp_path)
+    index = find_template(OFFICIAL_ID, tmp_path).folder / "template.json"
+    before = index.read_bytes()
+
+    template = rename_template(OFFICIAL_ID, "Boss Sweeper", root=tmp_path)
+
+    assert index.read_bytes() == before
+    assert template.name == "Official Farmer" and renamed_in_draft(template) == "Boss Sweeper"
+    entry = next(e for e in template_gallery.gallery(root=tmp_path) if e.id == OFFICIAL_ID)
+    assert entry.detail == "v1 · no bots · renamed to Boss Sweeper in draft"
+    release(OFFICIAL_ID, "Renamed", root=tmp_path)
+    template = find_template(OFFICIAL_ID, tmp_path)
+    assert template.name == "Boss Sweeper" and renamed_in_draft(template) is None
+
+
+def test_with_one_root_an_unreleased_template_renames_at_once(tmp_path):
+    scratch = new_template("Scratch", root=tmp_path)
+
+    assert rename_template(scratch.id, "Sketch", root=tmp_path).name == "Sketch"
 
 
 def test_saving_an_unrenamed_draft_never_writes_the_index(roots):
@@ -621,6 +688,38 @@ def test_renaming_the_open_draft_renames_the_document_too(harness, roots, monkey
     assert harness._window.bot_canvas.crumb_bar.text == "Template draft · Renamed"
     harness._save_bot()
     assert find_template(mine.id, *roots).name == "Renamed", "the next save keeps the new name"
+
+
+def test_a_taken_name_asks_again_with_what_was_typed(harness, roots, monkeypatch):
+    asked = []
+    answers = iter([("official farmer", True), ("Mob Sweeper", True)])
+
+    def get_text(_parent, _title, label, text=""):
+        asked.append((label, text))
+        return next(answers)
+
+    monkeypatch.setattr(QInputDialog, "getText", get_text)
+
+    assert harness._new_template()
+
+    assert harness._loaded_config.name == "Mob Sweeper"
+    assert asked[1] == (
+        "There is already a template called 'Official Farmer'.\n\nWhat is the template called?",
+        "official farmer",
+    )
+
+
+def test_saving_a_draft_renamed_in_its_header_to_a_taken_name_is_refused(harness, roots, monkeypatch):
+    told = []
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a[2]))
+    mine = new_template("Mine", root=roots[0], user_root=roots[1])
+    harness._edit_template(mine)
+    harness._loaded_config.name = "Official Farmer"
+
+    assert not harness._save_bot()
+
+    assert "Official Farmer" in told[0]
+    assert load_draft(mine.id, *roots).name == "Mine"
 
 
 def test_delete_names_the_bots_made_from_it_closes_its_open_draft_and_deletes(harness, roots, tmp_path, monkeypatch):

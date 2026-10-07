@@ -18,7 +18,8 @@ matches none of these                           ``CONFLICT``  **Import as copy**
                                                               Replace, Keep mine
 ==============================================  ============  ==========================
 
-The first action listed is the default (:data:`CHOICES`). A conflict defaults to Import
+"The receiver's hash" includes the one an item import changed was sent with: see THE
+NEXT VERSION below. The first action listed is the default (:data:`CHOICES`). A conflict defaults to Import
 as copy, never to Replace: an import that overwrote by id without asking is how Grafana
 users lost dashboards.
 
@@ -29,6 +30,21 @@ A copy's id is not random. :func:`copy_id` derives it from the item's kind, its 
 the hash it was sent with, so the same file imported again finds the copy it made the
 first time (``COPIED``) and writes nothing, and the same item reaching the receiver in
 two files becomes one copy, not two.
+
+THE NEXT VERSION OF WHAT CAME IN CHANGED
+----------------------------------------
+
+An item written other than as it was sent -- its links rewritten to a copy, or as a copy
+itself -- records the hash it was sent with (``sent_sha256``,
+:mod:`bartlebot.shared.content_hash`), and :class:`Held` carries it. Matching treats it
+as the receiver's hash too, so the sender's next version of the item is ``NEWER``, not a
+conflict, for as long as the receiver hasn't changed it.
+
+A copy is found the same way. Its id is :func:`copy_id` of a hash the item once had, so
+:func:`copy_ids` of the incoming item's hash and history names every copy an earlier
+version of it could have made. One still holding the version it was sent as is that
+item's copy here (:func:`copy_outcome`): the same version again is ``COPIED``, and a
+later one ``NEWER``, which updates the copy rather than making another.
 
 Nothing here imports from outside :mod:`bartlebot.shared`.
 """
@@ -91,6 +107,13 @@ class Held:
 
     sha256: str
     history: tuple[str, ...] = ()
+    #: The hash it was sent with, when an import wrote it changed: see the module docstring.
+    sent_sha256: str | None = None
+
+    @property
+    def hashes(self) -> frozenset[str]:
+        """Every hash that stands for this item as it is: its own, and the one it was sent with."""
+        return frozenset(h for h in (self.sha256, self.sent_sha256) if h)
 
 
 def match(
@@ -98,17 +121,20 @@ def match(
     history: Iterable[str],
     held: Held | None,
     *,
+    sent: str | None = None,
     official: bool = False,
     copied: bool = False,
 ) -> Outcome:
     """What an item hashing to ``sha256``, with ``history``, is to ``held``, the receiver's copy of its id.
 
-    ``official`` says the item may never take its own id here: the receiver has an
-    Official item of that id, or the sender's was a change to an Official one.
+    ``sent`` is the hash the item was sent with, when ``sha256`` is of it with its links
+    rewritten. ``official`` says the item may never take its own id here: the receiver
+    has an Official item of that id, or the sender's was a change to an Official one.
     ``copied`` says the copy :func:`copy_id` names already exists, because this same
     item was imported as a copy before.
     """
-    if held is not None and held.sha256 == sha256:
+    sent = sent or sha256
+    if held is not None and (held.sha256 == sha256 or sent in held.hashes):
         return Outcome.SAME
     if copied:
         return Outcome.COPIED
@@ -116,9 +142,9 @@ def match(
         return Outcome.OFFICIAL
     if held is None:
         return Outcome.NEW
-    if held.sha256 in set(history):
+    if held.hashes & set(history):
         return Outcome.NEWER
-    if sha256 in held.history:
+    if sha256 in held.history or sent in held.history:
         return Outcome.OLDER
     return Outcome.CONFLICT
 
@@ -130,6 +156,27 @@ _COPY_NAMESPACE = uuid.UUID("5d0b3c1e-8f7a-4e62-9c1d-2b6f0a4e7c31")
 def copy_id(kind: str, item_id: str, sha256: str) -> str:
     """The id an item of ``kind`` gets when imported as a copy: the same for the same item, every time."""
     return str(uuid.uuid5(_COPY_NAMESPACE, f"{kind}\n{item_id}\n{sha256}"))
+
+
+def copy_ids(kind: str, item_id: str, sent: str, history: Iterable[str]) -> list[str]:
+    """Every id a copy of this item, or of an earlier version of it, would have been given: newest first."""
+    return [copy_id(kind, item_id, h) for h in dict.fromkeys((sent, *history))]
+
+
+def copy_outcome(sent: str, history: Iterable[str], copy: Held) -> Outcome | None:
+    """What an item sent as ``sent``, with ``history``, is to ``copy``, a copy import made of it under :func:`copy_ids`.
+
+    ``COPIED`` when the copy still holds this version as it was sent, ``NEWER`` when it
+    holds an earlier one, and ``None`` once the receiver has changed it: from then on
+    it is their own, and the item comes in as any other would.
+    """
+    if copy.sent_sha256 is None:
+        return None
+    if copy.sent_sha256 == sent:
+        return Outcome.COPIED
+    if copy.sent_sha256 in set(history):
+        return Outcome.NEWER
+    return None
 
 
 def relink_duel(duel: DuelCombatStrategy, players: Mapping[str, str]) -> None:

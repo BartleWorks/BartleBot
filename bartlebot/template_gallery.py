@@ -17,7 +17,9 @@ them. Which are allowed follows from where a template comes from:
 Developer mode makes the two roots one directory, so every template there reads as
 Custom and the maintainer edits the shipped ones in place, as before. What it cannot do
 is delete one that has been released, since that folder is what ships
-(:func:`bartlebot.template_store.deletion_refused`).
+(:func:`bartlebot.template_store.deletion_refused`), or rename one anywhere but in its
+draft, which the next release carries
+(:func:`bartlebot.template_store.rename_waits_for_release`).
 
 No Qt and no settings here: the dialog is ``gui/templates_dialog.py``, and a test builds
 a gallery on a ``tmp_path``.
@@ -60,6 +62,9 @@ class GalleryEntry:
     edit_refused: str
     #: "" when Delete is allowed, else why not.
     delete_refused: str
+    #: The name the draft carries when it differs from the card's, which its next release
+    #: will carry (:func:`~bartlebot.template_store.renamed_in_draft`); "" otherwise.
+    renamed_to: str = ""
 
     @property
     def id(self) -> str:
@@ -102,6 +107,8 @@ class GalleryEntry:
         parts.append(bots_phrase(self.bots))
         if self.forked_from:
             parts.append(f"from {self.forked_from}")
+        if self.renamed_to:
+            parts.append(f"renamed to {self.renamed_to} in draft")
         return " · ".join(parts)
 
 
@@ -158,6 +165,7 @@ def gallery(
                 forked_from=forked_from,
                 edit_refused="" if template.origin is Origin.USER or dev else OFFICIAL_EDIT_REFUSED,
                 delete_refused=template_store.deletion_refused(template, root, user_root),
+                renamed_to=template_store.renamed_in_draft(template) or "",
             )
         )
     return entries

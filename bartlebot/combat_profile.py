@@ -183,7 +183,7 @@ def duplicate_profile(bcs: BotCombatStrategy, name: str) -> BotCombatStrategy:
     profile first, so the other profile's copy would then silently hide the library one.
     """
     # A new item, so a fresh history too (#169): the one it was copied from is not its past.
-    copy = bcs.model_copy(deep=True, update={"id": str(uuid4()), "name": name, "history": []})
+    copy = bcs.model_copy(deep=True, update={"id": str(uuid4()), "name": name, "history": [], "sent_sha256": None})
     id_map: dict[str, str] = {}
     for item in (*copy.duel_strategies, *copy.player_strategies):
         new_id = str(uuid4())

@@ -340,7 +340,10 @@ word outside the vocabulary, a Source word included, is dropped on load with a w
 an unknown bot tag is. In the open document they ride on `DefinitionMeta.tags`, because the
 document's own `tags` are bot tags and validation would drop any other word; Bar B's tag
 row shows them in place of a bot's, with one *Category* picker in Edit mode, beside where
-the definition comes from. A category change is `"meta"` to `definition_change`, like a
+the definition comes from. *Save Region as Reusable Subgraph* and *Save as New Subgraph*
+ask for them too, beside the name and description, the second starting from the
+original's (`SubgraphMetaDialog`'s Category row); the library's Rename asks only for the
+name and description. A category change is `"meta"` to `definition_change`, like a
 rename: it keeps the version and reaches no bot's run. It does change the content hash, so
 it is recorded in the history and travels in a share file.
 

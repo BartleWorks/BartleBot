@@ -153,7 +153,7 @@ def _fresh_copy(name: str) -> dict:
     A copy is a new item, as a bot's Make my own copy is: what it was copied from is not
     its own past, and it overrides nothing (#169).
     """
-    return {"id": str(uuid4()), "name": name, "history": [], "official_sha256": None}
+    return {"id": str(uuid4()), "name": name, "history": [], "official_sha256": None, "sent_sha256": None}
 
 
 def _snapshot(item) -> str:
