@@ -397,6 +397,7 @@ def test_a_deck_file_holds_one_preset_without_tc_or_apply_archmastery(roots):
         name="Storm Deck",
         description="For the boss.",
         tags=["Hitter"],
+        schools=["Storm"],
         deck=DeckData(normal={"Storm Lord": 2}, item={"Tempest": 1}, tc={"Old": 3}, apply_archmastery=False),
     )
     save_deck_preset(preset, roots.shipped, roots.user)
@@ -407,6 +408,7 @@ def test_a_deck_file_holds_one_preset_without_tc_or_apply_archmastery(roots):
     assert item.content["name"] == "Storm Deck"
     assert item.content["description"] == "For the boss."
     assert item.content["tags"] == ["Hitter"]
+    assert item.content["schools"] == ["Storm"], "a deck's school travels with it (#174)"
     assert item.content["deck"] == {"normal": {"Storm Lord": 2}, "item": {"Tempest": 1}}
     assert item.sha256 == content_sha256(DeckPreset.model_validate(item.content))
     assert plan.extension == ".bbdeck"

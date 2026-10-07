@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import pytest
 
+from bartlebot.bot.strategy_models import DeckData, DeckPreset
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_store import StrategyKind
+from bartlebot.strategy_summary import summarize_deck
 from bartlebot.strategy_tags import (
     KIND_GROUPS,
     PROFILE_SOURCE,
@@ -58,9 +60,27 @@ def test_duels_have_no_role_group():
     assert ROLE in KIND_GROUPS[StrategyKind.DECK]
 
 
-def test_decks_are_not_asked_about_school_and_only_duels_about_team_size():
-    assert StrategyKind.DECK not in SCHOOL_KINDS
+def test_every_kind_is_asked_about_school_and_only_duels_about_team_size():
+    assert SCHOOL_KINDS == {StrategyKind.DUEL, StrategyKind.PLAYER, StrategyKind.DECK}
     assert TEAM_SIZE_KINDS == {StrategyKind.DUEL}
+
+
+def test_a_decks_schools_are_its_one_slot_and_its_first_facet():
+    """#174: a deck names the schools it is built for, and empty works with any."""
+    storm = summarize_deck(DeckPreset(name="D", schools=["Storm", "Ice"], deck=DeckData(normal={"Storm Lord": 2})))
+    anyone = summarize_deck(DeckPreset(name="D"))
+
+    assert storm.facets == ["Storm/Ice", "2 cards"]
+    assert storm.slot_schools == (frozenset({"Storm", "Ice"}),)
+    assert anyone.facets == ["empty"]
+    assert works_with_school(anyone.slot_schools, ["Fire"])
+    assert not works_with_school(storm.slot_schools, ["Fire"])
+
+
+def test_a_decks_schools_stay_out_of_its_file_while_empty_and_are_deduplicated(tmp_path):
+    DeckPreset(name="D").save(tmp_path / "d.json")
+    assert "schools" not in (tmp_path / "d.json").read_text(encoding="utf-8")
+    assert DeckPreset(name="D", schools=["Ice", "", "Ice", "Storm"]).schools == ["Ice", "Storm"]
 
 
 def test_every_tag_knows_its_group():

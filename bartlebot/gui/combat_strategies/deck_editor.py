@@ -1,4 +1,4 @@
-"""Editor for a DeckPreset: its archmastery override, over a read-only card list.
+"""Editor for a DeckPreset: its schools and archmastery override, over a read-only card list.
 
 A deck preset's *contents* are captured from the game, not typed — there is no
 sensible way to author "4 × Storm Blade" by hand that is better than pressing
@@ -10,6 +10,10 @@ reachable only from the sidebar deck card's menu, which meant a preset in the li
 could not be configured in the place it is configured — it had to be loaded into a
 player slot first. :class:`~bartlebot.gui.widgets.archmastery_editor.ArchmasteryEditor`
 is that control, and the school itself stays read-only for the same reason the cards do.
+
+The schools the deck is built for (#174) are the other decision, and are authored here the
+way a player strategy's are, with the same picker: empty means any school. They are not the
+archmastery school, which is the wizard's at capture time and is shown below them.
 
 The identity fields are not here: name and description moved up into the detail pane's
 shared *About* section — see
@@ -29,12 +33,13 @@ give this widget.
 from __future__ import annotations
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.bot.strategy_models import DeckPreset
 from bartlebot.gui.widgets.archmastery_editor import ArchmasteryEditor
 from bartlebot.gui.widgets.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.widgets.school_picker import SchoolPickerButton
 
 #: Said in place of the card list for a preset holding nothing. A preset *can* be empty:
 #: ``+ New`` makes one before anything has been captured into it.
@@ -42,7 +47,7 @@ EMPTY_DECK = "(empty deck — capture one from a client to fill it)"
 
 
 class DeckPresetEditor(QWidget):
-    """Edit a DeckPreset's archmastery answer; show what it holds."""
+    """Edit a DeckPreset's schools and archmastery answer; show what it holds."""
 
     #: An edit landed on the loaded preset — for whoever draws the card list.
     changed = pyqtSignal()
@@ -54,6 +59,15 @@ class DeckPresetEditor(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
+
+        school_row = QHBoxLayout()
+        school_row.addWidget(QLabel("Schools:"))
+        self._school_picker = SchoolPickerButton()
+        self._school_picker.setToolTip("The schools this deck is built for, if any — descriptive only")
+        self._school_picker.selection_changed.connect(self._on_schools_changed)
+        school_row.addWidget(self._school_picker)
+        school_row.addStretch()
+        layout.addLayout(school_row)
 
         layout.addWidget(RuleHeading("Archmastery", self))
         self._archmastery = ArchmasteryEditor(parent=self)
@@ -76,6 +90,11 @@ class DeckPresetEditor(QWidget):
         return self._preset
 
     @property
+    def school_picker(self) -> SchoolPickerButton:
+        """The schools control. Public so a test can pick a school as a user would."""
+        return self._school_picker
+
+    @property
     def archmastery(self) -> ArchmasteryEditor:
         """The archmastery control. Public because it is what the page's tests read."""
         return self._archmastery
@@ -87,14 +106,24 @@ class DeckPresetEditor(QWidget):
 
     def set_editable(self, editable: bool) -> None:
         """Read-only in the dialog's Pick mode, which selects and edits nothing (#123)."""
+        self._school_picker.setEnabled(editable)
         self._archmastery.setEnabled(editable)
 
     def load(self, preset: DeckPreset) -> None:
+        self._preset = None  # so setting the picker below is not taken for an edit
+        self._school_picker.set_value(preset.schools)
         self._preset = preset
         self._archmastery.load(preset.deck)
         self._cards.set_deck(preset.deck)
 
     def clear(self) -> None:
         self._preset = None
+        self._school_picker.set_value([])
         self._archmastery.clear()
         self._cards.set_deck(None)
+
+    def _on_schools_changed(self) -> None:
+        if self._preset is None:
+            return
+        self._preset.schools = self._school_picker.value()
+        self.changed.emit()
