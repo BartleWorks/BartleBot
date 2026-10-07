@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 
 from bartlebot.bot_tags import normalize_tags
 from bartlebot.subgraph_tags import normalize_subgraph_tags
@@ -55,15 +55,104 @@ class DropModel(BaseModel):
         return self.match_name or self.name
 
 
-class FlagCondition(BaseModel):
-    """A single bot-option guard on a transition.
+#: The node type that writes variables. Named here, where the registry-free rules for a
+#: subgraph definition need it; the node is ``bartlebot/nodes/utility/set_variables.py``.
+SET_VARIABLES_NODE = "set_variables"
 
-    ``option`` is a BotOptionModel.name; ``negate`` inverts the truthiness check.
-    Multiple FlagConditions are combined by their parent's ``op`` field.
+
+class VariableModel(BaseModel):
+    """A value the bot learns during a run and reads back to choose its next node.
+
+    Declared per bot, typed, and fresh when the run starts: every run begins at
+    ``initial``, and only the bot itself changes it after that -- a ``set_variables``
+    node. Never saved: nothing a variable holds outlives the run. ``values`` lists an
+    enum's names and is left out for the other types. ``initial`` left unset starts a
+    bool at false, an int at 0 and an enum at its first value (:func:`initial_value`).
+
+    Kept loose here, like a condition row's value: a declaration that breaks a rule
+    (a duplicate name, an initial value of the wrong type) still loads, so the editor can
+    show it, and :mod:`bartlebot.variables` refuses the run instead.
     """
 
-    option: str
+    name: str
+    type: Literal["bool", "int", "enum"]
+    values: list[str] | None = None
+    initial: bool | int | str | None = None
+    description: str | None = None
+
+    def initial_value(self) -> bool | int | str | None:
+        """What the variable holds when a run starts."""
+        if self.initial is not None:
+            return self.initial
+        if self.type == "bool":
+            return False
+        if self.type == "int":
+            return 0
+        return self.values[0] if self.values else None
+
+
+class AssignmentModel(BaseModel):
+    """One write to a variable: set it to ``value``, add ``value`` to an int, or toggle a bool.
+
+    The rows of a ``set_variables`` node's ``assignments`` param, which are stored as
+    written and parsed with this. ``value`` is unused by ``toggle``.
+    """
+
+    variable: str
+    op: Literal["set", "add", "toggle"] = "set"
+    value: bool | int | str | None = None
+
+
+class FlagCondition(BaseModel):
+    """A single guard on a transition: a bot option, or a variable compared with a value.
+
+    An option row is ``{option, negate}``: ``option`` is a BotOptionModel.name, and
+    ``negate`` inverts the truthiness check. A variable row is ``{variable, compare,
+    value}``: ``variable`` names a :class:`VariableModel`, and the row is true when its
+    current value ``compare``-s against ``value``. Only an int takes the four ordering
+    comparisons; ``bartlebot.variables`` refuses them on a bool or an enum. Exactly one of ``option`` and
+    ``variable`` is set. Multiple FlagConditions are combined by their parent's ``op``
+    field, so options and variables mix in one AND/OR expression.
+
+    Every reader of ``option`` must pass over a variable row, whose ``option`` is None.
+    """
+
+    option: str | None = None
     negate: bool = False
+    variable: str | None = None
+    compare: Literal["==", "!=", "<", "<=", ">", ">="] | None = None
+    value: bool | int | str | None = None
+
+    @property
+    def is_variable(self) -> bool:
+        """Whether this row reads a variable rather than an option."""
+        return self.variable is not None
+
+    @model_validator(mode="after")
+    def names_one_guard(self) -> "FlagCondition":
+        if (self.option is None) == (self.variable is None):
+            raise ValueError("a condition names an option or a variable, and not both")
+        if self.variable is None:
+            # Dropped, not refused: before variable rows these were unknown keys, which a
+            # file could carry and pydantic ignored, and such a file must still load.
+            self.compare = None
+            self.value = None
+            return self
+        if self.negate:
+            raise ValueError(f"the condition on variable {self.variable!r} cannot be negated: compare with != instead")
+        if self.value is None:
+            raise ValueError(f"the condition on variable {self.variable!r} needs a value to compare with")
+        if self.compare is None:
+            self.compare = "=="
+        return self
+
+    @model_serializer(mode="wrap")
+    def _dump_one_shape(self, handler):
+        """A variable row is written without ``negate``, which only an option row has."""
+        data = handler(self)
+        if self.variable is not None:
+            data.pop("negate", None)
+        return data
 
 
 class FlagGroup(BaseModel):
@@ -430,6 +519,10 @@ class BotConfig(BaseModel):
     # What the bot is *for* — see bartlebot/bot_tags.py. Filters the library panel.
     tags: list[str] = Field(default_factory=list)
     options: list[BotOptionModel] = Field(default_factory=list)
+    # What the bot learns as it runs and reads back on its edges (docs/VARIABLES.md).
+    # Left out of the file while empty, as history is, so a bot without any is written
+    # exactly as before the field existed.
+    variables: list[VariableModel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel]
     regions: list[RegionModel] = Field(default_factory=list)
@@ -524,8 +617,11 @@ class BotConfig(BaseModel):
 
         Flag conditions are compiled to condition method names that BotMachine's
         ``__getattr__`` resolves at runtime:
-          - Single non-negated flag, AND: ``_flag_<option>`` (simple, backward-compat)
+          - Single non-negated option flag, AND: ``_flag_<option>`` (simple, backward-compat)
           - All other cases: ``_flag_compound_<idx>`` with an entry in conditions_registry
+
+        A row in the registry is ``{"option", "negate"}`` for an option and
+        ``{"variable", "compare", "value"}`` for a variable, in the same groups.
         """
         self.sort_transitions()
         conditions_registry: dict[str, dict] = {}
@@ -539,25 +635,20 @@ class BotConfig(BaseModel):
                 cond_name = f"_flag_compound_{idx}"
                 d.setdefault("conditions", []).append(cond_name)
                 conditions_registry[cond_name] = {
-                    "groups": [
-                        {
-                            "flags": [{"option": fc.option, "negate": fc.negate} for fc in g.flags],
-                            "op": g.op,
-                        }
-                        for g in t.flag_groups
-                    ],
+                    "groups": [{"flags": [_compiled_row(fc) for fc in g.flags], "op": g.op} for g in t.flag_groups],
                     "groups_op": t.flag_groups_op,
                 }
             elif t.flags:
-                if len(t.flags) == 1 and not t.flags[0].negate and t.flag_op == "AND":
+                only = t.flags[0]
+                if len(t.flags) == 1 and not only.is_variable and not only.negate and t.flag_op == "AND":
                     # Simple case: keep the cheap _flag_<name> form so existing bots
                     # with one plain flag condition continue to work without a registry lookup.
-                    d.setdefault("conditions", []).append(f"_flag_{t.flags[0].option}")
+                    d.setdefault("conditions", []).append(f"_flag_{only.option}")
                 else:
                     cond_name = f"_flag_compound_{idx}"
                     d.setdefault("conditions", []).append(cond_name)
                     conditions_registry[cond_name] = {
-                        "flags": [{"option": fc.option, "negate": fc.negate} for fc in t.flags],
+                        "flags": [_compiled_row(fc) for fc in t.flags],
                         "op": t.flag_op,
                     }
             if t.label:
@@ -579,6 +670,8 @@ class BotConfig(BaseModel):
             "states": states,
             "transitions": trans_list,
             "conditions_registry": conditions_registry,
+            # The declarations, from which the machine starts every value when a run begins.
+            "variables": [v.model_dump() for v in self.variables],
         }
 
     @classmethod
@@ -604,8 +697,9 @@ class BotConfig(BaseModel):
 
         data = self.model_dump(exclude_none=True)
         data["options"] = [o.model_dump(exclude_none=True) for o in storable_options(self)]
-        if not data["history"]:
-            del data["history"]
+        for key in ("variables", "history"):
+            if not data[key]:
+                del data[key]
         return data
 
     def save(self, path: str | Path) -> None:
@@ -614,6 +708,20 @@ class BotConfig(BaseModel):
         # on every platform. Left to the platform, saving one on Windows rewrote every
         # line of it.
         atomic_write_json(self.file_dump(), path, newline="\n" if self.is_template else None)
+
+
+def _compiled_row(fc: FlagCondition) -> dict:
+    """One condition row as ``BotMachine`` evaluates it from ``conditions_registry``."""
+    if fc.is_variable:
+        return {"variable": fc.variable, "compare": fc.compare, "value": fc.value}
+    return {"option": fc.option, "negate": fc.negate}
+
+
+def uses_variables(transitions: list[TransitionModel], states: list[StateModel]) -> bool:
+    """Whether a graph reads or writes a variable: a variable condition row, or a set_variables node."""
+    if any(s.node_type == SET_VARIABLES_NODE for s in states):
+        return True
+    return any(fc.is_variable for t in transitions for fc in [*t.flags, *(f for g in t.flag_groups for f in g.flags)])
 
 
 def atomic_write_json(data: dict, path: str | Path, *, newline: str | None = None) -> None:
@@ -694,6 +802,10 @@ def definition_structure_errors(
     for x in exits:
         if any(t.source == x.id for t in transitions):
             errors.append(f"Exit '{x.label or x.id}' cannot have edges leading out of it")
+    # Variables belong to a bot. Two instances of one definition reading the bot's
+    # variables by name would share one counter without saying so (docs/VARIABLES.md).
+    if uses_variables(transitions, states):
+        errors.append("a subgraph cannot use variables: they belong to the bot")
 
     panel_ids: set[str] = set()
     exposed: set[str] = set()

@@ -32,6 +32,7 @@ from bartlebot import (
     template_diff,
     template_gallery,
     template_store,
+    variables,
     wizard_names,
     zone_names,
 )
@@ -2620,6 +2621,8 @@ class AppController(QObject):
             return
         if not self._check_player_realms():
             return
+        if not self._check_variables():
+            return
         from bartlebot.gui.safety_warning_dialog import level_scaling_players  # noqa: PLC0415
 
         clients = self._client_manager.clients
@@ -2724,6 +2727,22 @@ class AppController(QObject):
             return True
         logger.warning("Refusing to run: %s is Separate in a bot with a merging node", player_realms.OPTION)
         QMessageBox.critical(self._window, player_realms.OPTION, reason)
+        return False
+
+    def _check_variables(self) -> bool:
+        """Refuse to run a bot whose variables have errors. Returns whether to proceed.
+
+        Tells rather than asks, as the two checks before it do: a condition on an undeclared
+        variable, or a write its type refuses, is a graph that cannot run as drawn
+        (``bartlebot.variables``). Warnings are the author's and never stop a run.
+        """
+        if self._loaded_config is None:
+            return True
+        reason = variables.run_refusal(self._loaded_config)
+        if reason is None:
+            return True
+        logger.warning("Refusing to run: the bot's variables have errors")
+        QMessageBox.critical(self._window, "Variables", reason)
         return False
 
     def _confirm_recovery_gaps(self) -> bool:

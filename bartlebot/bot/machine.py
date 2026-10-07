@@ -3,15 +3,16 @@ import logging
 import re
 import time
 from collections import Counter, deque
-from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Iterable, Mapping
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any
 
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import bot_options, option_values, restricted_zones, sightings
+from bartlebot import bot_options, option_values, restricted_zones, sightings, variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
-from bartlebot.bot.schema import FALLTHROUGH_RETURNS
+from bartlebot.bot.schema import FALLTHROUGH_RETURNS, VariableModel
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,10 @@ _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
 
 
+class VariableWriteRefused(RuntimeError):
+    """A variable write from a task that may not make one: anything but the running node's and the run loop's."""
+
+
 class BotMachine:
     """
     FSM engine for BartleBot. Wraps transitions.AsyncMachine.
@@ -64,6 +69,7 @@ class BotMachine:
         on_explicit_stop: Callable[[str, str, str], None] | None = None,
         on_stopped: Callable[[str], None] | None = None,
         recovery_gap: Callable[[int], str | None] | None = None,
+        on_variable_change: Callable[[str, Any, Any], None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -77,6 +83,7 @@ class BotMachine:
         self._on_restricted_zone = on_restricted_zone
         self._on_explicit_stop = on_explicit_stop
         self._on_stopped = on_stopped
+        self._on_variable_change = on_variable_change
         # Why a client could not be relaunched, or None when it could. See abandon_client.
         self._recovery_gap = recovery_gap
         # When each recent flee happened (monotonic), for the flee limit. See note_flee.
@@ -86,6 +93,9 @@ class BotMachine:
         self._stop_flag = asyncio.Event()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
+        # run()'s own task while it runs. With the node's, the only task that may write a
+        # variable -- see set_variable.
+        self._run_task: asyncio.Task | None = None
         self.drops: deque[tuple[str, int, int]] = deque(maxlen=10_000)  # (item, quantity, client_index)
         # Per-client chat-log baseline that drop detection diffs against. Keyed by the
         # client object rather than its slot: ClientManager.swap_clients reorders slots
@@ -146,6 +156,16 @@ class BotMachine:
         # Compiled compound flag expressions from to_machine_config().
         # Keys are _flag_compound_<idx> strings; values are {"flags": [...], "op": "AND"|"OR"}.
         self._conditions_registry: dict[str, dict] = config.get("conditions_registry", {})
+        # The bot's variables (docs/VARIABLES.md): declarations by name, and what each holds
+        # now. Every value starts at its declaration's initial value when run() begins, and
+        # after that only set_variable changes one -- no recovery jump, rerun or watcher.
+        self._variable_decls: dict[str, VariableModel] = {
+            d.name: d for d in (VariableModel.model_validate(v) for v in config.get("variables", []))
+        }
+        self._variables: dict[str, Any] = {}
+        self._reset_variables()
+        # The variable-only nodes run in a row, most recent last. See MAX_VARIABLE_ONLY_STEPS.
+        self._variable_only_streak: list[str] = []
 
         states = [s["id"] for s in config["states"]]
         transitions = config["transitions"]
@@ -168,7 +188,8 @@ class BotMachine:
                                 into this condition name.
         _flag_<NAME>          — fires when bot option <NAME> is truthy.
         _flag_compound_<IDX>  — evaluates a compiled multi-flag AND/OR/NOT expression
-                                stored in self._conditions_registry.
+                                stored in self._conditions_registry, whose rows read
+                                options and variables alike (_condition_row_holds).
         """
         if name.startswith("_result_is_"):
             expected = name[len("_result_is_") :]
@@ -182,21 +203,11 @@ class BotMachine:
                         # Grouped format: evaluate each group then combine with groups_op.
                         group_results = []
                         for grp in ci["groups"]:
-                            vals = [
-                                (not bool(self.get_option(c["option"], default=False)))
-                                if c["negate"]
-                                else bool(self.get_option(c["option"], default=False))
-                                for c in grp["flags"]
-                            ]
+                            vals = [self._condition_row_holds(c) for c in grp["flags"]]
                             group_results.append(any(vals) if grp["op"] == "OR" else all(vals))
                         return any(group_results) if ci["groups_op"] == "OR" else all(group_results)
                     # Legacy flat format.
-                    results = [
-                        (not bool(self.get_option(c["option"], default=False)))
-                        if c["negate"]
-                        else bool(self.get_option(c["option"], default=False))
-                        for c in ci["flags"]
-                    ]
+                    results = [self._condition_row_holds(c) for c in ci["flags"]]
                     return any(results) if ci["op"] == "OR" else all(results)
 
                 return _eval_compound
@@ -204,6 +215,86 @@ class BotMachine:
             option_name = name[len("_flag_") :]
             return lambda: bool(self.get_option(option_name, default=False))
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
+    def _condition_row_holds(self, row: dict) -> bool:
+        """Whether one compiled condition row is true: an option's truthiness, or a variable's comparison."""
+        if "variable" in row:
+            return variables.compare(self._variables.get(row["variable"]), row["compare"], row["value"])
+        value = bool(self.get_option(row["option"], default=False))
+        return not value if row["negate"] else value
+
+    # --- Variables ---
+
+    @property
+    def variables(self) -> Mapping[str, Any]:
+        """What each of the bot's variables holds now, by name. Read-only: set_variable is the one write."""
+        return MappingProxyType(self._variables)
+
+    @property
+    def variable_declarations(self) -> Mapping[str, VariableModel]:
+        """The bot's variable declarations, by name."""
+        return MappingProxyType(self._variable_decls)
+
+    def _reset_variables(self) -> None:
+        """Every variable back to its initial value. Only ever as a run starts."""
+        self._variables = {name: decl.initial_value() for name, decl in self._variable_decls.items()}
+
+    def set_variable(self, name: str, value: Any) -> None:
+        """Write one variable, and log the change once.
+
+        The only write there is, and only from the task running the current node or from
+        the run loop itself. The ambient watchers run beside a node and a node's game code
+        runs once per client in parallel, so either writing would let two of them change one
+        value -- a write from any other task raises :class:`VariableWriteRefused`. A name
+        the bot does not declare, or a value its type cannot hold, raises
+        :class:`bartlebot.variables.VariableError`.
+
+        Contains no ``await``, so a cancel can never land halfway through a write.
+        """
+        try:
+            task = asyncio.current_task()
+        except RuntimeError:
+            task = None
+        if task is None or task not in (self._current_node_task, self._run_task):
+            raise VariableWriteRefused(
+                f"variable {name!r} can only be written by the running node or the run loop, not from another task"
+            )
+        decl = self._variable_decls.get(name)
+        if decl is None:
+            raise variables.VariableError(f"there is no variable named {name!r}")
+        if not variables.value_fits(decl, value):
+            raise variables.VariableError(f"{name!r} cannot hold {variables.format_value(value)}")
+        old = self._variables.get(name)
+        if type(old) is type(value) and old == value:
+            self._log_machine(f"Variable {name} stays {variables.format_value(value)}", logging.DEBUG)
+            return
+        self._variables[name] = value
+        self._log_machine(f"Variable {name}: {variables.format_value(old)} → {variables.format_value(value)}")
+        if self._on_variable_change:
+            try:
+                self._on_variable_change(name, old, value)
+            except Exception:
+                logger.exception("on_variable_change callback raised for %r", name)
+
+    def _note_variable_only_step(self, state_id: str, node_type: str) -> bool:
+        """Count a step toward the variable-only limit. True when this one stopped the run.
+
+        A wrong condition between two set_variables or branch nodes loops without touching
+        the game. Neither the no-match count nor the same-state count sees it, because every
+        step matches and the state keeps changing.
+        """
+        if node_type not in variables.VARIABLE_ONLY_NODE_TYPES:
+            self._variable_only_streak.clear()
+            return False
+        self._variable_only_streak.append(state_id)
+        if len(self._variable_only_streak) <= variables.MAX_VARIABLE_ONLY_STEPS:
+            return False
+        looping = ", ".join(self._fmt_state(s) for s in dict.fromkeys(self._variable_only_streak))
+        self._stop_with_reason(
+            f"{len(self._variable_only_streak)} variable-only nodes ran in a row without touching the game,"
+            f" going round {looping}. Check the conditions on their edges."
+        )
+        return True
 
     # --- Options ---
 
@@ -511,6 +602,9 @@ class BotMachine:
         self._together.retain = True
         _run_start = time.monotonic()
         self._running = True
+        self._run_task = asyncio.current_task()
+        self._reset_variables()
+        self._variable_only_streak.clear()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         health_task = asyncio.create_task(self._health_monitor.run())
@@ -535,6 +629,8 @@ class BotMachine:
                         logger.exception("on_state_change callback raised in state %s", self._fmt_state(state_id))
 
                 node_type = state_def["node_type"]
+                if self._note_variable_only_step(state_id, node_type):
+                    break
                 if not self._rerunning:
                     self._note_pass(state_id)
                 self._rerunning = False
@@ -678,6 +774,7 @@ class BotMachine:
                         self._consecutive_same_state_count = 0
         finally:
             self._running = False
+            self._run_task = None
             self._current_node_type = None
             self._log_run_summary(time.monotonic() - _run_start)
             watcher.cancel()

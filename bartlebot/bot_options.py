@@ -478,8 +478,9 @@ def orphaned_flag_options(config, specs=None) -> list[tuple]:
     declared = {o.name for o in config.options} | set(required_option_specs(config, specs))
     orphans: list[tuple] = []
     for trans in config.transitions:
-        names: list[str] = [fc.option for fc in trans.flags]
-        names += [fc.option for group in trans.flag_groups for fc in group.flags]
+        rows = [*trans.flags, *(fc for group in trans.flag_groups for fc in group.flags)]
+        # A variable row guards on no option; bartlebot.variables checks those.
+        names: list[str] = [fc.option for fc in rows if fc.option is not None]
         for name in names:
             if name not in declared and (trans, name) not in orphans:
                 orphans.append((trans, name))

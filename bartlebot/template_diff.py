@@ -8,7 +8,7 @@ the *base*). When the template releases a newer one, this module compares three 
 - **mine**: the bot as it stands.
 
 Each is turned into a set of **units**, the smallest things compared: one param, one
-label, one edge slot, one input, one option, one role. A unit the template did not change
+label, one edge slot, one input, one option, one variable, one role. A unit the template did not change
 is never shown. One it did change is hidden when the bot already matches, **offered** when
 the user never touched it, and a **conflict** when the user changed it too. A removal is a
 conflict as well when the bot wired edges of its own to what it removes, since applying it
@@ -48,9 +48,11 @@ from bartlebot import fight_keys, template_store
 from bartlebot.bot.schema import (
     BotConfig,
     BotOptionModel,
+    FlagCondition,
     RegionModel,
     StateModel,
     TransitionModel,
+    VariableModel,
 )
 from bartlebot.bot_options import storable_options
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
@@ -91,16 +93,26 @@ class Port:
 # ---------------------------------------------------------------------------
 
 
+def _canon_row(f: FlagCondition) -> tuple:
+    """One condition row as a hashable tuple: ``(option, negate)``, or ``(variable, compare, value)``."""
+    if f.is_variable:
+        return (f.variable, f.compare, f.value)
+    return (f.option, f.negate)
+
+
 def _canon_flags(t: TransitionModel) -> tuple:
-    """A transition's flag guard in one canonical form, so two spellings of one guard share a slot."""
+    """A transition's flag guard in one canonical form, so two spellings of one guard share a slot.
+
+    Option and variable rows alike: a changed comparison is a different guard, so it moves
+    the edge to another slot and shows as a change to it.
+    """
     if t.flag_groups:
         groups = frozenset(
-            (frozenset((f.option, f.negate) for f in g.flags), g.op if len(g.flags) > 1 else "AND")
-            for g in t.flag_groups
+            (frozenset(_canon_row(f) for f in g.flags), g.op if len(g.flags) > 1 else "AND") for g in t.flag_groups
         )
         return ("groups", groups, t.flag_groups_op if len(groups) > 1 else "OR")
     if t.flags:
-        return ("flags", frozenset((f.option, f.negate) for f in t.flags), t.flag_op if len(t.flags) > 1 else "AND")
+        return ("flags", frozenset(_canon_row(f) for f in t.flags), t.flag_op if len(t.flags) > 1 else "AND")
     return ()
 
 
@@ -173,6 +185,8 @@ def _snapshot(config: BotConfig, prefixes: tuple[str, ...]) -> _Snapshot:
 
     for option in storable_options(config):
         units[("option", option.name)] = option.model_dump(exclude_none=True)
+    for variable in config.variables:
+        units.setdefault(("variable", variable.name), variable.model_dump(exclude_none=True))
     units[("role", "initial")] = _end(snap, config.initial)
     units[("role", "recovery_state")] = _end(snap, config.recovery_state)
     units[("role", "clients")] = config.clients
@@ -452,13 +466,23 @@ def _describe(unit: Unit, theirs: _Snapshot, base: _Snapshot, mine: _Snapshot) -
         return f"{_name(named, key[1])} · subgraph", "The template uses a different subgraph here"
     if kind == "option":
         return f"Option '{key[1]}'", "Removed" if unit.theirs is MISSING else "Its declaration changed"
+    if kind == "variable":
+        if unit.base is MISSING:
+            return f"Variable '{key[1]}'", "Added"
+        return f"Variable '{key[1]}'", "Removed" if unit.theirs is MISSING else "Its declaration changed"
     if kind == "role":
         what = {"initial": "Initial node", "recovery_state": "Recovery node", "clients": "Players"}[key[1]]
         return what, arrow
     source = _name(named, owner)
     outcome = f"port {key[1].port}" if isinstance(key[1], Port) else (key[2] or "any outcome")
-    guard = " (with option conditions)" if key[3] else ""
+    guard = (" (with option conditions)" if _options_only(key[3]) else " (with conditions)") if key[3] else ""
     return f"{source} · on {outcome}{guard}", arrow
+
+
+def _options_only(guard: tuple) -> bool:
+    """Whether a canonical guard (:func:`_canon_flags`) reads options alone, and no variable."""
+    rows = guard[1] if guard[0] == "flags" else [r for found, _op in guard[1] for r in found]
+    return all(len(r) == 2 for r in rows)
 
 
 def _guard_text(guard: tuple) -> str:
@@ -470,8 +494,15 @@ def _guard_text(guard: tuple) -> str:
     if not guard:
         return ""
 
+    def row(found: tuple) -> str:
+        if len(found) == 3:
+            variable, compare, value = found
+            return f"{variable}{compare}{value}"
+        option, negate = found
+        return f"{'!' if negate else ''}{option}"
+
     def flags(found) -> str:
-        return ",".join(sorted(f"{'!' if negate else ''}{option}" for option, negate in found))
+        return ",".join(sorted(row(f) for f in found))
 
     if guard[0] == "flags":
         return f"{guard[2]}({flags(guard[1])})"
@@ -989,6 +1020,15 @@ def apply(config: BotConfig, change: Change, *, place: Placer | None = None, lib
                 new.options.append(BotOptionModel.model_validate(value))
             else:
                 new.options[at] = BotOptionModel.model_validate(value)
+        elif kind == "variable":
+            # The same, for the Variables section.
+            at = next((i for i, v in enumerate(new.variables) if v.name == key[1]), None)
+            if value is MISSING:
+                new.variables = [v for v in new.variables if v.name != key[1]]
+            elif at is None:
+                new.variables.append(VariableModel.model_validate(value))
+            else:
+                new.variables[at] = VariableModel.model_validate(value)
 
     for unit in change.units:
         if unit.key[0] == "slot" and _owner(unit.key) not in change.removed:

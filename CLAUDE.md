@@ -77,6 +77,7 @@ read on purpose.
 | `docs/TEMPLATES.md` | the template store, template-owned ids and a fork's prefixes, release, user templates and File › Templates…, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/LIBRARY_MIGRATION.md` | the Stage 9 worksheet: where all 85 bots stand against the six released templates, per-bot tier and divergence, what the rewrite keeps and changes, and what to fix or decide before it starts |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
+| `docs/VARIABLES.md` | bot variables: options vs. variables, condition rows and `set_variables`, why only the run loop writes and a write never waits, fresh at run start and reset by the author, validation's errors and warnings, and when a subgraph is the better tool |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/PLAYER_REALMS.md` | telling whether players share a realm by sight, the record of who does, the Player Realms option (Together/Separate) and what blocks Separate, and where each node checks and repairs |
 | `docs/AMBIENT_COMBAT.md` | a fight no node started: the game rules it rests on, cancelling and rerunning the node, who helps and how (same realm, or by port), holding the first cast, where everyone goes after, how a session ends, the flee limit |

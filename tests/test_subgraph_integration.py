@@ -53,6 +53,7 @@ class ControllerHarness:
             "_finish_run_request",
             "_check_restricted_zones",
             "_check_player_realms",
+            "_check_variables",
             "_start_enabled",
             "_autosave_stem",
             "_close_definitions",

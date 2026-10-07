@@ -1401,6 +1401,8 @@ def definition_problems(
     if meta is None:
         return [], []
     errors = definition_structure_errors(config.states, config.transitions, config.regions, meta.inputs, meta.panels)
+    if config.variables:
+        errors.append("a subgraph cannot declare variables: they belong to the bot")
     by_id = {s.id: s for s in config.states}
 
     def field_type(state_id: str, key: str) -> str | None:
