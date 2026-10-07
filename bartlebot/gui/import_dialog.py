@@ -89,6 +89,8 @@ class ImportDialog(QDialog):
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        # The rows wrap to the width they are given, so the choice beside each stays in view.
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         layout.addWidget(self._scroll, 1)
 
         footer = dialog_footer(self, commit_text=COMMIT_TEXT, commit_icon="download")
@@ -100,7 +102,8 @@ class ImportDialog(QDialog):
             self.resize(560, 480)
         else:
             self._scroll.hide()
-            self.resize(460, 0)
+            # As tall as the wrapped headline needs at this width, and no taller.
+            self.resize(460, max(layout.totalHeightForWidth(460), self.minimumSizeHint().height()))
 
     # -- reading --------------------------------------------------------
 
@@ -182,6 +185,7 @@ class ImportDialog(QDialog):
         font.setBold(True)
         name.setFont(font)
         name.setTextFormat(Qt.TextFormat.PlainText)
+        name.setWordWrap(True)
         return name
 
     def _row(self, row: Row) -> QWidget:
@@ -190,9 +194,11 @@ class ImportDialog(QDialog):
         box.setContentsMargins(8, 2, 0, 4)
         box.setSpacing(0)
         box.addWidget(self._name_label(row))
-        box.addWidget(ThemedTextLabel(_kind_line(row)))
-        if text := affected_text(row):
-            box.addWidget(ThemedTextLabel(text))
+        for text in (_kind_line(row), affected_text(row)):
+            if text:
+                line = ThemedTextLabel(text)
+                line.setWordWrap(True)
+                box.addWidget(line)
         return widget
 
     def _choice_row(self, row: Row) -> QWidget:
