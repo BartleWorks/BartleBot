@@ -2038,13 +2038,16 @@ class AppController(QObject):
         QMessageBox.critical(self._window, title, f"Fix these before saving '{config.name}':\n\n{listed}{more}")
         return True
 
-    def _save_definition_as(self, name: str | None = None, description: str | None = None) -> bool:
+    def _save_definition_as(
+        self, name: str | None = None, description: str | None = None, categories: list[str] | None = None
+    ) -> bool:
         """Save the open definition as a new one, and go on editing the new one. False when refused or cancelled.
 
         Save As, as for a file: the copy gets its own id at version 1, and the
         document becomes the copy. The bots linking the original -- the one this was
         opened from included -- keep linking it, since the copy is a new thing nothing
-        uses yet. Asks for a name and description unless given.
+        uses yet. Asks for a name, description and categories, starting from the
+        original's, unless a name is given; ``categories`` None keeps the original's.
         """
         config = self._loaded_config
         if config is None or config.definition is None:
@@ -2058,17 +2061,21 @@ class AppController(QObject):
                 self._window,
                 name=f"{config.name} (copy)",
                 description=config.description or "",
+                categories=list(config.definition.tags),
                 title="Save as New Subgraph",
             )
             if not dlg.exec():
                 return False
-            name, description = dlg.name, dlg.description
+            name, description, categories = dlg.name, dlg.description, dlg.categories
         try:
             defn = config_to_definition(config, version=1)
         except ValueError as exc:
             QMessageBox.critical(self._window, "Save as New Subgraph", str(exc))
             return False
-        defn = defn.model_copy(update={"id": str(uuid4()), "name": name, "description": description})
+        update = {"id": str(uuid4()), "name": name, "description": description}
+        if categories is not None:
+            update["tags"] = list(categories)
+        defn = defn.model_copy(update=update)
         try:
             self._subgraph_library.save(defn)
         except Exception as exc:

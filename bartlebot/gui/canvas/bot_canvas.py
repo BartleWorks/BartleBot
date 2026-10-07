@@ -3561,10 +3561,17 @@ class BotCanvas(QWidget):
     # Subgraph authoring: save a region as one; a definition's signature
     # ------------------------------------------------------------------
 
-    def save_region_as_subgraph(self, region_id: str, *, name: str | None = None, description: str | None = None):
+    def save_region_as_subgraph(
+        self,
+        region_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        categories: list[str] | None = None,
+    ):
         """Extract an ordinary region into the user library, link the region to it, and open the definition.
 
-        Asks for a name and description unless given. The region's members are
+        Asks for a name, description and categories unless a name is given. The region's members are
         renamed to the derived form and every combat assignment of this bot that
         keyed on an old id is re-keyed through the strategy store, so nothing the
         user configured against those states falls silent. One undo step. The new
@@ -3579,16 +3586,18 @@ class BotCanvas(QWidget):
         if region is None or region.source is not None:
             return False
         if name is None:
-            dlg = SubgraphMetaDialog(self, name=region.label)
+            dlg = SubgraphMetaDialog(self, name=region.label, categories=[])
             if not dlg.exec():
                 return False
-            name, description = dlg.name, dlg.description
+            name, description, categories = dlg.name, dlg.description, dlg.categories
         work = config.model_copy(deep=True)
         try:
             defn, source = extract_definition(work, region_id, new_id=str(uuid4()), name=name, description=description)
         except ValueError as exc:
             QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
             return False
+        if categories:
+            defn = defn.model_copy(update={"tags": list(categories)})
         library.save(defn)
         instance_id = self._scene.mint_instance_id(name, work)
         id_map = convert_region_to_instance(work, region_id, defn, source, instance_id=instance_id)
