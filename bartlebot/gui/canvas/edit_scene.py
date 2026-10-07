@@ -47,6 +47,7 @@ from bartlebot.bot.schema import (
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, CollapsedRegionItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
+    EdgeLabelItem,
     bridge_y_above,
     bridge_y_below,
     is_above_routed,
@@ -2125,6 +2126,8 @@ class EditScene(QGraphicsScene):
 
         view = self.views()[0] if self.views() else None
         item = self.itemAt(event.scenePos(), view.transform() if view is not None else QTransform())
+        if isinstance(item, EdgeLabelItem):
+            item = item.parentItem()  # a condition label is its edge, for a menu as for a click
         menu = popup_menu(view) if view is not None else QMenu()
         if isinstance(item, CallNodeItem):
             self._build_call_menu(menu, item)

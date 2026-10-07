@@ -340,6 +340,8 @@ def test_the_section_sits_under_options_on_the_edit_mode_tab_and_follows_the_con
     steps: list[str] = []
     sidebar.config_changed.connect(lambda: changed.append(True))
     sidebar.edit_starting.connect(steps.append)
+    declared: list[bool] = []
+    sidebar.declarations_changed.connect(lambda: declared.append(True))
 
     assert sidebar.variables.row_names == ["swords", "stage", "spare"]
     page = sidebar.widget(0)
@@ -350,6 +352,7 @@ def test_the_section_sits_under_options_on_the_edit_mode_tab_and_follows_the_con
     _drive(monkeypatch, lambda dlg: dlg._on_delete())
     sidebar.variables.edit_variable("spare")
     assert changed and steps == ["Delete variable spare"]
+    assert declared, "the Properties page is re-shown from the config after a declaration edit"
 
     # Undo hands back another config object; the section follows it.
     other = _bot()

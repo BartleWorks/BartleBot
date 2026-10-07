@@ -200,6 +200,31 @@ def test_clicking_a_label_selects_its_edge(canvas, qtbot):
     assert edge.isSelected()
 
 
+def test_right_clicking_a_label_opens_its_edges_menu(canvas, monkeypatch):
+    from PyQt6.QtGui import QTransform  # noqa: PLC0415
+    from PyQt6.QtWidgets import QMenu  # noqa: PLC0415
+
+    canvas.setup(_switch_bot())
+    canvas.enter_edit_mode()
+    label = _edge_to(canvas, "which", "rack_2").label
+    at = label.mapToScene(label.boundingRect().center())
+    assert canvas.scene.itemAt(at, QTransform()) is label
+
+    shown: list[list[str]] = []
+    monkeypatch.setattr(QMenu, "exec", lambda self, *a: shown.append([a.text() for a in self.actions()]))
+    from PyQt6.QtCore import QPoint  # noqa: PLC0415
+
+    class _Event:  # PyQt6 will not construct a QGraphicsSceneContextMenuEvent
+        def scenePos(self):  # noqa: N802 - Qt's name
+            return at
+
+        def screenPos(self):  # noqa: N802 - Qt's name
+            return QPoint(0, 0)
+
+    canvas.scene.contextMenuEvent(_Event())
+    assert shown and "Delete Transition" in shown[0]
+
+
 def test_a_label_change_and_a_move_leave_nothing_unrepainted(canvas, qtbot, tmp_path):
     """The repaint tracer (#73) on a live canvas: a label's text, size and place all change, and nothing is owed."""
     from bartlebot.gui.canvas.repaint_trace import RepaintTracer  # noqa: PLC0415
