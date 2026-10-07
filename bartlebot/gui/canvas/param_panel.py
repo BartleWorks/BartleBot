@@ -50,7 +50,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import param_cards, zone_names
+from bartlebot import param_cards, variables, zone_names
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
@@ -207,6 +207,33 @@ class _StrListLineEdit(QLineEdit):
     Stores values as a comma-separated string (e.g. "IronBloom, GoldKey") and
     is identified by get_params() to deserialize back to list[str].
     """
+
+
+class _HeldParam(QLabel):
+    """A param the form shows but cannot edit, handed back by get_params() exactly as it came.
+
+    For a type with no control yet: a set_variables node's ``assignments`` until their
+    row editor exists (#187), or a type this build does not know. Saving the form must
+    never drop a value just because it could not be drawn.
+    """
+
+    def __init__(self, value: Any, text: str):
+        super().__init__(text)
+        self.value = value
+        self.setWordWrap(True)
+
+
+def _held_text(field_type: str, val: Any) -> str:
+    """What a :class:`_HeldParam` says about the value it holds."""
+    if field_type != "assignments":
+        return f"(unsupported type: {field_type})"
+    try:
+        rows = variables.parse_assignments(val)
+    except ValueError:
+        return "(not readable: fix the rows in the bot file)"
+    if not rows:
+        return "(none yet: add rows in the bot file)"
+    return "\n".join(variables.describe_assignment(r) for r in rows)
 
 
 # ---------------------------------------------------------------------------
@@ -1650,7 +1677,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     def get_params(self) -> dict:
         result: dict[str, Any] = {}
         for key, w in self._widgets.items():
-            if isinstance(w, _XyzField):
+            if isinstance(w, _HeldParam):
+                if w.value is not None:
+                    result[key] = w.value
+            elif isinstance(w, _XyzField):
                 # Blank or invalid is absent, not (0, 0, 0): the nodes read an optional one with get().
                 if (xyz := w.value()) is not None:
                     result[key] = xyz
@@ -1817,7 +1847,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 w.setToolTip(help_text)
             w.changed.connect(self._emit_changed)
             return w
-        w = QLabel(f"(unsupported type: {field_type})")
+        w = _HeldParam(val, _held_text(field_type, val))
+        if help_text:
+            w.setToolTip(help_text)
         self._muted_labels.append(w)
         w.setStyleSheet(f"color: {THEME.text_muted};")
         return w
@@ -1929,6 +1961,10 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         self._updating: bool = False
         # List of (group_frame, inner_op_combo, rows_layout, row_tuples_list)
         self._groups: list[tuple[QFrame, QComboBox, QVBoxLayout, list]] = []
+        # Each group's variable rows, by id(frame), shown read-only and written back as they
+        # came. Editing them is Stage 2 of the variables plan (#187); until then a change to
+        # an edge's option rows must not lose them.
+        self._held: dict[int, list[FlagCondition]] = {}
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -1984,6 +2020,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
             f"  font-weight: 600; border: none; }}"
             f"#FlagSep {{ color: {THEME.border}; }}"
             f"#FlagGroupFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}"
+            f"#FlagHeld {{ color: {THEME.text_muted}; border: none; }}"
         )
 
     # ------------------------------------------------------------------
@@ -2033,6 +2070,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
                 option = opt_cb.currentText()
                 if option:
                     flags.append(FlagCondition(option=option, negate=not_cb.isChecked()))
+            flags += [fc.model_copy() for fc in self._held.get(id(_frame), [])]
             if flags:
                 result.append(FlagGroup(flags=flags, op=inner_op.currentText()))
         return result, self._groups_op_combo.currentText()
@@ -2046,6 +2084,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
             self._groups_layout.removeWidget(frame)
             frame.deleteLater()
         self._groups.clear()
+        self._held.clear()
 
     def _add_group(self, flags: list[FlagCondition] | None = None, op: str = "AND") -> None:
         frame = QFrame()
@@ -2098,8 +2137,18 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         self._groups_layout.addWidget(frame)
 
         # Add initial condition rows
+        held: list[FlagCondition] = []
         for fc in flags or []:
-            self._add_condition_row(group_entry, fc.option, fc.negate)
+            if fc.is_variable:
+                held.append(fc)
+            else:
+                self._add_condition_row(group_entry, fc.option, fc.negate)
+        self._held[id(frame)] = held
+        for fc in held:
+            shown = QLabel(variables.describe_condition(fc))
+            shown.setObjectName("FlagHeld")
+            shown.setToolTip("A variable condition. It is edited in the bot file for now.")
+            rows_layout.addWidget(shown)
 
         # Wire signals
         inner_op.currentTextChanged.connect(self._on_any_changed)
@@ -2165,6 +2214,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
             return  # always keep at least one group
         if group_entry in self._groups:
             self._groups.remove(group_entry)
+        self._held.pop(id(frame), None)
         self._groups_layout.removeWidget(frame)
         frame.deleteLater()
         self._refresh_outer_op_visibility()

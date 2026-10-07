@@ -33,6 +33,8 @@ from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _te
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
 from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
+from bartlebot.nodes.utility.branch import NODE_SPEC as _branch_spec
+from bartlebot.nodes.utility.branch import run as branch_run
 from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
 from bartlebot.nodes.utility.change_realm import run as change_realm_run
 from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
@@ -45,6 +47,8 @@ from bartlebot.nodes.utility.quicksell import NODE_SPEC as _quicksell_spec
 from bartlebot.nodes.utility.quicksell import run as quicksell_run
 from bartlebot.nodes.utility.relog import NODE_SPEC as _relog_spec
 from bartlebot.nodes.utility.relog import run as relog_run
+from bartlebot.nodes.utility.set_variables import NODE_SPEC as _set_variables_spec
+from bartlebot.nodes.utility.set_variables import run as set_variables_run
 from bartlebot.nodes.utility.sleep import NODE_SPEC as _sleep_spec
 from bartlebot.nodes.utility.sleep import run as sleep_run
 from bartlebot.nodes.zone_entry.enter_dungeon import NODE_SPEC as _enter_dungeon_spec
@@ -85,6 +89,8 @@ NODE_REGISTRY: dict = {
     "check_zone": check_zone_run,
     "handle_level_scaling": handle_level_scaling_run,
     "relog": relog_run,
+    "set_variables": set_variables_run,
+    "branch": branch_run,
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
@@ -116,6 +122,8 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "check_zone": _check_zone_spec,
     "handle_level_scaling": _handle_level_scaling_spec,
     "relog": _relog_spec,
+    "set_variables": _set_variables_spec,
+    "branch": _branch_spec,
 }
 
 # Convenience alias — param schemas derived from NODE_SPECS so there is one source of truth
@@ -179,12 +187,14 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Utility",
         [
             "apply_level_scaling",
+            "branch",
             "change_realm",
             "check_level_scaling",
             "check_zone",
             "handle_level_scaling",
             "quicksell",
             "relog",
+            "set_variables",
             "sleep",
         ],
     ),
