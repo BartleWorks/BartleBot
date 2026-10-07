@@ -96,7 +96,7 @@ from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.source_pill import source_pill
-from bartlebot.gui.widgets.tag_picker import TagPickerButton, source_vocabulary
+from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
@@ -106,6 +106,7 @@ from bartlebot.store_roots import SOURCE_LABELS, Origin, dev_mode
 from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
 from bartlebot.strategy_tags import SOURCE
 from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES, subgraph_tag_group
 from bartlebot.subgraphs import (
     ComposeReport,
     compose_bot,
@@ -429,12 +430,20 @@ def _art_icon(path: Path | None) -> QIcon | None:
 
 
 def filter_bot_metas(
-    metas: list[_BotMeta], query: str, tags: set[str], sources: "set[str] | frozenset[str]" = frozenset()
+    metas: list[_BotMeta],
+    query: str,
+    tags: set[str],
+    sources: "set[str] | frozenset[str]" = frozenset(),
+    group_of: Callable[[str], str] = tag_group,
 ) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
     """Narrow *metas* by free text, by selected tag chips and by Source.
 
     *sources* are Source words (``SOURCE_LABELS``): an entry passes when its own is one
     of them, or when none is selected. Source is one more group, so it ANDs with the tags.
+
+    *group_of* says which group a tag is in: the bot tags' by default, and for the
+    Subgraphs folder :func:`~bartlebot.subgraph_tags.subgraph_tag_group`, whose one
+    stored group is Category (#172). A subgraph's ``tags`` are its categories.
 
     Returns the surviving metas and, for each one the text matched by drop name, the
     drops that matched — the library card shows those so a hit on a 300-entry drop
@@ -457,7 +466,7 @@ def filter_bot_metas(
     q = query.strip().casefold()
     wanted: dict[str, set[str]] = {}
     for t in tags:
-        wanted.setdefault(tag_group(t), set()).add(t)
+        wanted.setdefault(group_of(t), set()).add(t)
 
     results: list[_BotMeta] = []
     matched_drops: dict[Path, list[str]] = {}
@@ -543,8 +552,10 @@ class _BotCard(ThemedMixin, QWidget):
 
         # One palette for a tag everywhere it appears: the dot in the picker, the chip
         # in the filter bar, this pill, and the ones in Bot Info. TagPill owns it.
+        # A subgraph's tags are its categories (#172), in their own vocabulary's color.
+        vocabulary = SUBGRAPH_VOCABULARY if self._meta.subgraph_id else BOT_VOCABULARY
         for tag in self._meta.tags:
-            header.addWidget(TagPill(tag), 0, Qt.AlignmentFlag.AlignVCenter)
+            header.addWidget(TagPill(tag, vocabulary=vocabulary), 0, Qt.AlignmentFlag.AlignVCenter)
 
         header.addStretch()
         # Where it comes from, at the end of the row as on a strategy card (#149): the
@@ -736,6 +747,9 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     #: which is the bots: a definition opens as a document to edit, never to run.
     _SUBGRAPHS = "Subgraphs"
     _SUBGRAPHS_KEY = "\0subgraphs"
+    #: The search box's prompt, for the bots and for the Subgraphs folder.
+    _BOT_SEARCH = "Search bots by name, author, or drop…"
+    _SUBGRAPH_SEARCH = "Search subgraphs by name, description, or category…"
     #: Folder-name keys for the rows that are not folders. A folder can never be named
     #: with a leading NUL, so these cannot collide with one.
     _OTHER = "Other"
@@ -801,12 +815,22 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         )
         self._source_picker.setToolTip("Filter by where it comes from: Official, or your own")
         self._source_picker.selection_changed.connect(self._on_tag_selection_changed)
+        # A subgraph's categories (#172) take the bot tags' place in the Subgraphs folder,
+        # where a bot tag has nothing to match: shown there and only there, before Source,
+        # which both lists share. See _show_pickers_for_folder.
+        self._category_picker = TagPickerButton(
+            title=CATEGORY, placeholder=CATEGORY, group=CATEGORY, vocabulary=SUBGRAPH_VOCABULARY
+        )
+        self._category_picker.setToolTip("Filter subgraphs by what they do")
+        self._category_picker.selection_changed.connect(self._on_tag_selection_changed)
+        self._category_picker.setVisible(False)
+        top_layout.addWidget(self._category_picker, 0)
         top_layout.addWidget(self._source_picker, 0)
 
         # Stretch 1, not a fixed width flanked by two stretches: the search field then
         # fills whatever the two clusters leave, so it *sits* centered without being
         # anchored there, and narrowing the window shortens it instead of colliding.
-        self._search = SearchLineEdit("Search bots by name, author, or drop…")
+        self._search = SearchLineEdit(self._BOT_SEARCH)
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
@@ -973,7 +997,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                     description=d.description or "",
                     authors="",
                     drops=[],
-                    tags=[],
+                    tags=list(d.tags),
                     version=str(d.version),
                     path=Path(f"{d.id}.json"),
                     subgraph_id=d.id,
@@ -1100,6 +1124,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # Bots and subgraphs both: the Source filter narrows the Subgraphs folder as well.
         sources = Counter(m.source_text for m in (*self._all_metas, *self._subgraph_metas))
         self._source_picker.set_counts({word: sources.get(word, 0) for word in self._source_picker.vocabulary.tags})
+        categories = Counter(t for m in self._subgraph_metas for t in m.tags)
+        self._category_picker.set_counts({word: categories.get(word, 0) for word in SUBGRAPH_CATEGORIES})
 
     def _rebuild_chips(self) -> None:
         """Show one removable chip per *selected* tag; hide the bar when none are."""
@@ -1109,11 +1135,17 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 w.hide()
                 w.deleteLater()
 
-        selected = self._selected_tag_list()
+        # Only the facets of what is listed: bot tags for bots, categories in the Subgraphs
+        # folder (#172). The other kind stays selected, out of sight, and comes back with
+        # its list -- it matches nothing here, so a chip for it would only be noise.
+        if self._in_subgraphs_folder():
+            selected, vocabulary = self._selected_categories(), SUBGRAPH_VOCABULARY
+        else:
+            selected, vocabulary = self._selected_tag_list(), BOT_VOCABULARY
         for tag in selected:
             # Colored by group, matching the dot in the popup and the button it came
             # from — with two pickers feeding one chip bar, a chip has to say which.
-            chip = TagChip(tag, tooltip=f"Remove the {tag} filter")
+            chip = TagChip(tag, tooltip=f"Remove the {tag} filter", vocabulary=vocabulary)
             chip.removed.connect(self._remove_tag)
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
         sources = self._source_picker.tags()
@@ -1134,7 +1166,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._chip_bar.setVisible(bool(selected))
 
     def _remove_tag(self, tag: str) -> None:
-        self._set_tag_selection([t for t in self._selected_tag_list() if t != tag])
+        chosen = [*self._selected_tag_list(), *self._selected_categories()]
+        self._set_tag_selection([t for t in chosen if t != tag])
 
     def _remove_source(self, word: str) -> None:
         self._source_picker.set_selection([w for w in self._source_picker.tags() if w != word])
@@ -1142,7 +1175,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._apply_filter()
 
     def _clear_filters(self) -> None:
-        """The chip bar's Clear: every tag and every Source word."""
+        """The chip bar's Clear: every tag, every category and every Source word, shown or not."""
         self._source_picker.set_selection([])
         self._set_tag_selection([])
 
@@ -1161,8 +1194,30 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         """
         for group, picker in self._pickers.items():
             picker.set_selection([t for t in tags if tag_group(t) == group])
+        self._category_picker.set_selection([t for t in tags if subgraph_tag_group(t) == CATEGORY])
         self._rebuild_chips()
         self._apply_filter()
+
+    def set_category_filter(self, words: Iterable[str]) -> None:
+        """Select categories as the picker would. For the tests, and for nothing else to need the picker."""
+        self._category_picker.set_selection(list(words))
+        self._rebuild_chips()
+        self._apply_filter()
+
+    @property
+    def category_filter_visible(self) -> bool:
+        """Whether the Category filter is offered: in the Subgraphs folder only."""
+        return not self._category_picker.isHidden()
+
+    @property
+    def bot_tag_filters_visible(self) -> bool:
+        """Whether the bot tags' pickers are offered: everywhere but the Subgraphs folder."""
+        return not any(p.isHidden() for p in self._pickers.values())
+
+    def chip_texts(self) -> list[str]:
+        """What the chip bar says, in order. Public so a test can read it."""
+        items = (self._chip_layout.itemAt(i).widget() for i in range(self._chip_layout.count()))
+        return [w.tag for w in items if isinstance(w, TagChip)]
 
     def _on_tag_selection_changed(self, _keys: list) -> None:
         self._rebuild_chips()
@@ -1176,6 +1231,22 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     def _selected_tags(self) -> set[str]:
         return {t for picker in self._pickers.values() for t in picker.tags()}
 
+    def _selected_categories(self) -> list[str]:
+        """Every selected subgraph category, in vocabulary order."""
+        return self._category_picker.tags()
+
+    def _in_subgraphs_folder(self) -> bool:
+        item = self._cat_list.currentItem()
+        return item is not None and item.data(Qt.ItemDataRole.UserRole) == self._SUBGRAPHS_KEY
+
+    def _show_pickers_for_folder(self) -> None:
+        """Offer the facets of what the selected row lists: bot tags, or a subgraph's categories (#172)."""
+        subgraphs = self._in_subgraphs_folder()
+        for picker in self._pickers.values():
+            picker.setVisible(not subgraphs)
+        self._category_picker.setVisible(subgraphs)
+        self._search.setPlaceholderText(self._SUBGRAPH_SEARCH if subgraphs else self._BOT_SEARCH)
+
     def _on_category_row_changed(self, row: int) -> None:
         """Switch category, keeping the filters.
 
@@ -1187,6 +1258,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         """
         if row < 0:
             return
+        self._show_pickers_for_folder()
+        self._rebuild_chips()
         self._apply_filter()
 
     def _category_metas(self) -> "list[_BotMeta]":
@@ -1211,8 +1284,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         list already implies — a world is one more facet — and it is what makes
         ``All`` meaningful rather than decorative.
         """
+        if self._in_subgraphs_folder():
+            tags, group_of = set(self._selected_categories()), subgraph_tag_group
+        else:
+            tags, group_of = self._selected_tags(), tag_group
         results, matched_drops = filter_bot_metas(
-            self._category_metas(), self._search.text(), self._selected_tags(), set(self._source_picker.tags())
+            self._category_metas(), self._search.text(), tags, set(self._source_picker.tags()), group_of
         )
         self._show_cards(results, matched_drops)
 
@@ -1233,9 +1310,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if not metas:
             # "All" is always in the list now, so its presence no longer distinguishes
             # "nothing matched" from "the library is empty". The metas do.
-            self._empty_hint = hint = QLabel(
-                "No bots match these filters." if self._all_metas else "No bots found in bots/ directory."
-            )
+            if self._in_subgraphs_folder():
+                text = "No subgraphs match these filters."
+            else:
+                text = "No bots match these filters." if self._all_metas else "No bots found in bots/ directory."
+            self._empty_hint = hint = QLabel(text)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.insertWidget(0, hint)
             self.refresh_theme_styles()

@@ -311,6 +311,71 @@ and `history` and `official_sha256` left out; `definition_change` ignores the tw
 too, so a recorded history never reads as an edit. Import (#171) reads the history to
 tell a newer copy of a definition from a separate edit of it.
 
+## Categories, and finding a subgraph
+
+Once users make and share subgraphs, a flat list stops working, so a definition says what
+it does with a **category** (#172), and every list of subgraphs filters by it. It has the
+shape `bartlebot/strategy_tags.py` gave combat strategies: a stored group with a fixed
+vocabulary, normalized on load, beside a **Source** group (Official, Official (modified),
+Custom) worked out from where the file is and never stored. `bartlebot/subgraph_tags.py`
+holds the vocabulary and the rule.
+
+| category | for a subgraph that |
+|---|---|
+| Zone Entry | gets into a dungeon, a gauntlet or a zone, by its door or an object |
+| Teleportation | moves across a world: to coordinates, a marked location, a friend, a hub |
+| Team | brings several players to one zone, realm and area |
+| Combat | runs a fight and what surrounds it: potions, health, wisps |
+| Interaction | talks to an NPC, clicks through a menu, collects reagents |
+| Utility | does anything else: level scaling, selling, relogging, waiting |
+
+The words are the node browser's own tabs wherever one fits, since a subgraph is a node the
+user made and is added from that dialog. **Team** is the one it lacks: a node never brings
+players together alone, and the one shipped definition, Sync players, does exactly that. It
+was chosen with one subgraph shipped and none shared yet, so expect it to grow.
+
+A definition may carry several. They are stored as `tags` in its file, after `version`,
+and left out while empty, so a definition never given one is written exactly as before. A
+word outside the vocabulary, a Source word included, is dropped on load with a warning, as
+an unknown bot tag is. In the open document they ride on `DefinitionMeta.tags`, because the
+document's own `tags` are bot tags and validation would drop any other word; Bar B's tag
+row shows them in place of a bot's, with one *Category* picker in Edit mode, beside where
+the definition comes from. A category change is `"meta"` to `definition_change`, like a
+rename: it keeps the version and reaches no bot's run. It does change the content hash, so
+it is recorded in the history and travels in a share file.
+
+Two lists filter by them, with the strategy dialog's rule: **OR within a group, AND across
+groups**, so "Team or Combat, and Custom".
+
+- **The Bot Library's Subgraphs folder.** Its bar shows a *Category* picker in place of
+  *Rewards* and *Activities*, which a subgraph never carries, and keeps *Source*, which
+  both lists share. A bot tag left selected stays selected, out of sight, and its chip
+  comes back with the bots; it is not applied to subgraphs, which would always come up
+  empty. Each card wears its categories, and the search box matches them.
+- **The node browser's Subgraphs tab.** *Category* and *Source* sit beside the search box
+  on that tab only, and a search's subgraphs are filtered by them too. The detail page
+  shows the categories beside the Source pill.
+
+Neither surface reuses the strategy dialog's `StrategyFilterBar`, which the issue
+suggested: it brings its own search box and chip row, and both lists already had both
+(the library) or a search shared with every node (the browser), with Source added beside
+them in #149. The new picker joins that one instead, using the same `TagPickerButton`,
+chips and pills.
+
+**Adding a category** is a code change, for the reason it is for bot tags: a library shared
+between users that drifts between spellings cannot be filtered.
+
+1. Add the word to `SUBGRAPH_CATEGORIES` in `bartlebot/subgraph_tags.py`, where its place
+   in the tuple is its place in every picker and in every file. Give it a one-line comment
+   saying what belongs in it.
+2. Keep it apart from the bot tags and the Source words:
+   `test_no_category_is_also_a_bot_tag_or_a_source_word` fails otherwise, because a shared
+   word would put a bot tag's medallion on a subgraph card.
+3. If it is not one of the node browser's tabs, add it to the set
+   `test_the_vocabulary_is_the_node_browsers_words_and_team` expects, and say why here.
+4. Add a row to the table above. Nothing is migrated: removing or renaming a word drops it
+   from every file that carries it on the next load, so never do either to a released one.
+
 ## Changing a signature warns
 
 A definition's signature is what a bot linking it depends on: its inputs, whose values an

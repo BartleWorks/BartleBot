@@ -30,6 +30,7 @@ from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
+from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
 #: are 128px (two are 64px) game art, and 20px is the smallest that stays legible.
@@ -128,6 +129,17 @@ STRATEGY_VOCABULARY = TagVocabulary(
 SOURCE_VOCABULARY = TagVocabulary(
     {SOURCE: tuple(SOURCE_LABELS[o] for o in LISTED_ORIGINS)},
     {SOURCE: "pill_neutral_bg"},
+)
+
+
+#: A subgraph's categories (#172): what Bar B edits on a definition, and the Category
+#: filter beside Source on every list of subgraphs. Source is not in it, because a file
+#: never stores one; the filters take it from :func:`source_vocabulary`. Colored as the
+#: strategy dialog's Role, the other stored group beside a derived Source.
+SUBGRAPH_VOCABULARY = TagVocabulary(
+    {CATEGORY: SUBGRAPH_CATEGORIES},
+    {CATEGORY: "chip_neutral_bg"},
+    ("subgraph", "subgraphs"),
 )
 
 

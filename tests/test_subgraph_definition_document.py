@@ -1321,3 +1321,17 @@ def test_a_link_row_brings_its_node_into_view_without_selecting_it(doc):
     assert doc.view.mapToScene(doc.view.viewport().rect()).boundingRect().intersects(node.sceneBoundingRect())
     assert doc.scene.selectedItems() == []
     assert doc.param_panel.showing_signature
+
+
+def test_saving_a_category_writes_it_and_keeps_the_version(harness, library):
+    """A category is metadata, like a name (#172): nothing a bot runs changes."""
+    canvas = _canvas(harness)
+    canvas.open_definition_of(REGION)
+    canvas.config.definition.tags = ["Team"]
+    canvas.config_changed.emit()
+    assert harness._has_unsaved_changes
+    assert harness._save_definition()
+    stored = library.get(SYNC_ID)
+    assert stored.tags == ["Team"]
+    assert stored.version == 1
+    assert not harness._has_unsaved_changes

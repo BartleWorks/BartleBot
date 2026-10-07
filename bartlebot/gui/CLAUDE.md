@@ -897,9 +897,9 @@ follows the default until its own page changes the value (Reset goes back). A ro
 status and action in one control: an unlinked row's Link button appears only on hover or
 focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
 except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Official / Official (modified) / Custom" (`store_roots.source_label`, shared with the combat strategy cards); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
-version read-only and no tags; line 2 says where it comes from and how many bots use it.
-**Line 2 stays in a definition** and the hidden tag field keeps its slot, so the bar is
-the same height in both documents — hiding the row made every step in or out move the
+version read-only; line 2 says where it comes from and how many bots use it, then the
+definition's categories (#172) in the same `TagsField`, handed `SUBGRAPH_VOCABULARY`.
+**Line 2 stays in a definition**, so the bar is the same height in both documents — hiding the row made every step in or out move the
 graph 22px, and the bar was caught mid-change on screen. Open a document straight into
 its mode with `setup(config, mode=...)`, never `setup` then `enter_edit_mode`, which
 laid the canvas out in Run mode first.
@@ -917,6 +917,10 @@ file. A list long enough to need it has a Source filter beside it, offering the 
 words (`tag_picker.source_vocabulary`): the bot library, whose filter also narrows the
 Subgraphs folder, the node browser's Subgraphs tab, and File › Templates… (#164), whose
 gallery is New Bot's cards with a last line added. New Bot's gallery has pills only.
+Beside it on both lists of subgraphs is a *Category* filter (#172); in the bot library it
+takes the bot tag pickers' place while the Subgraphs folder is selected, and a bot tag
+left selected is kept, out of sight, rather than applied to subgraphs.
+`docs/SUBGRAPHS.md` has the vocabulary.
 
 **File › Templates… decides nothing itself** (`gui/templates_dialog.py`). Which verbs a
 card allows comes from `template_gallery.GalleryEntry`, and a verb a card does not allow

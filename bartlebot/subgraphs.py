@@ -1304,6 +1304,7 @@ def definition_to_config(defn: SubgraphDefinition) -> BotConfig:
             version=defn.version,
             inputs=[i.model_copy(deep=True) for i in defn.inputs],
             panels=[p.model_copy(deep=True) for p in defn.panels],
+            tags=list(defn.tags),
         ),
     )
 
@@ -1321,6 +1322,7 @@ def config_to_definition(config: BotConfig, *, version: int | None = None) -> Su
         name=config.name,
         description=config.description,
         version=version if version is not None else meta.version,
+        tags=list(meta.tags),
         inputs=[i.model_copy(deep=True) for i in meta.inputs],
         panels=[p.model_copy(deep=True) for p in meta.panels],
         states=[s.model_copy(deep=True) for s in config.states],
@@ -1342,9 +1344,9 @@ def definition_change(old: SubgraphDefinition, new: SubgraphDefinition) -> Defin
     Layout is what only the definition document draws: where each node and nested
     instance sits, and the plain regions, which are never composed. A change there
     reaches no bot's run, so a save that makes only one keeps the version (#158).
-    Neither does a rename (#160): ``"meta"`` is a changed name or description,
-    with or without a layout change beside it, and keeps the version too. A bot
-    links the id, and an instance's label is the bot's own.
+    Neither does a rename (#160): ``"meta"`` is a changed name, description or
+    category (#172), with or without a layout change beside it, and keeps the version
+    too. A bot links the id, and an instance's label is the bot's own.
     """
     if old.model_dump(mode="json", exclude=_NOT_COMPARED) == new.model_dump(mode="json", exclude=_NOT_COMPARED):
         return "none"
@@ -1355,7 +1357,7 @@ def definition_change(old: SubgraphDefinition, new: SubgraphDefinition) -> Defin
 
 
 def _without_meta(data: dict) -> dict:
-    return {k: v for k, v in data.items() if k not in ("name", "description")}
+    return {k: v for k, v in data.items() if k not in ("name", "description", "tags")}
 
 
 def _without_layout(defn: SubgraphDefinition) -> dict:

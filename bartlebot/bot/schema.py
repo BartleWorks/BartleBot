@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from bartlebot.bot_tags import normalize_tags
+from bartlebot.subgraph_tags import normalize_subgraph_tags
 
 #: Return values that fall through to the bot's recovery state when a node's port
 #: for them is left unrouted. Almost every failure in a graph ends up back at the
@@ -309,6 +310,11 @@ class DefinitionMeta(BaseModel):
     version: int = 1
     inputs: list[SubgraphInput] = Field(default_factory=list)
     panels: list[SubgraphPanel] = Field(default_factory=list)
+    # The definition's categories (#172). Here rather than in the document's own ``tags``,
+    # which hold bot tags and drop any other word on validation.
+    tags: list[str] = Field(default_factory=list)
+
+    _tags = field_validator("tags", mode="before")(normalize_subgraph_tags)
 
 
 class TemplateRef(BaseModel):
@@ -773,6 +779,9 @@ class SubgraphDefinition(BaseModel):
     name: str
     description: str | None = None
     version: int = 1
+    # What the subgraph does, from the fixed vocabulary of bartlebot.subgraph_tags (#172).
+    # Left out of the file while empty, so a definition never given one is written as before.
+    tags: list[str] = Field(default_factory=list)
     inputs: list[SubgraphInput] = Field(default_factory=list)
     panels: list[SubgraphPanel] = Field(default_factory=list)
     states: list[StateModel]
@@ -790,6 +799,8 @@ class SubgraphDefinition(BaseModel):
         if not value.strip():
             raise ValueError("id must not be empty")
         return value
+
+    _tags = field_validator("tags", mode="before")(normalize_subgraph_tags)
 
     @field_validator("version")
     @classmethod
@@ -815,6 +826,8 @@ class SubgraphDefinition(BaseModel):
         data = self.model_dump(exclude_none=True)
         if not data["history"]:
             del data["history"]
+        if not data["tags"]:
+            del data["tags"]
         return data
 
     def save(self, path: str | Path) -> None:
