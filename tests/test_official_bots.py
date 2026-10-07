@@ -316,7 +316,7 @@ def test_an_official_bot_never_lists_a_template_update(official_path, monkeypatc
     assert _read_bot_meta(official_path, shipped=False).update_available
 
 
-def test_a_copy_says_which_official_bot_it_came_from():
+def test_a_copy_says_which_official_bot_it_came_from(qapp):
     official = _meta("Jade Oni", Origin.SHIPPED, bot_id="official")
     fork = _meta("Mine", Origin.USER, bot_id="fork", forked_from_id="official")
     stray = _meta("Stray", Origin.USER, bot_id="stray", forked_from_id="gone")
