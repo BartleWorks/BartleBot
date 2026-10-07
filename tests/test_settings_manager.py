@@ -1,5 +1,3 @@
-
-
 def test_recent_bot_files_in_dev_mode_list_only_repo_files(tmp_path, monkeypatch):
     from bartlebot.paths import project_root
     from bartlebot.settings_manager import SettingsManager

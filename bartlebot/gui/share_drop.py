@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, QMimeData, QObject, pyqtSignal
+from PyQt6.QtCore import QEvent, QMimeData, QObject, QTimer, pyqtSignal
 
 from bartlebot.share_export import EXTENSIONS
 
@@ -52,5 +52,7 @@ class ShareFileDrops(QObject):
             return False
         event.acceptProposedAction()  # type: ignore[attr-defined]
         if event.type() == QEvent.Type.Drop:
-            self.files_dropped.emit(paths)
+            # An Explorer drag is OLE: its window waits inside DoDragDrop until this Drop returns, so
+            # whatever the import opens (a summary, a refusal's box) must open after it (#178).
+            QTimer.singleShot(0, lambda: self.files_dropped.emit(paths))
         return True

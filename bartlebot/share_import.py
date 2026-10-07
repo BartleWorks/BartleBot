@@ -12,8 +12,11 @@ REFUSED BEFORE ANYTHING IS WRITTEN
   item in a newer format: "Made with a newer BartleBot (1.2.0). Update BartleBot, then
   import again." The models drop fields they don't know, so importing it anyway would
   lose data the first time it was saved;
-- an Official item in ``requires`` that is missing here, or older here than the
-  sender's (its hash is neither the receiver's nor in the receiver's history): the same;
+- an Official item in ``requires`` that is missing here, or that is here but different
+  while the sender's ``app_version`` is newer than this build's: the same. Decided by
+  version, not ancestry, since a shipped item changes outside an in-app save (tools, hand
+  edits, merges) and records no history (#179). A file from the other product keeps the
+  hash check, against this item's hash and its history;
 - an item that fails validation, uses a node type this build doesn't have, or names a
   restricted zone, with the reason a run would give (:mod:`bartlebot.restricted_zones`).
 
@@ -70,6 +73,7 @@ from bartlebot.share_export import (
     PLAYER_STRATEGY,
     SUBGRAPH,
     Sources,
+    app_version,
 )
 from bartlebot.shared import strategy_library
 from bartlebot.shared.content_hash import content_sha256
@@ -84,6 +88,7 @@ from bartlebot.shared.share_match import (
     match,
     relink_duel,
     update_message,
+    version_is_newer,
 )
 from bartlebot.shared.store_files import Origin, load_in
 from bartlebot.shared.strategy_library import LibraryKind
@@ -233,6 +238,13 @@ def _check_item(kind: str, item: Any, newer: str) -> None:
             )
 
 
+def _may_differ(share: ShareFile, have: Any, sha256: str) -> bool:
+    """Whether the sender's Official item may differ from ``have``, the receiver's: it was not made by a newer build."""
+    if share.app == PRODUCT:
+        return not version_is_newer(share.app_version, app_version())
+    return sha256 in getattr(have, "history", [])
+
+
 def check(share: ShareFile, sources: Sources) -> list[Incoming]:
     """Every packed item of ``share``, validated. Raises :class:`Refused` for the first reason it can't come in.
 
@@ -276,7 +288,7 @@ def check(share: ShareFile, sources: Sources) -> list[Incoming]:
         raise Refused("This file is damaged: it doesn't hold what it is for.")
     for req in share.requires:
         have = official_item(sources, req.kind, req.id)
-        if have is None or (content_sha256(have) != req.sha256 and req.sha256 not in getattr(have, "history", [])):
+        if have is None or (content_sha256(have) != req.sha256 and not _may_differ(share, have, req.sha256)):
             logger.info("Refusing an import: it needs the Official %s %s at %s", NOUNS[req.kind], req.id, req.sha256)
             raise Refused(newer)
     return incoming
@@ -591,10 +603,23 @@ def plan_import(
     copies: dict[str, dict[str, str]] = {}
     names: dict[str, set[str]] = {}
     rows: list[Row] = []
-    for inc in _ordered(incoming):
+    ordered = _ordered(incoming)
+    # An item the receiver already has as it came, before any relinking, keeps its links, so a second
+    # import of the same file finds it again (#185). What it links defaults to Keep mine, not a copy.
+    pinned: set[tuple[str, str]] = set()
+    kept_links: set[tuple[str, str]] = set()
+    for inc in ordered:
+        if inc.kind not in (BOT, SUBGRAPH):
+            continue
+        have = holding(sources, inc.kind, inc.id)
+        if have is not None and not have.read_only and content_sha256(inc.item) == content_sha256(have.item):
+            pinned.add((inc.kind, inc.id))
+            kept_links |= {(SUBGRAPH, linked) for linked in _links(inc.kind, inc.item)}
+    for inc in ordered:
         # Content never carries the history: it travels beside it, and is written as it arrived.
         item = inc.item.model_copy(deep=True, update={"history": list(inc.history)})
-        _relink(inc.kind, item, copies)
+        if (inc.kind, inc.id) not in pinned:
+            _relink(inc.kind, item, copies)
         sha = content_sha256(item)
         held = holding(sources, inc.kind, inc.id)
         new_id = copy_id(inc.kind, inc.id, inc.sha256)
@@ -612,6 +637,8 @@ def plan_import(
         allowed = CHOICES[outcome]
         wanted = choices.get((inc.kind, inc.id))
         action = wanted if wanted in allowed else allowed[0]
+        if wanted is None and outcome is Outcome.CONFLICT and (inc.kind, inc.id) in kept_links:
+            action = Action.KEEP
         target = inc.id
         if action is Action.COPY or outcome is Outcome.COPIED:
             target = new_id

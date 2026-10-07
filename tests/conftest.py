@@ -421,6 +421,7 @@ def isolated_settings(_appdata_root, monkeypatch):
     from bartlebot.shared import official_set  # noqa: PLC0415
 
     monkeypatch.setattr(official_set, "_registry", official_set.NoRegistry())
+    official_set.reset_shipped_root()
 
 
 # ---------------------------------------------------------------------------

@@ -161,6 +161,8 @@ def test_a_share_file_dropped_anywhere_is_taken_and_any_other_drag_goes_on(qapp,
 
     assert drops.eventFilter(target, event(QDragEnterEvent, _mime(path))) is True
     assert drops.eventFilter(target, event(QDropEvent, _mime(path))) is True
+    assert dropped == [], "the Drop returns before anything is imported (#178)"
+    qapp.processEvents()
     assert [[Path(p) for p in paths] for paths in dropped] == [[Path(path)]]
     assert drops.eventFilter(target, event(QDropEvent, _mime(str(tmp_path / "farm.json")))) is False
     assert drops.eventFilter(target, QEvent(QEvent.Type.Show)) is False
@@ -186,6 +188,7 @@ _IMPORT_METHODS = (
     "_import_from_arguments",
     "_import_dropped",
     "_import_share_file",
+    "_import_blocked_by_run",
     "_open_document_ids",
     "_clear_for_import",
     "_after_import",
@@ -332,3 +335,26 @@ def test_a_combat_strategy_for_the_open_bot_rebinds_the_combat_tab(harness, send
 
     harness._window.left_sidebar.rebind_identity.assert_called()
     assert SettingsManager.instance().get_active_strategy("bot-1") == "bcs-1"
+
+
+def test_no_way_in_imports_while_a_bot_runs(harness, sender, receiver, tmp_path, monkeypatch):
+    bot, bcs = _sender_setup(sender)
+    path = str(_send_bot(sender, tmp_path, bot, bcs))
+    harness._current_machine = object()
+    monkeypatch.setattr(
+        "bartlebot.app_controller.ask_for_file", lambda _w: pytest.fail("File › Import… must not ask for a file")
+    )
+    monkeypatch.setattr(
+        "bartlebot.app_controller.confirm_import", lambda _p, _b: pytest.fail("no summary during a run")
+    )
+    before = receiver.files()
+
+    assert harness._import_share_file(path) is None
+    assert harness._import_share_file() is None
+    harness._import_dropped([path, path])
+    harness._app.arguments.return_value = ["bartlebot", path]
+    harness._import_from_arguments()
+
+    assert len(harness.warnings) == 4
+    assert all("Stop the running bot" in w for w in harness.warnings)
+    assert receiver.files() == before

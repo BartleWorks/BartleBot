@@ -285,12 +285,20 @@ def test_an_unedited_official_or_custom_subgraph_is_never_updated(tmp_path):
     assert not library.official_updated("nope")
 
 
-def test_in_developer_mode_a_subgraph_keeps_a_history_and_overrides_nothing(tmp_path):
+def test_in_developer_mode_a_subgraph_records_no_history_and_overrides_nothing(tmp_path):
+    """The file is a shipped one: a history on it would change with every save (#182)."""
     save_subgraph(_defn(name="One"), tmp_path)
     save_subgraph(_defn(name="Two"), tmp_path)
     stored = load_subgraph("sg-a", tmp_path)
-    assert stored.history == [content_sha256(_defn(name="One"))]
+    assert stored.history == []
     assert stored.official_sha256 is None
+
+
+def test_a_custom_subgraph_keeps_a_history(tmp_path):
+    shipped, user = _roots(tmp_path)
+    save_subgraph(_defn(name="One"), shipped, user)
+    save_subgraph(_defn(name="Two"), shipped, user)
+    assert load_subgraph("sg-a", shipped, user).history == [content_sha256(_defn(name="One"))]
 
 
 # ---------------------------------------------------------------------------
@@ -313,21 +321,31 @@ def test_a_strategy_override_records_its_history_and_official_base(tmp_path):
 
 
 def test_a_custom_strategy_keeps_a_history_and_no_base(tmp_path):
+    shipped, user = _roots(tmp_path)
     first = PlayerCombatStrategy(id="p1", name="Hitter", dsl="any<damage>")
-    fp = save_player_strategy(first, tmp_path)
+    fp = save_player_strategy(first, shipped, user)
     edited = PlayerCombatStrategy(id="p1", name="Hitter", dsl="pass")
-    save_player_strategy(edited, tmp_path, expected=fp)
+    save_player_strategy(edited, shipped, user, expected=fp)
     assert edited.history == [content_sha256(first)] and edited.official_sha256 is None
 
 
 def test_a_bot_combat_strategy_keeps_a_history(tmp_path):
+    shipped, user = _roots(tmp_path)
     first = BotCombatStrategy(id="b1", name="Mine", bot_id="bot-1")
-    save_bot_strategy(first, tmp_path)
+    save_bot_strategy(first, shipped, user)
     edited = BotCombatStrategy(id="b1", name="Mine", bot_id="bot-1", description="Fire first")
-    save_bot_strategy(edited, tmp_path)
-    assert load_bot_strategy("b1", tmp_path).history == [content_sha256(first)]
-    save_bot_strategy(edited, tmp_path)
-    assert load_bot_strategy("b1", tmp_path).history == [content_sha256(first)], "unchanged adds nothing"
+    save_bot_strategy(edited, shipped, user)
+    assert load_bot_strategy("b1", shipped, user).history == [content_sha256(first)]
+    save_bot_strategy(edited, shipped, user)
+    assert load_bot_strategy("b1", shipped, user).history == [content_sha256(first)], "unchanged adds nothing"
+
+
+def test_in_developer_mode_a_strategy_records_no_history(tmp_path):
+    first = PlayerCombatStrategy(id="p1", name="Hitter", dsl="any<damage>")
+    fp = save_player_strategy(first, tmp_path)
+    edited = PlayerCombatStrategy(id="p1", name="Hitter", dsl="pass")
+    save_player_strategy(edited, tmp_path, expected=fp)
+    assert edited.history == []
 
 
 def _reship(duel: DuelCombatStrategy, shipped: Path) -> None:

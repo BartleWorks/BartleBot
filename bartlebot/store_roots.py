@@ -73,6 +73,7 @@ __all__ = [
     "merged_by_id",
     "origin_in",
     "pill_text",
+    "resolve_bot_strategy_roots",
     "resolve_roots",
     "resolve_shared_roots",
     "save_by_id",
@@ -137,6 +138,18 @@ def resolve_roots(root: str | Path | None, user_root: str | Path | None) -> tupl
     else:
         user = product_dir()
     return shipped, user
+
+
+def resolve_bot_strategy_roots(root: str | Path | None, user_root: str | Path | None) -> tuple[Path, Path]:
+    """``(shipped, user)`` for Bot Combat Strategies, which developer mode leaves alone (#180).
+
+    No Bot Combat Strategy ships, so there is nothing to author in place: one made while
+    authoring a bot holds a deck captured from a client, and belongs under ``%APPDATA%``
+    rather than in the repo.
+    """
+    if root is None and user_root is None:
+        return project_root(), product_dir()
+    return resolve_roots(root, user_root)
 
 
 def resolve_shared_roots(root: str | Path | None, user_root: str | Path | None) -> tuple[Path, Path]:

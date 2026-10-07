@@ -994,8 +994,11 @@ class AppController(QObject):
         # A fork gets its own identity. The copy would otherwise share the original's
         # id, and with it every value the user has stored against that bot -- and the
         # remembered combat strategy, which is a fork's to choose again.
+        # Its history goes too: what the original was copied from is not the copy's own past.
         old_id = self._loaded_config.id
+        old_history = self._loaded_config.history
         self._loaded_config.id = str(uuid4())
+        self._loaded_config.history = []
         try:
             self._loaded_config.save(path)
         except Exception as e:
@@ -1003,6 +1006,7 @@ class AppController(QObject):
             # loaded bot is still that bot. Keeping the minted id here would orphan
             # every value the user has stored against it for the rest of the session.
             self._loaded_config.id = old_id
+            self._loaded_config.history = old_history
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
             return False
         if self._rewards_declined_for == old_id:
@@ -1194,8 +1198,18 @@ class AppController(QObject):
 
     def _import_dropped(self, paths: list[str]) -> None:
         """Files dropped on the window, imported one after another."""
+        if self._import_blocked_by_run():
+            return
         for path in paths:
             self._import_share_file(path)
+
+    def _import_blocked_by_run(self) -> bool:
+        """Say to stop the bot first, and True, while one runs: an import would write what the run is using (#181)."""
+        if self._current_machine is None:
+            return False
+        logger.warning("Not importing: a bot is running")
+        QMessageBox.warning(self._window, IMPORT_TITLE, "Stop the running bot before importing. Nothing was imported.")
+        return True
 
     def _import_share_file(self, path: str | None = None) -> share_import.ImportResult | None:
         """File › Import…, a dropped file, or one named at launch: the summary, then the write. What was written.
@@ -1203,6 +1217,8 @@ class AppController(QObject):
         Refused files say why and write nothing. Changing a choice in the summary
         re-matches the file, so what Import writes is what the summary showed last.
         """
+        if self._import_blocked_by_run():
+            return None
         if path is None:
             path = ask_for_file(self._window)
             if path is None:
@@ -2740,6 +2756,7 @@ class AppController(QObject):
         self._current_machine = machine
         self._client_manager.set_machine(machine)
         self._window.set_start_enabled(False)
+        self._window.action_import.setEnabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
         self._window.right_sidebar.log_panel.on_run_started()
@@ -2775,6 +2792,7 @@ class AppController(QObject):
             self._client_manager.set_machine(None)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
+            self._window.action_import.setEnabled(True)
 
     async def _run_pre_run_setup(self) -> None:
         """Prepare every connected client before the FSM starts.
@@ -3101,13 +3119,11 @@ class AppController(QObject):
         self._mark_unsaved()
         if canvas_config is not None and canvas_config.is_definition:
             # No sidebars to follow and no options to compose: a definition has neither.
-            self._loaded_config = canvas_config
             self._window.bot_canvas.refresh_initial(canvas_config.initial)
             self._window.bot_canvas.refresh_edge_flags()
             self._window.set_bot_name(canvas_config.name, "subgraph")
             return
         if canvas_config is not None:
-            self._loaded_config = canvas_config
             # Undo/redo replaces the canvas's config object; the sidebar has to
             # follow it or its edits go nowhere.  No-op the rest of the time.
             self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
@@ -3349,16 +3365,13 @@ def _save_as_start(last_save_path: str | Path | None) -> Path:
     """Where Save As opens: the user's own folder, in the open bot's world folder, under its file name.
 
     The user's folder rather than the open file's, which may be an Official bot's in the
-    install directory, where nothing may be written (#168).
+    install directory, where nothing may be written (#168). The folder is not created here:
+    opening a dialog writes nothing, and the save makes it if the user keeps the path.
     """
     folder = bot_roots.user_bots_dir()
     world = _world_folder(last_save_path)
     if world is not None:
         folder = folder / world
-    try:
-        folder.mkdir(parents=True, exist_ok=True)
-    except OSError:
-        logger.debug("Could not create %s", folder, exc_info=True)
     return folder / Path(last_save_path).name if last_save_path else folder
 
 

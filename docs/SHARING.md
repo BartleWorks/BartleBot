@@ -157,13 +157,16 @@ files a drop or the open dialog offers.
 | the file | what it says |
 |---|---|
 | a `format` newer than this build's, an item kind it doesn't know, or a library item whose own `format` is newer | "Made with a newer BartleBot (1.2.0). Update BartleBot, then import again." The models drop fields they don't know, so importing anyway would lose data. |
-| an Official item in `requires` that is missing here, or older here: its hash is neither the receiver's nor in the receiver's Official item's history | the same |
+| an Official item in `requires` that is missing here, or that is here but different while the file's `app_version` is newer than this build's | the same |
 | an item that fails validation, holds its id twice, or is a template | why |
 | a bot or subgraph using a node type this build doesn't have | the type, and the update message |
 | a bot or subgraph naming a restricted zone | the list a run start gives (`restricted_zones.describe_found`), and that it cannot be turned off |
 
-A newer receiver is fine: an Official item whose history holds the sender's hash is newer
-than what the sender had, and nothing released is ever removed.
+A file from the same or an older release is fine: it is decided by version, not ancestry,
+because shipped items change outside an in-app save (tools, hand edits, merges) and record no
+history, and nothing released is ever removed. A file from the other product has no version
+to compare, so it keeps the hash check: the sender's hash must be the receiver's Official
+item's or in its history.
 
 ### Matching
 

@@ -110,21 +110,44 @@ def set_registry(reg: InstallRegistry | None) -> None:
     """Read install keys from ``reg`` from now on; ``None`` goes back to the real registry."""
     global _registry
     _registry = reg
+    reset_shipped_root()
 
 
 #: The other product last reported as supplying the set, so the choice is logged once, not per read.
 _reported: str | None = None
+
+#: The roots chosen so far this session, by ``(own_root, product)``. The keys change only when
+#: a product is installed or removed, and one dialog must read one set whole, so the registry
+#: is read once and the answer kept.
+_chosen: dict[tuple[Path, str], Path] = {}
+
+
+def reset_shipped_root() -> None:
+    """Forget the cached choice, so the next :func:`shipped_root` reads the registry again."""
+    global _reported
+    _chosen.clear()
+    _reported = None
 
 
 def shipped_root(own_root: Path, *, product: str = PRODUCT, reg: InstallRegistry | None = None) -> Path:
     """The install directory whose copy of the shared set is used: ``own_root`` unless another's is newer.
 
     Another product's key counts only while its install directory exists, so a key an
-    uninstall left behind cannot leave the library empty.
+    uninstall left behind cannot leave the library empty. The registry is read once per
+    session; a ``reg`` passed in is always read, and its answer is not kept.
     """
+    if reg is None and (cached := _chosen.get((own_root, product))) is not None:
+        return cached
+    root = _choose(own_root, product, reg or registry())
+    if reg is None:
+        _chosen[(own_root, product)] = root
+    return root
+
+
+def _choose(own_root: Path, product: str, reg: InstallRegistry) -> Path:
     global _reported
     best_version, best_root, best_product = SHARED_SET_VERSION, own_root, product
-    for key in (reg or registry()).install_keys():
+    for key in reg.install_keys():
         if key.product == product or key.shared_set_version <= best_version:
             continue
         if not key.install_dir.is_dir():

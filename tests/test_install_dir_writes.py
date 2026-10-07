@@ -20,7 +20,7 @@ from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import vendor_dir
-from bartlebot.store_roots import is_inside, resolve_roots, resolve_shared_roots
+from bartlebot.store_roots import is_inside, resolve_bot_strategy_roots, resolve_roots, resolve_shared_roots
 from bartlebot.strategy_store import save_bot_strategy, save_player_strategy
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.template_store import templates_dir
@@ -59,6 +59,18 @@ def test_every_store_saved_with_its_defaults_writes_outside_the_install_director
     ]
     assert written, "nothing was saved, so this checks nothing"
     assert not [p for p in written if is_inside(p, project_root())]
+
+
+def test_a_bot_combat_strategy_saved_in_developer_mode_still_lands_outside_the_install_directory(monkeypatch):
+    """Nothing ships for it, so dev mode has nothing to author in place (#180)."""
+    monkeypatch.setenv("BARTLEBOT_DEV", "1")
+    shipped, user = resolve_bot_strategy_roots(None, None)
+    assert not is_inside(user, project_root())
+    assert shipped == project_root()
+    written = _saved(lambda: save_bot_strategy(BotCombatStrategy(name="Mine", bot_id="b")), user)
+    assert written
+    assert not [p for p in written if is_inside(p, project_root())]
+    assert resolve_roots(None, None)[1] == project_root(), "the other stores still author in place"
 
 
 def _saved(save, under: Path) -> list[Path]:

@@ -189,6 +189,23 @@ def test_save_as_leaves_a_plain_copy_that_is_the_users_to_edit(harness, official
     assert SettingsManager.instance().get("bot_option_overrides", copy.id) is None, "and takes no option values"
 
 
+def test_save_as_starts_the_copy_with_no_history_and_leaves_the_original_its_own(harness, tmp_path, monkeypatch):
+    from PyQt6.QtWidgets import QFileDialog  # noqa: PLC0415
+
+    original = bot_roots.user_bots_dir() / "original.json"
+    target = bot_roots.user_bots_dir() / "copy.json"
+    bot = _bot("mine", "Mine")
+    bot.history = ["an-older-id"]
+    bot.save(original)
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *_a: (str(target), "")))
+    harness._open_bot(str(original))
+
+    assert harness._save_bot_as()
+
+    assert BotConfig.load(target).history == []
+    assert BotConfig.load(original).history == ["an-older-id"]
+
+
 # ---------------------------------------------------------------------------
 # Make my own copy
 # ---------------------------------------------------------------------------
@@ -299,7 +316,7 @@ def test_an_official_bot_never_lists_a_template_update(official_path, monkeypatc
     assert _read_bot_meta(official_path, shipped=False).update_available
 
 
-def test_a_copy_says_which_official_bot_it_came_from():
+def test_a_copy_says_which_official_bot_it_came_from(qapp):
     official = _meta("Jade Oni", Origin.SHIPPED, bot_id="official")
     fork = _meta("Mine", Origin.USER, bot_id="fork", forked_from_id="official")
     stray = _meta("Stray", Origin.USER, bot_id="stray", forked_from_id="gone")

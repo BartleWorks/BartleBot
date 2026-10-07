@@ -390,6 +390,24 @@ def test_keep_mine_and_replace_leave_the_imported_bot_on_the_receivers_id(sender
     assert receiver.bots()["bot-1"].regions[0].source.subgraph_id == "sg"
 
 
+def test_importing_a_file_again_after_keep_mine_writes_nothing(sender, receiver, tmp_path):
+    sender.subgraph(_defn("sg", "Their Loop"))
+    receiver.subgraph(_defn("sg", "My Loop"))
+    bot = _bot("bot-1", "Boss Farmer", "sg")
+    sender.bot(bot)
+    path = _send_bot(sender, tmp_path, bot)
+
+    _import(receiver, path, {(SUBGRAPH, "sg"): Action.KEEP})
+    before = receiver.files()
+    plan, result = _import(receiver, path)
+
+    assert plan.row(BOT, "bot-1").outcome is Outcome.SAME
+    assert plan.row(SUBGRAPH, "sg").action is Action.KEEP
+    assert not plan.writes_anything
+    assert result.rows == []
+    assert receiver.files() == before
+
+
 def test_a_choice_a_row_does_not_allow_takes_its_default(sender, receiver, tmp_path):
     bot, _ = _sender_setup(sender)
     plan = _plan(receiver, _send_bot(sender, tmp_path, bot), {(BOT, "bot-1"): Action.REPLACE})
@@ -691,3 +709,35 @@ def test_the_folder_travels_beside_the_content_and_is_never_hashed(sender, tmp_p
     others = share_export.export_player(PlayerCombatStrategy(id="p1", name="Hitter"), sender.sources())
     path = _export(others, tmp_path)
     assert "folder" not in json.loads(path.read_text(encoding="utf-8"))["items"][0], "left out when there is none"
+
+
+def test_an_official_item_changed_outside_a_save_still_imports_from_an_older_sender(sender, receiver, tmp_path):
+    """No history records the change: the sender's build is older, so the difference is not theirs to refuse (#179)."""
+    sender.ship_subgraph(_defn("official", "Sync Players", version=1))
+    receiver.ship_subgraph(_defn("official", "Sync Players", version=2))
+    bot = _bot("bot-1", "Boss Farmer", "official")
+    sender.bot(bot)
+    path = _send_bot(sender, tmp_path, bot)
+
+    share = share_import.read(path)
+    share.app_version = "0.0.1"
+    plan = share_import.plan_import(share, receiver.sources())
+    assert _outcomes(plan) == {(BOT, "bot-1"): Outcome.NEW}
+
+    share.app_version = "99.0.0"
+    with pytest.raises(Refused, match=r"Made with a newer BartleBot \(99\.0\.0\)"):
+        share_import.plan_import(share, receiver.sources())
+
+
+def test_a_file_from_the_other_product_keeps_the_hash_check(sender, receiver, tmp_path):
+    """No version of ours to compare with: the sender's hash must be the receiver's, or in its history."""
+    sender.ship_subgraph(_defn("official", "Sync Players", version=1))
+    receiver.ship_subgraph(_defn("official", "Sync Players", version=2))
+    bot = _bot("bot-1", "Boss Farmer", "official")
+    sender.bot(bot)
+    share = share_import.read(_send_bot(sender, tmp_path, bot))
+    share.app = "OtherApp"
+    share.app_version = "0.0.1"
+
+    with pytest.raises(Refused, match=r"Made with a newer OtherApp"):
+        share_import.plan_import(share, receiver.sources())
