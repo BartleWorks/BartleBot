@@ -4,8 +4,8 @@ What a bot learns as it runs and reads back to choose its next node: the model, 
 rules the engine and validation hold it to, and when to reach for a subgraph instead.
 The plan, epic #16, lives on a claude.ai page (*Runtime flow control*); this file is the
 part of it that governs code. Stage 1 (#186) is the engine, Stage 2 (#187) the editors,
-and Stage 3 (#188) reading a run: the live values and the log. Assignments on edges are
-Stage 4 (#189).
+Stage 3 (#188) reading a run: the live values and the log, and Stage 4 (#189) assignments
+on edges.
 
 A bot already branches on the value its last node returned. A variable is how it
 branches on something that happened earlier in the run, without copying every node in
@@ -40,10 +40,12 @@ variable may not take an option's name.
   takes the four that order. Equality is by type as well as value, so `true` never equals
   `1` (`variables.compare`). Every reader of `FlagCondition.option` must pass over a
   variable row, whose `option` is None.
-- **Written by a `set_variables` node, and nowhere else** (until #189 adds the same rows
-  on an edge). Its `assignments` param is rows of variable, `op` and `value`: `set` to a
-  value, `add` a whole number to an int, `toggle` a bool. They apply in order, so a later
-  row sees an earlier one's write.
+- **Written by a `set_variables` node, or by an edge as it is taken, and nowhere else.**
+  A node's `assignments` param is rows of variable, `op` and `value`: `set` to a value,
+  `add` a whole number to an int, `toggle` a bool. They apply in order, so a later row
+  sees an earlier one's write. An edge holds the same rows in `TransitionModel.assign`,
+  left out of the file while empty, and applies them only when it is the edge taken (see
+  [Edge assignments](#edge-assignments)).
 - **A switch** is several conditioned edges on one port plus one without a condition: the
   otherwise. `sort_transitions` already tries conditioned edges first. A `branch` node
   does nothing and returns SUCCESS, so several nodes can lead into one switch.
@@ -68,9 +70,48 @@ twice.
 **Fresh when the run starts, and changed only by a write after that.** `run()` sets every
 value from its declaration. A recovery jump (`force_state`), an unrouted failure falling
 through to recovery, and a rerun after an ambient fight leave values alone. The author
-resets a value where the loop begins, usually on the way into the dungeon, and a recovery
-goes back in through that same reset. There is no reset on entering the first node: no
-shipped bot loops back to its first node, so it would only ever fire at startup (#191).
+resets a value where the loop begins, usually with an edge assignment on the way into the
+dungeon, and a recovery goes back in through that same edge. There is no reset on
+entering the first node: no shipped bot loops back to its first node, so it would only
+ever fire at startup (#191).
+
+## Edge assignments
+
+"Remember which way I came" with only `set_variables` costs a node per branch: eight in
+Heretical Academy, one per spot. A statechart's answer is an assignment on the transition
+itself, and our graph is a state machine, so an edge can write too (#189).
+
+**Applied when that edge is taken, and only then.** `to_machine_config` carries an edge's
+rows under `assign`, and the machine gives each assigning transition an after-callback,
+`_assign_<idx>`, resolved by `BotMachine.__getattr__` as the conditions are. It runs only
+when its transition fires, and hands the rows to the run loop. The run loop logs the
+transition and then applies them (`_apply_taken_assignments`), so the log reads in the
+order things happened:
+
+```
+Transition: 'spot_3' (Spot 3) --SUCCESS / next_spot = 4, swords + 1--> 'which' (Which rack)
+Variable next_spot: 3 → 4
+Variable swords: 1 → 2
+```
+
+That is a statechart's `event [guard] / action`; a conditioned edge reads
+`--SUCCESS [swords == 2] / found toggled-->`. So:
+
+- **Another edge from the same port writes nothing**, and neither does an edge on another
+  port: only the edge taken noted its rows.
+- **A jump to recovery writes nothing.** `force_state` and an unrouted failure falling
+  through take no edge.
+- **A rerun after an ambient fight cannot write twice.** The rows are applied once, by the
+  run loop, after the source node has returned; the node a rerun repeats is the one the
+  edge led into.
+- **A write never waits** here either: every row's value is worked out first
+  (`apply_assignments`), then written, with no `await` between the transition and the
+  last write. A row validation should have refused stops the run with a reason instead
+  of half-applying.
+
+A call node's edge stands for one transition per member that feeds its exit port. The
+edge panel writes the rows to all of them, as it does a condition, and only the one whose
+member ran is ever taken.
 
 **Each write is logged once**, by the machine, as `Variable swords: 1 → 2`; a write that
 changes nothing is DEBUG. `on_variable_change(name, old, new)` follows the callback guard
@@ -95,7 +136,8 @@ reads and writes no variable skips the check.
 
 Errors:
 
-- a condition or a write naming an undeclared variable;
+- a condition or a write naming an undeclared variable, on a node or an edge (an edge's
+  problem marks its source node);
 - a value of the wrong type, or an enum value not in the list;
 - an ordering comparison on a bool or an enum;
 - `add` on a non-int, or `toggle` on a non-bool;
@@ -121,6 +163,9 @@ Warnings:
 - **a recovery that skips the reset**: a counter the recovery state reaches without
   passing a `set` of it, so a value from before the recovery carries into the run after.
 
+For both loop warnings an assigning edge is a step of its own between its two ends, so a
+reset on Enter's SUCCESS edge does not cover Enter's FAILURE edge into the same node.
+
 ## Authoring
 
 Everything above can be done in the editor, without touching the file (#187). Heretical
@@ -144,7 +189,8 @@ would change routing without saying so:
 
 A name is refused when it is blank or another variable's or an option's
 (`variables.name_problem`). **A rename is the one change that carries its references**:
-`variables.rename` rewrites both condition forms and every `set_variables` row. Every
+`variables.rename` rewrites both condition forms, every `set_variables` row and every
+edge's assignments. Every
 change goes out on `edit_starting` first, so it is one undo step like a panel edit.
 
 **Reading: the edge panel's Conditions** (`canvas/variable_rows.ConditionRow`, inside
@@ -158,8 +204,9 @@ variable cannot be negated, so the NOT box is hidden on its row, keeping its slo
 **Writing: the `assignments` param type** (`variable_rows.AssignmentsField`), a
 `set_variables` node's rows: variable, the writes its type allows
 (`variables.operations_for`: set and add for an int, set and toggle for a bool, set for an
-enum), and a value unless it toggles. An add is a whole number. Stage 4 puts the same rows
-on an edge.
+enum), and a value unless it toggles. An add is a whole number. The edge panel has the same
+editor under Conditions, as **When taken, set**, read against the declarations the page
+was shown with; a change is one undo step.
 
 **A row the editor only read is never rewritten.** One naming a variable the bot does not
 declare is listed and handed back as it came, and so is a value its type refuses: shown
@@ -181,6 +228,15 @@ its segment has, so it never runs into the destination node; the tooltip is neve
 click on it selects the edge. It is a child item of the edge (`edge_item.EdgeLabelItem`),
 so the repaint tracer (#73) watches it, and every change of its size goes through
 `prepareGeometryChange`.
+
+**Every edge that writes says what it writes** on the same label, after its condition:
+`swords == 4 → found toggled`, or `→ swords + 1` for an edge with no condition
+(`variables.edge_label`). The port the edge leaves already names its outcome, and the
+arrow is what tells a write from a condition: `swords = 4` beside `swords == 4` would be
+too easy to misread. Each part is cut to `EDGE_LABEL_CHARS` on its own. Short of room, the
+condition is cut first, since the dotted pen already says there is one and nothing else
+on the canvas says what the edge sets; with no room for any of it, `… → found to…`. An
+assignment is not a condition, so it leaves the pen solid.
 
 ## Reading a run
 
@@ -216,24 +272,35 @@ An edge without a condition, the otherwise of a switch included, is logged as be
 `to_machine_config` carries each edge's condition as text under `guard`, and the machine
 gives each guarded transition a before-callback, `_took_guard_<idx>`, that notes it was
 the one taken. The destination alone cannot say which: two edges from one port can reach
-the same node on different conditions. The machine takes `guard` and `label` off before it
-hands the transitions to the `transitions` library, which refuses any argument it does not
-know.
+the same node on different conditions. An edge that writes names what it set after the
+condition, `/ swords + 1`, and each write follows on its own line, once. The machine takes
+`guard`, `assign` and `label` off before it hands the transitions to the `transitions`
+library, which refuses any argument it does not know.
 
 **The run summary lists each variable's final value**, after the drops:
 `Variables: next_spot = 9, swords = 4`.
 
 ## Subgraphs, templates and share files
 
-**A subgraph definition cannot use a variable.** A variable row or a `set_variables` node
-in a definition is a structure error (`definition_structure_errors`), and a definition
+**A subgraph definition cannot use a variable.** A variable row, an edge assignment or a
+`set_variables` node in a definition is a structure error (`definition_structure_errors`), and a definition
 document that declares one cannot be saved. Two instances reading the bot's variables by
 name would share one counter without saying so. Variables of a subgraph's own, renamed
 per instance the way member ids are, are a later stage of the plan.
 
 **The template diff** has a `("variable", name)` unit per declaration, applied in place
 like an option, and `_canon_flags` includes variable rows, so a changed comparison moves
-the edge to another slot and shows as a change to it.
+the edge to another slot and shows as a change to it. A slot's value is a `SlotValue`:
+where the edge lands and what it sets, in order. So an added, removed or changed
+assignment is a change to the edge ("When taken, sets nothing → sets swords + 1"), and a
+conflict when the user changed it too.
+
+**A variable the template declares or drops is one change with what uses it**: every edge
+and `set_variables` node of that release that reads or writes it. Applied alone, either
+side would leave a row naming a variable the bot does not declare, which refuses the run.
+The change is titled for the variable, or, when it comes with an added node, names it
+after the node ("Add 'Mark found'; declare 'found'"). A declaration that only changes is
+not grouped: it leaves no row dangling.
 
 **Share files** need nothing new: a bot carries its variables inside it. If this lands
 after a release, `SHARE_FORMAT` rises with it, since an older app would drop the field it

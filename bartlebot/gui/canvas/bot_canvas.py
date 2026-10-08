@@ -3454,13 +3454,15 @@ class BotCanvas(QWidget):
         shown = self._param_panel.shown_transition
         if shown is not None:
             # A call node's edge stands for several transitions and shows the first:
-            # its conditions are the edge's, so the rest take the same ones.
+            # its conditions and assignments are the edge's, so the rest take the same ones.
+            # Only the transition whose member ran is ever taken, so its writes still land once.
             for sibling in self._shown_edge_models:
                 if sibling is not shown:
                     sibling.flags = [f.model_copy() for f in shown.flags]
                     sibling.flag_op = shown.flag_op
                     sibling.flag_groups = [g.model_copy(deep=True) for g in shown.flag_groups]
                     sibling.flag_groups_op = shown.flag_groups_op
+                    sibling.assign = [a.model_copy() for a in shown.assign]
             self._scene.refresh_edge_flags(shown)
             self._config.sort_transitions()
         # A bool param can be what suggests a tag: Offers Team-Up is the case.

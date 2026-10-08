@@ -5,8 +5,9 @@ the next node. The model and the rules are in ``docs/VARIABLES.md``; in short:
 
 - Declared per bot (``BotConfig.variables``) and typed: ``bool``, ``int`` or ``enum``.
 - Read by edge conditions only, as a row of variable, comparison and value.
-- Written by a ``set_variables`` node only, as rows of set, add and toggle, which the
-  machine applies through :meth:`BotMachine.set_variable` with no ``await`` between them.
+- Written as rows of set, add and toggle, by a ``set_variables`` node or by an edge as it
+  is taken (``TransitionModel.assign``). The machine applies them through
+  :meth:`BotMachine.set_variable` with no ``await`` between them.
 - Fresh when the run starts, and changed after that only by a write.
 
 :func:`check` returns a bot's errors and warnings. An error refuses the run
@@ -171,6 +172,34 @@ def describe_assignment(row: AssignmentModel) -> str:
     return f"{row.variable} = {format_value(row.value)}"
 
 
+def describe_assignments(rows: Iterable[AssignmentModel]) -> str | None:
+    """An edge's writes as one line, ``next_spot = 4, swords + 1``, or None for an edge that writes nothing."""
+    text = ", ".join(describe_assignment(row) for row in rows)
+    return text or None
+
+
+#: What an edge's label puts between what chooses it and what it sets.
+ASSIGN_ARROW = " → "
+
+
+def edge_label(t: TransitionModel, limit: int = EDGE_LABEL_CHARS) -> tuple[str, str] | None:
+    """What an edge's label says, whole for its tooltip and cut for the canvas, or None for an edge with neither part.
+
+    The condition, then what the edge sets when taken: ``swords == 2 → next_spot = 4``.
+    An edge that sets without a condition starts at the arrow, ``→ swords + 1``: the port
+    it leaves already names its outcome, and the arrow is what tells a write from a
+    condition. Each part is cut to ``limit`` on its own, so a long condition never hides
+    what the edge sets.
+    """
+    guard = describe_guard(t)
+    sets = describe_assignments(t.assign)
+    if sets is None:
+        return (guard, shorten(guard, limit)) if guard is not None else None
+    if guard is None:
+        return f"{ASSIGN_ARROW}{sets}".lstrip(), f"{ASSIGN_ARROW}{shorten(sets, limit)}".lstrip()
+    return f"{guard}{ASSIGN_ARROW}{sets}", f"{shorten(guard, limit)}{ASSIGN_ARROW}{shorten(sets, limit)}"
+
+
 def parse_assignments(raw: Any) -> list[AssignmentModel]:
     """A set_variables node's ``assignments`` param as rows. Raises ``ValueError`` on one that is not a row."""
     if raw is None:
@@ -244,6 +273,11 @@ def condition_rows(t: TransitionModel) -> list[FlagCondition]:
 def _guard(t: TransitionModel) -> list[FlagCondition]:
     """The rows that decide whether an edge fires: the grouped form wins over a stale flat one, as at run time."""
     return [fc for g in t.flag_groups for fc in g.flags] if t.flag_groups else list(t.flags)
+
+
+def _edge_step(idx: int) -> str:
+    """The id the loop analysis gives an assigning edge, as a step between its two ends. Never a state id."""
+    return f"\0edge{idx}"
 
 
 def _variable_rows(t: TransitionModel) -> list[FlagCondition]:
@@ -407,10 +441,41 @@ def check(config: BotConfig, specs=None) -> Report:
                     )
                 )
 
-    # --- Writes: set_variables nodes ---
+    # --- Writes: set_variables nodes, and edges as they are taken ---
+    # Keyed by where the write happens: a node's id, or an assigning edge's step id
+    # (_edge_step), which the loop analysis below treats as a node of its own between the
+    # edge's two ends. ``owner`` maps either to the node a problem is marked on.
     written: dict[str, set[str]] = {}
     resets: dict[str, set[str]] = {}
     changes: dict[str, set[str]] = {}
+    owner: dict[str, str] = {}
+
+    def check_writes(step: str, who: str, state_id: str, rows: Sequence[AssignmentModel]) -> None:
+        owner[step] = state_id
+        for row in rows:
+            name = row.variable
+            written.setdefault(name, set()).add(state_id)
+            (resets if row.op == "set" else changes).setdefault(name, set()).add(step)
+            decl = decls.get(name)
+            if decl is None:
+                error(Problem(f"{who} writes {name!r}, which is not a declared variable", name, (state_id,)))
+            elif row.op == "add" and decl.type != "int":
+                error(Problem(f"{who} adds to {name!r}, and only an int can be added to", name, (state_id,)))
+            elif row.op == "add" and not _is_int(row.value):
+                error(
+                    Problem(f"{who} adds {format_value(row.value)} to {name!r}: add a whole number", name, (state_id,))
+                )
+            elif row.op == "toggle" and decl.type != "bool":
+                error(Problem(f"{who} toggles {name!r}, and only a bool can be toggled", name, (state_id,)))
+            elif row.op == "set" and not value_fits(decl, row.value):
+                error(
+                    Problem(
+                        f"{who} sets {name!r} to {format_value(row.value)}, which a {decl.type} cannot hold",
+                        name,
+                        (state_id,),
+                    )
+                )
+
     for s in config.states:
         if s.node_type != SET_VARIABLES_NODE:
             continue
@@ -425,31 +490,10 @@ def check(config: BotConfig, specs=None) -> Report:
             continue
         if not rows:
             warn(Problem(f"{where(s.id)} sets no variables", None, (s.id,)))
-        for row in rows:
-            name = row.variable
-            written.setdefault(name, set()).add(s.id)
-            (resets if row.op == "set" else changes).setdefault(name, set()).add(s.id)
-            decl = decls.get(name)
-            if decl is None:
-                error(Problem(f"{where(s.id)} writes {name!r}, which is not a declared variable", name, (s.id,)))
-            elif row.op == "add" and decl.type != "int":
-                error(Problem(f"{where(s.id)} adds to {name!r}, and only an int can be added to", name, (s.id,)))
-            elif row.op == "add" and not _is_int(row.value):
-                error(
-                    Problem(
-                        f"{where(s.id)} adds {format_value(row.value)} to {name!r}: add a whole number", name, (s.id,)
-                    )
-                )
-            elif row.op == "toggle" and decl.type != "bool":
-                error(Problem(f"{where(s.id)} toggles {name!r}, and only a bool can be toggled", name, (s.id,)))
-            elif row.op == "set" and not value_fits(decl, row.value):
-                error(
-                    Problem(
-                        f"{where(s.id)} sets {name!r} to {format_value(row.value)}, which a {decl.type} cannot hold",
-                        name,
-                        (s.id,),
-                    )
-                )
+        check_writes(s.id, where(s.id), s.id, rows)
+    for idx, t in enumerate(config.transitions):
+        if t.assign:
+            check_writes(_edge_step(idx), f"the edge from {where(t.source)} to {where(t.dest)}", t.source, t.assign)
 
     # --- Warnings: switches ---
     ports: dict[tuple[str, str | None], list[TransitionModel]] = {}
@@ -501,15 +545,29 @@ def check(config: BotConfig, specs=None) -> Report:
             )
 
     # --- Warnings: a loop that carries a value over ---
+    # An assigning edge is a step of its own between its ends, so a reset on it counts
+    # only for the walks that take that edge, and not for another edge between the same
+    # two nodes on a different outcome.
     edges_out: dict[str, set[str]] = {}
-    for t in config.transitions:
-        edges_out.setdefault(t.source, set()).add(t.dest)
+    steps = [s.id for s in config.states]
+    for idx, t in enumerate(config.transitions):
+        if t.assign:
+            step = _edge_step(idx)
+            steps.append(step)
+            edges_out.setdefault(t.source, set()).add(step)
+            edges_out.setdefault(step, set()).add(t.dest)
+        else:
+            edges_out.setdefault(t.source, set()).add(t.dest)
     # Any node can end up at recovery: an unrouted failure falls through to it, and so does
     # an ambient fight that leaves the players out of place.
     if config.recovery_state:
         for s in config.states:
             edges_out.setdefault(s.id, set()).add(config.recovery_state)
-    loops = _loops((s.id for s in config.states), edges_out)
+    loops = _loops(steps, edges_out)
+
+    def marked(found: Iterable[str]) -> tuple[str, ...]:
+        return tuple(sorted({owner.get(step, step) for step in found}))
+
     for name, changed_by in changes.items():
         if name not in decls:
             continue
@@ -525,7 +583,7 @@ def check(config: BotConfig, specs=None) -> Report:
                     f"variable {name!r} is changed in a loop that never sets it back, so it carries over from one"
                     " trip round the loop to the next: set it to a fixed value where the loop begins",
                     name,
-                    tuple(sorted(stale)),
+                    marked(stale),
                 )
             )
             continue
@@ -538,7 +596,7 @@ def check(config: BotConfig, specs=None) -> Report:
                         f"variable {name!r} is changed after a recovery without being set back first, so a value"
                         " from before the recovery carries into the run after it: set it on the way back in",
                         name,
-                        tuple(sorted(bypassed)),
+                        marked(bypassed),
                     )
                 )
     return report
@@ -573,7 +631,7 @@ def _raw_assignments(params: Mapping[str, Any]) -> list[dict]:
 
 
 def uses(config: BotConfig, name: str, *, values: Iterable[Any] | None = None) -> list[Use]:
-    """Every edge that reads ``name`` and every node that writes it, edges first, each in file order.
+    """Every edge that reads or writes ``name`` and every node that writes it, edges first, each in file order.
 
     With ``values``, only the rows that compare with or set one of them: what removing an
     enum's values would break. A row that adds or toggles holds no value to break.
@@ -584,9 +642,13 @@ def uses(config: BotConfig, name: str, *, values: Iterable[Any] | None = None) -
     def where(state_id: str) -> str:
         return f"'{labels.get(state_id, state_id)}'"
 
+    def breaks(row: AssignmentModel) -> bool:
+        return row.variable == name and (narrow is None or (row.op == "set" and row.value in narrow))
+
     found: list[Use] = []
     for t in config.transitions:
-        if any(fc.variable == name and (narrow is None or fc.value in narrow) for fc in condition_rows(t)):
+        reads = any(fc.variable == name and (narrow is None or fc.value in narrow) for fc in condition_rows(t))
+        if reads or any(breaks(row) for row in t.assign):
             when = f" on {t.when}" if t.when else ""
             found.append(Use(f"the edge from {where(t.source)} to {where(t.dest)}{when}", (t.source,)))
     for s in config.states:
@@ -601,7 +663,7 @@ def uses(config: BotConfig, name: str, *, values: Iterable[Any] | None = None) -
 
 
 def rename(config: BotConfig, old: str, new: str) -> None:
-    """Carry every condition and assignment naming variable ``old`` over to ``new``.
+    """Carry every condition and assignment naming variable ``old`` over to ``new``, on edges and nodes alike.
 
     The declaration itself is the caller's to rename. Both condition forms are rewritten,
     the flat rows as well as the groups that win over them at run time, as an option's
@@ -611,6 +673,9 @@ def rename(config: BotConfig, old: str, new: str) -> None:
         for fc in condition_rows(t):
             if fc.variable == old:
                 fc.variable = new
+        for row in t.assign:
+            if row.variable == old:
+                row.variable = new
     for s in config.states:
         if s.node_type != SET_VARIABLES_NODE:
             continue

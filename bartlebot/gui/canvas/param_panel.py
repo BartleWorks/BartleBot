@@ -51,7 +51,15 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import param_cards, variables, zone_names
-from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel, VariableModel
+from bartlebot.bot.schema import (
+    AssignmentModel,
+    FlagCondition,
+    FlagGroup,
+    RegionModel,
+    StateModel,
+    TransitionModel,
+    VariableModel,
+)
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.variable_rows import AssignmentsField, ConditionRow, parse_rows
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
@@ -2578,9 +2586,23 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         self._flag_conditions_widget = _FlagConditionsWidget()
 
+        # What the edge writes when it is the one taken (#189): the rows a set_variables
+        # node holds, in the same editor, read against the declarations show_transition
+        # was handed.
+        self._assign_lbl = QLabel("When taken, set")
+        self._assign_lbl.setToolTip(
+            "Variables this edge sets when the run takes it, in order:\n"
+            "set one to a value, add to a whole number, or toggle a true/false.\n"
+            "Nothing is set when another edge is taken, or when the bot recovers."
+        )
+        self._edge_decls: list[VariableModel] = []
+        self._edge_assign_field = AssignmentsField(lambda: self._edge_decls)
+
         edge_vbox.addWidget(edge_form_w)
         edge_vbox.addWidget(self._flags_lbl)
         edge_vbox.addWidget(self._flag_conditions_widget)
+        edge_vbox.addWidget(self._assign_lbl)
+        edge_vbox.addWidget(self._edge_assign_field)
         edge_vbox.addStretch()
         self._stack.addWidget(edge_outer)
 
@@ -2672,6 +2694,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
+        self._edge_assign_field.changed.connect(self._on_edge_assign_changed)
         self._param_form.link_requested.connect(self._on_form_link_requested)
         self._param_form.step_add_requested.connect(self._on_form_step_add_requested)
         self._param_form.step_remove_requested.connect(self._on_form_step_remove_requested)
@@ -2703,9 +2726,10 @@ class _ParamPanel(ThemedMixin, QWidget):
             f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
             f"border-radius: 4px; color: {THEME.text}; font-size: {THEME.font_small_px}px; padding: 3px; }}"
         )
-        self._flags_lbl.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
-        )
+        for header in (self._flags_lbl, self._assign_lbl):
+            header.setStyleSheet(
+                f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
+            )
         # Connection rows are built per selection and hold four THEME colors each
         # (chip background, accent link, hover surface), so replaying the build is
         # both shorter and more complete than holding a reference to every label.
@@ -3251,6 +3275,8 @@ class _ParamPanel(ThemedMixin, QWidget):
                 option_names or [],
                 variable_decls,
             )
+        self._edge_decls = list(variable_decls or [])
+        self._edge_assign_field.set_rows(transition.assign)
 
         for combo in (self._edge_src_combo, self._edge_dst_combo, self._edge_when_combo):
             combo.setEnabled(rewire)
@@ -3436,6 +3462,13 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._transition.flag_groups_op = flag_groups_op
         # Clear legacy flat fields — the grouped format takes precedence in to_machine_config()
         self._transition.flags = []
+        self.properties_changed.emit()
+
+    def _on_edge_assign_changed(self) -> None:
+        if self._suppress or self._transition is None:
+            return
+        self.edit_starting.emit("Edit transition")
+        self._transition.assign = [AssignmentModel.model_validate(row) for row in self._edge_assign_field.value()]
         self.properties_changed.emit()
 
     # ------------------------------------------------------------------

@@ -180,20 +180,21 @@ class EdgeItem(QGraphicsPathItem):
 
     @property
     def label(self) -> "EdgeLabelItem | None":
-        """The condition label, or None for an edge that has never had a condition."""
+        """The label, or None for an edge that has never had a condition or an assignment."""
         return self._label
 
-    def set_condition(self, text: str | None) -> None:
-        """Show *text*, the edge's whole condition, as a label near where the edge leaves its source.
+    def set_condition(self, text: str | None, shown: str | None = None) -> None:
+        """Show *text*, the edge's whole condition and what it sets, as a label near where the edge leaves its source.
 
-        None takes the label away. The label is a child item, so the repaint tracer
-        (#73) watches it like any other item on the canvas.
+        *shown* is the text cut for the canvas (``variables.edge_label``); without it the
+        label cuts *text* itself. None takes the label away. The label is a child item,
+        so the repaint tracer (#73) watches it like any other item on the canvas.
         """
         if not text and self._label is None:
             return
         if self._label is None:
             self._label = EdgeLabelItem(self)
-        self._label.set_text(text or "")
+        self._label.set_text(text or "", shown)
         self._place_label()
 
     def shape(self):
@@ -419,11 +420,11 @@ class EdgeItem(QGraphicsPathItem):
 
 
 class EdgeLabelItem(QGraphicsItem):
-    """An edge's condition as text, ``swords == 2``, with the whole of it in the tooltip (#187).
+    """An edge's condition and what it sets as text, ``swords == 2 → found toggled``, with the whole in the tooltip.
 
     A child of its edge, placed by :meth:`EdgeItem._place_label`. Its text is cut to
-    ``variables.EDGE_LABEL_CHARS`` and then to the room its segment has; the tooltip is
-    never cut. Every change of size goes through ``prepareGeometryChange``, so the
+    ``variables.EDGE_LABEL_CHARS`` a part (#187, #189) and then to the room its segment
+    has; the tooltip is never cut. Every change of size goes through ``prepareGeometryChange``, so the
     old rect is repainted and the repaint tracer (#73) sees a lost repaint if one ever
     is not. Colors are read at paint time, so a theme switch needs nothing here.
     """
@@ -431,6 +432,7 @@ class EdgeLabelItem(QGraphicsItem):
     def __init__(self, edge: EdgeItem) -> None:
         super().__init__(edge)
         self._full = ""
+        self._cut: str | None = None
         self._shown = ""
         self._room = float("inf")
         # A step up from a node's type line, which is muted and secondary: on an edge the
@@ -442,18 +444,20 @@ class EdgeLabelItem(QGraphicsItem):
 
     @property
     def full_text(self) -> str:
-        """The edge's whole condition, as the tooltip shows it."""
+        """The edge's whole condition and what it sets, as the tooltip shows it."""
         return self._full
 
     @property
     def shown_text(self) -> str:
-        """What the label draws: the condition, cut to fit."""
+        """What the label draws: the condition and what it sets, cut to fit."""
         return self._shown
 
-    def set_text(self, text: str) -> None:
-        if text == self._full:
+    def set_text(self, text: str, cut: str | None = None) -> None:
+        """Show *text*, or *cut* where the label has the room for it: *text* is always the tooltip."""
+        if text == self._full and cut == self._cut:
             return
         self._full = text
+        self._cut = cut
         self.setToolTip(text)
         self._refit()
         if not text:
@@ -466,10 +470,10 @@ class EdgeLabelItem(QGraphicsItem):
             self._refit()
 
     def _refit(self) -> None:
-        text = variables.shorten(self._full) if self._full else ""
+        text = (self._cut if self._cut is not None else variables.shorten(self._full)) if self._full else ""
         width = max(0.0, self._room - 2 * _LABEL_PAD_X)
         if text and self._metrics.horizontalAdvance(text) > width:
-            text = self._metrics.elidedText(text, Qt.TextElideMode.ElideRight, width) or "\u2026"
+            text = self._elide(text, width)
         rect = QRectF(0, 0, self._metrics.horizontalAdvance(text) + 2 * _LABEL_PAD_X, self._metrics.height())
         if text == self._shown and rect == self._rect:
             return
@@ -477,6 +481,26 @@ class EdgeLabelItem(QGraphicsItem):
         self._shown = text
         self._rect = rect
         self.update()
+
+    def _elide(self, text: str, width: float) -> str:
+        """*text* cut to *width*, the condition before what the edge sets (#189).
+
+        The dotted pen already says an edge has a condition, and nothing else on the
+        canvas says what it writes, so the write keeps its room while there is any.
+        """
+        head, arrow, tail = text.partition(variables.ASSIGN_ARROW)
+        if head and arrow:
+            room = width - self._metrics.horizontalAdvance(arrow + tail)
+            cut = self._metrics.elidedText(head, Qt.TextElideMode.ElideRight, room) if room > 0 else ""
+            if cut:
+                return cut + arrow + tail
+            # No room for any of the condition: an ellipsis stands for it, and the write is cut.
+            lead = "…" + arrow
+            room = width - self._metrics.horizontalAdvance(lead)
+            cut = self._metrics.elidedText(tail, Qt.TextElideMode.ElideRight, room) if room > 0 else ""
+            if cut:
+                return lead + cut
+        return self._metrics.elidedText(text, Qt.TextElideMode.ElideRight, width) or "…"
 
     def boundingRect(self) -> QRectF:  # noqa: N802 - Qt override
         return self._rect

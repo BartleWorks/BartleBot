@@ -229,7 +229,7 @@ The diff compares three configs: **base**, **theirs** (the latest version) and *
 |---|---|---|
 | a template-owned node | its id, under any prefix in the template's lineage | its `node_type` |
 | a param, label or stop list of one | (id, key) | the value |
-| an edge slot from one | (source, `when`, canonical flags) | `dest` |
+| an edge slot from one | (source, `when`, canonical flags) | `dest`, and the edge's assignments in order (`SlotValue`, #189) |
 | a template-owned subgraph node | its region id | `subgraph_id` |
 | an input on one | (region id, input name) | the value |
 | an edge into or out of one | normalized to (region id, port id) | as an edge slot |

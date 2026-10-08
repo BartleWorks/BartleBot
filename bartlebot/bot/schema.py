@@ -186,6 +186,17 @@ class TransitionModel(BaseModel):
     flag_groups: list[FlagGroup] = Field(default_factory=list)
     flag_groups_op: Literal["AND", "OR"] = "OR"
     label: str | None = None
+    # Writes to variables, applied in order when this edge is the one taken (#189): the
+    # same rows a set_variables node holds. Left out of the file while empty, so no
+    # existing bot's bytes change.
+    assign: list[AssignmentModel] = Field(default_factory=list)
+
+    @model_serializer(mode="wrap")
+    def _dump_assign_only_when_set(self, handler):
+        data = handler(self)
+        if not self.assign:
+            data.pop("assign", None)
+        return data
 
 
 class StateModel(BaseModel):
@@ -623,7 +634,8 @@ class BotConfig(BaseModel):
         A row in the registry is ``{"option", "negate"}`` for an option and
         ``{"variable", "compare", "value"}`` for a variable, in the same groups.
         A conditioned transition also carries its condition as text under ``guard``,
-        which the machine names in the log when that edge is the one taken.
+        which the machine names in the log when that edge is the one taken, and one with
+        assignments carries their rows under ``assign``, which the machine applies then.
         """
         from bartlebot.variables import describe_guard  # noqa: PLC0415 - avoids an import cycle
 
@@ -657,6 +669,8 @@ class BotConfig(BaseModel):
                     }
             if (guard := describe_guard(t)) is not None:
                 d["guard"] = guard
+            if t.assign:
+                d["assign"] = [row.model_dump() for row in t.assign]
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
@@ -724,8 +738,10 @@ def _compiled_row(fc: FlagCondition) -> dict:
 
 
 def uses_variables(transitions: list[TransitionModel], states: list[StateModel]) -> bool:
-    """Whether a graph reads or writes a variable: a variable condition row, or a set_variables node."""
+    """Whether a graph reads or writes a variable: a variable condition row, an edge assignment, or a set_variables node."""
     if any(s.node_type == SET_VARIABLES_NODE for s in states):
+        return True
+    if any(t.assign for t in transitions):
         return True
     return any(fc.is_variable for t in transitions for fc in [*t.flags, *(f for g in t.flag_groups for f in g.flags)])
 
