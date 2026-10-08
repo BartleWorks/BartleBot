@@ -2816,6 +2816,7 @@ class AppController(QObject):
             on_explicit_stop=self._on_machine_explicit_stop,
             on_stopped=self._on_machine_stopped,
             recovery_gap=self._client_manager.recovery_gap_for,
+            on_variable_change=self._on_machine_variable_change,
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -3034,6 +3035,12 @@ class AppController(QObject):
 
     def _on_machine_state_change(self, state_id: str) -> None:
         self._window.set_fsm_state(state_id)
+        machine = self._current_machine
+        if machine is not None:
+            self._window.left_sidebar.variable_values.on_node_started(machine.node_type_of(state_id))
+
+    def _on_machine_variable_change(self, name: str, old, new) -> None:
+        self._window.left_sidebar.variable_values.on_variable_change(name, old, new)
 
     def _on_machine_transition(self, prev: str, result: str, next_: str) -> None:
         self._window.bot_canvas.on_transition(prev, result, next_)
