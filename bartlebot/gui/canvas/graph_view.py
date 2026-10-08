@@ -378,6 +378,17 @@ class _MinimapView(QGraphicsView):
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
 
+    def drawBackground(self, painter: QPainter, rect: QRectF) -> None:  # noqa: N802 - Qt override
+        """The scene's own background, without the editor's grid.
+
+        The minimap shows the whole scene, so it would draw the whole grid -- some
+        2,500 dots, one Python call each, on every scroll step of the main view. That
+        was two thirds of the cost of a pan, for dots smaller than a minimap pixel.
+        """
+        scene = self.scene()
+        if scene is not None:
+            QGraphicsScene.drawBackground(scene, painter, rect)
+
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
         # Draw the main view's visible scene rect as a translucent overlay
