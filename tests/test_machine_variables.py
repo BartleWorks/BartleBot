@@ -489,3 +489,115 @@ async def test_set_variables_with_a_bad_row_fails_the_state_and_writes_nothing()
     await _run(machine)
     assert machine.state == "failed"
     assert machine.variables["swords"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Reading a run: the condition behind a transition, and the final values
+# ---------------------------------------------------------------------------
+
+
+def _transitions(caplog) -> list[str]:
+    return [r.getMessage() for r in caplog.records if r.getMessage().startswith("Transition:")]
+
+
+async def test_a_conditioned_transition_names_its_condition_and_a_plain_one_does_not(caplog):
+    add = {"variable": "swords", "op": "add", "value": 1}
+    bot = _switch(_edge("which", "one", _is("swords", 2)), writes=(add,))
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(bot))
+    assert _transitions(caplog) == [
+        "Transition: 'start' (Start) --SUCCESS--> 'which' (Which)",
+        "Transition: 'which' (Which) --SUCCESS [swords == 2]--> 'one' (One)",
+        "Transition: 'one' (One) --SUCCESS--> 'end' (End)",
+    ]
+
+
+async def test_an_otherwise_edge_beside_conditioned_ones_names_no_condition(caplog):
+    bot = _switch(_edge("which", "one", _is("swords", 2)), _edge("which", "two", _is("swords", 3)))
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(bot))
+    assert "Transition: 'which' (Which) --SUCCESS--> 'other' (Other)" in _transitions(caplog)
+
+
+async def test_two_edges_to_one_node_name_the_condition_that_was_true(caplog):
+    """The destination cannot tell them apart, so the edge that was taken has to say which it was."""
+    edges = (
+        _edge("which", "one", _is("stage", "Moon")),
+        _edge("which", "one", FlagCondition(option="On"), _is("found", False)),
+    )
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(_switch(*edges, options=OPTIONS)))
+    assert "Transition: 'which' (Which) --SUCCESS [On AND found == false]--> 'one' (One)" in _transitions(caplog)
+
+
+async def test_an_option_condition_is_named_too(caplog):
+    bot = _switch(_edge("which", "one", FlagCondition(option="On")), options=OPTIONS)
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(bot))
+    assert "Transition: 'which' (Which) --SUCCESS [On]--> 'one' (One)" in _transitions(caplog)
+
+
+async def test_a_grouped_condition_is_named_as_the_edge_label_shows_it(caplog):
+    groups = [FlagGroup(flags=[_is("swords", 1), FlagCondition(option="On")]), FlagGroup(flags=[_is("found", True)])]
+    edge = _edge("which", "one", flag_groups=groups, flag_groups_op="OR")
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(_switch(edge, options=OPTIONS)))
+    assert "Transition: 'which' (Which) --SUCCESS [(swords == 1 AND On) OR found == true]--> 'one' (One)" in (
+        _transitions(caplog)
+    )
+
+
+async def test_a_labeled_edge_runs():
+    """An edge's label is the editor's; the machine's transitions library would refuse it as an argument."""
+    bot = _bot([_state("a"), _state("b", "done")], [_edge("a", "b", label="onward")])
+    machine = _machine(bot)
+    await _run(machine)
+    assert machine.state == "b"
+
+
+async def test_the_run_summary_lists_each_variables_final_value(caplog):
+    bot = _bot(
+        [
+            _set("a", {"variable": "swords", "op": "add", "value": 2}, {"variable": "found", "op": "toggle"}),
+            _state("b", "done"),
+        ],
+        [_edge("a", "b")],
+    )
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(bot))
+    assert "Variables: swords = 3, found = true, stage = Sun" in [r.getMessage() for r in caplog.records]
+
+
+async def test_a_bot_without_variables_has_no_variables_line(caplog):
+    bot = _bot([_state("a", "done")], [], variables=[])
+    with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):
+        await _run(_machine(bot))
+    assert not [r for r in caplog.records if r.getMessage().startswith("Variables:")]
+
+
+async def test_every_conditioned_transition_in_a_run_names_its_condition_and_every_write_is_logged_once(caplog):
+    """The issue's two Done-when lines about the log, over a loop that writes and branches several times."""
+    bot = _bot(
+        [
+            _set("count", {"variable": "swords", "op": "add", "value": 1}),
+            _state("which", "branch"),
+            _state("game"),
+            _state("end", "done"),
+        ],
+        [
+            _edge("count", "which"),
+            _edge("which", "end", _is("swords", 4)),
+            _edge("which", "game", _is("swords", 4, "<")),
+            _edge("game", "count"),
+        ],
+    )
+    with caplog.at_level(logging.DEBUG, logger="bartlebot.bot.machine"):
+        await _run(_machine(bot))
+    from_which = [t for t in _transitions(caplog) if t.startswith("Transition: 'which'")]
+    assert from_which == [
+        "Transition: 'which' (Which) --SUCCESS [swords < 4]--> 'game' (Game)",
+        "Transition: 'which' (Which) --SUCCESS [swords < 4]--> 'game' (Game)",
+        "Transition: 'which' (Which) --SUCCESS [swords == 4]--> 'end' (End)",
+    ]
+    writes = [r.getMessage() for r in caplog.records if r.getMessage().startswith("Variable swords")]
+    assert writes == ["Variable swords: 1 → 2", "Variable swords: 2 → 3", "Variable swords: 3 → 4"]

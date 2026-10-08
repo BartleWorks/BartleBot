@@ -622,7 +622,11 @@ class BotConfig(BaseModel):
 
         A row in the registry is ``{"option", "negate"}`` for an option and
         ``{"variable", "compare", "value"}`` for a variable, in the same groups.
+        A conditioned transition also carries its condition as text under ``guard``,
+        which the machine names in the log when that edge is the one taken.
         """
+        from bartlebot.variables import describe_guard  # noqa: PLC0415 - avoids an import cycle
+
         self.sort_transitions()
         conditions_registry: dict[str, dict] = {}
         trans_list = []
@@ -651,6 +655,8 @@ class BotConfig(BaseModel):
                         "flags": [_compiled_row(fc) for fc in t.flags],
                         "op": t.flag_op,
                     }
+            if (guard := describe_guard(t)) is not None:
+                d["guard"] = guard
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
