@@ -77,8 +77,8 @@ ever fire at startup (#191).
 
 ## Edge assignments
 
-"Remember which way I came" with only `set_variables` costs a node per branch: eight in
-Heretical Academy, one per spot. A statechart's answer is an assignment on the transition
+"Remember which way I came" with only `set_variables` costs a node per branch: Heretical
+Academy had eight, one per spot, before they moved onto the spots' edges. A statechart's answer is an assignment on the transition
 itself, and our graph is a state machine, so an edge can write too (#189).
 
 **Applied when that edge is taken, and only then.** `to_machine_config` carries an edge's
@@ -96,6 +96,14 @@ Variable swords: 1 → 2
 
 That is a statechart's `event [guard] / action`; a conditioned edge reads
 `--SUCCESS [swords == 2] / found toggled-->`. So:
+
+- **An edge's condition reads the values from before its own writes.** Every condition on
+  the port is checked first, and only the edge chosen has its rows applied, so
+  `[swords == 1] / swords + 1` is the edge for the second sword. A condition that read
+  after the writes would depend on an edge that had not yet been chosen, and sibling
+  edges with different rows would each see a different value. Moving a `set_variables`
+  node's rows onto the edge before it therefore lowers by one every comparison after it
+  that reads a counter it adds to, as Heretical Academy's racks did.
 
 - **Another edge from the same port writes nothing**, and neither does an edge on another
   port: only the edge taken noted its rows.
@@ -225,16 +233,19 @@ variables: a label, `swords == 2`, with the whole expression in its tooltip
 its source port: every edge from one port shares its first stretch, so a switch's labels
 would sit on each other there. It is cut to `variables.EDGE_LABEL_CHARS`, then to the room
 its segment has, so it never runs into the destination node; the tooltip is never cut. A
-click on it selects the edge. It is a child item of the edge (`edge_item.EdgeLabelItem`),
-so the repaint tracer (#73) watches it, and every change of its size goes through
-`prepareGeometryChange`.
+click on it selects the edge. It is drawn over every edge and under every node, so no
+other edge strikes through its text. That is why it is an item of its own
+(`edge_item.EdgeLabelItem`) rather than a child of its edge: Qt paints a child straight
+after its parent, under every edge stacked later. The edge adds it to the scene, removes
+it, and shows and hides it along with itself. The repaint tracer (#73) watches it like
+any other item, and every change of its size goes through `prepareGeometryChange`.
 
 **Every edge that writes says what it writes** on the same label, after its condition:
 `swords == 4 → found toggled`, or `→ swords + 1` for an edge with no condition
 (`variables.edge_label`). The port the edge leaves already names its outcome, and the
 arrow is what tells a write from a condition: `swords = 4` beside `swords == 4` would be
 too easy to misread. Each part is cut to `EDGE_LABEL_CHARS` on its own. Short of room, the
-condition is cut first, since the dotted pen already says there is one and nothing else
+condition is cut first, since the dashed pen already says there is one and nothing else
 on the canvas says what the edge sets; with no room for any of it, `… → found to…`. An
 assignment is not a condition, so it leaves the pen solid.
 

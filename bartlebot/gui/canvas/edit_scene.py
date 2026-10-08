@@ -1278,7 +1278,7 @@ class EditScene(QGraphicsScene):
                 node.set_recovery(node_id == recovery)
 
     def refresh_edge_flags(self, transition) -> None:
-        """Refresh the dotted pen and the condition label on the edge *transition* is drawn as."""
+        """Refresh the dashed pen and the condition label on the edge *transition* is drawn as."""
         edge = self.edge_for(transition)
         if edge is not None:
             models = self._edge_models.get(edge, [])
@@ -1286,7 +1286,7 @@ class EditScene(QGraphicsScene):
             edge.set_condition(*_condition_text(models))
 
     def refresh_all_edge_flags(self) -> None:
-        """Re-derive every edge's dotted-pen indicator from the config.
+        """Re-derive every edge's dashed-pen indicator from the config.
 
         Deleting an option strips its conditions off the transitions that used it,
         which can leave an edge unconditional -- but the edge item is a snapshot,
@@ -2127,7 +2127,7 @@ class EditScene(QGraphicsScene):
         view = self.views()[0] if self.views() else None
         item = self.itemAt(event.scenePos(), view.transform() if view is not None else QTransform())
         if isinstance(item, EdgeLabelItem):
-            item = item.parentItem()  # a condition label is its edge, for a menu as for a click
+            item = item.edge  # a condition label is its edge, for a menu as for a click
         menu = popup_menu(view) if view is not None else QMenu()
         if isinstance(item, CallNodeItem):
             self._build_call_menu(menu, item)

@@ -775,8 +775,8 @@ def test_a_changed_default_does_not_rebuild_the_row_it_was_changed_in(qapp, sett
 # ---------------------------------------------------------------------------
 
 
-def test_deleting_an_option_undots_the_edges_that_guarded_on_it(qapp, settings):
-    """An edge is dotted while it is conditional, and a deletion can end that.
+def test_deleting_an_option_makes_solid_the_edges_that_guarded_on_it(qapp, settings):
+    """An edge is dashed while it is conditional, and a deletion can end that.
 
     The flags come off the transitions, but an ``EdgeItem`` holds a snapshot of
     whether it had any, and the Options surface cannot reach the canvas to say

@@ -258,6 +258,30 @@ async def test_a_condition_reads_the_value_an_earlier_edge_wrote():
     assert machine.variables["swords"] == 2
 
 
+async def test_an_edges_condition_reads_the_value_from_before_its_own_writes():
+    """An edge that reads and writes one variable: the condition sees the count before the edge adds to it.
+
+    With swords at 1, ``[swords == 1] / swords + 1`` is taken and ``[swords == 2]`` is not,
+    so rack_2 gets the second sword. Writing first would send it to rack_3.
+    """
+    bot = _bot(
+        [_state("spot"), _state("rack_2"), _state("rack_3"), _state("end", "done")],
+        [
+            _edge("spot", "rack_2", ADD_SWORD, flags=[_is("swords", 1)]),
+            _edge("spot", "rack_3", ADD_SWORD, flags=[_is("swords", 2)]),
+            _edge("spot", "end", ADD_SWORD),
+            _edge("rack_2", "end"),
+            _edge("rack_3", "end"),
+        ],
+        variables=[VariableModel(name="swords", type="int", initial=1)],
+    )
+    work = _Recorder()
+    machine = _machine(bot, work=work)
+    await _run(machine)
+    assert work.runs == ["spot", "rack_2"]
+    assert machine.variables["swords"] == 2
+
+
 async def test_a_write_validation_should_have_refused_stops_the_run_and_writes_nothing():
     reasons: list[str] = []
     bot = _bot(

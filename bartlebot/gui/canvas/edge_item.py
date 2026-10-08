@@ -26,6 +26,15 @@ _BACK_PADDING = BACK_PADDING  # alias kept for internal use
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 FORWARD_PADDING = 30  # gap between forward-edge channel and source node right edge
 
+#: A conditional edge's dashes and gaps, in pen widths. Flat caps on purpose: a round
+#: cap makes every dash a curved shape of its own, and on the sword puzzle's 30
+#: conditional edges that was 17 ms a pan frame at zoom 1 and 96 at zoom 0.5, against
+#: 5.4 and 13 for these.
+CONDITIONAL_DASHES = [4.0, 3.0]
+
+#: A condition label's stacking: over every edge (0), under every node (1).
+LABEL_Z = 0.5
+
 _LABEL_GAP = 4  # between a condition label and the corner it hangs from, and the line under it
 _LABEL_PAD_X = 3  # inside the label's backing, either side of the text
 _LABEL_MIN_ROOM = 24  # the narrowest a label is squeezed to; below this it shows an ellipsis alone
@@ -41,6 +50,17 @@ def _edge_hover():
 
 def _edge_selected():
     return THEME.qcolor("edge_selected")
+
+
+def _edge_pen(color, width: float, conditional: bool) -> QPen:
+    """The pen an edge is drawn with when it is not selected: dashed while it is conditional."""
+    pen = QPen(color, width)
+    if conditional:
+        pen.setDashPattern(CONDITIONAL_DASHES)
+        pen.setCapStyle(Qt.PenCapStyle.FlatCap)
+    else:
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+    return pen
 
 
 def _when_edge_color(when: str | None, is_self_loop: bool = False):
@@ -169,7 +189,7 @@ class EdgeItem(QGraphicsPathItem):
 
     @property
     def has_flags(self) -> bool:
-        """Whether this edge is conditional, and so drawn with a dotted pen."""
+        """Whether this edge is conditional, and so drawn with a dashed pen."""
         return self._has_flags
 
     def set_has_flags(self, has_flags: bool) -> None:
@@ -187,15 +207,33 @@ class EdgeItem(QGraphicsPathItem):
         """Show *text*, the edge's whole condition and what it sets, as a label near where the edge leaves its source.
 
         *shown* is the text cut for the canvas (``variables.edge_label``); without it the
-        label cuts *text* itself. None takes the label away. The label is a child item,
-        so the repaint tracer (#73) watches it like any other item on the canvas.
+        label cuts *text* itself. None takes the label away. The label is an item of its
+        own in the scene, which this edge carries in and out with it (``itemChange``), so
+        the repaint tracer (#73) watches it like any other item on the canvas.
         """
         if not text and self._label is None:
             return
         if self._label is None:
             self._label = EdgeLabelItem(self)
+            if self.scene() is not None:
+                self.scene().addItem(self._label)
         self._label.set_text(text or "", shown)
         self._place_label()
+
+    def itemChange(self, change, value):  # noqa: N802 - Qt override
+        """Take the label wherever this edge goes: into and out of a scene, shown and hidden."""
+        label = self._label
+        if label is not None:
+            if change == QGraphicsItem.GraphicsItemChange.ItemSceneChange:
+                old = label.scene()
+                if old is not None and old is not value:
+                    old.removeItem(label)
+            elif change == QGraphicsItem.GraphicsItemChange.ItemSceneHasChanged:
+                if value is not None and label.scene() is not value:
+                    value.addItem(label)
+            elif change == QGraphicsItem.GraphicsItemChange.ItemVisibleHasChanged:
+                self._place_label()
+        return super().itemChange(change, value)
 
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
@@ -229,10 +267,10 @@ class EdgeItem(QGraphicsPathItem):
         not fit is cut, and the tooltip has the rest.
         """
         label = self._label
-        if label is None or not label.full_text:
+        if label is None:
             return
         wp = self._waypoints
-        if len(wp) < 2:
+        if not label.full_text or len(wp) < 2:
             label.setVisible(False)
             return
         corner, nxt = (wp[2], wp[3]) if len(wp) >= 4 else (wp[0], wp[-1])
@@ -244,7 +282,9 @@ class EdgeItem(QGraphicsPathItem):
         below = len(wp) == 6 and corner.y() > wp[0].y()
         y = corner.y() + _LABEL_GAP / 2 if below else corner.y() - size.height() - _LABEL_GAP / 2
         label.setPos(x, y)
-        label.setVisible(True)
+        # Not a child, so it does not inherit the edge's visibility: an edge hidden by
+        # Focus Mode or the failure-edge toggle has to hide its label itself.
+        label.setVisible(self.isVisible())
 
     # ------------------------------------------------------------------
     # Hover events
@@ -281,12 +321,11 @@ class EdgeItem(QGraphicsPathItem):
             return
         if self.isSelected():
             pen = QPen(_edge_selected(), 2.5, Qt.PenStyle.DashLine)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         elif self._hovered:
-            pen = QPen(_edge_hover(), 2.5, Qt.PenStyle.DotLine if self._has_flags else Qt.PenStyle.SolidLine)
+            pen = _edge_pen(_edge_hover(), 2.5, self._has_flags)
         else:
-            style = Qt.PenStyle.DotLine if self._has_flags else Qt.PenStyle.SolidLine
-            pen = QPen(_when_edge_color(self._when, self._is_self_loop), 2.0, style)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            pen = _edge_pen(_when_edge_color(self._when, self._is_self_loop), 2.0, self._has_flags)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(self.path())
@@ -422,7 +461,13 @@ class EdgeItem(QGraphicsPathItem):
 class EdgeLabelItem(QGraphicsItem):
     """An edge's condition and what it sets as text, ``swords == 2 → found toggled``, with the whole in the tooltip.
 
-    A child of its edge, placed by :meth:`EdgeItem._place_label`. Its text is cut to
+    Placed by :meth:`EdgeItem._place_label`, and drawn over every edge and under every
+    node (``LABEL_Z``). It cannot be a child of its edge: Qt paints a child straight after
+    its parent, so a child label sits above its own edge but under every edge stacked
+    after it, and those struck through its text. So it is an item of its own, which its
+    edge adds to and removes from the scene, and shows and hides, along with itself.
+
+    Its text is cut to
     ``variables.EDGE_LABEL_CHARS`` a part (#187, #189) and then to the room its segment
     has; the tooltip is never cut. Every change of size goes through ``prepareGeometryChange``, so the
     old rect is repainted and the repaint tracer (#73) sees a lost repaint if one ever
@@ -430,7 +475,9 @@ class EdgeLabelItem(QGraphicsItem):
     """
 
     def __init__(self, edge: EdgeItem) -> None:
-        super().__init__(edge)
+        super().__init__()
+        self._edge = edge
+        self.setZValue(LABEL_Z)
         self._full = ""
         self._cut: str | None = None
         self._shown = ""
@@ -441,6 +488,11 @@ class EdgeLabelItem(QGraphicsItem):
         self._metrics = QFontMetricsF(self._font)
         self._rect = QRectF()
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+
+    @property
+    def edge(self) -> EdgeItem:
+        """The edge this label belongs to: a click or a menu on the label is on it."""
+        return self._edge
 
     @property
     def full_text(self) -> str:
@@ -485,7 +537,7 @@ class EdgeLabelItem(QGraphicsItem):
     def _elide(self, text: str, width: float) -> str:
         """*text* cut to *width*, the condition before what the edge sets (#189).
 
-        The dotted pen already says an edge has a condition, and nothing else on the
+        The dashed pen already says an edge has a condition, and nothing else on the
         canvas says what it writes, so the write keeps its room while there is any.
         """
         head, arrow, tail = text.partition(variables.ASSIGN_ARROW)
@@ -522,13 +574,12 @@ class EdgeLabelItem(QGraphicsItem):
 
     def mousePressEvent(self, event) -> None:  # noqa: N802 - Qt override
         """A click on the label is a click on its edge: it selects the edge."""
-        edge = self.parentItem()
         scene = self.scene()
-        if edge is None or scene is None:
+        if scene is None:
             return super().mousePressEvent(event)
         if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             scene.clearSelection()
-        edge.setSelected(True)
+        self._edge.setSelected(True)
         event.accept()
 
 

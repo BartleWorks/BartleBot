@@ -3332,7 +3332,7 @@ class BotCanvas(QWidget):
         self._scene.refresh_recovery(recovery_state_id)
 
     def refresh_edge_flags(self) -> None:
-        """Re-derive every edge's condition -- its dotted pen and its label -- from the config."""
+        """Re-derive every edge's condition -- its dashed pen and its label -- from the config."""
         self._scene.refresh_all_edge_flags()
 
     def note_edit_starting(self, desc: str) -> None:
@@ -3450,7 +3450,7 @@ class BotCanvas(QWidget):
         if shown_state is not None and self._config is not None and self._config.is_definition:
             sync_linked_values(self._config, edited_state=shown_state.id)
             reresolve_linked_instances(self._config, self._subgraph_library)
-        # Refresh the dotted-pen flag indicator on the selected edge when flags change.
+        # Refresh the dashed-pen flag indicator on the selected edge when flags change.
         shown = self._param_panel.shown_transition
         if shown is not None:
             # A call node's edge stands for several transitions and shows the first:
