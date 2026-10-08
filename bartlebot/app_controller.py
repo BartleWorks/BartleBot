@@ -3202,7 +3202,7 @@ class AppController(QObject):
         if self._loaded_config is not None:
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
             self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)
-            # An edge is drawn dotted while it is conditional, and deleting an option
+            # An edge is drawn dashed while it is conditional, and deleting an option
             # strips its conditions off every transition that guarded on it -- from a
             # surface with no way to reach the canvas.  Cheap: each edge is only
             # repainted when its own flag actually moved.

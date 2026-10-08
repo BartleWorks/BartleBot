@@ -242,7 +242,7 @@ so the repaint tracer (#73) watches it, and every change of its size goes throug
 (`variables.edge_label`). The port the edge leaves already names its outcome, and the
 arrow is what tells a write from a condition: `swords = 4` beside `swords == 4` would be
 too easy to misread. Each part is cut to `EDGE_LABEL_CHARS` on its own. Short of room, the
-condition is cut first, since the dotted pen already says there is one and nothing else
+condition is cut first, since the dashed pen already says there is one and nothing else
 on the canvas says what the edge sets; with no room for any of it, `… → found to…`. An
 assignment is not a condition, so it leaves the pen solid.
 
