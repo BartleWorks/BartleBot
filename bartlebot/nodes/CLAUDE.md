@@ -42,8 +42,8 @@ result counted. So:
 
 ## Nodes never write variables
 
-A bot's variables (`docs/VARIABLES.md`) are written by the `set_variables` node and by
-nothing else. `BotMachine.set_variable` refuses any task but the running node's and the
+A bot's variables (`docs/VARIABLES.md`) are written by the `set_variables` node and by an
+edge as it is taken, which the run loop applies, and by nothing else. `BotMachine.set_variable` refuses any task but the running node's and the
 run loop's, so a write from a per-client coroutine under `gather`, or from a task a node
 spawns, raises `VariableWriteRefused` -- and a node that writes from its own task is still
 wrong: the value would change with nothing on the canvas to say so. A node that needs to

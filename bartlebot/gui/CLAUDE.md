@@ -909,7 +909,7 @@ laid the canvas out in Run mode first.
 the declarations are the **Variables section**, under Options on the Edit-mode Options tab
 -- declarations, like options, and never the Properties page; a variable's reads are the
 edge page's **Conditions** rows; its writes are the **`assignments`** rows on a
-`set_variables` node's page (and on an edge's page in #189). The two row editors read the
+`set_variables` node's page and on an edge's page, as **When taken, set** (#189). The two row editors read the
 declarations the canvas hands them each time a page is shown, never a copy of their own,
 and share one value control (`widgets/variable_widgets.VariableValueField`), which only
 ever offers a value the type takes. Because the Options tab *replaces* the Properties page
