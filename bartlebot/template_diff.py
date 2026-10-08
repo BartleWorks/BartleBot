@@ -27,9 +27,15 @@ base or the latest version names; and anything on a node the bot itself added.
 Skips are remembered by advancing the base (:func:`finish`), not by an ignore list: a
 finished review is not offered again.
 
-Edges are compared by **slot**: (source, ``when``, flags) is the key and ``dest`` the
-value, so a rewire is one slot's value changing. An end on a subgraph node is normalized
-to its port, so a definition that moved a port's member is not a template change.
+Edges are compared by **slot**: (source, ``when``, flags) is the key, and where the edge
+lands and what it sets when taken (:class:`SlotValue`) the value, so a rewire, or a
+changed assignment, is one slot's value changing. An end on a subgraph node is
+normalized to its port, so a definition that moved a port's member is not a template
+change.
+
+A variable the template declares or drops is one change with every edge and node of that
+release that reads or writes it, since either alone would leave a row naming a variable
+the bot does not declare, which refuses the run.
 
 No Qt here. The Setup tab (``gui/sidebar/setup_panel.py``) draws what :func:`review` returns.
 """
@@ -44,8 +50,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from bartlebot import fight_keys, template_store
+from bartlebot import fight_keys, template_store, variables
 from bartlebot.bot.schema import (
+    AssignmentModel,
     BotConfig,
     BotOptionModel,
     FlagCondition,
@@ -116,6 +123,19 @@ def _canon_flags(t: TransitionModel) -> tuple:
     return ()
 
 
+def _canon_assign(t: TransitionModel) -> tuple:
+    """An edge's assignments as a hashable tuple of ``(variable, op, value)``, in order: a later row sees an earlier one."""
+    return tuple((a.variable, a.op, a.value) for a in t.assign)
+
+
+@dataclass(frozen=True)
+class SlotValue:
+    """What an edge slot holds: where the edge lands, and what it sets when taken (#189)."""
+
+    dest: str | Port
+    assign: tuple = ()
+
+
 @dataclass
 class _Snapshot:
     """One config as units, with what applying a unit needs to copy from it."""
@@ -180,7 +200,7 @@ def _snapshot(config: BotConfig, prefixes: tuple[str, ...]) -> _Snapshot:
         else:
             continue
         if key not in units:
-            units[key] = _end(snap, t.dest)
+            units[key] = SlotValue(_end(snap, t.dest), _canon_assign(t))
             snap.edges[key] = t
 
     for option in storable_options(config):
@@ -216,7 +236,9 @@ def _owner(key: tuple) -> str | None:
 
 
 def _entity(end: Any) -> str | None:
-    """The node or subgraph node an edge end or a role names."""
+    """The node or subgraph node an edge end, a slot or a role names."""
+    if isinstance(end, SlotValue):
+        return _entity(end.dest)
     if isinstance(end, Port):
         return end.region
     return end if isinstance(end, str) else None
@@ -417,6 +439,9 @@ def _fmt(snap: _Snapshot, value: Any) -> str:
     """A unit's value in a few words."""
     if value is MISSING:
         return "nothing"
+    if isinstance(value, SlotValue):
+        dest = _fmt(snap, value.dest)
+        return f"{dest}, setting {_sets_text(value.assign)}" if value.assign else dest
     if isinstance(value, Port):
         return f"'{_name(snap, value.region)}'"
     if isinstance(value, str):
@@ -476,7 +501,43 @@ def _describe(unit: Unit, theirs: _Snapshot, base: _Snapshot, mine: _Snapshot) -
     source = _name(named, owner)
     outcome = f"port {key[1].port}" if isinstance(key[1], Port) else (key[2] or "any outcome")
     guard = (" (with option conditions)" if _options_only(key[3]) else " (with conditions)") if key[3] else ""
+    if isinstance(unit.base, SlotValue) and isinstance(unit.theirs, SlotValue) and unit.base.dest == unit.theirs.dest:
+        # Only what the edge sets changed, so that is what the detail says.
+
+        def sets(value: SlotValue) -> str:
+            return f"sets {_sets_text(value.assign)}" if value.assign else "sets nothing"
+
+        arrow = f"When taken, {sets(unit.base)} → {sets(unit.theirs)}"
+        if unit.conflicts:
+            arrow += f". Yours: {sets(unit.mine) if isinstance(unit.mine, SlotValue) else fmt(unit.mine)}"
     return f"{source} · on {outcome}{guard}", arrow
+
+
+def _sets_text(assign: tuple) -> str:
+    """A slot's canonical assignments (:func:`_canon_assign`) as the edge's label says them: ``swords + 1``."""
+    rows = [AssignmentModel(variable=v, op=op, value=value) for v, op, value in assign]
+    return variables.describe_assignments(rows) or "nothing"
+
+
+def _variables_named(unit: Unit) -> set[str]:
+    """The variables a unit reads or writes, in any of its three values: what groups it with their declarations."""
+    kind = unit.key[0]
+    found: set[str] = set()
+    if kind == "variable":
+        found.add(unit.key[1])
+    elif kind == "slot":
+        guard = unit.key[3]
+        if guard:
+            rows = guard[1] if guard[0] == "flags" else [r for group, _op in guard[1] for r in group]
+            found.update(r[0] for r in rows if len(r) == 3)
+        for value in (unit.base, unit.theirs, unit.mine):
+            if isinstance(value, SlotValue):
+                found.update(row[0] for row in value.assign)
+    elif kind == "param" and unit.key[2] == variables.ASSIGNMENTS_PARAM:
+        for value in (unit.base, unit.theirs, unit.mine):
+            if isinstance(value, list):
+                found.update(r["variable"] for r in value if isinstance(r, dict) and isinstance(r.get("variable"), str))
+    return found
 
 
 def _options_only(guard: tuple) -> bool:
@@ -546,6 +607,9 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
 
     added = {u.key[1] for u in changed if u.key[0] in ("node", "instance") and u.base is MISSING}
     removed = {u.key[1] for u in changed if u.key[0] in ("node", "instance") and u.theirs is MISSING}
+    # A variable declared or dropped goes with what uses it: applied alone, either side
+    # leaves a row naming a variable the bot does not declare.
+    declared = {u.key[1] for u in changed if u.key[0] == "variable" and MISSING in (u.base, u.theirs)}
 
     # Group around the nodes a release added or removed: a node, what it carries, and
     # every edge and role that now points at it or used to.
@@ -568,6 +632,7 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
                 near.append(_entity(unit.theirs))
             if _entity(unit.base) in removed:
                 near.append(_entity(unit.base))
+        near += [_variable_anchor(name) for name in sorted(_variables_named(unit) & declared)]
         for other in near[1:]:
             parent[find(other)] = find(near[0])
         anchors.append(near)
@@ -619,6 +684,11 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
         if seen[change.id] > 1:
             change.id = f"{change.id}#{seen[change.id]}"
     return changes
+
+
+def _variable_anchor(name: str) -> str:
+    """What a declared or dropped variable's change is grouped under. Never a node id."""
+    return f"\0variable:{name}"
 
 
 def _unit_versions(update: TemplateUpdate, base: _Snapshot, prefixes: tuple[str, ...]) -> dict[tuple, int]:
@@ -699,6 +769,8 @@ def _blocker(units: Sequence[Unit], own: _Snapshot, theirs: _Snapshot) -> str:
             if port is None or port.member is None:
                 return f"This bot's '{region.label}' has no port {end.port}. Update the subgraph first."
             return ""
+        if isinstance(end, SlotValue):
+            return end_missing(end.dest)
         if isinstance(end, str) and end not in adds and not any(s.id == end for s in own.config.states):
             return f"This bot has no '{_name(theirs, end)}'."
         return ""
@@ -729,13 +801,21 @@ def _build_change(units: list[Unit], base: _Snapshot, theirs: _Snapshot, own: _S
             parts.append("Add " + ", ".join(f"'{_name(theirs, a)}'" for a in adds))
         if drops:
             parts.append(("remove " if adds else "Remove ") + ", ".join(f"'{_name(base, d)}'" for d in drops))
+        declared = [u.key[1] for u in units if u.key[0] == "variable" and u.base is MISSING]
+        dropped = [u.key[1] for u in units if u.key[0] == "variable" and u.theirs is MISSING]
+        if declared:
+            parts.append("declare " + ", ".join(f"'{v}'" for v in declared))
+        if dropped:
+            parts.append("drop variable " + ", ".join(f"'{v}'" for v in dropped))
         title = "; ".join(parts)
         rewired = sum(
             1 for u in units if u.key[0] == "slot" and _owner(u.key) not in adds and _owner(u.key) not in drops
         )
         detail = f"With {rewired} edge{'s' if rewired != 1 else ''} rewired around it" if rewired else ""
     else:
-        title, detail = _describe(units[0], theirs, base, own)
+        # A variable declared together with the edges that use it is named for the variable.
+        lead = next((u for u in units if u.key[0] == "variable"), units[0])
+        title, detail = _describe(lead, theirs, base, own)
         if len(units) > 1:
             detail = f"{detail} (and {len(units) - 1} more)"
     # The nodes left on the other end of an edge the removal drops: the user's to rewire.
@@ -890,13 +970,15 @@ def _slot_sources(config: BotConfig, key: tuple) -> list[tuple[str, str | None]]
 
 def _apply_slot(config: BotConfig, unit: Unit, theirs: _Snapshot) -> None:
     flags = unit.key[3]
-    dest = _resolve(config, unit.theirs) if unit.theirs is not MISSING else None
+    value = unit.theirs
+    dest = _resolve(config, value.dest) if value is not MISSING else None
     for source, when in _slot_sources(config, unit.key):
         held = [t for t in config.transitions if t.source == source and t.when == when and _canon_flags(t) == flags]
         if dest is None:
             config.transitions = [t for t in config.transitions if not any(t is h for h in held)]
         elif held:
             held[0].dest = dest
+            held[0].assign = [AssignmentModel(variable=v, op=op, value=x) for v, op, x in value.assign]
             config.transitions = [t for t in config.transitions if not any(t is h for h in held[1:])]
         else:
             copy = theirs.edges[unit.key].model_copy(deep=True)
