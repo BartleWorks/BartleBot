@@ -77,8 +77,8 @@ ever fire at startup (#191).
 
 ## Edge assignments
 
-"Remember which way I came" with only `set_variables` costs a node per branch: eight in
-Heretical Academy, one per spot. A statechart's answer is an assignment on the transition
+"Remember which way I came" with only `set_variables` costs a node per branch: Heretical
+Academy had eight, one per spot, before they moved onto the spots' edges. A statechart's answer is an assignment on the transition
 itself, and our graph is a state machine, so an edge can write too (#189).
 
 **Applied when that edge is taken, and only then.** `to_machine_config` carries an edge's
@@ -96,6 +96,14 @@ Variable swords: 1 → 2
 
 That is a statechart's `event [guard] / action`; a conditioned edge reads
 `--SUCCESS [swords == 2] / found toggled-->`. So:
+
+- **An edge's condition reads the values from before its own writes.** Every condition on
+  the port is checked first, and only the edge chosen has its rows applied, so
+  `[swords == 1] / swords + 1` is the edge for the second sword. A condition that read
+  after the writes would depend on an edge that had not yet been chosen, and sibling
+  edges with different rows would each see a different value. Moving a `set_variables`
+  node's rows onto the edge before it therefore lowers by one every comparison after it
+  that reads a counter it adds to, as Heretical Academy's racks did.
 
 - **Another edge from the same port writes nothing**, and neither does an edge on another
   port: only the edge taken noted its rows.
