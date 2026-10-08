@@ -12,7 +12,7 @@ from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadEr
 
 from bartlebot import bot_options, option_values, restricted_zones, sightings, variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
-from bartlebot.bot.schema import FALLTHROUGH_RETURNS, VariableModel
+from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +171,10 @@ class BotMachine:
         # it was taken, and the one taken by the advance in flight. See _machine_transitions.
         self._guards: dict[str, str] = {}
         self._taken_guard: str | None = None
+        # Each assigning transition's rows, by the after-callback that notes it was taken, and
+        # the rows of the one taken by the advance in flight. See _apply_taken_assignments.
+        self._assigns: dict[str, list[AssignmentModel]] = {}
+        self._taken_assign: list[AssignmentModel] | None = None
 
         states = [s["id"] for s in config["states"]]
         transitions = self._machine_transitions(config["transitions"])
@@ -189,20 +193,27 @@ class BotMachine:
     def _machine_transitions(self, transitions: list[dict]) -> list[dict]:
         """The config's transitions as ``transitions`` takes them.
 
-        Two keys are the machine's own and are taken off: ``guard``, the condition as text,
-        and ``label``, an author's name for the edge. ``transitions`` refuses any argument it
-        does not know. A guarded transition gets a before-callback in its place, which runs
-        only when that transition is the one taken, so the log can name the condition that
-        chose it -- two edges from one port can go to the same node on different conditions.
+        Three keys are the machine's own and are taken off: ``guard``, the condition as
+        text; ``assign``, the edge's writes; and ``label``, an author's name for the edge.
+        ``transitions`` refuses any argument it does not know. A guarded transition gets a
+        before-callback in its place, which runs only when that transition is the one taken,
+        so the log can name the condition that chose it -- two edges from one port can go
+        to the same node on different conditions. An assigning one gets an after-callback
+        the same way, so its writes are applied for that edge and no other.
         """
         out = []
         for idx, raw in enumerate(transitions):
-            t = {k: v for k, v in raw.items() if k not in ("guard", "label")}
+            t = {k: v for k, v in raw.items() if k not in ("guard", "assign", "label")}
             if guard := raw.get("guard"):
                 callback = f"_took_guard_{idx}"
                 self._guards[callback] = guard
                 before = t.get("before") or []
                 t["before"] = [*([before] if isinstance(before, str) else before), callback]
+            if rows := raw.get("assign"):
+                callback = f"_assign_{idx}"
+                self._assigns[callback] = [AssignmentModel.model_validate(r) for r in rows]
+                after = t.get("after") or []
+                t["after"] = [*([after] if isinstance(after, str) else after), callback]
             out.append(t)
         return out
 
@@ -217,6 +228,8 @@ class BotMachine:
                                 options and variables alike (_condition_row_holds).
         _took_guard_<IDX>     — a before-callback, not a condition: notes that a guarded
                                 transition was taken (_machine_transitions).
+        _assign_<IDX>         — an after-callback: hands the run loop the writes of the
+                                transition just taken (_apply_taken_assignments).
         """
         if name.startswith("_took_guard_"):
             guard = self.__dict__.get("_guards", {}).get(name)
@@ -226,6 +239,14 @@ class BotMachine:
                     self._taken_guard = g
 
                 return _note_taken
+        if name.startswith("_assign_"):
+            rows = self.__dict__.get("_assigns", {}).get(name)
+            if rows is not None:
+
+                def _note_assign(r=rows):
+                    self._taken_assign = r
+
+                return _note_assign
         if name.startswith("_result_is_"):
             expected = name[len("_result_is_") :]
             return lambda: self.last_result == expected
@@ -310,6 +331,27 @@ class BotMachine:
                 self._on_variable_change(name, old, value)
             except Exception:
                 logger.exception("on_variable_change callback raised for %r", name)
+
+    def _apply_taken_assignments(self) -> None:
+        """Apply the writes of the edge the last advance took, if it had any (#189).
+
+        Called by the run loop right after it logs the transition, so the log reads in the
+        order things happened: the edge, then each write it made, once. Only the edge taken
+        noted its rows, so another edge from the same port writes nothing, and a jump to
+        recovery takes no edge at all. Every value is worked out before any is written, and
+        nothing here awaits, so the writes land whole or not at all. A write validation
+        should have refused stops the run instead of half-applying.
+        """
+        rows, self._taken_assign = self._taken_assign, None
+        if not rows:
+            return
+        try:
+            changed = variables.apply_assignments(self._variables, self._variable_decls, rows)
+        except variables.VariableError as exc:
+            self._stop_with_reason(f"An edge into {self._fmt_state(self.state)} could not set its variables: {exc}")
+            return
+        for name, value in changed.items():
+            self.set_variable(name, value)
 
     def _note_variable_only_step(self, state_id: str, node_type: str) -> bool:
         """Count a step toward the variable-only limit. True when this one stopped the run.
@@ -752,16 +794,21 @@ class BotMachine:
                         self.stop()
                     else:
                         self._taken_guard = None
+                        self._taken_assign = None
                         fired = await self.advance()
                         recovery_dest = None if fired else self._fallthrough_dest(state_id, self.last_result)
                         if fired:
                             self._no_match_count = 0
                             guard = f" [{self._taken_guard}]" if self._taken_guard else ""
+                            if self._taken_assign:
+                                # A statechart's ``event [guard] / action``: the arrows are the log's own.
+                                guard += f" / {variables.describe_assignments(self._taken_assign)}"
                             self._log_machine(
                                 f"Transition: {self._fmt_state(prev_state)} --{self.last_result}{guard}-->"
                                 f" {self._fmt_state(self.state)}",
                                 logging.INFO,
                             )
+                            self._apply_taken_assignments()
                         elif recovery_dest is not None:
                             # force_state, not a synthesised transition: there is no
                             # TransitionModel behind this edge, and inventing one would

@@ -34,7 +34,6 @@ from bartlebot import player_realms, scales, setup_steps, variables
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
-    SET_VARIABLES_NODE,
     SUBGRAPH_ENTRY,
     SUBGRAPH_EXIT,
     BotConfig,
@@ -43,6 +42,7 @@ from bartlebot.bot.schema import (
     StateModel,
     SubgraphSource,
     TransitionModel,
+    uses_variables,
 )
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, CollapsedRegionItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import (
@@ -443,11 +443,7 @@ def variable_report(config: BotConfig) -> variables.Report | None:
     """
     if config.is_definition:
         return None
-    if (
-        not config.variables
-        and not any(s.node_type == SET_VARIABLES_NODE for s in config.states)
-        and not any(fc.is_variable for t in config.transitions for fc in variables.condition_rows(t))
-    ):
+    if not config.variables and not uses_variables(config.transitions, config.states):
         return None
     return variables.check(config)
 
