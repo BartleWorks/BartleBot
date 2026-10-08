@@ -918,6 +918,12 @@ while the author declares, a declaration edit re-shows the page
 it back on its next edit. A new surface that edits what a page was built from needs the
 same.
 
+Their **values** are a fourth surface, which edits nothing: the Run-mode Variables section
+under Option Values (`variable_values_section.py`, #188), showing what each holds now and
+marking what just changed. It is fed by the machine's callbacks through `AppController`,
+never by reading the machine, and never logs a write -- the machine's own line is already
+in the in-app log.
+
 ## Source: Official, Official (modified), Custom
 
 Every list of bots, templates, subgraphs or strategies says where each item comes from,

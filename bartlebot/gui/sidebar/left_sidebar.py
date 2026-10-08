@@ -40,6 +40,7 @@ from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
+from bartlebot.gui.sidebar.sections.variable_values_section import VariableValuesSection
 from bartlebot.gui.sidebar.sections.variables_section import VariablesSection
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 
@@ -111,10 +112,13 @@ class LeftSidebar(QTabWidget):
         # Under Options on the same tab: both are an author's declarations, and a variable
         # is what the bot learns where an option is what the user chose (docs/VARIABLES.md).
         self.variables = VariablesSection()
+        # And their values under Option Values: where each starts, and during a run what it
+        # holds now (#188). The pair the two option surfaces are, for variables.
+        self.variable_values = VariableValuesSection()
         self._values_desc = DescriptionSection(editable=False)
         self._options_desc = DescriptionSection(editable=True)
 
-        self._values_page = self._wrap(self._values_desc, self.option_values)
+        self._values_page = self._wrap(self._values_desc, self.option_values, self.variable_values)
         self._options_page = self._wrap(self._options_desc, self.options, self.variables)
 
         # ── Combat and Properties ───────────────────────────────────
@@ -303,6 +307,7 @@ class LeftSidebar(QTabWidget):
         declared = tuple(v.model_dump_json() for v in config.variables) if config is not None else ()
         if config is not self._built_config or declared != self._built_variables:
             self.variables.set_config(config)
+            self.variable_values.set_config(config)
             self._built_variables = declared
         if config is self._built_config and signature == self._built_signature:
             return
@@ -380,5 +385,9 @@ class LeftSidebar(QTabWidget):
         # structure — it simply is not one of the tabs Edit mode offers.
 
     def set_bot_running(self, running: bool) -> None:
-        """Lock the combat tab while the bot is actively running."""
+        """Lock the combat tab while the bot is actively running, and start or end the run's variable values."""
         self.combat_tab.set_editable(not running)
+        if running:
+            self.variable_values.run_started()
+        else:
+            self.variable_values.run_finished()
