@@ -6,7 +6,1170 @@
   "clients": "all",
   "initial": "t_sync_players_1_state_2",
   "recovery_state": "t_sync_players_1_state_1",
-  "drops": [],
+  "drops": [
+    {
+      "name": "6 Outsider Relic",
+      "category": "Reagents"
+    },
+    {
+      "name": "7 Outsider Relic",
+      "category": "Reagents"
+    },
+    {
+      "name": "8 Outsider Relic",
+      "category": "Reagents"
+    },
+    {
+      "name": "9 Outsider Relic",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ammut",
+      "category": "Spellements"
+    },
+    {
+      "name": "Anubis",
+      "category": "Spellements"
+    },
+    {
+      "name": "Balance Blade Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance Crushing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (180)"
+    },
+    {
+      "name": "Balance Crushing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (180)"
+    },
+    {
+      "name": "Balance Crushing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (180)"
+    },
+    {
+      "name": "Balance Crushing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (180)"
+    },
+    {
+      "name": "Balance Crushing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (180)"
+    },
+    {
+      "name": "Balance Crushing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (180)"
+    },
+    {
+      "name": "Balance Disabling Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (180)"
+    },
+    {
+      "name": "Balance Disabling Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (180)"
+    },
+    {
+      "name": "Balance Disabling Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (180)"
+    },
+    {
+      "name": "Balance Disabling Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (180)"
+    },
+    {
+      "name": "Balance Disabling Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (180)"
+    },
+    {
+      "name": "Balance Disabling Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (180)"
+    },
+    {
+      "name": "Balance Punishing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (180)"
+    },
+    {
+      "name": "Balance Punishing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (180)"
+    },
+    {
+      "name": "Balance Punishing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (180)"
+    },
+    {
+      "name": "Balance Punishing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (180)"
+    },
+    {
+      "name": "Balance Punishing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (180)"
+    },
+    {
+      "name": "Balance Punishing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (180)"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bright Archmastery Opal +48",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Amethyst +65",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Citrine +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Jade +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Onyx +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Peridot +66",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Ruby +65",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bright Conversion Sapphire +66",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chameleon Clash",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chilling Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Chilling Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Chilling Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Cleanse Charm Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cleanse Ward Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Blade Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death Crushing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (180)"
+    },
+    {
+      "name": "Death Crushing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (180)"
+    },
+    {
+      "name": "Death Crushing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (180)"
+    },
+    {
+      "name": "Death Crushing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (180)"
+    },
+    {
+      "name": "Death Crushing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (180)"
+    },
+    {
+      "name": "Death Crushing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (180)"
+    },
+    {
+      "name": "Death Disabling Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (180)"
+    },
+    {
+      "name": "Death Disabling Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (180)"
+    },
+    {
+      "name": "Death Disabling Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (180)"
+    },
+    {
+      "name": "Death Disabling Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (180)"
+    },
+    {
+      "name": "Death Disabling Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (180)"
+    },
+    {
+      "name": "Death Disabling Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (180)"
+    },
+    {
+      "name": "Death Punishing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (180)"
+    },
+    {
+      "name": "Death Punishing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (180)"
+    },
+    {
+      "name": "Death Punishing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (180)"
+    },
+    {
+      "name": "Death Punishing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (180)"
+    },
+    {
+      "name": "Death Punishing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (180)"
+    },
+    {
+      "name": "Death Punishing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (180)"
+    },
+    {
+      "name": "Death Trap Onyx (Tear)",
+      "category": "Jewels",
+      "match_name": "Death Trap Onyx"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Disarm Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Doomed Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Doomed Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Doomed Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Elemental Blade Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Elemental Trap Citrine (Tear)",
+      "category": "Jewels",
+      "match_name": "Elemental Trap Citrine"
+    },
+    {
+      "name": "Feint Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fire Blade Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fire Crushing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (180)"
+    },
+    {
+      "name": "Fire Crushing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (180)"
+    },
+    {
+      "name": "Fire Crushing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (180)"
+    },
+    {
+      "name": "Fire Crushing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (180)"
+    },
+    {
+      "name": "Fire Crushing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (180)"
+    },
+    {
+      "name": "Fire Crushing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (180)"
+    },
+    {
+      "name": "Fire Disabling Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (180)"
+    },
+    {
+      "name": "Fire Disabling Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (180)"
+    },
+    {
+      "name": "Fire Disabling Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (180)"
+    },
+    {
+      "name": "Fire Disabling Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (180)"
+    },
+    {
+      "name": "Fire Disabling Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (180)"
+    },
+    {
+      "name": "Fire Disabling Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Disabling Pin (180)"
+    },
+    {
+      "name": "Fire Punishing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (180)"
+    },
+    {
+      "name": "Fire Punishing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (180)"
+    },
+    {
+      "name": "Fire Punishing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (180)"
+    },
+    {
+      "name": "Fire Punishing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (180)"
+    },
+    {
+      "name": "Fire Punishing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (180)"
+    },
+    {
+      "name": "Fire Punishing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (180)"
+    },
+    {
+      "name": "Fire Trap Ruby (Tear)",
+      "category": "Jewels",
+      "match_name": "Fire Trap Ruby"
+    },
+    {
+      "name": "Flawless Accurate Amethyst +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Accurate Citrine +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Accurate Jade +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Accurate Onyx +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Accurate Peridot +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Accurate Ruby +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Accurate Sapphire +16%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Mana Opal +61",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Mana Opal +62",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Mana Opal +63",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Mana Opal +64",
+      "category": "Jewels"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Heqet",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Blade Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Crushing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (180)"
+    },
+    {
+      "name": "Ice Crushing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (180)"
+    },
+    {
+      "name": "Ice Crushing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (180)"
+    },
+    {
+      "name": "Ice Crushing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (180)"
+    },
+    {
+      "name": "Ice Crushing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (180)"
+    },
+    {
+      "name": "Ice Crushing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (180)"
+    },
+    {
+      "name": "Ice Disabling Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (180)"
+    },
+    {
+      "name": "Ice Disabling Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (180)"
+    },
+    {
+      "name": "Ice Disabling Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (180)"
+    },
+    {
+      "name": "Ice Disabling Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (180)"
+    },
+    {
+      "name": "Ice Disabling Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (180)"
+    },
+    {
+      "name": "Ice Disabling Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (180)"
+    },
+    {
+      "name": "Ice Punishing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (180)"
+    },
+    {
+      "name": "Ice Punishing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (180)"
+    },
+    {
+      "name": "Ice Punishing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (180)"
+    },
+    {
+      "name": "Ice Punishing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (180)"
+    },
+    {
+      "name": "Ice Punishing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (180)"
+    },
+    {
+      "name": "Ice Punishing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (180)"
+    },
+    {
+      "name": "Ice Trap Sapphire (Tear)",
+      "category": "Jewels",
+      "match_name": "Ice Trap Sapphire"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Life Blade Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Life Crushing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (180)"
+    },
+    {
+      "name": "Life Crushing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (180)"
+    },
+    {
+      "name": "Life Crushing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (180)"
+    },
+    {
+      "name": "Life Crushing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (180)"
+    },
+    {
+      "name": "Life Crushing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (180)"
+    },
+    {
+      "name": "Life Crushing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (180)"
+    },
+    {
+      "name": "Life Disabling Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (180)"
+    },
+    {
+      "name": "Life Disabling Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (180)"
+    },
+    {
+      "name": "Life Disabling Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (180)"
+    },
+    {
+      "name": "Life Disabling Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (180)"
+    },
+    {
+      "name": "Life Disabling Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (180)"
+    },
+    {
+      "name": "Life Disabling Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (180)"
+    },
+    {
+      "name": "Life Punishing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (180)"
+    },
+    {
+      "name": "Life Punishing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (180)"
+    },
+    {
+      "name": "Life Punishing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (180)"
+    },
+    {
+      "name": "Life Punishing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (180)"
+    },
+    {
+      "name": "Life Punishing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (180)"
+    },
+    {
+      "name": "Life Punishing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (180)"
+    },
+    {
+      "name": "Life Trap Jade (Tear)",
+      "category": "Jewels",
+      "match_name": "Life Trap Jade"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lustrous PIP Opal +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Moon Shield Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mortality",
+      "category": "Spellements"
+    },
+    {
+      "name": "Myth Blade Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth Crushing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (180)"
+    },
+    {
+      "name": "Myth Crushing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (180)"
+    },
+    {
+      "name": "Myth Crushing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (180)"
+    },
+    {
+      "name": "Myth Crushing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (180)"
+    },
+    {
+      "name": "Myth Crushing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (180)"
+    },
+    {
+      "name": "Myth Crushing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (180)"
+    },
+    {
+      "name": "Myth Disabling Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (180)"
+    },
+    {
+      "name": "Myth Disabling Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (180)"
+    },
+    {
+      "name": "Myth Disabling Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (180)"
+    },
+    {
+      "name": "Myth Disabling Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (180)"
+    },
+    {
+      "name": "Myth Disabling Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (180)"
+    },
+    {
+      "name": "Myth Disabling Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (180)"
+    },
+    {
+      "name": "Myth Punishing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (180)"
+    },
+    {
+      "name": "Myth Punishing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (180)"
+    },
+    {
+      "name": "Myth Punishing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (180)"
+    },
+    {
+      "name": "Myth Punishing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (180)"
+    },
+    {
+      "name": "Myth Punishing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (180)"
+    },
+    {
+      "name": "Myth Punishing Pin (180, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (180)"
+    },
+    {
+      "name": "Myth Trap Peridot (Tear)",
+      "category": "Jewels",
+      "match_name": "Myth Trap Peridot"
+    },
+    {
+      "name": "Mythic Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Mythic Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Mythic Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phantasmania!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pierce Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Potent Trap Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sanguine Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Sanguine Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Sanguine Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scary Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scary Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Scary Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Death Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Death Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Death Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Destructive Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Destructive Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Destructive Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Devilish Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Devilish Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Devilish Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Fortune Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Fortune Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Fortune Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Justice Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Justice Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Justice Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Strength Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Strength Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Strength Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Scholomantic Worldly Axe",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholomantic Worldly Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Scholomantic Worldly Paws",
+      "category": "Boots"
+    },
+    {
+      "name": "Sharpened Blade Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shocking Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Shocking Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Shocking Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Shu",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spirit Blade Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spirit Trap Citrine (Tear)",
+      "category": "Jewels",
+      "match_name": "Spirit Trap Citrine"
+    },
+    {
+      "name": "Star Blade Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Blade Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm Crushing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (180)"
+    },
+    {
+      "name": "Storm Crushing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (180)"
+    },
+    {
+      "name": "Storm Crushing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (180)"
+    },
+    {
+      "name": "Storm Crushing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (180)"
+    },
+    {
+      "name": "Storm Crushing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (180)"
+    },
+    {
+      "name": "Storm Crushing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (180)"
+    },
+    {
+      "name": "Storm Disabling Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (180)"
+    },
+    {
+      "name": "Storm Disabling Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (180)"
+    },
+    {
+      "name": "Storm Disabling Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (180)"
+    },
+    {
+      "name": "Storm Disabling Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (180)"
+    },
+    {
+      "name": "Storm Disabling Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (180)"
+    },
+    {
+      "name": "Storm Disabling Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (180)"
+    },
+    {
+      "name": "Storm Punishing Pin (180, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (180)"
+    },
+    {
+      "name": "Storm Punishing Pin (180, Death)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (180)"
+    },
+    {
+      "name": "Storm Punishing Pin (180, Fire)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (180)"
+    },
+    {
+      "name": "Storm Punishing Pin (180, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (180)"
+    },
+    {
+      "name": "Storm Punishing Pin (180, Life)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (180)"
+    },
+    {
+      "name": "Storm Punishing Pin (180, Myth)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (180)"
+    },
+    {
+      "name": "Storm Trap Amethyst (Tear)",
+      "category": "Jewels",
+      "match_name": "Storm Trap Amethyst"
+    },
+    {
+      "name": "Sun Trap Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Taweret",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tense Abomination Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Tense Abomination Glaive",
+      "category": "Wands"
+    },
+    {
+      "name": "Tense Abomination Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "The Chariot",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Emperor",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Hierophant",
+      "category": "Spellements"
+    },
+    {
+      "name": "The Tower",
+      "category": "Spellements"
+    },
+    {
+      "name": "The World",
+      "category": "Spellements"
+    },
+    {
+      "name": "Thoth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    },
+    {
+      "name": "Triage Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Mana Opal +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unearthly Shadow Hematite +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wheel of Fortune",
+      "category": "Spellements"
+    },
+    {
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
@@ -21,11 +1184,21 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Abomination",
-        "Punishing",
-        "Death Disabling",
-        "Death Crushing"
+        "Abomination"
       ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "Next Sword to Check",
+      "type": "int",
+      "initial": 1,
+      "description": "The index (1-based) of the next sword spawn location to check. Written after each time a location is checked."
+    },
+    {
+      "name": "Swords Found",
+      "type": "int",
+      "description": "The number of swords found so far. Increments after each sword is found. After 4 swords are found and added to the weapon rack, the puzzle is complete."
     }
   ],
   "states": [
@@ -130,7 +1303,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 14520,
+        "x": 15400.0,
         "y": 0.0
       },
       "params": {
@@ -160,7 +1333,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2640,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
@@ -172,7 +1345,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Entrance Exam",
       "position": {
-        "x": 3080,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
@@ -186,7 +1359,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3520,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -203,7 +1376,7 @@
       "node_type": "interact",
       "label": "Check first sword location",
       "position": {
-        "x": 3960,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -229,7 +1402,7 @@
       "node_type": "interact",
       "label": "Add first sword to weapons rack",
       "position": {
-        "x": 7480,
+        "x": 8360.0,
         "y": 0.0
       },
       "params": {
@@ -255,8 +1428,8 @@
       "node_type": "interact",
       "label": "Check second sword location",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 4840.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -281,8 +1454,8 @@
       "node_type": "interact",
       "label": "Check third sword location",
       "position": {
-        "x": 4840,
-        "y": 0.0
+        "x": 5280.0,
+        "y": 180.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -307,8 +1480,8 @@
       "node_type": "interact",
       "label": "Check fourth sword location",
       "position": {
-        "x": 5280,
-        "y": 0.0
+        "x": 5720.0,
+        "y": 270.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -333,8 +1506,8 @@
       "node_type": "interact",
       "label": "Check fifth sword location",
       "position": {
-        "x": 5720,
-        "y": 0.0
+        "x": 6160.0,
+        "y": 360.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -359,8 +1532,8 @@
       "node_type": "interact",
       "label": "Check sixth sword location",
       "position": {
-        "x": 6160,
-        "y": 0.0
+        "x": 6600.0,
+        "y": 450.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -385,8 +1558,8 @@
       "node_type": "interact",
       "label": "Check seventh sword location",
       "position": {
-        "x": 6600,
-        "y": 0.0
+        "x": 7040.0,
+        "y": 540.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -411,8 +1584,8 @@
       "node_type": "interact",
       "label": "Check eighth sword location",
       "position": {
-        "x": 7040,
-        "y": 0.0
+        "x": 7480.0,
+        "y": 630.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -437,8 +1610,8 @@
       "node_type": "interact",
       "label": "Add second sword to weapons rack",
       "position": {
-        "x": 7920,
-        "y": 0.0
+        "x": 8800.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -463,8 +1636,8 @@
       "node_type": "interact",
       "label": "Add third sword to weapons rack",
       "position": {
-        "x": 8360,
-        "y": 0.0
+        "x": 9240.0,
+        "y": 180.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -489,8 +1662,8 @@
       "node_type": "interact",
       "label": "Add fourth sword to weapons rack",
       "position": {
-        "x": 8800,
-        "y": 0.0
+        "x": 9680.0,
+        "y": 270.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
@@ -515,7 +1688,7 @@
       "node_type": "interact",
       "label": "Open gate",
       "position": {
-        "x": 9240,
+        "x": 10120.0,
         "y": 0.0
       },
       "params": {
@@ -541,7 +1714,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Preceptor of Order",
       "position": {
-        "x": 9680,
+        "x": 10560.0,
         "y": 0.0
       },
       "params": {
@@ -558,7 +1731,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Preceptor of Order",
       "position": {
-        "x": 10120,
+        "x": 11000.0,
         "y": 0.0
       },
       "params": {
@@ -572,7 +1745,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 10560,
+        "x": 11440.0,
         "y": 0.0
       },
       "params": {
@@ -584,7 +1757,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 11000,
+        "x": 11880.0,
         "y": 0.0
       },
       "params": {
@@ -601,7 +1774,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger cutscene",
       "position": {
-        "x": 11440,
+        "x": 12320.0,
         "y": 0.0
       },
       "params": {
@@ -618,7 +1791,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11880,
+        "x": 12760.0,
         "y": 0.0
       },
       "params": {
@@ -630,13 +1803,14 @@
       "node_type": "handle_combat",
       "label": "Defeat Balaur",
       "position": {
-        "x": 12320,
+        "x": 13200.0,
         "y": 0.0
       },
       "params": {
         "enemy": "DM_Dragon_BalaurHead_A_01",
         "use_default_strategy": false,
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Balaur (Balance, Standard)"
       }
     },
     {
@@ -644,7 +1818,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to first group of wisps",
       "position": {
-        "x": 12760,
+        "x": 13640.0,
         "y": 0.0
       },
       "params": {
@@ -661,7 +1835,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 13200,
+        "x": 14080.0,
         "y": 0.0
       },
       "params": {
@@ -678,7 +1852,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second group of wisps",
       "position": {
-        "x": 13640,
+        "x": 14520.0,
         "y": 0.0
       },
       "params": {
@@ -695,7 +1869,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 14080,
+        "x": 14960.0,
         "y": 0.0
       },
       "params": {
@@ -735,89 +1909,216 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true
       }
+    },
+    {
+      "id": "state_36",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_37",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 5280.0,
+        "y": 90.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 3
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_38",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 5720.0,
+        "y": 180.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 4
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_39",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 6160.0,
+        "y": 270.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 5
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_40",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 6600.0,
+        "y": 360.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 6
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_41",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 7040.0,
+        "y": 450.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 7
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_42",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 7480.0,
+        "y": 540.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 8
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_43",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 7920.0,
+        "y": 630.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 1
+          },
+          {
+            "variable": "Swords Found",
+            "op": "add",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "state_44",
+      "node_type": "set_variables",
+      "label": "Set Variables",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "assignments": [
+          {
+            "variable": "Next Sword to Check",
+            "op": "set",
+            "value": 1
+          },
+          {
+            "variable": "Swords Found",
+            "op": "set",
+            "value": 0
+          }
+        ]
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_10",
@@ -861,7 +2162,7 @@
     {
       "trigger": "advance",
       "source": "state_12",
-      "dest": "state_20",
+      "dest": "state_36",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -881,7 +2182,7 @@
     {
       "trigger": "advance",
       "source": "state_13",
-      "dest": "state_20",
+      "dest": "state_37",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -901,7 +2202,7 @@
     {
       "trigger": "advance",
       "source": "state_14",
-      "dest": "state_20",
+      "dest": "state_38",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -921,7 +2222,7 @@
     {
       "trigger": "advance",
       "source": "state_15",
-      "dest": "state_20",
+      "dest": "state_39",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -941,7 +2242,7 @@
     {
       "trigger": "advance",
       "source": "state_16",
-      "dest": "state_20",
+      "dest": "state_40",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -961,7 +2262,7 @@
     {
       "trigger": "advance",
       "source": "state_17",
-      "dest": "state_20",
+      "dest": "state_41",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -981,7 +2282,7 @@
     {
       "trigger": "advance",
       "source": "state_18",
-      "dest": "state_20",
+      "dest": "state_42",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -991,7 +2292,7 @@
     {
       "trigger": "advance",
       "source": "state_19",
-      "dest": "state_20",
+      "dest": "state_43",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1000,12 +2301,107 @@
     },
     {
       "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_12",
-      "when": "FAILURE",
+      "source": "state_20",
+      "dest": "state_13",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 5
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 6
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -1020,8 +2416,113 @@
     },
     {
       "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_13",
+      "source": "state_21",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 5
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 6
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 7
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1040,8 +2541,113 @@
     },
     {
       "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_14",
+      "source": "state_22",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 5
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 6
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 7
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Sword to Check",
+              "compare": "==",
+              "value": 8
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1053,16 +2659,6 @@
       "source": "state_22",
       "dest": "state_23",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_15",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1200,6 +2796,431 @@
     },
     {
       "trigger": "advance",
+      "source": "state_35",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "t_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_9",
       "dest": "state_10",
       "when": "SUCCESS",
@@ -1210,8 +3231,28 @@
     },
     {
       "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_3",
-      "dest": "state_9",
+      "dest": "state_44",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1220,8 +3261,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_35",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1230,9 +3271,19 @@
     },
     {
       "trigger": "advance",
-      "source": "state_35",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1243,6 +3294,16 @@
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1263,6 +3324,46 @@
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_12",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1305,10 +3406,83 @@
           "y": 0.0
         }
       }
+    },
+    {
+      "id": "e254af7e",
+      "label": "Lesson of Swords",
+      "members": [
+        "state_38",
+        "state_17",
+        "state_39",
+        "state_41",
+        "state_22",
+        "state_19",
+        "state_15",
+        "state_23",
+        "state_12",
+        "state_36",
+        "state_43",
+        "state_13",
+        "state_16",
+        "state_37",
+        "state_14",
+        "state_20",
+        "state_21",
+        "state_42",
+        "state_40",
+        "state_18"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "3f957bbb",
+      "label": "Entrance Exam",
+      "members": [
+        "state_11",
+        "state_9",
+        "state_10"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "31e8a8e0",
+      "label": "Preceptor of Order",
+      "members": [
+        "state_26",
+        "state_27",
+        "state_28",
+        "state_24",
+        "state_25"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "41043f21",
+      "label": "Balaur",
+      "members": [
+        "state_33",
+        "state_35",
+        "state_34",
+        "state_29",
+        "state_32",
+        "state_31",
+        "state_30"
+      ],
+      "color": 1,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "45f07f11f7f4e746ee3c02cee4ef0dcb7ee1b5617694687d52023c93d3ce4850",
+    "9953e91dd9046ac6a4f93289ec69874ad165e4111c027ba085f3329a94b53af7",
+    "54859e61c8f31de4382edb00ad6fdebea13b372bb9c6a43b031cbd18455629be",
+    "652bff8f1300e491521e0b8dd06ae2e52bf5eb11ca407b8d5b9a85deea16aa57"
+  ]
 }
