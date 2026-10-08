@@ -3,8 +3,9 @@
 What a bot learns as it runs and reads back to choose its next node: the model, the
 rules the engine and validation hold it to, and when to reach for a subgraph instead.
 The plan, epic #16, lives on a claude.ai page (*Runtime flow control*); this file is the
-part of it that governs code. Stage 1 (#186) is the engine and Stage 2 (#187) the editors.
-The live values in Run mode and assignments on edges are Stages 3 and 4 (#188, #189).
+part of it that governs code. Stage 1 (#186) is the engine, Stage 2 (#187) the editors,
+and Stage 3 (#188) reading a run: the live values and the log. Assignments on edges are
+Stage 4 (#189).
 
 A bot already branches on the value its last node returned. A variable is how it
 branches on something that happened earlier in the run, without copying every node in
@@ -73,7 +74,8 @@ shipped bot loops back to its first node, so it would only ever fire at startup 
 
 **Each write is logged once**, by the machine, as `Variable swords: 1 → 2`; a write that
 changes nothing is DEBUG. `on_variable_change(name, old, new)` follows the callback guard
-in `CLAUDE.md`.
+in `CLAUDE.md`. Nothing else logs a write, the Run-mode section included: the machine's
+line already reaches the in-app log, so a restatement would only be a second copy there.
 
 **A loop of variable-only nodes stops the run.** A wrong condition between two
 `set_variables` or `branch` nodes would loop without touching the game, and neither the
@@ -179,6 +181,47 @@ its segment has, so it never runs into the destination node; the tooltip is neve
 click on it selects the edge. It is a child item of the edge (`edge_item.EdgeLabelItem`),
 so the repaint tracer (#73) watches it, and every change of its size goes through
 `prepareGeometryChange`.
+
+## Reading a run
+
+Once a branch depends on a variable, the highlighted node no longer says why the bot is
+there. Three things say it instead (#188).
+
+**The Variables section in Run mode** (`sidebar/sections/variable_values_section.py`), under
+Option Values on the Run-mode Options tab, as the declarations sit under Options in Edit
+mode. A row is the variable's name and its value. Before a run that is where it starts.
+During one it is what it holds now: `AppController` passes the machine's
+`on_variable_change` to the section, so every write shows as it is made. After the run the
+values stay, so the run can be read, until the next run or another bot starts them again.
+An equal config swapped in during a run, by an undo snapshot or the pre-run recompose,
+keeps them. A bot with no variables hides the section.
+
+**A value that just changed is marked**, bold in the accent, with what it was in its
+tooltip. The mark lasts through the first node after the write that touches the game, and
+is cleared when the one after that starts (`bartlebot/variable_watch.LiveVariables`, fed
+`on_state_change` with `BotMachine.node_type_of`). Clearing it when the next node starts
+would mark nothing anyone could see: a `set_variables` write is followed by the next node
+within milliseconds, and so is the `branch` that usually reads it. For the same reason
+`set_variables` and `branch` never count toward clearing it. Two writes before any game
+node has shown the first are one change, and the tooltip names the value from before both.
+
+**A conditioned transition names its condition in the log**, in the same words as the
+edge's label:
+
+```
+Transition: 'which' (Which rack) --SUCCESS [swords == 2]--> 'rack_2' (Rack 2)
+```
+
+An edge without a condition, the otherwise of a switch included, is logged as before.
+`to_machine_config` carries each edge's condition as text under `guard`, and the machine
+gives each guarded transition a before-callback, `_took_guard_<idx>`, that notes it was
+the one taken. The destination alone cannot say which: two edges from one port can reach
+the same node on different conditions. The machine takes `guard` and `label` off before it
+hands the transitions to the `transitions` library, which refuses any argument it does not
+know.
+
+**The run summary lists each variable's final value**, after the drops:
+`Variables: next_spot = 9, swords = 4`.
 
 ## Subgraphs, templates and share files
 
