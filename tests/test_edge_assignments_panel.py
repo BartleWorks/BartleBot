@@ -114,6 +114,13 @@ def test_a_long_condition_never_hides_what_the_edge_sets(canvas):
     whole, short = variables.edge_label(config.transitions[3])
     assert label.full_text == whole and short.endswith("→ found toggled")
 
+    # Short of room, the condition is cut first, and the write is the last thing to go.
+    label.fit_to(200)
+    assert label.shown_text.endswith("… → found toggled")
+    label.fit_to(70)
+    assert label.shown_text.startswith("… → ")
+    assert label.boundingRect().width() <= 70
+
 
 def test_a_label_with_an_assignment_moving_and_changing_leaves_nothing_unrepainted(canvas, qtbot, tmp_path):
     """The repaint tracer (#73): the label gains and loses its assignment part and follows a moved node."""

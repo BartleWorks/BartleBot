@@ -2726,9 +2726,10 @@ class _ParamPanel(ThemedMixin, QWidget):
             f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
             f"border-radius: 4px; color: {THEME.text}; font-size: {THEME.font_small_px}px; padding: 3px; }}"
         )
-        self._flags_lbl.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
-        )
+        for header in (self._flags_lbl, self._assign_lbl):
+            header.setStyleSheet(
+                f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
+            )
         # Connection rows are built per selection and hold four THEME colors each
         # (chip background, accent link, hover surface), so replaying the build is
         # both shorter and more complete than holding a reference to every label.

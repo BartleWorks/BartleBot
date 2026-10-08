@@ -473,7 +473,7 @@ class EdgeLabelItem(QGraphicsItem):
         text = (self._cut if self._cut is not None else variables.shorten(self._full)) if self._full else ""
         width = max(0.0, self._room - 2 * _LABEL_PAD_X)
         if text and self._metrics.horizontalAdvance(text) > width:
-            text = self._metrics.elidedText(text, Qt.TextElideMode.ElideRight, width) or "\u2026"
+            text = self._elide(text, width)
         rect = QRectF(0, 0, self._metrics.horizontalAdvance(text) + 2 * _LABEL_PAD_X, self._metrics.height())
         if text == self._shown and rect == self._rect:
             return
@@ -481,6 +481,26 @@ class EdgeLabelItem(QGraphicsItem):
         self._shown = text
         self._rect = rect
         self.update()
+
+    def _elide(self, text: str, width: float) -> str:
+        """*text* cut to *width*, the condition before what the edge sets (#189).
+
+        The dotted pen already says an edge has a condition, and nothing else on the
+        canvas says what it writes, so the write keeps its room while there is any.
+        """
+        head, arrow, tail = text.partition(variables.ASSIGN_ARROW)
+        if head and arrow:
+            room = width - self._metrics.horizontalAdvance(arrow + tail)
+            cut = self._metrics.elidedText(head, Qt.TextElideMode.ElideRight, room) if room > 0 else ""
+            if cut:
+                return cut + arrow + tail
+            # No room for any of the condition: an ellipsis stands for it, and the write is cut.
+            lead = "…" + arrow
+            room = width - self._metrics.horizontalAdvance(lead)
+            cut = self._metrics.elidedText(tail, Qt.TextElideMode.ElideRight, room) if room > 0 else ""
+            if cut:
+                return lead + cut
+        return self._metrics.elidedText(text, Qt.TextElideMode.ElideRight, width) or "…"
 
     def boundingRect(self) -> QRectF:  # noqa: N802 - Qt override
         return self._rect
