@@ -520,7 +520,7 @@ def _sets_text(assign: tuple) -> str:
 
 
 def _variables_named(unit: Unit) -> set[str]:
-    """The variables a unit reads or writes, in any of its three values: what groups it with their declarations."""
+    """The variables a unit reads or writes, in either of the template's versions: what groups it with their declarations."""
     kind = unit.key[0]
     found: set[str] = set()
     if kind == "variable":
@@ -530,11 +530,11 @@ def _variables_named(unit: Unit) -> set[str]:
         if guard:
             rows = guard[1] if guard[0] == "flags" else [r for group, _op in guard[1] for r in group]
             found.update(r[0] for r in rows if len(r) == 3)
-        for value in (unit.base, unit.theirs, unit.mine):
+        for value in (unit.base, unit.theirs):
             if isinstance(value, SlotValue):
                 found.update(row[0] for row in value.assign)
     elif kind == "param" and unit.key[2] == variables.ASSIGNMENTS_PARAM:
-        for value in (unit.base, unit.theirs, unit.mine):
+        for value in (unit.base, unit.theirs):
             if isinstance(value, list):
                 found.update(r["variable"] for r in value if isinstance(r, dict) and isinstance(r.get("variable"), str))
     return found
