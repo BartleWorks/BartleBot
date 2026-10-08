@@ -186,18 +186,18 @@ def edge_label(t: TransitionModel, limit: int = EDGE_LABEL_CHARS) -> tuple[str, 
     """What an edge's label says, whole for its tooltip and cut for the canvas, or None for an edge with neither part.
 
     The condition, then what the edge sets when taken: ``swords == 2 → next_spot = 4``.
-    An edge that sets without a condition names its outcome in the condition's place,
-    ``SUCCESS → swords + 1``, and one with no outcome either starts at the arrow. Each part
-    is cut to ``limit`` on its own, so a long condition never hides what the edge sets.
+    An edge that sets without a condition starts at the arrow, ``→ swords + 1``: the port
+    it leaves already names its outcome, and the arrow is what tells a write from a
+    condition. Each part is cut to ``limit`` on its own, so a long condition never hides
+    what the edge sets.
     """
     guard = describe_guard(t)
     sets = describe_assignments(t.assign)
     if sets is None:
         return (guard, shorten(guard, limit)) if guard is not None else None
-    head = guard if guard is not None else (t.when or "")
-    whole = f"{head}{ASSIGN_ARROW}{sets}".lstrip()
-    short = f"{shorten(head, limit) if head else ''}{ASSIGN_ARROW}{shorten(sets, limit)}".lstrip()
-    return whole, short
+    if guard is None:
+        return f"{ASSIGN_ARROW}{sets}".lstrip(), f"{ASSIGN_ARROW}{shorten(sets, limit)}".lstrip()
+    return f"{guard}{ASSIGN_ARROW}{sets}", f"{shorten(guard, limit)}{ASSIGN_ARROW}{shorten(sets, limit)}"
 
 
 def parse_assignments(raw: Any) -> list[AssignmentModel]:
@@ -567,6 +567,7 @@ def check(config: BotConfig, specs=None) -> Report:
 
     def marked(found: Iterable[str]) -> tuple[str, ...]:
         return tuple(sorted({owner.get(step, step) for step in found}))
+
     for name, changed_by in changes.items():
         if name not in decls:
             continue

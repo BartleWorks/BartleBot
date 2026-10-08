@@ -510,8 +510,8 @@ def test_removing_an_enum_value_an_edge_sets_is_a_use_and_adding_to_one_is_not()
         (_edge("a", "b", flags=[_is("swords", 2)]), "swords == 2", "swords == 2"),
         (
             _edge("a", "b", {"variable": "next_spot", "op": "set", "value": 4}, ADD_SWORD),
-            "SUCCESS → next_spot = 4, swords + 1",
-            "SUCCESS → next_spot = 4, swords + 1",
+            "→ next_spot = 4, swords + 1",
+            "→ next_spot = 4, swords + 1",
         ),
         (
             _edge("a", "b", {"variable": "found", "op": "toggle"}, flags=[_is("swords", 2)]),

@@ -469,9 +469,13 @@ def problem_line(problem: variables.Problem) -> str:
     return text[:1].upper() + text[1:]
 
 
-def _condition_text(models: list[TransitionModel]) -> str | None:
-    """The condition an edge is drawn with: its first transition's, which a call node's siblings share."""
-    return variables.describe_guard(models[0]) if models else None
+def _condition_text(models: list[TransitionModel]) -> tuple[str | None, str | None]:
+    """What an edge's label says, whole and cut, or ``(None, None)`` for no label.
+
+    Its first transition's: a call node's siblings share their condition and their writes.
+    """
+    label = variables.edge_label(models[0]) if models else None
+    return label if label is not None else (None, None)
 
 
 def _reachable_states(config: BotConfig) -> set[str]:
@@ -1128,7 +1132,7 @@ class EditScene(QGraphicsScene):
         sn, dn = self._node_items[s], self._node_items[d]
         has_flags = any(t.flags or t.flag_groups for t in models)
         edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y, has_flags=has_flags, dst_port=port)
-        edge.set_condition(_condition_text(models))
+        edge.set_condition(*_condition_text(models))
         self.addItem(edge)
         sn.add_edge(edge)
         if dn is not sn:
@@ -1279,7 +1283,7 @@ class EditScene(QGraphicsScene):
         if edge is not None:
             models = self._edge_models.get(edge, [])
             edge.set_has_flags(any(t.flags or t.flag_groups for t in models))
-            edge.set_condition(_condition_text(models))
+            edge.set_condition(*_condition_text(models))
 
     def refresh_all_edge_flags(self) -> None:
         """Re-derive every edge's dotted-pen indicator from the config.
@@ -1294,7 +1298,7 @@ class EditScene(QGraphicsScene):
         for edge, models in self._edge_models.items():
             edge.set_has_flags(any(t.flags or t.flag_groups for t in models))
             # A rename of an option or a variable changes the label's text without touching the edge.
-            edge.set_condition(_condition_text(models))
+            edge.set_condition(*_condition_text(models))
 
     def refresh_terminal(self) -> None:
         """Update the terminal-state badge based on current transitions."""
