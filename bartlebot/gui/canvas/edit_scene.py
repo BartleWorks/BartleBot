@@ -2127,7 +2127,7 @@ class EditScene(QGraphicsScene):
         view = self.views()[0] if self.views() else None
         item = self.itemAt(event.scenePos(), view.transform() if view is not None else QTransform())
         if isinstance(item, EdgeLabelItem):
-            item = item.parentItem()  # a condition label is its edge, for a menu as for a click
+            item = item.edge  # a condition label is its edge, for a menu as for a click
         menu = popup_menu(view) if view is not None else QMenu()
         if isinstance(item, CallNodeItem):
             self._build_call_menu(menu, item)

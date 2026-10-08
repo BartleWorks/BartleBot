@@ -233,9 +233,12 @@ variables: a label, `swords == 2`, with the whole expression in its tooltip
 its source port: every edge from one port shares its first stretch, so a switch's labels
 would sit on each other there. It is cut to `variables.EDGE_LABEL_CHARS`, then to the room
 its segment has, so it never runs into the destination node; the tooltip is never cut. A
-click on it selects the edge. It is a child item of the edge (`edge_item.EdgeLabelItem`),
-so the repaint tracer (#73) watches it, and every change of its size goes through
-`prepareGeometryChange`.
+click on it selects the edge. It is drawn over every edge and under every node, so no
+other edge strikes through its text. That is why it is an item of its own
+(`edge_item.EdgeLabelItem`) rather than a child of its edge: Qt paints a child straight
+after its parent, under every edge stacked later. The edge adds it to the scene, removes
+it, and shows and hides it along with itself. The repaint tracer (#73) watches it like
+any other item, and every change of its size goes through `prepareGeometryChange`.
 
 **Every edge that writes says what it writes** on the same label, after its condition:
 `swords == 4 → found toggled`, or `→ swords + 1` for an edge with no condition
