@@ -16,6 +16,9 @@ import pytest
 from PyQt6.QtCore import Qt
 
 from bartlebot import store_roots
+from bartlebot.combat.strategy_store import StrategyKind
+from bartlebot.combat.strategy_summary import StrategySummary
+from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.dialog import (
     CombatStrategyDialog,
     DialogMode,
@@ -23,9 +26,6 @@ from bartlebot.gui.combat_strategies.dialog import (
     matches_query,
 )
 from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.strategy_store import StrategyKind
-from bartlebot.strategy_summary import StrategySummary
-from bartlebot.strategy_workset import StrategyWorkingSet
 
 
 @pytest.fixture

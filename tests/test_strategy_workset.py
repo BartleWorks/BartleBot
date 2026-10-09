@@ -1,4 +1,4 @@
-"""Tests for the Save/Cancel boundary: bartlebot.strategy_workset.
+"""Tests for the Save/Cancel boundary: bartlebot.combat.strategy_workset.
 
 Qt-free by construction — the working set is what makes Cancel mean something,
 and none of that reasoning needs a QApplication to check.
@@ -6,15 +6,8 @@ and none of that reasoning needs a QApplication to check.
 
 from pathlib import Path
 
-from bartlebot.bot.strategy_models import BotCombatStrategy
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
-from bartlebot.strategy_store import (
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,
     list_duel_strategies,
@@ -22,7 +15,14 @@ from bartlebot.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.strategy_workset import StrategyWorkingSet
+from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 
 
 def _ws(tmp_path: Path, **kw) -> StrategyWorkingSet:
@@ -207,7 +207,7 @@ def test_commit_writes_only_to_the_user_root(tmp_path: Path):
 
 def test_a_failed_write_leaves_the_entry_dirty(tmp_path: Path, monkeypatch):
     """One unwritable file must not forfeit the session, and must not read as saved."""
-    import bartlebot.strategy_workset as ws_mod
+    import bartlebot.combat.strategy_workset as ws_mod
 
     pcs = PlayerCombatStrategy(name="Blade")
     save_player_strategy(pcs, tmp_path)
@@ -230,7 +230,7 @@ def test_deck_presets_round_trip(tmp_path: Path):
     ws.get(StrategyKind.DECK, preset.id).name = "Storm 60 v2"
     ws.commit()
 
-    from bartlebot.strategy_store import list_deck_presets  # noqa: PLC0415
+    from bartlebot.combat.strategy_store import list_deck_presets  # noqa: PLC0415
 
     assert list_deck_presets(tmp_path)[0].name == "Storm 60 v2"
 

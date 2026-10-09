@@ -10,7 +10,7 @@ from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtGui import QColor, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import QApplication
 
-from bartlebot import dsl_syntax
+from bartlebot.combat import dsl_syntax
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import DARK, LIGHT, active_theme, set_theme_instance

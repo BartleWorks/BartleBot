@@ -13,7 +13,18 @@ import pytest
 from PyQt6.QtWidgets import QInputDialog, QMessageBox, QSplitter
 
 from bartlebot import store_roots
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import (
+    StrategyKind,
+    list_duel_strategies,
+    load_bot_strategy,
+    save_bot_strategy,
+    save_deck_preset,
+    save_duel_strategy,
+    save_player_strategy,
+)
+from bartlebot.combat.strategy_tags import PROFILE_SOURCE
+from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.assignment_card import strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     CREATE_PROFILE_TEXT,
@@ -30,17 +41,6 @@ from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.tag_pill import ProfilePill
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.strategy_store import (
-    StrategyKind,
-    list_duel_strategies,
-    load_bot_strategy,
-    save_bot_strategy,
-    save_deck_preset,
-    save_duel_strategy,
-    save_player_strategy,
-)
-from bartlebot.strategy_tags import PROFILE_SOURCE
-from bartlebot.strategy_workset import StrategyWorkingSet
 
 DUEL, PLAYER, DECK = StrategyKind.DUEL, StrategyKind.PLAYER, StrategyKind.DECK
 

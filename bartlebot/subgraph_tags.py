@@ -1,6 +1,6 @@
 """The subgraph category vocabulary, and the one rule for filtering subgraphs by it (#172).
 
-The shape of :mod:`bartlebot.strategy_tags`: a stored group with a fixed vocabulary,
+The shape of :mod:`bartlebot.combat.strategy_tags`: a stored group with a fixed vocabulary,
 normalized on load, beside a Source group that is worked out and never stored. Adding a
 category is a code change, for the same reason it is for strategies and bot tags: a
 library shared between users that drifts between ``travel`` / ``Travel`` / ``Moving``

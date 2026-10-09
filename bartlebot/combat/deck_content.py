@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from bartlebot.deck_io import resolve_apply_archmastery
+from bartlebot.combat.deck_io import resolve_apply_archmastery
 from bartlebot.game.spell_names import display_name
 from bartlebot.game.spell_schools import deck_sort_key
 from bartlebot.shared.strategy_models import DeckData

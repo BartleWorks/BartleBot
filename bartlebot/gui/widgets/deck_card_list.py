@@ -10,7 +10,7 @@ at all.
 ORDER AND GROUPING COME FROM ``deck_groups``
     So both surfaces list a deck the way the game's own deck window does -- school
     first, then by name -- and neither one sorts it itself. Treasure cards are absent
-    for the reason :func:`~bartlebot.gui.deck_content.deck_groups` gives.
+    for the reason :func:`~bartlebot.combat.deck_content.deck_groups` gives.
 
 THE ART IS OPTIONAL, AND ITS ABSENCE IS THE ORDINARY CASE
     A row whose card has no extracted art is the row without the tile, never a row with
@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from bartlebot.gui.deck_content import DeckCardEntry, deck_groups
+from bartlebot.combat.deck_content import DeckCardEntry, deck_groups
 from bartlebot.gui.widgets.card_art_tile import ROW_TILE, CardArtTile, card_icon, tooltip_for
 from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel

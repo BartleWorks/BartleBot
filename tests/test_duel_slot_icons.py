@@ -18,9 +18,9 @@ import json
 import pytest
 from PIL import Image
 
+from bartlebot.combat.strategy_summary import format_combat_order
 from bartlebot.game import card_art
 from bartlebot.game.card_art import DUEL_SLOT_SYMBOLS, DUEL_SLOTS, duel_slot_icon_name
-from bartlebot.strategy_summary import format_combat_order
 from tools.extract_card_art import (
     DUEL_SLOT_ICON_SOURCES,
     DUEL_SLOT_TEXTURES,

@@ -35,7 +35,7 @@ WHAT LIVES ELSEWHERE
 after every keystroke, is gone. This editor still mutates the config it is handed
 directly — but what it is handed is a working copy, so writing through is safe, and when
 the write happens is the dialog's Save button's business. See
-:mod:`bartlebot.strategy_workset`.
+:mod:`bartlebot.combat.strategy_workset`.
 """
 
 from __future__ import annotations
@@ -88,7 +88,7 @@ class DuelConfigEditor(QWidget):
 
     Mutates the loaded ``DuelConfig`` directly as the user edits — there is no separate
     "apply" step, and no autosave of its own. What it is handed is a working copy out of
-    :class:`~bartlebot.strategy_workset.StrategyWorkingSet`, so writing through is safe
+    :class:`~bartlebot.combat.strategy_workset.StrategyWorkingSet`, so writing through is safe
     and *when* it is written is the dialog's Save button's business. ``changed`` is still
     emitted, but only so an embedder can refresh what it draws — nothing downstream of it
     touches disk.

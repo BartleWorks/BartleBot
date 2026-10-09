@@ -65,7 +65,7 @@ from wizwalker.memory.memory_objects.window import (
     DynamicSpellListControl,
 )
 
-from bartlebot.card_kinds import classify_effects
+from bartlebot.combat.card_kinds import classify_effects
 from bartlebot.nodes.paths import ARCHMASTERY_GAUGE_PATH, archmastery_school_path
 from bartlebot.nodes.timing import (
     ARCHMASTERY_ATTEMPTS,

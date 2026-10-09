@@ -16,10 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot.paths import project_root
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.store_roots import declared_id, find_by_id, index_dir, save_by_id, slugify
-from bartlebot.strategy_store import (
+from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,
     delete_player_strategy,
@@ -30,6 +27,9 @@ from bartlebot.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
+from bartlebot.paths import project_root
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
+from bartlebot.store_roots import declared_id, find_by_id, index_dir, save_by_id, slugify
 from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_subgraph_store import _defn
 

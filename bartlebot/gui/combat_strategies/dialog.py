@@ -46,7 +46,7 @@ a filter, the full detail on the right, unelided, with a usage count — the sha
 WHAT IT IS A VIEW OF
 --------------------
 
-A :class:`~bartlebot.strategy_workset.StrategyWorkingSet` — deep copies, edited
+A :class:`~bartlebot.combat.strategy_workset.StrategyWorkingSet` — deep copies, edited
 freely, written only by ``commit()``. Nothing below this dialog decides when a
 file is written any more. See that module for why dirtiness is derived rather
 than reported.
@@ -68,7 +68,7 @@ TAGS, FILTERS AND FAVORITES (#125)
 
 Each tab has a :class:`~bartlebot.gui.combat_strategies.filter_bar.StrategyFilterBar`
 across its top: facet pickers and the search box, with the selection as chips below.
-:mod:`bartlebot.strategy_tags` holds the vocabulary and the matching rule.
+:mod:`bartlebot.combat.strategy_tags` holds the vocabulary and the matching rule.
 
 Favorites are the one thing here that is *not* inside the Save/Cancel boundary. A
 star is saved to the user's settings on the click, because it is a preference about
@@ -107,7 +107,24 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat_profile import profile_players_of
+from bartlebot.combat.combat_profile import profile_players_of
+from bartlebot.combat.strategy_store import Origin, StrategyKind
+from bartlebot.combat.strategy_summary import (
+    StrategySummary,
+    name_list,
+    summarize_deck,
+    summarize_duel,
+    summarize_player,
+)
+from bartlebot.combat.strategy_tags import (
+    KIND_GROUPS,
+    PROFILE_SOURCE,
+    STORED_GROUPS,
+    StrategyFacets,
+    facets_match,
+    normalize_strategy_tags,
+)
+from bartlebot.combat.strategy_workset import PROFILE_KINDS, Conflict, SharedUse, StrategyWorkingSet
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
@@ -126,23 +143,6 @@ from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButto
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
 from bartlebot.store_roots import SOURCE_LABELS
-from bartlebot.strategy_store import Origin, StrategyKind
-from bartlebot.strategy_summary import (
-    StrategySummary,
-    name_list,
-    summarize_deck,
-    summarize_duel,
-    summarize_player,
-)
-from bartlebot.strategy_tags import (
-    KIND_GROUPS,
-    PROFILE_SOURCE,
-    STORED_GROUPS,
-    StrategyFacets,
-    facets_match,
-    normalize_strategy_tags,
-)
-from bartlebot.strategy_workset import PROFILE_KINDS, Conflict, SharedUse, StrategyWorkingSet
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +209,7 @@ CREATE_PROFILE_TEXT = "Create one"
 ADD_TO_LIBRARY_TEXT = "Add to library"
 
 #: Origin.SHIPPED_OVERRIDE means the shipped file reappears underneath, so the
-#: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
+#: honest verb is "revert" — see :class:`bartlebot.combat.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
 #: A card's right-click (#170), and why it is off on an entry with unsaved edits.

@@ -6,8 +6,8 @@ already drifted: ``1-4 players`` in one, ``Any players`` in another, for the
 same config.  A :class:`StrategySummary` is the single place that formatting
 happens, and every surface renders from one.
 
-Everything here is pure and Qt-free, matching :mod:`bartlebot.combat_warnings`
-and :mod:`bartlebot.combat_grouping` next door — no ``QApplication`` needed to
+Everything here is pure and Qt-free, matching :mod:`bartlebot.combat.combat_warnings`
+and :mod:`bartlebot.combat.combat_grouping` next door — no ``QApplication`` needed to
 test it.
 """
 
@@ -22,7 +22,7 @@ from bartlebot.store_roots import Origin
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
-    from bartlebot.bot.strategy_models import BotCombatStrategy
+    from bartlebot.combat.profile_models import BotCombatStrategy
     from bartlebot.shared.strategy_models import DeckPreset, DuelConfig, PlayerCombatStrategy
 
 # Truncation length for an inline DSL preview — the picker's own figure, now
@@ -200,7 +200,7 @@ class StrategySummary:
     #: The combat profile's name when the entry belongs to that profile rather than the
     #: library (#118); None for a library entry. A card shows it in place of ``source``.
     profile_name: str | None = None
-    #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
+    #: Stored tags (the Role group of :mod:`bartlebot.combat.strategy_tags`), in vocabulary order.
     tags: tuple[str, ...] = ()
     #: The schools a deck is built for, in the order it lists them, for a card that draws
     #: each beside its icon. The same schools the first facet spells out in words.

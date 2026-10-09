@@ -8,10 +8,9 @@ widget.
 
 from pathlib import Path
 
-import bartlebot.strategy_workset as workset_mod
-from bartlebot.bot.strategy_models import BotCombatStrategy
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.strategy_store import (
+import bartlebot.combat.strategy_workset as workset_mod
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,
     list_all_bot_strategies,
@@ -22,7 +21,8 @@ from bartlebot.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.strategy_workset import SharedUse, StrategyWorkingSet
+from bartlebot.combat.strategy_workset import SharedUse, StrategyWorkingSet
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 
 def _profile(**kw) -> BotCombatStrategy:

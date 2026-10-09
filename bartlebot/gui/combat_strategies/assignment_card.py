@@ -62,7 +62,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.dsl_syntax import DSL_HELP
+from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle

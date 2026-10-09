@@ -50,7 +50,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from bartlebot import fight_keys, template_store, variables
+from bartlebot import template_store, variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     BotConfig,
@@ -62,6 +62,7 @@ from bartlebot.bot.schema import (
     VariableModel,
 )
 from bartlebot.bot_options import storable_options
+from bartlebot.combat import fight_keys
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraphs import (
     drop_states,

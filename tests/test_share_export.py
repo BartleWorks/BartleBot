@@ -14,7 +14,13 @@ import pytest
 
 from bartlebot import share_export
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, SubgraphSource, TemplateRef
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.strategy_store import (
+    save_bot_strategy,
+    save_deck_preset,
+    save_duel_strategy,
+    save_player_strategy,
+)
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.share_export import (
     BOT,
@@ -36,7 +42,6 @@ from bartlebot.shared.strategy_models import (
     PlayerAssignment,
     PlayerCombatStrategy,
 )
-from bartlebot.strategy_store import save_bot_strategy, save_deck_preset, save_duel_strategy, save_player_strategy
 from bartlebot.subgraph_store import SubgraphLibrary, save_subgraph
 from tests.test_subgraph_store import _defn
 

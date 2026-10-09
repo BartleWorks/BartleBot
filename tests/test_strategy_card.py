@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from bartlebot.combat.strategy_summary import StrategySummary
 from bartlebot.gui.widgets.card_art_tile import ArtIconView
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
-from bartlebot.strategy_summary import StrategySummary
 
 _ROLES = ("Hitter", "Support", "Healer")
 

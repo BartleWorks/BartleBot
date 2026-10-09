@@ -16,7 +16,8 @@ from PyQt6.QtWidgets import QDialog, QLabel
 
 from bartlebot import bot_roots, template_diff
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.gui.canvas.bot_canvas import (
     BotMode,
     _BotCard,
@@ -30,7 +31,6 @@ from bartlebot.gui.canvas.bot_canvas import (
 from bartlebot.gui.make_copy_dialog import MakeCopyDialog
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import DEV_ENV_VAR, SOURCE_LABELS, Origin
-from bartlebot.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_subgraph_integration import ControllerHarness
 

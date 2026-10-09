@@ -26,6 +26,14 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
 from bartlebot import store_roots
+from bartlebot.combat.strategy_store import (
+    StrategyKind,
+    list_duel_strategies,
+    list_player_strategies,
+    save_duel_strategy,
+    save_player_strategy,
+)
+from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, EDIT_VERB, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     KIND_LABELS,
@@ -43,14 +51,6 @@ from bartlebot.shared.strategy_models import (
     PlayerAssignment,
     PlayerCombatStrategy,
 )
-from bartlebot.strategy_store import (
-    StrategyKind,
-    list_duel_strategies,
-    list_player_strategies,
-    save_duel_strategy,
-    save_player_strategy,
-)
-from bartlebot.strategy_workset import StrategyWorkingSet
 
 
 @pytest.fixture
@@ -141,7 +141,7 @@ def test_declining_the_discard_prompt_keeps_the_dialog_open(qapp, roots):
 
 def test_a_save_that_could_not_write_keeps_the_dialog_open(qapp, roots, monkeypatch):
     """commit() logs and skips a failed write; closing anyway would lose it silently."""
-    import bartlebot.strategy_workset as ws_mod
+    import bartlebot.combat.strategy_workset as ws_mod
 
     pcs = PlayerCombatStrategy(name="Blade", dsl="blade")
     save_player_strategy(pcs, roots[0])
@@ -708,7 +708,7 @@ def test_choosing_custom_dsl_opens_the_box_and_offers_to_name_it(qapp, roots):
 
 
 def _deck_page(roots, preset: DeckPreset):
-    from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
+    from bartlebot.combat.strategy_store import save_deck_preset  # noqa: PLC0415
 
     save_deck_preset(preset, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DECK, current_id=preset.id)
@@ -755,7 +755,7 @@ def test_an_archmastery_edit_is_a_change_the_dialog_can_save_or_discard(qapp, ro
 
 
 def test_an_archmastery_edit_reaches_disk_only_on_save(qapp, roots):
-    from bartlebot.strategy_store import list_deck_presets  # noqa: PLC0415
+    from bartlebot.combat.strategy_store import list_deck_presets  # noqa: PLC0415
 
     preset = DeckPreset(name="Storm 60", deck=DeckData(normal={"Test Card": 1}, archmastery_school="Storm"))
     dlg, page = _deck_page(roots, preset)
@@ -795,7 +795,7 @@ def test_every_tab_has_an_about_section(qapp, roots, kind):
 
 def _one_of_each(roots):
     """A saved entry of every kind, so each tab has something selected."""
-    from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
+    from bartlebot.combat.strategy_store import save_deck_preset  # noqa: PLC0415
 
     shipped, _user = roots
     made = {

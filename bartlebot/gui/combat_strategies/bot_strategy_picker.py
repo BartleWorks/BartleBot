@@ -23,12 +23,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_summary import StrategySummary, summarize_bot
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
-from bartlebot.strategy_summary import StrategySummary, summarize_bot
 
 NONE_LABEL = "(built-in default)"
 

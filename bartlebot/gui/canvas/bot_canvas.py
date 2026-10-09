@@ -57,6 +57,8 @@ from bartlebot.bot.schema import (
 from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
+from bartlebot.combat.strategy_store import list_bot_strategies, rekey_bot_strategy_states
+from bartlebot.combat.strategy_tags import SOURCE
 from bartlebot.game import card_art, scales
 from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
@@ -107,8 +109,6 @@ from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import SOURCE_LABELS, Origin, dev_mode
-from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
-from bartlebot.strategy_tags import SOURCE
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES, subgraph_tag_group
 from bartlebot.subgraphs import (

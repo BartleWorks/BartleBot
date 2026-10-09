@@ -35,7 +35,7 @@ HOW TO RUN
     change that section D puts back.
 
     Section E is opt-in because it deliberately enters the treasure card view,
-    which is documented (bartlebot/deck_io.py module docstring) to leave the
+    which is documented (bartlebot/combat/deck_io.py module docstring) to leave the
     spell list in a state that breaks normal card restore:
 
         uv run python tools/probe_bare_deck_open.py --tc-test
@@ -57,7 +57,7 @@ from wizwalker import Keycode
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.deck_io import active_item_counts, count_names, read_deck_card_names, read_item_slots
+from bartlebot.combat.deck_io import active_item_counts, count_names, read_deck_card_names, read_item_slots
 
 SAMPLES = 5
 

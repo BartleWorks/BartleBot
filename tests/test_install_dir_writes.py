@@ -15,7 +15,8 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from bartlebot import bot_roots
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import save_bot_strategy, save_player_strategy
 from bartlebot.game import card_art
 from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
@@ -23,7 +24,6 @@ from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
 from bartlebot.shared.vendor import vendor_dir
 from bartlebot.store_roots import is_inside, resolve_bot_strategy_roots, resolve_roots, resolve_shared_roots
-from bartlebot.strategy_store import save_bot_strategy, save_player_strategy
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.template_store import templates_dir
 from bartlebot.ui_state import UiState

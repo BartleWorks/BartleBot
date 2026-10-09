@@ -9,7 +9,7 @@ just naming a card the user has never heard of.
 Classification has to happen when a deck is *imported*, not when it is applied.
 The applying wizard does not own the missing card, so there is no
 ``SpellTemplate`` to inspect; the authoring wizard does, and ``_entry_name``
-already reads that template on the way past.  See :mod:`bartlebot.deck_io`.
+already reads that template on the way past.  See :mod:`bartlebot.combat.deck_io`.
 
 The predicates mirror ``SprintyCombat``'s — a card this module calls a blade is
 one the combat DSL would also pick for ``<blade>``.  The effect-type and target

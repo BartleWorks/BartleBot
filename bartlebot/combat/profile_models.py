@@ -41,7 +41,7 @@ class FightRef(BaseModel):
     ``enemy`` is the node's ``enemy`` param when that names the fight uniquely in its
     bot, and is what lets the strategy follow a fight whose node was replaced. None
     for a fight that takes the closest mob, or one written before fight keys. Placing
-    a stored fight on a current state is :func:`bartlebot.fight_keys.bind`'s job.
+    a stored fight on a current state is :func:`bartlebot.combat.fight_keys.bind`'s job.
     """
 
     state: str
@@ -106,7 +106,7 @@ class BotCombatStrategy(BaseModel):
     state_assignments: list[StateAssignment] = Field(default_factory=list)
     description: str = ""
     # Strategies that belong to this profile alone, rather than to the library (#118).
-    # Linked by id like any library entry, and found first — see bartlebot.combat_profile.
+    # Linked by id like any library entry, and found first — see bartlebot.combat.combat_profile.
     duel_strategies: list[DuelCombatStrategy] = Field(default_factory=list)
     player_strategies: list[PlayerCombatStrategy] = Field(default_factory=list)
     # Content hashes of what earlier saves replaced, newest first (#169). None ship, so
@@ -133,7 +133,7 @@ class BotCombatStrategy(BaseModel):
         """Return the StateAssignment whose stored fights name this state id, or None.
 
         Raw state ids only, for when there is no bot to place the fights on. With one,
-        ask :func:`bartlebot.fight_keys.bind`, which follows a fight by its enemy.
+        ask :func:`bartlebot.combat.fight_keys.bind`, which follows a fight by its enemy.
         """
         for assignment in self.state_assignments:
             if state_id in assignment.state_ids:

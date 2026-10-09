@@ -14,6 +14,7 @@ from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import QDialog, QLineEdit, QMessageBox
 
 from bartlebot import bot_roots, share_export, share_import
+from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.gui import import_dialog
 from bartlebot.gui.import_dialog import CHOICES_HEADING, COPIES_NOTE, REST_HEADING, ImportDialog, confirm_import
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file, share_paths
@@ -21,7 +22,6 @@ from bartlebot.settings_manager import SettingsManager
 from bartlebot.share_export import BOT, SUBGRAPH
 from bartlebot.share_import import Action
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
-from bartlebot.strategy_store import StrategyKind
 from bartlebot.subgraph_store import load_subgraph
 from tests.test_share_import import WORLD, Library, _bot, _combat, _export, _send_bot, _sender_setup
 from tests.test_subgraph_integration import ControllerHarness

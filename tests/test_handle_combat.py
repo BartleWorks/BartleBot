@@ -35,7 +35,7 @@ _DEFAULT_PARAMS = {"enemy": "", "use_default_strategy": True}
 def _patch_resolve_combat(combat_order: list[int]):
     from unittest.mock import patch  # noqa: PLC0415
 
-    from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG  # noqa: PLC0415
+    from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG  # noqa: PLC0415
 
     return patch(
         "bartlebot.nodes.combat.handle_combat.resolve_combat",
@@ -231,7 +231,7 @@ async def test_combat_order_sequential():
 
 async def test_combat_order_invalid_client_number_skipped():
     """combat_order referencing a client that doesn't exist is silently skipped."""
-    from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+    from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()

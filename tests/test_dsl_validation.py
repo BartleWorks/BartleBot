@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.combat_runner import (
     _lark_parser,
     _str_provider_class,

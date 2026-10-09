@@ -40,7 +40,7 @@ WHAT IS ALREADY KNOWN
         and the server never hears.  That is outcome 2 below, the one that would
         demo perfectly and do nothing on a real run.
       * So the click path is what shipped: see ``set_archmastery_school`` in
-        ``bartlebot/deck_io.py``.  Section D is kept because a future build could
+        ``bartlebot/combat/deck_io.py``.  Section D is kept because a future build could
         change the answer, and because re-deriving why it was rejected is
         expensive.  Note that *reading* the value stays trustworthy — a school
         changed through the UI reads back correctly, which is what makes it a

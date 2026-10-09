@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import NamedTuple
 
-from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.game import drop_detection
 from bartlebot.nodes.timing import (
     COMBAT_DROP_MESSAGE_POLL,
@@ -57,7 +57,7 @@ def resolve_combat(
       2. Look up active BotCombatStrategy UUID in SettingsManager.
       3. Load BotCombatStrategy (the active combat profile); if use_default_strategy=True use the BCS default,
          otherwise find the StateAssignment whose fight is machine.state -- by the
-         enemy the node names first, then by state id, see ``bartlebot.fight_keys`` --
+         enemy the node names first, then by state id, see ``bartlebot.combat.fight_keys`` --
          falling back to the BCS default when no assignment covers the state.
       4. Find the DuelCombatStrategy that one links -- in the profile first, then
          the library; an unset one means the built-in default.
@@ -71,10 +71,10 @@ def resolve_combat(
     missing, no duel strategy is assigned, or an error occurs.
     """
     # Lazy imports to avoid circular imports and keep startup fast.
-    from bartlebot.combat_profile import StrategyLookup  # noqa: PLC0415
-    from bartlebot.fight_keys import bind  # noqa: PLC0415
+    from bartlebot.combat.combat_profile import StrategyLookup  # noqa: PLC0415
+    from bartlebot.combat.fight_keys import bind  # noqa: PLC0415
+    from bartlebot.combat.strategy_store import load_bot_strategy  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
-    from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
 
     bot_cfg = machine.bot_config
     if bot_cfg is None:

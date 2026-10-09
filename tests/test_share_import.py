@@ -14,7 +14,16 @@ import pytest
 
 from bartlebot import bot_roots, share_export, share_import
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.strategy_store import (
+    list_all_bot_strategies,
+    load_bot_strategy,
+    load_duel_strategy,
+    load_player_strategy,
+    save_bot_strategy,
+    save_duel_strategy,
+    save_player_strategy,
+)
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.share_export import BOT, BOT_COMBAT_STRATEGY, DECK, DUEL_STRATEGY, PLAYER_STRATEGY, SUBGRAPH, Sources
 from bartlebot.share_import import Action, Outcome, Refused
@@ -27,15 +36,6 @@ from bartlebot.shared.strategy_models import (
     DuelCombatStrategy,
     PlayerAssignment,
     PlayerCombatStrategy,
-)
-from bartlebot.strategy_store import (
-    list_all_bot_strategies,
-    load_bot_strategy,
-    load_duel_strategy,
-    load_player_strategy,
-    save_bot_strategy,
-    save_duel_strategy,
-    save_player_strategy,
 )
 from bartlebot.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
 from tests.test_subgraph_store import _defn
@@ -585,7 +585,7 @@ def test_a_deck_arrives_in_the_library(sender, receiver, tmp_path):
     imported, _ = _import(receiver, _export(plan, tmp_path))
 
     assert imported.row(DECK, "k1").outcome is Outcome.NEW
-    from bartlebot.strategy_store import load_deck_preset
+    from bartlebot.combat.strategy_store import load_deck_preset
 
     got = load_deck_preset("k1", receiver.shipped, receiver.user)
     assert got.deck.normal == {"Storm Lord": 2} and got.schools == ["Storm"]

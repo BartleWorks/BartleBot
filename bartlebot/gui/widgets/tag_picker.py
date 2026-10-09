@@ -24,12 +24,12 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
+from bartlebot.combat.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
 from bartlebot.game import card_art
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
-from bartlebot.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
 from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions

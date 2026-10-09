@@ -43,8 +43,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from bartlebot.bot.schema import BotConfig, StateModel  # noqa: E402
+from bartlebot.combat.strategy_store import rekey_bot_strategy_states  # noqa: E402
 from bartlebot.shared.vendor import product_dir  # noqa: E402
-from bartlebot.strategy_store import rekey_bot_strategy_states  # noqa: E402
 from bartlebot.subgraphs import is_nested_in, local_id, member_id, outermost_linked_regions, rename_states  # noqa: E402
 
 #: The prefix a bot's nodes are numbered with; see ``--prefix``.

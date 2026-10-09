@@ -1,10 +1,10 @@
-"""Tests for bartlebot.bot.strategy_models: the combat profile and its fight assignments."""
+"""Tests for bartlebot.combat.profile_models: the combat profile and its fight assignments."""
 
 from pathlib import Path
 
 import pytest
 
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.shared.strategy_models import DeckData
 
 # ---------------------------------------------------------------------------
