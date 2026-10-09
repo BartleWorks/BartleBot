@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot.wiki_pages import (
+from bartlebot.game.wiki_pages import (
     WIKI_HOST,
     is_valid_title,
     page_title,

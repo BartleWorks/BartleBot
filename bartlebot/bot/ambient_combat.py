@@ -489,7 +489,7 @@ async def _ratios(client) -> tuple[float, float]:
 
 
 async def _hub_of(client) -> str | None:
-    from bartlebot import zone_nav  # noqa: PLC0415
+    from bartlebot.game import zone_nav  # noqa: PLC0415
 
     zone = await _zone(client)
     world = zone_nav.load().world_of(zone) if zone else None

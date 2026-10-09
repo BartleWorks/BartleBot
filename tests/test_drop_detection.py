@@ -2,9 +2,9 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from bartlebot.utils import drop_detection
+from bartlebot.game import drop_detection
 
-_SNAP = "bartlebot.utils.drop_detection.snapshot_chat"
+_SNAP = "bartlebot.game.drop_detection.snapshot_chat"
 
 
 def _window(name: str, children=(), visible: bool = True) -> MagicMock:

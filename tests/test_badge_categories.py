@@ -1,8 +1,8 @@
-"""Tests for bartlebot.badge_categories, against the checked-in snapshot."""
+"""Tests for bartlebot.game.badge_categories, against the checked-in snapshot."""
 
 from __future__ import annotations
 
-from bartlebot import badge_categories
+from bartlebot.game import badge_categories
 
 
 def test_the_game_order_is_kept():

@@ -1,6 +1,6 @@
 """Add a Scales of Knowledge to the shipped table from a bot recorded in the app.
 
-``bartlebot/data/scales_of_knowledge.json`` is never edited by hand. This tool builds an entry
+``bartlebot/game/data/scales_of_knowledge.json`` is never edited by hand. This tool builds an entry
 from points Record already captured, checks it, and writes the whole file back in one fixed
 format (see ``docs/LEVEL_SCALING.md``).
 
@@ -45,11 +45,11 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from bartlebot import scales, zone_names, zone_nav  # noqa: E402
+from bartlebot.game import scales, zone_names, zone_nav  # noqa: E402
 from bartlebot.nodes.node_helpers import has_glob, zone_matches  # noqa: E402
 
 COMMENT = [
-    "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/scales.py.",
+    "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/game/scales.py.",
     "Written by tools/scales_table.py: add and change entries with it, not by hand.",
     "A bot file stores an entry's key, so a key is never renamed once shipped.",
     "See docs/LEVEL_SCALING.md.",

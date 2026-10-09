@@ -79,7 +79,7 @@ NODE_SPEC = NodeSpec(
 
 async def _collect_for_client(machine, client, client_idx: int, entity_names: list[str], safety_delay: float) -> int:
     """Find and collect all matching reagent entities for a single client. Returns collected count."""
-    from bartlebot.utils.drop_detection import chat_available, poll_new_drops, snapshot_chat  # noqa: PLC0415
+    from bartlebot.game.drop_detection import chat_available, poll_new_drops, snapshot_chat  # noqa: PLC0415
 
     entities = []
     for name in entity_names:

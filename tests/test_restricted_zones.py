@@ -16,10 +16,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 import bartlebot.bot.client_health_monitor as health_module
-from bartlebot import restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
+from bartlebot.game import restricted_zones
 from tests.conftest import FakeClient
 
 # ---------------------------------------------------------------------------

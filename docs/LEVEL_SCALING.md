@@ -134,7 +134,7 @@ different client objects are discarded.
 
 ## The table
 
-`bartlebot/data/scales_of_knowledge.json`, read by `bartlebot/scales.py`. It holds names,
+`bartlebot/game/data/scales_of_knowledge.json`, read by `bartlebot/game/scales.py`. It holds names,
 zone paths and coordinates, so it is text and safe to track.
 
 | field | holds |

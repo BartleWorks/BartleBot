@@ -1,7 +1,7 @@
 {
   "_comment": [
     "The zone navigation map. See docs/ZONE_NAVIGATION.md for every field, and",
-    "bartlebot/zone_nav.py for the loader and route planner.",
+    "bartlebot/game/zone_nav.py for the loader and route planner.",
     "",
     "Zones are the main zones chosen by hand from tools/zone_graph/main_zones.py's",
     "proposal. Links marked source 'bot' are copied from bot files that use them; 'code'",

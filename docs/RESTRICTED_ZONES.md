@@ -1,8 +1,8 @@
 # Restricted zones (PvP)
 
 
-BartleBot does not automate PvP. `bartlebot/restricted_zones.py` and its data file
-`bartlebot/data/restricted_zones.json` hold the whole policy: the `Battlegrounds`
+BartleBot does not automate PvP. `bartlebot/game/restricted_zones.py` and its data file
+`bartlebot/game/data/restricted_zones.json` hold the whole policy: the `Battlegrounds`
 world (all of Beastmoon) and the twelve PvP match arenas. **Raids and every other
 PvE zone are deliberately allowed** — automating PvE monotony is the point of the
 tool, and a guard that bans farming content is just a broken tool.

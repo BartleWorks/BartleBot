@@ -108,7 +108,7 @@ class ParamField:
                       narrowest_type.
                       "scales" is one Scales of Knowledge, picked from the shipped table grouped by
                       world (bartlebot/gui/widgets/scales_picker.py). Only the entry's key is stored;
-                      bartlebot/scales.py resolves it.
+                      bartlebot/game/scales.py resolves it.
                       "text" renders as a multi-line QPlainTextEdit.
                       "player_slot" is the single-select sibling of "player_list": one 1-based client
                       index, or 0 for none.
@@ -119,7 +119,7 @@ class ParamField:
                       in the bot at once instead of once per node that thought to offer it.
                       "wiki_page" records the Wizard101 Central Wiki page a node's data came from. Editor-only —
                       no node reads it at run time. Stored as a bare page title, never a URL; resolve it
-                      through bartlebot.wiki_pages.resolve_wiki_page() and never by hand.
+                      through bartlebot.game.wiki_pages.resolve_wiki_page() and never by hand.
         label:        Human-readable form label.
         help:         Tooltip / documentation text shown on hover.
         default:      Value used when no existing param data is present.

@@ -14,6 +14,7 @@ from functools import lru_cache
 from typing import NamedTuple
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.game import drop_detection
 from bartlebot.nodes.timing import (
     COMBAT_DROP_MESSAGE_POLL,
     COMBAT_DROP_MESSAGE_TIMEOUT,
@@ -24,7 +25,6 @@ from bartlebot.nodes.timing import (
     FLEE_VOTE_TIMEOUT,
     POLL_INTERVAL,
 )
-from bartlebot.utils import drop_detection
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +308,7 @@ def dsl_warnings(dsl: str) -> tuple[DslWarning, ...]:
         TreeToConfig,
     )
 
-    from bartlebot import spell_names  # noqa: PLC0415
+    from bartlebot.game import spell_names  # noqa: PLC0415
 
     transformer = TreeToConfig()
     warnings = []

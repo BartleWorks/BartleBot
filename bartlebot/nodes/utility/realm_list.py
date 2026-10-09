@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from bartlebot import dialog_captions, realms
+from bartlebot.game import dialog_captions, realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,

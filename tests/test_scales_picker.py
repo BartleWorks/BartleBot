@@ -2,8 +2,8 @@
 
 from wizwalker import XYZ
 
-from bartlebot import scales
 from bartlebot.bot.schema import BotConfig
+from bartlebot.game import scales
 from bartlebot.gui.widgets.picker_popup import filter_sections
 from bartlebot.gui.widgets.scales_picker import PLACEHOLDER, ScalesButton, describe_key, scales_sections
 from bartlebot.nodes.param_schema import ParamField

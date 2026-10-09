@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from bartlebot import entity_names
+from bartlebot.game import entity_names
 
 
 @pytest.fixture

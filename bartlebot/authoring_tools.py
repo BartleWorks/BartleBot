@@ -42,8 +42,8 @@ from collections.abc import Callable
 from enum import StrEnum
 from types import SimpleNamespace
 
-from bartlebot import wizard_names
 from bartlebot.bot.client_health_monitor import restriction_for
+from bartlebot.game import wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import _run_combat, resolve_combat
 from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL, POLL_INTERVAL, SPEED_REAPPLY_INTERVAL

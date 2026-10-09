@@ -2,7 +2,7 @@
 
 import json
 
-from bartlebot import worlds
+from bartlebot.game import worlds
 
 
 def test_the_world_gate_title_is_in_the_snapshot_english_first():

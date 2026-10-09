@@ -9,8 +9,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bartlebot import character_roster, wizard_names
+from bartlebot import character_roster
 from bartlebot.client_manager import ClientManager
+from bartlebot.game import wizard_names
 
 
 class FakeClientWindow:

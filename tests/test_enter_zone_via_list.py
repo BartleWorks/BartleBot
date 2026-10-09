@@ -346,7 +346,7 @@ async def test_instance_prompt_is_answered_after_the_teleport_click():
 
 async def test_a_refused_teleport_fails_instead_of_waiting_for_a_zone_change():
     """A gauntlet will not let anyone change areas, so the arrival wait cannot succeed."""
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     clients = [_ready_client()]
     machine = FakeMachine()

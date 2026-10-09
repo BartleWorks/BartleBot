@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.game_sizing import grid_for, required_game_area
+from bartlebot.game.game_sizing import grid_for, required_game_area
 from bartlebot.gui.account_accent import account_color_keys
 from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,
@@ -801,7 +801,7 @@ class GameView(ThemedMixin, QWidget):
         This is what stops the window and the splitters being dragged to where the game
         windows get clipped: a tile shows its client at 1:1 and cannot scale, so anything
         narrower than the grid needs simply cuts the game off. Resolutions are capped to
-        the screen before launch (see bartlebot/game_sizing.py), so the minimum this
+        the screen before launch (see bartlebot/game/game_sizing.py), so the minimum this
         derives is always satisfiable rather than a size the window cannot reach.
 
         The grid is measured against the **largest** client on screen, not an arbitrary

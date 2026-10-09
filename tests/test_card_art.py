@@ -1,4 +1,4 @@
-"""Tests for bartlebot.card_art — finding extracted card art, and not finding it.
+"""Tests for bartlebot.game.card_art — finding extracted card art, and not finding it.
 
 Every test points ``APPDATA`` at a tmp directory, because that is what
 ``shared/vendor.product_dir`` reads and so what decides where the cache is. The
@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 """Tests for identifying in-game modals by their caption text.
 
-The snapshot under test is the real one shipped in bartlebot/data — these are not
+The snapshot under test is the real one shipped in bartlebot/game/data — these are not
 fixtures. That is the point: the checked-in captions are the thing that can rot when a
 game patch reworks a dialog, so the round-trip test below is what catches it.
 """
@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from bartlebot import dialog_captions as dc
+from bartlebot.game import dialog_captions as dc
 
 SNAPSHOT = json.loads(dc.CAPTIONS_PATH.read_text(encoding="utf-8"))
 CAPTIONS: dict[str, dict[str, str]] = SNAPSHOT["captions"]

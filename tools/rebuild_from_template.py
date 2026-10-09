@@ -50,7 +50,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from bartlebot import scales, setup_steps, zone_nav  # noqa: E402
+from bartlebot import setup_steps  # noqa: E402
 from bartlebot.bot.schema import (  # noqa: E402
     FALLTHROUGH_RETURNS,
     BotConfig,
@@ -60,6 +60,7 @@ from bartlebot.bot.schema import (  # noqa: E402
 )
 from bartlebot.bot_options import required_option_specs  # noqa: E402
 from bartlebot.bot_tags import normalize_tags, suggested_tags  # noqa: E402
+from bartlebot.game import scales, zone_nav  # noqa: E402
 from bartlebot.gui.canvas.edit_scene import _reachable_states  # noqa: E402
 from bartlebot.gui.canvas.layout import auto_layout  # noqa: E402
 from bartlebot.new_bot import BotDetails, StartingPoint, create_bot, starting_points  # noqa: E402

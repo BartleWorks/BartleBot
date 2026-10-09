@@ -1,7 +1,7 @@
 """The bot library's folders: which badge category each one is, and what it is called.
 
 The folders under ``bots/`` are the game's own badge categories (see
-:mod:`bartlebot.badge_categories`), because that is a grouping players already know:
+:mod:`bartlebot.game.badge_categories`), because that is a grouping players already know:
 the worlds in the order the badge page lists them, then activities such as Crafting and
 Four Dungeons. A folder's icon and caption both come from its category.
 
@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import re
 
-from bartlebot import badge_categories
+from bartlebot.game import badge_categories
 
 #: Folder name, without its number -> badge category key.
 FOLDER_BADGES: dict[str, str] = {

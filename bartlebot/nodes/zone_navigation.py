@@ -40,14 +40,15 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from bartlebot import player_realms, port_map, sightings, worlds, zone_lists, zone_nav
+from bartlebot import player_realms, port_map, sightings
+from bartlebot.game import worlds, zone_lists, zone_nav
+from bartlebot.game.restricted_zones import check_zone
 from bartlebot.nodes import node_helpers, wizard_city
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
 from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
 from bartlebot.nodes.utility import change_realm, realm_list, sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
-from bartlebot.restricted_zones import check_zone
 
 MAX_STEPS = 30
 """No route needs this many. Reaching it means steps keep landing somewhere the plan did not expect."""
@@ -152,7 +153,7 @@ def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[Runs, dict] | st
         if not names:
             return (
                 f"no display name is known for world {p['world']!r}, so its World Gate row cannot be found; "
-                f"regenerate bartlebot/data/world_names.json with tools/dump_world_names.py"
+                f"regenerate bartlebot/game/data/world_names.json with tools/dump_world_names.py"
             )
         primary, *aliases = names
         return enter_zone_via_list, {

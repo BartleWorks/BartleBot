@@ -18,9 +18,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from bartlebot.deck_io import resolve_apply_archmastery
+from bartlebot.game.spell_names import display_name
+from bartlebot.game.spell_schools import deck_sort_key
 from bartlebot.shared.strategy_models import DeckData
-from bartlebot.spell_names import display_name
-from bartlebot.spell_schools import deck_sort_key
 
 #: The two verbs that move a deck between a game client and BartleBot, as every surface says them.
 IMPORT_DECK = "Import from client"

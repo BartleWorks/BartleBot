@@ -13,9 +13,10 @@ from pathlib import Path
 import pytest
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
-from bartlebot import bot_roots, card_art
+from bartlebot import bot_roots
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.game import card_art
 from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager

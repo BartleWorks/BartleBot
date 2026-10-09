@@ -9,7 +9,7 @@ from bartlebot.paths import project_root
 
 sys.path.insert(0, str(project_root()))
 
-from bartlebot import scales, zone_nav  # noqa: E402
+from bartlebot.game import scales, zone_nav  # noqa: E402
 from tools import scales_table  # noqa: E402
 from tools.scales_table import TableError  # noqa: E402
 

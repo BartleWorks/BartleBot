@@ -14,7 +14,7 @@ import json
 import pytest
 from PyQt6.QtGui import QColor, QPixmap
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.widgets.card_art_tile import CardArtTile
 from bartlebot.gui.widgets.deck_card_list import DeckCardList
 from bartlebot.shared.strategy_models import DeckData

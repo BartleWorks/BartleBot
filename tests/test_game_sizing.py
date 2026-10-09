@@ -1,6 +1,6 @@
 """Tests for the (resolution, UI size) ladder and the screen-fit arithmetic.
 
-No QApplication and no settings: bartlebot/game_sizing.py is pure on purpose, so the
+No QApplication and no settings: bartlebot/game/game_sizing.py is pure on purpose, so the
 numbers behind "two clients do not fit on a 1080p screen" can be asserted directly.
 """
 
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import game_sizing as gs
+from bartlebot.game import game_sizing as gs
 from bartlebot.settings_manager import VALID_RESOLUTIONS
 
 # The layout the worked examples in the window-scaling work were computed against: a 1080p screen and the

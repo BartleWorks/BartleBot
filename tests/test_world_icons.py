@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from PIL import Image
 
-from bartlebot import zone_nav
-from bartlebot.card_art import DUNGEON_ICON, world_icon_name
-from bartlebot.worlds import DUNGEON_WORLDS, SPIRAL_DOOR_WORLDS
+from bartlebot.game import zone_nav
+from bartlebot.game.card_art import DUNGEON_ICON, world_icon_name
+from bartlebot.game.worlds import DUNGEON_WORLDS, SPIRAL_DOOR_WORLDS
 from tools.extract_card_art import (
     DUNGEON_TEXTURE,
     ICON_SOURCES,

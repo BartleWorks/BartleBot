@@ -10,9 +10,10 @@ from typing import TYPE_CHECKING, Any
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import bot_options, option_values, restricted_zones, sightings, variables
+from bartlebot import bot_options, option_values, sightings, variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
+from bartlebot.game import restricted_zones
 
 logger = logging.getLogger(__name__)
 

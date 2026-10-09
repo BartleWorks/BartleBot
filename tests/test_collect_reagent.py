@@ -14,9 +14,9 @@ _XYZ_A = XYZ(100.0, 200.0, 0.0)
 _XYZ_B = XYZ(-300.0, 500.0, 50.0)
 
 # Patch targets for drop-detection I/O
-_SNAP = "bartlebot.utils.drop_detection.snapshot_chat"
-_EXTRACT = "bartlebot.utils.drop_detection.extract_new_drops"
-_AVAIL = "bartlebot.utils.drop_detection.chat_available"
+_SNAP = "bartlebot.game.drop_detection.snapshot_chat"
+_EXTRACT = "bartlebot.game.drop_detection.extract_new_drops"
+_AVAIL = "bartlebot.game.drop_detection.chat_available"
 
 
 def _entity(xyz: XYZ = _XYZ_A, name: str = _ENTITY_NAME) -> FakeEntity:

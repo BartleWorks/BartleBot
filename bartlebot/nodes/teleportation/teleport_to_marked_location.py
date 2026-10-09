@@ -5,7 +5,8 @@ import logging
 
 from wizwalker import XYZ
 
-from bartlebot import dialog_captions, player_realms
+from bartlebot import player_realms
+from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.node_helpers import POSITION_MARGIN, TRIGGER_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec

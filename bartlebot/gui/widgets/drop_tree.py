@@ -13,7 +13,7 @@ from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.widgets.card_art_tile import art_icon
 
 #: Shown in the Category column for a drop that has none — every drop imported

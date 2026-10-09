@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from bartlebot.name_tables import (
+from bartlebot.game.name_tables import (
     DEFAULT_LOCALE,
     FIRST_FEMALE,
     FIRST_MALE,
@@ -164,7 +164,7 @@ def test_unknown_locale_falls_back_to_default(tmp_path):
 @pytest.fixture(scope="module")
 def real_tables() -> NameTables:
     tables = load_name_tables()
-    assert tables is not None, "bartlebot/data/name_tables.json should be checked in"
+    assert tables is not None, "bartlebot/game/data/name_tables.json should be checked in"
     return tables
 
 

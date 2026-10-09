@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from bartlebot import zone_names, zone_nav
+from bartlebot.game import zone_names, zone_nav
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ def resolve(step: zone_nav.Step) -> ListEntry | str:
     if not names:
         return (
             f"no display name is known for {step.to_zone!r}, so its list entry cannot be found; "
-            f"regenerate bartlebot/data/zone_names.json with tools/dump_zone_names.py"
+            f"regenerate bartlebot/game/data/zone_names.json with tools/dump_zone_names.py"
         )
     primary, *aliases = names
     # The map's own list_aliases cover text the list shows that is not a locale name at all --

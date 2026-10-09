@@ -14,8 +14,9 @@ import pytest
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.utility.change_realm as cr
 import bartlebot.nodes.utility.realm_list as rl
-from bartlebot import bot_options, dialog_captions
+from bartlebot import bot_options
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.game import dialog_captions
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     MESSAGE_BOX_CENTER,

@@ -15,7 +15,7 @@ from bartlebot.authoring_tools import (
     boosted_speed_value,
     source_index,
 )
-from bartlebot.restricted_zones import Restriction
+from bartlebot.game.restricted_zones import Restriction
 from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS
 from tests.conftest import FakeClient
 

@@ -54,7 +54,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.game_sizing import FitProblem
+from bartlebot.game.game_sizing import FitProblem
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
 from bartlebot.gui.theme import THEME

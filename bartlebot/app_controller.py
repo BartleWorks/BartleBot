@@ -24,7 +24,6 @@ from bartlebot import (
     option_values,
     player_realms,
     recovery_readiness,
-    restricted_zones,
     setup_steps,
     share_export,
     share_import,
@@ -33,8 +32,6 @@ from bartlebot import (
     template_gallery,
     template_store,
     variables,
-    wizard_names,
-    zone_names,
 )
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
@@ -43,6 +40,7 @@ from bartlebot.bot_tags import normalize_tags, suggested_tags, wants_rewards_pro
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
+from bartlebot.game import restricted_zones, wizard_names, zone_names
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
@@ -300,7 +298,7 @@ class AppController(QObject):
         """Give the game back the display settings a previous session overwrote.
 
         A launch below 800x600 has to shrink the game's own HUD to match (see
-        bartlebot/game_sizing.py), and every launch retiles the resolution and forces
+        bartlebot/game/game_sizing.py), and every launch retiles the resolution and forces
         windowed mode. The user plays Wizard101 outside BartleBot, so all three are put
         back on quit. This is the other half: a session that died without reaching the
         quit path left them in place, and nothing else would ever undo them. No-op when

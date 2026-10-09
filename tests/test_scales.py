@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from bartlebot import scales, worlds, zone_nav
+from bartlebot.game import scales, worlds, zone_nav
 from bartlebot.nodes.node_helpers import zone_matches
 
 
@@ -102,7 +102,7 @@ def test_the_shipped_table_passes_the_tools_checks_and_is_in_its_format():
 
 def test_no_entry_names_a_challenge_mode_zone():
     """The Challenge Mode copy of a dungeon has no Scales, so no entry may lead into one."""
-    from bartlebot import zone_names
+    from bartlebot.game import zone_names
     from bartlebot.nodes.node_helpers import has_glob
 
     for entry in scales.load().values():

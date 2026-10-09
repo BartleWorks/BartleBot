@@ -36,7 +36,7 @@ from __future__ import annotations
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.widgets.card_art_tile import ArtIconView, art_icon
 
 #: Height of both icons on the deck card. ``Icon_Archmastery`` is a 32px texture and

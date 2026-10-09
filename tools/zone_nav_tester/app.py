@@ -27,7 +27,7 @@ MAP tab
     the destination's gamedata.bin. That landing point is saved as the destination's arrival
     point for the zone you came from, which is the default reset for the walk back. Check the
     card, change the kind if it is wrong, and Save -- it goes straight into
-    bartlebot/data/zone_nav.json as a verified link, since you just used it in the game. A
+    bartlebot/game/data/zone_nav.json as a verified link, since you just used it in the game. A
     recording never silently replaces a verified link that already exists. Review with git diff.
 
     A list object is recorded without using it: open the list and the List object card holds
@@ -80,11 +80,11 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker import XYZ
 
-from bartlebot import worlds, zone_names, zone_nav
+from bartlebot.game import worlds, zone_names, zone_nav
+from bartlebot.game.restricted_zones import check_zone
 from bartlebot.nodes import node_helpers, zone_navigation
 from bartlebot.nodes.paths import HUB_BUTTON_PATH, TELEPORT_TIMER_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
 from bartlebot.nodes.timing import POLL_INTERVAL
-from bartlebot.restricted_zones import check_zone
 from tools.zone_nav_tester import edits, recorder, tree
 from tools.zone_nav_tester.game_data import GameData
 

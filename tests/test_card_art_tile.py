@@ -13,7 +13,7 @@ import pytest
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QColor, QPixmap
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.gui.widgets.card_art_tile import (
     COLLAPSED_TILE,

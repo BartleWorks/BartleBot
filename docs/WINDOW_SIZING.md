@@ -1,7 +1,7 @@
 # Window sizing
 
 How big a Wizard101 client is launched, why that is one setting and not two, and why an
-unfittable configuration cannot be launched at all. The code is `bartlebot/game_sizing.py`
+unfittable configuration cannot be launched at all. The code is `bartlebot/game/game_sizing.py`
 (the arithmetic, pure) and `bartlebot/gui/screen_fit.py` (the same question asked from a
 widget, with a real screen behind it). Read this before changing either, or before adding
 a resolution to `VALID_RESOLUTIONS`.

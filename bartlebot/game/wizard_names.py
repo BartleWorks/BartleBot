@@ -6,7 +6,7 @@ and the on-disk config files contain graphics settings. The registry value
 HKCU\\SOFTWARE\\KingsIsle\\Wizard101\\UserName is the *account* login, not the wizard.
 
 The name is nonetheless in memory, as three indices into the game's own name tables packed
-into WizPlayerNameBehavior.m_nameKeys — see bartlebot.name_tables, which decodes it. Wiring
+into WizPlayerNameBehavior.m_nameKeys — see bartlebot.game.name_tables, which decodes it. Wiring
 that in as the primary route is still to come; today the two UI routes below do the work:
 
   detect_wizard_name()   opens the character page and reads its title. Works any time,
@@ -26,7 +26,7 @@ import re
 from wizwalker import Keycode
 from wizwalker.memory.memory_object import Primitive
 
-from bartlebot.name_tables import decode_name_keys
+from bartlebot.game.name_tables import decode_name_keys
 from bartlebot.nodes.paths import CHARACTER_PAGE_TITLE_WINDOW
 from bartlebot.nodes.timing import CHARACTER_PAGE_SETTLE, TRIGGER_TIMEOUT, jitter
 
@@ -218,7 +218,7 @@ async def refresh_identities(clients: list) -> list[int]:
 # ---------------------------------------------------------------------------
 # Memory route
 #
-# The name lives on WizPlayerNameBehavior as packed table indices; bartlebot.name_tables
+# The name lives on WizPlayerNameBehavior as packed table indices; bartlebot.game.name_tables
 # decodes them. Two keypresses and a UI settle become two memory reads, and nothing on
 # screen moves.
 # ---------------------------------------------------------------------------
@@ -258,7 +258,7 @@ async def read_name_from_memory(client) -> str | None:
     None means "ask another route", and covers three genuinely different cases that the
     caller treats identically: the behavior was not found, the reads failed, or the name
     tables are older than the client and cannot resolve the indices. The last of those is
-    the one that matters operationally — see bartlebot.name_tables — and it is exactly why
+    the one that matters operationally — see bartlebot.game.name_tables — and it is exactly why
     the character-page route stays.
 
     Costs a walk of the behavior list (~38 entries, each a pointer read plus a string
@@ -339,7 +339,7 @@ async def resolve_names(clients: list) -> list[str | None]:
       3. the character page, via detect_wizard_name — two keypresses and a UI settle
 
     Route 2 handles every character whose name the shipped tables know. Route 3 exists for
-    the case where they do not: Wizard101 added names and bartlebot/data/name_tables.json
+    the case where they do not: Wizard101 added names and bartlebot/game/data/name_tables.json
     has not been regenerated yet. That is rare, but it is a real state the app has to keep
     working in, so the keypress path stays rather than being deleted.
 

@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Zones BartleBot refuses to run in. See bartlebot/restricted_zones.py.",
+    "Zones BartleBot refuses to run in. See bartlebot/game/restricted_zones.py.",
     "Scope is PvP only: the Beastmoon world and the PvP match arenas. PvE content",
     "is deliberately not listed, raids included -- automating PvE monotony is what",
     "this tool is for.",

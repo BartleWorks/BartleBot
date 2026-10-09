@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import bot_options, realms
+from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.game import realms
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.option_widgets import NODE_ONLY_TYPES, OPTION_TYPES, make_option_widget, widget_value

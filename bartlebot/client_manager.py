@@ -719,7 +719,7 @@ class ClientManager(QObject):
         Never raises: a stale name degrades grouping, but an exception here would take down
         the client loop that owns hook lifecycle and crash recovery.
         """
-        from bartlebot import wizard_names  # noqa: PLC0415
+        from bartlebot.game import wizard_names  # noqa: PLC0415
 
         try:
             changed = await wizard_names.fill_names_from_memory(clients)
@@ -751,7 +751,8 @@ class ClientManager(QObject):
         client vanishing at once. character_roster's own calls swallow their failures,
         so the remaining risk is a client object going away mid-pass.
         """
-        from bartlebot import character_roster, wizard_names  # noqa: PLC0415
+        from bartlebot import character_roster  # noqa: PLC0415
+        from bartlebot.game import wizard_names  # noqa: PLC0415
 
         for client in clients:
             try:
@@ -1439,7 +1440,8 @@ class ClientManager(QObject):
         Never raises and never stops the bot: running ungrouped is a degraded run, but
         stopping outright turns one crash into a dead overnight session.
         """
-        from bartlebot import group_manager, wizard_names  # noqa: PLC0415
+        from bartlebot import group_manager  # noqa: PLC0415
+        from bartlebot.game import wizard_names  # noqa: PLC0415
 
         if not SettingsManager.instance().auto_group_players:
             return

@@ -196,7 +196,7 @@ from wizwalker.memory.memory_object import Primitive
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bartlebot.utils import drop_detection  # noqa: E402
+from bartlebot.game import drop_detection  # noqa: E402
 
 # Wizard names are real player data. They are printed so the operator can tell which
 # window is which, and never written to the CSV.
@@ -744,7 +744,7 @@ async def main() -> int:
         await client.activate_hooks()
 
     # ClientObject.display_name() holds no name string -- a wizard's name is three table
-    # indices, which is what bartlebot/wizard_names.py exists to decode. The first run of
+    # indices, which is what bartlebot/game/wizard_names.py exists to decode. The first run of
     # this probe called it anyway and every row came back as a bare pid, which made the
     # side-by-side comparison the probe is *for* impossible to line up with which window
     # had been relogged. The window title is what the launcher already uses to tell

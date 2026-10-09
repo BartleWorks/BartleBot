@@ -906,11 +906,11 @@ def test_every_reagent_id_names_a_real_entity():
 
     A wildcard pattern is skipped: it names no single ID to look up.
     """
-    from bartlebot import entity_names  # noqa: PLC0415
+    from bartlebot.game import entity_names  # noqa: PLC0415
     from bartlebot.nodes.node_helpers import has_glob  # noqa: PLC0415
 
     reagents = entity_names.reagent_node_ids()
-    assert reagents, "bartlebot/data/reagent_nodes.json is missing or empty"
+    assert reagents, "bartlebot/game/data/reagent_nodes.json is missing or empty"
 
     unknown: list[str] = []
     for path in _all_bot_files():

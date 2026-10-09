@@ -7,7 +7,7 @@ unreadable, which is what makes the browser's list hard to search: nothing in
 ``AQ-Centaur-Artemis`` says "Crescent Moon Centaur".
 
 The display text lives beside it in the game's own files, and
-``bartlebot/data/entity_names.json`` is the checked-in join, extracted by
+``bartlebot/game/data/entity_names.json`` is the checked-in join, extracted by
 ``tools/dump_entity_names.py``. That file explains why it is a snapshot rather than the
 run-time lookup WizWalker's ``ClientObject.display_name()`` does, and why it is English only.
 

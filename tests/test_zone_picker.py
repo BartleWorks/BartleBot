@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from bartlebot import card_art, zone_nav
+from bartlebot.game import card_art, zone_nav
 from bartlebot.gui.widgets.picker_popup import PickerRow, filter_sections
 from bartlebot.gui.widgets.zone_picker import (
     SUGGESTED_LIMIT,

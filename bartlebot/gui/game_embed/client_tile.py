@@ -11,7 +11,7 @@ from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot import streamer_mode
-from bartlebot.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
+from bartlebot.game.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui.account_accent import TINT_ALPHA_PERCENT
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow, is_click_notification
 from bartlebot.gui.icon_utils import svg_pixmap
@@ -20,7 +20,7 @@ from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
 
 # FOCUS_BORDER and LABEL_RESERVE are imported rather than defined here: how much chrome
 # a tile wraps around its game window is a term in the screen-fit arithmetic as well as
-# a drawing constant, and bartlebot/game_sizing.py cannot import a QWidget to find out.
+# a drawing constant, and bartlebot/game/game_sizing.py cannot import a QWidget to find out.
 __all__ = [
     "FOCUS_BORDER",
     "LABEL_RESERVE",

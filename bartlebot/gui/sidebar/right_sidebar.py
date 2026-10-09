@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
-from bartlebot.game_sizing import SIDEBAR_MIN_HEIGHT
+from bartlebot.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from bartlebot.gui import screen_fit
 from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.sections.client_section import ClientSection

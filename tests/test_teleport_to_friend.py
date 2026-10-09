@@ -6,7 +6,7 @@ import pytest
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_friend as ttf
-from bartlebot import wizard_names
+from bartlebot.game import wizard_names
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeMachine, message_box_patches
 from tests.port_sim import HOME, PortSim

@@ -4,7 +4,7 @@ A Wizard101 Central Wiki page cannot list two items under one title, so it disam
 variants with a suffix — "(60, Death)", "(Level 90+)", "(Triangle)". The game does
 not need to, and mostly does not show them. Anything matching item names against
 text read off the game's UI has to work in the in-game form, which
-``bartlebot/wiki_drops.py`` derives.
+``bartlebot/game/wiki_drops.py`` derives.
 
 That derivation is a lookup table of suffix kinds, so it fails in one specific way:
 a wiki page introduces a suffix nobody has classified, and the drop silently keeps a
@@ -29,7 +29,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from bartlebot.wiki_drops import (  # noqa: E402
+from bartlebot.game.wiki_drops import (  # noqa: E402
     KIND_NONE,
     KIND_UNCLASSIFIED,
     WIKI_ONLY_KINDS,
@@ -133,7 +133,7 @@ def main() -> None:
 
     unclassified = per_kind.get(KIND_UNCLASSIFIED, 0)
     if unclassified:
-        print(f"\n{unclassified} drop(s) carry a suffix no rule in bartlebot/wiki_drops.py accounts for.")
+        print(f"\n{unclassified} drop(s) carry a suffix no rule in bartlebot/game/wiki_drops.py accounts for.")
         print("Decide whether the game shows it, then add a rule or list it in KNOWN_KEPT_SUFFIXES:")
         for name, bot, category in examples[KIND_UNCLASSIFIED]:
             print(f"  {name!r}  [{category or 'uncategorized'}, {bot}]")

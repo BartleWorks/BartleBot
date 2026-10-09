@@ -2,7 +2,7 @@
 
 import json
 
-from bartlebot import realms
+from bartlebot.game import realms
 
 
 def test_the_snapshot_lists_the_realms_with_an_english_name_each():

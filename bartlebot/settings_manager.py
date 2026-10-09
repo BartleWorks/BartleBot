@@ -11,7 +11,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from bartlebot import bot_options
-from bartlebot.game_sizing import (
+from bartlebot.game.game_sizing import (
     BOTCANVAS_MIN_HEIGHT,
     LEFT_SIDEBAR_MIN_WIDTH,
     RIGHT_SIDEBAR_MIN_WIDTH,
@@ -1065,7 +1065,7 @@ class SettingsManager:
         This is the floor the window may be *dragged* to, so it is measured against the
         panel minimums rather than the configured layout sizes -- unlike
         ``layout_budget``, which asks the opposite question and must not assume the user
-        will crush their sidebars. See bartlebot/game_sizing.py for the two directions.
+        will crush their sidebars. See bartlebot/game/game_sizing.py for the two directions.
 
         *client_count* is 1 by default because that is the floor the window is *given*:
         embedding more raises the game view's own minimum and Qt grows the window to

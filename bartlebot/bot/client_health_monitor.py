@@ -22,7 +22,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from bartlebot import dialog_captions, restricted_zones
+from bartlebot.game import dialog_captions, restricted_zones
 from bartlebot.nodes.paths import (
     MESSAGE_BOX_CAPTION_PATH,
     NETWORK_LINK_BAD_PATH,

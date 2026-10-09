@@ -54,7 +54,7 @@ so the probe collects the needle *before* it needs it.
 
 It also dumps the bytes around each roster hit. If name keys or a level sit beside the
 gid, then enumerating an account's characters for the launch cards falls out for free;
-name keys are the one encoding bartlebot.name_tables can already decode. And because a
+name keys are the one encoding bartlebot.game.name_tables can already decode. And because a
 selection held as an *index* rather than a gid would never show up in step 3, the same
 neighborhood snapshot is re-read after the desk click, so a small integer changing
 beside the roster is caught without a second full scan.

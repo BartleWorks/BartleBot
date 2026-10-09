@@ -4,7 +4,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from bartlebot import dialog_captions, wizard_names
+from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT

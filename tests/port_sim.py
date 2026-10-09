@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 from wizwalker import XYZ
 
-from bartlebot import wizard_names
+from bartlebot.game import wizard_names
 from bartlebot.sightings import SIGHT_RANGE
 from tests.conftest import FakeClient, FakeGidEntity
 

@@ -13,7 +13,8 @@ from dataclasses import dataclass
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import player_realms, scales, zone_names
+from bartlebot import player_realms
+from bartlebot.game import scales, zone_names
 from bartlebot.nodes import node_helpers, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec

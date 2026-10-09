@@ -8,7 +8,7 @@ import pytest
 from wizwalker import XYZ
 
 import bartlebot.nodes.utility.handle_level_scaling as hls
-from bartlebot import scales
+from bartlebot.game import scales
 from bartlebot.nodes.zone_navigation import Outcome
 from tests.conftest import FakeClient, FakeMachine
 
@@ -198,7 +198,7 @@ class _World:
             ("teleport_to_marked_location.recall", self.recall),
         ):
             stack.enter_context(patch(f"bartlebot.nodes.utility.handle_level_scaling.{target}", new=new))
-        stack.enter_context(patch("bartlebot.scales.get", new=lambda key: self.entry if key == "test" else None))
+        stack.enter_context(patch("bartlebot.game.scales.get", new=lambda key: self.entry if key == "test" else None))
         return stack
 
 
@@ -228,7 +228,7 @@ async def test_an_unset_scales_uses_the_default_of_the_bots_world():
         seen.append(config)
         return _PLAIN
 
-    with world.patched(), patch("bartlebot.scales.default_for", new=default_for):
+    with world.patched(), patch("bartlebot.game.scales.default_for", new=default_for):
         result = await hls.run(machine, [client], {"scales": ""})
 
     assert result == "SUCCESS"
@@ -241,7 +241,7 @@ async def test_an_unset_scales_with_no_default_fails_and_says_why():
     world = _World([client])
     machine = _machine([1])
 
-    with world.patched(), patch("bartlebot.scales.default_for", new=lambda config: None):
+    with world.patched(), patch("bartlebot.game.scales.default_for", new=lambda config: None):
         result = await hls.run(machine, [client], {})
 
     assert result == "FAILURE"

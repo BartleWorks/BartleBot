@@ -14,7 +14,7 @@ everyone who runs it to the same place, which is the crowding a favorite realm e
 escape, so ``Favorite Realm`` is in ``bot_options.USER_OWNED_OPTIONS`` and the Options
 surface has no row for it. The stored value is the realm's *key* (its English name); the
 in-game list shows the client's own locale, so a row is matched through
-:func:`bartlebot.realms.matches`, against every locale's text for that key.
+:func:`bartlebot.game.realms.matches`, against every locale's text for that key.
 
 Next-realm mode cycles through pages 3-5 of the list. The range used to be two params,
 ``start_realm_page`` and ``end_realm_page``; they held one value across every bot that
@@ -44,7 +44,8 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from bartlebot import player_realms, realms, sightings
+from bartlebot import player_realms, sightings
+from bartlebot.game import realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT, TRIGGER_TIMEOUT

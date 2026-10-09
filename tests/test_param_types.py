@@ -8,7 +8,7 @@ offers is valid anywhere a zone is, which is what lets one subgraph input feed b
 import pytest
 from PyQt6.QtWidgets import QLineEdit
 
-from bartlebot import zone_nav
+from bartlebot.game import zone_nav
 from bartlebot.gui.canvas.edit_scene import _required_field_empty
 from bartlebot.nodes.node_helpers import has_glob, zone_matches
 from bartlebot.nodes.param_schema import ParamField, narrowest_type

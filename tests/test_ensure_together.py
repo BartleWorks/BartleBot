@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 import bartlebot.nodes.node_helpers as nh
-from bartlebot import wizard_names
+from bartlebot.game import wizard_names
 from bartlebot.sightings import Reading, Sightings, choose_leader
 from tests.conftest import FakeClient, FakeMachine, see_each_other
 

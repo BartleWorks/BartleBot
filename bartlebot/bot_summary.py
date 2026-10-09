@@ -47,8 +47,8 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from bartlebot import entity_names, worlds, zone_names, zone_nav
-from bartlebot.wiki_pages import page_title
+from bartlebot.game import entity_names, worlds, zone_names, zone_nav
+from bartlebot.game.wiki_pages import page_title
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
-from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for

@@ -27,7 +27,7 @@ import math
 from functools import cache
 from pathlib import Path
 
-from bartlebot import scales, zone_names
+from bartlebot.game import scales, zone_names
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,8 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import dialog_captions, player_realms, sightings, wizard_names, zone_names
+from bartlebot import player_realms, sightings
+from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DECLINE_QUEST_PATH,
@@ -200,7 +201,7 @@ async def identify_modal(client) -> str | None:
     """Return the lang key of the modal currently on screen, or None.
 
     Every in-game modal is the same MessageBoxModalWindow tree, so "a modal is up" says
-    nothing about which one it is. Its caption does: see bartlebot.dialog_captions for the
+    nothing about which one it is. Its caption does: see bartlebot.game.dialog_captions for the
     key constants to compare against (INSTANCE_EXIT, FRIEND_BUSY, …) and for how the match
     survives markup, substitution slots, and all seven locales.
 

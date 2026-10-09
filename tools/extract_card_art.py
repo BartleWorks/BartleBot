@@ -12,7 +12,7 @@ WHY THIS IS A TOOL AND NOT A FEATURE
     (see "No real player data" in the root ``CLAUDE.md``). Writing into
     ``%APPDATA%/Bartleby/BartleBot/art`` puts the output somewhere the repo cannot
     reach even by accident, and leaves every install without art until its user asks
-    for it. ``bartlebot/card_art.py`` is the read side, and treats absent art as the
+    for it. ``bartlebot/game/card_art.py`` is the read side, and treats absent art as the
     ordinary case.
 
 WHERE THE ART COMES FROM
@@ -55,8 +55,8 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bartlebot import badge_categories  # noqa: E402
-from bartlebot.card_art import (  # noqa: E402
+from bartlebot.game import badge_categories  # noqa: E402
+from bartlebot.game.card_art import (  # noqa: E402
     ARCHMASTERY_ICON,
     DUNGEON_ICON,
     ICONS_DIRNAME,
@@ -73,8 +73,8 @@ from bartlebot.card_art import (  # noqa: E402
     tag_icon_name,
     world_icon_name,
 )
-from bartlebot.spell_schools import SCHOOL_ORDER  # noqa: E402
-from bartlebot.worlds import DUNGEON_WORLDS  # noqa: E402
+from bartlebot.game.spell_schools import SCHOOL_ORDER  # noqa: E402
+from bartlebot.game.worlds import DUNGEON_WORLDS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,7 @@ TAG_TEXTURES: dict[str, str] = {
 #: sheets.
 #:
 #: Sun, Star and Moon are also real schools. These are *not* those medallions -- see
-#: :func:`~bartlebot.card_art.duel_slot_icon_name` for why the slot number is the key.
+#: :func:`~bartlebot.game.card_art.duel_slot_icon_name` for why the slot number is the key.
 DUEL_SLOT_TEXTURES: dict[int, str] = {
     1: "GUI/Art/Art_Target_Sun.dds",
     2: "GUI/Art/Art_Target_Eye.dds",

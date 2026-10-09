@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import DropModel
+from bartlebot.game.wiki_drops import match_name_for
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
@@ -32,7 +33,6 @@ from bartlebot.gui.widgets.drop_tree import (
     show_drop_icons,
 )
 from bartlebot.nodes.utility.quicksell import DROP_CATEGORIES
-from bartlebot.wiki_drops import match_name_for
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

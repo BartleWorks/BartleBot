@@ -151,7 +151,7 @@ Art therefore has no checked-in snapshot and never gets one — not the spell ca
 and not the school and archmastery icons beside it. The user extracts all of it on
 their own machine with `tools/extract_card_art.py`, into
 `%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely, so an accidental `git
-add` cannot reach it. `bartlebot/card_art.py` is the read side, and **every lookup
+add` cannot reach it. `bartlebot/game/card_art.py` is the read side, and **every lookup
 returning `None` is the ordinary case**: most installs never run the extractor, so any
 surface using art needs a form that works without it. `tools/CLAUDE.md` has the
 extraction details, `bartlebot/gui/CLAUDE.md` the fallback rules.

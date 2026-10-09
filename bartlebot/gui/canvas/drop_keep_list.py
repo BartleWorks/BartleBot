@@ -265,7 +265,7 @@ class DropKeepListWidget(QWidget):
     the keep list reads, and a warning line under the summary says why.
 
     Ticking a row adds the drop's *in-game* name, which is not always the wiki name
-    the row displays (see ``bartlebot/wiki_drops.py``). Where several drops share
+    the row displays (see ``bartlebot/game/wiki_drops.py``). Where several drops share
     one in-game name the game gives the node no way to tell them apart, so they
     tick and untick as a group and say so in their tooltip.
     """

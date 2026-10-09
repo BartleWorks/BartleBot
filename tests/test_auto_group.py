@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 import bartlebot.client_manager as cm
+import bartlebot.game.wizard_names as wn
 import bartlebot.group_manager as gm
-import bartlebot.wizard_names as wn
 from bartlebot.client_manager import ClientManager
 from bartlebot.group_manager import GroupResult, GroupState
 from tests.conftest import FakeClient
