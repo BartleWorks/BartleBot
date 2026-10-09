@@ -11,12 +11,12 @@ from PyQt6.QtGui import QColor, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import QApplication
 
 from bartlebot import dsl_syntax
-from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import DARK, LIGHT, active_theme, set_theme_instance
 from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit, DslPlainTextEdit
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warnings
+from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 
 _BROKEN = "any<damag> @ enemy"  # stops parsing at line 1, column 5
 

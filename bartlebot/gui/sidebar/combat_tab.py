@@ -98,14 +98,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import bot_roots
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DeckData,
-    DuelCombatStrategy,
-    FightRef,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat_grouping import (
     apply_membership,
     build_bindings,
@@ -151,6 +144,7 @@ from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.strategy_store import (
     StrategyKind,
     delete_bot_strategy,
@@ -1447,7 +1441,7 @@ class CombatTab(QWidget):
         self._decks_section.refresh(decks)
 
     def _on_save_deck_to_library(self, slot: int) -> None:
-        from bartlebot.bot.strategy_models import DeckPreset  # noqa: PLC0415
+        from bartlebot.shared.strategy_models import DeckPreset  # noqa: PLC0415
         from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
 
         if self._bcs is None:

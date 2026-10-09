@@ -83,7 +83,7 @@ from bartlebot.utils.window_kill import force_close_client
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine, Sequence
 
-    from bartlebot.bot.strategy_models import DeckData
+    from bartlebot.shared.strategy_models import DeckData
 
 #: What a PlayerCard shows for a zone it could not read; never a real zone name.
 _ZONE_PLACEHOLDER = "—"
@@ -2386,7 +2386,7 @@ class AppController(QObject):
         The read half of an import, shared by one slot and by all of them, so Import all
         can read concurrently and still save once.
         """
-        from bartlebot.bot.strategy_models import DeckData  # noqa: PLC0415
+        from bartlebot.shared.strategy_models import DeckData  # noqa: PLC0415
 
         logger.info("Importing deck for slot %d", slot)
         try:

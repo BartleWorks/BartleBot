@@ -16,8 +16,8 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot.bot.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.paths import project_root
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.store_roots import declared_id, find_by_id, index_dir, save_by_id, slugify
 from bartlebot.strategy_store import (
     Origin,

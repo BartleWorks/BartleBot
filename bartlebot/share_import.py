@@ -65,7 +65,7 @@ from pydantic import BaseModel, ValidationError
 
 from bartlebot import bot_roots, restricted_zones, strategy_store
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
-from bartlebot.bot.strategy_models import BotCombatStrategy, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
+from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.combat_profile import duplicate_profile, read_bot_names
 from bartlebot.new_bot import file_stem, library_folders, unique_file_name
 from bartlebot.nodes.registry import NODE_REGISTRY
@@ -99,7 +99,7 @@ from bartlebot.shared.share_match import (
 )
 from bartlebot.shared.store_files import Origin, load_in
 from bartlebot.shared.strategy_library import LibraryKind
-from bartlebot.shared.strategy_models import LIBRARY_FORMAT
+from bartlebot.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.shared.vendor import PRODUCT
 from bartlebot.store_roots import resolve_roots, resolve_shared_roots
 from bartlebot.strategy_store import StrategyKind, unique_name

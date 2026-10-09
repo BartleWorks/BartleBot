@@ -22,12 +22,8 @@ from bartlebot.store_roots import Origin
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
-    from bartlebot.bot.strategy_models import (
-        BotCombatStrategy,
-        DeckPreset,
-        DuelConfig,
-        PlayerCombatStrategy,
-    )
+    from bartlebot.bot.strategy_models import BotCombatStrategy
+    from bartlebot.shared.strategy_models import DeckPreset, DuelConfig, PlayerCombatStrategy
 
 # Truncation length for an inline DSL preview — the picker's own figure, now
 # canonical everywhere.  Surfaces that elide visually (the Combat tab's

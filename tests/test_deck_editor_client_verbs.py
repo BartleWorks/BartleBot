@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from bartlebot.bot.strategy_models import DeckData, DeckPreset
 from bartlebot.gui.combat_strategies import deck_editor as deck_editor_module
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.deck_content import APPLY_DECK, IMPORT_DECK
+from bartlebot.shared.strategy_models import DeckData, DeckPreset
 
 
 class _Clients:

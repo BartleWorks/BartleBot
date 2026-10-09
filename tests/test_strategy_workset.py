@@ -6,8 +6,8 @@ and none of that reasoning needs a QApplication to check.
 
 from pathlib import Path
 
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
+from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.shared.strategy_models import (
     DeckData,
     DeckPreset,
     DuelCombatStrategy,

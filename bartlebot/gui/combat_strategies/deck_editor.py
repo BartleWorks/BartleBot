@@ -35,7 +35,6 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from bartlebot.bot.strategy_models import DeckData, DeckPreset
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.deck_content import APPLY_DECK, IMPORT_DECK
 from bartlebot.gui.widgets.action_button import ActionButton
@@ -44,6 +43,7 @@ from bartlebot.gui.widgets.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.school_picker import SchoolPickerButton
+from bartlebot.shared.strategy_models import DeckData, DeckPreset
 
 #: Said in place of the card list for a preset holding nothing. A preset *can* be empty:
 #: ``+ New`` makes one before anything has been captured into it.

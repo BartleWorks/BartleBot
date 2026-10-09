@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bartlebot.bot.strategy_models import DeckData
+from bartlebot.shared.strategy_models import DeckData
 
 
 class PreRunDeckHarness:

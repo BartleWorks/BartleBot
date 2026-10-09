@@ -62,7 +62,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from bartlebot.dsl_syntax import DSL_HELP
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
@@ -75,6 +74,7 @@ from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
+from bartlebot.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
 #: each carries. Module level because the tests name them and because ``choose_strategy``

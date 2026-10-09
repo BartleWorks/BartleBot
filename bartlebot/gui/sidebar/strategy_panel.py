@@ -142,7 +142,7 @@ from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
 from bartlebot.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 
 if TYPE_CHECKING:
-    from bartlebot.bot.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
+    from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
     from bartlebot.strategy_summary import StrategySummary
 
 #: What the *default* binding falls through to when it is unset.

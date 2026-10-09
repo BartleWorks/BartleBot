@@ -9,12 +9,8 @@ widget.
 from pathlib import Path
 
 import bartlebot.strategy_workset as workset_mod
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.strategy_store import (
     Origin,
     StrategyKind,

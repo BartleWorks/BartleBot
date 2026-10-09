@@ -48,11 +48,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.strategy_models import (
-    DuelConfig,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 from bartlebot.gui.combat_strategies.assignment_card import AssignmentCard
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.widgets.add_card import AddCard
@@ -60,6 +55,7 @@ from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.drag_reorder import DragReorder
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 
 #: The two section headings, and what the Add card at the foot of the second one reads.
 #: "Player Strategies" rather than "Player assignments": an assignment *is* the pairing

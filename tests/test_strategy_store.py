@@ -3,13 +3,8 @@
 from pathlib import Path
 
 from bartlebot import store_roots
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DuelCombatStrategy,
-    FightRef,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.strategy_store import (
     Origin,
     StrategyKind,

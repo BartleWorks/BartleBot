@@ -27,11 +27,11 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.gui.deck_content import DeckCardEntry, deck_groups
 from bartlebot.gui.widgets.card_art_tile import ROW_TILE, CardArtTile, card_icon, tooltip_for
 from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.shared.strategy_models import DeckData
 
 #: A group heading is the row's own text in bold rather than a heading widget: this is a
 #: list inside a card or a form region, and ``RuleHeading`` would divide the two groups

@@ -42,7 +42,7 @@ from pathlib import Path
 
 from bartlebot import bot_roots, strategy_store
 from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
-from bartlebot.bot.strategy_models import BotCombatStrategy, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
+from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.shared import share_file
 from bartlebot.shared.share_file import (
     DECK,
@@ -60,6 +60,7 @@ from bartlebot.shared.share_file import (
     shareable_deck_data,
 )
 from bartlebot.shared.store_files import Origin, slugify
+from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.shared.vendor import PRODUCT
 from bartlebot.store_roots import declared_id
 from bartlebot.strategy_store import StrategyKind

@@ -4,16 +4,10 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DuelCombatStrategy,
-    FightRef,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.conftest import FakeMachine
 
 

@@ -15,12 +15,6 @@ from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QApplication
 
 from bartlebot import store_roots
-from bartlebot.bot.strategy_models import (
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 from bartlebot.gui.combat_strategies.dialog import (
     FAVORITES_HEADING,
     CombatStrategyDialog,
@@ -29,6 +23,7 @@ from bartlebot.gui.combat_strategies.dialog import (
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_store import StrategyKind, save_deck_preset, save_player_strategy
 from bartlebot.strategy_summary import StrategySummary

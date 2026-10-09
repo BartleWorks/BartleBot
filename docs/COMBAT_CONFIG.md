@@ -222,7 +222,8 @@ follow it by.
 
 | module | holds |
 |---|---|
-| `bot/strategy_models.py` | the five levels, as Pydantic models |
+| `shared/strategy_models.py` | player strategies, duel strategies and decks, as Pydantic models |
+| `bot/strategy_models.py` | the combat profile (`BotCombatStrategy`) and its fight assignments |
 | `strategy_store.py` | the two roots, load/save/delete per kind, `Origin`, `unique_name` |
 | `strategy_workset.py` | the Save/Cancel boundary |
 | `strategy_summary.py` | every display string, derived once |

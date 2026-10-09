@@ -9,15 +9,14 @@ assignment and a linked preset.
 
 from __future__ import annotations
 
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
+from bartlebot.bot.strategy_models import BotCombatStrategy, StateAssignment
+from bartlebot.shared.strategy_models import (
     DeckData,
     DeckPreset,
     DuelCombatStrategy,
     DuelConfig,
     PlayerAssignment,
     PlayerCombatStrategy,
-    StateAssignment,
 )
 from bartlebot.strategy_summary import (
     Health,

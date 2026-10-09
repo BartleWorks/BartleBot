@@ -17,8 +17,8 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import DeckApplyReport
+from bartlebot.shared.strategy_models import DeckData
 
 _BOUND = (
     "_start_deck_job",

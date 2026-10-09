@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot.bot.strategy_models import DeckData, DeckPreset
+from bartlebot.shared.strategy_models import DeckData, DeckPreset
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_store import StrategyKind
 from bartlebot.strategy_summary import summarize_deck

@@ -8,8 +8,9 @@ DuelCombatStrategy    — team-level config for one type of fight
 DeckPreset            — named, reusable deck configuration in the library
 
 Every product by this vendor reads and writes these (``docs/SHARED_CONTENT.md``), so
-they live in :mod:`bartlebot.shared` and import nothing product-specific. BartleBot's
-Bot Combat Strategy, which embeds them, stays in :mod:`bartlebot.bot.strategy_models`.
+they live in :mod:`bartlebot.shared` and import nothing product-specific, and every
+surface imports them from here. BartleBot's Bot Combat Strategy, which embeds them, is
+BartleBot's own and lives in :mod:`bartlebot.bot.strategy_models`.
 
 Each top-level model is stored as an individual JSON file identified by UUID, keeps a
 ``history`` of content hashes and, as an override of an Official one, the hash of what it
