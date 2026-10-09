@@ -9,7 +9,6 @@ import logging
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication,
-    QFrame,
     QHBoxLayout,
     QLayout,
     QToolButton,
@@ -31,6 +30,7 @@ from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.link_button import LinkButton
+from bartlebot.gui.widgets.logo_disc import LogoDisc
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.tile_slots import TileKey, TileSlot, plan_tile_changes
@@ -42,10 +42,10 @@ _user32 = ctypes.windll.user32
 _OVERLAY_BTN_SIZE = 34
 _OVERLAY_BTN_MARGIN = 4
 
-_LOGO_SIZE = 160  # diameter of the circular logo widget
+_LOGO_SIZE = 160  # diameter of the logo disc
 
 
-class _GamePlaceholder(ThemedMixin, QWidget):
+class _GamePlaceholder(QWidget):
     """Placeholder shown in GameView when no clients are embedded.
 
     Three-column layout:
@@ -80,7 +80,6 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         # Set before _build_ui: the constructor's own refresh() reads it.
         self._roster_source = None
         self._build_ui()
-        self.refresh_theme_styles()
         self.refresh()
 
     # ------------------------------------------------------------------
@@ -121,8 +120,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
         center.addStretch(1)
 
-        self._logo = logo = QFrame()
-        logo.setFixedSize(_LOGO_SIZE, _LOGO_SIZE)
+        logo = LogoDisc(_LOGO_SIZE)
         logo_wrapper = QHBoxLayout()
         logo_wrapper.setContentsMargins(0, 0, 0, 0)
         logo_wrapper.addStretch()
@@ -158,10 +156,6 @@ class _GamePlaceholder(ThemedMixin, QWidget):
     def profiles_column(self) -> CardColumn:
         """The Launch Profiles column."""
         return self._profiles_col
-
-    def apply_theme_styles(self) -> None:
-        """The one piece that is not a label -- the rest own their own color."""
-        self._logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
 
     def set_roster_source(self, source) -> None:
         """Supply the callable that answers ``characters_for(username)``.
