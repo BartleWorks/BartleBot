@@ -160,9 +160,8 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         ],
     ),
     (
-        "Combat",
+        "Combat and Recovery",
         [
-            "check_health_and_mana",
             "collect_wisps",
             "handle_combat",
             "handle_potions",
@@ -180,16 +179,22 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         ],
     ),
     (
-        "Utility",
+        "Control Flow",
         [
             "branch",
-            "change_realm",
+            "check_health_and_mana",
             "check_level_scaling",
             "check_zone",
+            "set_variables",
+        ],
+    ),
+    (
+        "Utility",
+        [
+            "change_realm",
             "handle_level_scaling",
             "quicksell",
             "relog",
-            "set_variables",
             "sleep",
         ],
     ),

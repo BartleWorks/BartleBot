@@ -2,7 +2,7 @@
 
 What a bot learns as it runs and reads back to choose its next node: the model, the
 rules the engine and validation hold it to, and when to reach for a subgraph instead.
-The plan, epic #16, lives on a claude.ai page (*Runtime flow control*); this file is the
+The plan, epic #16, lives on a claude.ai page (*Runtime control flow*); this file is the
 part of it that governs code. Stage 1 (#186) is the engine, Stage 2 (#187) the editors,
 Stage 3 (#188) reading a run: the live values and the log, and Stage 4 (#189) assignments
 on edges.
