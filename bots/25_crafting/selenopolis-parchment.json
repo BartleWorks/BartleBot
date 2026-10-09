@@ -8,10 +8,12 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Ancient Scroll"
+      "name": "Ancient Scroll",
+      "category": "Reagents"
     },
     {
-      "name": "Parchment"
+      "name": "Parchment",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",

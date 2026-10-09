@@ -8,109 +8,144 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Cloak of the Seasons"
+      "name": "Cloak of the Seasons",
+      "category": "Robes"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of Blazes"
+      "name": "Cowl of Blazes",
+      "category": "Hats"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Deck of Perfect Harmony"
+      "name": "Deck of Perfect Harmony",
+      "category": "Decks"
     },
     {
-      "name": "Drake Marker"
+      "name": "Drake Marker",
+      "category": "Housing Items"
     },
     {
-      "name": "Drape of Symmetry"
+      "name": "Drape of Symmetry",
+      "category": "Robes"
     },
     {
-      "name": "Dull Blocking Onyx +4"
+      "name": "Dull Blocking Onyx +4",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Damage Citrine +13"
+      "name": "Dull Damage Citrine +13",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Damage Jade +13"
+      "name": "Dull Damage Jade +13",
+      "category": "Jewels"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Footgear of Craftsmanship"
+      "name": "Footgear of Craftsmanship",
+      "category": "Boots"
     },
     {
-      "name": "Headgear of the Ice Pilot"
+      "name": "Headgear of the Ice Pilot",
+      "category": "Hats"
     },
     {
-      "name": "Hood of the Historian"
+      "name": "Hood of the Historian",
+      "category": "Hats"
     },
     {
-      "name": "King Parsley"
+      "name": "King Parsley",
+      "category": "Seeds"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Monsoon Mocassins"
+      "name": "Monsoon Mocassins",
+      "category": "Boots"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ozone Shroud"
+      "name": "Ozone Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Sandals of the Prophet"
+      "name": "Sandals of the Prophet",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Gloom"
+      "name": "Shoes of Gloom",
+      "category": "Boots"
     },
     {
-      "name": "Signet of the Reaper"
+      "name": "Signet of the Reaper",
+      "category": "Rings"
     },
     {
-      "name": "Slippers of the Ice Flow"
+      "name": "Slippers of the Ice Flow",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of the Slipstream"
+      "name": "Slippers of the Slipstream",
+      "category": "Boots"
     },
     {
-      "name": "Snowflake Plaque"
+      "name": "Snowflake Plaque",
+      "category": "Housing Items"
     },
     {
-      "name": "Soothing Steel"
+      "name": "Soothing Steel",
+      "category": "Athames"
     },
     {
-      "name": "Stonecutter"
+      "name": "Stonecutter",
+      "category": "Athames"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tunic of Effervescence"
+      "name": "Tunic of Effervescence",
+      "category": "Robes"
     },
     {
-      "name": "Valerik's Chilled Vestment"
+      "name": "Valerik's Chilled Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Valerik's Sandals of Destiny"
+      "name": "Valerik's Sandals of Destiny",
+      "category": "Boots"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     }
   ],
   "authors": "BartleBot",
@@ -118,7 +153,15 @@
     "Seeds",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=King Parsley"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_4",
@@ -154,7 +197,7 @@
       },
       "params": {
         "enemy": "Warrior-Male-Armor-Purple-Boss-R8",
-        "wiki_page": "",
+        "wiki_page": "Creature:Valerik Brightsword",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
@@ -440,5 +483,8 @@
   "template": {
     "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
     "version": 1
-  }
+  },
+  "history": [
+    "446c411b1428bc652ab51f90bfe60a43ef97069df925b10ef39ddb7108ccb92d"
+  ]
 }

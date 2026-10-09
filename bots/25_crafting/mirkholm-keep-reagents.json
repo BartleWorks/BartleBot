@@ -8,25 +8,32 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Cat Tail"
+      "name": "Cat Tail",
+      "category": "Reagents"
     },
     {
-      "name": "Diamond"
+      "name": "Diamond",
+      "category": "Reagents"
     },
     {
-      "name": "Frost Flower"
+      "name": "Frost Flower",
+      "category": "Reagents"
     },
     {
-      "name": "Grendelweed"
+      "name": "Grendelweed",
+      "category": "Reagents"
     },
     {
-      "name": "Kelp"
+      "name": "Kelp",
+      "category": "Reagents"
     },
     {
-      "name": "Ore"
+      "name": "Ore",
+      "category": "Reagents"
     },
     {
-      "name": "Water Lily"
+      "name": "Water Lily",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",

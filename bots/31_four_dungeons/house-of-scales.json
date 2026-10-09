@@ -8,416 +8,553 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Ancient Rebus Headgear"
+      "name": "Ancient Rebus Headgear",
+      "category": "Hats"
     },
     {
-      "name": "Ancient Rebus Sandals"
+      "name": "Ancient Rebus Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Ancient Rebus Vestment"
+      "name": "Ancient Rebus Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Anubis' Cards of Veracity"
+      "name": "Anubis' Cards of Veracity",
+      "category": "Decks"
     },
     {
-      "name": "Anubis' Crown of Judgment"
+      "name": "Anubis' Crown of Judgment",
+      "category": "Hats"
     },
     {
-      "name": "Anubis' Staff of Redress"
+      "name": "Anubis' Staff of Redress",
+      "category": "Wands"
     },
     {
-      "name": "Anubis' Tunic of Judgment"
+      "name": "Anubis' Tunic of Judgment",
+      "category": "Robes"
     },
     {
-      "name": "Army of the Condemned Helm"
+      "name": "Army of the Condemned Helm",
+      "category": "Hats"
     },
     {
-      "name": "Array of the Archaic Rebus"
+      "name": "Array of the Archaic Rebus",
+      "category": "Decks"
     },
     {
-      "name": "Baby Carrots"
+      "name": "Baby Carrots",
+      "category": "Seeds"
     },
     {
-      "name": "Biting Cold Broadsword"
+      "name": "Biting Cold Broadsword",
+      "category": "Wands"
     },
     {
-      "name": "Blade of Anubis' Verdict"
+      "name": "Blade of Anubis' Verdict",
+      "category": "Athames"
     },
     {
-      "name": "Blizzard Lizard Sapphire"
+      "name": "Blizzard Lizard Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Blood Hound"
+      "name": "Blood Hound",
+      "category": "Pets"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of the Burning Scales"
+      "name": "Boots of the Burning Scales",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Condemned"
+      "name": "Boots of the Condemned",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Fire Sands"
+      "name": "Boots of the Fire Sands",
+      "category": "Boots"
     },
     {
-      "name": "Boss Toad Peridot"
+      "name": "Boss Toad Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Burning Scales Headdress"
+      "name": "Burning Scales Headdress",
+      "category": "Hats"
     },
     {
-      "name": "Burning Scales Raiment"
+      "name": "Burning Scales Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Case of the Virtuous Soul"
+      "name": "Case of the Virtuous Soul",
+      "category": "Decks"
     },
     {
-      "name": "Cat Bandit Opal"
+      "name": "Cat Bandit Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Cauliflowers",
+      "category": "Snacks"
     },
     {
-      "name": "Cheese Broccoli"
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Chocolate Strawberry"
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Clear Blocking Hematite +10"
+      "name": "Clear Blocking Hematite +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Onyx +10"
+      "name": "Clear Blocking Onyx +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Opal +5"
+      "name": "Clear Blocking Opal +5",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Jade +10"
+      "name": "Clear Critical Jade +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Onyx +10"
+      "name": "Clear Critical Onyx +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Peridot +10"
+      "name": "Clear Critical Peridot +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Damage Ruby +19"
+      "name": "Clear Damage Ruby +19",
+      "category": "Jewels"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cracker"
+      "name": "Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Crown of the Frozen Desert"
+      "name": "Crown of the Frozen Desert",
+      "category": "Hats"
     },
     {
-      "name": "Crown of the Sistrum"
+      "name": "Crown of the Sistrum",
+      "category": "Hats"
     },
     {
-      "name": "Crown of Upper Zigazag"
+      "name": "Crown of Upper Zigazag",
+      "category": "Hats"
     },
     {
-      "name": "Crystallize Sapphire"
+      "name": "Crystallize Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Dagger of the Cold Bones"
+      "name": "Dagger of the Cold Bones",
+      "category": "Athames"
     },
     {
-      "name": "Dagger of the Hidden Words"
+      "name": "Dagger of the Hidden Words",
+      "category": "Athames"
     },
     {
-      "name": "Deck of Sand Squalls"
+      "name": "Deck of Sand Squalls",
+      "category": "Decks"
     },
     {
-      "name": "Deck of the Simmering Evil"
+      "name": "Deck of the Simmering Evil",
+      "category": "Decks"
     },
     {
-      "name": "Deep Mushroom"
+      "name": "Deep Mushroom",
+      "category": "Reagents"
     },
     {
-      "name": "Desert Rain Mukluks"
+      "name": "Desert Rain Mukluks",
+      "category": "Boots"
     },
     {
-      "name": "Detonate Ruby"
+      "name": "Detonate Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Critical Ruby +4"
+      "name": "Dull Critical Ruby +4",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Defense Jade +28"
+      "name": "Dull Defense Jade +28",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Defense Ruby +28"
+      "name": "Dull Defense Ruby +28",
+      "category": "Jewels"
     },
     {
-      "name": "Dune Storm Armor"
+      "name": "Dune Storm Armor",
+      "category": "Robes"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Efreet"
+      "name": "Efreet",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snow Peas"
+      "name": "Evil Snow Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Serpent"
+      "name": "Fire Serpent",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Footwraps of the Sistrum"
+      "name": "Footwraps of the Sistrum",
+      "category": "Boots"
     },
     {
-      "name": "Glowing Star Fruit"
+      "name": "Glowing Star Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Greatsword of Adjudication"
+      "name": "Greatsword of Adjudication",
+      "category": "Wands"
     },
     {
-      "name": "Greatsword of Redemption"
+      "name": "Greatsword of Redemption",
+      "category": "Wands"
     },
     {
-      "name": "Green Grapes"
+      "name": "Green Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Greensleeves Jade"
+      "name": "Greensleeves Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Gummy Firecat"
+      "name": "Gummy Firecat",
+      "category": "Snacks"
     },
     {
-      "name": "Hands of Anubis Boots"
+      "name": "Hands of Anubis Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hands of Anubis Mantle"
+      "name": "Hands of Anubis Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Hands of Anubis Staff"
+      "name": "Hands of Anubis Staff",
+      "category": "Wands"
     },
     {
-      "name": "Hands of Anubis Uniform"
+      "name": "Hands of Anubis Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Headgear of Dune Storms"
+      "name": "Headgear of Dune Storms",
+      "category": "Hats"
     },
     {
-      "name": "Helm of the Ravenous Teeth"
+      "name": "Helm of the Ravenous Teeth",
+      "category": "Hats"
     },
     {
-      "name": "House of Scales Headdress"
+      "name": "House of Scales Headdress",
+      "category": "Hats"
     },
     {
-      "name": "House of Scales Raiment"
+      "name": "House of Scales Raiment",
+      "category": "Robes"
     },
     {
-      "name": "House of Scales Walkers"
+      "name": "House of Scales Walkers",
+      "category": "Boots"
     },
     {
-      "name": "Ice-Giver Sapphire"
+      "name": "Ice-Giver Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Izft's Dirk of Incarnation"
+      "name": "Izft's Dirk of Incarnation",
+      "category": "Athames"
     },
     {
-      "name": "Jelly Baby"
+      "name": "Jelly Baby",
+      "category": "Snacks"
     },
     {
-      "name": "Key Limes"
+      "name": "Key Limes",
+      "category": "Seeds"
     },
     {
-      "name": "Kola Nuts"
+      "name": "Kola Nuts",
+      "category": "Snacks"
     },
     {
-      "name": "Kris of Thunderous Resolve"
+      "name": "Kris of Thunderous Resolve",
+      "category": "Athames"
     },
     {
-      "name": "Krokotillian"
+      "name": "Krokotillian",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Life-Away Jade"
+      "name": "Life-Away Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Giver Jade"
+      "name": "Life-Giver Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Longblade of the Soul Eater"
+      "name": "Longblade of the Soul Eater",
+      "category": "Wands"
     },
     {
-      "name": "Lower Zigazag Headdress"
+      "name": "Lower Zigazag Headdress",
+      "category": "Hats"
     },
     {
-      "name": "Lower Zigazag Stalkers"
+      "name": "Lower Zigazag Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Lower Zigazag Vestment"
+      "name": "Lower Zigazag Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Merle's Whisker"
+      "name": "Merle's Whisker",
+      "category": "Reagents"
     },
     {
-      "name": "Montante of the Immortals"
+      "name": "Montante of the Immortals",
+      "category": "Wands"
     },
     {
-      "name": "Mote of Severity"
+      "name": "Mote of Severity",
+      "category": "Reagents"
     },
     {
-      "name": "Nettle Root"
+      "name": "Nettle Root",
+      "category": "Snacks"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ore"
+      "name": "Ore",
+      "category": "Reagents"
     },
     {
-      "name": "Pipe Down! Opal"
+      "name": "Pipe Down! Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Accurate Jade +7%"
+      "name": "Plain Accurate Jade +7%",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Accurate Peridot +7%"
+      "name": "Plain Accurate Peridot +7%",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Critical Peridot +6"
+      "name": "Plain Critical Peridot +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Critical Sapphire +6"
+      "name": "Plain Critical Sapphire +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Piercing Jade +3%"
+      "name": "Plain Piercing Jade +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Piercing Ruby +3%"
+      "name": "Plain Piercing Ruby +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Ra"
+      "name": "Ra",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ravenous Teeth Garb"
+      "name": "Ravenous Teeth Garb",
+      "category": "Robes"
     },
     {
-      "name": "Ravenous Teeth Stompers"
+      "name": "Ravenous Teeth Stompers",
+      "category": "Boots"
     },
     {
-      "name": "Rebus Breaker's Stave"
+      "name": "Rebus Breaker's Stave",
+      "category": "Wands"
     },
     {
-      "name": "Robes of the Fire Sands"
+      "name": "Robes of the Fire Sands",
+      "category": "Robes"
     },
     {
-      "name": "Robes of the Frozen Desert"
+      "name": "Robes of the Frozen Desert",
+      "category": "Robes"
     },
     {
-      "name": "Robes of the Sistrum"
+      "name": "Robes of the Sistrum",
+      "category": "Robes"
     },
     {
-      "name": "Rod of the Burning Scales"
+      "name": "Rod of the Burning Scales",
+      "category": "Wands"
     },
     {
-      "name": "Sandswells Greatblade"
+      "name": "Sandswells Greatblade",
+      "category": "Wands"
     },
     {
-      "name": "Scarab"
+      "name": "Scarab",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorching Sands Greatsword"
+      "name": "Scorching Sands Greatsword",
+      "category": "Wands"
     },
     {
-      "name": "Scorpion"
+      "name": "Scorpion",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Shoes of Anubis' Judgment"
+      "name": "Shoes of Anubis' Judgment",
+      "category": "Boots"
     },
     {
-      "name": "Snap Dragon"
+      "name": "Snap Dragon",
+      "category": "Seeds"
     },
     {
       "name": "Soul Devourer's Arcana (Triangle)",
+      "category": "Decks",
       "match_name": "Soul Devourer's Arcana"
     },
     {
-      "name": "Soul Devourer's Footwraps"
+      "name": "Soul Devourer's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Soul Devourer's Greathelm"
+      "name": "Soul Devourer's Greathelm",
+      "category": "Hats"
     },
     {
-      "name": "Soul Devourer's Tunic"
+      "name": "Soul Devourer's Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Stave of Cold Justice"
+      "name": "Stave of Cold Justice",
+      "category": "Wands"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Stone Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stone Skeleton Key"
+      "name": "Stone Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "Stonewall Opal"
+      "name": "Stonewall Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sugar Donut"
+      "name": "Sugar Donut",
+      "category": "Snacks"
     },
     {
-      "name": "Sunbird"
+      "name": "Sunbird",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tiny Fish"
+      "name": "Tiny Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Tunic of Upper Zigazag"
+      "name": "Tunic of Upper Zigazag",
+      "category": "Robes"
     },
     {
-      "name": "Uniform of the Condemned"
+      "name": "Uniform of the Condemned",
+      "category": "Robes"
     },
     {
-      "name": "Upper Zigazag Striders"
+      "name": "Upper Zigazag Striders",
+      "category": "Boots"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Wrath of Anubis Staff"
+      "name": "Wrath of Anubis Staff",
+      "category": "Wands"
     },
     {
-      "name": "Zigazag Desert Armor"
+      "name": "Zigazag Desert Armor",
+      "category": "Robes"
     },
     {
-      "name": "Zigazag Desert Headgear"
+      "name": "Zigazag Desert Headgear",
+      "category": "Hats"
     },
     {
-      "name": "Zigazag Desert Mukluks"
+      "name": "Zigazag Desert Mukluks",
+      "category": "Boots"
     }
   ],
   "authors": "BartleBot",
@@ -425,7 +562,35 @@
     "Gear",
     "Dungeon"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Crown of the Sistrum",
+        "=Footwraps of the Sistrum",
+        "=Robes of the Sistrum",
+        "=Army of the Condemned Helm",
+        "=Boots of the Condemned",
+        "=Uniform of the Condemned",
+        "=House of Scales Headdress",
+        "=House of Scales Raiment",
+        "=House of Scales Walkers",
+        "=Crown of Upper Zigazag",
+        "=Tunic of Upper Zigazag",
+        "=Upper Zigazag Striders",
+        "=Lower Zigazag Headdress",
+        "=Lower Zigazag Stalkers",
+        "=Lower Zigazag Vestment",
+        "=Zigazag Desert Armor",
+        "=Zigazag Desert Headgear",
+        "=Zigazag Desert Mukluks",
+        "=Helm of the Ravenous Teeth",
+        "=Ravenous Teeth Garb",
+        "=Ravenous Teeth Stompers"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -1064,7 +1229,8 @@
       "params": {
         "enemy": "G14-HS-Ammit",
         "use_default_strategy": false,
-        "max_duration": 5.0
+        "max_duration": 5.0,
+        "wiki_page": "Creature:Ammit the Devourer"
       }
     },
     {
@@ -1664,5 +1830,8 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "687bd5ee28a01f58e92e46b0d4263b570655edc43e5f088acc62078abf877962"
+  ]
 }

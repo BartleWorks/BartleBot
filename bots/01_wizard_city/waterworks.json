@@ -8,583 +8,776 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Accurate"
+      "name": "Accurate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Amber Dust"
+      "name": "Amber Dust",
+      "category": "Reagents"
     },
     {
-      "name": "Amplify"
+      "name": "Amplify",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Animate Skeleton Onyx"
+      "name": "Animate Skeleton Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Aquamarine"
+      "name": "Aquamarine",
+      "category": "Reagents"
     },
     {
-      "name": "Availing Hands Citrine"
+      "name": "Availing Hands Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Baby Carrot"
+      "name": "Baby Carrot",
+      "category": "Snacks"
     },
     {
-      "name": "Balance Mastery Amulet"
+      "name": "Balance Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Balefrost"
+      "name": "Balefrost",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Black Widow Onyx"
+      "name": "Black Widow Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Blade of Ice Sapphire"
+      "name": "Blade of Ice Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Boots of Catastrophe"
+      "name": "Boots of Catastrophe",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Esprit"
+      "name": "Boots of Esprit",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Judgment"
+      "name": "Boots of Judgment",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Brilliant Light Jade"
+      "name": "Brilliant Light Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Brimstone Boots"
+      "name": "Brimstone Boots",
+      "category": "Boots"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Buff Minion Peridot"
+      "name": "Buff Minion Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Bullheaded Peridot"
+      "name": "Bullheaded Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Burning Pixie"
+      "name": "Burning Pixie",
+      "category": "Pets"
     },
     {
-      "name": "Cape of Esprit"
+      "name": "Cape of Esprit",
+      "category": "Robes"
     },
     {
-      "name": "Cape of Judgment"
+      "name": "Cape of Judgment",
+      "category": "Robes"
     },
     {
-      "name": "Captain Canteloupe"
+      "name": "Captain Canteloupe",
+      "category": "Snacks"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Cauliflowers",
+      "category": "Snacks"
     },
     {
-      "name": "Cherry Tomato"
+      "name": "Cherry Tomato",
+      "category": "Snacks"
     },
     {
-      "name": "Clear Blocking Hematite +10"
+      "name": "Clear Blocking Hematite +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Opal +5"
+      "name": "Clear Blocking Opal +5",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Amethyst +10"
+      "name": "Clear Critical Amethyst +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Jade +10"
+      "name": "Clear Critical Jade +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Peridot +10"
+      "name": "Clear Critical Peridot +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Damage Citrine +19"
+      "name": "Clear Damage Citrine +19",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Damage Onyx +19"
+      "name": "Clear Damage Onyx +19",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Damage Peridot +19"
+      "name": "Clear Damage Peridot +19",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Defense Hematite +40"
+      "name": "Clear Defense Hematite +40",
+      "category": "Jewels"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Combustible Band"
+      "name": "Combustible Band",
+      "category": "Rings"
     },
     {
-      "name": "Crab Apples"
+      "name": "Crab Apples",
+      "category": "Snacks"
     },
     {
-      "name": "Cubby Broccoli"
+      "name": "Cubby Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Cyclops Minion Peridot"
+      "name": "Cyclops Minion Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Dagger of Typhoons"
+      "name": "Dagger of Typhoons",
+      "category": "Athames"
     },
     {
-      "name": "Darkwind"
+      "name": "Darkwind",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dastardly Radish"
+      "name": "Dastardly Radish",
+      "category": "Snacks"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Death Mastery Amulet"
+      "name": "Death Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Delectable Hooves"
+      "name": "Delectable Hooves",
+      "category": "Boots"
     },
     {
-      "name": "Delicious Cookie"
+      "name": "Delicious Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Detonate Ruby"
+      "name": "Detonate Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Devoted Vestment"
+      "name": "Devoted Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Dimension Shift Peridot"
+      "name": "Dimension Shift Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Dirk of Delusion"
+      "name": "Dirk of Delusion",
+      "category": "Athames"
     },
     {
-      "name": "Donate Power"
+      "name": "Donate Power",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Doom and Gloom"
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dragonflies"
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dragonhorned Melon"
+      "name": "Dragonhorned Melon",
+      "category": "Snacks"
     },
     {
-      "name": "Draw Health Sapphire"
+      "name": "Draw Health Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Empower"
+      "name": "Empower",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Enfeeble Amethyst"
+      "name": "Enfeeble Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Facade of Fairness"
+      "name": "Facade of Fairness",
+      "category": "Hats"
     },
     {
-      "name": "Fancy Yogurt"
+      "name": "Fancy Yogurt",
+      "category": "Snacks"
     },
     {
-      "name": "Fire Mastery Amulet"
+      "name": "Fire Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Firestarter's Boots"
+      "name": "Firestarter's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Firestarter's Cape"
+      "name": "Firestarter's Cape",
+      "category": "Robes"
     },
     {
-      "name": "Firestarter's Hood"
+      "name": "Firestarter's Hood",
+      "category": "Hats"
     },
     {
-      "name": "Fish Fin"
+      "name": "Fish Fin",
+      "category": "Reagents"
     },
     {
-      "name": "Flowering Pineapple"
+      "name": "Flowering Pineapple",
+      "category": "Snacks"
     },
     {
-      "name": "Forgotten Facade"
+      "name": "Forgotten Facade",
+      "category": "Hats"
     },
     {
-      "name": "Fossil"
+      "name": "Fossil",
+      "category": "Reagents"
     },
     {
-      "name": "Frostbit Boots"
+      "name": "Frostbit Boots",
+      "category": "Boots"
     },
     {
-      "name": "Frostbit Cape"
+      "name": "Frostbit Cape",
+      "category": "Robes"
     },
     {
-      "name": "Frostbit Footguards"
+      "name": "Frostbit Footguards",
+      "category": "Boots"
     },
     {
-      "name": "Frostbit Hood"
+      "name": "Frostbit Hood",
+      "category": "Hats"
     },
     {
-      "name": "Frozen Armor Sapphire"
+      "name": "Frozen Armor Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Gargantuan"
+      "name": "Gargantuan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Get Sunbird Ruby"
+      "name": "Get Sunbird Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Giant"
+      "name": "Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Glowing Star Fruit"
+      "name": "Glowing Star Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Glowing Taffy"
+      "name": "Glowing Taffy",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Grapes"
+      "name": "Golden Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Wheat Bread"
+      "name": "Golden Wheat Bread",
+      "category": "Snacks"
     },
     {
-      "name": "Golem Minion Peridot"
+      "name": "Golem Minion Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Great Learner Opal"
+      "name": "Great Learner Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Green Tomato"
+      "name": "Green Tomato",
+      "category": "Snacks"
     },
     {
-      "name": "Hambrosia"
+      "name": "Hambrosia",
+      "category": "Snacks"
     },
     {
-      "name": "Hangman's Boots"
+      "name": "Hangman's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hangman's Cape"
+      "name": "Hangman's Cape",
+      "category": "Robes"
     },
     {
-      "name": "Hangman's Hood"
+      "name": "Hangman's Hood",
+      "category": "Hats"
     },
     {
-      "name": "Heart o'Pixie Jade"
+      "name": "Heart o'Pixie Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Helm of Burning Ambition"
+      "name": "Helm of Burning Ambition",
+      "category": "Hats"
     },
     {
-      "name": "Hexster Citrine"
+      "name": "Hexster Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Hood of Esprit"
+      "name": "Hood of Esprit",
+      "category": "Hats"
     },
     {
-      "name": "Hood of Judgment"
+      "name": "Hood of Judgment",
+      "category": "Hats"
     },
     {
-      "name": "Ice Mastery Amulet"
+      "name": "Ice Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Ice Rangers"
+      "name": "Ice Rangers",
+      "category": "Boots"
     },
     {
-      "name": "Icestar Stalkers"
+      "name": "Icestar Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Insightful Topper"
+      "name": "Insightful Topper",
+      "category": "Hats"
     },
     {
-      "name": "Kris of the Piscean Guard"
+      "name": "Kris of the Piscean Guard",
+      "category": "Athames"
     },
     {
-      "name": "Life Mastery Amulet"
+      "name": "Life Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Lifeforce Blade"
+      "name": "Lifeforce Blade",
+      "category": "Wands"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Majestic Signet"
+      "name": "Majestic Signet",
+      "category": "Rings"
     },
     {
-      "name": "Mander Minion Citrine"
+      "name": "Mander Minion Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Mass Triage Jade"
+      "name": "Mass Triage Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Mend Minion Peridot"
+      "name": "Mend Minion Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Merle's Whisker"
+      "name": "Merle's Whisker",
+      "category": "Reagents"
     },
     {
-      "name": "Minotaur"
+      "name": "Minotaur",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mithril"
+      "name": "Mithril",
+      "category": "Reagents"
     },
     {
-      "name": "Mutate Snowman (Fire)"
+      "name": "Mutate Snowman (Fire)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mutate Snowman (Storm)"
+      "name": "Mutate Snowman (Storm)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mysterious Costume"
+      "name": "Mysterious Costume",
+      "category": "Robes"
     },
     {
-      "name": "Mystic Dragon Fruit"
+      "name": "Mystic Dragon Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Myth Mastery Amulet"
+      "name": "Myth Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Natural Boots"
+      "name": "Natural Boots",
+      "category": "Boots"
     },
     {
-      "name": "Nereus's Hoarfrost Helm"
+      "name": "Nereus's Hoarfrost Helm",
+      "category": "Hats"
     },
     {
-      "name": "Ninja Pig Opal"
+      "name": "Ninja Pig Opal",
+      "category": "Jewels"
     },
     {
-      "name": "No Pain, No Gain Onyx"
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Opaque Blocking Sapphire +8"
+      "name": "Opaque Blocking Sapphire +8",
+      "category": "Jewels"
     },
     {
-      "name": "Opaque Damage Citrine +17"
+      "name": "Opaque Damage Citrine +17",
+      "category": "Jewels"
     },
     {
-      "name": "Opaque Damage Sapphire +17"
+      "name": "Opaque Damage Sapphire +17",
+      "category": "Jewels"
     },
     {
-      "name": "Opaque Defense Opal +18"
+      "name": "Opaque Defense Opal +18",
+      "category": "Jewels"
     },
     {
-      "name": "Pest Zapper"
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Pink Jellyfish"
+      "name": "Pink Jellyfish",
+      "category": "Pets"
     },
     {
-      "name": "Polar Boots"
+      "name": "Polar Boots",
+      "category": "Boots"
     },
     {
-      "name": "Polished Blocking Opal +6"
+      "name": "Polished Blocking Opal +6",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Amethyst +11"
+      "name": "Polished Critical Amethyst +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Citrine +11"
+      "name": "Polished Critical Citrine +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Onyx +21"
+      "name": "Polished Damage Onyx +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Peridot +21"
+      "name": "Polished Damage Peridot +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Sapphire +21"
+      "name": "Polished Damage Sapphire +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Opal +22"
+      "name": "Polished Defense Opal +22",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Health Opal +90"
+      "name": "Polished Health Opal +90",
+      "category": "Jewels"
     },
     {
-      "name": "Power Link Ruby"
+      "name": "Power Link Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Precision"
+      "name": "Precision",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Purloin Health Talent Citrine"
+      "name": "Purloin Health Talent Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Purloin Power Amethyst"
+      "name": "Purloin Power Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Reckless Raiment"
+      "name": "Reckless Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Rime Runners"
+      "name": "Rime Runners",
+      "category": "Boots"
     },
     {
-      "name": "Ring of Rare Origins"
+      "name": "Ring of Rare Origins",
+      "category": "Rings"
     },
     {
-      "name": "Rising Tide Topper"
+      "name": "Rising Tide Topper",
+      "category": "Hats"
     },
     {
-      "name": "Salgio's Tinder Cloak"
+      "name": "Salgio's Tinder Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Sanctuary"
+      "name": "Sanctuary",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sandstone"
+      "name": "Sandstone",
+      "category": "Reagents"
     },
     {
-      "name": "Savory Shroud"
+      "name": "Savory Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Scales"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Shell"
+      "name": "Shell",
+      "category": "Reagents"
     },
     {
-      "name": "Shroud of Solitude"
+      "name": "Shroud of Solitude",
+      "category": "Hats"
     },
     {
-      "name": "Silver"
+      "name": "Silver",
+      "category": "Reagents"
     },
     {
-      "name": "Silver Trumpet Vine"
+      "name": "Silver Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Skyscream Boots"
+      "name": "Skyscream Boots",
+      "category": "Boots"
     },
     {
-      "name": "Skyscream Cape"
+      "name": "Skyscream Cape",
+      "category": "Robes"
     },
     {
-      "name": "Skyscream Hood"
+      "name": "Skyscream Hood",
+      "category": "Hats"
     },
     {
-      "name": "Sniper"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sniper Talent Opal"
+      "name": "Sniper Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Snow Drift Sapphire"
+      "name": "Snow Drift Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Spartan Jade"
+      "name": "Spartan Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Spicy Drumstick"
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Spirit Armor"
+      "name": "Spirit Armor",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Block"
+      "name": "Stone Block",
+      "category": "Reagents"
     },
     {
-      "name": "Storm Elemental Opal"
+      "name": "Storm Elemental Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Storm Mastery Amulet"
+      "name": "Storm Mastery Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Stormclaw Amethyst"
+      "name": "Stormclaw Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storyteller's Cap"
+      "name": "Storyteller's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Storyteller's Tunic"
+      "name": "Storyteller's Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Strawberry Cupcake"
+      "name": "Strawberry Cupcake",
+      "category": "Snacks"
     },
     {
-      "name": "Submarine Sandwich"
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
     },
     {
-      "name": "Sun Fruit"
+      "name": "Sun Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Sunbird"
+      "name": "Sunbird",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sunstone"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "Synthesis Cover"
+      "name": "Synthesis Cover",
+      "category": "Hats"
     },
     {
-      "name": "Take Power Ruby"
+      "name": "Take Power Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Talos Peridot"
+      "name": "Talos Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Tasty Tunic"
+      "name": "Tasty Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Thundercloud Coif"
+      "name": "Thundercloud Coif",
+      "category": "Hats"
     },
     {
-      "name": "Time Skip Sapphire"
+      "name": "Time Skip Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Titanium"
+      "name": "Titanium",
+      "category": "Reagents"
     },
     {
-      "name": "Tolerant Boots"
+      "name": "Tolerant Boots",
+      "category": "Boots"
     },
     {
-      "name": "Tragic Tunic"
+      "name": "Tragic Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Tricksy Boots"
+      "name": "Tricksy Boots",
+      "category": "Boots"
     },
     {
-      "name": "Tricksy Cape"
+      "name": "Tricksy Cape",
+      "category": "Robes"
     },
     {
-      "name": "Tricksy Hood"
+      "name": "Tricksy Hood",
+      "category": "Hats"
     },
     {
-      "name": "Tungsten"
+      "name": "Tungsten",
+      "category": "Reagents"
     },
     {
-      "name": "Turbulent Tunic"
+      "name": "Turbulent Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Typhoon Band"
+      "name": "Typhoon Band",
+      "category": "Rings"
     },
     {
-      "name": "Unstoppable"
+      "name": "Unstoppable",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Virtue Shoes"
+      "name": "Virtue Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Virulent Plague Onyx"
+      "name": "Virulent Plague Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Vital Headdress"
+      "name": "Vital Headdress",
+      "category": "Hats"
     },
     {
-      "name": "Whimsical Surcoat"
+      "name": "Whimsical Surcoat",
+      "category": "Robes"
     },
     {
-      "name": "Wraps of Rapport"
+      "name": "Wraps of Rapport",
+      "category": "Boots"
     },
     {
-      "name": "Wyldfire"
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Yellow Corn"
+      "name": "Yellow Corn",
+      "category": "Snacks"
     }
   ],
   "authors": "BartleBot",
@@ -1106,7 +1299,8 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "",
+        "enemy": "Tri-Gauntlet-Squid",
+        "wiki_page": "Creature:Luska Charmbeak",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -1681,6 +1875,7 @@
       },
       "params": {
         "enemy": "Tri-Gauntlet-Angler",
+        "wiki_page": "Creature:Sylster Glowstorm",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -1830,86 +2025,6 @@
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_10",
@@ -2432,6 +2547,26 @@
     },
     {
       "trigger": "advance",
+      "source": "state_54",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Respawn Sylster Glowstorm",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_56",
       "dest": "state_57",
       "when": "SUCCESS",
@@ -2482,6 +2617,26 @@
     },
     {
       "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_3",
       "dest": "state_7",
       "when": "SUCCESS",
@@ -2492,22 +2647,32 @@
     },
     {
       "trigger": "advance",
-      "source": "state_54",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Respawn Sylster Glowstorm",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
@@ -2515,6 +2680,16 @@
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2534,6 +2709,26 @@
       "trigger": "advance",
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2687,5 +2882,10 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "f892d93d45ba7dfcf860943080bd7a9ddc06d7b51c6a6f435809bb6432c3fe4c",
+    "fca2b0859353bc2d15ab2caf75db5a0642cf782ceccf8bff2a7dceb7e522da34",
+    "a9e418ae7b389d6f999544c24c57d138c47fb9fcd1290f8430289c03c8b84c71"
+  ]
 }

@@ -8,526 +8,700 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Aether"
+      "name": "Aether",
+      "category": "Reagents"
     },
     {
-      "name": "Agave Leaves"
+      "name": "Agave Leaves",
+      "category": "Reagents"
     },
     {
-      "name": "Agave Nectar"
+      "name": "Agave Nectar",
+      "category": "Reagents"
     },
     {
-      "name": "Amber"
+      "name": "Amber",
+      "category": "Reagents"
     },
     {
-      "name": "Amber Dust"
+      "name": "Amber Dust",
+      "category": "Reagents"
     },
     {
-      "name": "Angel Oak"
+      "name": "Angel Oak",
+      "category": "Seeds"
     },
     {
-      "name": "Aquamarine"
+      "name": "Aquamarine",
+      "category": "Reagents"
     },
     {
-      "name": "Arcanum Theme"
+      "name": "Arcanum Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Arcticzilla"
+      "name": "Arcticzilla",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Astral Shard"
+      "name": "Astral Shard",
+      "category": "Reagents"
     },
     {
-      "name": "Astraphobia"
+      "name": "Astraphobia",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Balefrost"
+      "name": "Balefrost",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Beast Wellington"
+      "name": "Beast Wellington",
+      "category": "Snacks"
     },
     {
-      "name": "Bleaks Band of Snowstorms"
+      "name": "Bleaks Band of Snowstorms",
+      "category": "Rings"
     },
     {
-      "name": "Bleaks Circle of Pyres"
+      "name": "Bleaks Circle of Pyres",
+      "category": "Rings"
     },
     {
-      "name": "Bleaks Cutter of Despair"
+      "name": "Bleaks Cutter of Despair",
+      "category": "Athames"
     },
     {
-      "name": "Bleaks Dagger of Vigor"
+      "name": "Bleaks Dagger of Vigor",
+      "category": "Athames"
     },
     {
-      "name": "Bleaks Dirk of Mischief"
+      "name": "Bleaks Dirk of Mischief",
+      "category": "Athames"
     },
     {
-      "name": "Bleaks Knife of Snowstorms"
+      "name": "Bleaks Knife of Snowstorms",
+      "category": "Athames"
     },
     {
-      "name": "Bleaks Medallion of Vigor"
+      "name": "Bleaks Medallion of Vigor",
+      "category": "Amulets"
     },
     {
-      "name": "Bleaks Pendant of Mischief"
+      "name": "Bleaks Pendant of Mischief",
+      "category": "Amulets"
     },
     {
-      "name": "Bleaks Seal of Despair"
+      "name": "Bleaks Seal of Despair",
+      "category": "Rings"
     },
     {
-      "name": "Bleaks Signet of Mischief"
+      "name": "Bleaks Signet of Mischief",
+      "category": "Rings"
     },
     {
-      "name": "Bleaks Torc of Snowstorms"
+      "name": "Bleaks Torc of Snowstorms",
+      "category": "Amulets"
     },
     {
-      "name": "Boiled Peanuts"
+      "name": "Boiled Peanuts",
+      "category": "Seeds"
     },
     {
-      "name": "Burning Snap Dragon"
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Chalupacabra"
+      "name": "Chalupacabra",
+      "category": "Snacks"
     },
     {
-      "name": "Cornbread Fruit Bush"
+      "name": "Cornbread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Couch Potatoes"
+      "name": "Couch Potatoes",
+      "category": "Seeds"
     },
     {
-      "name": "Counterforce"
+      "name": "Counterforce",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deathspear"
+      "name": "Deathspear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deepwater Toffee"
+      "name": "Deepwater Toffee",
+      "category": "Snacks"
     },
     {
-      "name": "Dual Balanceblade Citrine"
+      "name": "Dual Balanceblade Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Deathblade Onyx"
+      "name": "Dual Deathblade Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Fireblade Ruby"
+      "name": "Dual Fireblade Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Iceblade Sapphire"
+      "name": "Dual Iceblade Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Lifeblade Jade"
+      "name": "Dual Lifeblade Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Mythblade Peridot"
+      "name": "Dual Mythblade Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Shadowblade Hematite"
+      "name": "Dual Shadowblade Hematite",
+      "category": "Jewels"
     },
     {
-      "name": "Dual Stormblade Amethyst"
+      "name": "Dual Stormblade Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Efreet"
+      "name": "Efreet",
+      "category": "Spellements"
     },
     {
-      "name": "Enchanter's Fervid Cloak"
+      "name": "Enchanter's Fervid Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Enchanter's Set of Frostbite"
+      "name": "Enchanter's Set of Frostbite",
+      "category": "Decks"
     },
     {
-      "name": "Evil Snow Peas"
+      "name": "Evil Snow Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Evoker's Boots of Squalls"
+      "name": "Evoker's Boots of Squalls",
+      "category": "Boots"
     },
     {
-      "name": "Evoker's Brim of Acuity"
+      "name": "Evoker's Brim of Acuity",
+      "category": "Hats"
     },
     {
-      "name": "Evoker's Brim of Squalls"
+      "name": "Evoker's Brim of Squalls",
+      "category": "Hats"
     },
     {
-      "name": "Evoker's Ember Walkers"
+      "name": "Evoker's Ember Walkers",
+      "category": "Boots"
     },
     {
-      "name": "Evoker's Forlorn Robes"
+      "name": "Evoker's Forlorn Robes",
+      "category": "Robes"
     },
     {
-      "name": "Evoker's Forlorn Stalkers"
+      "name": "Evoker's Forlorn Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Evoker's Gallant Brim"
+      "name": "Evoker's Gallant Brim",
+      "category": "Hats"
     },
     {
-      "name": "Evoker's Gallant Drape"
+      "name": "Evoker's Gallant Drape",
+      "category": "Robes"
     },
     {
-      "name": "Evoker's Gallant Footwear"
+      "name": "Evoker's Gallant Footwear",
+      "category": "Boots"
     },
     {
-      "name": "Evoker's Gelid Robes"
+      "name": "Evoker's Gelid Robes",
+      "category": "Robes"
     },
     {
-      "name": "Evoker's Stalwart Brim"
+      "name": "Evoker's Stalwart Brim",
+      "category": "Hats"
     },
     {
-      "name": "Evoker's Stalwart Cloak"
+      "name": "Evoker's Stalwart Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Evoker's Stalwart Footgear"
+      "name": "Evoker's Stalwart Footgear",
+      "category": "Boots"
     },
     {
-      "name": "Evoker's Wrap of Acuity"
+      "name": "Evoker's Wrap of Acuity",
+      "category": "Robes"
     },
     {
-      "name": "Eye Candy"
+      "name": "Eye Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Face Palm"
+      "name": "Face Palm",
+      "category": "Seeds"
     },
     {
-      "name": "Fiery Colossus"
+      "name": "Fiery Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Blossom"
+      "name": "Fire Blossom",
+      "category": "Reagents"
     },
     {
-      "name": "Fish Fin"
+      "name": "Fish Fin",
+      "category": "Reagents"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Frostfang"
+      "name": "Frostfang",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frosty Sugar Cubes"
+      "name": "Frosty Sugar Cubes",
+      "category": "Snacks"
     },
     {
-      "name": "Frozen Fly Trap"
+      "name": "Frozen Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Glacier Dragon"
+      "name": "Glacier Dragon",
+      "category": "Pets"
     },
     {
-      "name": "Gnomes!"
+      "name": "Gnomes!",
+      "category": "Spellements"
     },
     {
-      "name": "Golden Pearl"
+      "name": "Golden Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Goose Tree"
+      "name": "Goose Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Green Snow Apples"
+      "name": "Green Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "High Road Haggis"
+      "name": "High Road Haggis",
+      "category": "Snacks"
     },
     {
-      "name": "Hot Cross Buns"
+      "name": "Hot Cross Buns",
+      "category": "Snacks"
     },
     {
-      "name": "Icebird"
+      "name": "Icebird",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Katabatic Wind"
+      "name": "Katabatic Wind",
+      "category": "Treasure Cards"
     },
     {
-      "name": "King Artorius (Balance)"
+      "name": "King Artorius (Balance)",
+      "category": "Spellements"
     },
     {
-      "name": "King Artorius (Death)"
+      "name": "King Artorius (Death)",
+      "category": "Spellements"
     },
     {
-      "name": "King Artorius (Fire)"
+      "name": "King Artorius (Fire)",
+      "category": "Spellements"
     },
     {
-      "name": "King Artorius (Ice)"
+      "name": "King Artorius (Ice)",
+      "category": "Spellements"
     },
     {
-      "name": "King Artorius (Life)"
+      "name": "King Artorius (Life)",
+      "category": "Spellements"
     },
     {
-      "name": "King Artorius (Myth)"
+      "name": "King Artorius (Myth)",
+      "category": "Spellements"
     },
     {
-      "name": "King Artorius (Storm)"
+      "name": "King Artorius (Storm)",
+      "category": "Spellements"
     },
     {
-      "name": "King Parsley"
+      "name": "King Parsley",
+      "category": "Seeds"
     },
     {
-      "name": "Kossack Parcel of Redress"
+      "name": "Kossack Parcel of Redress",
+      "category": "Decks"
     },
     {
-      "name": "Kossack Saber of Chills"
+      "name": "Kossack Saber of Chills",
+      "category": "Wands"
     },
     {
-      "name": "Kossack Spread of Chills"
+      "name": "Kossack Spread of Chills",
+      "category": "Decks"
     },
     {
-      "name": "Kossack Stack of Purpose"
+      "name": "Kossack Stack of Purpose",
+      "category": "Decks"
     },
     {
-      "name": "Kossack Sword of Counsel"
+      "name": "Kossack Sword of Counsel",
+      "category": "Wands"
     },
     {
-      "name": "Kossack Sword of Travail"
+      "name": "Kossack Sword of Travail",
+      "category": "Wands"
     },
     {
-      "name": "Large Keeper Aquarium"
+      "name": "Large Keeper Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Large Small Fry Aquarium"
+      "name": "Large Small Fry Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Lustrous Accurate Jade +11%"
+      "name": "Lustrous Accurate Jade +11%",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Damage Opal +12"
+      "name": "Lustrous Damage Opal +12",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Damage Ruby +24"
+      "name": "Lustrous Damage Ruby +24",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Defense Jade +48"
+      "name": "Lustrous Defense Jade +48",
+      "category": "Jewels"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Medusa"
+      "name": "Medusa",
+      "category": "Spellements"
     },
     {
-      "name": "Memento of the Bleaks"
+      "name": "Memento of the Bleaks",
+      "category": "Amulets"
     },
     {
-      "name": "Mithril"
+      "name": "Mithril",
+      "category": "Reagents"
     },
     {
-      "name": "Moon Flower"
+      "name": "Moon Flower",
+      "category": "Seeds"
     },
     {
-      "name": "Mustachios"
+      "name": "Mustachios",
+      "category": "Snacks"
     },
     {
-      "name": "Mutate Colossus"
+      "name": "Mutate Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mythspear"
+      "name": "Mythspear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Namaste"
+      "name": "Namaste",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Noble Strand of the Bleaks"
+      "name": "Noble Strand of the Bleaks",
+      "category": "Amulets"
     },
     {
-      "name": "Nodori Winged Ram"
+      "name": "Nodori Winged Ram",
+      "category": "Pets"
     },
     {
-      "name": "Obsidian Colossus (420)"
+      "name": "Obsidian Colossus (420)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Orichalcum"
+      "name": "Orichalcum",
+      "category": "Reagents"
     },
     {
-      "name": "Palladium"
+      "name": "Palladium",
+      "category": "Reagents"
     },
     {
-      "name": "Penne Dreadful"
+      "name": "Penne Dreadful",
+      "category": "Snacks"
     },
     {
-      "name": "Pink Huckleberries"
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Polar Bear Cub"
+      "name": "Polar Bear Cub",
+      "category": "Pets"
     },
     {
-      "name": "Polarian Evoker's Boots"
+      "name": "Polarian Evoker's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Polaris Baba Yaga Theme"
+      "name": "Polaris Baba Yaga Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Fries"
+      "name": "Polaris Fries",
+      "category": "Snacks"
     },
     {
-      "name": "Polaris Frozen Combat Theme"
+      "name": "Polaris Frozen Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Frozen Forest Theme"
+      "name": "Polaris Frozen Forest Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Gulag Combat Theme"
+      "name": "Polaris Gulag Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Gulag Theme"
+      "name": "Polaris Gulag Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Ice Block Theme"
+      "name": "Polaris Ice Block Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Mine Combat Theme"
+      "name": "Polaris Mine Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Mine Theme"
+      "name": "Polaris Mine Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Opera Theme"
+      "name": "Polaris Opera Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Polaris Rasputin Combat Theme"
+      "name": "Polaris Rasputin Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Purple Snow Apples"
+      "name": "Purple Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Queen Crape Myrtle"
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
     },
     {
-      "name": "Ra"
+      "name": "Ra",
+      "category": "Spellements"
     },
     {
-      "name": "Radiant Kossack Sword"
+      "name": "Radiant Kossack Sword",
+      "category": "Wands"
     },
     {
-      "name": "Raging Bull"
+      "name": "Raging Bull",
+      "category": "Spellements"
     },
     {
-      "name": "Rain of Fire"
+      "name": "Rain of Fire",
+      "category": "Spellements"
     },
     {
-      "name": "Red Huckleberries"
+      "name": "Red Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Regular Keeper Aquarium"
+      "name": "Regular Keeper Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Regular Small Fry Aquarium"
+      "name": "Regular Small Fry Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Rusalka's Wrath"
+      "name": "Rusalka's Wrath",
+      "category": "Spellements"
     },
     {
-      "name": "Sabertooth"
+      "name": "Sabertooth",
+      "category": "Spellements"
     },
     {
-      "name": "Sandstone Colossus"
+      "name": "Sandstone Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Satyr Chow"
+      "name": "Satyr Chow",
+      "category": "Snacks"
     },
     {
-      "name": "Scales"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Ships 'n' Queso"
+      "name": "Ships 'n' Queso",
+      "category": "Snacks"
     },
     {
-      "name": "Shock Colossus"
+      "name": "Shock Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Silver"
+      "name": "Silver",
+      "category": "Reagents"
     },
     {
-      "name": "Skeletal Dragon"
+      "name": "Skeletal Dragon",
+      "category": "Spellements"
     },
     {
-      "name": "Snap Dragon"
+      "name": "Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Snow Angel"
+      "name": "Snow Angel",
+      "category": "Spellements"
     },
     {
-      "name": "Snow Apples"
+      "name": "Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Snowball Barrage"
+      "name": "Snowball Barrage",
+      "category": "Spellements"
     },
     {
-      "name": "Spinysaur"
+      "name": "Spinysaur",
+      "category": "Spellements"
     },
     {
-      "name": "Stardust"
+      "name": "Stardust",
+      "category": "Reagents"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Stone Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Owl"
+      "name": "Storm Owl",
+      "category": "Spellements"
     },
     {
-      "name": "Sunstone"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "Tayg Chisel of Leveling"
+      "name": "Tayg Chisel of Leveling",
+      "category": "Athames"
     },
     {
-      "name": "Tayg Pendant of Vitality"
+      "name": "Tayg Pendant of Vitality",
+      "category": "Amulets"
     },
     {
-      "name": "The Goat Horns"
+      "name": "The Goat Horns",
+      "category": "Hats"
     },
     {
-      "name": "The Kroktop"
+      "name": "The Kroktop",
+      "category": "Hats"
     },
     {
-      "name": "The Warlock"
+      "name": "The Warlock",
+      "category": "Hats"
     },
     {
-      "name": "Titanium"
+      "name": "Titanium",
+      "category": "Reagents"
     },
     {
-      "name": "Tundarian Iceblade"
+      "name": "Tundarian Iceblade",
+      "category": "Wands"
     },
     {
-      "name": "Tundarian Sword of Dread"
+      "name": "Tundarian Sword of Dread",
+      "category": "Wands"
     },
     {
-      "name": "Tungsten"
+      "name": "Tungsten",
+      "category": "Reagents"
     },
     {
-      "name": "Turquoise"
+      "name": "Turquoise",
+      "category": "Reagents"
     },
     {
-      "name": "Ultra Snap Dragon"
+      "name": "Ultra Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Snow Apples"
+      "name": "Ultra Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Veggie Juice"
+      "name": "Veggie Juice",
+      "category": "Snacks"
     },
     {
-      "name": "Vine"
+      "name": "Vine",
+      "category": "Reagents"
     },
     {
-      "name": "Walruskberg Combat Theme"
+      "name": "Walruskberg Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Walruskberg Liberated Theme"
+      "name": "Walruskberg Liberated Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Walruskberg Theme"
+      "name": "Walruskberg Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Winged Sorrow"
+      "name": "Winged Sorrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Winged Sorrow"
+      "name": "Winged Sorrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Witch's House Call"
+      "name": "Witch's House Call",
+      "category": "Spellements"
     },
     {
-      "name": "Woolly Mammoth"
+      "name": "Woolly Mammoth",
+      "category": "Spellements"
     }
   ],
   "authors": "BartleBot",
@@ -536,7 +710,21 @@
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Dual Balanceblade Citrine",
+        "=Dual Deathblade Onyx",
+        "=Dual Fireblade Ruby",
+        "=Dual Iceblade Sapphire",
+        "=Dual Lifeblade Jade",
+        "=Dual Mythblade Peridot",
+        "=Dual Stormblade Amethyst"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -627,26 +815,9 @@
       },
       "params": {
         "enemy": "PL_WolfGryphon_Warrior_C",
-        "wiki_page": "",
+        "wiki_page": "Creature:Vigilant Jarilo",
         "use_default_strategy": false,
         "max_duration": 0.0
-      }
-    },
-    {
-      "id": "t_5",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 3960,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true
       }
     },
     {
@@ -654,7 +825,7 @@
       "node_type": "enter_zone",
       "label": "Exit Sunless Shrine",
       "position": {
-        "x": 4400,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -768,26 +939,6 @@
     },
     {
       "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_6",
       "dest": "t_1",
       "when": "SUCCESS",
@@ -889,7 +1040,7 @@
     {
       "trigger": "advance",
       "source": "state_8",
-      "dest": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -948,5 +1099,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "80c2f748996125ca61c487aa6459ed429db6b53dc79e62285ea96fb216184be8"
+  ]
 }

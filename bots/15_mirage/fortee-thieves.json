@@ -8,768 +8,1022 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Agave Leaves"
+      "name": "Agave Leaves",
+      "category": "Reagents"
     },
     {
-      "name": "Age of Reckoning"
+      "name": "Age of Reckoning",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Alligator Pear Tree"
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Amber Dust"
+      "name": "Amber Dust",
+      "category": "Reagents"
     },
     {
-      "name": "Angel Oak"
+      "name": "Angel Oak",
+      "category": "Seeds"
     },
     {
-      "name": "Angora Bunny Ears"
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Antheneum Delight"
+      "name": "Antheneum Delight",
+      "category": "Snacks"
     },
     {
-      "name": "Aquamarine"
+      "name": "Aquamarine",
+      "category": "Reagents"
     },
     {
-      "name": "Arcticzilla"
+      "name": "Arcticzilla",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Astral Shard"
+      "name": "Astral Shard",
+      "category": "Reagents"
     },
     {
-      "name": "Astraphobia"
+      "name": "Astraphobia",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Aztecan Hot Chocolate"
+      "name": "Aztecan Hot Chocolate",
+      "category": "Snacks"
     },
     {
-      "name": "Baby Carrots"
+      "name": "Baby Carrots",
+      "category": "Seeds"
     },
     {
-      "name": "Balefrost"
+      "name": "Balefrost",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Beast Wellington"
+      "name": "Beast Wellington",
+      "category": "Snacks"
     },
     {
-      "name": "Beetle Cream Soda"
+      "name": "Beetle Cream Soda",
+      "category": "Snacks"
     },
     {
-      "name": "Bell Pepper"
+      "name": "Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Blue Huckleberries"
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Blue Phoenix"
+      "name": "Blue Phoenix",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Boiled Peanuts"
+      "name": "Boiled Peanuts",
+      "category": "Seeds"
     },
     {
-      "name": "Boom Shroom"
+      "name": "Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Bread Fruit Bush"
+      "name": "Bread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Bread Fruit Fruit"
+      "name": "Bread Fruit Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Burning Snap Dragon"
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Chalupacabra"
+      "name": "Chalupacabra",
+      "category": "Snacks"
     },
     {
-      "name": "Charred Eerem Givehs"
+      "name": "Charred Eerem Givehs",
+      "category": "Boots"
     },
     {
-      "name": "Charred Eerem Raiment"
+      "name": "Charred Eerem Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Coldiron"
+      "name": "Coldiron",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Combustion"
+      "name": "Combustion",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cornbread Fruit Bush"
+      "name": "Cornbread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Couch Potatoes"
+      "name": "Couch Potatoes",
+      "category": "Seeds"
     },
     {
-      "name": "Crystal Spider"
+      "name": "Crystal Spider",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dandelion"
+      "name": "Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Death Troll"
+      "name": "Death Troll",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deathspear"
+      "name": "Deathspear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Eerem Frostfall Razor"
+      "name": "Eerem Frostfall Razor",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Gallery of Ability"
+      "name": "Eerem Gallery of Ability",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Gallery of Agony"
+      "name": "Eerem Gallery of Agony",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Gallery of Ciphers"
+      "name": "Eerem Gallery of Ciphers",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Gallery of Clouds"
+      "name": "Eerem Gallery of Clouds",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Gallery of Elation"
+      "name": "Eerem Gallery of Elation",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Gallery of Eruption"
+      "name": "Eerem Gallery of Eruption",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Gallery of Frostfall"
+      "name": "Eerem Gallery of Frostfall",
+      "category": "Decks"
     },
     {
-      "name": "Eerem Givehs of Hail"
+      "name": "Eerem Givehs of Hail",
+      "category": "Boots"
     },
     {
-      "name": "Eerem Givehs of Pulse"
+      "name": "Eerem Givehs of Pulse",
+      "category": "Boots"
     },
     {
-      "name": "Eerem Headwrap of Discovery"
+      "name": "Eerem Headwrap of Discovery",
+      "category": "Hats"
     },
     {
-      "name": "Eerem Headwrap of Hail"
+      "name": "Eerem Headwrap of Hail",
+      "category": "Hats"
     },
     {
-      "name": "Eerem Headwrap of Menace"
+      "name": "Eerem Headwrap of Menace",
+      "category": "Hats"
     },
     {
-      "name": "Eerem Necklace of Ability"
+      "name": "Eerem Necklace of Ability",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Necklace of Agony"
+      "name": "Eerem Necklace of Agony",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Necklace of Ciphers"
+      "name": "Eerem Necklace of Ciphers",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Necklace of Clouds"
+      "name": "Eerem Necklace of Clouds",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Necklace of Elation"
+      "name": "Eerem Necklace of Elation",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Necklace of Eruption"
+      "name": "Eerem Necklace of Eruption",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Necklace of Frostfall"
+      "name": "Eerem Necklace of Frostfall",
+      "category": "Amulets"
     },
     {
-      "name": "Eerem Raiment of Clangor"
+      "name": "Eerem Raiment of Clangor",
+      "category": "Robes"
     },
     {
-      "name": "Eerem Raiment of Discovery"
+      "name": "Eerem Raiment of Discovery",
+      "category": "Robes"
     },
     {
-      "name": "Eerem Raiment of Pulse"
+      "name": "Eerem Raiment of Pulse",
+      "category": "Robes"
     },
     {
-      "name": "Eerem Razor of Ability"
+      "name": "Eerem Razor of Ability",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Razor of Agony"
+      "name": "Eerem Razor of Agony",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Razor of Ciphers"
+      "name": "Eerem Razor of Ciphers",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Razor of Clouds"
+      "name": "Eerem Razor of Clouds",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Razor of Elation"
+      "name": "Eerem Razor of Elation",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Razor of Eruption"
+      "name": "Eerem Razor of Eruption",
+      "category": "Athames"
     },
     {
-      "name": "Eerem Signet of Ability"
+      "name": "Eerem Signet of Ability",
+      "category": "Rings"
     },
     {
-      "name": "Eerem Signet of Agony"
+      "name": "Eerem Signet of Agony",
+      "category": "Rings"
     },
     {
-      "name": "Eerem Signet of Ciphers"
+      "name": "Eerem Signet of Ciphers",
+      "category": "Rings"
     },
     {
-      "name": "Eerem Signet of Clouds"
+      "name": "Eerem Signet of Clouds",
+      "category": "Rings"
     },
     {
-      "name": "Eerem Signet of Eruption"
+      "name": "Eerem Signet of Eruption",
+      "category": "Rings"
     },
     {
-      "name": "Eerem Signet of Frostfall"
+      "name": "Eerem Signet of Frostfall",
+      "category": "Rings"
     },
     {
-      "name": "Elemental Spear"
+      "name": "Elemental Spear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Magma Peas"
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Evil Snow Peas"
+      "name": "Evil Snow Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Eye Candy"
+      "name": "Eye Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Face Palm"
+      "name": "Face Palm",
+      "category": "Seeds"
     },
     {
-      "name": "Fern Jelly"
+      "name": "Fern Jelly",
+      "category": "Snacks"
     },
     {
-      "name": "Fickle Pickle"
+      "name": "Fickle Pickle",
+      "category": "Seeds"
     },
     {
-      "name": "Fiery Colossus"
+      "name": "Fiery Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Passion Fruit"
+      "name": "Fire Passion Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Firespear"
+      "name": "Firespear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fish Fin"
+      "name": "Fish Fin",
+      "category": "Reagents"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Frostfang"
+      "name": "Frostfang",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frosty Sugar Cubes"
+      "name": "Frosty Sugar Cubes",
+      "category": "Snacks"
     },
     {
-      "name": "Frozen Fly Trap"
+      "name": "Frozen Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Gallant Istanboa Khanjar"
+      "name": "Gallant Istanboa Khanjar",
+      "category": "Athames"
     },
     {
-      "name": "Gallant Istanboa Pendant"
+      "name": "Gallant Istanboa Pendant",
+      "category": "Amulets"
     },
     {
-      "name": "Gallant Istanboa Signet"
+      "name": "Gallant Istanboa Signet",
+      "category": "Rings"
     },
     {
-      "name": "Gallant Mottoman Helm"
+      "name": "Gallant Mottoman Helm",
+      "category": "Hats"
     },
     {
-      "name": "Gallant Mottoman Runners"
+      "name": "Gallant Mottoman Runners",
+      "category": "Boots"
     },
     {
-      "name": "Gallant Mottoman Uniform"
+      "name": "Gallant Mottoman Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Glass Sliver"
+      "name": "Glass Sliver",
+      "category": "Reagents"
     },
     {
-      "name": "Golden Pearl"
+      "name": "Golden Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Grapes of Wrath"
+      "name": "Grapes of Wrath",
+      "category": "Seeds"
     },
     {
-      "name": "Green Snow Apples"
+      "name": "Green Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Green Tomato"
+      "name": "Green Tomato",
+      "category": "Snacks"
     },
     {
-      "name": "Hard Boiled Beetle Eggs"
+      "name": "Hard Boiled Beetle Eggs",
+      "category": "Snacks"
     },
     {
-      "name": "Helephant Ears"
+      "name": "Helephant Ears",
+      "category": "Seeds"
     },
     {
-      "name": "High Road Haggis"
+      "name": "High Road Haggis",
+      "category": "Snacks"
     },
     {
-      "name": "Honey Sickle"
+      "name": "Honey Sickle",
+      "category": "Seeds"
     },
     {
-      "name": "Hot Cross Buns"
+      "name": "Hot Cross Buns",
+      "category": "Snacks"
     },
     {
-      "name": "Icebird"
+      "name": "Icebird",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Icespear"
+      "name": "Icespear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Iridium"
+      "name": "Iridium",
+      "category": "Reagents"
     },
     {
-      "name": "Istanboa Array of Enigmas"
+      "name": "Istanboa Array of Enigmas",
+      "category": "Decks"
     },
     {
-      "name": "Istanboa Array of Scruples"
+      "name": "Istanboa Array of Scruples",
+      "category": "Decks"
     },
     {
-      "name": "Istanboa Pendant of Enigmas"
+      "name": "Istanboa Pendant of Enigmas",
+      "category": "Amulets"
     },
     {
-      "name": "Istanboa Pendant of Icefall"
+      "name": "Istanboa Pendant of Icefall",
+      "category": "Amulets"
     },
     {
-      "name": "Istanboa Sandspouts Array"
+      "name": "Istanboa Sandspouts Array",
+      "category": "Decks"
     },
     {
-      "name": "Istanboa Sandspouts Khanjar"
+      "name": "Istanboa Sandspouts Khanjar",
+      "category": "Athames"
     },
     {
-      "name": "Istanboa Sandspouts Pendant"
+      "name": "Istanboa Sandspouts Pendant",
+      "category": "Amulets"
     },
     {
-      "name": "Istanboa Signet of Enigmas"
+      "name": "Istanboa Signet of Enigmas",
+      "category": "Rings"
     },
     {
-      "name": "Istanboa Signet of Icefall"
+      "name": "Istanboa Signet of Icefall",
+      "category": "Rings"
     },
     {
-      "name": "Istanboa Signet of Scruples"
+      "name": "Istanboa Signet of Scruples",
+      "category": "Rings"
     },
     {
-      "name": "Ivy League"
+      "name": "Ivy League",
+      "category": "Seeds"
     },
     {
-      "name": "Jolly Rancher"
+      "name": "Jolly Rancher",
+      "category": "Snacks"
     },
     {
-      "name": "Katabatic Wind"
+      "name": "Katabatic Wind",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Laugh-O-Dil"
+      "name": "Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Lifespear"
+      "name": "Lifespear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lustrous Accurate Citrine +11%"
+      "name": "Lustrous Accurate Citrine +11%",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Accurate Onyx +11%"
+      "name": "Lustrous Accurate Onyx +11%",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Critical Peridot +13"
+      "name": "Lustrous Critical Peridot +13",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Damage Citrine +23"
+      "name": "Lustrous Damage Citrine +23",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Defense Onyx +45"
+      "name": "Lustrous Defense Onyx +45",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Defense Peridot +45"
+      "name": "Lustrous Defense Peridot +45",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Defense Ruby +45"
+      "name": "Lustrous Defense Ruby +45",
+      "category": "Jewels"
     },
     {
-      "name": "Lustrous Mana Opal +42"
+      "name": "Lustrous Mana Opal +42",
+      "category": "Jewels"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Magma Colossus"
+      "name": "Magma Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Maltese Tiger Lily"
+      "name": "Maltese Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Mithril"
+      "name": "Mithril",
+      "category": "Reagents"
     },
     {
-      "name": "Mottoman Heatwave Runners"
+      "name": "Mottoman Heatwave Runners",
+      "category": "Boots"
     },
     {
-      "name": "Mottoman Heatwave Uniform"
+      "name": "Mottoman Heatwave Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Mottoman Helm of Enigmas"
+      "name": "Mottoman Helm of Enigmas",
+      "category": "Hats"
     },
     {
-      "name": "Mottoman Helm of Ruin"
+      "name": "Mottoman Helm of Ruin",
+      "category": "Hats"
     },
     {
-      "name": "Mottoman Helm of Scruples"
+      "name": "Mottoman Helm of Scruples",
+      "category": "Hats"
     },
     {
-      "name": "Mottoman Icefall Runners"
+      "name": "Mottoman Icefall Runners",
+      "category": "Boots"
     },
     {
-      "name": "Mottoman Icefall Uniform"
+      "name": "Mottoman Icefall Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Mottoman Runners of Enigmas"
+      "name": "Mottoman Runners of Enigmas",
+      "category": "Boots"
     },
     {
-      "name": "Mottoman Runners of Ruin"
+      "name": "Mottoman Runners of Ruin",
+      "category": "Boots"
     },
     {
-      "name": "Mottoman Runners of Scruples"
+      "name": "Mottoman Runners of Scruples",
+      "category": "Boots"
     },
     {
-      "name": "Mottoman Sandspouts Helm"
+      "name": "Mottoman Sandspouts Helm",
+      "category": "Hats"
     },
     {
-      "name": "Mottoman Sandspouts Runners"
+      "name": "Mottoman Sandspouts Runners",
+      "category": "Boots"
     },
     {
-      "name": "Mottoman Sandspouts Uniform"
+      "name": "Mottoman Sandspouts Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Mottoman Uniform of Enigmas"
+      "name": "Mottoman Uniform of Enigmas",
+      "category": "Robes"
     },
     {
-      "name": "Mottoman Uniform of Ruin"
+      "name": "Mottoman Uniform of Ruin",
+      "category": "Robes"
     },
     {
-      "name": "Mottoman Uniform of Scruples"
+      "name": "Mottoman Uniform of Scruples",
+      "category": "Robes"
     },
     {
-      "name": "Mustachios"
+      "name": "Mustachios",
+      "category": "Snacks"
     },
     {
-      "name": "Mutate Colossus (Fire)"
+      "name": "Mutate Colossus (Fire)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mutate Colossus (Storm)"
+      "name": "Mutate Colossus (Storm)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Myriarch Tabarzin of Chaos"
+      "name": "Myriarch Tabarzin of Chaos",
+      "category": "Wands"
     },
     {
-      "name": "Myriarch Tabarzin of Fright"
+      "name": "Myriarch Tabarzin of Fright",
+      "category": "Wands"
     },
     {
-      "name": "Myriarch Tabarzin of Renown"
+      "name": "Myriarch Tabarzin of Renown",
+      "category": "Wands"
     },
     {
-      "name": "Mythspear"
+      "name": "Mythspear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Namaste"
+      "name": "Namaste",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Obsidian Colossus (420)"
+      "name": "Obsidian Colossus (420)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Orange Dandelion"
+      "name": "Orange Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Pink Huckleberries"
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Pink Laugh-O-Dil"
+      "name": "Pink Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Polished Accurate Hematite +10%"
+      "name": "Polished Accurate Hematite +10%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Amethyst +12"
+      "name": "Polished Blocking Amethyst +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Citrine +12"
+      "name": "Polished Blocking Citrine +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Hematite +11"
+      "name": "Polished Blocking Hematite +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Jade +12"
+      "name": "Polished Blocking Jade +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Onyx +12"
+      "name": "Polished Blocking Onyx +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Peridot +12"
+      "name": "Polished Blocking Peridot +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Ruby +12"
+      "name": "Polished Blocking Ruby +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Sapphire +12"
+      "name": "Polished Blocking Sapphire +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Amethyst +11"
+      "name": "Polished Critical Amethyst +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Citrine +11"
+      "name": "Polished Critical Citrine +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Hematite +11"
+      "name": "Polished Critical Hematite +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Jade +11"
+      "name": "Polished Critical Jade +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Onyx +11"
+      "name": "Polished Critical Onyx +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Peridot +11"
+      "name": "Polished Critical Peridot +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Ruby +11"
+      "name": "Polished Critical Ruby +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Critical Sapphire +11"
+      "name": "Polished Critical Sapphire +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Amethyst +21"
+      "name": "Polished Damage Amethyst +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Citrine +21"
+      "name": "Polished Damage Citrine +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Hematite +42"
+      "name": "Polished Damage Hematite +42",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Jade +21"
+      "name": "Polished Damage Jade +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Onyx +21"
+      "name": "Polished Damage Onyx +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Peridot +21"
+      "name": "Polished Damage Peridot +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Ruby +21"
+      "name": "Polished Damage Ruby +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Sapphire +21"
+      "name": "Polished Damage Sapphire +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Amethyst +43"
+      "name": "Polished Defense Amethyst +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Amethyst +44"
+      "name": "Polished Defense Amethyst +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Citrine +43"
+      "name": "Polished Defense Citrine +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Citrine +44"
+      "name": "Polished Defense Citrine +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Hematite +41"
+      "name": "Polished Defense Hematite +41",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Jade +43"
+      "name": "Polished Defense Jade +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Jade +44"
+      "name": "Polished Defense Jade +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Onyx +43"
+      "name": "Polished Defense Onyx +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Onyx +44"
+      "name": "Polished Defense Onyx +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Peridot +43"
+      "name": "Polished Defense Peridot +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Peridot +44"
+      "name": "Polished Defense Peridot +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Ruby +43"
+      "name": "Polished Defense Ruby +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Ruby +44"
+      "name": "Polished Defense Ruby +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Sapphire +43"
+      "name": "Polished Defense Sapphire +43",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Sapphire +44"
+      "name": "Polished Defense Sapphire +44",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Amethyst +6%"
+      "name": "Polished Piercing Amethyst +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Citrine +6%"
+      "name": "Polished Piercing Citrine +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Hematite +5%"
+      "name": "Polished Piercing Hematite +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Jade +6%"
+      "name": "Polished Piercing Jade +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Onyx +6%"
+      "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Peridot +6%"
+      "name": "Polished Piercing Peridot +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Ruby +6%"
+      "name": "Polished Piercing Ruby +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Sapphire +6%"
+      "name": "Polished Piercing Sapphire +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Purple Bell Pepper"
+      "name": "Purple Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Purple Grapes of Wrath"
+      "name": "Purple Grapes of Wrath",
+      "category": "Seeds"
     },
     {
-      "name": "Red Bell Pepper"
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Red Couch Potatoes"
+      "name": "Red Couch Potatoes",
+      "category": "Seeds"
     },
     {
-      "name": "Red Huckleberries"
+      "name": "Red Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Rhubarbed Wire"
+      "name": "Rhubarbed Wire",
+      "category": "Snacks"
     },
     {
-      "name": "Rye Bread Fruit Bush"
+      "name": "Rye Bread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Saga of Heroes"
+      "name": "Saga of Heroes",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sandstone Colossus"
+      "name": "Sandstone Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Satyr Chow"
+      "name": "Satyr Chow",
+      "category": "Snacks"
     },
     {
-      "name": "Scales"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Shift"
+      "name": "Shift",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ships 'n' Queso"
+      "name": "Ships 'n' Queso",
+      "category": "Snacks"
     },
     {
-      "name": "Shock Colossus"
+      "name": "Shock Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Silver"
+      "name": "Silver",
+      "category": "Reagents"
     },
     {
-      "name": "Smouldering Tetrus Baton"
+      "name": "Smouldering Tetrus Baton",
+      "category": "Wands"
     },
     {
-      "name": "Snap Dragon"
+      "name": "Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Sour Fickle Pickle"
+      "name": "Sour Fickle Pickle",
+      "category": "Seeds"
     },
     {
-      "name": "Spirit Spear"
+      "name": "Spirit Spear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stardust"
+      "name": "Stardust",
+      "category": "Reagents"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Steel Colossus"
+      "name": "Steel Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stone Block"
+      "name": "Stone Block",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Stone Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stormspear"
+      "name": "Stormspear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sugar Khrystal"
+      "name": "Sugar Khrystal",
+      "category": "Seeds"
     },
     {
-      "name": "Sunstone"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "Tetrus Baton of Blizzards"
+      "name": "Tetrus Baton of Blizzards",
+      "category": "Wands"
     },
     {
-      "name": "Tetrus Baton of Opposition"
+      "name": "Tetrus Baton of Opposition",
+      "category": "Wands"
     },
     {
-      "name": "Tetrus Baton of Readiness"
+      "name": "Tetrus Baton of Readiness",
+      "category": "Wands"
     },
     {
-      "name": "Tetrus Baton of Sophistry"
+      "name": "Tetrus Baton of Sophistry",
+      "category": "Wands"
     },
     {
-      "name": "Tetrus Baton of Torrents"
+      "name": "Tetrus Baton of Torrents",
+      "category": "Wands"
     },
     {
-      "name": "Tetrus Baton of Woe"
+      "name": "Tetrus Baton of Woe",
+      "category": "Wands"
     },
     {
-      "name": "Trumpet Vine"
+      "name": "Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Tungsten"
+      "name": "Tungsten",
+      "category": "Reagents"
     },
     {
-      "name": "Turquoise"
+      "name": "Turquoise",
+      "category": "Reagents"
     },
     {
-      "name": "Veggie Juice"
+      "name": "Veggie Juice",
+      "category": "Snacks"
     },
     {
-      "name": "Venus Fly Trap"
+      "name": "Venus Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Vine"
+      "name": "Vine",
+      "category": "Reagents"
     },
     {
-      "name": "Wheat Cracker"
+      "name": "Wheat Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "White Desparagus"
+      "name": "White Desparagus",
+      "category": "Seeds"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "White Tiger Lily"
+      "name": "White Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Yellow Troll"
+      "name": "Yellow Troll",
+      "category": "Treasure Cards"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Jewels",
+    "Seeds",
     "Mobs"
   ],
   "options": [
@@ -777,7 +1031,15 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Piercing"
+        "=Polished Piercing Amethyst +6%",
+        "=Polished Piercing Citrine +6%",
+        "=Polished Piercing Jade +6%",
+        "=Polished Piercing Onyx +6%",
+        "=Polished Piercing Peridot +6%",
+        "=Polished Piercing Ruby +6%",
+        "=Polished Piercing Sapphire +6%",
+        "=Couch Potatoes",
+        "=Evil Magma Peas"
       ]
     }
   ],
@@ -816,7 +1078,7 @@
       },
       "params": {
         "enemy": "MR_Baboon_Thug_A_01",
-        "wiki_page": "",
+        "wiki_page": "Creature:Fortee Thief",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
@@ -894,23 +1156,6 @@
       },
       "params": {
         "zone": "Mirage/MR_Z07_ThievesDen"
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "teleport_to_coordinates",
-      "label": "Go to corner",
-      "position": {
-        "x": 3080,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Mirage/MR_Z07_ThievesDen",
-        "xyz": {
-          "x": 2102.99,
-          "y": -151.59,
-          "z": -58.24
-        }
       }
     }
   ],
@@ -998,26 +1243,6 @@
     {
       "trigger": "advance",
       "source": "t_7",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
       "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
@@ -1067,5 +1292,8 @@
   "template": {
     "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
     "version": 1
-  }
+  },
+  "history": [
+    "77d7a6e574bcb1478b00fe13ba1999fff1185cb3a66944eeb40714657518b6b7"
+  ]
 }

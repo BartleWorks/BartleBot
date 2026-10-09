@@ -16,7 +16,15 @@
     "Gear",
     "Gauntlet"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Fitzhume"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_11",
@@ -412,5 +420,8 @@
   "template": {
     "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
     "version": 1
-  }
+  },
+  "history": [
+    "e0d2bf0b2afb0c7198f683fbcba13700f2ddf34eace3338428fdb35bc51dcf1e"
+  ]
 }

@@ -8,292 +8,387 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Alchemical Crystals"
+      "name": "Alchemical Crystals",
+      "category": "Reagents"
     },
     {
-      "name": "Alchemical Extract"
+      "name": "Alchemical Extract",
+      "category": "Reagents"
     },
     {
-      "name": "Alchemical Salts"
+      "name": "Alchemical Salts",
+      "category": "Reagents"
     },
     {
-      "name": "Alligator Pear Tree"
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Ancient Scroll"
+      "name": "Ancient Scroll",
+      "category": "Reagents"
     },
     {
-      "name": "Angora Bunny Ears"
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Antheneum Delight"
+      "name": "Antheneum Delight",
+      "category": "Snacks"
     },
     {
-      "name": "Antique Coins"
+      "name": "Antique Coins",
+      "category": "Reagents"
     },
     {
-      "name": "Aztecan  Hot Chocolate"
+      "name": "Aztecan  Hot Chocolate",
+      "category": "Snacks"
     },
     {
-      "name": "Baby Carrots"
+      "name": "Baby Carrots",
+      "category": "Seeds"
     },
     {
-      "name": "BBQ Drumstick"
+      "name": "BBQ Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Beast Wellington"
+      "name": "Beast Wellington",
+      "category": "Snacks"
     },
     {
-      "name": "Black Pearl"
+      "name": "Black Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Blood Moss"
+      "name": "Blood Moss",
+      "category": "Reagents"
     },
     {
-      "name": "Blue Huckleberries"
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Brain Jar"
+      "name": "Brain Jar",
+      "category": "Housing Items"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bread Fruit Fruit"
+      "name": "Bread Fruit Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Cherry Pie"
+      "name": "Cherry Pie",
+      "category": "Snacks"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Crab Alley Chaise"
+      "name": "Crab Alley Chaise",
+      "category": "Housing Items"
     },
     {
-      "name": "Daybreaker"
+      "name": "Daybreaker",
+      "category": "Spellements"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Decimatoes"
+      "name": "Decimatoes",
+      "category": "Snacks"
     },
     {
-      "name": "Desparagus (Seed)"
+      "name": "Desparagus (Seed)",
+      "category": "Seeds"
     },
     {
-      "name": "Discord Grape Jelly"
+      "name": "Discord Grape Jelly",
+      "category": "Snacks"
     },
     {
-      "name": "Dragonspyre Soldier Cleaver"
+      "name": "Dragonspyre Soldier Cleaver",
+      "category": "Wands"
     },
     {
-      "name": "Dragonspyre Soldier's Helm"
+      "name": "Dragonspyre Soldier's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Dragonspyre Vanguard's Helm"
+      "name": "Dragonspyre Vanguard's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Drumstick"
+      "name": "Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Evil Magma Peas"
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Eye Candy"
+      "name": "Eye Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Feathered Tabby"
+      "name": "Feathered Tabby",
+      "category": "Pets"
     },
     {
-      "name": "Fern Jelly"
+      "name": "Fern Jelly",
+      "category": "Snacks"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fish"
+      "name": "Fish",
+      "category": "Housing Items"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Ginormous Apple"
+      "name": "Ginormous Apple",
+      "category": "Housing Items"
     },
     {
-      "name": "Glowing Taffy"
+      "name": "Glowing Taffy",
+      "category": "Snacks"
     },
     {
-      "name": "Hot Cross Buns"
+      "name": "Hot Cross Buns",
+      "category": "Snacks"
     },
     {
-      "name": "Lustrous Blocking Citrine +14"
+      "name": "Lustrous Blocking Citrine +14",
+      "category": "Jewels"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Mystic Pizza"
+      "name": "Mystic Pizza",
+      "category": "Housing Items"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Nightbringer"
+      "name": "Nightbringer",
+      "category": "Spellements"
     },
     {
-      "name": "Pink Huckleberries"
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Pizza"
+      "name": "Pizza",
+      "category": "Snacks"
     },
     {
-      "name": "Polished Resilient Opal +5%"
+      "name": "Polished Resilient Opal +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Prickly Bear Cactus"
+      "name": "Prickly Bear Cactus",
+      "category": "Seeds"
     },
     {
-      "name": "Purple Grapes of Wrath"
+      "name": "Purple Grapes of Wrath",
+      "category": "Seeds"
     },
     {
-      "name": "Purple Snow Apples"
+      "name": "Purple Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Queen Crape Myrtle"
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
     },
     {
-      "name": "Red Bell Pepper"
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Roasted Drumstick"
+      "name": "Roasted Drumstick",
+      "category": "Housing Items"
     },
     {
-      "name": "Rock and Roll Candy"
+      "name": "Rock and Roll Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Rye Bread Fruit Bush"
+      "name": "Rye Bread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Satyr Chow"
+      "name": "Satyr Chow",
+      "category": "Snacks"
     },
     {
-      "name": "Saw Palmetto"
+      "name": "Saw Palmetto",
+      "category": "Seeds"
     },
     {
-      "name": "Scales"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Soldier's Balanced Helm"
+      "name": "Soldier's Balanced Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Deadly Helm"
+      "name": "Soldier's Deadly Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Deadly Longsword"
+      "name": "Soldier's Deadly Longsword",
+      "category": "Wands"
     },
     {
-      "name": "Soldier's Fiery Blade"
+      "name": "Soldier's Fiery Blade",
+      "category": "Wands"
     },
     {
-      "name": "Soldier's Fiery Helm"
+      "name": "Soldier's Fiery Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Icy Battle Axe"
+      "name": "Soldier's Icy Battle Axe",
+      "category": "Wands"
     },
     {
-      "name": "Soldier's Icy Helm"
+      "name": "Soldier's Icy Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Mythic Helm"
+      "name": "Soldier's Mythic Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Shocking Helm"
+      "name": "Soldier's Shocking Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Vibrant Helm"
+      "name": "Soldier's Vibrant Helm",
+      "category": "Hats"
     },
     {
-      "name": "Soldier's Vibrant Saber"
+      "name": "Soldier's Vibrant Saber",
+      "category": "Wands"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Spring"
+      "name": "Spring",
+      "category": "Reagents"
     },
     {
-      "name": "Sprinkle Cupcake"
+      "name": "Sprinkle Cupcake",
+      "category": "Snacks"
     },
     {
-      "name": "Sugar Khrystal"
+      "name": "Sugar Khrystal",
+      "category": "Seeds"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Trumpet Vine"
+      "name": "Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Vanguard's Balanced Helm"
+      "name": "Vanguard's Balanced Helm",
+      "category": "Hats"
     },
     {
-      "name": "Vanguard's Deadly Helm"
+      "name": "Vanguard's Deadly Helm",
+      "category": "Hats"
     },
     {
-      "name": "Vanguard's Fiery Helm"
+      "name": "Vanguard's Fiery Helm",
+      "category": "Hats"
     },
     {
-      "name": "Vanguard's Icy Helm"
+      "name": "Vanguard's Icy Helm",
+      "category": "Hats"
     },
     {
-      "name": "Vanguard's Mythic Helm"
+      "name": "Vanguard's Mythic Helm",
+      "category": "Hats"
     },
     {
-      "name": "Vanguard's Shocking Helm"
+      "name": "Vanguard's Shocking Helm",
+      "category": "Hats"
     },
     {
-      "name": "Vanguard's Vibrant Helm"
+      "name": "Vanguard's Vibrant Helm",
+      "category": "Hats"
     },
     {
-      "name": "Veggie Juice"
+      "name": "Veggie Juice",
+      "category": "Snacks"
     },
     {
-      "name": "Watermelon Slice"
+      "name": "Watermelon Slice",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Catacombs Combat Theme"
+      "name": "WC Catacombs Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Catacombs Theme"
+      "name": "WC Catacombs Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Drains Combat Theme"
+      "name": "WC Drains Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Drains Theme"
+      "name": "WC Drains Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Elsewhere Combat Theme"
+      "name": "WC Elsewhere Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "White Tiger Lily"
+      "name": "White Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Yellow Bell Pepper"
+      "name": "Yellow Bell Pepper",
+      "category": "Seeds"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
     "Reagents",
+    "Seeds",
     "Boss"
   ],
   "options": [
@@ -301,7 +396,8 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Vanguard"
+        "Vanguard",
+        "=Evil Magma Peas"
       ]
     }
   ],
@@ -607,7 +703,8 @@
       "params": {
         "enemy": "CC_Trash_Boss_A_01",
         "use_default_strategy": false,
-        "max_duration": 600.0
+        "max_duration": 600.0,
+        "wiki_page": "Creature:King Detritus"
       }
     },
     {
@@ -949,9 +1046,11 @@
         "state_8",
         "state_7",
         "state_9",
-        "state_18"
+        "state_18",
+        "state_20"
       ],
-      "color": 6
+      "color": 6,
+      "collapsed": true
     },
     {
       "id": "036bf7c2",
@@ -960,13 +1059,18 @@
         "state_13",
         "state_12",
         "state_11",
-        "state_17"
+        "state_17",
+        "state_16"
       ],
-      "color": 5
+      "color": 5,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "42fc8b104261ed2555d8052c0a0000cf65cafafe976c24e599a761be846bc436"
+  ]
 }

@@ -8,1795 +8,2392 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Alligator Pear Tree"
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Ally Dream Shield Onyx"
+      "name": "Ally Dream Shield Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Ally Precision Citrine"
+      "name": "Ally Precision Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Angel Oak"
+      "name": "Angel Oak",
+      "category": "Seeds"
     },
     {
-      "name": "Angora Bunny Ears"
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Arcanum Combat Theme"
+      "name": "Arcanum Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Baby Carrots"
+      "name": "Baby Carrots",
+      "category": "Seeds"
     },
     {
-      "name": "Baby Sunbird"
+      "name": "Baby Sunbird",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Balance Striker Citrine"
+      "name": "Balance Striker Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-Giver Citrine"
+      "name": "Balance-Giver Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-It Citrine"
+      "name": "Balance-It Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-Off Citrine"
+      "name": "Balance-Off Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-Sniper Citrine"
+      "name": "Balance-Sniper Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Bamboo Shoots"
+      "name": "Bamboo Shoots",
+      "category": "Seeds"
     },
     {
-      "name": "Barbarian's Saga"
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
     },
     {
-      "name": "Beast Wellington"
+      "name": "Beast Wellington",
+      "category": "Snacks"
     },
     {
-      "name": "Bell Pepper"
+      "name": "Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Berserk"
+      "name": "Berserk",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Black Sun Seeds"
+      "name": "Black Sun Seeds",
+      "category": "Snacks"
     },
     {
-      "name": "Blade of Fire Ruby"
+      "name": "Blade of Fire Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Blast Off!"
+      "name": "Blast Off!",
+      "category": "Spellements"
     },
     {
-      "name": "Blaze Beetle"
+      "name": "Blaze Beetle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blood Bat"
+      "name": "Blood Bat",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blue Huckleberries"
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Blue Phoenix"
+      "name": "Blue Phoenix",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Boiled Peanuts"
+      "name": "Boiled Peanuts",
+      "category": "Seeds"
     },
     {
-      "name": "Boom Shroom"
+      "name": "Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Boon Tree"
+      "name": "Boon Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bread Fruit Bush"
+      "name": "Bread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Breakfast Tacos"
+      "name": "Breakfast Tacos",
+      "category": "Snacks"
     },
     {
-      "name": "Brilliant Light"
+      "name": "Brilliant Light",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Burning Snap Dragon"
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Cargo"
+      "name": "Cargo",
+      "category": "Housing Items"
     },
     {
-      "name": "Cat Thug"
+      "name": "Cat Thug",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Centaur"
+      "name": "Centaur",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Chilly Con Queso"
+      "name": "Chilly Con Queso",
+      "category": "Snacks"
     },
     {
-      "name": "Climaclysm"
+      "name": "Climaclysm",
+      "category": "Spellements"
     },
     {
-      "name": "Clockwork Flower"
+      "name": "Clockwork Flower",
+      "category": "Seeds"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cornbread Fruit Bush"
+      "name": "Cornbread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Cracker"
+      "name": "Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Crystal Spider"
+      "name": "Crystal Spider",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dandelion"
+      "name": "Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Dark & Stormy"
+      "name": "Dark & Stormy",
+      "category": "Spellements"
     },
     {
-      "name": "Dazzling Accurate Amethyst +14%"
+      "name": "Dazzling Accurate Amethyst +14%",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Accurate Citrine +14%"
+      "name": "Dazzling Accurate Citrine +14%",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Accurate Hematite +14%"
+      "name": "Dazzling Accurate Hematite +14%",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Accurate Jade +14%"
+      "name": "Dazzling Accurate Jade +14%",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Accurate Onyx +14%"
+      "name": "Dazzling Accurate Onyx +14%",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Accurate Sapphire +14%"
+      "name": "Dazzling Accurate Sapphire +14%",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Amethyst +19"
+      "name": "Dazzling Blocking Amethyst +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Citrine +19"
+      "name": "Dazzling Blocking Citrine +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Hematite +19"
+      "name": "Dazzling Blocking Hematite +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Jade +19"
+      "name": "Dazzling Blocking Jade +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Opal +10"
+      "name": "Dazzling Blocking Opal +10",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Peridot +19"
+      "name": "Dazzling Blocking Peridot +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Ruby +19"
+      "name": "Dazzling Blocking Ruby +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Blocking Sapphire +19"
+      "name": "Dazzling Blocking Sapphire +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Amethyst +19"
+      "name": "Dazzling Critical Amethyst +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Citrine +19"
+      "name": "Dazzling Critical Citrine +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Hematite +19"
+      "name": "Dazzling Critical Hematite +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Jade +19"
+      "name": "Dazzling Critical Jade +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Onyx +19"
+      "name": "Dazzling Critical Onyx +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Peridot +19"
+      "name": "Dazzling Critical Peridot +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Critical Sapphire +19"
+      "name": "Dazzling Critical Sapphire +19",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Amethyst +29"
+      "name": "Dazzling Damage Amethyst +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Hematite +60"
+      "name": "Dazzling Damage Hematite +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Jade +29"
+      "name": "Dazzling Damage Jade +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Onyx +29"
+      "name": "Dazzling Damage Onyx +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Peridot +29"
+      "name": "Dazzling Damage Peridot +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Ruby +29"
+      "name": "Dazzling Damage Ruby +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Damage Sapphire +29"
+      "name": "Dazzling Damage Sapphire +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Amethyst +58"
+      "name": "Dazzling Defense Amethyst +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Citrine +58"
+      "name": "Dazzling Defense Citrine +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Citrine +60"
+      "name": "Dazzling Defense Citrine +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Hematite +58"
+      "name": "Dazzling Defense Hematite +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Hematite +60"
+      "name": "Dazzling Defense Hematite +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Jade +58"
+      "name": "Dazzling Defense Jade +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Jade +60"
+      "name": "Dazzling Defense Jade +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Onyx +58"
+      "name": "Dazzling Defense Onyx +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Onyx +60"
+      "name": "Dazzling Defense Onyx +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Opal +29"
+      "name": "Dazzling Defense Opal +29",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Peridot +58"
+      "name": "Dazzling Defense Peridot +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Peridot +60"
+      "name": "Dazzling Defense Peridot +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Ruby +58"
+      "name": "Dazzling Defense Ruby +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Ruby +60"
+      "name": "Dazzling Defense Ruby +60",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Sapphire +58"
+      "name": "Dazzling Defense Sapphire +58",
+      "category": "Jewels"
     },
     {
-      "name": "Dazzling Defense Sapphire +60"
+      "name": "Dazzling Defense Sapphire +60",
+      "category": "Jewels"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Deadly Helephant Ears"
+      "name": "Deadly Helephant Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Death Prism"
+      "name": "Death Prism",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Death Striker Onyx"
+      "name": "Death Striker Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Away Onyx"
+      "name": "Death-Away Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Boon Onyx"
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Dealer Onyx"
+      "name": "Death-Dealer Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Proof Onyx"
+      "name": "Death-Proof Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Shot Onyx"
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Sniper Onyx"
+      "name": "Death-Sniper Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Ward Onyx"
+      "name": "Death-Ward Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Decimatoes"
+      "name": "Decimatoes",
+      "category": "Snacks"
     },
     {
-      "name": "Desparagus (Seed)"
+      "name": "Desparagus (Seed)",
+      "category": "Seeds"
     },
     {
-      "name": "Dragonflies"
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dream Shield"
+      "name": "Dream Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Eggplant"
+      "name": "Eggplant",
+      "category": "Snacks"
     },
     {
-      "name": "Elemental Blade"
+      "name": "Elemental Blade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elemental Defuse"
+      "name": "Elemental Defuse",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elemental Shield"
+      "name": "Elemental Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elemental Spear"
+      "name": "Elemental Spear",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elemental Trap"
+      "name": "Elemental Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elf on Fire Ruby"
+      "name": "Elf on Fire Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Ether Shield"
+      "name": "Ether Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Magma Peas"
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Evil Snow Peas"
+      "name": "Evil Snow Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Eye Candy"
+      "name": "Eye Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Face Palm"
+      "name": "Face Palm",
+      "category": "Seeds"
     },
     {
-      "name": "Fetid Legumes"
+      "name": "Fetid Legumes",
+      "category": "Snacks"
     },
     {
-      "name": "Fickle Pickle"
+      "name": "Fickle Pickle",
+      "category": "Seeds"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Fire Prism"
+      "name": "Fire Prism",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Striker Ruby"
+      "name": "Fire Striker Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Away Ruby"
+      "name": "Fire-Away Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Dealer Ruby"
+      "name": "Fire-Dealer Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Giver Ruby"
+      "name": "Fire-Giver Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Proof Ruby"
+      "name": "Fire-Proof Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Ward Ruby"
+      "name": "Fire-Ward Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Flood"
+      "name": "Flood",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Flute Symphony"
+      "name": "Flute Symphony",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fortune Cookie Tree"
+      "name": "Fortune Cookie Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Freeze Ray"
+      "name": "Freeze Ray",
+      "category": "Spellements"
     },
     {
-      "name": "Frostbite"
+      "name": "Frostbite",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frozen Fly Trap"
+      "name": "Frozen Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Galvanic Field"
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Golden Biscuit"
+      "name": "Golden Biscuit",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Candy Bar"
+      "name": "Golden Candy Bar",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Peanut"
+      "name": "Golden Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Squash"
+      "name": "Golden Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Goose Tree"
+      "name": "Goose Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Grapes of Wrath"
+      "name": "Grapes of Wrath",
+      "category": "Seeds"
     },
     {
-      "name": "Green Snow Apples"
+      "name": "Green Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Green Widow"
+      "name": "Green Widow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Grim Reader"
+      "name": "Grim Reader",
+      "category": "Spellements"
     },
     {
-      "name": "Grrnadier"
+      "name": "Grrnadier",
+      "category": "Spellements"
     },
     {
-      "name": "Healer Opal"
+      "name": "Healer Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Healthy Opal"
+      "name": "Healthy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Helephant Ears"
+      "name": "Helephant Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Honey Bee Plant"
+      "name": "Honey Bee Plant",
+      "category": "Seeds"
     },
     {
-      "name": "Honey Sickle"
+      "name": "Honey Sickle",
+      "category": "Seeds"
     },
     {
-      "name": "Huge Ice Cream"
+      "name": "Huge Ice Cream",
+      "category": "Snacks"
     },
     {
-      "name": "Ice Assailant Sapphire"
+      "name": "Ice Assailant Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice Prism"
+      "name": "Ice Prism",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Striker Sapphire"
+      "name": "Ice Striker Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Away Sapphire"
+      "name": "Ice-Away Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Dealer Sapphire"
+      "name": "Ice-Dealer Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Eye Sapphire"
+      "name": "Ice-Eye Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Giver Sapphire"
+      "name": "Ice-Giver Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Proof Sapphire"
+      "name": "Ice-Proof Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Ward Sapphire"
+      "name": "Ice-Ward Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Iron Sultan"
+      "name": "Iron Sultan",
+      "category": "Spellements"
     },
     {
-      "name": "Ivy League"
+      "name": "Ivy League",
+      "category": "Seeds"
     },
     {
-      "name": "Key Limes"
+      "name": "Key Limes",
+      "category": "Seeds"
     },
     {
-      "name": "Lamassu"
+      "name": "Lamassu",
+      "category": "Spellements"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Watermelon"
+      "name": "Large Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Laugh-O-Dil"
+      "name": "Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Lemuria Action Theme"
+      "name": "Lemuria Action Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Boss Combat Theme"
+      "name": "Lemuria Boss Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Forest Combat Theme"
+      "name": "Lemuria Forest Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Forest Theme"
+      "name": "Lemuria Forest Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Heroic Theme"
+      "name": "Lemuria Heroic Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Jungle Combat Theme"
+      "name": "Lemuria Jungle Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Lab Combat Theme"
+      "name": "Lemuria Lab Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Mandoria Theme"
+      "name": "Lemuria Mandoria Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Minds Theme"
+      "name": "Lemuria Minds Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Mystery Theme"
+      "name": "Lemuria Mystery Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Noir Combat Theme"
+      "name": "Lemuria Noir Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Noir Theme"
+      "name": "Lemuria Noir Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Sky City Combat Theme"
+      "name": "Lemuria Sky City Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Sky City Theme"
+      "name": "Lemuria Sky City Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 1"
+      "name": "Lemuria Telos Theme 1",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 2"
+      "name": "Lemuria Telos Theme 2",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 3"
+      "name": "Lemuria Telos Theme 3",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 4"
+      "name": "Lemuria Telos Theme 4",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 5"
+      "name": "Lemuria Telos Theme 5",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 6"
+      "name": "Lemuria Telos Theme 6",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Telos Theme 7"
+      "name": "Lemuria Telos Theme 7",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemuria Ursai Village Theme"
+      "name": "Lemuria Ursai Village Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemurian Ancient One Hat"
+      "name": "Lemurian Ancient One Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Barbarian Robe"
+      "name": "Lemurian Barbarian Robe",
+      "category": "Robes"
     },
     {
-      "name": "Lemurian Barbarian Shoes"
+      "name": "Lemurian Barbarian Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Lemurian Cold Steel Deck"
+      "name": "Lemurian Cold Steel Deck",
+      "category": "Decks"
     },
     {
-      "name": "Lemurian Cold Steel Hat"
+      "name": "Lemurian Cold Steel Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Cold Steel Talisman"
+      "name": "Lemurian Cold Steel Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Lemurian Deadly Robe"
+      "name": "Lemurian Deadly Robe",
+      "category": "Robes"
     },
     {
-      "name": "Lemurian Deadly Shoes"
+      "name": "Lemurian Deadly Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Lemurian Deadly Staff"
+      "name": "Lemurian Deadly Staff",
+      "category": "Wands"
     },
     {
-      "name": "Lemurian Deflector Ring"
+      "name": "Lemurian Deflector Ring",
+      "category": "Rings"
     },
     {
-      "name": "Lemurian Deflector Shoes"
+      "name": "Lemurian Deflector Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Lemurian Detective Hat"
+      "name": "Lemurian Detective Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Detective Ring"
+      "name": "Lemurian Detective Ring",
+      "category": "Rings"
     },
     {
-      "name": "Lemurian Detective Staff"
+      "name": "Lemurian Detective Staff",
+      "category": "Wands"
     },
     {
-      "name": "Lemurian Electric Athame"
+      "name": "Lemurian Electric Athame",
+      "category": "Athames"
     },
     {
-      "name": "Lemurian Electric Shoes"
+      "name": "Lemurian Electric Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Lemurian Eruption Ring"
+      "name": "Lemurian Eruption Ring",
+      "category": "Rings"
     },
     {
-      "name": "Lemurian Eruption Staff"
+      "name": "Lemurian Eruption Staff",
+      "category": "Wands"
     },
     {
-      "name": "Lemurian Ferocious Shoes"
+      "name": "Lemurian Ferocious Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Lemurian Firewall Robe"
+      "name": "Lemurian Firewall Robe",
+      "category": "Robes"
     },
     {
-      "name": "Lemurian Founder's Athame"
+      "name": "Lemurian Founder's Athame",
+      "category": "Athames"
     },
     {
-      "name": "Lemurian Founder's Hat"
+      "name": "Lemurian Founder's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Founder's Shoes"
+      "name": "Lemurian Founder's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Lemurian Hex Talisman"
+      "name": "Lemurian Hex Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Lemurian Horror Ring"
+      "name": "Lemurian Horror Ring",
+      "category": "Rings"
     },
     {
-      "name": "Lemurian Horror Staff"
+      "name": "Lemurian Horror Staff",
+      "category": "Wands"
     },
     {
-      "name": "Lemurian Horror Talisman"
+      "name": "Lemurian Horror Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Lemurian Old Judge Talisman"
+      "name": "Lemurian Old Judge Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Lemurian Preservation Athame"
+      "name": "Lemurian Preservation Athame",
+      "category": "Athames"
     },
     {
-      "name": "Lemurian Preservation Staff"
+      "name": "Lemurian Preservation Staff",
+      "category": "Wands"
     },
     {
-      "name": "Lemurian Science Deck"
+      "name": "Lemurian Science Deck",
+      "category": "Decks"
     },
     {
-      "name": "Lemurian Stability Deck"
+      "name": "Lemurian Stability Deck",
+      "category": "Decks"
     },
     {
-      "name": "Lemurian Stability Hat"
+      "name": "Lemurian Stability Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Teleological Hat"
+      "name": "Lemurian Teleological Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Undaunting Robe"
+      "name": "Lemurian Undaunting Robe",
+      "category": "Robes"
     },
     {
-      "name": "Lemurian Undead Hat"
+      "name": "Lemurian Undead Hat",
+      "category": "Hats"
     },
     {
-      "name": "Lemurian Undead Talisman"
+      "name": "Lemurian Undead Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Lemurian Volcanic Athame"
+      "name": "Lemurian Volcanic Athame",
+      "category": "Athames"
     },
     {
-      "name": "Lemurian Volcanic Hat"
+      "name": "Lemurian Volcanic Hat",
+      "category": "Hats"
     },
     {
-      "name": "Life Prism"
+      "name": "Life Prism",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Life Striker Jade"
+      "name": "Life Striker Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Boon Jade"
+      "name": "Life-Boon Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Bringer Jade"
+      "name": "Life-Bringer Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Eye Jade"
+      "name": "Life-Eye Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Giver Jade"
+      "name": "Life-Giver Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Proof Jade"
+      "name": "Life-Proof Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Shot Jade"
+      "name": "Life-Shot Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Sniper Jade"
+      "name": "Life-Sniper Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Ward Jade"
+      "name": "Life-Ward Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Link"
+      "name": "Link",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lively Opal"
+      "name": "Lively Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Lord of the Jungle"
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Magician's Balance Cap"
+      "name": "Magician's Balance Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Balance Wand"
+      "name": "Magician's Balance Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Death Cap"
+      "name": "Magician's Death Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Death Wand"
+      "name": "Magician's Death Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Fire Cap"
+      "name": "Magician's Fire Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Fire Wand"
+      "name": "Magician's Fire Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Ice Cap"
+      "name": "Magician's Ice Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Ice Wand"
+      "name": "Magician's Ice Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Life Cap"
+      "name": "Magician's Life Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Life Wand"
+      "name": "Magician's Life Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Myth Cap"
+      "name": "Magician's Myth Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Myth Wand"
+      "name": "Magician's Myth Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Power Cap"
+      "name": "Magician's Power Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Power Wand"
+      "name": "Magician's Power Wand",
+      "category": "Wands"
     },
     {
-      "name": "Magician's Storm Cap"
+      "name": "Magician's Storm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Magician's Storm Wand"
+      "name": "Magician's Storm Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Balance Cap"
+      "name": "Malevolent Balance Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Balance Wand"
+      "name": "Malevolent Balance Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Death Cap"
+      "name": "Malevolent Death Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Death Wand"
+      "name": "Malevolent Death Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Fire Cap"
+      "name": "Malevolent Fire Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Fire Wand"
+      "name": "Malevolent Fire Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Ice Cap"
+      "name": "Malevolent Ice Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Ice Wand"
+      "name": "Malevolent Ice Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Life Cap"
+      "name": "Malevolent Life Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Life Wand"
+      "name": "Malevolent Life Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Myth Cap"
+      "name": "Malevolent Myth Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Myth Wand"
+      "name": "Malevolent Myth Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Power Cap"
+      "name": "Malevolent Power Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Power Wand"
+      "name": "Malevolent Power Wand",
+      "category": "Wands"
     },
     {
-      "name": "Malevolent Storm Cap"
+      "name": "Malevolent Storm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Malevolent Storm Wand"
+      "name": "Malevolent Storm Wand",
+      "category": "Wands"
     },
     {
-      "name": "Maltese Tiger Lily"
+      "name": "Maltese Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Marzipan Maize"
+      "name": "Marzipan Maize",
+      "category": "Snacks"
     },
     {
-      "name": "Massive Pest Zapper"
+      "name": "Massive Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Medic Opal"
+      "name": "Medic Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Melting Cheese Tree"
+      "name": "Melting Cheese Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Merciless Balance Cap"
+      "name": "Merciless Balance Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Balance Wand"
+      "name": "Merciless Balance Wand",
+      "category": "Wands"
     },
     {
-      "name": "Merciless Death Cap"
+      "name": "Merciless Death Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Death Wand"
+      "name": "Merciless Death Wand",
+      "category": "Wands"
     },
     {
-      "name": "Merciless Fire Cap"
+      "name": "Merciless Fire Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Fire Wand"
+      "name": "Merciless Fire Wand",
+      "category": "Wands"
     },
     {
-      "name": "Merciless Ice Cap"
+      "name": "Merciless Ice Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Ice Wand"
+      "name": "Merciless Ice Wand",
+      "category": "Wands"
     },
     {
-      "name": "Merciless Life Cap"
+      "name": "Merciless Life Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Life Wand"
+      "name": "Merciless Life Wand",
+      "category": "Wands"
     },
     {
-      "name": "Merciless Myth Cap"
+      "name": "Merciless Myth Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Myth Wand"
+      "name": "Merciless Myth Wand",
+      "category": "Wands"
     },
     {
-      "name": "Merciless Storm Cap"
+      "name": "Merciless Storm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Merciless Storm Wand"
+      "name": "Merciless Storm Wand",
+      "category": "Wands"
     },
     {
-      "name": "Miniature Bloodbats"
+      "name": "Miniature Bloodbats",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Missile Toe"
+      "name": "Missile Toe",
+      "category": "Seeds"
     },
     {
-      "name": "Mockenspiel"
+      "name": "Mockenspiel",
+      "category": "Spellements"
     },
     {
-      "name": "Moon Flower"
+      "name": "Moon Flower",
+      "category": "Seeds"
     },
     {
-      "name": "Moon Pie"
+      "name": "Moon Pie",
+      "category": "Snacks"
     },
     {
-      "name": "MooShu Cheddar"
+      "name": "MooShu Cheddar",
+      "category": "Snacks"
     },
     {
-      "name": "Myth Assailant Peridot"
+      "name": "Myth Assailant Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth Prism"
+      "name": "Myth Prism",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Myth Striker Peridot"
+      "name": "Myth Striker Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Boon Peridot"
+      "name": "Myth-Boon Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Giver Peridot"
+      "name": "Myth-Giver Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Proof Peridot"
+      "name": "Myth-Proof Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Sniper Peridot"
+      "name": "Myth-Sniper Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Ward Peridot"
+      "name": "Myth-Ward Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Nested Fury"
+      "name": "Nested Fury",
+      "category": "Spellements"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Fig"
+      "name": "Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "No Pain, No Gain Onyx"
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Old One's Endgame"
+      "name": "Old One's Endgame",
+      "category": "Spellements"
     },
     {
-      "name": "Orange Bell Pepper"
+      "name": "Orange Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Orange Dandelion"
+      "name": "Orange Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Periodic Table Poster"
+      "name": "Periodic Table Poster",
+      "category": "Housing Items"
     },
     {
-      "name": "Pest Zapper"
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pineapple Spears"
+      "name": "Pineapple Spears",
+      "category": "Snacks"
     },
     {
-      "name": "Pink Huckleberries"
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Pink Laugh-O-Dil"
+      "name": "Pink Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Poncherello Chips"
+      "name": "Poncherello Chips",
+      "category": "Snacks"
     },
     {
-      "name": "Potato Chips"
+      "name": "Potato Chips",
+      "category": "Snacks"
     },
     {
-      "name": "Power-Taker Ruby"
+      "name": "Power-Taker Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Prickly Bear Cactus"
+      "name": "Prickly Bear Cactus",
+      "category": "Seeds"
     },
     {
-      "name": "Pungent Bug Spray"
+      "name": "Pungent Bug Spray",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Purple Bell Pepper"
+      "name": "Purple Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Purple Grapes of Wrath"
+      "name": "Purple Grapes of Wrath",
+      "category": "Seeds"
     },
     {
-      "name": "Purple Snow Apples"
+      "name": "Purple Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Putrid Bug Spray"
+      "name": "Putrid Bug Spray",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Puzzle Cube"
+      "name": "Puzzle Cube",
+      "category": "Housing Items"
     },
     {
-      "name": "Pyrosaurus Rex Ruby"
+      "name": "Pyrosaurus Rex Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Qismah's Curse"
+      "name": "Qismah's Curse",
+      "category": "Spellements"
     },
     {
-      "name": "Quartermane Citrine"
+      "name": "Quartermane Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Queen Crape Myrtle"
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
     },
     {
-      "name": "Raging Bull"
+      "name": "Raging Bull",
+      "category": "Spellements"
     },
     {
-      "name": "Red Bell Pepper"
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Red Couch Potatoes"
+      "name": "Red Couch Potatoes",
+      "category": "Seeds"
     },
     {
-      "name": "Red Grapes of Wrath"
+      "name": "Red Grapes of Wrath",
+      "category": "Seeds"
     },
     {
-      "name": "Red Huckleberries"
+      "name": "Red Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Rock and Roll Candy"
+      "name": "Rock and Roll Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Rotten Beets"
+      "name": "Rotten Beets",
+      "category": "Seeds"
     },
     {
-      "name": "Rusalka's Wrath"
+      "name": "Rusalka's Wrath",
+      "category": "Spellements"
     },
     {
-      "name": "Rye Bread Fruit Bush"
+      "name": "Rye Bread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "S'more Machine"
+      "name": "S'more Machine",
+      "category": "Spellements"
     },
     {
-      "name": "Sand Wurm"
+      "name": "Sand Wurm",
+      "category": "Spellements"
     },
     {
-      "name": "Saw Palmetto"
+      "name": "Saw Palmetto",
+      "category": "Seeds"
     },
     {
-      "name": "Scales"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Scion of Balance"
+      "name": "Scion of Balance",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Death"
+      "name": "Scion of Death",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Fire"
+      "name": "Scion of Fire",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Ice"
+      "name": "Scion of Ice",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Life"
+      "name": "Scion of Life",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Myth"
+      "name": "Scion of Myth",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Storm"
+      "name": "Scion of Storm",
+      "category": "Spellements"
     },
     {
-      "name": "Scorching Scimitars"
+      "name": "Scorching Scimitars",
+      "category": "Spellements"
     },
     {
-      "name": "Shatterhorn"
+      "name": "Shatterhorn",
+      "category": "Spellements"
     },
     {
-      "name": "Silver Trumpet Vine"
+      "name": "Silver Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Sirens"
+      "name": "Sirens",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sliced Watermelon"
+      "name": "Sliced Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Snack Attack"
+      "name": "Snack Attack",
+      "category": "Spellements"
     },
     {
-      "name": "Snake Charmer"
+      "name": "Snake Charmer",
+      "category": "Spellements"
     },
     {
-      "name": "Snap Dragon"
+      "name": "Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Snow Apples"
+      "name": "Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Snowball Barrage"
+      "name": "Snowball Barrage",
+      "category": "Spellements"
     },
     {
-      "name": "Sound of Musicology"
+      "name": "Sound of Musicology",
+      "category": "Spellements"
     },
     {
-      "name": "Sour Fickle Pickle"
+      "name": "Sour Fickle Pickle",
+      "category": "Seeds"
     },
     {
-      "name": "Sparkling Accurate Amethyst +13%"
+      "name": "Sparkling Accurate Amethyst +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Citrine +13%"
+      "name": "Sparkling Accurate Citrine +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Hematite +13%"
+      "name": "Sparkling Accurate Hematite +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Jade +13%"
+      "name": "Sparkling Accurate Jade +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Onyx +13%"
+      "name": "Sparkling Accurate Onyx +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Peridot +13%"
+      "name": "Sparkling Accurate Peridot +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Ruby +13%"
+      "name": "Sparkling Accurate Ruby +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Accurate Sapphire +13%"
+      "name": "Sparkling Accurate Sapphire +13%",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Amethyst +17"
+      "name": "Sparkling Blocking Amethyst +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Citrine +17"
+      "name": "Sparkling Blocking Citrine +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Hematite +17"
+      "name": "Sparkling Blocking Hematite +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Jade +17"
+      "name": "Sparkling Blocking Jade +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Onyx +17"
+      "name": "Sparkling Blocking Onyx +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Opal +9"
+      "name": "Sparkling Blocking Opal +9",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Peridot +17"
+      "name": "Sparkling Blocking Peridot +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Ruby +17"
+      "name": "Sparkling Blocking Ruby +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Blocking Sapphire +17"
+      "name": "Sparkling Blocking Sapphire +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Amethyst +17"
+      "name": "Sparkling Critical Amethyst +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Citrine +17"
+      "name": "Sparkling Critical Citrine +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Jade +17"
+      "name": "Sparkling Critical Jade +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Onyx +17"
+      "name": "Sparkling Critical Onyx +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Peridot +17"
+      "name": "Sparkling Critical Peridot +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Ruby +17"
+      "name": "Sparkling Critical Ruby +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Critical Sapphire +17"
+      "name": "Sparkling Critical Sapphire +17",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Amethyst +27"
+      "name": "Sparkling Damage Amethyst +27",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Hematite +54"
+      "name": "Sparkling Damage Hematite +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Onyx +27"
+      "name": "Sparkling Damage Onyx +27",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Opal +14"
+      "name": "Sparkling Damage Opal +14",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Peridot +27"
+      "name": "Sparkling Damage Peridot +27",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Ruby +27"
+      "name": "Sparkling Damage Ruby +27",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Damage Sapphire +27"
+      "name": "Sparkling Damage Sapphire +27",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Amethyst +53"
+      "name": "Sparkling Defense Amethyst +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Amethyst +54"
+      "name": "Sparkling Defense Amethyst +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Citrine +53"
+      "name": "Sparkling Defense Citrine +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Hematite +53"
+      "name": "Sparkling Defense Hematite +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Hematite +54"
+      "name": "Sparkling Defense Hematite +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Jade +53"
+      "name": "Sparkling Defense Jade +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Jade +54"
+      "name": "Sparkling Defense Jade +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Onyx +53"
+      "name": "Sparkling Defense Onyx +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Onyx +54"
+      "name": "Sparkling Defense Onyx +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Opal +27"
+      "name": "Sparkling Defense Opal +27",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Peridot +53"
+      "name": "Sparkling Defense Peridot +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Peridot +54"
+      "name": "Sparkling Defense Peridot +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Ruby +53"
+      "name": "Sparkling Defense Ruby +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Ruby +54"
+      "name": "Sparkling Defense Ruby +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Sapphire +53"
+      "name": "Sparkling Defense Sapphire +53",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Defense Sapphire +54"
+      "name": "Sparkling Defense Sapphire +54",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Health Opal +116"
+      "name": "Sparkling Health Opal +116",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Health Opal +117"
+      "name": "Sparkling Health Opal +117",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Health Opal +118"
+      "name": "Sparkling Health Opal +118",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Health Opal +119"
+      "name": "Sparkling Health Opal +119",
+      "category": "Jewels"
     },
     {
-      "name": "Sparkling Mana Opal +49"
+      "name": "Sparkling Mana Opal +49",
+      "category": "Jewels"
     },
     {
-      "name": "Spell-Proof Opal"
+      "name": "Spell-Proof Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Spicy Popcorn"
+      "name": "Spicy Popcorn",
+      "category": "Snacks"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Sprinkle Cupcake"
+      "name": "Sprinkle Cupcake",
+      "category": "Snacks"
     },
     {
-      "name": "Square Root"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Squash"
+      "name": "Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Star Cookie"
+      "name": "Star Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Storm Prism"
+      "name": "Storm Prism",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Shield"
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm-Away Amethyst"
+      "name": "Storm-Away Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Boon Amethyst"
+      "name": "Storm-Boon Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Proof Amethyst"
+      "name": "Storm-Proof Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Shot Amethyst"
+      "name": "Storm-Shot Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Ward Amethyst"
+      "name": "Storm-Ward Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stun Recalcitrant Opal"
+      "name": "Stun Recalcitrant Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Stun Resistant Opal"
+      "name": "Stun Resistant Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sugar Donut"
+      "name": "Sugar Donut",
+      "category": "Snacks"
     },
     {
-      "name": "Sugar Khrystal"
+      "name": "Sugar Khrystal",
+      "category": "Seeds"
     },
     {
-      "name": "Sunion"
+      "name": "Sunion",
+      "category": "Seeds"
     },
     {
-      "name": "Super Cold Popsicle"
+      "name": "Super Cold Popsicle",
+      "category": "Snacks"
     },
     {
-      "name": "Supreme Ancient One Athame"
+      "name": "Supreme Ancient One Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Ancient One Deck"
+      "name": "Supreme Ancient One Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Ancient One Ring"
+      "name": "Supreme Ancient One Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Ancient One Robe"
+      "name": "Supreme Ancient One Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Ancient One Shoes"
+      "name": "Supreme Ancient One Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Ancient One Staff"
+      "name": "Supreme Ancient One Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Ancient One Talisman"
+      "name": "Supreme Ancient One Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Barbarian Deck"
+      "name": "Supreme Barbarian Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Barbarian Hat"
+      "name": "Supreme Barbarian Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Barbarian Ring"
+      "name": "Supreme Barbarian Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Barbarian Robe"
+      "name": "Supreme Barbarian Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Barbarian Shoes"
+      "name": "Supreme Barbarian Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Barbarian Staff"
+      "name": "Supreme Barbarian Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Barbarian Talisman"
+      "name": "Supreme Barbarian Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Cold Steel Athame"
+      "name": "Supreme Cold Steel Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Cold Steel Deck"
+      "name": "Supreme Cold Steel Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Cold Steel Robe"
+      "name": "Supreme Cold Steel Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Cold Steel Shoes"
+      "name": "Supreme Cold Steel Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Deadly Athame"
+      "name": "Supreme Deadly Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Deadly Robe"
+      "name": "Supreme Deadly Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Deadly Shoes"
+      "name": "Supreme Deadly Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Deflector Deck"
+      "name": "Supreme Deflector Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Deflector Robe"
+      "name": "Supreme Deflector Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Deflector Shoes"
+      "name": "Supreme Deflector Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Deflector Staff"
+      "name": "Supreme Deflector Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Detective Athame"
+      "name": "Supreme Detective Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Detective Hat"
+      "name": "Supreme Detective Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Detective Robe"
+      "name": "Supreme Detective Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Detective Shoes"
+      "name": "Supreme Detective Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Detective Staff"
+      "name": "Supreme Detective Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Electric Ring"
+      "name": "Supreme Electric Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Electric Robe"
+      "name": "Supreme Electric Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Electric Shoes"
+      "name": "Supreme Electric Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Electric Staff"
+      "name": "Supreme Electric Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Eruption Athame"
+      "name": "Supreme Eruption Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Eruption Ring"
+      "name": "Supreme Eruption Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Eruption Robe"
+      "name": "Supreme Eruption Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Eruption Shoes"
+      "name": "Supreme Eruption Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Eruption Staff"
+      "name": "Supreme Eruption Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Ferocious Ring"
+      "name": "Supreme Ferocious Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Ferocious Robe"
+      "name": "Supreme Ferocious Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Ferocious Shoes"
+      "name": "Supreme Ferocious Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Ferocious Talisman"
+      "name": "Supreme Ferocious Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Firewall Robe"
+      "name": "Supreme Firewall Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Firewall Shoes"
+      "name": "Supreme Firewall Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Firewall Staff"
+      "name": "Supreme Firewall Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Firewall Talisman"
+      "name": "Supreme Firewall Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Founder's Athame"
+      "name": "Supreme Founder's Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Founder's Deck"
+      "name": "Supreme Founder's Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Founder's Hat"
+      "name": "Supreme Founder's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Founder's Ring"
+      "name": "Supreme Founder's Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Founder's Robe"
+      "name": "Supreme Founder's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Founder's Shoes"
+      "name": "Supreme Founder's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Founder's Talisman"
+      "name": "Supreme Founder's Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Freezer Athame"
+      "name": "Supreme Freezer Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Freezer Deck"
+      "name": "Supreme Freezer Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Freezer Hat"
+      "name": "Supreme Freezer Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Freezer Robe"
+      "name": "Supreme Freezer Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Freezer Shoes"
+      "name": "Supreme Freezer Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Freezer Staff"
+      "name": "Supreme Freezer Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Freezer Talisman"
+      "name": "Supreme Freezer Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Hex Deck"
+      "name": "Supreme Hex Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Hex Hat"
+      "name": "Supreme Hex Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Hex Ring"
+      "name": "Supreme Hex Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Hex Robe"
+      "name": "Supreme Hex Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Hex Shoes"
+      "name": "Supreme Hex Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Hex Talisman"
+      "name": "Supreme Hex Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Horror Deck"
+      "name": "Supreme Horror Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Horror Hat"
+      "name": "Supreme Horror Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Horror Robe"
+      "name": "Supreme Horror Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Horror Shoes"
+      "name": "Supreme Horror Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Jungle Ring"
+      "name": "Supreme Jungle Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Jungle Robe"
+      "name": "Supreme Jungle Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Jungle Shoes"
+      "name": "Supreme Jungle Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Jungle Talisman"
+      "name": "Supreme Jungle Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Lifeforce Athame"
+      "name": "Supreme Lifeforce Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Lifeforce Deck"
+      "name": "Supreme Lifeforce Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Lifeforce Hat"
+      "name": "Supreme Lifeforce Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Lifeforce Robe"
+      "name": "Supreme Lifeforce Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Lifeforce Shoes"
+      "name": "Supreme Lifeforce Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Lifeforce Staff"
+      "name": "Supreme Lifeforce Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Old Judge Deck"
+      "name": "Supreme Old Judge Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Old Judge Ring"
+      "name": "Supreme Old Judge Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Old Judge Robe"
+      "name": "Supreme Old Judge Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Old Judge Shoes"
+      "name": "Supreme Old Judge Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Old Judge Talisman"
+      "name": "Supreme Old Judge Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Preservation Athame"
+      "name": "Supreme Preservation Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Preservation Hat"
+      "name": "Supreme Preservation Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Preservation Robe"
+      "name": "Supreme Preservation Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Preservation Shoes"
+      "name": "Supreme Preservation Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Preservation Talisman"
+      "name": "Supreme Preservation Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Science Athame"
+      "name": "Supreme Science Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Science Robe"
+      "name": "Supreme Science Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Science Shoes"
+      "name": "Supreme Science Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Stability Athame"
+      "name": "Supreme Stability Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Stability Deck"
+      "name": "Supreme Stability Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Stability Ring"
+      "name": "Supreme Stability Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Stability Robe"
+      "name": "Supreme Stability Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Stability Shoes"
+      "name": "Supreme Stability Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Sunburst"
+      "name": "Supreme Sunburst",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Supreme Teleological Athame"
+      "name": "Supreme Teleological Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Teleological Hat"
+      "name": "Supreme Teleological Hat",
+      "category": "Hats"
     },
     {
-      "name": "Supreme Teleological Robe"
+      "name": "Supreme Teleological Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Teleological Shoes"
+      "name": "Supreme Teleological Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Teleological Staff"
+      "name": "Supreme Teleological Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Teleological Talisman"
+      "name": "Supreme Teleological Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Undaunting Athame"
+      "name": "Supreme Undaunting Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Undaunting Ring"
+      "name": "Supreme Undaunting Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Undaunting Robe"
+      "name": "Supreme Undaunting Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Undaunting Shoes"
+      "name": "Supreme Undaunting Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Undaunting Talisman"
+      "name": "Supreme Undaunting Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Undead Athame"
+      "name": "Supreme Undead Athame",
+      "category": "Athames"
     },
     {
-      "name": "Supreme Undead Deck"
+      "name": "Supreme Undead Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Undead Robe"
+      "name": "Supreme Undead Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Undead Shoes"
+      "name": "Supreme Undead Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Undead Staff"
+      "name": "Supreme Undead Staff",
+      "category": "Wands"
     },
     {
-      "name": "Supreme Undead Talisman"
+      "name": "Supreme Undead Talisman",
+      "category": "Amulets"
     },
     {
-      "name": "Supreme Volcanic Deck"
+      "name": "Supreme Volcanic Deck",
+      "category": "Decks"
     },
     {
-      "name": "Supreme Volcanic Ring"
+      "name": "Supreme Volcanic Ring",
+      "category": "Rings"
     },
     {
-      "name": "Supreme Volcanic Robe"
+      "name": "Supreme Volcanic Robe",
+      "category": "Robes"
     },
     {
-      "name": "Supreme Volcanic Shoes"
+      "name": "Supreme Volcanic Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Supreme Volcanic Staff"
+      "name": "Supreme Volcanic Staff",
+      "category": "Wands"
     },
     {
-      "name": "Swirled Lollipop"
+      "name": "Swirled Lollipop",
+      "category": "Snacks"
     },
     {
-      "name": "Sword Fern"
+      "name": "Sword Fern",
+      "category": "Seeds"
     },
     {
-      "name": "Synthonium"
+      "name": "Synthonium",
+      "category": "Reagents"
     },
     {
-      "name": "Taco"
+      "name": "Taco",
+      "category": "Snacks"
     },
     {
-      "name": "Taco Town Special"
+      "name": "Taco Town Special",
+      "category": "Snacks"
     },
     {
-      "name": "Tatzlewurm Terror"
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
     },
     {
-      "name": "Tiger Lily (Seed)"
+      "name": "Tiger Lily (Seed)",
+      "category": "Seeds"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tiny Fish"
+      "name": "Tiny Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Titanium"
+      "name": "Titanium",
+      "category": "Reagents"
     },
     {
-      "name": "Tomato Soup"
+      "name": "Tomato Soup",
+      "category": "Snacks"
     },
     {
-      "name": "Triage"
+      "name": "Triage",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Trumpet Vine"
+      "name": "Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Alligator Pear Tree"
+      "name": "Ultra Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Boom Shroom"
+      "name": "Ultra Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Dandelion"
+      "name": "Ultra Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Fly Trap"
+      "name": "Ultra Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Huckleberries"
+      "name": "Ultra Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Ninja Fig"
+      "name": "Ultra Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Snap Dragon"
+      "name": "Ultra Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Snow Apples"
+      "name": "Ultra Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Tiger Lily"
+      "name": "Ultra Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Trumpet Vine"
+      "name": "Ultra Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Unbalancer Citrine"
+      "name": "Unbalancer Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Uncanny Magic"
+      "name": "Uncanny Magic",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Vampire Carrots"
+      "name": "Vampire Carrots",
+      "category": "Seeds"
     },
     {
-      "name": "Venus Fly Trap"
+      "name": "Venus Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "White Desparagus"
+      "name": "White Desparagus",
+      "category": "Seeds"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "White Tiger Lily"
+      "name": "White Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Winged Sorrow"
+      "name": "Winged Sorrow",
+      "category": "Spellements"
     },
     {
-      "name": "Wings of Fate"
+      "name": "Wings of Fate",
+      "category": "Spellements"
     },
     {
-      "name": "Witch's House Call"
+      "name": "Witch's House Call",
+      "category": "Spellements"
     },
     {
-      "name": "Yellow Bell Pepper"
+      "name": "Yellow Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Zounds...Bees!"
+      "name": "Zounds...Bees!",
+      "category": "Treasure Cards"
     }
   ],
   "authors": "BartleBot",
@@ -1811,7 +2408,8 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Merciless"
+        "Merciless",
+        "=Evil Magma Peas"
       ]
     }
   ],
@@ -1905,7 +2503,7 @@
       },
       "params": {
         "enemy": "LM_Khrulhu_Scion_A_01",
-        "wiki_page": "",
+        "wiki_page": "Creature:Scion of the Old One",
         "use_default_strategy": false,
         "max_duration": 600.0
       }
@@ -2122,5 +2720,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "abf172f8d0a67aba8b2701a171f0b0f2b7e38134bb93760d90377df701140a0d"
+  ]
 }

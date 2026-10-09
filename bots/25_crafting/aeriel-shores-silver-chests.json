@@ -8,10 +8,12 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Shocked Key"
+      "name": "Shocked Key",
+      "category": "Reagents"
     },
     {
-      "name": "Silver Chest"
+      "name": "Silver Chest",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",
@@ -605,11 +607,30 @@
         "state_27",
         "state_28"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
+    },
+    {
+      "id": "b0091762",
+      "label": "Aeriel Shore",
+      "members": [
+        "t_6",
+        "state_13",
+        "state_17",
+        "state_2",
+        "t_5",
+        "t_4",
+        "state_15"
+      ],
+      "color": 1,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
     "version": 1
-  }
+  },
+  "history": [
+    "53cb155a7ddc7c73537c51855bcded9ce02367a71f5d2ff3f573506045eb43d9"
+  ]
 }

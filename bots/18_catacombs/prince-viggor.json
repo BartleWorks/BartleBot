@@ -8,169 +8,223 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Alchemical Crystals"
+      "name": "Alchemical Crystals",
+      "category": "Reagents"
     },
     {
-      "name": "Alchemical Extract"
+      "name": "Alchemical Extract",
+      "category": "Reagents"
     },
     {
-      "name": "Alchemical reagents"
+      "name": "Alchemical Salts",
+      "category": "Reagents"
     },
     {
-      "name": "Alchemical Salts"
+      "name": "Antique Coins",
+      "category": "Reagents"
     },
     {
-      "name": "Antique Coins"
+      "name": "Beast Wellington",
+      "category": "Snacks"
     },
     {
-      "name": "Beast Wellington"
+      "name": "Black Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Black Pearl"
+      "name": "Blood Moss",
+      "category": "Reagents"
     },
     {
-      "name": "Blood Moss"
+      "name": "Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Boom Shroom"
+      "name": "Brain Jar",
+      "category": "Housing Items"
     },
     {
-      "name": "Brain Jar"
+      "name": "Bread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Bread Fruit Bush"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cobalt"
+      "name": "Crab Alley Chaise",
+      "category": "Housing Items"
     },
     {
-      "name": "Crab Alley Chaise"
+      "name": "Daybreaker",
+      "category": "Spellements"
     },
     {
-      "name": "Daybreaker"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Decimatoes",
+      "category": "Snacks"
     },
     {
-      "name": "Decimatoes"
+      "name": "Discord Grape Jelly",
+      "category": "Snacks"
     },
     {
-      "name": "Discord Grape Jelly"
+      "name": "Dragonspyre Vanguard's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Dragonspyre Vanguard's Boots"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Evil Magma Peas"
+      "name": "Face Palm",
+      "category": "Seeds"
     },
     {
-      "name": "Face Palm"
+      "name": "Fish",
+      "category": "Housing Items"
     },
     {
-      "name": "Fish"
+      "name": "Frozen Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Frozen Fly Trap"
+      "name": "Ginormous Apple",
+      "category": "Housing Items"
     },
     {
-      "name": "Ginormous Apple"
+      "name": "Mystic Pizza",
+      "category": "Housing Items"
     },
     {
-      "name": "Mystic Pizza"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Nickel"
+      "name": "Nightbringer",
+      "category": "Spellements"
     },
     {
-      "name": "Nightbringer"
+      "name": "Pizza",
+      "category": "Snacks"
     },
     {
-      "name": "Pizza"
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Red Bell Pepper"
+      "name": "Rock and Roll Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Rock and Roll Candy"
+      "name": "Satyr Chow",
+      "category": "Snacks"
     },
     {
-      "name": "Satyr Chow"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Scales"
+      "name": "Snow Apples",
+      "category": "Seeds"
     },
     {
-      "name": "Snow Apples"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spring",
+      "category": "Reagents"
     },
     {
-      "name": "Spring"
+      "name": "Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Squash"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tin"
+      "name": "Vanguard's Balanced Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's Balanced Boots"
+      "name": "Vanguard's Deadly Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's Deadly Boots"
+      "name": "Vanguard's Fiery Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's Fiery Boots"
+      "name": "Vanguard's Icy Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's helms"
+      "name": "Vanguard's Mythic Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's Icy Boots"
+      "name": "Vanguard's Shocking Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's Mythic Boots"
+      "name": "Vanguard's Vibrant Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vanguard's Shocking Boots"
+      "name": "Veggie Juice",
+      "category": "Snacks"
     },
     {
-      "name": "Vanguard's Vibrant Boots"
+      "name": "Watermelon Slice",
+      "category": "Housing Items"
     },
     {
-      "name": "Veggie Juice"
+      "name": "WC Catacombs Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Watermelon Slice"
+      "name": "WC Catacombs Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Catacombs Combat Theme"
+      "name": "WC Drains Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "WC Catacombs Theme"
-    },
-    {
-      "name": "WC Drains Combat Theme"
-    },
-    {
-      "name": "White Desparagus"
+      "name": "White Desparagus",
+      "category": "Seeds"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
     "Reagents",
+    "Seeds",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Evil Magma Peas",
+        "Vanguard"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -337,8 +391,8 @@
       },
       "params": {
         "enemy": "CC_Human_DSWarPrince_A_01",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "Creature:Prince Viggor",
+        "use_default_strategy": true,
         "max_duration": 1200.0
       }
     },
@@ -565,5 +619,9 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "736c36d1a7af37952e43bda2e8cd78d0740af9d1b46e8a119585a7fb993344a1",
+    "e30821e7f939ded856cd2da2b961dc8755a20dcac2ea67fc48eb2de4786f5dc5"
+  ]
 }

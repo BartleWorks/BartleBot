@@ -8,277 +8,368 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Ape Grapes"
+      "name": "Ape Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Benign Cap"
+      "name": "Benign Cap",
+      "category": "Hats"
     },
     {
-      "name": "Blemished Accurate Onyx +5%"
+      "name": "Blemished Accurate Onyx +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Amethyst +11"
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Citrine +11"
+      "name": "Blemished Damage Citrine +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Ruby +11"
+      "name": "Blemished Damage Ruby +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blended Wool Footwraps"
+      "name": "Blended Wool Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Blended Wool Tunic"
+      "name": "Blended Wool Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Boots of Chimes"
+      "name": "Boots of Chimes",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Cooperation"
+      "name": "Boots of Cooperation",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Niceties"
+      "name": "Boots of Niceties",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Cloak of Rhyming"
+      "name": "Cloak of Rhyming",
+      "category": "Robes"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Crunch Apple"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Dragonflies"
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Effective Opal"
+      "name": "Effective Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Euphonic Cloak"
+      "name": "Euphonic Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Flawed Damage Onyx +10"
+      "name": "Flawed Damage Onyx +10",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Citrine +20"
+      "name": "Flawed Defense Citrine +20",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Onyx +20"
+      "name": "Flawed Defense Onyx +20",
+      "category": "Jewels"
     },
     {
-      "name": "Footwraps of Chants"
+      "name": "Footwraps of Chants",
+      "category": "Boots"
     },
     {
-      "name": "Friendly Shoes"
+      "name": "Friendly Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Garment of Watchfulness"
+      "name": "Garment of Watchfulness",
+      "category": "Robes"
     },
     {
-      "name": "Garments of Chants"
+      "name": "Garments of Chants",
+      "category": "Robes"
     },
     {
-      "name": "Golden Peanut"
+      "name": "Golden Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Squash"
+      "name": "Golden Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Hat of Enthusiasm"
+      "name": "Hat of Enthusiasm",
+      "category": "Hats"
     },
     {
-      "name": "Healthy Opal"
+      "name": "Healthy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Heedful Robe"
+      "name": "Heedful Robe",
+      "category": "Robes"
     },
     {
-      "name": "Hood of the Resolute"
+      "name": "Hood of the Resolute",
+      "category": "Hats"
     },
     {
-      "name": "Ice Wyvern Sapphire"
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Koi Pond"
+      "name": "Koi Pond",
+      "category": "Housing Items"
     },
     {
-      "name": "Kraken Amethyst"
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Watermelon"
+      "name": "Large Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Light-As-Air Hat"
+      "name": "Light-As-Air Hat",
+      "category": "Hats"
     },
     {
-      "name": "Loop of Refreshment"
+      "name": "Loop of Refreshment",
+      "category": "Rings"
     },
     {
-      "name": "Lunar Tablet"
+      "name": "Lunar Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Meteor Strike Ruby"
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Minotaur"
+      "name": "Minotaur",
+      "category": "Pets"
     },
     {
-      "name": "Monstrous"
+      "name": "Monstrous",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Move It! Opal"
+      "name": "Move It! Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Pagoda Shrine"
+      "name": "Pagoda Shrine",
+      "category": "Housing Items"
     },
     {
-      "name": "Potted Bobtail"
+      "name": "Potted Bobtail",
+      "category": "Housing Items"
     },
     {
-      "name": "Power Play Citrine"
+      "name": "Power Play Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Problematic Boots"
+      "name": "Problematic Boots",
+      "category": "Boots"
     },
     {
-      "name": "Profound Slippers"
+      "name": "Profound Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Ring of the Naturewalker"
+      "name": "Ring of the Naturewalker",
+      "category": "Rings"
     },
     {
-      "name": "Robe of Consideration"
+      "name": "Robe of Consideration",
+      "category": "Robes"
     },
     {
-      "name": "Sandals of Exertion"
+      "name": "Sandals of Exertion",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Struggling"
+      "name": "Shoes of Struggling",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of the Observant"
+      "name": "Shoes of the Observant",
+      "category": "Boots"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Slippers of the Eager"
+      "name": "Slippers of the Eager",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of the Opus"
+      "name": "Slippers of the Opus",
+      "category": "Boots"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Sprightly Garments"
+      "name": "Sprightly Garments",
+      "category": "Robes"
     },
     {
-      "name": "Sprightly Slippers"
+      "name": "Sprightly Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Square Root"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Surgeon's Scalpel"
+      "name": "Surgeon's Scalpel",
+      "category": "Athames"
     },
     {
-      "name": "Tall Blue Vase"
+      "name": "Tall Blue Vase",
+      "category": "Housing Items"
     },
     {
-      "name": "Time of Legend"
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tormented Mask"
+      "name": "Tormented Mask",
+      "category": "Hats"
     },
     {
-      "name": "Triton"
+      "name": "Triton",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tunic of Preoccupation"
+      "name": "Tunic of Preoccupation",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Cooperation"
+      "name": "Vestment of Cooperation",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Tribulations"
+      "name": "Vestment of Tribulations",
+      "category": "Robes"
     },
     {
-      "name": "Vigilant Cap"
+      "name": "Vigilant Cap",
+      "category": "Hats"
     },
     {
-      "name": "Warbled Hat"
+      "name": "Warbled Hat",
+      "category": "Hats"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Wooden Skeleton Key"
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "Youkai's Bonsai"
+      "name": "Youkai's Bonsai",
+      "category": "Housing Items"
     },
     {
-      "name": "Youkai's Cap of Brainstorms"
+      "name": "Youkai's Cap of Brainstorms",
+      "category": "Hats"
     },
     {
-      "name": "Youkai's Cloak of Kindness"
+      "name": "Youkai's Cloak of Kindness",
+      "category": "Robes"
     },
     {
-      "name": "Youkai's Hat of Kindness"
+      "name": "Youkai's Hat of Kindness",
+      "category": "Hats"
     },
     {
-      "name": "Youkai's Headwraps of Intent"
+      "name": "Youkai's Headwraps of Intent",
+      "category": "Hats"
     },
     {
-      "name": "Youkai's Rational Hat"
+      "name": "Youkai's Rational Hat",
+      "category": "Hats"
     },
     {
-      "name": "Youkai's Robe of Premise"
+      "name": "Youkai's Robe of Premise",
+      "category": "Robes"
     },
     {
-      "name": "Youkai's Shoes"
+      "name": "Youkai's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Youkai's Slippers"
+      "name": "Youkai's Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Youkai's Tunic of Intent"
+      "name": "Youkai's Tunic of Intent",
+      "category": "Robes"
     },
     {
-      "name": "Youkai's Vacant Footwraps"
+      "name": "Youkai's Vacant Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Youkai's Vestment"
+      "name": "Youkai's Vestment",
+      "category": "Robes"
     }
   ],
   "authors": "BartleBot",
@@ -286,7 +377,25 @@
     "Gear",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Youkai's Cap of Brainstorms",
+        "=Youkai's Cloak of Kindness",
+        "=Youkai's Hat of Kindness",
+        "=Youkai's Headwraps of Intent",
+        "=Youkai's Rational Hat",
+        "=Youkai's Robe of Premise",
+        "=Youkai's Shoes",
+        "=Youkai's Slippers",
+        "=Youkai's Tunic of Intent",
+        "=Youkai's Vacant Footwraps",
+        "=Youkai's Vestment"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -448,8 +557,8 @@
       },
       "params": {
         "enemy": "Imp-Dark-LXX",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "Creature:Youkai",
+        "use_default_strategy": true,
         "max_duration": 600.0
       }
     },
@@ -666,5 +775,9 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "d2f1929635cf68d805b646b7abd0044127697d3ce50fb410b41d36ca3678d71d",
+    "67e90b951d881dfec450c826019ce30e144da862c33d948b972f07aea302294d"
+  ]
 }

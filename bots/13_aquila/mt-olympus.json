@@ -68,7 +68,8 @@
       "category": "Hats"
     },
     {
-      "name": "Fiery Skeleturion"
+      "name": "Fiery Skeleturion",
+      "category": "Pets"
     },
     {
       "name": "Fires of Mars",
@@ -191,9 +192,6 @@
       "category": "Robes"
     },
     {
-      "name": "Sky Iron Hasta"
-    },
-    {
       "name": "Staff of Zeus' Immortality",
       "category": "Wands"
     },
@@ -294,6 +292,7 @@
   "tags": [
     "Gear",
     "Spellements",
+    "Pets",
     "Dungeon"
   ],
   "options": [
@@ -308,7 +307,7 @@
       "type": "drop_keep_list",
       "default": [
         "Zeus",
-        "Heavenly"
+        "=Helmet of Heavenly Gaze"
       ]
     }
   ],
@@ -319,7 +318,7 @@
       "label": "Relog",
       "position": {
         "x": 0.0,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "relog_clients": [
@@ -336,7 +335,7 @@
       "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": 90.0
+        "y": 0.0
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub"
@@ -347,8 +346,8 @@
       "node_type": "mark_location",
       "label": "Mark the entrance",
       "position": {
-        "x": 440,
-        "y": 0.0
+        "x": 440.0,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub",
@@ -365,7 +364,7 @@
       "label": "Handle potions",
       "position": {
         "x": 880,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -379,7 +378,7 @@
       "label": "Quicksell",
       "position": {
         "x": 1320,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {}
     },
@@ -389,7 +388,7 @@
       "label": "Enter Mount Olympus",
       "position": {
         "x": 2200,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
@@ -414,8 +413,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 29920,
-        "y": 0.0
+        "x": 29040.0,
+        "y": -90.0
       },
       "params": {
         "zone": "",
@@ -428,7 +427,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 1760,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -445,7 +444,7 @@
       "label": "Handle level scaling",
       "position": {
         "x": 2640,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "scales": "mount_olympus"
@@ -457,7 +456,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 3080,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -473,8 +472,8 @@
       "node_type": "interact",
       "label": "Talk to Athena Battle Sight",
       "position": {
-        "x": 3960,
-        "y": 0.0
+        "x": 3520,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -498,8 +497,8 @@
       "node_type": "enter_zone",
       "label": "Enter Sun Chamber",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 3960,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z01_MountOlympus",
@@ -521,8 +520,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Apollo Bright One",
       "position": {
-        "x": 4840,
-        "y": 0.0
+        "x": 4400,
+        "y": -90.0
       },
       "params": {
         "enemy": "AQ-Immortal-Apollo",
@@ -536,8 +535,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 5280,
-        "y": 0.0
+        "x": 4840,
+        "y": -90.0
       },
       "params": {
         "timeout": 60.0
@@ -548,8 +547,8 @@
       "node_type": "interact",
       "label": "Collect first Legion Token",
       "position": {
-        "x": 5720,
-        "y": 0.0
+        "x": 5280,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
@@ -573,8 +572,8 @@
       "node_type": "enter_zone",
       "label": "Exit Sun Chamber",
       "position": {
-        "x": 6160,
-        "y": 0.0
+        "x": 5720,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
@@ -596,8 +595,8 @@
       "node_type": "interact",
       "label": "Talk to Athena Battle Sight",
       "position": {
-        "x": 6600,
-        "y": 0.0
+        "x": 6160,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -621,8 +620,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 7040,
-        "y": 0.0
+        "x": 6600,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -638,8 +637,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7480,
-        "y": 0.0
+        "x": 7040,
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -655,8 +654,8 @@
       "node_type": "enter_zone",
       "label": "Enter Moon Chamber",
       "position": {
-        "x": 7920,
-        "y": 0.0
+        "x": 7480,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z01_MountOlympus",
@@ -678,8 +677,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Crescent Moon Centaur",
       "position": {
-        "x": 8360,
-        "y": 0.0
+        "x": 7920,
+        "y": -90.0
       },
       "params": {
         "enemy": "AQ-Centaur-Artemis",
@@ -693,8 +692,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 8800,
-        "y": 0.0
+        "x": 8360,
+        "y": -90.0
       },
       "params": {
         "timeout": 60.0
@@ -705,8 +704,8 @@
       "node_type": "interact",
       "label": "Collect second Legion Token",
       "position": {
-        "x": 9240,
-        "y": 0.0
+        "x": 8800,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_ArtemusRoom",
@@ -730,8 +729,8 @@
       "node_type": "enter_zone",
       "label": "Exit Moon Chamber",
       "position": {
-        "x": 9680,
-        "y": 0.0
+        "x": 9240,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_ArtemusRoom",
@@ -753,8 +752,8 @@
       "node_type": "interact",
       "label": "Talk to Athena Battle Sight",
       "position": {
-        "x": 10120,
-        "y": 0.0
+        "x": 9680,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -778,8 +777,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 10560,
-        "y": 0.0
+        "x": 10120,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -795,8 +794,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 11000,
-        "y": 0.0
+        "x": 10560,
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -812,8 +811,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Sky Balcony",
       "position": {
-        "x": 11440,
-        "y": 0.0
+        "x": 11000,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -829,8 +828,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Praetorian Guard ",
       "position": {
-        "x": 11880,
-        "y": 0.0
+        "x": 11440,
+        "y": -90.0
       },
       "params": {
         "enemy": "",
@@ -844,8 +843,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 12320,
-        "y": 0.0
+        "x": 11880,
+        "y": -90.0
       },
       "params": {
         "timeout": 60.0
@@ -856,8 +855,8 @@
       "node_type": "interact",
       "label": "Collect third Legion Token",
       "position": {
-        "x": 12760,
-        "y": 0.0
+        "x": 12320,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -881,8 +880,8 @@
       "node_type": "interact",
       "label": "Talk to Athena Battle Sight",
       "position": {
-        "x": 13200,
-        "y": 0.0
+        "x": 12760,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -906,8 +905,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 13640,
-        "y": 0.0
+        "x": 13200,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -923,8 +922,8 @@
       "node_type": "handle_potions",
       "label": "Collect wisps",
       "position": {
-        "x": 14080,
-        "y": 0.0
+        "x": 13640,
+        "y": -90.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -937,8 +936,8 @@
       "node_type": "interact",
       "label": "Talk to Eris Golden Apple",
       "position": {
-        "x": 14520,
-        "y": 0.0
+        "x": 14080,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -962,8 +961,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Activate puzzle",
       "position": {
-        "x": 14960,
-        "y": 0.0
+        "x": 14520,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -979,8 +978,8 @@
       "node_type": "interact",
       "label": "Activate Carthaginian Elephant",
       "position": {
-        "x": 15400,
-        "y": 0.0
+        "x": 14960,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1004,8 +1003,8 @@
       "node_type": "interact",
       "label": "Activate Minotaur Warrior",
       "position": {
-        "x": 15840,
-        "y": 0.0
+        "x": 15400,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1029,7 +1028,7 @@
       "node_type": "interact",
       "label": "Activate Ophidian Archer",
       "position": {
-        "x": 16280,
+        "x": 15840.0,
         "y": 0.0
       },
       "params": {
@@ -1054,14 +1053,15 @@
       "node_type": "handle_combat",
       "label": "Defeat Carthaginian Elephant Warrior",
       "position": {
-        "x": 16720,
+        "x": 16280.0,
         "y": 0.0
       },
       "params": {
         "enemy": "",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Carthaginian Elephant Warrior"
       },
       "notes": "Drops Fiery Skeleturion. Only spawns if puzzle is failed."
     },
@@ -1070,8 +1070,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 17160,
-        "y": 0.0
+        "x": 16720,
+        "y": -90.0
       },
       "params": {
         "timeout": 60.0,
@@ -1083,8 +1083,8 @@
       "node_type": "interact",
       "label": "Talk to Athena Battle Sight",
       "position": {
-        "x": 17600,
-        "y": 0.0
+        "x": 17160,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1108,8 +1108,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 18040,
-        "y": 0.0
+        "x": 17600,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1125,8 +1125,8 @@
       "node_type": "collect_wisps",
       "label": "Colect wisps",
       "position": {
-        "x": 18480,
-        "y": 0.0
+        "x": 18040,
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1142,8 +1142,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Watchful Eye",
       "position": {
-        "x": 18920,
-        "y": 0.0
+        "x": 18480,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1165,8 +1165,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Elite Cyclops Guard",
       "position": {
-        "x": 19360,
-        "y": 0.0
+        "x": 18920,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
@@ -1182,8 +1182,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Elite Cyclops Guard",
       "position": {
-        "x": 19800,
-        "y": 0.0
+        "x": 19360,
+        "y": -90.0
       },
       "params": {
         "enemy": "",
@@ -1197,8 +1197,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hephaestus' Forge",
       "position": {
-        "x": 20240,
-        "y": 0.0
+        "x": 19800,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
@@ -1220,8 +1220,8 @@
       "node_type": "interact",
       "label": "Talk to Hephaestus Coppersmith",
       "position": {
-        "x": 20680,
-        "y": 0.0
+        "x": 20240,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
@@ -1245,8 +1245,8 @@
       "node_type": "enter_zone",
       "label": "Exit Hephaestus' Forge",
       "position": {
-        "x": 21120,
-        "y": 0.0
+        "x": 20680,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
@@ -1268,8 +1268,8 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Watchful Eye",
       "position": {
-        "x": 21560,
-        "y": 0.0
+        "x": 21120,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
@@ -1291,8 +1291,8 @@
       "node_type": "interact",
       "label": "Collect first Bronze Eagle",
       "position": {
-        "x": 22000,
-        "y": 0.0
+        "x": 21560,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1317,8 +1317,8 @@
       "node_type": "interact",
       "label": "Collect second Bronze Eagle",
       "position": {
-        "x": 22440,
-        "y": 0.0
+        "x": 22000,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1343,8 +1343,8 @@
       "node_type": "interact",
       "label": "Collect third Bronze Eagle",
       "position": {
-        "x": 22880,
-        "y": 0.0
+        "x": 22440,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1369,8 +1369,8 @@
       "node_type": "enter_zone",
       "label": "Enter Sun Chamber",
       "position": {
-        "x": 23320,
-        "y": 0.0
+        "x": 22880,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1392,8 +1392,8 @@
       "node_type": "interact",
       "label": "Collect fourth Bronze Eagle",
       "position": {
-        "x": 23760,
-        "y": 0.0
+        "x": 23320,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
@@ -1418,8 +1418,8 @@
       "node_type": "enter_zone",
       "label": "Exit Sun Chamber",
       "position": {
-        "x": 24200,
-        "y": 0.0
+        "x": 23760,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
@@ -1441,8 +1441,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Watchful Eye",
       "position": {
-        "x": 24640,
-        "y": 0.0
+        "x": 24200,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1464,8 +1464,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hephaestus' Forge",
       "position": {
-        "x": 25080,
-        "y": 0.0
+        "x": 24640,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
@@ -1487,8 +1487,8 @@
       "node_type": "interact",
       "label": "Talk to Hephaestus Coppersmith",
       "position": {
-        "x": 25520,
-        "y": 0.0
+        "x": 25080,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
@@ -1512,8 +1512,8 @@
       "node_type": "enter_zone",
       "label": "Exit Hephaestus' Forge",
       "position": {
-        "x": 25960,
-        "y": 0.0
+        "x": 25520,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
@@ -1535,8 +1535,8 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Watchful Eye",
       "position": {
-        "x": 26400,
-        "y": 0.0
+        "x": 25960,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
@@ -1558,8 +1558,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of Battle",
       "position": {
-        "x": 26840,
-        "y": 0.0
+        "x": 26400,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z01_MountOlympus",
@@ -1581,8 +1581,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Ares Savage Spear",
       "position": {
-        "x": 27280,
-        "y": 0.0
+        "x": 26840,
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z01_HallOfBattle",
@@ -1598,14 +1598,15 @@
       "node_type": "handle_combat",
       "label": "Defeat Ares Savage Spear",
       "position": {
-        "x": 27720,
-        "y": 0.0
+        "x": 27280,
+        "y": -90.0
       },
       "params": {
         "enemy": "",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Ares Savage Spear (Mount Olympus)"
       }
     },
     {
@@ -1613,8 +1614,8 @@
       "node_type": "enter_zone",
       "label": "Enter Throne Room",
       "position": {
-        "x": 28160,
-        "y": 0.0
+        "x": 27720,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_HallOfBattle",
@@ -1636,14 +1637,15 @@
       "node_type": "handle_combat",
       "label": "Defeat Zeus Sky Father",
       "position": {
-        "x": 28600,
-        "y": 0.0
+        "x": 28160,
+        "y": -90.0
       },
       "params": {
         "enemy": "AQ-Immortal-Zeus-A",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Zeus Sky Father (Mount Olympus)"
       }
     },
     {
@@ -1651,36 +1653,11 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 29040,
-        "y": 0.0
+        "x": 28600,
+        "y": -90.0
       },
       "params": {
         "timeout": 60.0
-      }
-    },
-    {
-      "id": "state_63",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 29480,
-        "y": 0.0
-      },
-      "params": {},
-      "notes": "Helmet of Heavenly Gaze is the Fire Zeus hat, and is the only piece of of the Zeus gear set that does not have the word Zeus in the name."
-    },
-    {
-      "id": "state_15",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 3520,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
       }
     },
     {
@@ -1689,7 +1666,7 @@
       "label": "Teleport to world hub",
       "position": {
         "x": -880.0,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub"
@@ -1701,7 +1678,7 @@
       "label": "Collect wisps",
       "position": {
         "x": -440.0,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1836,16 +1813,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_14",
       "dest": "state_17",
       "when": "SUCCESS",
@@ -1856,39 +1823,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_16",
       "dest": "state_14",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_13",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1956,26 +1893,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_22",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_22",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_23",
       "dest": "state_21",
       "when": "SUCCESS",
@@ -2019,26 +1936,6 @@
       "source": "state_27",
       "dest": "state_28",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_27",
-      "dest": "state_27",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_27",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2187,28 +2084,8 @@
     {
       "trigger": "advance",
       "source": "state_36",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_36",
       "dest": "state_37",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_36",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2456,16 +2333,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_60",
       "dest": "state_35",
       "when": "SUCCESS",
@@ -2488,16 +2355,6 @@
       "trigger": "advance",
       "source": "state_62",
       "dest": "state_56",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_64",
-      "dest": "state_63",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2576,16 +2433,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_63",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
@@ -2608,6 +2455,26 @@
       "trigger": "advance",
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_64",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2648,39 +2515,9 @@
         },
         "anchor": {
           "x": 0.0,
-          "y": 0.0
+          "y": -90.0
         }
       }
-    },
-    {
-      "id": "85f3ad6c",
-      "label": "Collect Legion Tokens",
-      "members": [
-        "state_12",
-        "state_17",
-        "state_19",
-        "state_8",
-        "state_27",
-        "state_24",
-        "state_18",
-        "state_13",
-        "state_7",
-        "state_5",
-        "state_26",
-        "state_20",
-        "state_23",
-        "state_16",
-        "state_22",
-        "state_10",
-        "state_25",
-        "state_14",
-        "state_9",
-        "state_21",
-        "state_28",
-        "state_66",
-        "state_65"
-      ],
-      "color": 2
     },
     {
       "id": "4d0a14fe",
@@ -2697,7 +2534,8 @@
         "state_36",
         "state_37"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
     },
     {
       "id": "3ce49f35",
@@ -2722,11 +2560,86 @@
         "state_44",
         "state_52"
       ],
-      "color": 4
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "ca03465d",
+      "label": "Sky Balcony",
+      "members": [
+        "state_28",
+        "state_23",
+        "state_67",
+        "state_27",
+        "state_22",
+        "state_26",
+        "state_21",
+        "state_24",
+        "state_25"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "c8b1ddbf",
+      "label": "Apollo Bright One",
+      "members": [
+        "state_8",
+        "state_5",
+        "state_10",
+        "state_12",
+        "state_9",
+        "state_6",
+        "state_65",
+        "state_7"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "61ae135b",
+      "label": "Crescent Moon Centaur",
+      "members": [
+        "state_17",
+        "state_13",
+        "state_16",
+        "state_66",
+        "state_14",
+        "state_20",
+        "state_18",
+        "state_19"
+      ],
+      "color": 2,
+      "collapsed": true
+    },
+    {
+      "id": "d93b4d9f",
+      "label": "Ares Savage Spear",
+      "members": [
+        "state_62",
+        "state_56",
+        "state_55"
+      ],
+      "color": 6,
+      "collapsed": true
+    },
+    {
+      "id": "240d89bb",
+      "label": "Zeus Sky Father",
+      "members": [
+        "state_57",
+        "state_58",
+        "state_64"
+      ],
+      "color": 1,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "bd46de0da66e8f5624a51d00d62dc4cec7edc80571e9f8cbf06bfca9e049ee54"
+  ]
 }

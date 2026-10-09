@@ -720,10 +720,6 @@
       "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern",
-      "category": "Treasure Cards"
-    },
-    {
       "name": "Icestar Stalkers",
       "category": "Boots"
     },
@@ -845,6 +841,7 @@
     },
     {
       "name": "Life Punishing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (60)"
     },
     {
@@ -996,6 +993,7 @@
     },
     {
       "name": "Myth Punishing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (60)"
     },
     {
@@ -1257,6 +1255,7 @@
     },
     {
       "name": "Storm Punishing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (60)"
     },
     {
@@ -1749,5 +1748,8 @@
         }
       }
     }
+  ],
+  "history": [
+    "3f8b6aa7e5e1678894af6426a74c6355239ee7722a1486c9a2a9f31fd8de8a2c"
   ]
 }
