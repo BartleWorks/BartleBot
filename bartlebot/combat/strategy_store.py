@@ -41,7 +41,7 @@ import re
 from enum import Enum
 from pathlib import Path
 
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.shared import strategy_library as library
 from bartlebot.shared.store_files import record_save_in
 from bartlebot.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat

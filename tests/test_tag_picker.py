@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QWidget
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
+from bartlebot.combat.strategy_tags import STRATEGY_TAG_GROUPS
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.widgets.picker_popup import _RowWidget
 from bartlebot.gui.widgets.tag_picker import (
@@ -19,7 +20,6 @@ from bartlebot.gui.widgets.tag_picker import (
     tag_sections,
 )
 from bartlebot.gui.widgets.tag_pill import TagChip, TagPill
-from bartlebot.strategy_tags import STRATEGY_TAG_GROUPS
 from tests.picker_helpers import pick
 
 # ---------------------------------------------------------------------------

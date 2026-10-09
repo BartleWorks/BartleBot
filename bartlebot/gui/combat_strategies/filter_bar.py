@@ -3,11 +3,11 @@
 Shaped like the bot library's top bar, and for the same reasons: filters first, then
 the search box filling what they leave, and the *selected* values underneath as
 removable chips, with the vocabulary itself kept behind the pickers. Which pickers a
-tab gets is :mod:`bartlebot.strategy_tags`' business — Source everywhere, Role on
+tab gets is :mod:`bartlebot.combat.strategy_tags`' business — Source everywhere, Role on
 Player and Deck, School on Duel and Player, Team size on Duel alone.
 
 The bar reads nothing and filters nothing. It holds a selection, says when it has
-changed, and hands it over as a :class:`~bartlebot.strategy_tags.StrategyFilter`; the
+changed, and hands it over as a :class:`~bartlebot.combat.strategy_tags.StrategyFilter`; the
 page applies it. Nothing here persists: every opening of the dialog starts
 unfiltered, because a remembered filter hiding entries is exactly the "where did my
 strategy go" a Pick-mode visitor cannot diagnose.
@@ -21,16 +21,9 @@ from dataclasses import replace
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from bartlebot.deck_io import PIP_SCHOOLS
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow
-from bartlebot.gui.widgets.school_picker import SchoolPickerButton
-from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton, TagVocabulary, count_label
-from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
-from bartlebot.strategy_store import StrategyKind
-from bartlebot.strategy_tags import (
+from bartlebot.combat.deck_io import PIP_SCHOOLS
+from bartlebot.combat.strategy_store import StrategyKind
+from bartlebot.combat.strategy_tags import (
     KIND_GROUPS,
     PROFILE_SOURCE,
     SCHOOL_KINDS,
@@ -42,6 +35,13 @@ from bartlebot.strategy_tags import (
     count_facets,
     team_label,
 )
+from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.discard import discard_widget
+from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow
+from bartlebot.gui.widgets.school_picker import SchoolPickerButton
+from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton, TagVocabulary, count_label
+from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
 
 #: What each tab's counts count.
 KIND_NOUNS: dict[StrategyKind, tuple[str, str]] = {

@@ -9,7 +9,7 @@
 Files are named after the definition's name (``sync-players.json``) and found by the
 id inside them; :mod:`bartlebot.store_roots` has the naming rules. The root argument convention, :class:`Origin` and the
 shadowing rule are :mod:`bartlebot.store_roots`; this module mirrors
-:mod:`bartlebot.strategy_store` function for function so a reader of one knows the
+:mod:`bartlebot.combat.strategy_store` function for function so a reader of one knows the
 other. :class:`SubgraphLibrary` is the session's cached view over the pair, which is
 what the composition functions in :mod:`bartlebot.subgraphs` take.
 

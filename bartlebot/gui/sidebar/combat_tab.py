@@ -98,22 +98,33 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import bot_roots
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.combat_grouping import (
+from bartlebot.combat.combat_grouping import (
     apply_membership,
     build_bindings,
     group_bindings,
     state_label,
 )
-from bartlebot.combat_profile import StrategyLookup, duplicate_profile, read_bot_names
+from bartlebot.combat.combat_profile import StrategyLookup, duplicate_profile, read_bot_names
+from bartlebot.combat.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
+from bartlebot.combat.deck_io import resolve_apply_archmastery
+from bartlebot.combat.fight_keys import exposed_combat_states, heal, place
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.strategy_store import (
+    StrategyKind,
+    delete_bot_strategy,
+    list_bot_strategies,
+    list_duel_strategies,
+    list_player_strategies,
+    load_bot_strategy,
+    save_bot_strategy,
+)
+from bartlebot.combat.strategy_summary import summarize_bot
+from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.credentials import CredentialStore
-from bartlebot.deck_io import resolve_apply_archmastery
-from bartlebot.fight_keys import exposed_combat_states, heal, place
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -145,17 +156,6 @@ from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.strategy_store import (
-    StrategyKind,
-    delete_bot_strategy,
-    list_bot_strategies,
-    list_duel_strategies,
-    list_player_strategies,
-    load_bot_strategy,
-    save_bot_strategy,
-)
-from bartlebot.strategy_summary import summarize_bot
-from bartlebot.strategy_workset import StrategyWorkingSet
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
@@ -1122,7 +1122,7 @@ class CombatTab(QWidget):
         """Every strategy in reach: the active profile's own first, then the library's.
 
         The one rule for resolving an id, shared with ``resolve_combat`` -- see
-        ``bartlebot.combat_profile``. The cards and the fights popup both read from it,
+        ``bartlebot.combat.combat_profile``. The cards and the fights popup both read from it,
         so they cannot name a different strategy than the one the fight will run.
         """
         return StrategyLookup(self._bcs, self._all_dcs, self._all_pcs)
@@ -1246,7 +1246,7 @@ class CombatTab(QWidget):
         """Bind every fight from a strategy file's *assignments*, whose order is the cards'.
 
         Each stored fight is placed on one of the bot's current fights, by enemy and
-        then by state id (``bartlebot.fight_keys``), so from here on an assignment's
+        then by state id (``bartlebot.combat.fight_keys``), so from here on an assignment's
         ``state_ids`` are the fights it is bound to.
 
         ``build_bindings`` inserts in file order, so each assignment's first appearance
@@ -1307,7 +1307,7 @@ class CombatTab(QWidget):
         Per fight: one whose state is no longer an exposed fight of the bot goes, and
         the rest of its assignment stays. Each kept fight is written as its current
         state, plus its enemy when that enemy names it alone in the bot -- which is how
-        the keys heal, here and nowhere else (``bartlebot.fight_keys``).
+        the keys heal, here and nowhere else (``bartlebot.combat.fight_keys``).
 
         Deleting a node used to leave its assignment behind forever, because
         bindings are seeded from the strategy file and never checked against the
@@ -1441,8 +1441,8 @@ class CombatTab(QWidget):
         self._decks_section.refresh(decks)
 
     def _on_save_deck_to_library(self, slot: int) -> None:
+        from bartlebot.combat.strategy_store import save_deck_preset  # noqa: PLC0415
         from bartlebot.shared.strategy_models import DeckPreset  # noqa: PLC0415
-        from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
 
         if self._bcs is None:
             return
@@ -1460,7 +1460,7 @@ class CombatTab(QWidget):
         save_deck_preset(preset)
 
     def _on_load_deck_from_library(self, slot: int) -> None:
-        from bartlebot.strategy_store import list_deck_presets  # noqa: PLC0415
+        from bartlebot.combat.strategy_store import list_deck_presets  # noqa: PLC0415
 
         if not list_deck_presets():
             QMessageBox.information(

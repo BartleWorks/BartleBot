@@ -315,7 +315,7 @@ tell a newer copy of a definition from a separate edit of it.
 
 Once users make and share subgraphs, a flat list stops working, so a definition says what
 it does with a **category** (#172), and every list of subgraphs filters by it. It has the
-shape `bartlebot/strategy_tags.py` gave combat strategies: a stored group with a fixed
+shape `bartlebot/combat/strategy_tags.py` gave combat strategies: a stored group with a fixed
 vocabulary, normalized on load, beside a **Source** group (Official, Official (modified),
 Custom) worked out from where the file is and never stored. `bartlebot/subgraph_tags.py`
 holds the vocabulary and the rule.

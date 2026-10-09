@@ -14,7 +14,7 @@ keyed on the bot's id, so it runs exactly as the Official bot did:
 - every option value the user stored (``bot_option_overrides``), and the quicksell sales
   they accepted, which are consent given against those values;
 - every Bot Combat Strategy of the Official bot, duplicated through
-  :func:`~bartlebot.combat_profile.duplicate_profile` and pointed at the copy;
+  :func:`~bartlebot.combat.combat_profile.duplicate_profile` and pointed at the copy;
 - the active pick, mapped to the duplicate of the strategy that was active.
 
 No Qt here; the controller asks for the name and opens the result.
@@ -28,10 +28,10 @@ from pathlib import Path
 from uuid import uuid4
 
 from bartlebot.bot.schema import BotConfig, ForkedFrom
-from bartlebot.combat_profile import duplicate_profile
+from bartlebot.combat.combat_profile import duplicate_profile
+from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.new_bot import file_stem, unique_file_name
 from bartlebot.shared.content_hash import content_sha256
-from bartlebot.strategy_store import list_bot_strategies, save_bot_strategy
 
 logger = logging.getLogger(__name__)
 

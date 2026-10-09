@@ -12,7 +12,7 @@ exact commit. The local checkout paths and repo URLs are in the root `CLAUDE.md`
 Both are pinned by exact commit `rev` in `pyproject.toml`, using HTTPS URLs so CI can
 fetch them without SSH credentials. They carry fixes the original projects do not have,
 including the `SpellListControl` / `DeckListControl` memory offsets that
-`bartlebot/deck_io.py` depends on. Pointing either back at its original repo will break
+`bartlebot/combat/deck_io.py` depends on. Pointing either back at its original repo will break
 deck reads.
 
 ## Where updates come from

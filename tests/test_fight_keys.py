@@ -1,4 +1,4 @@
-"""Tests for bartlebot.fight_keys: placing a profile's stored fights on a bot's states.
+"""Tests for bartlebot.combat.fight_keys: placing a profile's stored fights on a bot's states.
 
 Pure functions over the strategy models and a BotConfig, so no QApplication. The
 Combat tab's half -- seeding from ``bind`` and healing the keys on save -- is in
@@ -10,8 +10,8 @@ from __future__ import annotations
 import json
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.fight_keys import bind, enemy_keys, heal, place, settle
+from bartlebot.combat.fight_keys import bind, enemy_keys, heal, place, settle
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 
 _DCS_A = "dcs-aaaa"
 _DCS_B = "dcs-bbbb"

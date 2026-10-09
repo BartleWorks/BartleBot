@@ -1,4 +1,4 @@
-"""Tests for bartlebot.card_kinds.
+"""Tests for bartlebot.combat.card_kinds.
 
 Classification mirrors SprintyCombat's own predicates, so these pin the four
 distinctions that matter: a blade and a charm sit on the same effect types and
@@ -22,7 +22,7 @@ from wizwalker.extensions.wizsprinter.sprinty_combat import (
 )
 from wizwalker.memory import EffectTarget, SpellEffects
 
-from bartlebot.card_kinds import (
+from bartlebot.combat.card_kinds import (
     AURA,
     BLADE,
     CHARM,

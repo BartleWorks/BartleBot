@@ -184,7 +184,7 @@ def test_every_template_opens_with_sync_players(template):
 @pytest.mark.parametrize("name", ["Boss Farmer", "Spellement Farmer"])
 def test_a_boss_fight_asks_for_a_strategy_of_its_own(name):
     """A boss is the fight a default strategy is wrong for, so its template leaves it exposed."""
-    from bartlebot.fight_keys import exposed_combat_states  # noqa: PLC0415
+    from bartlebot.combat.fight_keys import exposed_combat_states  # noqa: PLC0415
 
     draft = BotConfig.load(next(t for t in list_templates() if t.name == name).draft_path)
     fights = [s for s in draft.states if s.node_type == "handle_combat"]

@@ -1,11 +1,10 @@
-"""Tests for bartlebot.strategy_store."""
+"""Tests for bartlebot.combat.strategy_store."""
 
 from pathlib import Path
 
 from bartlebot import store_roots
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.strategy_store import (
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,
     delete_bot_strategy,
@@ -24,6 +23,7 @@ from bartlebot.strategy_store import (
     save_player_strategy,
     unique_name,
 )
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 # ---------------------------------------------------------------------------
 # PlayerCombatStrategy store

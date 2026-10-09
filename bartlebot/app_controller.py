@@ -27,7 +27,6 @@ from bartlebot import (
     setup_steps,
     share_export,
     share_import,
-    strategy_store,
     template_diff,
     template_gallery,
     template_store,
@@ -38,8 +37,9 @@ from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.client_manager import ClientManager
-from bartlebot.combat_warnings import collect_combat_warnings
-from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
+from bartlebot.combat import strategy_store
+from bartlebot.combat.combat_warnings import collect_combat_warnings
+from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.game import restricted_zones, wizard_names, zone_names
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
@@ -323,7 +323,7 @@ class AppController(QObject):
         strategy they point at.  Best-effort: a failure here must not stop the
         app from starting.
         """
-        from bartlebot.strategy_store import list_all_bot_strategies  # noqa: PLC0415
+        from bartlebot.combat.strategy_store import list_all_bot_strategies  # noqa: PLC0415
 
         try:
             known = {bcs.id for bcs in list_all_bot_strategies()}
@@ -510,7 +510,7 @@ class AppController(QObject):
         quit_event = asyncio.Event()
         # Nothing to flush here any more: combat edits used to sit in a 500 ms
         # debounce that a quit could beat, and now live behind the combat strategy
-        # dialog's own Save button. See bartlebot.strategy_workset.
+        # dialog's own Save button. See bartlebot.combat.strategy_workset.
         self._app.aboutToQuit.connect(self._client_manager.stop)
         # Give the system-wide hotkeys back while the thread that registered them can.
         self._app.aboutToQuit.connect(self._hotkeys.close)
@@ -2407,7 +2407,7 @@ class AppController(QObject):
         Loaded after the reads rather than before them, so the save lands on the file as
         it stands now.
         """
-        from bartlebot.strategy_store import load_bot_strategy, save_bot_strategy  # noqa: PLC0415
+        from bartlebot.combat.strategy_store import load_bot_strategy, save_bot_strategy  # noqa: PLC0415
 
         try:
             bcs = load_bot_strategy(bcs_id)
@@ -2424,7 +2424,7 @@ class AppController(QObject):
 
     def _saved_decks(self) -> dict[int, DeckData] | None:
         """The active strategy's non-empty decks by slot, or None if there is no strategy."""
-        from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
+        from bartlebot.combat.strategy_store import load_bot_strategy  # noqa: PLC0415
 
         bcs_id = self._active_deck_strategy_id("apply")
         if bcs_id is None:
@@ -2584,7 +2584,7 @@ class AppController(QObject):
         gets its name and nothing else, which is the honest answer: a Fire
         wizard has no stand-in for a Storm hitter.
         """
-        from bartlebot.card_kinds import describe_kind  # noqa: PLC0415
+        from bartlebot.combat.card_kinds import describe_kind  # noqa: PLC0415
 
         kind = describe_kind(report.kinds.get(name))
         line = f"{name} — {kind}" if kind else name
@@ -2952,7 +2952,7 @@ class AppController(QObject):
 
     async def _apply_pre_run_decks(self) -> None:
         """Apply saved deck presets to each connected client before the FSM starts."""
-        from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
+        from bartlebot.combat.strategy_store import load_bot_strategy  # noqa: PLC0415
 
         if self._loaded_config is None:
             return

@@ -11,7 +11,7 @@ WHAT IS EDITABLE, AND WHAT IS NOT
     list, and there is no sensible way to type it that beats capturing it — a school the
     deck never held is a claim about a wizard nobody has. What the user owns is whether
     applying this deck should set it, which is the three-state
-    :data:`~bartlebot.gui.deck_content.ARCHMASTERY_MODES` value.
+    :data:`~bartlebot.combat.deck_content.ARCHMASTERY_MODES` value.
 
 THREE RADIOS, NOT A TICK BOX
     "Use app setting" is a real third answer and the shipped default, so a two-state
@@ -36,8 +36,8 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QRadioButton, QVBoxLayout, QWidget
 
-from bartlebot.deck_io import resolve_apply_archmastery
-from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note
+from bartlebot.combat.deck_content import ARCHMASTERY_MODES, archmastery_note
+from bartlebot.combat.deck_io import resolve_apply_archmastery
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.shared.strategy_models import DeckData
@@ -168,7 +168,7 @@ class ArchmasteryEditor(QWidget):
 
         Nothing here reaches disk: the deck this holds is the working copy the combat
         strategy dialog's Save commits, and its dirtiness is derived from the fields
-        rather than reported — see :mod:`bartlebot.strategy_workset`. Which is also why
+        rather than reported — see :mod:`bartlebot.combat.strategy_workset`. Which is also why
         a click that changes nothing must not emit: it would count as a change the user
         would then be warned about losing.
         """

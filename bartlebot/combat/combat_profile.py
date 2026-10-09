@@ -26,7 +26,7 @@ strategies; otherwise it would depend on one user's profile. The dialog's assign
 enforces that, and :func:`library_links_to_profile` finds a violation that got in some
 other way, such as a hand-edited file.
 
-Qt-free, like :mod:`bartlebot.strategy_summary` and :mod:`bartlebot.combat_warnings`.
+Qt-free, like :mod:`bartlebot.combat.strategy_summary` and :mod:`bartlebot.combat.combat_warnings`.
 """
 
 from __future__ import annotations
@@ -37,8 +37,8 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from uuid import uuid4
 
-from bartlebot import strategy_store
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat import strategy_store
+from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)

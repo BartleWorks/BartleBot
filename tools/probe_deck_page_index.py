@@ -103,7 +103,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from wizwalker.memory.memory_object import DynamicMemoryObject, Primitive
 from wizwalker.memory.memory_objects.spell import DynamicGraphicalSpell
 
-from bartlebot.deck_io import parse_tiered_name
+from bartlebot.combat.deck_io import parse_tiered_name
 from bartlebot.nodes.timing import DECK_ITEM_PAGE_SETTLE, DECK_SPELL_PAGE_SETTLE
 
 SCAN_START = 0x240

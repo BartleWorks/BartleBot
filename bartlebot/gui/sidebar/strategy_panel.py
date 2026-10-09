@@ -18,7 +18,7 @@ opening anything -- which is the whole point of a Run-mode surface.
 
 A strategy whose DSL does not parse says so on its own name, in ``THEME.error``, the
 same way ``StrategyCard`` does in the picker. Both render from one
-:class:`~bartlebot.strategy_summary.StrategySummary`, so the card in the tab and the
+:class:`~bartlebot.combat.strategy_summary.StrategySummary`, so the card in the tab and the
 card in the list cannot describe the same strategy differently.
 
 WHAT IT NO LONGER CARRIES
@@ -132,6 +132,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
+from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
@@ -139,11 +140,10 @@ from bartlebot.gui.widgets.flow_layout import FlowLayout
 from bartlebot.gui.widgets.picker_popup import PickerButton, Section
 from bartlebot.gui.widgets.player_pills import PlayerBadgeRow
 from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
-from bartlebot.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 
 if TYPE_CHECKING:
+    from bartlebot.combat.strategy_summary import StrategySummary
     from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
-    from bartlebot.strategy_summary import StrategySummary
 
 #: What the *default* binding falls through to when it is unset.
 BUILT_IN_LABEL = "BartleBot Default Combat Strategy"

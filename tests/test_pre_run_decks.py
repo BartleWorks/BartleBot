@@ -34,7 +34,7 @@ class PreRunDeckHarness:
 def strategy(monkeypatch):
     """Wire up the settings + strategy lookups that _apply_pre_run_decks does first."""
     import bartlebot.app_controller as ac  # noqa: PLC0415
-    import bartlebot.strategy_store as store  # noqa: PLC0415
+    import bartlebot.combat.strategy_store as store  # noqa: PLC0415
 
     settings = MagicMock()
     settings.get_active_strategy = MagicMock(return_value="bcs-1")

@@ -1,4 +1,4 @@
-"""Tests for bartlebot.strategy_summary.
+"""Tests for bartlebot.combat.strategy_summary.
 
 Pure functions over strategy models — no QApplication, same as
 combat_warnings and combat_grouping next door.  Covers each summarize_*
@@ -9,16 +9,8 @@ assignment and a linked preset.
 
 from __future__ import annotations
 
-from bartlebot.bot.strategy_models import BotCombatStrategy, StateAssignment
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    DuelConfig,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
-from bartlebot.strategy_summary import (
+from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
+from bartlebot.combat.strategy_summary import (
     Health,
     HealthStatus,
     UsageCount,
@@ -28,6 +20,14 @@ from bartlebot.strategy_summary import (
     summarize_deck,
     summarize_duel,
     summarize_player,
+)
+from bartlebot.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    DuelConfig,
+    PlayerAssignment,
+    PlayerCombatStrategy,
 )
 
 _VALID_DSL = "any<blade>[sharp]@ally(2)"

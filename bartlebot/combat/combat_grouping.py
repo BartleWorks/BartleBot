@@ -13,7 +13,7 @@ was rebuilt from disk.  Collapsing to one panel per group removes the class of
 bug entirely — there is no sibling widget left to disagree with.
 
 Everything here is pure and Qt-free so it can be tested without a QApplication,
-matching :mod:`bartlebot.combat_warnings` next door.
+matching :mod:`bartlebot.combat.combat_warnings` next door.
 
 Grouping key
 ------------
@@ -26,8 +26,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from bartlebot.bot.strategy_models import FightRef, StateAssignment
-from bartlebot.fight_keys import settle
+from bartlebot.combat.fight_keys import settle
+from bartlebot.combat.profile_models import FightRef, StateAssignment
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
@@ -122,7 +122,7 @@ def build_bindings(assignments: list[StateAssignment], config: BotConfig | None 
     duplicated across four call sites in ``CombatTab``.
 
     Given the bot's *config*, the stored fights are first placed on its current
-    states — by enemy, then by state id, see :mod:`bartlebot.fight_keys` — and each
+    states — by enemy, then by state id, see :mod:`bartlebot.combat.fight_keys` — and each
     assignment's fights are rewritten in memory to the states they landed on, the
     orphaned ones dropped. That is what a freshly loaded profile needs. Without one,
     the fights are taken at the state ids they hold, which is right for assignments

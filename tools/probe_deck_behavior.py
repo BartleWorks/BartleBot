@@ -62,7 +62,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from wizwalker.memory.memory_object import Primitive
 from wizwalker.memory.memory_objects.window import DeckListControlSpellEntry
 
-from bartlebot.deck_io import (
+from bartlebot.combat.deck_io import (
     ACTIVE_FLAG_OFFSET,
     ACTIVE_FLAG_ON,
     ENTRY_STRIDE,

@@ -22,7 +22,7 @@ shared *About* section — see
 Like its siblings in this package, it writes through to the working copy it was
 handed and never touches disk; the 500ms rename debounce it inherited from the
 Strategy Library window is gone with the rest of the autosaves. See
-:mod:`bartlebot.strategy_workset`.
+:mod:`bartlebot.combat.strategy_workset`.
 
 No scroll area of its own, either. The page around this one scrolls, and a nested
 scroll area inside it is the thing ``dialog.py`` says it never wants: two bars for one
@@ -35,8 +35,8 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from bartlebot.combat.deck_content import APPLY_DECK, IMPORT_DECK
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
-from bartlebot.gui.deck_content import APPLY_DECK, IMPORT_DECK
 from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.archmastery_editor import ArchmasteryEditor
 from bartlebot.gui.widgets.deck_card_list import DeckCardList

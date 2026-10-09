@@ -2,7 +2,7 @@
 
 Promoted out of the strategy picker's private ``_StrategyCard`` so the picker,
 the Strategy Library window and any future strategy list can all draw the same
-card from the same :class:`~bartlebot.strategy_summary.StrategySummary` — see
+card from the same :class:`~bartlebot.combat.strategy_summary.StrategySummary` — see
 that module's docstring for why the summary itself is shared.
 
 Sized by a real ``sizeHint()`` rather than a fixed height: a card with a
@@ -17,6 +17,8 @@ from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from bartlebot.combat.strategy_summary import HealthStatus, StrategySummary
+from bartlebot.combat.strategy_tags import PROFILE_SOURCE
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.card_art_tile import ArtIconView
@@ -27,8 +29,6 @@ from bartlebot.gui.widgets.school_picker import school_icon
 from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import ProfilePill, TagPill
-from bartlebot.strategy_summary import HealthStatus, StrategySummary
-from bartlebot.strategy_tags import PROFILE_SOURCE
 
 #: Side of a school's medallion beside its name on a deck card, a size up from the caption.
 SCHOOL_ICON_PX = 16

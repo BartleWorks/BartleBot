@@ -10,7 +10,7 @@ DeckPreset            — named, reusable deck configuration in the library
 Every product by this vendor reads and writes these (``docs/SHARED_CONTENT.md``), so
 they live in :mod:`bartlebot.shared` and import nothing product-specific, and every
 surface imports them from here. BartleBot's Bot Combat Strategy, which embeds them, is
-BartleBot's own and lives in :mod:`bartlebot.bot.strategy_models`.
+BartleBot's own and lives in :mod:`bartlebot.combat.profile_models`.
 
 Each top-level model is stored as an individual JSON file identified by UUID, keeps a
 ``history`` of content hashes and, as an override of an Official one, the hash of what it
@@ -94,7 +94,7 @@ class PlayerCombatStrategy(BaseModel):
     # inferred from dsl.  See DuelConfig.school_requirements.
     schools: list[str] = Field(default_factory=list)
     description: str = ""
-    # Stored tags — the Role group of bartlebot.strategy_tags. Source is derived, never here.
+    # Stored tags — the Role group of bartlebot.combat.strategy_tags. Source is derived, never here.
     tags: list[str] = Field(default_factory=list)
     #: The file format; see the module docstring.
     format: int = 1
@@ -126,7 +126,7 @@ class PlayerCombatStrategy(BaseModel):
 class DeckData(BaseModel):
     """Embedded deck config — no id/name, always inline within a deck preset or a Bot Combat Strategy.
 
-    ``normal`` and ``item`` are both live — see :mod:`bartlebot.deck_io`.
+    ``normal`` and ``item`` are both live — see :mod:`bartlebot.combat.deck_io`.
 
     ``tc`` is retained only so decks saved by earlier versions still parse.
     Treasure cards cannot be read or restored: reaching the treasure card view
@@ -174,7 +174,7 @@ class DeckPreset(BaseModel):
     name: str
     deck: DeckData = Field(default_factory=DeckData)
     description: str = ""
-    # Stored tags — the Role group of bartlebot.strategy_tags.
+    # Stored tags — the Role group of bartlebot.combat.strategy_tags.
     tags: list[str] = Field(default_factory=list)
     # The schools the deck is built for (#174), each one of deck_io.PIP_SCHOOLS; empty
     # means any. Authored, never inferred from the cards: most spells can be trained on

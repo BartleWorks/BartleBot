@@ -13,7 +13,17 @@ import pytest
 
 from bartlebot import bot_roots
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import (
+    StrategyKind,
+    fingerprint,
+    load_bot_strategy,
+    load_duel_strategy,
+    save_bot_strategy,
+    save_duel_strategy,
+    save_player_strategy,
+)
+from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.paths import project_root
 from bartlebot.shared.content_hash import (
     HISTORY_CAP,
@@ -31,16 +41,6 @@ from bartlebot.shared.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.store_roots import Origin, pill_text
-from bartlebot.strategy_store import (
-    StrategyKind,
-    fingerprint,
-    load_bot_strategy,
-    load_duel_strategy,
-    save_bot_strategy,
-    save_duel_strategy,
-    save_player_strategy,
-)
-from bartlebot.strategy_workset import StrategyWorkingSet
 from bartlebot.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
 from tests.test_subgraph_store import _defn
 
@@ -451,7 +451,7 @@ def test_a_duplicated_strategy_starts_fresh(tmp_path):
 
 
 def test_a_duplicated_bot_combat_strategy_starts_fresh():
-    from bartlebot.combat_profile import duplicate_profile  # noqa: PLC0415
+    from bartlebot.combat.combat_profile import duplicate_profile  # noqa: PLC0415
 
     bcs = BotCombatStrategy(id="b1", name="Mine", bot_id="bot-1", history=["x"])
     assert duplicate_profile(bcs, "Copy").history == []

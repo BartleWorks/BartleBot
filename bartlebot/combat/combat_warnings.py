@@ -22,13 +22,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from bartlebot.bot.strategy_models import BotCombatStrategy, StateAssignment
-from bartlebot.combat_profile import StrategyLookup, profile_players_of
-from bartlebot.fight_keys import bind, exposed_combat_states
+from bartlebot.combat.combat_profile import StrategyLookup, profile_players_of
+from bartlebot.combat.fight_keys import bind, exposed_combat_states
+from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
+from bartlebot.combat.strategy_store import load_bot_strategy
+from bartlebot.combat.strategy_summary import format_players as _format_players
 from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.shared.strategy_models import DuelConfig
-from bartlebot.strategy_store import load_bot_strategy
-from bartlebot.strategy_summary import format_players as _format_players
 
 if TYPE_CHECKING:
     from pathlib import Path

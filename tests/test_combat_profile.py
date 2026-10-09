@@ -1,4 +1,4 @@
-"""Tests for bartlebot.combat_profile: the lookup order, and what a profile owns (#118).
+"""Tests for bartlebot.combat.combat_profile: the lookup order, and what a profile owns (#118).
 
 Pure functions over the models and a tmp_path store — no QApplication.
 """
@@ -8,16 +8,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bartlebot.bot.strategy_models import BotCombatStrategy, StateAssignment
-from bartlebot.combat_profile import (
+from bartlebot.combat.combat_profile import (
     StrategyLookup,
     duplicate_profile,
     library_links_to_profile,
     profile_players_of,
     read_bot_names,
 )
+from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
+from bartlebot.combat.strategy_store import (
+    load_bot_strategy,
+    save_bot_strategy,
+    save_duel_strategy,
+    save_player_strategy,
+)
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.strategy_store import load_bot_strategy, save_bot_strategy, save_duel_strategy, save_player_strategy
 
 
 def _duel(name: str, *pcs: PlayerCombatStrategy) -> DuelCombatStrategy:

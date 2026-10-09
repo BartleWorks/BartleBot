@@ -29,11 +29,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from bartlebot.bot.strategy_models import FightRef
+from bartlebot.combat.profile_models import FightRef
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
-    from bartlebot.bot.strategy_models import BotCombatStrategy, StateAssignment
+    from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
 
 
 def exposed_combat_states(config: BotConfig) -> list[StateModel]:

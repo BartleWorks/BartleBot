@@ -17,7 +17,7 @@ import json
 import pytest
 from PyQt6.QtGui import QColor, QIcon, QPixmap
 
-from bartlebot import deck_io
+from bartlebot.combat import deck_io
 from bartlebot.game import card_art
 from bartlebot.gui.widgets.archmastery_editor import (
     APP_SETTING_OFF,

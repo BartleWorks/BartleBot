@@ -57,7 +57,7 @@ import time
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.deck_io import (
+from bartlebot.combat.deck_io import (
     _control_for,
     _deck_entry_names,
     _entry_vector,

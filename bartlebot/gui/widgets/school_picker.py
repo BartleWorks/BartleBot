@@ -17,7 +17,7 @@ from __future__ import annotations
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.deck_io import PIP_SCHOOLS
+from bartlebot.combat.deck_io import PIP_SCHOOLS
 from bartlebot.game import card_art
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section, summarize
@@ -50,7 +50,7 @@ def school_sections(
 
 
 class SchoolPickerButton(PickerButton):
-    """Picks any number of :data:`bartlebot.deck_io.PIP_SCHOOLS`; none selected means any school."""
+    """Picks any number of :data:`bartlebot.combat.deck_io.PIP_SCHOOLS`; none selected means any school."""
 
     #: Class-level default so ``PickerButton.__init__`` can call ``format_text`` first.
     _caption: str | None = None

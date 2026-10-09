@@ -39,8 +39,8 @@ from PyQt6.QtCore import QRect, QRectF, QSize, Qt
 from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
+from bartlebot.combat.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.game import card_art
-from bartlebot.gui.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.flow_layout import FlowLayout
@@ -231,7 +231,7 @@ class GroupDivider(QWidget):
 class CardArtStrip(QWidget):
     """The wrapping strip of tiles a collapsed deck card shows.
 
-    Built from :func:`~bartlebot.gui.deck_content.deck_groups`, and empty -- which is
+    Built from :func:`~bartlebot.combat.deck_content.deck_groups`, and empty -- which is
     to say, never built at all -- when no art has been extracted. The caller checks
     :meth:`has_art` and falls back to its text form.
     """

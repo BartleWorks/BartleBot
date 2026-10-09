@@ -12,7 +12,7 @@ from PyQt6.QtCore import QEvent, QObject, Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
-from bartlebot.gui.deck_content import deck_groups
+from bartlebot.combat.deck_content import deck_groups
 from bartlebot.gui.widgets import card_art_tile
 from bartlebot.gui.widgets.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.discard import discard_widget

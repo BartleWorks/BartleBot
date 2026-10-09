@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
-from bartlebot.deck_io import DeckApplyReport
+from bartlebot.combat.deck_io import DeckApplyReport
 from bartlebot.shared.strategy_models import DeckData
 
 _BOUND = (
@@ -78,7 +78,7 @@ class DeckJobHarness:
 def strategy(monkeypatch):
     """The active strategy, and a record of every save as a snapshot of its decks."""
     import bartlebot.app_controller as ac  # noqa: PLC0415
-    import bartlebot.strategy_store as store  # noqa: PLC0415
+    import bartlebot.combat.strategy_store as store  # noqa: PLC0415
 
     settings = MagicMock()
     settings.get_active_strategy = MagicMock(return_value="bcs-1")

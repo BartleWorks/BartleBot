@@ -1,4 +1,4 @@
-"""Tests for bartlebot.combat_grouping.
+"""Tests for bartlebot.combat.combat_grouping.
 
 Pure functions over strategy models — no QApplication, same as the
 combat_warnings tests next door.  The behavior under test is what the combat
@@ -8,8 +8,7 @@ sidebar draws and what "Applies to…" does, expressed without any widgets.
 from __future__ import annotations
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import FightRef, StateAssignment
-from bartlebot.combat_grouping import (
+from bartlebot.combat.combat_grouping import (
     apply_membership,
     build_bindings,
     detach_state,
@@ -18,6 +17,7 @@ from bartlebot.combat_grouping import (
     split_unconfigured,
     state_label,
 )
+from bartlebot.combat.profile_models import FightRef, StateAssignment
 
 _DCS_A = "dcs-aaaa"
 _DCS_B = "dcs-bbbb"

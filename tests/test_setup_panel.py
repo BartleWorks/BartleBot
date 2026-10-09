@@ -1076,7 +1076,7 @@ def test_finishing_advances_the_base_as_one_undo_step_and_says_the_template_move
 
 
 def test_removing_a_fight_with_a_strategy_asks_first(canvas, monkeypatch):
-    from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
+    from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
     from bartlebot.gui.canvas import bot_canvas as canvas_module  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
@@ -1288,7 +1288,7 @@ def _change_text(review: template_diff.Review, text: str) -> template_diff.Chang
 
 
 def test_a_fight_in_two_profiles_names_both(canvas, monkeypatch):
-    from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
+    from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
     from bartlebot.gui.canvas import bot_canvas as canvas_module  # noqa: PLC0415
 
     theirs = _draft([_ZONE, _DROPS])

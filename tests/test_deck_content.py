@@ -1,8 +1,8 @@
-"""Tests for bartlebot.gui.deck_content — the Qt-free deck-content line builder."""
+"""Tests for bartlebot.combat.deck_content — the Qt-free deck-content line builder."""
 
 from __future__ import annotations
 
-from bartlebot.gui.deck_content import archmastery_line, deck_content_lines, deck_groups
+from bartlebot.combat.deck_content import archmastery_line, deck_content_lines, deck_groups
 from bartlebot.shared.strategy_models import DeckData
 
 

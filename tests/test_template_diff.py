@@ -23,7 +23,7 @@ from bartlebot.bot.schema import (
     TemplateRef,
     TransitionModel,
 )
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.new_bot import BotDetails, StartingPoint, create_bot
 from bartlebot.subgraphs import drop_states, member_id, nested_regions
 from bartlebot.template_diff import MISSING, Port, Release, Status, TemplateUpdate, apply, diff, finish

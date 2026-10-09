@@ -10,7 +10,7 @@ others. The fix is not a better debounce — it is a boundary. The combat strate
 dialog opens onto *copies*, every editor mutates a copy, and nothing reaches disk
 until Save.
 
-That also makes the copy-on-write in :mod:`bartlebot.strategy_store` fall out for
+That also makes the copy-on-write in :mod:`bartlebot.combat.strategy_store` fall out for
 free: writes only ever land in the user root, so an edit to a shipped strategy is
 already a user override by the time it is written, and Cancel leaves the shipped
 file as untouched as it was before the dialog opened.
@@ -30,10 +30,10 @@ every other profile stays read-only, there only to be counted. Commit writes the
 library before the profile, so moving an entry from the profile into the library
 leaves two copies if it is interrupted, never none — the rule ``save_by_id``
 follows for a rename. Lookups go profile first, then library, as they do
-everywhere else (:mod:`bartlebot.combat_profile`).
+everywhere else (:mod:`bartlebot.combat.combat_profile`).
 
 Everything is Qt-free and needs no ``QApplication``, matching
-:mod:`bartlebot.strategy_summary` and :mod:`bartlebot.combat_grouping` next door.
+:mod:`bartlebot.combat.strategy_summary` and :mod:`bartlebot.combat.combat_grouping` next door.
 
 DIRTINESS IS DERIVED, NEVER REPORTED
 ------------------------------------
@@ -81,12 +81,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
-from bartlebot.bot.strategy_models import BotCombatStrategy
-from bartlebot.combat_profile import StrategyLookup, profile_players_of
-from bartlebot.shared.content_hash import content_sha256, official_updated
-from bartlebot.shared.strategy_library import is_newer_format
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.strategy_store import (
+from bartlebot.combat.combat_profile import StrategyLookup, profile_players_of
+from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import (
     ChangedOnDisk,
     NewerFormat,
     Origin,
@@ -106,7 +103,10 @@ from bartlebot.strategy_store import (
     save_player_strategy,
     unique_name,
 )
-from bartlebot.strategy_summary import name_list
+from bartlebot.combat.strategy_summary import name_list
+from bartlebot.shared.content_hash import content_sha256, official_updated
+from bartlebot.shared.strategy_library import is_newer_format
+from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -351,7 +351,7 @@ class StrategyWorkingSet:
         """The live entry for ``uuid``, or None. This is the object editors mutate.
 
         The active profile's own entries first, then the library's — the lookup order
-        everything else uses (:mod:`bartlebot.combat_profile`).
+        everything else uses (:mod:`bartlebot.combat.combat_profile`).
         """
         if uuid is None:
             return None
@@ -467,7 +467,7 @@ class StrategyWorkingSet:
 
         A duel takes the profile's own player strategies it uses along with it, since a
         library duel may not link profile content — the caller confirms that first, with
-        :func:`bartlebot.combat_profile.profile_players_of`. Like every edit it reaches disk
+        :func:`bartlebot.combat.combat_profile.profile_players_of`. Like every edit it reaches disk
         at :meth:`commit` and not before, and Cancel undoes it.
         """
         entry = self._profile_entry(kind, uuid)
@@ -625,7 +625,7 @@ class StrategyWorkingSet:
 
     def unique_name(self, kind: StrategyKind, base: str) -> str:
         """``base`` made unique against every live name of that kind, profile entries
-        included — see :func:`bartlebot.strategy_store.unique_name`."""
+        included — see :func:`bartlebot.combat.strategy_store.unique_name`."""
         names = [i.name for i in self._slots[kind].items.values()]
         names += [i.name for i in self.profile_items(kind)]
         return unique_name(base, names)
@@ -833,13 +833,13 @@ class StrategyWorkingSet:
         """How many things reference ``uuid``, counting unsaved edits.
 
         Counted against the working set rather than disk, which is the whole
-        reason :func:`bartlebot.strategy_summary.find_references` takes lists:
+        reason :func:`bartlebot.combat.strategy_summary.find_references` takes lists:
         a player strategy linked into a duel a minute ago has no file saying so
         yet, and a delete confirmation that missed it would be wrong in exactly
         the case the user most needs it to be right. The active profile is counted
         as its live copy, for the same reason.
         """
-        from bartlebot.strategy_summary import find_references  # noqa: PLC0415 — avoids a cycle
+        from bartlebot.combat.strategy_summary import find_references  # noqa: PLC0415 — avoids a cycle
 
         return find_references(uuid, self.bot_strategies, self.duels)
 

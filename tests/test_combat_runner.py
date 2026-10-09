@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.conftest import FakeMachine
@@ -59,7 +59,7 @@ def test_missing_bcs_file_returns_builtin_default(tmp_path: Path):
     machine = _make_machine()
     with (
         _patch_active_strategy("bot-1", "nonexistent-uuid"),
-        patch("bartlebot.strategy_store.load_bot_strategy", side_effect=FileNotFoundError),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", side_effect=FileNotFoundError),
     ):
         dsls, order, source = resolve_combat(machine, True, 1)
     assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG]
@@ -72,7 +72,7 @@ def test_no_dcs_id_returns_builtin_default(tmp_path: Path):
     machine = _make_machine(bot_id="bot-1", state="unknown_state")
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
     assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG]
@@ -106,9 +106,9 @@ def test_full_resolution(tmp_path: Path):
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
-        patch("bartlebot.strategy_store.load_player_strategy", side_effect=[pcs1, pcs2]),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", side_effect=[pcs1, pcs2]),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
@@ -134,9 +134,9 @@ def test_full_resolution_inline_dsl_skips_store(tmp_path: Path):
     load_pcs = Mock(side_effect=AssertionError("inline assignments must not load PCS files"))
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
-        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", load_pcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
@@ -161,9 +161,9 @@ def test_mixed_inline_and_linked_assignments(tmp_path: Path):
     load_pcs = Mock(return_value=pcs)
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
-        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", load_pcs),
     ):
         dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
@@ -180,8 +180,8 @@ def test_empty_inline_dsl_falls_back_to_builtin(tmp_path: Path):
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
     ):
         dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
 
@@ -217,9 +217,9 @@ def test_state_assignment_used_when_use_default_false(tmp_path: Path):
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", side_effect=_load_dcs),
-        patch("bartlebot.strategy_store.load_player_strategy", side_effect=_load_pcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", side_effect=_load_dcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", side_effect=_load_pcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
@@ -238,9 +238,9 @@ def test_unassigned_player_falls_back_to_builtin():
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
-        patch("bartlebot.strategy_store.load_player_strategy", return_value=pcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", return_value=pcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
@@ -268,9 +268,9 @@ def test_missing_pcs_file_uses_builtin_for_that_player():
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
-        patch("bartlebot.strategy_store.load_player_strategy", side_effect=_load_pcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", side_effect=_load_pcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
@@ -290,7 +290,7 @@ def test_an_unset_default_falls_back_to_builtin(tmp_path: Path):
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
 
@@ -316,8 +316,8 @@ def test_an_unlinked_state_assignment_falls_back_to_bcs_default(tmp_path: Path):
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs_default),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs_default),
     ):
         dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
@@ -348,8 +348,8 @@ def test_a_file_from_before_118_loads_with_its_inline_config_ignored(tmp_path: P
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
     ):
         dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
@@ -371,8 +371,8 @@ def test_a_fight_stored_under_another_state_id_is_found_by_its_enemy(tmp_path: P
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
     ):
         dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
@@ -393,8 +393,8 @@ def test_a_profile_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", load_dcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", load_dcs),
     ):
         dsls, _order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=1)
 
@@ -419,8 +419,8 @@ def test_a_profile_duel_links_a_profile_player_strategy(tmp_path: Path):
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_player_strategy", load_pcs),
     ):
         dsls, _order, _source = resolve_combat(_make_machine(state="boss"), use_default_strategy=False, num_clients=1)
 
@@ -432,8 +432,8 @@ def test_an_id_in_neither_the_profile_nor_the_library_falls_back_to_the_builtin(
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", side_effect=FileNotFoundError),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.combat.strategy_store.load_duel_strategy", side_effect=FileNotFoundError),
     ):
         dsls, order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=2)
 

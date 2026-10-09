@@ -1,4 +1,4 @@
-"""Tests for ``bartlebot.dsl_syntax`` — the combat DSL's vocabulary, scanner and completion.
+"""Tests for ``bartlebot.combat.dsl_syntax`` — the combat DSL's vocabulary, scanner and completion.
 
 The vocabulary tests are the drift guard the module docstring promises: each word list
 is checked against wizsprinter's grammar or combat code, so a keyword added upstream
@@ -10,8 +10,8 @@ import re
 
 import pytest
 
-from bartlebot import dsl_syntax as ds
-from bartlebot.dsl_syntax import Context, Kind
+from bartlebot.combat import dsl_syntax as ds
+from bartlebot.combat.dsl_syntax import Context, Kind
 from bartlebot.nodes.combat_runner import validate_dsl
 
 
