@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import wizwalker.utils
 
-from bartlebot.game_keybindings import GameBinding, parse_input_mappings, read_game_keybindings
+from bartlebot.game.game_keybindings import GameBinding, parse_input_mappings, read_game_keybindings
 from bartlebot.gui.settings.authoring_tab import binding_problems
 
 # Shaped like the game's config.xml: a section before, then InputMappings with a mix of

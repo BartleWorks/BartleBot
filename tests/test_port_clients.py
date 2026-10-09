@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 import bartlebot.nodes.node_helpers as nh
-from bartlebot import wizard_names
+from bartlebot.game import wizard_names
 from tests.conftest import FakeMachine
 from tests.port_sim import PortSim
 

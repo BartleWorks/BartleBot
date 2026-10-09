@@ -8,7 +8,7 @@ from wizwalker import XYZ
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.mark_location as ml
 import bartlebot.nodes.teleportation.teleport_to_marked_location as rtm
-from bartlebot import dialog_captions
+from bartlebot.game import dialog_captions
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT, RECALL_BUTTON_PATH
 from tests.conftest import FakeClient, FakeMachine, message_box_patches
 

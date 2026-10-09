@@ -16,7 +16,7 @@ import json
 import pytest
 from PyQt6.QtGui import QColor, QIcon, QPixmap
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.sidebar.combat_tab import _PlayerDecksSection
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge, extracted_icon, school_icon_for
 from bartlebot.shared.strategy_models import DeckData

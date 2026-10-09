@@ -1,10 +1,10 @@
-"""Regenerate bartlebot/data/stat_caps.json from the game's Root.wad.
+"""Regenerate bartlebot/game/data/stat_caps.json from the game's Root.wad.
 
 Challenge Mode level scales a player to its dungeon's level by the **stat caps**: each
 stat is scaled by the cap at the dungeon's level over the cap at the player's own. Only
 max health and max mana matter to BartleBot, because a player leaves a Challenge Mode
 dungeon with the health and mana it had inside, under caps that are no longer scaled.
-``bartlebot/stat_caps.py`` has the rest.
+``bartlebot/game/stat_caps.py`` has the rest.
 
 WHERE THE DATA COMES FROM
     ``LevelScaledData.xml`` at the root of Root.wad: one ``LevelScaledInfo`` per school
@@ -31,7 +31,7 @@ from katsuba.wad import Archive
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bartlebot.stat_caps import CAPS_PATH  # noqa: E402
+from bartlebot.game.stat_caps import CAPS_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
 DEFAULT_TYPES = Path(__file__).resolve().parent / "r800294_WizardDev.json"

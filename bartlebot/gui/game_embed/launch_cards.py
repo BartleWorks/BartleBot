@@ -100,7 +100,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import streamer_mode
 from bartlebot.credentials import CredentialStore
-from bartlebot.game_sizing import FitProblem
+from bartlebot.game.game_sizing import FitProblem
 from bartlebot.gui.account_accent import account_accent, account_color_key, account_color_keys
 from bartlebot.gui.theme import THEME
 

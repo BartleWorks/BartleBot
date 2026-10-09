@@ -175,7 +175,7 @@ SETTINGS_QUIT_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "Q
 
 # The "Remember Realm" option, on the third gameplay-options tab of the same settings
 # page. Its value is localized text ("Yes"/"No", "Ja"/"Nein", ...) -- read it through
-# bartlebot.realms.yes_no(), never by comparing to English. The right arrow flips it;
+# bartlebot.game.realms.yes_no(), never by comparing to English. The right arrow flips it;
 # OK commits the page. There is no config.xml or preferences.xml tag for it, which is
 # why it is toggled through the UI after login rather than patched before launch.
 SETTINGS_MORE_GAMEPLAY_TAB_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "TabWindow", "MoreGameplayButton"]

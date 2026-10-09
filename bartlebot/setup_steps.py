@@ -38,8 +38,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from bartlebot import scales, zone_nav
 from bartlebot.bot.schema import BotConfig, RegionModel, SetupStep, SetupTarget, StateModel
+from bartlebot.game import scales, zone_nav
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import input_targets, member_id

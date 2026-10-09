@@ -53,6 +53,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import setup_steps, template_diff
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SetupStep, SetupTarget
+from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
@@ -69,7 +70,6 @@ from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraphs import exposed_key, node_panels
-from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 #: The tick's size.
 _TICK_PX = 14

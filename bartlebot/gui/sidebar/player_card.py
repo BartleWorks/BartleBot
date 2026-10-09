@@ -73,7 +73,8 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from wizwalker import XYZ
 
-from bartlebot import streamer_mode, wizard_names
+from bartlebot import streamer_mode
+from bartlebot.game import wizard_names
 from bartlebot.gui.account_accent import account_accent, account_color_keys
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.sidebar.sidebar_section import field_label

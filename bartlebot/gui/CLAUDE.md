@@ -399,7 +399,7 @@ is still asked about.)
 ## Card art is optional, and missing is the ordinary case
 
 Spell art is the game's own and is never in this repo: the user extracts it with
-`tools/extract_card_art.py`, and `bartlebot/card_art.py` is the only thing that knows
+`tools/extract_card_art.py`, and `bartlebot/game/card_art.py` is the only thing that knows
 where it lands. **Every lookup can return `None`** — most installs never run the
 extractor, a few templates name a texture the game's own files do not contain, and the
 names snapshot can be older than the game. So a surface showing art needs a form that
@@ -590,7 +590,7 @@ undo by accident:
 
 - **Resolution and UI size are one coupled setting.** The HUD is fixed-pixel, so a
   resolution below 800x600 needs the game's own UI scale clamped down to match, and the
-  pairing is `bartlebot/game_sizing.py`'s ladder. `Resolution` is written to
+  pairing is `bartlebot/game/game_sizing.py`'s ladder. `Resolution` is written to
   `preferences.xml`, `UISize` only to `config.xml`; neither file holds both. The user's
   own UI scale is captured **once** into `settings.json` and given back on quit — never
   re-read from `config.xml`, which after one session holds our clamp rather than their

@@ -27,7 +27,7 @@ from pathlib import Path
 
 from wizwalker import XYZ
 
-from bartlebot import worlds
+from bartlebot.game import worlds
 
 logger = logging.getLogger(__name__)
 

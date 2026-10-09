@@ -1,8 +1,8 @@
 # Zone navigation
 
 How BartleBot gets every client from wherever they are to a named zone, without the bot
-author recording each gate along the way. The map lives in `bartlebot/data/zone_nav.json`;
-`bartlebot/zone_nav.py` loads it and plans routes over it, and
+author recording each gate along the way. The map lives in `bartlebot/game/data/zone_nav.json`;
+`bartlebot/game/zone_nav.py` loads it and plans routes over it, and
 `bartlebot/nodes/zone_navigation.py` runs a route. The Sync In Zone node and the tester both run it.
 
 The research behind the zone list — which zones count as main zones, and how they were
@@ -271,7 +271,7 @@ that worked.
 first step through its zone-entry node, and plans again from wherever they landed. Another
 world is part of the plan, not a separate trip first. A route with no way on is a failure naming
 where it stopped. A list step matches the destination's name in every locale from
-`bartlebot/data/zone_names.json` (`tools/dump_zone_names.py`), and a gate step matches the
+`bartlebot/game/data/zone_names.json` (`tools/dump_zone_names.py`), and a gate step matches the
 world's name the same way from `world_names.json`.
 
 The Sync In Zone node (`nodes/teleportation/sync_in_zone.py`) is `navigate()` with the zone as its one

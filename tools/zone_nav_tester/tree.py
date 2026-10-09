@@ -18,7 +18,7 @@ import itertools
 from collections.abc import Callable, Collection
 from dataclasses import dataclass, field
 
-from bartlebot import zone_nav
+from bartlebot.game import zone_nav
 
 VERIFIED, TENTATIVE, NO_DATA = "verified", "tentative", "none"
 

@@ -42,7 +42,7 @@ was expected: a raw memory scan for the name as plain text, and a sweep of the e
 window tree for a control already holding it.
 
 WHY THIS EXISTS
-    bartlebot.wizard_names.detect_wizard_name() gets the character name by pressing C,
+    bartlebot.game.wizard_names.detect_wizard_name() gets the character name by pressing C,
     waiting for the character page to render, reading its title window, and pressing C
     again.  It works, but it costs two keypresses and a UI settle per client, it visibly
     moves the game UI, and it runs before every group formation and after every recovery.
@@ -153,7 +153,7 @@ import pymem.process
 import regex
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.wizard_names import strip_markup
+from bartlebot.game.wizard_names import strip_markup
 
 _EXE_NAME = "WizardGraphicalClient.exe"
 

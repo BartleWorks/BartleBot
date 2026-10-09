@@ -1,6 +1,6 @@
 """Tests for the launch-time fit check and the disabled cards it drives.
 
-``bartlebot/game_sizing.py`` owns the arithmetic and is tested on its own; what is
+``bartlebot/game/game_sizing.py`` owns the arithmetic and is tested on its own; what is
 checked here is the layer that supplies it with the screen and the settings, and that an
 unfittable launch is *refused* — a card that cannot be clicked — rather than warned about.
 """
@@ -12,7 +12,7 @@ from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QMouseEvent, QResizeEvent
 from PyQt6.QtWidgets import QApplication, QPushButton
 
-from bartlebot import game_sizing
+from bartlebot.game import game_sizing
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, character_summary, profile_summary
 from bartlebot.settings_manager import SettingsManager

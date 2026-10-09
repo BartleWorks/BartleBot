@@ -7,7 +7,7 @@ about. The caller validates the result with ``zone_nav.parse`` before writing it
 
 from __future__ import annotations
 
-from bartlebot import zone_nav
+from bartlebot.game import zone_nav
 
 SOURCE = "recorded"
 

@@ -56,7 +56,7 @@ async def test_no_dsl_fails():
     client.in_battle.return_value = True
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(
@@ -86,7 +86,7 @@ async def test_named_enemy_is_found_as_a_fight_target():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(
             hc.node_helpers, "find_closest_fight_target", new=AsyncMock(return_value=FakeEntity("Cyclops"))
@@ -115,7 +115,7 @@ async def test_wildcard_enemy_name_searches_by_predicate():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(
@@ -139,7 +139,7 @@ async def test_timeout_entering_combat_fails():
     client.in_battle.return_value = False  # never enters combat
 
     with (
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.01),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
@@ -159,7 +159,7 @@ async def test_timeout_during_sprinty_combat_fails():
 
     with (
         patch("bartlebot.nodes.combat_runner._run_combat", new=AsyncMock(side_effect=_hang_combat)),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(combat_runner, "FLEE_TIMEOUT", 0.05),
     ):
@@ -180,7 +180,7 @@ async def test_success_no_drops():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         machine = FakeMachine()
@@ -215,7 +215,7 @@ async def test_combat_order_sequential():
     with (
         _patch_run_combat(),
         _patch_resolve_combat([2, 1]),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [c1, c2], _DEFAULT_PARAMS)
@@ -242,7 +242,7 @@ async def test_combat_order_invalid_client_number_skipped():
             "bartlebot.nodes.combat.handle_combat.resolve_combat",
             return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG], [5], "test"),
         ),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
@@ -264,7 +264,7 @@ async def test_success_with_drops():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=mock_snap),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=mock_snap),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         machine = FakeMachine()
@@ -296,7 +296,7 @@ async def test_success_does_not_wait_for_the_drop_poll():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "poll_combat_drops", new=_poll),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
@@ -350,7 +350,7 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.001),
     ):
@@ -374,7 +374,7 @@ async def test_a_target_that_never_returns_fails_at_the_timeout_and_says_so_once
     client.in_battle.return_value = False
 
     with (
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.2),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01),
@@ -404,7 +404,7 @@ async def test_a_re_teleport_logs_how_far_it_moved_the_player():
 
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.001),
     ):
@@ -441,7 +441,7 @@ def _leader_and_follower():
 def _patches_for_fast_retry():
     return (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01),
     )
@@ -658,7 +658,7 @@ async def test_an_unreadable_mana_reading_does_not_stop_the_fight():
     client.calc_mana_ratio.side_effect = RuntimeError("unreadable")
     with (
         _patch_run_combat(),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
@@ -681,7 +681,7 @@ async def test_a_fled_or_broken_fight_fails_without_polling_for_drops(end, error
     with (
         patch.object(hc, "run_fight", AsyncMock(return_value=combat_runner.FightResult(end, errors))),
         patch.object(hc, "start_combat_drop_poll") as drop_poll,
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
@@ -698,7 +698,7 @@ async def test_the_fight_is_given_what_is_left_of_max_duration():
     finished = combat_runner.FightResult(combat_runner.FightEnd.FINISHED, [])
     with (
         patch.object(hc, "run_fight", AsyncMock(return_value=finished)) as run_fight,
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         await hc.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "max_duration": 600.0})
@@ -718,7 +718,7 @@ async def test_a_fled_fight_counts_toward_the_flee_limit():
     fled = combat_runner.FightResult(combat_runner.FightEnd.FLED, [])
     with (
         patch.object(hc, "run_fight", AsyncMock(return_value=fled)),
-        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         await hc.run(machine, [client], _DEFAULT_PARAMS)

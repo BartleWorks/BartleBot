@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import pytest
 
+from bartlebot.game.wiki_pages import WIKI_HOST, WIKI_PAGE_PARAM, resolve_wiki_page
 from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _WikiPageLineEdit
 from bartlebot.nodes.combat.handle_combat import PARAM_SCHEMA
-from bartlebot.wiki_pages import WIKI_HOST, WIKI_PAGE_PARAM, resolve_wiki_page
 
 
 def _form(params=None):

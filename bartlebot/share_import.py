@@ -18,7 +18,7 @@ REFUSED BEFORE ANYTHING IS WRITTEN
   edits, merges) and records no history (#179). A file from the other product keeps the
   hash check, against this item's hash and its history;
 - an item that fails validation, uses a node type this build doesn't have, or names a
-  restricted zone, with the reason a run would give (:mod:`bartlebot.restricted_zones`).
+  restricted zone, with the reason a run would give (:mod:`bartlebot.game.restricted_zones`).
 
 MATCHING
 --------
@@ -63,10 +63,11 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from bartlebot import bot_roots, restricted_zones, strategy_store
+from bartlebot import bot_roots, strategy_store
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
 from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.combat_profile import duplicate_profile, read_bot_names
+from bartlebot.game import restricted_zones
 from bartlebot.new_bot import file_stem, library_folders, unique_file_name
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot.share_export import (

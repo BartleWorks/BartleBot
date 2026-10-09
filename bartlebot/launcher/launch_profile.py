@@ -22,7 +22,7 @@ from wizwalker.utils import (
 )
 
 from bartlebot.credentials import CredentialStore
-from bartlebot.game_sizing import ui_size_for
+from bartlebot.game.game_sizing import ui_size_for
 from bartlebot.launch_tracker import LaunchStage
 from bartlebot.nodes.timing import (
     LAUNCH_LOGIN_SCREEN_TIMEOUT,
@@ -129,7 +129,7 @@ def _launch_config_updates() -> dict[str, str]:
 # has no such element -- while Resolution goes the other way: it appears in both files
 # but only the preferences.xml copy is read, the config.xml one being a mirror the game
 # rewrites at launch. Neither split is guessable, which is why both are spelled out here
-# and in bartlebot/game_sizing.py.
+# and in bartlebot/game/game_sizing.py.
 _UI_SIZE_TAG = "UISize"
 
 # The two preferences.xml tags a tiled launch overwrites. Resolution is the size the
@@ -253,7 +253,7 @@ def _ui_size_update(width: int, height: int) -> dict[str, str]:
 
     The HUD is fixed-pixel, so a resolution below the game's own 800x600 floor needs the
     UI scaled down to match or the interface overflows the client area -- the two are one
-    coupled setting (see bartlebot/game_sizing.py). The clamp only ever goes down, and
+    coupled setting (see bartlebot/game/game_sizing.py). The clamp only ever goes down, and
     the user's own value is captured here, once, before anything overwrites it.
 
     Captured from *settings* when a capture already exists rather than from the file: one

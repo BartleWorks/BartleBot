@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot import group_manager, port_map, wizard_names
+from bartlebot import group_manager, port_map
+from bartlebot.game import wizard_names
 from bartlebot.group_manager import GroupState
 from bartlebot.nodes import node_helpers
 from bartlebot.port_map import PortMap

@@ -1,6 +1,6 @@
 """Unit tests for zone_lists: what a list object's row for a given destination reads."""
 
-from bartlebot import zone_lists, zone_nav
+from bartlebot.game import zone_lists, zone_nav
 
 _HUB, _A, _C = "Alpha/Hub", "Alpha/A", "Alpha/C"
 

@@ -21,7 +21,7 @@ where the order is set, and
 :class:`~bartlebot.gui.widgets.player_pills.PlayerBadgeRow` where it is summarized.
 
 EVERY GEM MAY BE NONE
-    The art is extracted per machine (see :mod:`bartlebot.card_art`), so most installs
+    The art is extracted per machine (see :mod:`bartlebot.game.card_art`), so most installs
     have no gems at all. That is the ordinary case, not an error: the ordinal text
     carries the row on its own, and only the picture is missing. The *mirroring* is not
     conditional on the art -- it is a fact about the game either way.
@@ -34,7 +34,7 @@ from functools import lru_cache
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.widgets.card_art_tile import ArtIconView, art_icon
 
 #: How big a gem is drawn beside a label. The textures are 64px, so this is a preference

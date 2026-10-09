@@ -21,7 +21,7 @@ import pytest
 from bartlebot.nodes import combat_runner
 from tests.conftest import FakeClient, FakeMachine
 
-_SNAP = "bartlebot.utils.drop_detection.snapshot_chat"
+_SNAP = "bartlebot.game.drop_detection.snapshot_chat"
 
 # A chat line drop_detection.extract_new_drops recognizes as a Reagent drop.
 _DROP = "Art_Chat_System.dds> <>Iron Bloom<;Reagent>"

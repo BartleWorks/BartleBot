@@ -11,7 +11,7 @@ A PROPOSAL, NOT A LIST
     So a candidate is a zone of the world that
 
         - has no segment matching MINOR (Interiors, Gauntlets, TreasureTower, ...)
-        - is not restricted (bartlebot/restricted_zones.py)
+        - is not restricted (bartlebot/game/restricted_zones.py)
         - links to at least one other zone of the same world
 
     and the columns exist to make hand review fast:
@@ -58,7 +58,7 @@ from wad_common import (
 from zone_data import zone_record
 
 sys.path.insert(0, str(TOOLS_DIR.parent))
-from bartlebot.restricted_zones import check_zone  # noqa: E402
+from bartlebot.game.restricted_zones import check_zone  # noqa: E402
 
 # A path segment matching this marks a side room, instance or non-questing zone.
 MINOR = re.compile(

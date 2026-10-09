@@ -14,7 +14,7 @@ from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QDoubleSpinBox, QKeySequenceEdit
 
 from bartlebot.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
-from bartlebot.game_keybindings import GameBinding, read_game_keybindings
+from bartlebot.game.game_keybindings import GameBinding, read_game_keybindings
 from bartlebot.gui.global_hotkeys import parse_binding
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel

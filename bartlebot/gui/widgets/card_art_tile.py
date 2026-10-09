@@ -1,7 +1,7 @@
 """Card art tiles, and the wrapping strip of them a deck card shows.
 
 The art itself is extracted by the user (``tools/extract_card_art.py``) and found by
-:mod:`bartlebot.card_art`; this is only the drawing. Three pieces:
+:mod:`bartlebot.game.card_art`; this is only the drawing. Three pieces:
 
 * :class:`CardArtTile` -- one card's art at a fixed size, with a count badge when the
   deck holds more than one copy.
@@ -39,7 +39,7 @@ from PyQt6.QtCore import QRect, QRectF, QSize, Qt
 from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
-from bartlebot import card_art
+from bartlebot.game import card_art
 from bartlebot.gui.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.discard import discard_widget

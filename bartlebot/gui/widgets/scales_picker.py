@@ -17,7 +17,7 @@ from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
-from bartlebot import card_art, scales, worlds
+from bartlebot.game import card_art, scales, worlds
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 

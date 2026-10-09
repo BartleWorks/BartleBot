@@ -42,7 +42,7 @@ import logging
 import weakref
 from dataclasses import dataclass, field
 
-from bartlebot import wizard_names
+from bartlebot.game import wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,

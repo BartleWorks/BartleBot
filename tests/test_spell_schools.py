@@ -1,4 +1,4 @@
-"""Tests for bartlebot.spell_schools — a card's school, and the game's own order.
+"""Tests for bartlebot.game.spell_schools — a card's school, and the game's own order.
 
 Most of these drive a snapshot written into tmp_path, so they assert the rules rather
 than the current contents of ``data/spell_schools.json``. The few that read the real
@@ -12,8 +12,8 @@ import json
 
 import pytest
 
-from bartlebot import spell_schools
-from bartlebot.spell_schools import (
+from bartlebot.game import spell_schools
+from bartlebot.game.spell_schools import (
     SCHOOL_ORDER,
     UNKNOWN_SCHOOL_INDEX,
     deck_sort_key,

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from bartlebot import zone_nav
+from bartlebot.game import zone_nav
 
 _HUB = "Alpha/Hub"
 _DOOR = "Alpha/Door"
@@ -896,7 +896,7 @@ def test_the_shipped_map_is_in_canonical_form():
 
 
 def test_every_spiral_door_world_is_declared():
-    from bartlebot.worlds import SPIRAL_DOOR_WORLDS
+    from bartlebot.game.worlds import SPIRAL_DOOR_WORLDS
 
     nav = _shipped()
 

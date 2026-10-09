@@ -1,8 +1,8 @@
-"""Tests for bartlebot.stat_caps: the shipped caps, the level bands, the factors, and dungeon levels."""
+"""Tests for bartlebot.game.stat_caps: the shipped caps, the level bands, the factors, and dungeon levels."""
 
 import pytest
 
-from bartlebot import stat_caps
+from bartlebot.game import stat_caps
 
 THRONE_ROOM = "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB"
 SISYPHUS = "Aquila/Interiors/AQ_Z01_TempleOfSisyphus"

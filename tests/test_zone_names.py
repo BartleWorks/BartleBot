@@ -2,7 +2,7 @@
 
 import pytest
 
-from bartlebot import zone_names, zone_nav
+from bartlebot.game import zone_names, zone_nav
 
 
 def test_every_locale_is_offered_with_english_first():

@@ -17,14 +17,14 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import DropModel
+from bartlebot.game.wiki_drops import match_name_for
+from bartlebot.game.wiki_pages import WIKI_HOST as _WIKI_HOST
+from bartlebot.game.wiki_pages import page_title, wiki_page_path
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.wiki_drops import match_name_for
-from bartlebot.wiki_pages import WIKI_HOST as _WIKI_HOST
-from bartlebot.wiki_pages import page_title, wiki_page_path
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +206,7 @@ class WikiImportDialog(ThemedMixin, QDialog):
     def selected_page(self) -> str | None:
         """The title of the page these drops came from, for the caller to record.
 
-        A title rather than the URL the user pasted — see bartlebot/wiki_pages.py.
+        A title rather than the URL the user pasted — see bartlebot/game/wiki_pages.py.
         """
         return self._page
 

@@ -1,6 +1,6 @@
 """The zone navigation map, and the cheapest route across it.
 
-``bartlebot/data/zone_nav.json`` declares each world's zones and the links between them.
+``bartlebot/game/data/zone_nav.json`` declares each world's zones and the links between them.
 This module validates it, generates the links it stores compactly (list networks, the hub
 button), and plans routes costed in estimated seconds. It does not move a client: executing
 a step is the navigation node's job, through the zone-entry node each kind names.
@@ -21,8 +21,8 @@ from dataclasses import dataclass, field, replace
 from functools import cache
 from pathlib import Path
 
+from bartlebot.game.restricted_zones import check_zone
 from bartlebot.nodes.timing import OBJECT_USE_DELAY
-from bartlebot.restricted_zones import check_zone
 
 logger = logging.getLogger(__name__)
 

@@ -340,7 +340,8 @@ def _write_bot(folder: Path, name: str) -> None:
 
 @pytest.fixture
 def library(tmp_path, monkeypatch):
-    from bartlebot import bot_roots, card_art  # noqa: PLC0415
+    from bartlebot import bot_roots  # noqa: PLC0415
+    from bartlebot.game import card_art  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     # The user's folder alone: the shipped bots would add every world the repo has.
@@ -395,7 +396,7 @@ def test_with_no_art_extracted_no_row_has_an_icon(qapp, library):
 def test_extracted_badges_decorate_all_and_the_known_folders(qapp, library, tmp_path):
     from PyQt6.QtGui import QColor, QPixmap  # noqa: PLC0415
 
-    from bartlebot import card_art  # noqa: PLC0415
+    from bartlebot.game import card_art  # noqa: PLC0415
 
     icons = {"badge_all": "badge_all.png", "badge_4dungeons": "badge_4dungeons.png"}
     card_art.icons_dir().mkdir(parents=True, exist_ok=True)

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-import bartlebot.wizard_names as wn
+import bartlebot.game.wizard_names as wn
 from bartlebot.client_manager import ClientManager
 from tests.conftest import FakeClient
 

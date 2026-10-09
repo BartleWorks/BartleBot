@@ -42,7 +42,7 @@ class DropModel(BaseModel):
     ``match_name`` carries that in-game form when it differs, and is None when the
     two agree — the common case, kept out of the file by ``exclude_none``. Any
     code comparing a drop against text read off the game's UI wants
-    :attr:`match_key`, never ``name``. ``bartlebot/wiki_drops.py`` derives it.
+    :attr:`match_key`, never ``name``. ``bartlebot/game/wiki_drops.py`` derives it.
     """
 
     name: str

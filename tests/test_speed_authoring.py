@@ -17,7 +17,7 @@ from bartlebot import app_controller
 from bartlebot.app_controller import AppController
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
-from bartlebot.game_keybindings import GameBinding
+from bartlebot.game.game_keybindings import GameBinding
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.edit_scene import authoring_anchor
 from bartlebot.gui.global_hotkeys import ID_BASE_AUTHORING, ID_BASE_SPEED_AUTHORING, GlobalHotkeys

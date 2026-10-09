@@ -50,7 +50,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import param_cards, variables, zone_names
+from bartlebot import param_cards, variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     FlagCondition,
@@ -60,6 +60,8 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
+from bartlebot.game import zone_names
+from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.variable_rows import AssignmentsField, ConditionRow, parse_rows
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
@@ -99,7 +101,6 @@ from bartlebot.nodes.registry import (
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.setup_steps import value_empty
 from bartlebot.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
-from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 
 def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
@@ -192,7 +193,7 @@ class _WikiPageLineEdit(QLineEdit):
 
     Stores a bare page title. A pasted URL is normalized to its title on edit, so
     whichever form the user has to hand produces the same thing on disk — and a bot
-    file never carries a host of its own. See bartlebot/wiki_pages.py.
+    file never carries a host of its own. See bartlebot/game/wiki_pages.py.
     """
 
     def normalize(self) -> None:

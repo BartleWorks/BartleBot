@@ -13,11 +13,11 @@ import pytest
 from PIL import Image
 from PyQt6.QtWidgets import QTreeWidget
 
-from bartlebot import card_art
 from bartlebot.bot.schema import DropModel
-from bartlebot.card_art import drop_icon_name, pin_icon_name
+from bartlebot.game import card_art
+from bartlebot.game.card_art import drop_icon_name, pin_icon_name
+from bartlebot.game.wiki_drops import PIN_KINDS, pin_kind
 from bartlebot.nodes.utility import quicksell
-from bartlebot.wiki_drops import PIN_KINDS, pin_kind
 from tools.extract_card_art import (
     DROP_ICON_SOURCES,
     DROP_TEXTURES,

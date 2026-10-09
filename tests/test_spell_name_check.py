@@ -12,8 +12,8 @@ import json
 
 import pytest
 
-from bartlebot import spell_names
-from bartlebot.spell_names import name_problem
+from bartlebot.game import spell_names
+from bartlebot.game.spell_names import name_problem
 
 _SNAPSHOT = {
     "Storm Lord": "Storm Lord",

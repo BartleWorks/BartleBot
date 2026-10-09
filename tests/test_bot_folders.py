@@ -12,7 +12,6 @@ from pathlib import Path
 from PyQt6.QtGui import QFont, QFontMetrics
 from PyQt6.QtWidgets import QStyle
 
-from bartlebot import badge_categories
 from bartlebot.bot_folders import (
     ALL_BADGE,
     FOLDER_BADGES,
@@ -22,7 +21,8 @@ from bartlebot.bot_folders import (
     folder_number,
     folder_slug,
 )
-from bartlebot.card_art import RECENT_ICON, badge_icon_name
+from bartlebot.game import badge_categories
+from bartlebot.game.card_art import RECENT_ICON, badge_icon_name
 from bartlebot.gui.canvas.bot_canvas import (
     CATEGORY_LIST_WIDTH,
     CATEGORY_PAD_X,

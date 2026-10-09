@@ -3,7 +3,7 @@
 A player leaves a Challenge Mode dungeon holding the health and mana it had under the
 scaled caps, and outside they read against its full max, so a player who left at full
 health reads well under half. Entering again clamps health to the scaled max, so what
-matters before going back in is the share of the *scaled* max (``bartlebot/stat_caps.py``).
+matters before going back in is the share of the *scaled* max (``bartlebot/game/stat_caps.py``).
 ``handle_potions`` and ``collect_wisps`` read their ratios here, so one threshold means the
 same thing in either mode, and a bot needs no Challenge Mode branch of its own.
 """
@@ -12,7 +12,7 @@ import asyncio
 
 from wizwalker.memory.memory_objects.conditionals import school_to_str
 
-from bartlebot import stat_caps, zone_names
+from bartlebot.game import stat_caps, zone_names
 from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_CHALLENGE_MODE, PARAM_OFFERS_CHALLENGE_MODE
 
 

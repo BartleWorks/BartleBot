@@ -1,6 +1,6 @@
 """Form an in-game group across every running Wizard101 client.
 
-Runs the exact code path the app uses — bartlebot.wizard_names for name detection and
+Runs the exact code path the app uses — bartlebot.game.wizard_names for name detection and
 bartlebot.group_manager for the invite flow — but without the GUI, a bot file, or the
 settings system. What works here works in a real run, and what breaks here breaks there.
 
@@ -40,7 +40,8 @@ import sys
 
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, wizard_names
+from bartlebot import group_manager
+from bartlebot.game import wizard_names
 
 
 def _setup_logging(verbose: bool) -> None:

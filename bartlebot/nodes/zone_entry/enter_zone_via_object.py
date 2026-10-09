@@ -5,7 +5,8 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import dialog_captions, player_realms
+from bartlebot import player_realms
+from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import (

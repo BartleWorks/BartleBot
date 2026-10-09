@@ -34,7 +34,8 @@ import logging
 
 from wizwalker.errors import ClientClosedError
 
-from bartlebot import dialog_captions, group_manager, wizard_names
+from bartlebot import group_manager
+from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.launcher import auto_select
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec

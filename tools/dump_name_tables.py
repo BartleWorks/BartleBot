@@ -1,4 +1,4 @@
-"""Regenerate bartlebot/data/name_tables.json from the game's Root.wad.
+"""Regenerate bartlebot/game/data/name_tables.json from the game's Root.wad.
 
 Run this only when Wizard101 adds new character names, which is rare -- the tables show
 4 to 10 append batches across the game's lifetime.  Everything else reads the checked-in
@@ -20,7 +20,7 @@ WHY A SNAPSHOT IS SAFE
 
     So a stale snapshot cannot corrupt an existing name.  It can only fail to know a newly
     added one, and that shows up as an index past the end of the table -- detectable, and
-    reported as such by bartlebot.name_tables rather than guessed at.
+    reported as such by bartlebot.game.name_tables rather than guessed at.
 
 USAGE
     uv run python tools/dump_name_tables.py
@@ -41,7 +41,7 @@ from wizwalker.file_readers.wad import Wad
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bartlebot.name_tables import TABLE_NAMES, TABLES_PATH  # noqa: E402
+from bartlebot.game.name_tables import TABLE_NAMES, TABLES_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
 NAMES_XML = "CharacterNames.xml"

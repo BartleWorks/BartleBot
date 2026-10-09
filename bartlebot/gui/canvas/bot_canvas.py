@@ -42,7 +42,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_roots, bot_summary, card_art, scales, setup_steps, template_diff
+from bartlebot import bot_roots, bot_summary, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -57,7 +57,9 @@ from bartlebot.bot.schema import (
 from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
-from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
+from bartlebot.game import card_art, scales
+from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
+from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import EdgeItem
@@ -123,7 +125,6 @@ from bartlebot.subgraphs import (
     resolve_instance_key,
     sync_linked_values,
 )
-from bartlebot.wiki_pages import WIKI_PAGE_PARAM
 
 logger = logging.getLogger(__name__)
 

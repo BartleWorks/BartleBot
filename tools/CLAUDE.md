@@ -72,7 +72,7 @@ Conventions worth knowing:
 Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
 dependency on the game being installed at a guessable path. Extract what you need
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
-`bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
+`bartlebot/game/data/name_tables.json`, and regenerate it when the game adds entries.
 
 The snapshots and their tools:
 
@@ -124,7 +124,7 @@ It reads each spell's `m_imageName` and pulls that texture from `GUI/SummonedIma
 (nearly all in `_Shared-WorldData.wad`, a dozen in `Root.wad`), converting DXT3/DXT5 to
 PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per template:
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
-is not imported at runtime. `bartlebot/card_art.py` is the read side.
+is not imported at runtime. `bartlebot/game/card_art.py` is the read side.
 
 The same run also writes 163 UI icons into `art/icons/`, and they are keyed by a
 **logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,
@@ -242,7 +242,7 @@ cannot find a texture called *Universal* or *Global*, and one that caps its per-
 output silently hides whatever sorts last. Both happened here.
 
 Follow the same split for any new asset work: a *name* or an *id* can be snapshotted
-into `bartlebot/data/`, a *texture, model or sound* goes to the machine-local cache.
+into `bartlebot/game/data/`, a *texture, model or sound* goes to the machine-local cache.
 
 ### Zone connectivity: `tools/zone_graph/`
 

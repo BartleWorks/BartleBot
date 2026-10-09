@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot.wiki_drops import (
+from bartlebot.game.wiki_drops import (
     AMBIGUOUS_JEWEL_SHAPES,
     KIND_JEWEL_SHAPE,
     KIND_KNOWN_KEPT,

@@ -866,7 +866,7 @@ _EXIT_CAPTION = (
 
 async def test_identify_modal_names_the_dialog_on_screen():
     import bartlebot.nodes.node_helpers as nh_mod
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     with _caption_patch(_EXIT_CAPTION):
         assert await nh_mod.identify_modal(FakeClient()) == dialog_captions.INSTANCE_EXIT
@@ -916,7 +916,7 @@ async def test_resolve_modal_confirms_a_question():
 
 async def test_resolve_modal_dismisses_a_refusal_and_names_it():
     """The node needs the key so it can fail with the reason a player would have read."""
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     outcome, clicked = await _resolve_with("Your friend is busy right now.", (MESSAGE_BOX_RIGHT,))
 
@@ -927,7 +927,7 @@ async def test_resolve_modal_dismisses_a_refusal_and_names_it():
 
 async def test_resolve_modal_dismisses_a_one_button_refusal_with_the_center():
     """A refusal with only an OK button puts it in the center, not the right."""
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     outcome, clicked = await _resolve_with(
         "You are not allowed to switch Realms from this location", (MESSAGE_BOX_CENTER,)
@@ -949,7 +949,7 @@ async def test_resolve_modal_treats_an_unknown_dismiss_only_dialog_as_a_refusal(
 
     No center button means the game offers no way to proceed, whatever the words say.
     """
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     outcome, clicked = await _resolve_with("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,))
 
@@ -972,7 +972,7 @@ async def test_resolve_modal_leaves_another_handlers_dialog_alone():
     it: an unknown dismiss-only dialog would be treated as a refusal and dismissed, which
     is the right default but the wrong answer here.
     """
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     outcome, clicked = await _resolve_with("Somebody is already in a group.", (MESSAGE_BOX_RIGHT,))
 
@@ -1015,7 +1015,7 @@ async def test_retry_falls_through_when_nothing_is_on_screen():
 async def test_retry_records_a_refusal_and_stops_pressing():
     """poll_each_until_seen only reports who was seen, so the refusal has to be carried out."""
     import bartlebot.nodes.node_helpers as nh_mod
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     patches, _ = message_box_patches((MESSAGE_BOX_CENTER,))
     action = AsyncMock()
@@ -1056,7 +1056,7 @@ async def test_answer_instance_prompts_reports_one_clients_refusal_for_the_group
     from unittest.mock import patch
 
     import bartlebot.nodes.node_helpers as nh_mod
-    from bartlebot import dialog_captions
+    from bartlebot.game import dialog_captions
 
     ok, blocked = FakeClient(), FakeClient()
 
@@ -1659,7 +1659,7 @@ async def test_attempt_zone_recovery_ports_only_the_actual_stragglers():
 
 
 async def test_find_target_in_zone_picks_the_first_client_there_by_player_order():
-    from bartlebot import wizard_names  # noqa: PLC0415
+    from bartlebot.game import wizard_names  # noqa: PLC0415
 
     clients = [FakeClient(), FakeClient(), FakeClient()]
     try:

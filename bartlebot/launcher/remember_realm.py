@@ -17,7 +17,7 @@ without one the option changes nothing a bot relies on.
 
 Best-effort throughout, like the rest of the cleanup: the option is a convenience, and
 nothing here may fail a launch that otherwise succeeded. The value the page shows is
-localized text, read through :func:`bartlebot.realms.yes_no`; an unreadable value is
+localized text, read through :func:`bartlebot.game.realms.yes_no`; an unreadable value is
 left alone rather than blindly toggled, because a blind toggle from "Yes" turns it off.
 """
 
@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import logging
 
-from bartlebot import realms
+from bartlebot.game import realms
 from bartlebot.nodes.node_helpers import (
     click_by_path,
     get_text_by_path,

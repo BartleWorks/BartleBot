@@ -41,8 +41,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import card_art
 from bartlebot.bot_folders import folder_badge, folder_caption
+from bartlebot.game import card_art
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet

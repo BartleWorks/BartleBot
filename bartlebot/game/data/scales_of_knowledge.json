@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/scales.py.",
+    "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/game/scales.py.",
     "Written by tools/scales_table.py: add and change entries with it, not by hand.",
     "A bot file stores an entry's key, so a key is never renamed once shipped.",
     "See docs/LEVEL_SCALING.md."

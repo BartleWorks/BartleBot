@@ -1,6 +1,6 @@
 """Unit tests for the zone navigation tester's world tree and map colors."""
 
-from bartlebot import zone_nav
+from bartlebot.game import zone_nav
 from tools.zone_nav_tester import tree
 
 _HUB, _S1, _S2, _S3, _ISLAND, _LOST = "W/Hub", "W/S1", "W/S2", "W/S3", "W/Island", "W/Lost"

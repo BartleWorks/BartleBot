@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from bartlebot.spell_names import _load_names, display_name
+from bartlebot.game.spell_names import _load_names, display_name
 
 
 @pytest.fixture

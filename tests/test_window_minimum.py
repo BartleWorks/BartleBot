@@ -24,8 +24,8 @@ from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QBoxLayout, QComboBox, QScrollArea, QSizePolicy, QStyleFactory, QWidget
 
-from bartlebot import game_sizing as gs
 from bartlebot.bot.schema import DropModel
+from bartlebot.game import game_sizing as gs
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget

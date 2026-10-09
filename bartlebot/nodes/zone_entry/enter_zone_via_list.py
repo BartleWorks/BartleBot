@@ -18,7 +18,7 @@ from collections.abc import Callable
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import dialog_captions
+from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     UNIVERSE_CANCEL_BUTTON,

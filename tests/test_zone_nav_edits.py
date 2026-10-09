@@ -4,7 +4,7 @@ import copy
 
 import pytest
 
-from bartlebot import zone_nav
+from bartlebot.game import zone_nav
 from tools.zone_nav_tester import edits
 
 _BASE = {

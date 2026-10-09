@@ -194,7 +194,7 @@ legible instead.
 
 Every in-game modal is the same `MessageBoxModalWindow` tree, so "a modal is up"
 does not say which one. Identify it by caption, comparing against the key constants
-in `bartlebot/dialog_captions.py`.
+in `bartlebot/game/dialog_captions.py`.
 
 Most nodes want `resolve_modal()` rather than `identify_modal()` — it acts on the
 dialog and reports only what the caller has to decide about:
@@ -225,7 +225,7 @@ two dialogs a node can hit share a layout, and it already broke once: the dungeo
 exit warning and the friend-busy dialog both show a right button, so
 `teleport_to_friend` reported every dungeon exit as an unreachable friend.
 
-Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per key
+Captions come from `bartlebot/game/data/dialog_captions.json`, all seven locales per key
 — memory holds the *resolved* text, so an English substring match fails silently on
 any other locale. To add a dialog: append to `KNOWN_KEYS`, run
 `uv run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.

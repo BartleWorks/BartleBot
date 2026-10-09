@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import player_realms, scales, setup_steps, variables
+from bartlebot import player_realms, setup_steps, variables
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -44,6 +44,7 @@ from bartlebot.bot.schema import (
     TransitionModel,
     uses_variables,
 )
+from bartlebot.game import scales
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, CollapsedRegionItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,

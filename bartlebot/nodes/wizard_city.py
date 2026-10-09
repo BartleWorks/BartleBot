@@ -12,7 +12,7 @@ to the Commons on its own.
 import asyncio
 import logging
 
-from bartlebot import dialog_captions
+from bartlebot.game import dialog_captions
 from bartlebot.nodes import housing, node_helpers
 from bartlebot.nodes.paths import GOTO_DORM_BUTTON_PATH
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, HOME_LOADING_TIMEOUT, POLL_INTERVAL

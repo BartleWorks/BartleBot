@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import game_sizing
+from bartlebot.game import game_sizing
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
 

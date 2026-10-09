@@ -8,7 +8,7 @@ on open and again whenever the Refresh button is pressed.
 
 Each row carries both of an entity's names: the internal object name, which
 is the identity a node's params are written against, and the display name a
-player reads, resolved from the checked-in snapshot (``bartlebot.entity_names``).
+player reads, resolved from the checked-in snapshot (``bartlebot.game.entity_names``).
 The filter matches either, so "Crescent Moon Centaur" finds the row whose
 object name is ``AQ-Centaur-Artemis``.
 """
@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from bartlebot import entity_names
+from bartlebot.game import entity_names
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit

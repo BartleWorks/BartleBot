@@ -1,4 +1,4 @@
-"""Regenerate bartlebot/data/spell_names.json from the game's Root.wad.
+"""Regenerate bartlebot/game/data/spell_names.json from the game's Root.wad.
 
 SpellTemplate's internal name -- what ``deck_io.py`` stores and keys decks by --
 is a stable identity but not what the player sees in-game: tiered/fusion variants
@@ -63,7 +63,7 @@ from wizwalker.file_readers.cache_handler import CacheHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bartlebot.spell_names import NAMES_PATH  # noqa: E402
+from bartlebot.game.spell_names import NAMES_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
 DEFAULT_TYPES = Path(__file__).resolve().parent / "r800294_WizardDev.json"

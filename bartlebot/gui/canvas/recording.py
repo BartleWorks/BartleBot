@@ -23,7 +23,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from bartlebot import entity_names, zone_names
+from bartlebot.game import entity_names, zone_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import NPC_RANGE_TITLE_PATH
 from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL

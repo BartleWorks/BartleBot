@@ -19,7 +19,7 @@ from bartlebot.paths import project_root
 PROJECT_ROOT = project_root()
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from bartlebot.wiki_drops import (  # noqa: E402
+from bartlebot.game.wiki_drops import (  # noqa: E402
     KIND_LEVEL,
     KIND_LEVEL_AND_SCHOOL,
     KIND_SCHOOL,
@@ -117,7 +117,7 @@ def test_the_shipped_library_has_no_unclassified_suffixes():
     per_kind, examples, _ = scan(PROJECT_ROOT / "bots")
     assert per_kind.get(KIND_UNCLASSIFIED, 0) == 0, (
         f"Unclassified drop name suffixes: {[n for n, _, _ in examples[KIND_UNCLASSIFIED]]}. "
-        "Decide whether the game shows the suffix, then add a rule to bartlebot/wiki_drops.py."
+        "Decide whether the game shows the suffix, then add a rule to bartlebot/game/wiki_drops.py."
     )
 
 
