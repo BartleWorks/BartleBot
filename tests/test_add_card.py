@@ -17,14 +17,14 @@ from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import QDialog
 
-import bartlebot.gui.theme as theme_mod
+import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PROFILES_HINT
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import ADD_CARD_BORDER_WIDTH, AccountCard, AddCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab
-from bartlebot.gui.widgets.card_frame import GRIP_GUTTER
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import main_window_stub
 

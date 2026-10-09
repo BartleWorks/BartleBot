@@ -10,12 +10,12 @@ from PyQt6.QtCore import QRect, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot import streamer_mode
 from bartlebot.game.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
-from bartlebot.gui.account_accent import TINT_ALPHA_PERCENT
+from bartlebot.gui import streamer_mode
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow, is_click_notification
-from bartlebot.gui.icon_utils import svg_pixmap
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.account_accent import TINT_ALPHA_PERCENT
+from bartlebot.gui.theming.icon_utils import svg_pixmap
+from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
 
 # FOCUS_BORDER and LABEL_RESERVE are imported rather than defined here: how much chrome

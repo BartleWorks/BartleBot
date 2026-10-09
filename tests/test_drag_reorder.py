@@ -14,8 +14,8 @@ from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication, QLabel, QScrollArea, QVBoxLayout, QWidget
 
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode
-from bartlebot.gui.widgets.drag_reorder import AUTOSCROLL_INTERVAL_MS, DragReorder
+from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode
+from bartlebot.gui.widgets.layout.drag_reorder import AUTOSCROLL_INTERVAL_MS, DragReorder
 from tests.drag_helpers import drag_card, press_and_move, release, show
 
 
@@ -125,7 +125,7 @@ def test_a_locked_grip_starts_no_drag(qapp):
 
 
 def test_showing_the_host_warms_its_window(qapp, monkeypatch):
-    import bartlebot.gui.widgets.drag_reorder as module  # noqa: PLC0415
+    import bartlebot.gui.widgets.layout.drag_reorder as module  # noqa: PLC0415
 
     warmed: list[QWidget] = []
     monkeypatch.setattr(module, "warm_offscreen_render", warmed.append)

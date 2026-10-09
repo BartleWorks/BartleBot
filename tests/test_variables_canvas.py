@@ -227,7 +227,7 @@ def test_right_clicking_a_label_opens_its_edges_menu(canvas, monkeypatch):
 
 def test_a_label_change_and_a_move_leave_nothing_unrepainted(canvas, qtbot, tmp_path):
     """The repaint tracer (#73) on a live canvas: a label's text, size and place all change, and nothing is owed."""
-    from bartlebot.gui.canvas.repaint_trace import RepaintTracer  # noqa: PLC0415
+    from bartlebot.gui.debug.repaint_trace import RepaintTracer  # noqa: PLC0415
 
     canvas.setup(_switch_bot())
     canvas.enter_edit_mode()

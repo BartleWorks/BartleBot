@@ -28,9 +28,9 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.combat.dsl_syntax import DSL_HELP
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.dsl_edit import DslPlainTextEdit
-from bartlebot.gui.widgets.school_picker import SchoolPickerButton
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.inputs.dsl_edit import DslPlainTextEdit
+from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
 

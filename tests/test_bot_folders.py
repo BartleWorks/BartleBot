@@ -27,8 +27,8 @@ from bartlebot.gui.canvas.bot_canvas import (
     CATEGORY_LIST_WIDTH,
     CATEGORY_PAD_X,
 )
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartlebot.paths import project_root
 from tools.extract_card_art import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
 

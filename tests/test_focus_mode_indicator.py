@@ -142,7 +142,7 @@ def test_the_pill_says_how_to_leave(canvas):
 
 
 def test_the_frame_is_painted_in_the_focused_region_color(canvas):
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     c = canvas()
 
@@ -152,7 +152,7 @@ def test_the_frame_is_painted_in_the_focused_region_color(canvas):
 
 
 def test_focusing_a_different_region_repaints_the_frame(canvas):
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     c = canvas()
     c.enter_focus_mode("r1")

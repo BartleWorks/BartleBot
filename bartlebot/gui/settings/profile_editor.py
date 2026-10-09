@@ -81,14 +81,14 @@ from PyQt6.QtWidgets import (
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui import screen_fit
-from bartlebot.gui.account_accent import account_accent, account_color_keys
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.picker_popup import PickerPopup, PickerRow, Section, should_open
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.account_accent import account_accent, account_color_keys
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
 # Wide enough for an account card to draw what it knows, plus the Add button and

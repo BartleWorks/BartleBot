@@ -11,7 +11,7 @@ from PyQt6.QtCore import Qt
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sections.possible_drops_section import _DropsListWidget
-from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY
+from bartlebot.gui.widgets.layout.drop_tree import UNCATEGORIZED_DISPLAY
 
 
 @pytest.fixture

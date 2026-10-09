@@ -11,7 +11,7 @@ import pytest
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QImage, QPainter
 
-from bartlebot.gui.widgets.tag_pill import paint_pill_outline
+from bartlebot.gui.widgets.pills.tag_pill import paint_pill_outline
 
 
 def _edge_rows(scale: float) -> tuple[list[int], list[int]]:

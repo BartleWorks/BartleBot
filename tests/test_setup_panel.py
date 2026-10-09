@@ -48,7 +48,7 @@ from bartlebot.gui.sidebar.setup_panel import (
     step_summary,
     target_choices,
 )
-from bartlebot.gui.widgets.card_frame import CardMode
+from bartlebot.gui.widgets.cards.card_frame import CardMode
 from tests.drag_helpers import menu_move
 from tests.test_subgraph_integration import ControllerHarness
 
@@ -808,7 +808,7 @@ def test_closing_the_bot_takes_the_tab_away(window):
 
 def test_a_fights_import_fills_the_drop_list_and_records_the_page(window, monkeypatch):
     from bartlebot.bot.schema import DropModel  # noqa: PLC0415
-    from bartlebot.gui import wiki_import_dialog  # noqa: PLC0415
+    from bartlebot.gui.dialogs import wiki_import_dialog  # noqa: PLC0415
 
     class _Imported:
         def __init__(self, parent=None) -> None:

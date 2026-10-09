@@ -132,16 +132,16 @@ from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
-from bartlebot.gui.export_dialog import run_export
+from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.elided_label import apply_muted_color
-from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
-from bartlebot.gui.widgets.strategy_card import StrategyCard
-from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
+from bartlebot.gui.widgets.labels.elided_label import apply_muted_color
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

@@ -13,9 +13,9 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
 from bartlebot.combat.deck_content import deck_groups
-from bartlebot.gui.widgets import card_art_tile
-from bartlebot.gui.widgets.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.discard import discard_widget
+from bartlebot.gui.widgets.cards import card_art_tile
+from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
+from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.shared.strategy_models import DeckData
 
 

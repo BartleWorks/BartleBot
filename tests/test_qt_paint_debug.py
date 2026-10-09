@@ -5,7 +5,7 @@ throttling, and dump layout.  Installing the handler needs a QApplication, per
 CLAUDE.md's testing convention for Qt code.
 """
 
-from bartlebot.qt_paint_debug import (
+from bartlebot.gui.debug.qt_paint_debug import (
     DISPLAY_NOISE_SIGNATURE,
     FONT_NOISE_SIGNATURE,
     LEGACY_BITMAP_FONTS,
@@ -27,7 +27,7 @@ BURST = [
 ]
 
 CALLER = '  File "bartlebot/gui/canvas/node_item.py", line 551, in paint\n    painter.drawText(...)\n'
-OWN_FRAME = '  File "bartlebot/qt_paint_debug.py", line 130, in _handler\n'
+OWN_FRAME = '  File "bartlebot/gui/debug/qt_paint_debug.py", line 130, in _handler\n'
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +161,7 @@ def test_frames_from_the_handler_itself_are_dropped():
 def test_the_same_caller_produces_the_same_signature():
     """The handler's own line number varies; the caller is what identifies a burst."""
     a = [CALLER, OWN_FRAME]
-    b = [CALLER, '  File "bartlebot/qt_paint_debug.py", line 999, in _handler\n']
+    b = [CALLER, '  File "bartlebot/gui/debug/qt_paint_debug.py", line 999, in _handler\n']
     assert stack_signature(a) == stack_signature(b)
 
 

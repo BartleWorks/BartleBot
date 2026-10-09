@@ -9,8 +9,8 @@ from bartlebot.bot.schema import BotConfig
 from bartlebot.combat.strategy_tags import STRATEGY_TAG_GROUPS
 from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS
 from bartlebot.gui.canvas.bot_header import BotHeader
-from bartlebot.gui.widgets.picker_popup import _RowWidget
-from bartlebot.gui.widgets.tag_picker import (
+from bartlebot.gui.widgets.pickers.picker_popup import _RowWidget
+from bartlebot.gui.widgets.pickers.tag_picker import (
     BOT_VOCABULARY,
     STRATEGY_VOCABULARY,
     TagPickerButton,
@@ -19,7 +19,7 @@ from bartlebot.gui.widgets.tag_picker import (
     tag_group,
     tag_sections,
 )
-from bartlebot.gui.widgets.tag_pill import TagChip, TagPill
+from bartlebot.gui.widgets.pills.tag_pill import TagChip, TagPill
 from tests.picker_helpers import pick
 
 # ---------------------------------------------------------------------------

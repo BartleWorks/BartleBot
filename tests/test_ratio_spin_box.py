@@ -11,7 +11,7 @@ import pytest
 from PyQt6.QtWidgets import QDoubleSpinBox
 
 from bartlebot.gui.canvas.param_panel import _DynamicParamForm
-from bartlebot.gui.widgets.ratio_spin_box import RatioSpinBox
+from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 
 RATIO_FIELDS = [

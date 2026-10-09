@@ -16,7 +16,7 @@ Real widget tests (QApplication required), in the style of test_menu_anchoring.
 import pytest
 from PyQt6.QtCore import QEvent
 
-from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
+from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 
 
 @pytest.fixture

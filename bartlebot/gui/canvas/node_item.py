@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.canvas.lod import text_is_legible
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Geometry constants (also used by EdgeItem for port positions)

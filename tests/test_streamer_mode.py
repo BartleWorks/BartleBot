@@ -6,7 +6,7 @@ against a fresh, default-off configuration rather than whatever the developer ha
 enabled locally.
 """
 
-from bartlebot import streamer_mode
+from bartlebot.gui import streamer_mode
 from bartlebot.settings_manager import SettingsManager
 
 

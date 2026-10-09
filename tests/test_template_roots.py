@@ -63,7 +63,7 @@ def test_both_roots_are_listed_each_with_its_origin(roots):
 
 def test_new_bot_shows_each_templates_source_and_none_on_the_blank_bot(qapp, roots, tmp_path):
     """Every surface listing templates says where each comes from, in the same words (#149)."""
-    from bartlebot.gui.new_bot_dialog import NewBotDialog  # noqa: PLC0415
+    from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog  # noqa: PLC0415
 
     shipped, user = roots
     _released(shipped, "t-official", name="Official Farmer")

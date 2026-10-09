@@ -29,7 +29,7 @@ caller's to pass, chosen from the active pick, and the pick itself never travels
 values are never in a bot file at all. ``test_share_export`` proves no settings value
 reaches a file.
 
-Qt-free: the export summary is :mod:`bartlebot.gui.export_dialog`.
+Qt-free: the export summary is :mod:`bartlebot.gui.dialogs.export_dialog`.
 """
 
 from __future__ import annotations

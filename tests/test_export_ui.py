@@ -23,10 +23,10 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots, share_export, store_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
-from bartlebot.gui import export_dialog
 from bartlebot.gui.canvas.bot_canvas import EXPORT_TEXT, _BotLibraryPanel
 from bartlebot.gui.combat_strategies.dialog import EXPORT_UNSAVED_TIP, CombatStrategyDialog
-from bartlebot.gui.export_dialog import NOTHING_TO_SEND, Choices, ExportDialog, run_export
+from bartlebot.gui.dialogs import export_dialog
+from bartlebot.gui.dialogs.export_dialog import NOTHING_TO_SEND, Choices, ExportDialog, run_export
 from bartlebot.gui.sidebar.combat_tab import _EXPORT_BCS
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import share_file

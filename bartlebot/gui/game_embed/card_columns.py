@@ -57,16 +57,16 @@ from PyQt6.QtWidgets import (
 from bartlebot.game.game_sizing import FitProblem
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
     AUTOSCROLL_MARGIN,
     CARD_SETTLE_MS,
     CARD_SHIFT_MS,
     DragReorder,
 )
-from bartlebot.gui.widgets.drag_reorder import DropPlaceholder as _DropPlaceholder  # noqa: F401
-from bartlebot.gui.widgets.link_button import LinkButton
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.drag_reorder import DropPlaceholder as _DropPlaceholder  # noqa: F401
 from bartlebot.settings_manager import SettingsManager
 
 # What an empty column says beneath its Add card. The Add card is the empty state -- it

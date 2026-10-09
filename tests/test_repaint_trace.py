@@ -13,7 +13,7 @@ from PyQt6.QtCore import QRect, QRectF
 from PyQt6.QtGui import QPainterPath, QRegion
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsScene, QGraphicsView
 
-from bartlebot.gui.canvas.repaint_trace import RepaintLedger, RepaintTracer, describe_item, update_path
+from bartlebot.gui.debug.repaint_trace import RepaintLedger, RepaintTracer, describe_item, update_path
 
 VISIBLE = QRect(0, 0, 800, 600)
 NAMES = {1: "EdgeItem(a -> b)", 2: "NodeItem(c)"}
@@ -142,7 +142,7 @@ def test_a_change_qt_repaints_is_not_reported(qtbot, caplog, tmp_path):
     moved.addRect(QRectF(100, 250, 80, 40))
     item.setPath(moved)
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.canvas.repaint_trace"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.debug.repaint_trace"):
         assert _settle(qtbot, tracer) == []
     assert not caplog.records
 
@@ -154,7 +154,7 @@ def test_bounds_changed_behind_qts_back_are_reported(qtbot, caplog, tmp_path):
     item.rect = QRectF(100, 250, 80, 40)
     item.update()  # repaints the new bounds only: the old ones are left on screen
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.canvas.repaint_trace"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.debug.repaint_trace"):
         stale = _settle(qtbot, tracer)
     assert [(s.what, s.kind) for s in stale] == [("_Sneaky", "was")]
     assert "Lost canvas repaint" in caplog.text
@@ -168,7 +168,7 @@ def test_a_finding_carries_what_tests_the_compat_path_theory(qtbot, caplog, tmp_
     item.rect = QRectF(100, 250, 80, 40)
     item.update()  # paints the new bounds, so a paint lands after the change
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.canvas.repaint_trace"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.debug.repaint_trace"):
         _settle(qtbot, tracer)
     text = caplog.text
     assert "update path: direct" in text

@@ -625,7 +625,7 @@ class SettingsManager:
 
         Off by default: a name is genuinely useful for telling characters apart, and
         someone who is not sharing their screen has nothing to gain from hiding it.
-        See bartlebot/streamer_mode.py for what it applies to and why the placeholder
+        See bartlebot/gui/streamer_mode.py for what it applies to and why the placeholder
         is positional rather than a mask.
         """
         return bool(self.get_general("streamer_mode", default=False))

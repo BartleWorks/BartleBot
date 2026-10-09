@@ -41,7 +41,7 @@ from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSec
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.variable_values_section import VariableValuesSection
 from bartlebot.gui.sidebar.sections.variables_section import VariablesSection
-from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.options.bot_options import options_signature
 
 if TYPE_CHECKING:

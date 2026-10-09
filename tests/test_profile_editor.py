@@ -240,7 +240,7 @@ def test_the_resolution_hint_is_judged_against_this_profiles_account_count(qapp,
 
 
 def _pill_texts(card) -> list[str]:
-    from bartlebot.gui.widgets.tag_pill import NeutralPill
+    from bartlebot.gui.widgets.pills.tag_pill import NeutralPill
 
     return [pill.text() for pill in card.findChildren(NeutralPill)]
 
@@ -264,7 +264,7 @@ def test_an_empty_profile_says_what_it_will_do(qapp, screen, stored):
     dialog on, and there is no Add card in the column to carry the explanation instead --
     the Add button now lives beside it."""
     from bartlebot.gui.settings.profile_editor import EMPTY_PROFILE_HINT
-    from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+    from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
     dlg = ProfileDialog()
 

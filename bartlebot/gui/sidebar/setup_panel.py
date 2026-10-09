@@ -55,20 +55,20 @@ from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SetupStep, SetupTar
 from bartlebot.content.subgraphs.subgraphs import exposed_key, node_panels
 from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
-from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.add_card import AddCard
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.drag_reorder import DragReorder
-from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
-from bartlebot.gui.widgets.link_button import LinkButton
-from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.icon_utils import svg_icon
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.cards.add_card import AddCard
+from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.labels.elided_label import WrappingElidedLabel
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.discard import discard_widget
+from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
+from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 
 #: The tick's size.

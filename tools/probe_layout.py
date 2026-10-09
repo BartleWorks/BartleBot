@@ -87,7 +87,7 @@ def _scenario_mode(canvas, app, tracer, args, snapshots, target):
     the canvas's own layout would read if its layout request were served first, which is
     exactly what happened; the settled one is what the user is left looking at.
     """
-    from bartlebot.qt_layout_debug import size_snapshot
+    from bartlebot.gui.debug.qt_layout_debug import size_snapshot
 
     snapshots.append(size_snapshot(target, "run (initial)"))
     for i in range(args.cycles):
@@ -106,7 +106,7 @@ def _scenario_mode(canvas, app, tracer, args, snapshots, target):
 
 def _scenario_paints(canvas, app, tracer, args, snapshots, target):
     """Resize and scroll the graph, which is what #73's stale pixels follow."""
-    from bartlebot.qt_layout_debug import size_snapshot
+    from bartlebot.gui.debug.qt_layout_debug import size_snapshot
 
     view = canvas.view
     snapshots.append(size_snapshot(target, "before"))
@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
     app = QApplication.instance() or QApplication([])
 
     from bartlebot.gui.canvas.bot_canvas import BotCanvas
-    from bartlebot.qt_layout_debug import (
+    from bartlebot.gui.debug.qt_layout_debug import (
         EVENT_NAMES,
         LayoutTracer,
         format_records,

@@ -269,7 +269,7 @@ def test_cycle_refuses_the_run_with_a_dialog(harness, library, tmp_path, monkeyp
 
 
 async def test_run_recompose_swaps_config_before_machine_build(harness, library, bot_file, monkeypatch):
-    from bartlebot.gui import safety_warning_dialog  # noqa: PLC0415
+    from bartlebot.gui.dialogs import safety_warning_dialog  # noqa: PLC0415
 
     harness._open_bot(str(bot_file))
     library.save(_v2_definition())

@@ -53,7 +53,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.sidebar.player_card import PlayerCard, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.nodes.timing import (
     CLIENT_REFRESH_INTERVAL_HIDDEN,
     CLIENT_REFRESH_INTERVAL_IDLE,

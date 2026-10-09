@@ -11,9 +11,9 @@ from dataclasses import replace
 import pytest
 from PyQt6.QtWidgets import QSizePolicy
 
-import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.theme import DARK, LIGHT, THEME
-from bartlebot.gui.widgets.link_button import LinkButton
+import bartlebot.gui.theming.theme as theme_mod
+from bartlebot.gui.theming.theme import DARK, LIGHT, THEME
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
 
 
 @pytest.fixture

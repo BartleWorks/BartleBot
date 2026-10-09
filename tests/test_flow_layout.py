@@ -11,7 +11,7 @@ tests of their own at the bottom.
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.gui.widgets.flow_layout import block_offset, flow_container, flow_geometry
+from bartlebot.gui.widgets.layout.flow_layout import block_offset, flow_container, flow_geometry
 
 
 def _sizes(*widths: int, height: int = 14) -> list[QSize]:

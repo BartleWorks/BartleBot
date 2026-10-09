@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.settings_manager import SettingsManager
 
 

@@ -17,8 +17,8 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
 from bartlebot.nodes.registry import NODE_SPECS, node_display_name
 from bartlebot.settings_manager import SettingsManager
 

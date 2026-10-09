@@ -32,13 +32,13 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import SubgraphInput
 from bartlebot.gui.canvas.call_node_item import canvas_edge_color
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.icon_button import IconButton, IconTint
-from bartlebot.gui.widgets.tag_picker import SUBGRAPH_VOCABULARY
-from bartlebot.gui.widgets.tags_field import TagsField
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY
+from bartlebot.gui.widgets.pills.tags_field import TagsField
 from bartlebot.nodes.param_schema import narrowest_type
 
 #: The combo entry that means "declare a new input" rather than bind to one.

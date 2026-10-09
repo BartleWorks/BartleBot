@@ -20,8 +20,8 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 
 from bartlebot.gui.settings.rows import SettingGroup, SettingRow, SettingsForm
-from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
-from bartlebot.gui.widgets.realm_combo import RealmCombo
+from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
 from bartlebot.nodes.utility import quicksell
 from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for

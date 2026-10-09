@@ -3,7 +3,7 @@
 from PyQt6.QtCore import Qt
 
 from bartlebot.gui.sidebar.option_card import CardFolds, CardHeadingActions, OptionCard, UiStateFoldStore
-from bartlebot.ui_state import UiState
+from bartlebot.gui.ui_state import UiState
 
 
 def _store(tmp_path, defaults):

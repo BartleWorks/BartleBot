@@ -11,7 +11,7 @@ import pytest
 from PyQt6.QtCore import QPointF
 
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, TransitionModel
-from bartlebot.gui.canvas.repaint_trace import update_path
+from bartlebot.gui.debug.repaint_trace import update_path
 
 
 def _bot() -> BotConfig:

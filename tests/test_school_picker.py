@@ -1,7 +1,7 @@
 """Tests for SchoolPickerButton — authoring a school set, and filtering by one (#125)."""
 
 from bartlebot.combat.deck_io import PIP_SCHOOLS
-from bartlebot.gui.widgets.school_picker import ANY_SCHOOL, SchoolPickerButton, school_sections
+from bartlebot.gui.widgets.pickers.school_picker import ANY_SCHOOL, SchoolPickerButton, school_sections
 from tests.picker_helpers import pick
 
 

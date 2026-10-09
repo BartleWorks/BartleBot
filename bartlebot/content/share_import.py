@@ -49,7 +49,7 @@ how an existing bot fights: an imported Bot Combat Strategy becomes the active p
 for a bot with none (:func:`assign_active_picks`). Settings are touched there alone, and
 only through the object the caller passes.
 
-Qt-free: the import summary is :mod:`bartlebot.gui.import_dialog`.
+Qt-free: the import summary is :mod:`bartlebot.gui.dialogs.import_dialog`.
 """
 
 from __future__ import annotations

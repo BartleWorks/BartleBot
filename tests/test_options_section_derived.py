@@ -203,7 +203,7 @@ def test_a_specs_bounds_reach_the_composed_option_and_never_the_file(qapp):
 def test_a_specs_minimum_reaches_the_spin_box(qapp):
     """One option-type -> widget mapping, so both surfaces and the Add/Edit dialog
     pick the range up for free."""
-    from bartlebot.gui.widgets.option_widgets import make_option_widget
+    from bartlebot.gui.widgets.inputs.option_widgets import make_option_widget
     from bartlebot.options.bot_options import compose_options
 
     opt = next(o for o in compose_options(_config()) if o.name == "Safety Delay")
@@ -218,7 +218,7 @@ def test_a_specs_minimum_reaches_the_spin_box(qapp):
 
 
 def test_an_unbounded_option_keeps_the_wide_range(qapp):
-    from bartlebot.gui.widgets.option_widgets import make_option_widget
+    from bartlebot.gui.widgets.inputs.option_widgets import make_option_widget
 
     widget = make_option_widget("float", 1.0)
     _WIDGETS.append(widget)

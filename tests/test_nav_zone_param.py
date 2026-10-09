@@ -8,7 +8,7 @@ free to disagree with the first.
 import asyncio
 import logging
 
-from bartlebot.gui.widgets.picker_popup import apply_toggle
+from bartlebot.gui.widgets.pickers.picker_popup import apply_toggle
 
 _ENTRANCE = "Krokotopia/KT_Krokosphinx/KT_EntranceHall"
 
@@ -50,7 +50,7 @@ def test_a_zone_no_longer_on_the_map_is_kept_and_marked(qapp):
 
 
 def test_a_long_caption_does_not_hold_the_panel_open(qapp):
-    from bartlebot.gui.widgets.zone_picker import MINIMUM_WIDTH
+    from bartlebot.gui.widgets.pickers.zone_picker import MINIMUM_WIDTH
 
     form = _form({"zone": _ENTRANCE})  # held: the form owns the widgets below
     picker = form.widget("zone").picker
@@ -124,7 +124,7 @@ class _ZoneClient:
 
 
 def test_both_buttons_are_action_buttons(qapp):
-    from bartlebot.gui.widgets.action_button import ActionButton
+    from bartlebot.gui.widgets.buttons.action_button import ActionButton
 
     form = _form({"zone": _ENTRANCE})
     field = form.widget("zone")

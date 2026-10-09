@@ -28,7 +28,7 @@ from bartlebot.gui.logo import (
     tree_image,
     tree_scale,
 )
-from bartlebot.gui.widgets.logo_disc import LogoDisc
+from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
 
 BACKGROUND = QColor("#4488cc").rgba()
 TREE = {QColor(c).rgba() for c in ("#22b14c", "#b97a57", "#7092be", "#3f48cc")}

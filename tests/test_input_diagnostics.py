@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import QApplication, QGraphicsRectItem, QWidget
 
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.subgraphs.subgraphs import definition_to_config
-from bartlebot.gui.canvas.press_trace import PressTracer
+from bartlebot.gui.debug.press_trace import PressTracer
 from tests.test_subgraphs import SYNC_ID, linked_bot, sync_players_definition
 
 

@@ -589,7 +589,7 @@ def qapp_cls():
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
 
     from bartlebot.gui.native_widgets import keep_siblings_alien  # noqa: PLC0415
-    from bartlebot.gui.theme import THEME  # noqa: PLC0415
+    from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415
 
     keep_siblings_alien()
 
@@ -622,7 +622,7 @@ def _production_app_font():
     if qtwidgets is not None:
         app = qtwidgets.QApplication.instance()
         if app is not None:
-            from bartlebot.gui.theme import THEME  # noqa: PLC0415 - keeps Qt out of non-GUI runs
+            from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415 - keeps Qt out of non-GUI runs
 
             if app.font().pixelSize() != THEME.font_body_px:
                 app.setFont(THEME.ui_font())

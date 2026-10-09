@@ -15,13 +15,13 @@ import pytest
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel
 from bartlebot.content.templates.template_store import list_templates
 from bartlebot.gui.canvas.edit_scene import _validate_node
-from bartlebot.gui.widgets.option_widgets import (
+from bartlebot.gui.widgets.inputs.option_widgets import (
     NODE_ONLY_TYPES,
     block_separate_if_merging,
     make_option_widget,
     widget_value,
 )
-from bartlebot.gui.widgets.player_realms_choice import PlayerRealmsChoice
+from bartlebot.gui.widgets.inputs.player_realms_choice import PlayerRealmsChoice
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.options import bot_options, player_realms
 from bartlebot.paths import project_root

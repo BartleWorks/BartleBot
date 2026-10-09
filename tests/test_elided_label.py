@@ -6,13 +6,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QLabel, QSizePolicy
 
-from bartlebot.gui.widgets.elided_label import (
+from bartlebot.gui.widgets.labels.elided_label import (
     ElidedLabel,
     WrappingElidedLabel,
     apply_muted_color,
     elide_long_words,
 )
-from bartlebot.gui.widgets.themed_label import ThemedWrappingElidedLabel
+from bartlebot.gui.widgets.labels.themed_label import ThemedWrappingElidedLabel
 
 _LONG = "P1: {1} shatter@boss {2} empower… · P2–P3: {1} pass {2} pass · P4: {1} weakness@boss"
 #: A zone path — the case that motivated left elision.  Every zone in a world
@@ -135,7 +135,7 @@ def test_paints_without_error_in_left_elide_mode(qapp):
 
 def test_apply_muted_color_uses_the_palette_not_a_stylesheet(qapp):
     """ElidedLabel paints its own text, so a QSS color rule would never reach it."""
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     lbl = ElidedLabel("x")
     apply_muted_color(lbl)
@@ -285,7 +285,7 @@ def test_the_themed_wrapping_label_elides_as_the_plain_one_does(qapp):
 
 
 def test_the_themed_wrapping_label_reads_its_color_from_the_token(qapp):
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     lbl = ThemedWrappingElidedLabel("x", color="warning", css="font-weight: bold;")
 

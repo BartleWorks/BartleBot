@@ -92,7 +92,7 @@ ALLOWED_MULTI_PRIMARY: dict[str, str] = {}
 #: ``ActionStyle.PRIMARY`` in ``action_button.py`` is a branch of the styling code,
 #: and in ``dialog_footer.py`` a parameter default; neither is a button on a
 #: surface, so counting them could only ever produce a false alarm.
-VOCABULARY_MODULES = frozenset({"widgets/action_button.py", "widgets/dialog_footer.py"})
+VOCABULARY_MODULES = frozenset({"widgets/buttons/action_button.py", "widgets/layout/dialog_footer.py"})
 
 # ---------------------------------------------------------------------------
 # Check 3 — QSS that takes a compound widget over
@@ -101,7 +101,7 @@ VOCABULARY_MODULES = frozenset({"widgets/action_button.py", "widgets/dialog_foot
 #: ``theme.py`` owns the global stylesheet and is the one place allowed to know
 #: about any of this — it styles the combo box's drop-down and the scrollbars
 #: deliberately, with the art to back them up.
-QSS_OWNER = "theme.py"
+QSS_OWNER = "theming/theme.py"
 
 #: Selectors that make ``QStyleSheetStyle`` take over a compound widget. Matched
 #: against stylesheet *strings*, so an ``isinstance(w, QAbstractSpinBox)`` in

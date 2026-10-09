@@ -15,7 +15,7 @@ from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication, QWidget
 
-from bartlebot.gui.widgets.drag_reorder import CARD_SETTLE_MS
+from bartlebot.gui.widgets.layout.drag_reorder import CARD_SETTLE_MS
 
 
 def _send(card: QWidget, kind: QEvent.Type, dy: int, buttons: Qt.MouseButton) -> None:

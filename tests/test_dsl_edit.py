@@ -13,8 +13,8 @@ from PyQt6.QtWidgets import QApplication
 from bartlebot.combat import dsl_syntax
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
-from bartlebot.gui.theme import DARK, LIGHT, active_theme, set_theme_instance
-from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit, DslPlainTextEdit
+from bartlebot.gui.theming.theme import DARK, LIGHT, active_theme, set_theme_instance
+from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit, DslPlainTextEdit
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warnings
 from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 

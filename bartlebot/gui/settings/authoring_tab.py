@@ -17,7 +17,7 @@ from bartlebot.clients.authoring_tools import ACTION_LABELS, SLOT_KEYS, Authorin
 from bartlebot.game.game_keybindings import GameBinding, read_game_keybindings
 from bartlebot.gui.global_hotkeys import parse_binding
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SPEED_MULTIPLIER_RANGE, SettingsManager, default_for
 
 #: Each hotkey row's one line, and the longer prose behind its ``?`` (empty: none).

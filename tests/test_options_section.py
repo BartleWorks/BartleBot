@@ -38,8 +38,8 @@ from bartlebot.bot.schema import (
 )
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
-from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.option_widgets import (
+from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.inputs.option_widgets import (
     OPTION_TYPES,
     BoolChoice,
     StrListLineEdit,
@@ -47,7 +47,7 @@ from bartlebot.gui.widgets.option_widgets import (
     set_widget_value,
     widget_value,
 )
-from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
+from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 from bartlebot.options import bot_options
 from bartlebot.settings_manager import SettingsManager
 

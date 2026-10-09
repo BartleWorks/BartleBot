@@ -41,7 +41,7 @@ from bartlebot.gui.canvas.node_item import (
     _play_badge_renderer,
     _recovery_badge_renderer,
 )
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 
 _HEADER_H = 46  # title and sub-line
 _ROW_H = 20  # one port row

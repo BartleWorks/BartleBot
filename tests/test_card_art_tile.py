@@ -15,7 +15,7 @@ from PyQt6.QtGui import QColor, QPixmap
 
 from bartlebot.combat.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.game import card_art
-from bartlebot.gui.widgets.card_art_tile import (
+from bartlebot.gui.widgets.cards.card_art_tile import (
     COLLAPSED_TILE,
     CardArtStrip,
     GroupDivider,
@@ -123,7 +123,7 @@ def test_the_view_paints_at_the_devices_resolution(art_home, qapp):
     """Painted into a 150% device, a 20pt view fills 30 physical pixels with the art."""
     from PyQt6.QtGui import QImage, QPainter
 
-    from bartlebot.gui.widgets.card_art_tile import ArtIconView
+    from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView
 
     _extract({"Tempest": "Spell_Storm_Tempest.png"}, qapp)
     view = ArtIconView(20)

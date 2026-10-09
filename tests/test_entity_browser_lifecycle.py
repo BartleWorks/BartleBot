@@ -12,7 +12,7 @@ import asyncio
 import pytest
 from PyQt6.QtWidgets import QTreeWidgetItem
 
-from bartlebot.gui.entity_browser import _POS_ROLE, EntityBrowserDialog
+from bartlebot.gui.dialogs.entity_browser import _POS_ROLE, EntityBrowserDialog
 
 
 class _StubClient:

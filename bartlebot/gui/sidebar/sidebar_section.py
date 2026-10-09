@@ -16,10 +16,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.icon_utils import svg_pixmap
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.icon_button import IconButton
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.icon_utils import svg_pixmap
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.icon_button import IconButton
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 _PLACEHOLDER = "—"
 _QWIDGETSIZE_MAX = 16777215  # Qt's QWIDGETSIZE_MAX

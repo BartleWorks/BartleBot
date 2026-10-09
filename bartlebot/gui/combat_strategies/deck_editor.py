@@ -8,7 +8,7 @@ What is editable is the one thing about a saved deck that is a decision rather t
 capture: whether applying it should also set the wizard's archmastery school. That was
 reachable only from the sidebar deck card's menu, which meant a preset in the library
 could not be configured in the place it is configured — it had to be loaded into a
-player slot first. :class:`~bartlebot.gui.widgets.archmastery_editor.ArchmasteryEditor`
+player slot first. :class:`~bartlebot.gui.widgets.cards.archmastery_editor.ArchmasteryEditor`
 is that control, and the school itself stays read-only for the same reason the cards do.
 
 The schools the deck is built for (#174) are the other decision, and are authored here the
@@ -37,12 +37,12 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.combat.deck_content import APPLY_DECK, IMPORT_DECK
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.archmastery_editor import ArchmasteryEditor
-from bartlebot.gui.widgets.deck_card_list import DeckCardList
-from bartlebot.gui.widgets.player_picker import pick_player, picker_label
-from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.school_picker import SchoolPickerButton
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.cards.archmastery_editor import ArchmasteryEditor
+from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
+from bartlebot.gui.widgets.pickers.player_picker import pick_player, picker_label
+from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.shared.strategy_models import DeckData, DeckPreset
 
 #: Said in place of the card list for a preset holding nothing. A preset *can* be empty:

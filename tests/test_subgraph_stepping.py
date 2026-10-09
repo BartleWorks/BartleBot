@@ -25,7 +25,7 @@ from bartlebot.content.subgraphs.subgraphs import compose_bot, definition_to_con
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.canvas.call_node_item import CallNodeItem
 from bartlebot.gui.canvas.subgraph_widgets import CrumbMode
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
 

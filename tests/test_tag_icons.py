@@ -162,7 +162,7 @@ def test_a_tag_with_an_extracted_medallion_resolves(art_home):
 
 
 def test_a_tag_icon_is_looked_up_once_until_the_cache_is_forgotten(qapp, art_home, monkeypatch):
-    from bartlebot.gui.widgets.tag_picker import tag_icon
+    from bartlebot.gui.widgets.pickers.tag_picker import tag_icon
 
     _extract("Gear")
     calls = []
@@ -179,7 +179,7 @@ def test_a_tag_icon_is_looked_up_once_until_the_cache_is_forgotten(qapp, art_hom
 
 
 def test_forgetting_the_cache_lets_new_art_appear(qapp, art_home):
-    from bartlebot.gui.widgets.tag_picker import tag_icon
+    from bartlebot.gui.widgets.pickers.tag_picker import tag_icon
 
     assert tag_icon("Gear") is None
 
@@ -190,8 +190,8 @@ def test_forgetting_the_cache_lets_new_art_appear(qapp, art_home):
 
 
 def test_the_pill_is_led_by_the_medallion_and_keeps_its_name(qapp, art_home):
-    from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX
-    from bartlebot.gui.widgets.tag_pill import TagPill
+    from bartlebot.gui.widgets.pickers.tag_picker import TAG_ICON_PX
+    from bartlebot.gui.widgets.pills.tag_pill import TagPill
 
     _extract("Gear")
     pill = TagPill("Gear")
@@ -207,8 +207,8 @@ def test_the_medallion_is_the_pills_round_end(qapp, art_home):
     stays clear, the medallion covers the left, and the body runs on to a round right end."""
     from PyQt6.QtGui import QColor
 
-    from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent
-    from bartlebot.gui.widgets.tag_pill import TagPill
+    from bartlebot.gui.widgets.pickers.tag_picker import TAG_ICON_PX, group_accent
+    from bartlebot.gui.widgets.pills.tag_pill import TagPill
 
     card_art.icons_dir().mkdir(parents=True, exist_ok=True)
     disc = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
@@ -232,8 +232,8 @@ def test_the_medallion_is_the_pills_round_end(qapp, art_home):
 
 
 def test_the_pill_keeps_its_name_without_art(qapp, art_home):
-    from bartlebot.gui.widgets.tag_picker import group_accent
-    from bartlebot.gui.widgets.tag_pill import TagPill
+    from bartlebot.gui.widgets.pickers.tag_picker import group_accent
+    from bartlebot.gui.widgets.pills.tag_pill import TagPill
 
     _extract("Gear")
     pill = TagPill("Boss")  # has a source, but this install extracted only Gear
@@ -244,8 +244,8 @@ def test_the_pill_keeps_its_name_without_art(qapp, art_home):
 
 
 def test_the_chip_takes_the_pills_medallion_shape(qapp, art_home):
-    from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX
-    from bartlebot.gui.widgets.tag_pill import TagChip
+    from bartlebot.gui.widgets.pickers.tag_picker import TAG_ICON_PX
+    from bartlebot.gui.widgets.pills.tag_pill import TagChip
 
     _extract("Boss")
     with_art, without = TagChip("Boss"), TagChip("Mobs")
@@ -257,7 +257,7 @@ def test_the_chip_takes_the_pills_medallion_shape(qapp, art_home):
 
 
 def test_picker_rows_carry_the_medallion_where_there_is_one(qapp, art_home):
-    from bartlebot.gui.widgets.tag_picker import tag_sections
+    from bartlebot.gui.widgets.pickers.tag_picker import tag_sections
 
     _extract("Dungeon")
     rows = {row.key: row for _title, section in tag_sections() for row in section}

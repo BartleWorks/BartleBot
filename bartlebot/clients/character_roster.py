@@ -26,7 +26,7 @@ service of its own. The cost is that clearing credentials loses it -- which degr
 each character is played. That is the same failure mode ``account_identity`` accepts for
 its key, for the same reason.
 
-Streamer Mode is the other half of the exposure and lives in ``bartlebot.streamer_mode``:
+Streamer Mode is the other half of the exposure and lives in ``bartlebot.gui.streamer_mode``:
 this module stores names, that one decides whether they reach a label.
 
 WHAT AN ENTRY HOLDS

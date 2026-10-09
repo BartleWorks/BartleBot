@@ -72,16 +72,16 @@ from bartlebot.gui.canvas.node_cards import PageFoldBar
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
 from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.add_card import AddCard
-from bartlebot.gui.widgets.card_frame import GRIP_GUTTER, GripHandle
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.drag_reorder import MOVE_DOWN_KEYS, MOVE_UP_KEYS, DragReorder, add_move_actions
-from bartlebot.gui.widgets.icon_button import IconButton
-from bartlebot.gui.widgets.link_button import LinkButton
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.buttons.icon_button import IconButton
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.cards.add_card import AddCard
+from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER, GripHandle
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
+from bartlebot.gui.widgets.layout.discard import discard_widget
+from bartlebot.gui.widgets.layout.drag_reorder import MOVE_DOWN_KEYS, MOVE_UP_KEYS, DragReorder, add_move_actions
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.options import param_cards
 

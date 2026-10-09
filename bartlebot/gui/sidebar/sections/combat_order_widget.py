@@ -1,7 +1,7 @@
 """CombatOrderWidget — drag-and-drop combat entry order selector.
 
 The row runs **right to left**, and each position wears the game's own gem beside its
-ordinal. :mod:`bartlebot.gui.widgets.duel_slot_gem` has the why, and is the one place
+ordinal. :mod:`bartlebot.gui.widgets.cards.duel_slot_gem` has the why, and is the one place
 that reasoning is written down; what matters here is that ``_order[0]`` is the player who
 enters *first* and is drawn *rightmost*, so every loop that builds a row reverses and
 every loop that reads or writes the value does not.
@@ -21,10 +21,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.account_accent import account_accent, account_tint
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
+from bartlebot.gui.theming.account_accent import account_accent, account_tint
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.cards.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
+from bartlebot.gui.widgets.layout.discard import discard_widget
 
 _CHIP_MIME = "application/x-bartlebot-combat-order-chip"
 _ORDINALS = ["1st", "2nd", "3rd", "4th"]
@@ -167,7 +167,7 @@ class CombatOrderWidget(QWidget):
 
     **Both rows run right to left**, so the player who enters first sits at the right-hand
     end under the Sun gem, which is where the duel itself puts them. See
-    :mod:`bartlebot.gui.widgets.duel_slot_gem`. Only the *drawing* is mirrored: the value
+    :mod:`bartlebot.gui.widgets.cards.duel_slot_gem`. Only the *drawing* is mirrored: the value
     is still an ordinary first-to-last list, so nothing outside this widget changes.
 
     get_value() returns [] when the checkbox is checked (empty order).

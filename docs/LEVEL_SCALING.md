@@ -219,7 +219,7 @@ Scales, but that was judged too fragile to build.
 
 ## The picker
 
-The `scales` param type (`bartlebot/gui/widgets/scales_picker.py`) lists the table by world,
+The `scales` param type (`bartlebot/gui/widgets/pickers/scales_picker.py`) lists the table by world,
 with each row's level as its meta. Only the key is stored. A key the table lacks is an
 error on the node, as a `nav_zone` that is not a destination is; the button keeps it and
 marks it rather than dropping it. An unset button reads "Bot's world: …" with the Scales

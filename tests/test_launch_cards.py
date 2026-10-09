@@ -4,8 +4,8 @@ The cards are QWidgets and need a QApplication, so what is tested here is the te
 build — extracted as plain functions for exactly that reason, per CLAUDE.md.
 """
 
-from bartlebot.gui import account_accent
 from bartlebot.gui.game_embed import launch_cards
+from bartlebot.gui.theming import account_accent
 from bartlebot.settings_manager import SettingsManager
 
 LUKE = {"gid": 1001, "name": "Luke SkullHunter"}

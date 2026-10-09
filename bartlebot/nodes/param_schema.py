@@ -96,18 +96,18 @@ class ParamField:
                       "ratio" is a share of a whole -- a health or mana threshold. It is stored as
                       a float from 0.0 to 1.0, which is what a node compares against, and shown and
                       edited as a whole percent, 0% to 100%, which is all its control accepts
-                      (bartlebot/gui/widgets/ratio_spin_box.py). A plain "float" let it be typed
+                      (bartlebot/gui/widgets/inputs/ratio_spin_box.py). A plain "float" let it be typed
                       as 5.0 or -1, neither of which means anything.
                       "zone" is a zone path, or a glob over zone paths ("WizardCity/*"), matched
                       by node_helpers.zone_matches. It gets the zone widget: autocomplete from
                       visited zones, and Fill from a player's current zone. The widget is chosen
                       by type alone; a "str" whose key happens to say "zone" is a plain field.
                       "nav_zone" is a zone on the navigation map, picked from a list grouped by
-                      world (bartlebot/gui/widgets/zone_picker.py). Only the zone path is stored:
+                      world (bartlebot/gui/widgets/pickers/zone_picker.py). Only the zone path is stored:
                       the map already says which world it is in. It is a narrower "zone" -- see
                       narrowest_type.
                       "scales" is one Scales of Knowledge, picked from the shipped table grouped by
-                      world (bartlebot/gui/widgets/scales_picker.py). Only the entry's key is stored;
+                      world (bartlebot/gui/widgets/pickers/scales_picker.py). Only the entry's key is stored;
                       bartlebot/game/scales.py resolves it.
                       "text" renders as a multi-line QPlainTextEdit.
                       "player_slot" is the single-select sibling of "player_list": one 1-based client

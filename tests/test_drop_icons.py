@@ -136,7 +136,7 @@ def test_a_drop_icon_resolves_only_when_extracted(art_home):
 
 
 def test_no_icon_for_an_uncategorized_drop(qapp, art_home):
-    from bartlebot.gui.widgets.drop_tree import drop_icon
+    from bartlebot.gui.widgets.layout.drop_tree import drop_icon
 
     _extract("drop_hats")
 
@@ -150,7 +150,7 @@ def test_the_icon_keeps_the_full_size_art(qapp, art_home):
     soft; the view has to be able to scale down from the original for each screen."""
     from PyQt6.QtCore import QSize
 
-    from bartlebot.gui.widgets.drop_tree import drop_icon
+    from bartlebot.gui.widgets.layout.drop_tree import drop_icon
 
     _extract("drop_hats")
 
@@ -158,7 +158,7 @@ def test_the_icon_keeps_the_full_size_art(qapp, art_home):
 
 
 def test_forgetting_the_cache_lets_new_icons_appear(qapp, art_home):
-    from bartlebot.gui.widgets.drop_tree import drop_icon
+    from bartlebot.gui.widgets.layout.drop_tree import drop_icon
 
     assert drop_icon("Hats") is None
 
@@ -202,7 +202,7 @@ def _category_icons(widget, name_col, category_col) -> dict[str, bool]:
 
 @pytest.mark.parametrize("build", [_possible_drops, _keep_list])
 def test_a_table_draws_the_icons_it_has(qapp, art_home, build):
-    from bartlebot.gui.widgets.drop_tree import DROP_ICON_PX
+    from bartlebot.gui.widgets.layout.drop_tree import DROP_ICON_PX
 
     _extract("drop_hats", "pin_shield")
     widget, name_col, category_col = build(_DROPS)

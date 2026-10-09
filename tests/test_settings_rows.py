@@ -18,10 +18,10 @@ from bartlebot.gui.settings.rows import (
     SettingsForm,
 )
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
-from bartlebot.gui.widgets.link_button import LinkButton
+from bartlebot.gui.ui_state import UI_STATE_FILE, UiState
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import product_dir
-from bartlebot.ui_state import UI_STATE_FILE, UiState
 
 
 def _check_row(default: bool = True, *, details: str = "Longer prose.") -> SettingRow:

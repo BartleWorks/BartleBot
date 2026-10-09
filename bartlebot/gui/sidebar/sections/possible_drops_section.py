@@ -23,9 +23,9 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.game.wiki_drops import match_name_for
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.drop_tree import (
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.layout.drop_tree import (
     DROP_ICON_PX,
     UNCATEGORIZED_DISPLAY,
     CategoryThenNameTreeItem,
@@ -464,7 +464,7 @@ class PossibleDropsSection(SidebarSection):
         self.drops_changed.emit()
 
     def _on_import_requested(self) -> None:
-        from bartlebot.gui.wiki_import_dialog import WikiImportDialog
+        from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog
 
         dialog = WikiImportDialog(parent=self.window())
         if dialog.exec():
