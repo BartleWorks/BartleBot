@@ -16,9 +16,11 @@ from bartlebot.bot.schema import DropModel
 from bartlebot.gui.canvas.drop_keep_list import (
     _COL_ITEM,
     _COL_KEEP,
+    _ROLE_MATCH,
     DropKeepListWidget,
     bulk_needs_confirmation,
     keyword_counts,
+    match_span,
     row_visible,
 )
 from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, widget_value
@@ -546,6 +548,48 @@ def test_keyword_counts_match_in_game_names_and_skip_what_is_never_sold():
         DropModel(name="Ruby Ring", category="Rings"),
     ]
     assert keyword_counts(["ruby", "mandrake", "fire"], drops) == {"ruby": 2, "mandrake": 0, "fire": 0}
+
+
+def test_match_span_finds_the_keyword_case_insensitively():
+    assert match_span("Red Couch Potatoes", "couch potatoes") == (4, 14)
+
+
+def test_match_span_is_none_for_an_item_entry_or_a_miss():
+    assert match_span("Couch Potatoes", "=couch potatoes") is None
+    assert match_span("Pin (140, Fire)", "ruby") is None
+    assert match_span("Amber", None) is None
+
+
+def test_a_row_kept_by_a_keyword_marks_where_it_matched(qapp):
+    w = _make(qapp, keep_list=["ring"])
+    assert _row(w, "Amber Ring").data(_COL_ITEM, _ROLE_MATCH) == (6, 4)
+
+
+def test_a_ticked_or_sold_row_marks_nothing(qapp):
+    w = _make(qapp, keep_list=["=Amber"])
+    assert _row(w, "Amber").data(_COL_ITEM, _ROLE_MATCH) is None
+    assert _row(w, "Amber Ring").data(_COL_ITEM, _ROLE_MATCH) is None
+
+
+def test_the_mark_goes_when_the_keyword_does(qapp):
+    w = _make(qapp, keep_list=["ring"])
+    _keyword_chip(w, "ring").click()
+    assert _row(w, "Amber Ring").data(_COL_ITEM, _ROLE_MATCH) is None
+
+
+def test_a_row_spared_by_a_sell_flag_category_marks_nothing(qapp):
+    drops = [DropModel(name="Storm Potbelly", category="Pets")]
+    w = _make(qapp, drops=drops, keep_list=["storm"], context={**_SELL_ALL, "sell_pets": False})
+    assert _row(w, "Storm Potbelly").data(_COL_ITEM, _ROLE_MATCH) is None
+
+
+def test_the_marked_table_paints(qapp):
+    """The delegate draws its spans without raising, elided or not."""
+    w = _make(qapp, keep_list=["ring", "dawn"])
+    w.resize(220, 400)
+    w.show()
+    w._tree.grab()
+    w.hide()
 
 
 def test_the_default_category_entry_counts_what_it_shows(qapp):

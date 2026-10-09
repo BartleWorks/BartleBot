@@ -15,8 +15,10 @@ from collections import Counter
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QModelIndex, QRect, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QFontMetrics, QPainter, QPalette
 from PyQt6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
@@ -24,6 +26,9 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -59,6 +64,9 @@ _TABLE_MAX_HEIGHT = 220
 #: pure helpers read. It owns that entry, so it supplies it rather than taking it
 #: from the context its host pushes.
 _VALUE_PARAM_KEY = "keep_list"
+
+#: The ``(start, length)`` of the keyword inside the Item text, on a row a keyword keeps.
+_ROLE_MATCH = Qt.ItemDataRole.UserRole + 1
 
 
 # ---------------------------------------------------------------------------
@@ -124,6 +132,18 @@ def keyword_counts(keywords: list[str], entries: list[DropModel]) -> dict[str, i
     return counts
 
 
+def match_span(name: str, keyword: str | None) -> tuple[int, int] | None:
+    """Where *keyword* sits in *name*, as ``(start, length)``, for drawing it in the accent.
+
+    None for no keyword, an item entry (the whole name, so nothing to point at), or a
+    keyword found only in the in-game name the row does not display.
+    """
+    if not keyword or quicksell.is_item_entry(keyword):
+        return None
+    start = name.lower().find(keyword.strip().lower())
+    return (start, len(keyword.strip())) if start >= 0 else None
+
+
 def bulk_needs_confirmation(count: int) -> bool:
     """Whether changing *count* rows at once is big enough to ask about first."""
     return count > DROP_BULK_CONFIRM_THRESHOLD
@@ -142,6 +162,68 @@ class _DropItem(CaseInsensitiveTreeItem):
                 other.checkState(_COL_KEEP) == Qt.CheckState.Checked
             )
         return super().__lt__(other)
+
+
+class _MatchDelegate(QStyledItemDelegate):
+    """Draws the Item text with the keyword that keeps the row in the accent color.
+
+    A row kept by a keyword is locked, and a grayed tick alone did not say why: the
+    reason was a tooltip away. "Red **Couch Potatoes**" says it on sight, the way a
+    search result marks what matched, and needs no words.
+
+    Color only, never bold: a bold span widens the text, and the elision below is
+    measured in the row's own font. Reads ``THEME`` at paint time, so a theme switch
+    needs nothing.
+    """
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        span = index.data(_ROLE_MATCH)
+        if not span:
+            super().paint(painter, option, index)
+            return
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        text = opt.text
+        opt.text = ""
+        widget = opt.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, widget)
+
+        rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, opt, widget)
+        # The style insets an item's text by this much inside that rect; matching it keeps
+        # a marked row's name in line with every plain row's.
+        margin = style.pixelMetric(QStyle.PixelMetric.PM_FocusFrameHMargin, None, widget) + 1
+        rect = rect.adjusted(margin, 0, -margin, 0)
+        metrics = QFontMetrics(opt.font)
+        shown = metrics.elidedText(text, Qt.TextElideMode.ElideRight, rect.width())
+        # An elided name keeps its first len-1 characters before the ellipsis; a span
+        # running into the cut is drawn up to it.
+        visible = len(shown) if shown == text else max(len(shown) - 1, 0)
+        start, length = span
+        end = min(start + length, visible)
+
+        enabled = bool(opt.state & QStyle.StateFlag.State_Enabled)
+        group = QPalette.ColorGroup.Normal if enabled else QPalette.ColorGroup.Disabled
+        role = (
+            QPalette.ColorRole.HighlightedText
+            if opt.state & QStyle.StateFlag.State_Selected
+            else QPalette.ColorRole.Text
+        )
+        painter.save()
+        painter.setFont(opt.font)
+        x = rect.left()
+        for piece, accent in ((shown[:start], False), (shown[start:end], True), (shown[end:], False)):
+            if not piece:
+                continue
+            painter.setPen(QColor(THEME.accent) if accent else opt.palette.color(group, role))
+            width = metrics.horizontalAdvance(piece)
+            painter.drawText(
+                QRect(x, rect.top(), width, rect.height()),
+                int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+                piece,
+            )
+            x += width
+        painter.restore()
 
 
 # ---------------------------------------------------------------------------
@@ -250,6 +332,8 @@ class DropKeepListWidget(QWidget):
         self._tree.setColumnWidth(_COL_KEEP, 42)
         self._tree.setColumnWidth(_COL_CATEGORY, 92)
         show_drop_icons(self._tree)
+        self._match_delegate = _MatchDelegate(self._tree)
+        self._tree.setItemDelegateForColumn(_COL_ITEM, self._match_delegate)
         self._tree.itemChanged.connect(self._on_item_changed)
         outer.addWidget(self._tree)
 
@@ -447,6 +531,7 @@ class DropKeepListWidget(QWidget):
         kept = sellable = 0
         unmatchable_counts: dict[str, int] = {}
         for row, entry, state in zip(self._rows, entries, states):
+            row.setData(_COL_ITEM, _ROLE_MATCH, None)
             category = row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
             never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(category)
             if never_reason:
@@ -478,6 +563,9 @@ class DropKeepListWidget(QWidget):
             # a sell_* bool. Which one is responsible is what the tooltip has to say,
             # since they are undone in different places.
             locked = category_reason is not None or (state.kept and not state.exact)
+            if category_reason is None and state.kept and not state.exact:
+                # Kept by a keyword: draw it in the accent, so the lock shows its reason.
+                row.setData(_COL_ITEM, _ROLE_MATCH, match_span(row.text(_COL_ITEM), state.keyword))
             flags = row.flags()
             row.setFlags(flags & ~Qt.ItemFlag.ItemIsEnabled if locked else flags | Qt.ItemFlag.ItemIsEnabled)
             if category_reason is not None:
