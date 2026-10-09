@@ -427,9 +427,9 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Sprockets' Charming Shoes",
-        "Sprockets' Shoes of Ideals",
-        "Sprockets's Victorian Vest"
+        "=Sprockets' Charming Shoes",
+        "=Sprockets' Shoes of Ideals",
+        "=Sprockets's Victorian Vest"
       ]
     }
   ],

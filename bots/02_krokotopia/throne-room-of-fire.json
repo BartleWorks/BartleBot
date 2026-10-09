@@ -834,10 +834,10 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Birdcaller's Boots",
-        "Birdcaller's Costume",
-        "Birdcaller's Mask",
-        "Pink Dandelion"
+        "=Birdcaller's Boots",
+        "=Birdcaller's Costume",
+        "=Birdcaller's Mask",
+        "=Pink Dandelion"
       ]
     }
   ],

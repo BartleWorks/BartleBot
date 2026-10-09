@@ -190,7 +190,7 @@ def test_ticking_a_drop_writes_an_override_and_not_the_bot_file(qapp, settings):
 
     _row(_picker(section), "Onyx Ring").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
 
-    assert settings.get_option_override(config.id, qs.OPTION_KEEP_LIST) == ["Amber Ring", "Onyx Ring"]
+    assert settings.get_option_override(config.id, qs.OPTION_KEEP_LIST) == ["Amber Ring", "=Onyx Ring"]
     assert config.options[0].default == ["Amber Ring"]
 
 

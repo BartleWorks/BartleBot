@@ -12,6 +12,9 @@ from bartlebot.nodes.utility.quicksell import (
     describe_config,
     drop_keep_states,
     effective_keep_list,
+    entry_text,
+    is_item_entry,
+    item_entry,
     matching_keyword,
     resolve_options,
     sell_flag,
@@ -69,20 +72,70 @@ def test_empty_keyword_never_matches():
     assert matching_keyword("Boots of Dawn", [""]) is None
 
 
+def test_an_item_entry_matches_only_the_whole_name():
+    assert matching_keyword("Couch Potatoes", ["=couch potatoes"]) == "=couch potatoes"
+    assert matching_keyword("Red Couch Potatoes", ["=couch potatoes"]) is None
+
+
+def test_an_item_entry_ignores_the_games_markup_and_spacing():
+    """A whole-name comparison that tripped on a wrapper would sell the item."""
+    assert matching_keyword("<center>Couch  Potatoes ", ["=couch potatoes"]) == "=couch potatoes"
+
+
+# ---------------------------------------------------------------------------
+# item entries
+# ---------------------------------------------------------------------------
+
+
+def test_item_entries_are_normalized_and_keep_their_prefix():
+    params = {"keep_list": ["= Couch  Potatoes ", "Giver"], **_SELL_ALL}
+    assert effective_keep_list(params) == ["=couch potatoes", "giver"]
+
+
+def test_a_bare_prefix_is_dropped_like_a_blank_keyword():
+    assert effective_keep_list({"keep_list": ["=", " = "], **_SELL_ALL}) == []
+
+
+def test_entry_helpers_round_trip():
+    assert item_entry("Couch Potatoes") == "=Couch Potatoes"
+    assert is_item_entry("=Couch Potatoes") and not is_item_entry("Couch Potatoes")
+    assert entry_text("=Couch Potatoes") == "Couch Potatoes"
+    assert entry_text("giver") == "giver"
+
+
 # ---------------------------------------------------------------------------
 # drop_keep_states
 # ---------------------------------------------------------------------------
 
 
-def test_exact_name_is_kept_and_marked_exact():
-    (state,) = drop_keep_states(["Amber"], {"keep_list": ["Amber"], **_SELL_ALL})
-    assert (state.kept, state.exact, state.keyword) == (True, True, "amber")
+def test_a_ticked_item_is_kept_and_marked_exact():
+    (state,) = drop_keep_states(["Amber"], {"keep_list": ["=Amber"], **_SELL_ALL})
+    assert (state.kept, state.exact, state.keyword) == (True, True, "=amber")
+
+
+def test_a_ticked_item_keeps_only_itself():
+    """Ticking Couch Potatoes must not keep Red Couch Potatoes."""
+    drops = ["Couch Potatoes", "Red Couch Potatoes", "Golden Couch Potatoes"]
+    states = drop_keep_states(drops, {"keep_list": ["=Couch Potatoes"], **_SELL_ALL})
+    assert [s.kept for s in states] == [True, False, False]
 
 
 def test_partial_match_is_kept_but_not_exact():
     # "Amber" also spares "Amber Ring" — the panel shows that row locked.
     _, ring = drop_keep_states(["Amber", "Amber Ring"], {"keep_list": ["Amber"], **_SELL_ALL})
     assert (ring.kept, ring.exact, ring.keyword) == (True, False, "amber")
+
+
+def test_a_keyword_equal_to_the_name_is_still_a_keyword():
+    """Typed, so it is removed as a chip, never by unticking the row."""
+    (state,) = drop_keep_states(["Amber"], {"keep_list": ["Amber"], **_SELL_ALL})
+    assert (state.kept, state.exact, state.keyword) == (True, False, "amber")
+
+
+def test_a_ticked_item_answers_before_a_keyword_that_also_keeps_it():
+    """Otherwise the row locks and the item entry can never be unticked away."""
+    (state,) = drop_keep_states(["Witch Hat"], {"keep_list": ["hat", "=Witch Hat"], **_SELL_ALL})
+    assert state.exact and state.keyword == "=witch hat"
 
 
 def test_implied_keyword_keeps_item_without_an_exact_entry():
@@ -110,16 +163,21 @@ def test_empty_drop_table_yields_no_states():
 # ---------------------------------------------------------------------------
 
 
-def test_toggle_on_appends_the_exact_name():
-    assert toggle_drop_in_keep_list(["Amber"], "Boots of Dawn", True) == ["Amber", "Boots of Dawn"]
+def test_toggle_on_appends_an_item_entry():
+    assert toggle_drop_in_keep_list(["Amber"], "Boots of Dawn", True) == ["Amber", "=Boots of Dawn"]
 
 
-def test_toggle_on_does_not_duplicate_an_existing_entry():
-    assert toggle_drop_in_keep_list(["amber"], "Amber", True) == ["Amber"]
+def test_toggle_on_does_not_duplicate_an_existing_item_entry():
+    assert toggle_drop_in_keep_list(["=amber"], "Amber", True) == ["=Amber"]
 
 
-def test_toggle_off_removes_the_entry_case_insensitively():
-    assert toggle_drop_in_keep_list(["amber", "Boots of Dawn"], "AMBER", False) == ["Boots of Dawn"]
+def test_toggle_off_removes_the_item_entry_case_insensitively():
+    assert toggle_drop_in_keep_list(["=amber", "=Boots of Dawn"], "AMBER", False) == ["=Boots of Dawn"]
+
+
+def test_toggle_off_leaves_a_keyword_equal_to_the_name_alone():
+    # Typed, so it is the chip's to remove.
+    assert toggle_drop_in_keep_list(["Amber"], "Amber", False) == ["Amber"]
 
 
 def test_toggle_off_leaves_a_broader_keyword_alone():
@@ -137,15 +195,15 @@ def test_toggle_off_missing_entry_is_a_no_op():
 
 
 def test_bulk_add_appends_every_name():
-    assert set_drops_in_keep_list(["hat"], ["Amber", "Boots of Dawn"], True) == ["hat", "Amber", "Boots of Dawn"]
+    assert set_drops_in_keep_list(["hat"], ["Amber", "Boots of Dawn"], True) == ["hat", "=Amber", "=Boots of Dawn"]
 
 
 def test_bulk_add_does_not_duplicate_existing_entries():
-    assert set_drops_in_keep_list(["amber"], ["Amber", "Cloak"], True) == ["Amber", "Cloak"]
+    assert set_drops_in_keep_list(["=amber"], ["Amber", "Cloak"], True) == ["=Amber", "=Cloak"]
 
 
 def test_bulk_remove_drops_every_name_case_insensitively():
-    assert set_drops_in_keep_list(["Amber", "hat", "Cloak"], ["AMBER", "cloak"], False) == ["hat"]
+    assert set_drops_in_keep_list(["=Amber", "hat", "=Cloak"], ["AMBER", "cloak"], False) == ["hat"]
 
 
 def test_bulk_remove_leaves_broader_keywords_alone():
@@ -298,7 +356,7 @@ def test_a_drop_kept_by_the_users_own_list_says_so_and_is_not_the_bots_to_untick
 
 def test_the_bots_own_exact_entry_still_answers_first():
     """Ticked in this bot, so unticking it here is still meaningful."""
-    params = {"keep_list": ["Pearl"], "user_keep_list": ["Pearl"], **_SELL_ALL}
+    params = {"keep_list": ["=Pearl"], "user_keep_list": ["Pearl"], **_SELL_ALL}
     (state,) = drop_keep_states(["Pearl"], params)
     assert state.exact and not state.users
 

@@ -2179,17 +2179,17 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Sidhe Staff",
-        "Boots of Fire Dancing",
+        "=Sidhe Staff",
+        "=Boots of Fire Dancing",
         "Attunement",
         "Oblivion",
         "Flameborn",
         "Frostborn",
         "Storyborn",
         "Squamish",
-        "Espirit Chapeau",
-        "Scintillating Tunic",
-        "Quick Stepping Boots",
+        "=Espirit Chapeau",
+        "=Scintillating Tunic",
+        "=Quick Stepping Boots",
         "Splendid"
       ]
     }

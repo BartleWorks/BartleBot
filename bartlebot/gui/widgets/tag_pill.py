@@ -420,6 +420,78 @@ class NeutralChip(QPushButton):
             self._restyle()
 
 
+class KeywordChip(NeutralChip):
+    """A keep-list keyword: :class:`NeutralChip` with how many drops it catches.
+
+    A keyword keeps every drop whose name contains it, a ticked row keeps only itself,
+    and the count is what says which of the two a chip is: "giver · 7" is plainly a
+    family. Only keywords are chips; a ticked item is shown by its row.
+
+    Unlike :class:`NeutralChip`, only the ✕ removes. The rest of the chip *shows* what
+    the keyword keeps: hovering emits :attr:`hovered` so the picker can light those
+    rows, and a click emits :attr:`activated` so it can filter to them. From the
+    keyboard, Space or Enter activates and Delete or Backspace removes.
+    """
+
+    activated = pyqtSignal(str)
+    #: ``(keyword, True)`` as the pointer enters, ``(keyword, False)`` as it leaves.
+    hovered = pyqtSignal(str, bool)
+
+    #: Slack either side of the ✕ glyph that still counts as pressing it.
+    _CROSS_SLACK = 6
+
+    def __init__(self, keyword: str, count: int = 0, *, parent: QWidget | None = None) -> None:
+        super().__init__(keyword, parent=parent)
+        self.clicked.disconnect()
+        self.clicked.connect(self._on_clicked)
+        self._press_x: int | None = None
+        self.set_count(count)
+
+    def set_count(self, count: int) -> None:
+        """Show *count* as the drops in this bot's table that the keyword keeps."""
+        self.setText(f"{self.value} · {count}  ✕")
+        drops = "drop" if count == 1 else "drops"
+        self.setToolTip(
+            f"Keeps every drop whose name contains “{self.value}”: {count} {drops} in this bot's table.\n"
+            "Click to show them; click ✕ to stop keeping them."
+        )
+
+    def on_cross(self, x: int) -> bool:
+        """Whether a click at *x* lands on the ✕ at the chip's right end."""
+        cross = self.fontMetrics().horizontalAdvance("✕")
+        # pad="2px 9px" in NeutralChip's style: the glyph ends 9px from the right edge.
+        return x >= self.width() - 9 - cross - self._CROSS_SLACK
+
+    def mousePressEvent(self, event) -> None:
+        self._press_x = int(event.position().x())
+        super().mousePressEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            self.removed.emit(self.value)
+            return
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.activated.emit(self.value)
+            return
+        self._press_x = None  # Space: a click with no position, so it activates
+        super().keyPressEvent(event)
+
+    def _on_clicked(self) -> None:
+        x, self._press_x = self._press_x, None
+        if x is not None and self.on_cross(x):
+            self.removed.emit(self.value)
+        else:
+            self.activated.emit(self.value)
+
+    def enterEvent(self, event) -> None:
+        super().enterEvent(event)
+        self.hovered.emit(self.value, True)
+
+    def leaveEvent(self, event) -> None:
+        super().leaveEvent(event)
+        self.hovered.emit(self.value, False)
+
+
 class ActionPill(QPushButton):
     """A gray pill that runs a verb when clicked, and wears no ✕.
 

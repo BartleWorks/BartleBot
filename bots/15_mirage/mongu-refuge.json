@@ -640,7 +640,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Epic Opal"
+        "=Epic Opal"
       ]
     }
   ],

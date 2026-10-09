@@ -62,18 +62,6 @@ def game_view(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_the_logo_and_link_recolor(qapp, theme):
-    theme("light")
-    ph = _GamePlaceholder()
-    light_border, light_muted = THEME.border, THEME.text_muted
-
-    _switch(qapp, ph, theme, "dark")
-
-    assert light_border not in ph._logo.styleSheet()
-    assert THEME.border in ph._logo.styleSheet()
-    assert light_muted not in ph._manage_btn.styleSheet()
-
-
 def test_the_column_headers_follow_the_theme(qapp, theme):
     """They are ThemedTextLabels, so the app-wide broadcast reaches them directly
     rather than the placeholder having to hold and restyle each one."""

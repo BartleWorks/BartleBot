@@ -51,6 +51,7 @@ from bartlebot.gui.export_dialog import run_export
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.import_dialog import TITLE as IMPORT_TITLE
 from bartlebot.gui.import_dialog import ask_for_file, confirm_import
+from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.make_copy_dialog import TITLE as MAKE_COPY_TITLE
 from bartlebot.gui.make_copy_dialog import MakeCopyDialog
@@ -192,6 +193,7 @@ class AppController(QObject):
         # beside everything else this publisher writes — see shared.vendor.
         self._app.setOrganizationName(VENDOR)
         self._app.setApplicationName(PRODUCT)
+        install_app_icon(self._app)
         self._app.setStyle("Fusion")
         self._apply_theme()
         self._handler = WizSprinter()
@@ -281,6 +283,8 @@ class AppController(QObject):
         )
         self._wire()
         self._window.show()
+        # The taskbar asked for the icon while start-up held the thread; see refresh_taskbar_icon.
+        QTimer.singleShot(0, lambda: refresh_taskbar_icon(self._window))
         self._reconfigure_autosave_timer()
         self._prune_dead_strategy_settings()
         self._restore_game_display_settings()

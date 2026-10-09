@@ -672,7 +672,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Pink Dandelion"
+        "=Pink Dandelion"
       ]
     }
   ],

@@ -299,7 +299,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Elven Storm Cap"
+        "=Elven Storm Cap"
       ]
     }
   ],

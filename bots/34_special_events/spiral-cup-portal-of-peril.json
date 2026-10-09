@@ -391,9 +391,9 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Greenwarden's Energetic Boots",
-        "Greenwarden's Energetic Mask",
-        "Greenwarden's Energetic Shroud"
+        "=Greenwarden's Energetic Boots",
+        "=Greenwarden's Energetic Mask",
+        "=Greenwarden's Energetic Shroud"
       ]
     }
   ],

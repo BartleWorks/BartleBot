@@ -15,8 +15,10 @@ from collections import Counter
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QModelIndex, QRect, Qt, pyqtSignal
+from PyQt6.QtGui import QBrush, QColor, QFontMetrics, QPainter, QPalette
 from PyQt6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
@@ -24,6 +26,9 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -42,7 +47,7 @@ from bartlebot.gui.widgets.drop_tree import (
 from bartlebot.gui.widgets.flow_layout import FlowLayout
 from bartlebot.gui.widgets.list_text import parse_list_text
 from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_pill import NeutralChip
+from bartlebot.gui.widgets.tag_pill import KeywordChip
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds
@@ -59,6 +64,9 @@ _TABLE_MAX_HEIGHT = 220
 #: pure helpers read. It owns that entry, so it supplies it rather than taking it
 #: from the context its host pushes.
 _VALUE_PARAM_KEY = "keep_list"
+
+#: The ``(start, length)`` of the keyword inside the Item text, on a row a keyword keeps.
+_ROLE_MATCH = Qt.ItemDataRole.UserRole + 1
 
 
 # ---------------------------------------------------------------------------
@@ -109,6 +117,54 @@ def row_visible(
     return query in name.lower() or (match_name is not None and query in match_name.lower())
 
 
+def keyword_counts(keywords: list[str], entries: list[DropModel]) -> dict[str, int]:
+    """How many sellable drops in *entries* each of *keywords* keeps, for its chip.
+
+    Matched by the in-game name, as the node matches. Drops quicksell never sells are
+    not counted, as the summary line leaves them out: a keyword's count is what it
+    saves from being sold.
+    """
+    sellable = [e.match_key for e in entries if (e.category or "") not in quicksell.NEVER_QUICKSOLD_CATEGORIES]
+    counts = {}
+    for keyword in keywords:
+        normalized = keyword.strip().lower()
+        counts[keyword] = sum(quicksell.matching_keyword(name, [normalized]) is not None for name in sellable)
+    return counts
+
+
+def match_span(name: str, keyword: str | None) -> tuple[int, int] | None:
+    """Where *keyword* sits in *name*, as ``(start, length)``, for drawing it in the accent.
+
+    None for no keyword, an item entry (the whole name, so nothing to point at), or a
+    keyword found only in the in-game name the row does not display.
+    """
+    if not keyword or quicksell.is_item_entry(keyword):
+        return None
+    start = name.lower().find(keyword.strip().lower())
+    return (start, len(keyword.strip())) if start >= 0 else None
+
+
+def lit_by(entry: DropModel, keywords: list[str]) -> bool:
+    """Whether a keyword in *keywords* would keep *entry*, to light its row.
+
+    Tested against the displayed name as well as the in-game one, as the search is,
+    so the rows lit are the rows a click on the chip filters to.
+    """
+    normalized = [k.strip().lower() for k in keywords if k.strip()]
+    if not normalized:
+        return False
+    return any(quicksell.matching_keyword(name, normalized) is not None for name in (entry.match_key, entry.name))
+
+
+def typed_keywords(text: str) -> list[str]:
+    """The keywords the add-field holds: a pasted list split, a typed "=" dropped.
+
+    An item is ticked, never typed, so the field only ever makes keywords.
+    """
+    words = (w.lstrip(quicksell.ITEM_PREFIX).strip() for w in parse_list_text(text))
+    return [w for w in words if w]
+
+
 def bulk_needs_confirmation(count: int) -> bool:
     """Whether changing *count* rows at once is big enough to ask about first."""
     return count > DROP_BULK_CONFIRM_THRESHOLD
@@ -127,6 +183,68 @@ class _DropItem(CaseInsensitiveTreeItem):
                 other.checkState(_COL_KEEP) == Qt.CheckState.Checked
             )
         return super().__lt__(other)
+
+
+class _MatchDelegate(QStyledItemDelegate):
+    """Draws the Item text with the keyword that keeps the row in the accent color.
+
+    A row kept by a keyword is locked, and a grayed tick alone did not say why: the
+    reason was a tooltip away. "Red **Couch Potatoes**" says it on sight, the way a
+    search result marks what matched, and needs no words.
+
+    Color only, never bold: a bold span widens the text, and the elision below is
+    measured in the row's own font. Reads ``THEME`` at paint time, so a theme switch
+    needs nothing.
+    """
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        span = index.data(_ROLE_MATCH)
+        if not span:
+            super().paint(painter, option, index)
+            return
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        text = opt.text
+        opt.text = ""
+        widget = opt.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, widget)
+
+        rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, opt, widget)
+        # The style insets an item's text by this much inside that rect; matching it keeps
+        # a marked row's name in line with every plain row's.
+        margin = style.pixelMetric(QStyle.PixelMetric.PM_FocusFrameHMargin, None, widget) + 1
+        rect = rect.adjusted(margin, 0, -margin, 0)
+        metrics = QFontMetrics(opt.font)
+        shown = metrics.elidedText(text, Qt.TextElideMode.ElideRight, rect.width())
+        # An elided name keeps its first len-1 characters before the ellipsis; a span
+        # running into the cut is drawn up to it.
+        visible = len(shown) if shown == text else max(len(shown) - 1, 0)
+        start, length = span
+        end = min(start + length, visible)
+
+        enabled = bool(opt.state & QStyle.StateFlag.State_Enabled)
+        group = QPalette.ColorGroup.Normal if enabled else QPalette.ColorGroup.Disabled
+        role = (
+            QPalette.ColorRole.HighlightedText
+            if opt.state & QStyle.StateFlag.State_Selected
+            else QPalette.ColorRole.Text
+        )
+        painter.save()
+        painter.setFont(opt.font)
+        x = rect.left()
+        for piece, accent in ((shown[:start], False), (shown[start:end], True), (shown[end:], False)):
+            if not piece:
+                continue
+            painter.setPen(QColor(THEME.accent) if accent else opt.palette.color(group, role))
+            width = metrics.horizontalAdvance(piece)
+            painter.drawText(
+                QRect(x, rect.top(), width, rect.height()),
+                int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+                piece,
+            )
+            x += width
+        painter.restore()
 
 
 # ---------------------------------------------------------------------------
@@ -193,10 +311,18 @@ class DropKeepListWidget(QWidget):
         # a settings-file write per keystroke.
         self._edit.returnPressed.connect(self._commit_typed)
         self._edit.editingFinished.connect(self._commit_typed)
+        # A preview, not a value: nothing is stored until the keyword is committed.
+        self._edit.textChanged.connect(self._on_typing)
         outer.addWidget(self._edit)
 
         self._keywords = QWidget()
         self._keyword_layout = FlowLayout(self._keywords, spacing=4)
+        self._chips: dict[str, KeywordChip] = {}
+        # The chip under the pointer, whose rows are lit.
+        self._hovered_keyword: str | None = None
+        # The keywords in the add-field, not yet committed.
+        self._preview_keywords: list[str] = []
+        self._lit_keywords: list[str] = []
         self._keywords.setVisible(False)
         outer.addWidget(self._keywords)
 
@@ -234,6 +360,8 @@ class DropKeepListWidget(QWidget):
         self._tree.setColumnWidth(_COL_KEEP, 42)
         self._tree.setColumnWidth(_COL_CATEGORY, 92)
         show_drop_icons(self._tree)
+        self._match_delegate = _MatchDelegate(self._tree)
+        self._tree.setItemDelegateForColumn(_COL_ITEM, self._match_delegate)
         self._tree.itemChanged.connect(self._on_item_changed)
         outer.addWidget(self._tree)
 
@@ -344,6 +472,7 @@ class DropKeepListWidget(QWidget):
             self._rebuild_rows(entries)
         self._apply_states(entries)
         self._apply_filter()
+        self._apply_lit()
 
     # ------------------------------------------------------------------
     # Rows
@@ -393,6 +522,7 @@ class DropKeepListWidget(QWidget):
         self._category.blockSignals(False)
 
     def _apply_states(self, entries: list[DropModel]) -> None:
+        self._update_keyword_counts(entries)
         has_drops = bool(entries)
         self._tree.setVisible(has_drops)
         self._rule.setVisible(has_drops)
@@ -430,6 +560,7 @@ class DropKeepListWidget(QWidget):
         kept = sellable = 0
         unmatchable_counts: dict[str, int] = {}
         for row, entry, state in zip(self._rows, entries, states):
+            row.setData(_COL_ITEM, _ROLE_MATCH, None)
             category = row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
             never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(category)
             if never_reason:
@@ -461,6 +592,9 @@ class DropKeepListWidget(QWidget):
             # a sell_* bool. Which one is responsible is what the tooltip has to say,
             # since they are undone in different places.
             locked = category_reason is not None or (state.kept and not state.exact)
+            if category_reason is None and state.kept and not state.exact:
+                # Kept by a keyword: draw it in the accent, so the lock shows its reason.
+                row.setData(_COL_ITEM, _ROLE_MATCH, match_span(row.text(_COL_ITEM), state.keyword))
             flags = row.flags()
             row.setFlags(flags & ~Qt.ItemFlag.ItemIsEnabled if locked else flags | Qt.ItemFlag.ItemIsEnabled)
             if category_reason is not None:
@@ -529,7 +663,44 @@ class DropKeepListWidget(QWidget):
         shown = sum(1 for row in self._rows if not row.isHidden())
         if shown != sellable:
             text += f" · {self._emphasis(shown)} shown"
+        if self._preview_keywords:
+            text += f" · adding this keeps {self._emphasis(self._preview_gain())} more"
         self._summary.setText(text)
+
+    def _preview_gain(self) -> int:
+        """How many drops sold now the keyword being typed would keep.
+
+        Counted over rows that are unticked and tickable: sold, and not a pet the keep
+        list cannot reach. Matched by in-game name only, as the node matches, so the
+        number is what adding the keyword would really save.
+        """
+        keywords = [k.lower() for k in self._preview_keywords]
+        gain = 0
+        for row in self._rows:
+            if row.checkState(_COL_KEEP) == Qt.CheckState.Checked or not row.flags() & Qt.ItemFlag.ItemIsEnabled:
+                continue
+            entry = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
+            gain += quicksell.matching_keyword(entry.match_key, keywords) is not None
+        return gain
+
+    def _on_typing(self, text: str) -> None:
+        """Preview a keyword as it is typed: light what it would keep, and count the gain.
+
+        Outlook tests a rule against the mailbox before it is saved, for the same reason:
+        a keyword is broader than it looks, and "Couch Potatoes" lighting three rows says
+        so before anything is stored.
+        """
+        self._preview_keywords = typed_keywords(text)
+        self._sync_lit()
+        if self._rows:
+            self._render_summary()
+
+    def _sync_lit(self) -> None:
+        """Light the hovered chip's rows, or else the rows the typed keyword would keep."""
+        if self._hovered_keyword:
+            self._set_lit_keywords([self._hovered_keyword])
+        else:
+            self._set_lit_keywords(self._preview_keywords)
 
     # ------------------------------------------------------------------
     # Filtering
@@ -649,19 +820,71 @@ class DropKeepListWidget(QWidget):
         """
         if self._suppress:
             return
-        typed = parse_list_text(self._edit.text())
+        typed = typed_keywords(self._edit.text())
         self._edit.clear()
-        existing = {v.casefold() for v in self._value}
-        added = [word for word in typed if word.casefold() not in existing]
+        existing = {v.strip().casefold() for v in self._value if not quicksell.is_item_entry(v)}
+        added = [word for word in dict.fromkeys(typed) if word.casefold() not in existing]
         if not added:
             return
         self._set_keep_list([*self._value, *added])
 
     def _remove_keyword(self, word: str) -> None:
-        self._set_keep_list([v for v in self._value if v != word])
+        self._set_keep_list([v for v in self._value if quicksell.is_item_entry(v) or v.strip() != word])
+
+    def _typed_keywords(self) -> list[str]:
+        """The keep list's keywords, as typed; its item entries are the table's to show."""
+        return [v.strip() for v in self._value if not quicksell.is_item_entry(v) and v.strip()]
+
+    def _filter_to_keyword(self, word: str) -> None:
+        """Show only the rows *word* keeps, through the search -- or stop, if it already is.
+
+        The search is the same substring test, so it shows exactly the rows the chip
+        lights, and its clear button is the way back.
+        """
+        self._search.setText("" if self._search.text().strip().lower() == word.lower() else word)
+
+    def _on_chip_hovered(self, word: str, entering: bool) -> None:
+        if entering:
+            self._hovered_keyword = word
+        elif self._hovered_keyword == word:
+            self._hovered_keyword = None
+        self._sync_lit()
+
+    def _set_lit_keywords(self, keywords: list[str]) -> None:
+        if keywords == self._lit_keywords:
+            return
+        self._lit_keywords = list(keywords)
+        self._apply_lit()
+
+    def lit_rows(self) -> list[str]:
+        """Names of the rows currently lit — public for tests."""
+        return [row.text(_COL_ITEM) for row in self._rows if row.background(_COL_ITEM).style() != Qt.BrushStyle.NoBrush]
+
+    def _apply_lit(self) -> None:
+        """Wash the rows a hovered chip's keyword keeps, and clear every other row."""
+        wash = QColor(THEME.accent)
+        wash.setAlpha(48)
+        lit_brush, plain = QBrush(wash), QBrush()
+        self._suppress = True
+        for row in self._rows:
+            entry = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
+            brush = lit_brush if entry is not None and lit_by(entry, self._lit_keywords) else plain
+            if row.background(_COL_ITEM) != brush:
+                for column in (_COL_KEEP, _COL_ITEM, _COL_CATEGORY):
+                    row.setBackground(column, brush)
+        self._suppress = False
+
+    def _update_keyword_counts(self, entries: list[DropModel]) -> None:
+        counts = keyword_counts(list(self._chips), entries)
+        for word, chip in self._chips.items():
+            chip.set_count(counts[word])
 
     def _render_keywords(self) -> None:
-        """Rebuild the chip row from the keep list.
+        """Rebuild the chip row from the keep list's keywords.
+
+        Only keywords are chips. A ticked item is a ticked row already, and a chip for
+        it beside the keywords read as one more keyword -- which is what it was matched
+        as, until item entries.
 
         A full rebuild rather than a diff: the list is a handful of short strings the
         user edits one at a time, and ``FlowLayout`` re-wraps the whole row on any
@@ -679,11 +902,18 @@ class DropKeepListWidget(QWidget):
             if widget is not None:
                 widget.hide()
                 widget.deleteLater()
-        for word in self._value:
-            chip = NeutralChip(word, tooltip=f"Stop keeping drops matching “{word}”")
+        self._chips = {}
+        # A chip removed under the pointer never sends its leave, so its light goes here.
+        self._hovered_keyword = None
+        self._sync_lit()
+        for word in dict.fromkeys(self._typed_keywords()):
+            chip = KeywordChip(word)
             chip.removed.connect(self._remove_keyword)
+            chip.activated.connect(self._filter_to_keyword)
+            chip.hovered.connect(self._on_chip_hovered)
             self._keyword_layout.addWidget(chip)
-        self._keywords.setVisible(bool(self._value))
+            self._chips[word] = chip
+        self._keywords.setVisible(bool(self._chips))
 
     # ------------------------------------------------------------------
     # Theming
@@ -725,3 +955,5 @@ class DropKeepListWidget(QWidget):
             if self._rows:
                 self._render_summary()
                 self._render_warning()
+                if self._lit_keywords:
+                    self._apply_lit()  # the wash is mixed from the accent

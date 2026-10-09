@@ -1,3 +1,5 @@
+<img src="bartlebot/gui/logo/bartlebot.svg" alt="" width="96" align="right">
+
 # BartleBot
 
 A Wizard101 bot built on [WizWalker](https://github.com/Deimos-Wizard101/wizwalker) and [WizSprinter](https://github.com/Deimos-Wizard101/wizsprinter).

@@ -1395,9 +1395,12 @@ already has.
 - **The keep list's keywords are chips, not a comma-separated field.** At a 400px
   sidebar a 32-keyword CSV string shows only its own middle, and removing one
   entry means selecting text between two commas. The field only *adds* now
-  (`parse_list_text` still reads a pasted CSV), and the value renders as
-  `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
-  `_VALUE_PARAM_KEY` changed.
+  (`parse_list_text` still reads a pasted CSV), and the keywords render as
+  `KeywordChip`s in a `FlowLayout`. **Only keywords are chips**, each with how many
+  sellable drops it keeps: an item ticked in the table is stored as `=Name` and
+  matches that name alone (`quicksell.ITEM_PREFIX`), so its row is what shows it.
+  A chip for it beside the keywords read as one more keyword, which is the
+  confusion item entries exist to end.
 - **An option that another option switches off is a child of it: indented,
   grayed, never hidden.** `BotOptionSpec.depends_on` names a bool option on the
   same bot, and `compose_options` carries it onto the composed declaration the way
