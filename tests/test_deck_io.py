@@ -16,7 +16,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import (
     ACTIVE_FLAG_OFFSET,
     ACTIVE_FLAG_ON,
@@ -59,6 +58,7 @@ from bartlebot.deck_io import (
 )
 from bartlebot.deck_io import logger as deck_logger
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT
+from bartlebot.shared.strategy_models import DeckData
 from tests.conftest import FakeClient
 
 

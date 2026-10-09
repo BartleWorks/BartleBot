@@ -23,15 +23,7 @@ from PyQt6.QtWidgets import QInputDialog, QScrollArea
 from bartlebot import store_roots
 from bartlebot import strategy_store as store_mod
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DeckData,
-    DuelCombatStrategy,
-    FightRef,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.sidebar.combat_tab import (
@@ -68,6 +60,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.widgets.picker_popup import PickerRow
 from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
+from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.drag_helpers import drag_card, menu_move, press_and_move, release, show
 
 

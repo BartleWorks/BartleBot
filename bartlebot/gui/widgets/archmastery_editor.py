@@ -36,11 +36,11 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QRadioButton, QVBoxLayout, QWidget
 
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.shared.strategy_models import DeckData
 
 #: What the caption says the app setting will do, for a deck that defers to it.
 APP_SETTING_ON = "App setting: the school is set when this deck is applied."

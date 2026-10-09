@@ -7,9 +7,9 @@ these tests call the private update methods directly rather than waiting on a
 real QTimer, the same way the identity tests call ``_flush`` directly.
 """
 
-from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
+from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.strategy_summary import HealthStatus, summarize_duel
 
 _INVALID_DSL = "not even close to valid (("

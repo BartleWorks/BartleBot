@@ -27,12 +27,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.strategy_models import PlayerCombatStrategy
 from bartlebot.dsl_syntax import DSL_HELP
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.dsl_edit import DslPlainTextEdit
 from bartlebot.gui.widgets.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
+from bartlebot.shared.strategy_models import PlayerCombatStrategy
 
 #: How long after the last keystroke the DSL is re-validated. Not a save delay.
 _VALIDATE_MS = 500

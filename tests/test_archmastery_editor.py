@@ -18,13 +18,13 @@ import pytest
 from PyQt6.QtGui import QColor, QIcon, QPixmap
 
 from bartlebot import card_art, deck_io
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.gui.widgets.archmastery_editor import (
     APP_SETTING_OFF,
     APP_SETTING_ON,
     NO_SCHOOL,
     ArchmasteryEditor,
 )
+from bartlebot.shared.strategy_models import DeckData
 
 COLORS = {
     card_art.ARCHMASTERY_ICON: QColor("red"),

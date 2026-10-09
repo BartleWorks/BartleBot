@@ -11,7 +11,6 @@ it, to prove that split actually holds.
 
 import pytest
 
-from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.gui.combat_strategies.assignment_card import (
     CHANGE_VERB,
     CUSTOM_DATA,
@@ -20,6 +19,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     REMOVE_VERB,
 )
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor, move_item
+from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from tests.drag_helpers import drag_card, menu_move, row_height, show
 from tests.picker_helpers import pick
 

@@ -8,13 +8,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat_profile import (
     StrategyLookup,
     duplicate_profile,
@@ -22,6 +16,7 @@ from bartlebot.combat_profile import (
     profile_players_of,
     read_bot_names,
 )
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.strategy_store import load_bot_strategy, save_bot_strategy, save_duel_strategy, save_player_strategy
 
 

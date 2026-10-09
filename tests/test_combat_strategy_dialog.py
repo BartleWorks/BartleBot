@@ -26,13 +26,6 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
 from bartlebot import store_roots
-from bartlebot.bot.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, EDIT_VERB, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     KIND_LABELS,
@@ -43,6 +36,13 @@ from bartlebot.gui.combat_strategies.dialog import (
 )
 from bartlebot.gui.widgets.scroll_gutter import is_gutter_reserved
 from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill
+from bartlebot.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 from bartlebot.strategy_store import (
     StrategyKind,
     list_duel_strategies,

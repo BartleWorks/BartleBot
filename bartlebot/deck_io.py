@@ -93,7 +93,7 @@ from bartlebot.nodes.timing import (
 )
 
 if TYPE_CHECKING:
-    from bartlebot.bot.strategy_models import DeckData
+    from bartlebot.shared.strategy_models import DeckData
 
 # The slot whose deck this task is applying, for the log.  Up to four applies run
 # at once under one gather, and a line saying "Only 1 of 3 copies of 'Epic'" is

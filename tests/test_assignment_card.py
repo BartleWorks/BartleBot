@@ -11,7 +11,6 @@ hold, including the one for a strategy that has since been deleted.
 
 import pytest
 
-from bartlebot.bot.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from bartlebot.gui.combat_strategies.assignment_card import (
     CHANGE_VERB,
     CUSTOM_CHOICE,
@@ -27,6 +26,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     dsl_preview,
     strategy_menu_entries,
 )
+from bartlebot.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from tests.picker_helpers import pick
 
 _BROKEN_DSL = "any<"

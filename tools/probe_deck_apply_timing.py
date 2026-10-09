@@ -53,7 +53,6 @@ import time
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import (
     _control_for,
     _entry_vector,
@@ -62,6 +61,7 @@ from bartlebot.deck_io import (
     read_deck_card_names,
     read_item_slots,
 )
+from bartlebot.shared.strategy_models import DeckData
 
 # Repeat each micro-benchmark this many times and report the median. A single
 # timing is dominated by whatever else the game happened to be doing.

@@ -81,15 +81,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerCombatStrategy,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.combat_profile import StrategyLookup, profile_players_of
 from bartlebot.shared.content_hash import content_sha256, official_updated
 from bartlebot.shared.strategy_library import is_newer_format
+from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.strategy_store import (
     ChangedOnDisk,
     NewerFormat,

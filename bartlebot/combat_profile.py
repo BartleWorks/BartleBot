@@ -38,11 +38,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from bartlebot import strategy_store
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DuelCombatStrategy,
-    PlayerCombatStrategy,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
 

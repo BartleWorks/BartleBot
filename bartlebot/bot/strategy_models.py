@@ -1,19 +1,16 @@
-"""Pydantic models for the three-level combat strategy system.
+"""Pydantic models for a combat profile: BartleBot's own level of the combat strategy system.
 
-PlayerCombatStrategy  — an optional *shared preset*: a named WizSprinter DSL
-                        string reusable across duels.
-DuelCombatStrategy    — team-level config for one type of fight
-BotCombatStrategy     — one user's combat profile for a bot: FSM states to strategies,
-                        deck data, and duel/player strategies of its own
-DeckPreset            — named, reusable deck configuration in the global library
+BotCombatStrategy  — one user's combat profile for a bot: FSM states to strategies,
+                     deck data, and duel/player strategies of its own
+StateAssignment    — a group of fights and the duel strategy they fight with
+FightRef           — one fight an assignment covers
 
-The first two and the deck models belong to the library shared with every product by
-this vendor, so they live in :mod:`bartlebot.shared.strategy_models` and are imported
-from there; they are re-exported here because every combat surface imports them from
-this module. Only the Bot Combat Strategy is BartleBot's own, since only BartleBot has
-bots.
+The player strategies, duel strategies and decks a profile embeds belong to the library
+shared with every product by this vendor, so they live in
+:mod:`bartlebot.shared.strategy_models`; import them from there. Only the Bot Combat
+Strategy is BartleBot's own, since only BartleBot has bots.
 
-Each top-level model is stored as an individual JSON file identified by UUID.
+Each profile is stored as an individual JSON file identified by UUID.
 """
 
 from __future__ import annotations
@@ -26,23 +23,14 @@ from pydantic import BaseModel, Field, model_validator
 
 from bartlebot.shared.strategy_models import (
     DeckData,
-    DeckPreset,
     DuelCombatStrategy,
-    DuelConfig,
-    PlayerAssignment,
     PlayerCombatStrategy,
     atomic_write,
 )
 
 __all__ = [
     "BotCombatStrategy",
-    "DeckData",
-    "DeckPreset",
-    "DuelCombatStrategy",
-    "DuelConfig",
     "FightRef",
-    "PlayerAssignment",
-    "PlayerCombatStrategy",
     "StateAssignment",
 ]
 

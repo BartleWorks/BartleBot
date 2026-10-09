@@ -16,7 +16,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from bartlebot.bot.strategy_models import DeckData
+from bartlebot.shared.strategy_models import DeckData
 
 
 @dataclass(frozen=True)

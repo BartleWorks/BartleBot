@@ -12,19 +12,13 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DuelCombatStrategy,
-    FightRef,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat_warnings import (
     _format_players,
     collect_combat_warnings,
     exposed_combat_states,
 )
+from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.strategy_store import (
     save_bot_strategy,
     save_duel_strategy,

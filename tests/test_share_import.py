@@ -14,22 +14,20 @@ import pytest
 
 from bartlebot import bot_roots, share_export, share_import
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    FightRef,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.share_export import BOT, BOT_COMBAT_STRATEGY, DECK, DUEL_STRATEGY, PLAYER_STRATEGY, SUBGRAPH, Sources
 from bartlebot.share_import import Action, Outcome, Refused
 from bartlebot.shared import share_file
 from bartlebot.shared.content_hash import content_sha256
 from bartlebot.shared.share_match import Held, copy_id, copy_ids, copy_outcome, match
+from bartlebot.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 from bartlebot.strategy_store import (
     list_all_bot_strategies,
     load_bot_strategy,

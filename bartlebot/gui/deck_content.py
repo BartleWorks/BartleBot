@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import resolve_apply_archmastery
+from bartlebot.shared.strategy_models import DeckData
 from bartlebot.spell_names import display_name
 from bartlebot.spell_schools import deck_sort_key
 
@@ -125,7 +125,7 @@ def deck_groups(deck: DeckData) -> list[DeckGroup]:
     Treasure cards are omitted, and deliberately: they can be neither read nor
     restored, so listing them would promise a round trip that cannot happen. ``tc``
     exists only so decks saved by earlier versions still parse -- see
-    :class:`~bartlebot.bot.strategy_models.DeckData`.
+    :class:`~bartlebot.shared.strategy_models.DeckData`.
 
     An empty group is dropped rather than returned empty, so a caller can render
     every group it is given without checking.

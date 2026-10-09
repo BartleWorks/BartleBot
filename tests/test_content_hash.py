@@ -13,14 +13,7 @@ import pytest
 
 from bartlebot import bot_roots
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot.strategy_models import (
-    BotCombatStrategy,
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
+from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.paths import project_root
 from bartlebot.shared.content_hash import (
     HISTORY_CAP,
@@ -30,6 +23,13 @@ from bartlebot.shared.content_hash import (
     record_save,
 )
 from bartlebot.shared.share_file import shareable_content
+from bartlebot.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 from bartlebot.store_roots import Origin, pill_text
 from bartlebot.strategy_store import (
     StrategyKind,
