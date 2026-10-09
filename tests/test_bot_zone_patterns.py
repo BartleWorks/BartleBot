@@ -15,11 +15,11 @@ allows it, rather than reaching for a broader pattern.
 """
 
 import json
-from pathlib import Path
 
 from bartlebot.nodes.node_helpers import has_glob
+from bartlebot.paths import project_root
 
-BOTS = Path(__file__).resolve().parent.parent / "bots"
+BOTS = project_root() / "bots"
 
 
 def _zone_values(bot: dict):

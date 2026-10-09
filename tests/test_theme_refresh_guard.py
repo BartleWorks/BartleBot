@@ -35,7 +35,9 @@ import functools
 import pathlib
 import re
 
-GUI_ROOT = pathlib.Path(__file__).resolve().parent.parent / "bartlebot" / "gui"
+from bartlebot.paths import project_root
+
+GUI_ROOT = project_root() / "bartlebot" / "gui"
 
 # A call is "themed" when its argument mentions one of these. Several are indirect:
 # pill_style, group_accent, account_accent and account_tint resolve THEME internally,

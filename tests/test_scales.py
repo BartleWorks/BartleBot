@@ -88,9 +88,10 @@ def test_no_world_has_two_defaults():
 def test_the_shipped_table_passes_the_tools_checks_and_is_in_its_format():
     """What `tools/scales_table.py check` reports. A hand edit that reflows the file fails here."""
     import sys
-    from pathlib import Path
 
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from bartlebot.paths import project_root
+
+    sys.path.insert(0, str(project_root()))
     from tools import scales_table
 
     entries = scales_table.read_entries(scales.SCALES_PATH)

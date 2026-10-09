@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from bartlebot.paths import project_root
+
+sys.path.insert(0, str(project_root()))
 
 from tools.drop_categories import _UNCATEGORIZED, classify, scan  # noqa: E402
 
@@ -95,5 +97,5 @@ def test_unreadable_files_do_not_stop_the_scan(bots_dir, capsys):
 
 def test_the_shipped_library_has_no_unclassified_categories():
     """Guards the real vocabulary: a wiki import producing a new label fails here."""
-    per_category, _, _ = scan(Path(__file__).parent.parent / "bots")
+    per_category, _, _ = scan(project_root() / "bots")
     assert [c for c in per_category if classify(c) == "UNCLASSIFIED"] == []
