@@ -9,7 +9,8 @@ tests/test_quicksell_keep_list.py.
 
 import re
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.bot.schema import DropModel
@@ -20,6 +21,7 @@ from bartlebot.gui.canvas.drop_keep_list import (
     DropKeepListWidget,
     bulk_needs_confirmation,
     keyword_counts,
+    lit_by,
     match_span,
     row_visible,
 )
@@ -58,6 +60,15 @@ def _keyword_chips(widget) -> list[str]:
 def _keyword_chip(widget, word):
     layout = widget._keyword_layout
     return next(layout.itemAt(i).widget() for i in range(layout.count()) if layout.itemAt(i).widget().value == word)
+
+
+def _click_cross(chip) -> None:
+    """Click the ✕ at a chip's right end, which is the only part that removes."""
+    QTest.mouseClick(chip, Qt.MouseButton.LeftButton, pos=QPoint(chip.width() - 10, chip.height() // 2))
+
+
+def _click_body(chip) -> None:
+    QTest.mouseClick(chip, Qt.MouseButton.LeftButton, pos=QPoint(4, chip.height() // 2))
 
 
 def _rows(w) -> list[str]:
@@ -493,7 +504,7 @@ def test_a_chip_removes_its_own_keyword(qapp):
     seen = []
     connect_widget(widget, seen.append)
 
-    _keyword_chip(widget, "Amber").click()
+    _click_cross(_keyword_chip(widget, "Amber"))
 
     assert _keyword_chips(widget) == ["Onyx"]
     assert seen == [["Onyx"]]
@@ -508,7 +519,7 @@ def test_removing_a_chip_never_leaves_it_parentless(qapp):
     widget = make_option_widget("drop_keep_list", ["Amber", "Onyx"], get_drops=lambda: list(_DROPS))
     chip = _keyword_chip(widget, "Amber")
 
-    chip.click()
+    _click_cross(chip)
 
     assert chip.parent() is not None
     assert not chip.isVisible()
@@ -537,7 +548,7 @@ def test_a_chip_count_follows_the_drop_table(qapp):
 
 def test_removing_a_chip_keeps_the_ticked_items(qapp):
     w = _make(qapp, keep_list=["Boots", "=Amber"])
-    _keyword_chip(w, "Boots").click()
+    _click_cross(_keyword_chip(w, "Boots"))
     assert w.get_value() == ["=Amber"]
 
 
@@ -573,7 +584,7 @@ def test_a_ticked_or_sold_row_marks_nothing(qapp):
 
 def test_the_mark_goes_when_the_keyword_does(qapp):
     w = _make(qapp, keep_list=["ring"])
-    _keyword_chip(w, "ring").click()
+    _click_cross(_keyword_chip(w, "ring"))
     assert _row(w, "Amber Ring").data(_COL_ITEM, _ROLE_MATCH) is None
 
 
@@ -590,6 +601,51 @@ def test_the_marked_table_paints(qapp):
     w.show()
     w._tree.grab()
     w.hide()
+
+
+def test_clicking_a_chip_shows_only_the_drops_its_keyword_keeps(qapp):
+    w = _make(qapp, keep_list=["amber"])
+    _click_body(_keyword_chip(w, "amber"))
+    assert w.visible_rows() == ["Amber", "Amber Ring"]
+    assert w.get_value() == ["amber"]
+
+
+def test_clicking_the_chip_again_shows_everything_again(qapp):
+    w = _make(qapp, keep_list=["amber"])
+    _click_body(_keyword_chip(w, "amber"))
+    _click_body(_keyword_chip(w, "amber"))
+    assert w._search.text() == ""
+
+
+def test_the_keyboard_can_show_and_remove_a_chip(qapp):
+    w = _make(qapp, keep_list=["amber", "boots"])
+    QTest.keyClick(_keyword_chip(w, "amber"), Qt.Key.Key_Return)
+    assert w._search.text() == "amber"
+    QTest.keyClick(_keyword_chip(w, "boots"), Qt.Key.Key_Delete)
+    assert w.get_value() == ["amber"]
+
+
+def test_hovering_a_chip_lights_the_rows_it_keeps(qapp):
+    w = _make(qapp, keep_list=["amber"])
+    chip = _keyword_chip(w, "amber")
+    chip.hovered.emit("amber", True)
+    assert w.lit_rows() == ["Amber", "Amber Ring"]
+    chip.hovered.emit("amber", False)
+    assert w.lit_rows() == []
+
+
+def test_removing_the_hovered_chip_puts_its_light_out(qapp):
+    w = _make(qapp, keep_list=["amber"])
+    chip = _keyword_chip(w, "amber")
+    chip.hovered.emit("amber", True)
+    _click_cross(chip)
+    assert w.lit_rows() == []
+
+
+def test_lit_by_tests_the_in_game_and_the_displayed_name():
+    pin = DropModel(name="Pin (140, Fire)", match_name="Ruby Pin (140)")
+    assert lit_by(pin, ["ruby"]) and lit_by(pin, ["fire"])
+    assert not lit_by(pin, ["onyx"]) and not lit_by(pin, ["", "  "])
 
 
 def test_the_default_category_entry_counts_what_it_shows(qapp):

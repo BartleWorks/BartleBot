@@ -16,7 +16,7 @@ from collections.abc import Callable
 from typing import Any
 
 from PyQt6.QtCore import QEvent, QModelIndex, QRect, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFontMetrics, QPainter, QPalette
+from PyQt6.QtGui import QBrush, QColor, QFontMetrics, QPainter, QPalette
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -142,6 +142,18 @@ def match_span(name: str, keyword: str | None) -> tuple[int, int] | None:
         return None
     start = name.lower().find(keyword.strip().lower())
     return (start, len(keyword.strip())) if start >= 0 else None
+
+
+def lit_by(entry: DropModel, keywords: list[str]) -> bool:
+    """Whether a keyword in *keywords* would keep *entry*, to light its row.
+
+    Tested against the displayed name as well as the in-game one, as the search is,
+    so the rows lit are the rows a click on the chip filters to.
+    """
+    normalized = [k.strip().lower() for k in keywords if k.strip()]
+    if not normalized:
+        return False
+    return any(quicksell.matching_keyword(name, normalized) is not None for name in (entry.match_key, entry.name))
 
 
 def bulk_needs_confirmation(count: int) -> bool:
@@ -295,6 +307,9 @@ class DropKeepListWidget(QWidget):
         self._keywords = QWidget()
         self._keyword_layout = FlowLayout(self._keywords, spacing=4)
         self._chips: dict[str, KeywordChip] = {}
+        # The chip under the pointer, whose rows are lit.
+        self._hovered_keyword: str | None = None
+        self._lit_keywords: list[str] = []
         self._keywords.setVisible(False)
         outer.addWidget(self._keywords)
 
@@ -444,6 +459,7 @@ class DropKeepListWidget(QWidget):
             self._rebuild_rows(entries)
         self._apply_states(entries)
         self._apply_filter()
+        self._apply_lit()
 
     # ------------------------------------------------------------------
     # Rows
@@ -775,6 +791,45 @@ class DropKeepListWidget(QWidget):
         """The keep list's keywords, as typed; its item entries are the table's to show."""
         return [v.strip() for v in self._value if not quicksell.is_item_entry(v) and v.strip()]
 
+    def _filter_to_keyword(self, word: str) -> None:
+        """Show only the rows *word* keeps, through the search -- or stop, if it already is.
+
+        The search is the same substring test, so it shows exactly the rows the chip
+        lights, and its clear button is the way back.
+        """
+        self._search.setText("" if self._search.text().strip().lower() == word.lower() else word)
+
+    def _on_chip_hovered(self, word: str, entering: bool) -> None:
+        if entering:
+            self._hovered_keyword = word
+        elif self._hovered_keyword == word:
+            self._hovered_keyword = None
+        self._set_lit_keywords([self._hovered_keyword] if self._hovered_keyword else [])
+
+    def _set_lit_keywords(self, keywords: list[str]) -> None:
+        if keywords == self._lit_keywords:
+            return
+        self._lit_keywords = list(keywords)
+        self._apply_lit()
+
+    def lit_rows(self) -> list[str]:
+        """Names of the rows currently lit — public for tests."""
+        return [row.text(_COL_ITEM) for row in self._rows if row.background(_COL_ITEM).style() != Qt.BrushStyle.NoBrush]
+
+    def _apply_lit(self) -> None:
+        """Wash the rows a hovered chip's keyword keeps, and clear every other row."""
+        wash = QColor(THEME.accent)
+        wash.setAlpha(48)
+        lit_brush, plain = QBrush(wash), QBrush()
+        self._suppress = True
+        for row in self._rows:
+            entry = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
+            brush = lit_brush if entry is not None and lit_by(entry, self._lit_keywords) else plain
+            if row.background(_COL_ITEM) != brush:
+                for column in (_COL_KEEP, _COL_ITEM, _COL_CATEGORY):
+                    row.setBackground(column, brush)
+        self._suppress = False
+
     def _update_keyword_counts(self, entries: list[DropModel]) -> None:
         counts = keyword_counts(list(self._chips), entries)
         for word, chip in self._chips.items():
@@ -804,9 +859,14 @@ class DropKeepListWidget(QWidget):
                 widget.hide()
                 widget.deleteLater()
         self._chips = {}
+        # A chip removed under the pointer never sends its leave, so its light goes here.
+        self._hovered_keyword = None
+        self._lit_keywords = []
         for word in dict.fromkeys(self._typed_keywords()):
             chip = KeywordChip(word)
             chip.removed.connect(self._remove_keyword)
+            chip.activated.connect(self._filter_to_keyword)
+            chip.hovered.connect(self._on_chip_hovered)
             self._keyword_layout.addWidget(chip)
             self._chips[word] = chip
         self._keywords.setVisible(bool(self._chips))
@@ -851,3 +911,5 @@ class DropKeepListWidget(QWidget):
             if self._rows:
                 self._render_summary()
                 self._render_warning()
+                if self._lit_keywords:
+                    self._apply_lit()  # the wash is mixed from the accent
