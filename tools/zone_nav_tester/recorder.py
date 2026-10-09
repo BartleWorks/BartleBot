@@ -1,7 +1,7 @@
 """Turn a stream of client samples into recorded zone transitions, with the kind detected.
 
 Pure: the tester polls the client and feeds ``Sample``s in; nothing here touches a client, so
-every rule below is covered by tests/test_zone_nav_recorder.py.
+every rule below is covered by tests/tools/test_zone_nav_recorder.py.
 
 HOW A KIND IS DETECTED
     Everything is decided from the samples taken *before* the loading screen started. During a

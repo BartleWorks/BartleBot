@@ -15,7 +15,7 @@ geometry, so it does not follow the body size.
 
 A size no token names is an *offset* from one at the call site —
 `f"font-size: {THEME.font_body_px + 1}px"` — never a literal, and never a
-`_FONT_PX` constant in the module. `tests/test_font_sizes.py` fails the build on any
+`_FONT_PX` constant in the module. `tests/gui/theming/test_font_sizes.py` fails the build on any
 of those, on a size in points, and on the two traps below. The sizes lived as literals
 in about eighty places before, which is why they had drifted into six values doing
 four jobs.
@@ -42,7 +42,7 @@ the time, and Qt never recomputes it: `QApplication.setStyleSheet()` delivers
 wins and is left exactly as it was. The widget has to re-derive it.
 
 **Inherit `ThemedMixin` (`bartlebot/gui/theming/themed.py`) and put the work in
-`apply_theme_styles`.** It is enforced: `tests/test_theme_refresh_guard.py` fails any
+`apply_theme_styles`.** It is enforced: `tests/gui/theming/test_theme_refresh_guard.py` fails any
 class that builds a `THEME`-derived value without either the mixin or a
 `changeEvent` that handles `StyleChange`.
 
@@ -184,7 +184,7 @@ Five rules that are easy to get wrong:
 
 Issue #47 is the rollout; `combat_strategies/dialog.py` is the worked example.
 
-`tests/test_button_guard.py` is what keeps it from eroding: it fails on a bare
+`tests/gui/test_button_guard.py` is what keeps it from eroding: it fails on a bare
 `QPushButton` that is not on its allowlist, on a second `PRIMARY` in one module, and on
 QSS that targets a compound widget's subcontrols. Every allowlist entry carries the
 reason it is exempt, and the failure prints it — so adding one is writing down a
@@ -214,7 +214,7 @@ Two things follow:
   filling the button that dismisses a safety warning argues with its own purpose. It is
   still the default button — Enter runs. Raise it on issue #89 before changing it.
 
-`tests/test_dialog_footer.py` presses Enter and Esc on every converted dialog.
+`tests/gui/widgets/layout/test_dialog_footer.py` presses Enter and Esc on every converted dialog.
 
 ### What is *not* an `ActionButton`
 
@@ -252,7 +252,7 @@ case**: it keeps a hardcoded stylesheet so that it stays legible *whatever* the 
 done to the running theme. It is the escape hatch from a custom theme that has made the
 app unreadable, and `ActionButton` derives everything from `THEME` — which is precisely
 what would break it. Leave the literal colors and the comment above them alone;
-`tests/test_surface_button_weights.py` says so too.
+`tests/gui/widgets/buttons/test_surface_button_weights.py` says so too.
 
 ## Section headings
 
@@ -1104,7 +1104,7 @@ layout or repaint bug; `tools/CLAUDE.md` has how to read a trace.
 **Set the spacing on every toolbar row explicitly** (`_BTN_GAP` within a cluster,
 `_GROUP_GAP` between). The style's default is 6px on Windows, so a row that only
 called `addSpacing(4)` came to 80px inside a 68px slot and clipped the Save button
-off its right-hand end. `tests/test_canvas_toolbar_layout.py` checks that no button
+off its right-hand end. `tests/gui/canvas/test_canvas_toolbar_layout.py` checks that no button
 overruns the slot it sits in, in either mode.
 
 The two side columns take **equal stretch**, which is what keeps the center column

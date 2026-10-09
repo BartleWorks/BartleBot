@@ -254,7 +254,7 @@ Every zone is declared by exactly one world, and a link may only name declared z
 typo is a load error, not a route that silently never exists. Restricted zones are refused
 outright, so no route can pass through one. `parse()` reports every problem at once;
 `load()` logs and returns an empty map if the shipped file is unreadable, and
-`tests/test_zone_nav.py` parses the shipped file strictly so that never reaches a user.
+`tests/game/test_zone_nav.py` parses the shipped file strictly so that never reaches a user.
 
 ### Verified, and where unverified data comes from
 

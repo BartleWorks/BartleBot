@@ -636,7 +636,7 @@ class PlayerCard(CardFrame):
         is still a real client on a real account and its card still says which, so the
         stripe survives -- what has changed is that nothing on it is live any more. The
         fill and the captions both move, because either alone reads as enabled
-        (tests/test_disabled_affordance.py).
+        (tests/gui/theming/test_disabled_affordance.py).
         """
         if not self._is_unhooked:
             return False

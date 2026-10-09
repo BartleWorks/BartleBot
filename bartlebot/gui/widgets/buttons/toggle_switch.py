@@ -14,7 +14,7 @@ and ``toggled`` are the switch's API too, so nothing downstream needs a branch f
 Only the drawing and the hit area are its own.
 
 Painted rather than styled, and from ``THEME`` at paint time, so it holds no baked color
-and needs no theme hook (``tests/test_theme_refresh_guard.py`` explains the exemption).
+and needs no theme hook (``tests/gui/theming/test_theme_refresh_guard.py`` explains the exemption).
 
 The state is carried by a glyph as well as by color -- a check mark on, a cross off --
 so it reads the same to someone who cannot tell the accent from the off fill.

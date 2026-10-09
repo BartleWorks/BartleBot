@@ -468,7 +468,7 @@ class _LaunchCard(CardFrame):
         """The grayed-out palette. The stripe goes too: it names an account, not a state.
 
         Fill and text both move, because either alone reads as enabled — the same finding
-        as the app-wide disabled palette (tests/test_disabled_affordance.py).
+        as the app-wide disabled palette (tests/gui/theming/test_disabled_affordance.py).
         """
         self._apply_frame_palette(THEME.surface_disabled, THEME.border, extra="")
         if self._name_lbl is not None:

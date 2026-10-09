@@ -310,7 +310,7 @@ def load() -> NavMap:
     """The shipped map. An unreadable file logs and returns an empty map.
 
     Nothing routes on an empty map, so a node fails with "no route" rather than the app
-    refusing to start. tests/test_zone_nav.py parses the shipped file strictly, which keeps
+    refusing to start. tests/game/test_zone_nav.py parses the shipped file strictly, which keeps
     a broken one from reaching a user in the first place.
     """
     try:
@@ -652,7 +652,7 @@ def dumps(raw: dict) -> str:
 
     The tester writes the file and people edit it by hand, so both go through one layout --
     otherwise every recording reformats the whole file and the diff hides what was recorded.
-    tests/test_zone_nav.py checks the shipped file is already in this form.
+    tests/game/test_zone_nav.py checks the shipped file is already in this form.
     """
     return _encode(raw, 0) + "\n"
 

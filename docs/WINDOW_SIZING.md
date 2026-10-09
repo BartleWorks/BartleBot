@@ -104,7 +104,7 @@ nothing else**:
 
 Every pairing below was driven on a live client with a sigil prompt up, checking whether
 the prompt covered the hub and dorm buttons. `MEASURED_PAIRINGS` in
-`tests/test_game_sizing.py` is this table, and the model is held to it — **if a change and
+`tests/game/test_game_sizing.py` is this table, and the model is held to it — **if a change and
 a measurement disagree, the measurement wins.**
 
 | resolution | ratio | max scale | | resolution | ratio | max scale |
@@ -367,7 +367,7 @@ Two of the terms are floors with nothing on the other side of them, so they carr
 constraints: `SIDEBAR_MIN_HEIGHT` must stay under the shortest tile any offered resolution
 produces, and `BOTCANVAS_MIN_WIDTH` under the narrowest window the ladder implies —
 otherwise a sidebar or the canvas, which have no height and width term respectively, become
-the floor instead of the game view. `tests/test_window_minimum.py` holds all of it together,
+the floor instead of the game view. `tests/gui/test_window_minimum.py` holds all of it together,
 including the 4K case above as a regression.
 
 ### The sidebar floors are measured, not fixed

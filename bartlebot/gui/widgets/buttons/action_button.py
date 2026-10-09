@@ -58,7 +58,7 @@ class ActionStyle(Enum):
     """How much weight a button carries — see the module docstring.
 
     ``PRIMARY`` is the one thing a surface expects you to do: filled with the accent.
-    At most one per surface — ``tests/test_button_guard.py`` holds that line.
+    At most one per surface — ``tests/gui/test_button_guard.py`` holds that line.
 
     ``SECONDARY`` is a way forward that is not the surface's commit: outlined in the
     accent over a faint wash of it. The wash is not decoration — drawn unfilled, the

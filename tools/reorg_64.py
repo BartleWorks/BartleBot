@@ -128,7 +128,109 @@ STAGES: dict[str, dict] = {
             },
         },
     },
-    # Stage 4 adds a "4" entry with "root": "tests": test module -> new dotted path.
+    "4": {  # tests/ mirrors bartlebot/; every name below is currently tests.<name>
+        "root": "tests",
+        "bot": "test_ambient_combat_slots test_disconnect_dialog_watcher test_edge_assignments test_machine "
+        "test_machine_ambient_combat test_machine_logging test_machine_parked test_machine_preempt "
+        "test_machine_variables test_network_link_watcher test_return_routing test_schema test_variable_watch "
+        "test_variables test_variables_authoring test_variables_schema",
+        "clients": "test_account_adoption test_account_identity test_account_identity_storage test_authoring_tools "
+        "test_auto_group test_character_roster test_client_loop test_client_manager_identities "
+        "test_client_reorder test_client_slots test_group_manager test_group_member_port test_hook_toggle "
+        "test_launch_pending test_port_map test_process_resources test_recovery test_recovery_readiness "
+        "test_relog test_relog_cycle test_roster_learning test_shutdown_release test_sightings "
+        "test_slot_order test_speed_authoring test_window_kill",
+        "combat": "test_card_kinds test_combat_grouping test_combat_profile test_combat_warnings test_deck_content "
+        "test_deck_io test_deck_jobs test_dsl_syntax test_dsl_validation test_fight_keys "
+        "test_profile_models test_strategy_store test_strategy_summary test_strategy_tags "
+        "test_strategy_workset test_strategy_workset_conflicts test_strategy_workset_profile",
+        "content": "test_blank_bot test_bot_folders test_bot_fork test_bot_roots test_bot_summary test_bot_tags "
+        "test_new_bot test_share_export test_share_import test_store_filenames test_store_roots",
+        "content.subgraphs": "test_signature_tree test_subgraph_integration test_subgraph_signature "
+        "test_subgraph_store test_subgraphs",
+        "content.templates": "test_setup_steps test_template_diff test_template_diff_assignments test_template_drafts "
+        "test_template_roots test_template_store test_user_templates",
+        "game": "test_badge_categories test_card_art test_dialog_captions test_drop_detection test_entity_names "
+        "test_game_keybindings test_game_sizing test_name_tables test_realms test_restricted_zones "
+        "test_scales test_spell_name_check test_spell_names test_spell_schools test_stat_caps test_wiki_drops "
+        "test_wiki_pages test_wizard_names test_worlds test_zone_lists test_zone_names test_zone_nav",
+        "gui": "test_app_logo test_button_guard test_global_hotkeys test_main_window_paths test_menu_anchoring "
+        "test_native_widgets test_offscreen_warmup test_screen_fit test_streamer_mode test_ui_state "
+        "test_window_minimum",
+        "gui.canvas": "test_bot_header test_bot_library_filter test_call_page_cards test_canvas_header_visibility "
+        "test_canvas_lod test_canvas_port_marks test_canvas_property_edits test_canvas_toolbar_layout "
+        "test_crumb_bar test_drop_keep_list_widget test_edge_assignments_panel test_edge_label_stacking "
+        "test_edge_pen test_edge_repaint_bounds test_editor_helpers test_failure_edge_mode "
+        "test_focus_mode_indicator test_fold test_friend_param_form test_fsm_role_checkboxes "
+        "test_graph_view_cursor_priming test_insert_at_port test_insert_on_edge test_minimap_background "
+        "test_nav_zone_param test_node_browser_subgraphs test_node_browser_theme test_node_paint_bounds "
+        "test_param_panel_theme test_param_rows test_port_marks test_record_labels test_recording "
+        "test_region_collapse test_region_follows_members test_subgraph_call_node "
+        "test_subgraph_categories test_subgraph_definition_document test_subgraph_stepping "
+        "test_template_ids test_undo_manager test_variables_canvas test_variables_panel "
+        "test_wiki_page_param test_xyz_field test_xyz_paste",
+        "gui.combat_strategies": "test_assignment_card test_combat_strategy_dialog "
+        "test_combat_strategy_dialog_profile test_deck_editor_client_verbs "
+        "test_dialog_advance test_dialog_theme test_dsl_live_validation "
+        "test_duel_config_editor test_strategy_filters test_strategy_picker_dialog",
+        "gui.debug": "test_input_diagnostics test_qt_layout_debug test_qt_paint_debug test_repaint_trace "
+        "test_window_show_trace",
+        "gui.dialogs": "test_entity_browser_lifecycle test_export_ui test_import_ui test_new_bot_dialog "
+        "test_rewards_prompt test_safety_warning test_ui_tree_browser test_wiki_import_parsing",
+        "gui.game_embed": "test_authoring_bar test_card_actions test_card_column_reorder test_card_drag_feedback "
+        "test_game_tab_cards test_game_view_theme test_launch_card_widgets test_launch_cards "
+        "test_launch_column_scrolling test_pill_text test_window_restore",
+        "gui.settings": "test_profile_editing_route test_profile_editor test_settings_rows test_settings_tabs",
+        "gui.sidebar": "test_card_fold_stores test_combat_tab test_initial_state_warnings test_option_card "
+        "test_option_value_cards test_player_card_text test_player_card_widgets test_setup_panel "
+        "test_sidebar_layout",
+        "gui.sidebar.sections": "test_client_refresh_interval test_client_refresh_one test_combat_order_colors "
+        "test_drop_list_edit test_drop_section test_favorite_realm_option "
+        "test_options_section test_options_section_derived test_possible_drops_sorting "
+        "test_variable_values_section test_variables_section",
+        "gui.theming": "test_account_accent test_account_color_pin test_disabled_affordance test_font_sizes "
+        "test_icon_utils test_input_border_theme test_sidebar_theme test_theme_refresh_guard "
+        "test_themed_mixin",
+        "gui.widgets.buttons": "test_action_button test_icon_button test_inspector_button_weights test_link_button "
+        "test_record_button test_surface_button_weights",
+        "gui.widgets.cards": "test_add_card test_archmastery_badge test_archmastery_editor test_card_art_tile "
+        "test_deck_card_list test_strategy_card",
+        "gui.widgets.inputs": "test_dsl_edit test_friend_name_option test_growing_text_edit test_list_text "
+        "test_ratio_spin_box test_search_field",
+        "gui.widgets.labels": "test_elided_label test_rule_heading",
+        "gui.widgets.layout": "test_dialog_footer test_discard_widget test_drag_reorder test_flow_layout "
+        "test_scroll_gutter",
+        "gui.widgets.pickers": "test_picker_popup test_player_list_widget test_record_from_player test_scales_picker "
+        "test_school_picker test_tag_picker test_zone_picker",
+        "gui.widgets.pills": "test_pill_outline test_player_pills",
+        "launcher": "test_auto_select test_launch_batch test_launch_config_patch test_remember_realm",
+        "nodes": "test_combat_drop_recording test_combat_flee test_combat_runner test_ensure_together "
+        "test_hotkey_node_defaults test_housing test_join_fight test_last_player_target test_node_helpers "
+        "test_param_types test_port_clients test_separate_realms test_take_turns test_wizard_city "
+        "test_zone_navigation",
+        "nodes.combat": "test_check_health_and_mana test_collect_wisps test_handle_combat test_handle_potions "
+        "test_scaled_ratios",
+        "nodes.interaction": "test_click_path test_collect_reagent test_interact test_interact_menu "
+        "test_wait_for_dialogue",
+        "nodes.teleportation": "test_mark_location test_sync_in_zone test_teleport_to_coordinates "
+        "test_teleport_to_friend test_teleport_to_marked_location test_teleport_to_world_hub",
+        "nodes.utility": "test_apply_elixir test_change_realm test_check_level_scaling test_check_zone "
+        "test_handle_level_scaling test_quicksell test_quicksell_keep_list test_realm_list "
+        "test_relog_node test_sleep",
+        "nodes.zone_entry": "test_enter_dungeon test_enter_gauntlet test_enter_zone test_enter_zone_via_list "
+        "test_enter_zone_via_object test_enter_zone_via_ride test_object_use_delay",
+        "options": "test_bot_options test_derived_declarations test_node_page_cards test_option_groups "
+        "test_option_values_quicksell test_param_cards test_player_realms",
+        "shared": "test_account_store test_content_hash test_official_set test_shared_strategy_library "
+        "test_strategy_library_filter test_strategy_models test_vendor_identity",
+        "tools": "test_drop_categories_tool test_drop_default_failure_edges test_drop_icons "
+        "test_drop_name_patterns_tool test_duel_slot_icons test_import_template_tool test_probe_aggro_radius "
+        "test_probe_fault_delta test_probe_group_tab test_probe_housing_equip test_probe_name_behavior "
+        "test_probe_same_place test_rebuild_from_template_tool test_renumber_states_tool "
+        "test_scales_table_tool test_tag_icons test_typedump test_world_icons test_zone_nav_edits "
+        "test_zone_nav_recorder test_zone_nav_tester_app test_zone_nav_tree",
+        "wizsprinter": "test_dsl_negation test_optional_enchant test_spell_ranking test_untargetable_enemies",
+    },
 }
 
 _RESERVED = {"extra", "dirs", "from", "root"}

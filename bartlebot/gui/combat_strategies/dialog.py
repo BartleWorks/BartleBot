@@ -818,7 +818,7 @@ class _KindPage(QWidget):
 
         Signals stay blocked throughout: hiding the current row can make Qt move
         the current item, and that would reload the detail pane mid-keystroke —
-        the defect ``tests/test_strategy_library_filter.py`` exists for. The
+        the defect ``tests/shared/test_strategy_library_filter.py`` exists for. The
         selected row is restored afterwards even when the query hides it, so the
         editor keeps the entry it was given.
         """

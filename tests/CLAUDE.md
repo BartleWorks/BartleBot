@@ -15,8 +15,8 @@ What every change ships with, and the ways this suite goes slow or flaky.
 
 A node test that sleeps through a production cadence costs that time on every run, so
 compress the constants the code under test reads — `monkeypatch.setattr` on the *module
-that imported them*, not on `timing.py`. `_fast_settle` in `tests/test_deck_io.py` and
-`fast` in `tests/test_auto_select.py` are the pattern.
+that imported them*, not on `timing.py`. `_fast_settle` in `tests/combat/test_deck_io.py` and
+`fast` in `tests/launcher/test_auto_select.py` are the pattern.
 
 Two things make this less obvious than it looks:
 

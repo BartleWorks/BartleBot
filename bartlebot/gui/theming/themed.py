@@ -17,7 +17,7 @@ So the override lives here and the body becomes :meth:`apply_theme_styles`::
         def apply_theme_styles(self) -> None:
             self._label.setStyleSheet(f"color: {THEME.text};")
 
-``tests/test_theme_refresh_guard.py`` accepts this base in place of a hand-written
+``tests/gui/theming/test_theme_refresh_guard.py`` accepts this base in place of a hand-written
 ``changeEvent``, and fails any themed widget that has neither.
 
 Three things about it are not obvious:

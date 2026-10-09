@@ -144,7 +144,7 @@ class FakeClient:
         self.client_object.read_value_from_offset = AsyncMock(return_value=FakeClient._next_handle * 1000)
         # No name behavior by default, so the memory name route answers None and callers
         # fall through to the character-page route. Tests that want the memory route give
-        # this a behavior — see tests/test_wizard_names.py.
+        # this a behavior — see tests/game/test_wizard_names.py.
         self.client_object.inactive_behaviors = AsyncMock(return_value=[])
         # This character's global id, and what it has loaded. By default every FakeClient
         # a test makes has every other loaded -- one zone, realm and instance, which is

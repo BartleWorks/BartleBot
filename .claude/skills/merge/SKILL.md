@@ -93,7 +93,7 @@ they ever disagree.
   → `tests/CLAUDE.md`
 - **Widget builds anything from `THEME`** (a stylesheet, or a bare `svg_icon`) —
   inherits `ThemedMixin` first in the base list, implements `apply_theme_styles`.
-  → `bartlebot/gui/CLAUDE.md`; `tests/test_theme_refresh_guard.py`
+  → `bartlebot/gui/CLAUDE.md`; `tests/gui/theming/test_theme_refresh_guard.py`
 - **Widget starts an asyncio task or `QThread`** — cancelled or joined in
   `closeEvent`. → `bartlebot/gui/CLAUDE.md`
 - **New option or declaration** — no bot pins a bot-wide option, borrows a name a
