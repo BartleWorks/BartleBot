@@ -1090,13 +1090,13 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Greenwarden's Energetic Boots",
-        "Greenwarden's Energetic Mask",
-        "Greenwarden's Energetic Shroud",
-        "Red Teleporter",
-        "Purple Teleporter",
-        "White Teleporter",
-        "Yellow Teleporter"
+        "=Greenwarden's Energetic Boots",
+        "=Greenwarden's Energetic Mask",
+        "=Greenwarden's Energetic Shroud",
+        "=Red Teleporter",
+        "=Purple Teleporter",
+        "=White Teleporter",
+        "=Yellow Teleporter"
       ]
     }
   ],

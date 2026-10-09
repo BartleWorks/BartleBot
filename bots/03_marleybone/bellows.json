@@ -679,10 +679,10 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Bellows' Aristocratic Hat",
-        "Bellows' Helm of Civility",
-        "Bellows' Confined Robe",
-        "Bellows' Shoes of Disposition"
+        "=Bellows' Aristocratic Hat",
+        "=Bellows' Helm of Civility",
+        "=Bellows' Confined Robe",
+        "=Bellows' Shoes of Disposition"
       ]
     }
   ],

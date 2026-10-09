@@ -207,6 +207,29 @@ async def test_keeps_items_matching_keyword():
     assert quicksell_item_checkbox_path(0) in clicked_paths
 
 
+async def test_a_ticked_item_spares_only_itself():
+    """keep_list=['=Couch Potatoes'] unchecks that row and leaves Red Couch Potatoes to be sold."""
+    client = FakeClient()
+    client.backpack_space.return_value = (100, 100)
+
+    def _text_for_path(client_arg, path):
+        if path == quicksell_item_title_path(0):
+            return "Red Couch Potatoes"
+        if path == quicksell_item_title_path(1):
+            return "<center>Couch Potatoes"
+        return ""
+
+    p = _make_patchers(is_jewel_full_returns=False)
+    with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
+        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+            result = await qs.run(_machine(keep_list=["=Couch Potatoes"]), [client], {})
+
+    assert result == "SUCCESS"
+    clicked_paths = [c.args[1] for c in mock_click.call_args_list]
+    assert quicksell_item_checkbox_path(1) in clicked_paths
+    assert quicksell_item_checkbox_path(0) not in clicked_paths
+
+
 async def test_case_insensitive_keep_match():
     """keep_list=['STAFF'] matches 'Firebrand Staff' (case-insensitive) → checkbox unchecked."""
     client = FakeClient()

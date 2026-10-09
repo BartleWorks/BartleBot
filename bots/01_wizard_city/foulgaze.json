@@ -436,7 +436,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Veil of Sparks"
+        "=Veil of Sparks"
       ]
     }
   ],

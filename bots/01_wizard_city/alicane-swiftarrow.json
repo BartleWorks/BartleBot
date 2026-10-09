@@ -500,8 +500,8 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Elven Fire Robe",
-        "Shortblade of the Quick"
+        "=Elven Fire Robe",
+        "=Shortblade of the Quick"
       ]
     }
   ],

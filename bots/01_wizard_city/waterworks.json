@@ -611,9 +611,9 @@
       "type": "drop_keep_list",
       "default": [
         "Mastery",
-        "Savory Shroud",
-        "Tasty Tunic",
-        "Delectable Hooves",
+        "=Savory Shroud",
+        "=Tasty Tunic",
+        "=Delectable Hooves",
         "Skyscream",
         "Frostbit",
         "Firestarter",

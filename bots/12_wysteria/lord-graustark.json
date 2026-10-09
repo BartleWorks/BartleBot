@@ -527,7 +527,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "The Valiant Defender"
+        "=The Valiant Defender"
       ]
     }
   ],

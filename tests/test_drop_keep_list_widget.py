@@ -167,13 +167,28 @@ def test_category_is_shown_and_missing_reads_as_a_dash(qapp):
 def test_ticking_a_drop_adds_its_name_to_the_keep_list(qapp):
     w = _make(qapp)
     _row(w, "Boots of Dawn").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
-    assert w.get_value() == ["Boots of Dawn"]
+    assert w.get_value() == ["=Boots of Dawn"]
 
 
 def test_unticking_a_drop_removes_it_from_the_keep_list(qapp):
-    w = _make(qapp, keep_list=["Amber", "Boots of Dawn"])
+    w = _make(qapp, keep_list=["=Amber", "=Boots of Dawn"])
     _row(w, "Amber").setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
-    assert w.get_value() == ["Boots of Dawn"]
+    assert w.get_value() == ["=Boots of Dawn"]
+
+
+def test_ticking_an_item_keeps_only_that_item(qapp):
+    """Ticking Amber is not typing "Amber": Amber Ring stays sold, and stays tickable."""
+    w = _make(qapp)
+    _row(w, "Amber").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert not _checked(w, "Amber Ring") and _enabled(w, "Amber Ring")
+
+
+def test_a_typed_prefix_still_makes_a_keyword(qapp):
+    """Only a tick makes an item entry; the field always adds keywords."""
+    w = _make(qapp)
+    w._edit.setText("=Amber")
+    w._commit_typed()
+    assert w.get_value() == ["Amber"]
 
 
 def test_ticking_emits_changed(qapp):
@@ -328,8 +343,8 @@ def test_check_all_shown_only_affects_visible_rows(qapp):
     w = _make(qapp)
     w._search.setText("amber")
     w._btn_check_all.click()
-    # Amber Ring becomes locked once "Amber" keeps it, so only Amber is written.
-    assert w.get_value() == ["Amber", "Amber Ring"]
+    # Each tick keeps its own item and nothing else, so both are written.
+    assert w.get_value() == ["=Amber", "=Amber Ring"]
     assert not _checked(w, "Boots of Dawn")
 
 
@@ -341,10 +356,10 @@ def test_check_all_shown_skips_locked_rows(qapp):
 
 
 def test_uncheck_all_shown_removes_only_visible_names(qapp):
-    w = _make(qapp, keep_list=["Amber", "Boots of Dawn"])
+    w = _make(qapp, keep_list=["=Amber", "=Boots of Dawn"])
     w._search.setText("boots")
     w._btn_uncheck_all.click()
-    assert w.get_value() == ["Amber"]
+    assert w.get_value() == ["=Amber"]
 
 
 def test_bulk_below_the_threshold_does_not_confirm(qapp, monkeypatch):
@@ -411,7 +426,7 @@ def test_the_option_layer_builds_the_picker_and_round_trips_its_value(qapp):
     assert widget_value(widget) == ["Amber"]
 
     _row(widget, "Boots of Dawn").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
-    assert widget_value(widget) == ["Amber", "Boots of Dawn"]
+    assert widget_value(widget) == ["Amber", "=Boots of Dawn"]
 
 
 def test_ticking_a_drop_reports_the_whole_new_list(qapp):
@@ -423,7 +438,7 @@ def test_ticking_a_drop_reports_the_whole_new_list(qapp):
     connect_widget(widget, seen.append)
 
     _row(widget, "Amber").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
-    assert seen == [["Amber"]]
+    assert seen == [["=Amber"]]
 
 
 def test_a_typed_keyword_is_reported_once_the_field_is_left_and_not_per_keystroke(qapp):
@@ -529,12 +544,12 @@ _PINS = [
 def test_ticking_stores_the_in_game_name_not_the_wiki_name(qapp):
     w = _make(qapp, drops=_PINS)
     _row(w, "Balance Crushing Pin (140, Fire)").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
-    assert w.get_value() == ["Balance Crushing Pin (140)"]
+    assert w.get_value() == ["=Balance Crushing Pin (140)"]
 
 
 def test_a_ticked_row_stays_tickable(qapp):
-    # The row must not lock itself: the stored keyword equals the item's in-game
-    # name, so the checkbox alone is enough to undo it.
+    # The row must not lock itself: the stored entry is the item's in-game name,
+    # so the checkbox alone is enough to undo it.
     w = _make(qapp, drops=_PINS)
     _row(w, "Balance Crushing Pin (140, Fire)").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
     assert _enabled(w, "Balance Crushing Pin (140, Fire)")
@@ -577,7 +592,7 @@ def test_bulk_counts_in_game_names_not_rows(qapp, monkeypatch):
     )
     w = _make(qapp, drops=_PINS)
     w._btn_check_all.click()
-    assert w.get_value() == ["Balance Crushing Pin (140)", "Amber"]
+    assert w.get_value() == ["=Balance Crushing Pin (140)", "=Amber"]
     assert not seen  # 2 entries is under the confirmation threshold
 
 
@@ -606,7 +621,7 @@ _COMMA_DROPS = [
 def test_a_comma_in_an_item_name_survives_ticking(qapp):
     w = _make(qapp, drops=_COMMA_DROPS)
     _row(w, "No Pain, No Gain Onyx").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
-    assert w.get_value() == ["No Pain, No Gain Onyx"]
+    assert w.get_value() == ["=No Pain, No Gain Onyx"]
 
 
 def test_a_comma_named_row_does_not_lock_itself(qapp):
@@ -806,4 +821,4 @@ def test_no_warning_when_the_bot_drops_no_pets(qapp):
 def test_pets_the_keep_list_cannot_keep_stay_out_of_bulk_changes(qapp):
     w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
     w._btn_check_all.click()
-    assert w.get_value() == ["Amber Ring"]
+    assert w.get_value() == ["=Amber Ring"]

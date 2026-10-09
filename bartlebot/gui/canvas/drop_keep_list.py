@@ -649,10 +649,16 @@ class DropKeepListWidget(QWidget):
         """
         if self._suppress:
             return
-        typed = parse_list_text(self._edit.text())
+        # Whatever is typed here is a keyword, never an item: an item is ticked in the
+        # table, so a typed "=" prefix is dropped rather than silently made exact.
+        typed = [
+            word
+            for word in (w.lstrip(quicksell.ITEM_PREFIX).strip() for w in parse_list_text(self._edit.text()))
+            if word
+        ]
         self._edit.clear()
-        existing = {v.casefold() for v in self._value}
-        added = [word for word in typed if word.casefold() not in existing]
+        existing = {v.strip().casefold() for v in self._value if not quicksell.is_item_entry(v)}
+        added = [word for word in dict.fromkeys(typed) if word.casefold() not in existing]
         if not added:
             return
         self._set_keep_list([*self._value, *added])

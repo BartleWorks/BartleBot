@@ -456,7 +456,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Heartsteel"
+        "=Heartsteel"
       ]
     }
   ],

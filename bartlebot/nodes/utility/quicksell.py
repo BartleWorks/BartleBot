@@ -95,7 +95,8 @@ NODE_SPEC = NodeSpec(
     description=(
         "Checks if the main backpack or jewel pouch is full. "
         "If either is full, opens the quicksell UI and sells all items except those "
-        "whose names match a keyword in keep_list. "
+        "the keep list keeps: a keyword keeps any item whose name contains it, a ticked item "
+        "keeps only itself. "
         "sell_pets controls whether pets are included — it is all-or-nothing, because the "
         "quicksell window shows a pet's nickname rather than its body type and no keep-list "
         "keyword can match it. Crowns items are always included."
@@ -162,8 +163,9 @@ NODE_SPEC = NodeSpec(
             type="drop_keep_list",
             default=[],
             description=(
-                "Keywords to match against item names when quickselling. Any item whose name "
-                "contains one of these (case-insensitive, partial matches count) is not sold. "
+                "What to keep when quickselling. A keyword you type keeps every item whose name "
+                "contains it (case-insensitive, so 'giver' keeps every Giver jewel). An item you "
+                "tick keeps that item alone: ticking Couch Potatoes does not keep Red Couch Potatoes. "
                 "The bot's author recommends a list; yours replaces it. Your own keep list in "
                 "Settings → Bot is kept too, in every bot."
             ),
@@ -183,6 +185,19 @@ NODE_SPEC = NodeSpec(
 from bartlebot.nodes.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # noqa: E402
 
 _ROWS_PER_PAGE = 10
+
+#: Marks a keep-list entry as one item rather than a keyword: ``"=Couch Potatoes"``.
+#:
+#: The two are added differently and mean different things. A keyword is typed, to keep
+#: a family -- "giver" keeps every Giver jewel -- so it matches anywhere in a name. An
+#: item is ticked in the picker, to keep that item, so it matches the whole name and
+#: nothing else; matched as a fragment, ticking Couch Potatoes also kept Red and Golden
+#: Couch Potatoes, and nothing could keep the one without the others.
+#:
+#: A prefix inside the one list rather than a second list, so the option stays the
+#: ``str_list`` every level of the resolution, the template diff and the share files
+#: already carry. An entry without it is a keyword, which is what every entry was before.
+ITEM_PREFIX = "="
 
 # Bool params that add a keyword to the keep list when switched *off*.
 IMPLIED_KEEP_KEYWORDS: dict[str, str] = {
@@ -379,19 +394,55 @@ def describe_config(params: dict) -> str:
     )
 
 
+def is_item_entry(entry: str) -> bool:
+    """Whether keep-list *entry* names one item (ticked) rather than a keyword (typed)."""
+    return entry.strip().startswith(ITEM_PREFIX)
+
+
+def item_entry(name: str) -> str:
+    """The keep-list entry that keeps the item called *name* and nothing else."""
+    return ITEM_PREFIX + name
+
+
+def entry_text(entry: str) -> str:
+    """*entry* as the user reads it: the item's name, or the keyword."""
+    entry = entry.strip()
+    return entry[len(ITEM_PREFIX) :].strip() if entry.startswith(ITEM_PREFIX) else entry
+
+
+def _normalize_name(name: str) -> str:
+    """An item name as both kinds of entry compare it: no markup, single spaces, lowercase.
+
+    The markup matters to an item entry only. A keyword matched inside ``<center>Amber``
+    just as well, but a whole-name comparison would fail on the wrapper and sell the item.
+    """
+    return " ".join(node_helpers.strip_html(name).split()).lower()
+
+
 def _typed_keywords(params: dict) -> list[str]:
-    """The keep_list param, lowercased. Blank entries are dropped: an empty keyword
+    """The keep_list param, normalized. Blank entries are dropped: an empty keyword
     is a substring of every name and would silently keep the entire backpack."""
     return _keywords(params.get("keep_list"))
 
 
 def _user_keywords(params: dict) -> list[str]:
-    """The user's own keep list from Settings -> Bot, lowercased, blanks dropped the same way."""
+    """The user's own keep list from Settings -> Bot, normalized, blanks dropped the same way."""
     return _keywords(params.get("user_keep_list"))
 
 
 def _keywords(entries) -> list[str]:
-    return [k for k in (kw.lower().strip() for kw in (entries or [])) if k]
+    """Normalize keep-list entries for :func:`matching_keyword`: keywords lowercased, items
+    by :func:`_normalize_name` with their prefix kept, blanks of either kind dropped."""
+    normalized = []
+    for raw in entries or []:
+        entry = str(raw).strip()
+        if is_item_entry(entry):
+            name = _normalize_name(entry_text(entry))
+            if name:
+                normalized.append(item_entry(name))
+        elif keyword := entry.lower():
+            normalized.append(keyword)
+    return normalized
 
 
 def sell_flag(params: dict, param_key: str) -> bool:
@@ -441,7 +492,7 @@ def category_unmatchable_reasons(params: dict) -> dict[str, str]:
 
 
 def effective_keep_list(params: dict) -> list[str]:
-    """Return the lowercased keywords this config keeps items by, each once.
+    """Return the normalized entries this config keeps items by, each once.
 
     The bot's own list, then the user's from Settings -> Bot, then the ones the sell
     flags imply.
@@ -450,14 +501,19 @@ def effective_keep_list(params: dict) -> list[str]:
 
 
 def matching_keyword(item_name: str, keywords: list[str]) -> str | None:
-    """Return the first keyword in *keywords* that keeps *item_name*, or None.
+    """Return the first entry in *keywords* that keeps *item_name*, or None.
 
-    Matching is the case-insensitive substring test the quicksell page loop uses,
-    so the answer is exactly what the node will do to that item.
+    *keywords* are normalized entries (:func:`effective_keep_list`). An item entry keeps
+    the item whose whole name it is; a keyword keeps any name containing it, ignoring
+    case. This is the test the quicksell page loop uses, so the answer is exactly what
+    the node will do to that item.
     """
-    lowered = item_name.lower()
+    name = _normalize_name(item_name)
     for keyword in keywords:
-        if keyword and keyword in lowered:
+        if keyword.startswith(ITEM_PREFIX):
+            if keyword[len(ITEM_PREFIX) :] == name:
+                return keyword
+        elif keyword and keyword in name:
             return keyword
     return None
 
@@ -468,12 +524,13 @@ class DropKeepState:
 
     Attributes:
         name:    The item name as it appears in the drop table.
-        keyword: The keep-list keyword that spares it, or None when it will be sold.
-        exact:   True when *keyword* is a keep_list entry equal to the item's own
-                 name, so ticking or unticking the item is enough to change its
-                 fate. False for a partial match, and false for an implied keyword
-                 even when it happens to equal the name ("Socket Wrench") — removing
-                 that one means flipping the sell_* bool, not editing the keep list.
+        keyword: The normalized keep-list entry that spares it, or None when it will
+                 be sold.
+        exact:   True when *keyword* is this bot's item entry for the drop -- it was
+                 ticked -- so unticking it is enough to change its fate. False for a
+                 keyword, even one equal to the item's name: a keyword is typed and
+                 removed as a chip. False for an implied keyword too ("Socket
+                 Wrench"): removing that one means flipping the sell_* bool.
         users:   True when *keyword* comes from the user's own keep list in
                  Settings -> Bot. Never exact either: this bot's list cannot
                  remove it, so the row is not this bot's to untick.
@@ -490,15 +547,23 @@ class DropKeepState:
 
 
 def drop_keep_states(drops: list[str], params: dict) -> list[DropKeepState]:
-    """Report what a quicksell config does to each item in a bot's drop table."""
+    """Report what a quicksell config does to each item in a bot's drop table.
+
+    A drop's own item entry answers first, even when a keyword keeps it too: the row
+    stays tickable, so the entry can still be unticked away. Answering with the
+    keyword would lock the row and leave the entry stuck in the list, unseen.
+    """
     typed = _typed_keywords(params)
+    items = [k for k in typed if is_item_entry(k)]
+    keywords = [k for k in typed if not is_item_entry(k)]
     users = _user_keywords(params)
     implied = _implied_keywords(params)
     states = []
     for name in drops:
-        keyword = matching_keyword(name, typed)
-        if keyword is not None:
-            states.append(DropKeepState(name, keyword, exact=keyword == name.lower().strip()))
+        if (keyword := matching_keyword(name, items)) is not None:
+            states.append(DropKeepState(name, keyword, exact=True))
+        elif (keyword := matching_keyword(name, keywords)) is not None:
+            states.append(DropKeepState(name, keyword, exact=False))
         elif (keyword := matching_keyword(name, users)) is not None:
             states.append(DropKeepState(name, keyword, exact=False, users=True))
         else:
@@ -513,20 +578,23 @@ def set_drops_in_keep_list(keep_list: list[str], names: list[str], keep: bool) -
     buttons: doing it one name at a time would rescan the list per name, and a
     drop table can hold hundreds of entries.
     """
-    targets = {name.lower().strip() for name in names}
-    remaining = [k for k in keep_list if k.lower().strip() not in targets]
-    return [*remaining, *names] if keep else remaining
+    targets = {_normalize_name(name) for name in names}
+    remaining = [k for k in keep_list if not _is_item_entry_for(k, targets)]
+    return [*remaining, *(item_entry(name) for name in names)] if keep else remaining
 
 
 def toggle_drop_in_keep_list(keep_list: list[str], name: str, keep: bool) -> list[str]:
-    """Return *keep_list* with the exact item *name* added or removed.
+    """Return *keep_list* with the item entry for *name* added or removed.
 
-    Only entries equal to *name* are touched, so a broader keyword the user typed
-    themselves survives an untick — it simply cannot be removed from here.
+    Only item entries for *name* are touched, so a keyword the user typed survives an
+    untick even when it equals the name -- it is removed as a chip, not from here.
     """
-    target = name.lower().strip()
-    remaining = [k for k in keep_list if k.lower().strip() != target]
-    return [*remaining, name] if keep else remaining
+    remaining = [k for k in keep_list if not _is_item_entry_for(k, {_normalize_name(name)})]
+    return [*remaining, item_entry(name)] if keep else remaining
+
+
+def _is_item_entry_for(entry: str, names: set[str]) -> bool:
+    return is_item_entry(entry) and _normalize_name(entry_text(entry)) in names
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -552,8 +620,8 @@ async def run(machine, clients: list, params: dict) -> str:
       9. Handle the crowns dialog if it appears: always confirm (YES) to include all crowns items.
       10. If sell_pets is False, switch to the Pet tab, click All to deselect pets,
           then return to the All tab.
-      11. Page through the quicksell list and uncheck any item whose name matches a
-          keyword in keep_list (case-insensitive partial match).
+      11. Page through the quicksell list and uncheck any item the keep list keeps
+          (``matching_keyword``: a keyword anywhere in the name, an item by its whole name).
       12. If the Sell button is grayed out (all items unchecked), close the shop and
           backpack and return SUCCESS.
       13. Click the Sell button; wait for the sell confirmation dialog; confirm it.
