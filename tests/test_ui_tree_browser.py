@@ -9,7 +9,7 @@ an invisible parent must survive as a spine to its visible children.
 import pytest
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
-from bartlebot.gui.ui_tree_browser import (
+from bartlebot.gui.dialogs.ui_tree_browser import (
     _COL_ELEMENT,
     _TEXT_ROLE,
     _VISIBLE_ROLE,

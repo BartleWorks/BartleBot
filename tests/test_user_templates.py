@@ -521,7 +521,7 @@ def gallery_roots(roots, tmp_path):
 
 
 def _dialog(roots, **callbacks):
-    from bartlebot.gui.templates_dialog import TemplatesDialog  # noqa: PLC0415
+    from bartlebot.gui.dialogs.templates_dialog import TemplatesDialog  # noqa: PLC0415
 
     return TemplatesDialog(
         lambda: template_gallery.gallery(root=roots[0], user_root=roots[1]),
@@ -580,7 +580,7 @@ def test_the_source_filter_narrows_the_cards(qapp, gallery_roots):
 
 
 def test_edit_new_and_duplicate_end_the_dialog_with_a_request(qapp, gallery_roots):
-    from bartlebot.gui.templates_dialog import TemplatesVerb  # noqa: PLC0415
+    from bartlebot.gui.dialogs.templates_dialog import TemplatesVerb  # noqa: PLC0415
 
     roots, fork = gallery_roots
     dialog = _dialog(roots)
@@ -755,7 +755,7 @@ def test_declining_delete_keeps_the_template(harness, roots, monkeypatch):
 
 
 def test_the_templates_dialog_hands_its_request_to_the_controller(harness, roots, monkeypatch):
-    from bartlebot.gui import templates_dialog  # noqa: PLC0415
+    from bartlebot.gui.dialogs import templates_dialog  # noqa: PLC0415
 
     mine = new_template("Mine", root=roots[0], user_root=roots[1])
 

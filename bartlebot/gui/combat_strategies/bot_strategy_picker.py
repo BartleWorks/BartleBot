@@ -25,10 +25,10 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_summary import StrategySummary, summarize_bot
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.strategy_card import StrategyCard
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 NONE_LABEL = "(built-in default)"
 

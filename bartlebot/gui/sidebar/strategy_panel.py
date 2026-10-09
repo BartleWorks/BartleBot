@@ -133,13 +133,13 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.elided_label import ElidedLabel
-from bartlebot.gui.widgets.flow_layout import FlowLayout
-from bartlebot.gui.widgets.picker_popup import PickerButton, Section
-from bartlebot.gui.widgets.player_pills import PlayerBadgeRow
-from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
+from bartlebot.gui.widgets.layout.flow_layout import FlowLayout
+from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, Section
+from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow
+from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, NeutralPill
 
 if TYPE_CHECKING:
     from bartlebot.combat.strategy_summary import StrategySummary

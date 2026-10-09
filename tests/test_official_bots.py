@@ -31,7 +31,7 @@ from bartlebot.gui.canvas.bot_canvas import (
     forked_from_text,
     name_forks,
 )
-from bartlebot.gui.make_copy_dialog import MakeCopyDialog
+from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
 from bartlebot.settings_manager import SettingsManager
 from tests.test_subgraph_integration import ControllerHarness
 

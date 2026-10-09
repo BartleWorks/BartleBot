@@ -52,7 +52,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
-from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_accent, account_color_keys, pinned_color_key
 from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
@@ -63,10 +62,16 @@ from bartlebot.gui.game_embed.card_columns import (
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard
 from bartlebot.gui.settings.profile_editor import ProfileDialog, mark_unfittable_resolutions
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.account_accent import (
+    ACCOUNT_PALETTE_SIZE,
+    account_accent,
+    account_color_keys,
+    pinned_color_key,
+)
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager, default_for
 
 

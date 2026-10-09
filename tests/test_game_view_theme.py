@@ -8,11 +8,11 @@ whose tint was baked in at render time by svg_icon.
 import pytest
 from PyQt6.QtCore import QEvent
 
-import bartlebot.gui.theme as theme_mod
+import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.settings.rows import hint
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 
 @pytest.fixture

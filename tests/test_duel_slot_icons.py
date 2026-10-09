@@ -113,7 +113,7 @@ def test_no_art_is_the_ordinary_case(art_home):
 def test_the_tooltip_names_the_symbol_without_any_art(art_home):
     """Most installs never run the extractor; the tooltip is the only thing left that
     connects this app's "slot 1" to the diamond the user picked in-game."""
-    from bartlebot.gui.widgets.duel_slot_gem import duel_slot_tooltip  # noqa: PLC0415
+    from bartlebot.gui.widgets.cards.duel_slot_gem import duel_slot_tooltip  # noqa: PLC0415
 
     assert "Sun" in duel_slot_tooltip(1)
     assert "Moon" in duel_slot_tooltip(4)
@@ -236,7 +236,7 @@ def test_a_swap_still_reorders_by_player(qapp):
 
 
 def test_the_summary_row_mirrors_and_gems_each_position(qapp, art_home):
-    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
 
     row = PlayerBadgeRow("←", duel_order=True)
     row.set_players([1, 2, 3])
@@ -248,7 +248,7 @@ def test_the_summary_row_mirrors_and_gems_each_position(qapp, art_home):
 
 def test_an_assignment_row_is_not_mirrored_and_wears_no_gems(qapp):
     """An assignment names a *set* of players and has no order to mirror."""
-    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
 
     row = PlayerBadgeRow()
     row.set_players([1, 2, 3])
@@ -259,7 +259,7 @@ def test_an_assignment_row_is_not_mirrored_and_wears_no_gems(qapp):
 
 def test_a_gem_is_hidden_where_there_is_no_art(qapp, art_home):
     """An empty 20px column would push the badges out of line with everything else."""
-    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
 
     row = PlayerBadgeRow("←", duel_order=True)
     row.set_players([1, 2])

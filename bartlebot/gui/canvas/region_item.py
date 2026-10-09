@@ -13,7 +13,7 @@ from PyQt6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
 from bartlebot.gui.canvas.lod import text_is_legible
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import RegionModel

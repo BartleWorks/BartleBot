@@ -11,13 +11,13 @@ from PyQt6.QtCore import QEvent, QObject, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import QWidget
 
-import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.account_accent import account_accent
+import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.game_view import _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, ProfileCard
 from bartlebot.gui.settings.accounts_tab import AccountsTab
-from bartlebot.gui.widgets.tag_pill import AccountPill
+from bartlebot.gui.theming.account_accent import account_accent
+from bartlebot.gui.widgets.pills.tag_pill import AccountPill
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"], "resolution": [1280, 720]}

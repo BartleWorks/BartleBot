@@ -8,8 +8,8 @@ import json
 import pytest
 
 from bartlebot.game import card_art, zone_nav
-from bartlebot.gui.widgets.picker_popup import PickerRow, filter_sections
-from bartlebot.gui.widgets.zone_picker import (
+from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, filter_sections
+from bartlebot.gui.widgets.pickers.zone_picker import (
     SUGGESTED_LIMIT,
     SUGGESTED_TITLE,
     describe_zone,

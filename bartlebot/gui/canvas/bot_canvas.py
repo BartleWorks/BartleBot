@@ -98,8 +98,6 @@ from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel, instance_key_field
-from bartlebot.gui.canvas.press_trace import PressTracer
-from bartlebot.gui.canvas.repaint_trace import RepaintTracer
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
     CrumbBar,
@@ -109,18 +107,25 @@ from bartlebot.gui.canvas.subgraph_widgets import (
     ViewFrame,
 )
 from bartlebot.gui.canvas.undo_manager import UndoManager
+from bartlebot.gui.debug.press_trace import PressTracer
+from bartlebot.gui.debug.repaint_trace import RepaintTracer
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.card_art_tile import art_icon
-from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
-from bartlebot.gui.widgets.icon_button import IconButton
-from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
-from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.source_pill import source_pill
-from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
-from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton
+from bartlebot.gui.widgets.cards.card_art_tile import art_icon
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
+from bartlebot.gui.widgets.labels.elided_label import WrappingElidedLabel
+from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
+from bartlebot.gui.widgets.pickers.tag_picker import (
+    BOT_VOCABULARY,
+    SUBGRAPH_VOCABULARY,
+    TagPickerButton,
+    source_vocabulary,
+)
+from bartlebot.gui.widgets.pills.source_pill import source_pill
+from bartlebot.gui.widgets.pills.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
@@ -4271,7 +4276,7 @@ class BotCanvas(QWidget):
         tab. The drop list is the bot file's, so it happens in Edit mode. Called from a
         synchronous slot: the dialog blocks.
         """
-        from bartlebot.gui.wiki_import_dialog import WikiImportDialog  # noqa: PLC0415
+        from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog  # noqa: PLC0415
 
         self.enter_edit_mode()
         config = self._config

@@ -33,7 +33,7 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QWidget
 
 from bartlebot.game import game_sizing
-from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
 # Stands in for a screen that cannot be measured. Big enough that nothing is refused:

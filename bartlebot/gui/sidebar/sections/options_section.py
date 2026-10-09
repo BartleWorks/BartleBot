@@ -58,13 +58,12 @@ from bartlebot.gui.sidebar.option_gutter import (
     keep_slot_when_hidden,
 )
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.icon_button import IconButton, IconTint
-from bartlebot.gui.widgets.option_widgets import (
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.inputs.option_widgets import (
     OPTION_TYPES,
     TALL_TYPES,
     TYPE_LABELS,
@@ -75,8 +74,9 @@ from bartlebot.gui.widgets.option_widgets import (
     set_widget_value,
     widget_value,
 )
-from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 from bartlebot.options import option_groups
 from bartlebot.options.bot_options import (
     USER_OWNED_OPTIONS,

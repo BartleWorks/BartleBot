@@ -5,7 +5,7 @@ import os
 
 from PyQt6.QtWidgets import QDialog, QMainWindow, QMenu, QWidget
 
-from bartlebot.gui.window_show_trace import WindowShowTracer, is_stray_window, should_report
+from bartlebot.gui.debug.window_show_trace import WindowShowTracer, is_stray_window, should_report
 
 
 def test_a_parentless_plain_widget_is_stray(qapp):
@@ -34,7 +34,7 @@ def test_only_our_own_process_and_the_game_are_reported():
 def test_showing_a_parentless_widget_logs_a_warning_with_its_stack(qapp, caplog):
     tracer = WindowShowTracer(qapp)
     try:
-        with caplog.at_level(logging.WARNING, logger="bartlebot.gui.window_show_trace"):
+        with caplog.at_level(logging.WARNING, logger="bartlebot.gui.debug.window_show_trace"):
             stray = QWidget()
             stray.show()
             stray.hide()
@@ -49,7 +49,7 @@ def test_showing_a_parentless_widget_logs_a_warning_with_its_stack(qapp, caplog)
 def test_a_dialog_shown_is_not_logged(qapp, caplog):
     tracer = WindowShowTracer(qapp)
     try:
-        with caplog.at_level(logging.WARNING, logger="bartlebot.gui.window_show_trace"):
+        with caplog.at_level(logging.WARNING, logger="bartlebot.gui.debug.window_show_trace"):
             dialog = QDialog()
             dialog.show()
             dialog.hide()

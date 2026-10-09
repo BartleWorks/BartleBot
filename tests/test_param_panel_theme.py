@@ -22,14 +22,14 @@ from PyQt6.QtCore import QEvent
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QLabel
 
-import bartlebot.gui.theme as theme_mod
+import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas.param_panel import (
     _DynamicParamForm,
     _FlagConditionsWidget,
     _ParamPanel,
 )
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.param_schema import ParamField
 
 

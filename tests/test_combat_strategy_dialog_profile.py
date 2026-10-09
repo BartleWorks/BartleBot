@@ -37,8 +37,8 @@ from bartlebot.gui.combat_strategies.dialog import (
     move_confirmation,
     tabs_for,
 )
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.tag_pill import ProfilePill
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.pills.tag_pill import ProfilePill
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 

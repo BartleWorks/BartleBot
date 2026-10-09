@@ -7,7 +7,7 @@ from bartlebot.gui.sidebar.sections.possible_drops_section import (
     edit_drop,
     merge_drops,
 )
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.nodes.utility.quicksell import DROP_CATEGORIES
 
 

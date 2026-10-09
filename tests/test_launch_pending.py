@@ -393,8 +393,8 @@ class TestGameViewPendingTiles:
         view.deleteLater()
 
     def test_a_tile_takes_its_account_color_on_sync_and_none_without_an_account(self, qapp) -> None:
-        from bartlebot.gui.account_accent import account_color_keys
         from bartlebot.gui.game_embed.game_view import GameView
+        from bartlebot.gui.theming.account_accent import account_color_keys
         from bartlebot.settings_manager import SettingsManager
 
         accounts = [{"username": "alpha"}, {"username": "beta"}]

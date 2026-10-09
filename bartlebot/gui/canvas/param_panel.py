@@ -66,7 +66,6 @@ from bartlebot.game import zone_names
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.variable_rows import AssignmentsField, ConditionRow, parse_rows
-from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.option_gutter import (
     HelpToggle,
@@ -75,22 +74,23 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.elided_label import ElidedLabel
-from bartlebot.gui.widgets.icon_button import IconButton, IconTint
-from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
-from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
-from bartlebot.gui.widgets.player_picker import pick_player, picker_label
-from bartlebot.gui.widgets.ratio_spin_box import RatioSpinBox
-from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
-from bartlebot.gui.widgets.scales_picker import ScalesButton
-from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
-from bartlebot.gui.widgets.tag_pill import NeutralChip
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
+from bartlebot.gui.theming.icon_utils import svg_icon, svg_pixmap
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
+from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
+from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.discard import discard_widget
+from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget, PlayerSlotWidget
+from bartlebot.gui.widgets.pickers.player_picker import pick_player, picker_label
+from bartlebot.gui.widgets.pickers.scales_picker import ScalesButton
+from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton, is_destination
+from bartlebot.gui.widgets.pills.tag_pill import NeutralChip
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import (
@@ -3478,7 +3478,7 @@ class _ParamPanel(ThemedMixin, QWidget):
     # ------------------------------------------------------------------
 
     def _on_wiki_import(self) -> None:
-        from bartlebot.gui.wiki_import_dialog import WikiImportDialog
+        from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog
 
         dialog = WikiImportDialog(parent=self.window())
         if dialog.exec():

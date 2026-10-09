@@ -13,8 +13,8 @@ from PyQt6.QtWidgets import QMenu, QWidget
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas import recording
-from bartlebot.gui.widgets.player_picker import pick_player, picker_label
-from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
+from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
+from bartlebot.gui.widgets.pickers.player_picker import pick_player, picker_label
 
 # ---------------------------------------------------------------------------
 # pick_player

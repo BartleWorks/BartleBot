@@ -330,7 +330,7 @@ uv run python tools/probe_layout.py mode --tags 6   # a heavily tagged bot, whos
 uv run python tools/probe_layout.py paints --show   # paint damage; --show to really paint
 ```
 
-`bartlebot/qt_layout_debug.py` is the reusable half — `LayoutTracer` and
+`bartlebot/gui/debug/qt_layout_debug.py` is the reusable half — `LayoutTracer` and
 `size_snapshot` — so the same instrumentation can be attached to the live app when a bug
 only reproduces there. It is installed nowhere by default and hooks nothing.
 

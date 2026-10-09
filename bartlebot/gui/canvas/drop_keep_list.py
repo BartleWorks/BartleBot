@@ -36,18 +36,18 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.drop_tree import (
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.inputs.list_text import parse_list_text
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
+from bartlebot.gui.widgets.layout.drop_tree import (
     UNCATEGORIZED_DISPLAY,
     CaseInsensitiveTreeItem,
     drop_icon,
     show_drop_icons,
 )
-from bartlebot.gui.widgets.flow_layout import FlowLayout
-from bartlebot.gui.widgets.list_text import parse_list_text
-from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_pill import KeywordChip
+from bartlebot.gui.widgets.layout.flow_layout import FlowLayout
+from bartlebot.gui.widgets.pills.tag_pill import KeywordChip
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds

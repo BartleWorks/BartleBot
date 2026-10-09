@@ -26,7 +26,7 @@ from bartlebot.gui.canvas.drop_keep_list import (
     row_visible,
     typed_keywords,
 )
-from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, widget_value
+from bartlebot.gui.widgets.inputs.option_widgets import connect_widget, make_option_widget, widget_value
 
 _DROPS = [
     DropModel(name="Amber", category="Jewels"),

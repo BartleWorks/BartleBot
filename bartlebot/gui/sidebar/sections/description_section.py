@@ -45,11 +45,11 @@ from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.content import bot_summary
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.link_button import LinkButton
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

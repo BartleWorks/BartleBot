@@ -5,7 +5,7 @@ import re
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QLineEdit
 
-from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.paths import project_root
 
 GUI_DIR = project_root() / "bartlebot" / "gui"

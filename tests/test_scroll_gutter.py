@@ -10,8 +10,8 @@ from PyQt6.QtWidgets import QApplication, QLabel, QScrollArea, QVBoxLayout, QWid
 
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.sidebar.combat_tab import CombatTab
-from bartlebot.gui.widgets.picker_popup import PickerPopup
-from bartlebot.gui.widgets.scroll_gutter import GUTTER_GAP, is_gutter_reserved, reserve_scrollbar_gutter
+from bartlebot.gui.widgets.layout.scroll_gutter import GUTTER_GAP, is_gutter_reserved, reserve_scrollbar_gutter
+from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup
 
 
 def _area(reserved: bool) -> tuple[QScrollArea, QVBoxLayout]:

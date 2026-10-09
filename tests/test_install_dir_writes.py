@@ -21,12 +21,12 @@ from bartlebot.content.store_roots import is_inside, resolve_bot_strategy_roots,
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates.template_store import templates_dir
 from bartlebot.game import card_art
+from bartlebot.gui.ui_state import UiState
 from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
 from bartlebot.shared.vendor import vendor_dir
-from bartlebot.ui_state import UiState
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraph_store import _defn
 

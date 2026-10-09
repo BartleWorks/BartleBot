@@ -12,10 +12,10 @@ from PyQt6.QtCore import QEvent, QPointF, Qt
 from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QLabel
 
-import bartlebot.gui.theme as theme_mod
+import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, _read_bot_meta, filter_bot_metas
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.tag_picker import group_accent
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.pickers.tag_picker import group_accent
 
 
 def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None = None, **kw) -> _BotMeta:

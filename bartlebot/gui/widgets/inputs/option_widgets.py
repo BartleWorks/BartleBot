@@ -1,0 +1,346 @@
+"""The one option-type -> widget mapping.
+
+A bot option's type decides which control edits it, and that mapping used to be
+written out three times: once in the Config tab's row builder, once in the
+properties panel's ``_make_widget``, and once in the per-node override renderer
+that Phase 3 deleted.  Three copies is how ``_AddOptionDialog`` came to hardcode
+``type="bool"`` while the row builder happily rendered floats -- pressing Edit on
+Safety Delay rewrote it as a checkbox.
+
+Both option surfaces now share this module: the Option Values view, the Options
+declaration editor, and the Add/Edit dialog inside it.  ``_make_widget`` stays
+where it is -- it maps *param* fields, a much larger vocabulary (zone, xyz,
+wiki_page, drop_keep_list) that no bot option can have.
+
+Four operations, all dispatching on the widget rather than on a remembered type
+string, so a caller holding only the widget can still read and write it:
+``make_option_widget``, ``widget_value``, ``set_widget_value``, ``connect_widget``.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QDoubleSpinBox,
+    QHBoxLayout,
+    QLineEdit,
+    QRadioButton,
+    QSpinBox,
+    QWidget,
+)
+
+from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
+
+#: Every type the Add/Edit dialog offers, in the order it lists them.
+OPTION_TYPES: tuple[str, ...] = ("bool", "int", "float", "str", "str_list", "player_list")
+
+#: Types a **node** may declare that the dialog does not offer.  Each is one of the
+#: types above underneath -- a str_list, a str -- with a control that knows something
+#: the generic one cannot: this bot's own drop table, this machine's friends list, the
+#: game's realm table.  Not offered for hand-adding, because a hand-added option has
+#: none of those behind it.
+NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name", "realm", "player_realms")
+
+#: Types whose control is a table rather than a field, so a list of rows reads better
+#: with them at the bottom than with the short rows arranged around them.
+TALL_TYPES: frozenset[str] = frozenset({"drop_keep_list"})
+
+#: How wide a spin box is allowed to get.  A number field that spans a 400px sidebar
+#: reads as a text field and gives four decimal places' worth of room to a value that
+#: is nearly always one digit -- "3.00 s" occupying the whole panel was half of what
+#: made the Option Values screenshot behind the Safety Delay validation look wrong.
+NUMERIC_MAX_WIDTH_PX = 110
+
+#: Decimals shown by a float control.  Four was the old default: Safety Delay read
+#: "3.0000", which says nothing true about a value nobody tunes past a tenth.
+FLOAT_DECIMALS = 2
+
+#: What to call each type to a user who has never read the schema.
+TYPE_LABELS: dict[str, str] = {
+    "bool": "Yes / No",
+    "int": "Whole number",
+    "float": "Decimal number",
+    "str": "Text",
+    "str_list": "List of text",
+    "player_list": "Players",
+    "drop_keep_list": "Keep list",
+    "friend_name": "Wizard name",
+    "realm": "Realm",
+    "player_realms": "Together / Separate",
+}
+
+
+class BoolChoice(QWidget):
+    """An explicitly two-way bool: True and False as a radio pair.
+
+    A checkbox is the right control in a *list* of options, where the caption is
+    the option's name and a tick plainly means yes.  On its own, under a field
+    labeled "Default", a lone box captioned "True" reads as though False were
+    unavailable -- and now that a declaration can also be *absent*, an unticked
+    box is genuinely ambiguous between "False" and "nothing chosen".  Two radios
+    say all three states without a word of explanation: True, False, or neither.
+    """
+
+    changed = pyqtSignal()
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._true = QRadioButton("True")
+        self._false = QRadioButton("False")
+        self._group = QButtonGroup(self)
+        self._group.addButton(self._true)
+        self._group.addButton(self._false)
+        self._group.buttonClicked.connect(lambda _btn: self.changed.emit())
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+        layout.addWidget(self._true)
+        layout.addWidget(self._false)
+        layout.addStretch()
+
+    def value(self) -> bool | None:
+        """``True``, ``False``, or ``None`` while neither has been chosen."""
+        if self._true.isChecked():
+            return True
+        if self._false.isChecked():
+            return False
+        return None
+
+    def set_value(self, value: Any) -> None:
+        if value is None:
+            # A QButtonGroup enforces exclusivity on its own, so clearing both
+            # radios means relaxing the group rather than the buttons' own
+            # autoExclusive -- which is why unsetting one silently did nothing.
+            self._group.setExclusive(False)
+            self._true.setChecked(False)
+            self._false.setChecked(False)
+            self._group.setExclusive(True)
+        elif value:
+            self._true.setChecked(True)
+        else:
+            self._false.setChecked(True)
+
+
+class StrListLineEdit(QLineEdit):
+    """A comma-separated list of strings, identified by type rather than by flag.
+
+    ``QLineEdit`` alone cannot say whether its text is one string or several, and
+    ``widget_value`` dispatches on the widget -- so the distinction has to be a
+    class.  The properties panel carries its own copy for the same reason.
+    """
+
+
+def empty_value(opt_type: str) -> Any:
+    """The value to show for a declaration of ``None`` -- "the author has no opinion".
+
+    There is still a control to fill, and every type has an empty-handed value to
+    fill it with.  This is *display* only: filling a widget is not storing a value,
+    and nothing here reaches the bot file or the override store.
+    """
+    if opt_type == "bool":
+        return False
+    if opt_type == "int":
+        return 0
+    if opt_type == "float":
+        return 0.0
+    if opt_type in ("str_list", "player_list", "drop_keep_list"):
+        return []
+    return ""
+
+
+def make_option_widget(
+    opt_type: str,
+    value: Any = None,
+    *,
+    connected: int = 0,
+    tooltip: str = "",
+    label: str = "",
+    explicit_bool: bool = False,
+    minimum: float | None = None,
+    maximum: float | None = None,
+    suffix: str | None = None,
+    get_drops: Callable[[], list] | None = None,
+    get_clients: Callable[[], list] | None = None,
+) -> QWidget:
+    """Build the control that edits an option of *opt_type*, showing *value*.
+
+    *connected* is how many clients are hooked right now; it only grays the player
+    checkboxes that have nobody behind them.  *label* is the checkbox caption a
+    ``bool`` carries instead of a separate field label.  Pass *explicit_bool* where
+    a bool is not sitting in a list of named options and needs to state both
+    answers for itself -- see :class:`BoolChoice`.
+
+    *minimum*, *maximum* and *suffix* come off the option's ``BotOptionSpec`` and
+    apply to the numeric types only; ``None`` keeps the wide range this used to have
+    unconditionally.  Both option surfaces and the Add/Edit dialog pick them up from
+    here, which is the point of there being one option-type -> widget mapping.  The
+    range is *not* the enforcement, only the near end of it -- a value can arrive
+    from a hand-edited file, which is why ``resolve_option`` checks it as well.
+
+    *get_drops* and *get_clients* are what the two node-only controls have that the
+    generic ones do not.  Without them each falls back to the plain control for the
+    type underneath, which is the right answer on a surface with no bot behind it --
+    the Add/Edit dialog, or a test.
+    """
+    widget: QWidget
+    if opt_type == "drop_keep_list" and get_drops is not None:
+        # Imported here: the picker pulls in the drop tree and the wiki tables, which
+        # is a lot of machinery for a module every option row goes through.
+        from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget  # noqa: PLC0415
+
+        widget = DropKeepListWidget(get_drops)
+    elif opt_type == "friend_name":
+        from bartlebot.gui.widgets.inputs.friend_name_edit import FriendNameEdit  # noqa: PLC0415
+
+        widget = FriendNameEdit(get_clients)
+    elif opt_type == "realm":
+        from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo  # noqa: PLC0415
+
+        widget = RealmCombo()
+    elif opt_type == "player_realms":
+        from bartlebot.gui.widgets.inputs.player_realms_choice import PlayerRealmsChoice  # noqa: PLC0415
+
+        widget = PlayerRealmsChoice()
+    elif opt_type == "bool":
+        widget = BoolChoice() if explicit_bool else QCheckBox(label)
+    elif opt_type == "int":
+        widget = QSpinBox()
+        widget.setRange(
+            -2_147_483_648 if minimum is None else int(minimum),
+            2_147_483_647 if maximum is None else int(maximum),
+        )
+        widget.setMaximumWidth(NUMERIC_MAX_WIDTH_PX)
+        if suffix:
+            widget.setSuffix(suffix)
+    elif opt_type == "float":
+        widget = QDoubleSpinBox()
+        widget.setDecimals(FLOAT_DECIMALS)
+        widget.setRange(-1e12 if minimum is None else float(minimum), 1e12 if maximum is None else float(maximum))
+        widget.setSingleStep(0.5)
+        widget.setMaximumWidth(NUMERIC_MAX_WIDTH_PX)
+        if suffix:
+            widget.setSuffix(suffix)
+    elif opt_type == "player_list":
+        widget = PlayerListWidget()
+        widget.set_available_players(connected)
+    elif opt_type in ("str_list", "drop_keep_list"):
+        widget = StrListLineEdit()
+        widget.setPlaceholderText("e.g. ItemA, ItemB")
+    else:  # str, and any type a future schema adds that this build cannot name
+        widget = QLineEdit()
+
+    set_widget_value(widget, value if value is not None else empty_value(opt_type))
+    if tooltip:
+        widget.setToolTip(tooltip)
+    return widget
+
+
+def block_separate_if_merging(widget: QWidget, config) -> None:
+    """Gray out a Player Realms control's Separate choice when *config* cannot be Separate.
+
+    A no-op for any other control, so both surfaces can call it on every row. See
+    :mod:`bartlebot.options.player_realms` for the rule; this is the first of its three enforcers.
+    """
+    if config is None or not hasattr(widget, "block_separate"):
+        return
+    from bartlebot.options import player_realms  # noqa: PLC0415
+
+    blockers = player_realms.separate_blocked_by(config)
+    widget.block_separate(player_realms.blocked_reason(blockers) if blockers else "")
+
+
+def set_widget_value(widget: QWidget, value: Any) -> None:
+    """Show *value* in *widget*, coercing a value of the wrong shape rather than raising.
+
+    A stored value can be the wrong type -- an author who changes an option's type
+    strands every value written under the old one -- and a control that refuses to
+    build is worse than one showing an empty-handed value the user can correct.
+    """
+    if isinstance(widget, BoolChoice):
+        widget.set_value(value)
+    elif isinstance(widget, QCheckBox):
+        widget.setChecked(bool(value))
+    elif isinstance(widget, QSpinBox):
+        widget.setValue(_as_int(value))
+    elif isinstance(widget, QDoubleSpinBox):
+        widget.setValue(_as_float(value))
+    elif isinstance(widget, PlayerListWidget):
+        widget.set_value([v for v in value if isinstance(v, int)] if isinstance(value, list) else [])
+    elif isinstance(widget, StrListLineEdit):
+        widget.setText(format_list_text([str(v) for v in value]) if isinstance(value, list) else str(value or ""))
+    elif isinstance(widget, QLineEdit):
+        widget.setText("" if value is None else str(value))
+    elif _is_rich_widget(widget):
+        widget.set_value(value)
+
+
+def widget_value(widget: QWidget) -> Any:
+    """Read the current value out of *widget*, in the type the option declares."""
+    if isinstance(widget, BoolChoice):
+        return widget.value()
+    if isinstance(widget, QCheckBox):
+        return widget.isChecked()
+    if isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+        return widget.value()
+    if isinstance(widget, PlayerListWidget):
+        return widget.get_value()
+    if isinstance(widget, StrListLineEdit):
+        return parse_list_text(widget.text())
+    if isinstance(widget, QLineEdit):
+        return widget.text()
+    if _is_rich_widget(widget):
+        return widget.get_value()
+    return None
+
+
+def connect_widget(widget: QWidget, callback: Callable[[Any], None]) -> None:
+    """Call *callback* with the new value whenever the user changes *widget*.
+
+    Line edits report on ``editingFinished`` rather than per keystroke: a value
+    edit writes an override row to ``settings.json``, and a save per character
+    typed is a disk write per character typed.
+    """
+    if isinstance(widget, BoolChoice):
+        widget.changed.connect(lambda: callback(widget_value(widget)))
+    elif isinstance(widget, QCheckBox):
+        widget.toggled.connect(lambda _checked: callback(widget_value(widget)))
+    elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+        widget.valueChanged.connect(lambda _v: callback(widget_value(widget)))
+    elif isinstance(widget, PlayerListWidget):
+        widget.changed.connect(lambda: callback(widget_value(widget)))
+    elif isinstance(widget, QLineEdit):
+        widget.editingFinished.connect(lambda: callback(widget_value(widget)))
+    elif _is_rich_widget(widget):
+        widget.changed.connect(lambda: callback(widget_value(widget)))
+
+
+def _is_rich_widget(widget: QWidget) -> bool:
+    """Whether *widget* speaks the get/set/changed protocol the node-only controls share.
+
+    Duck-typed rather than by class: both live behind lazy imports precisely so a
+    plain option row never pays for the drop tree, and naming their classes here
+    would undo that on the first ``isinstance``.  Each dispatch checks this last, so
+    a widget with its own branch keeps it.
+    """
+    return hasattr(widget, "get_value") and hasattr(widget, "set_value") and hasattr(widget, "changed")
+
+
+def _as_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _as_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0

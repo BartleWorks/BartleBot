@@ -151,7 +151,7 @@ class _StubWorker:
 
 
 def _dialog(qapp, monkeypatch, url):
-    from bartlebot.gui import wiki_import_dialog
+    from bartlebot.gui.dialogs import wiki_import_dialog
 
     monkeypatch.setattr(wiki_import_dialog, "_FetchWorker", _StubWorker)
     dlg = wiki_import_dialog.WikiImportDialog()
@@ -161,7 +161,7 @@ def _dialog(qapp, monkeypatch, url):
 
 
 def test_no_page_before_a_fetch(qapp):
-    from bartlebot.gui.wiki_import_dialog import WikiImportDialog
+    from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog
 
     assert WikiImportDialog().selected_page() is None
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 import logging
 
+from bartlebot.gui.ui_state import UI_STATE_FILE, UiState
 from bartlebot.shared.vendor import product_dir
-from bartlebot.ui_state import UI_STATE_FILE, UiState
 
 _DEFAULTS = {"quicksell": True, "autosave": True}
 
@@ -51,7 +51,7 @@ def test_a_corrupt_file_gives_defaults_rather_than_failing(tmp_path, caplog):
     path = tmp_path / UI_STATE_FILE
     path.write_text("{not json", encoding="utf-8")
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.ui_state"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.ui_state"):
         state = UiState(path)
 
     assert state.folds("settings_dialog", _DEFAULTS) == _DEFAULTS
@@ -86,7 +86,7 @@ def test_a_failed_write_is_logged_and_not_raised(tmp_path, caplog):
     path = tmp_path / UI_STATE_FILE
     path.mkdir()
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.ui_state"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.ui_state"):
         UiState(path).set_collapsed("settings_dialog", "quicksell", False, default=True)
 
     assert "will not be remembered" in caplog.text

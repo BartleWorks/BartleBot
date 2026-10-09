@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphi
 from bartlebot.bot import variables
 from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.canvas.node_item import NODE_W, NodeItem
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Constants

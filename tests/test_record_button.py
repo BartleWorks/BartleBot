@@ -2,9 +2,9 @@
 
 from PyQt6.QtGui import QColor
 
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionStyle
-from bartlebot.gui.widgets.record_button import IDLE_TEXT, RECORD_RED, RecordButton
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionStyle
+from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RECORD_RED, RecordButton
 
 
 def _glyph_color(button: RecordButton) -> str:

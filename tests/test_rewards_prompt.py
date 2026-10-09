@@ -15,8 +15,8 @@ from PyQt6.QtWidgets import QDialog
 import bartlebot.app_controller as app_controller
 from bartlebot.app_controller import AppController
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
-from bartlebot.gui.widgets.tag_pill import SuggestedTagPill
+from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
+from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill
 
 
 def _config(tags: list[str] | None = None) -> BotConfig:

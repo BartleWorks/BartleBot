@@ -18,7 +18,7 @@ from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab, SettingsForm
 from bartlebot.gui.settings.theme_tab import ThemeTab
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.settings_manager import SettingsManager
 
 # The size the dialog opens at when the screen has room for it. The height clears the

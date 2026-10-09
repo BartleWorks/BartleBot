@@ -47,16 +47,16 @@ from bartlebot.content.subgraphs.subgraph_store import (
 )
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SOURCE, SUBGRAPH_CATEGORIES, subgraph_matches
 from bartlebot.content.subgraphs.subgraphs import entry_nodes, exit_nodes, port_name
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.icon_button import IconButton, IconTint
-from bartlebot.gui.widgets.link_button import LinkButton
-from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.source_pill import source_pill
-from bartlebot.gui.widgets.tag_picker import SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
-from bartlebot.gui.widgets.tag_pill import TagPill
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
+from bartlebot.gui.widgets.pills.source_pill import source_pill
+from bartlebot.gui.widgets.pills.tag_pill import TagPill
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
 from bartlebot.settings_manager import SettingsManager

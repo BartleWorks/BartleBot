@@ -24,8 +24,8 @@ from bartlebot.gui.combat_strategies.dialog import (
     CombatStrategyDialog,
     others_heading,
 )
-from bartlebot.gui.widgets.strategy_card import StrategyCard
-from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
+from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
+from bartlebot.gui.widgets.pills.tag_pill import NeutralChip, TagChip
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.picker_helpers import pick

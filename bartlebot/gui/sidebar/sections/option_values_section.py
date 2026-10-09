@@ -75,17 +75,17 @@ from bartlebot.gui.sidebar.option_gutter import (
     keep_slot_when_hidden,
 )
 from bartlebot.gui.sidebar.sidebar_section import HeadingAction, SidebarSection, field_label
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.option_widgets import (
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.toggle_switch import ToggleSwitch
+from bartlebot.gui.widgets.inputs.option_widgets import (
     TALL_TYPES,
     block_separate_if_merging,
     connect_widget,
     make_option_widget,
     set_widget_value,
 )
-from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.gui.widgets.toggle_switch import ToggleSwitch
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 from bartlebot.options import bot_options, option_groups
 from bartlebot.options.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
 from bartlebot.settings_manager import SettingsManager

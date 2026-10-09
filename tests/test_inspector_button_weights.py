@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 
 
 def _buttons(widget) -> list[ActionButton]:
@@ -40,13 +40,13 @@ def _without_its_load(module, factory):
 
 
 def _entity_browser():
-    from bartlebot.gui import entity_browser
+    from bartlebot.gui.dialogs import entity_browser
 
     return _without_its_load(entity_browser, lambda: entity_browser.EntityBrowserDialog(MagicMock()))
 
 
 def _ui_tree_browser():
-    from bartlebot.gui import ui_tree_browser
+    from bartlebot.gui.dialogs import ui_tree_browser
 
     return _without_its_load(ui_tree_browser, lambda: ui_tree_browser.UITreeBrowserDialog(MagicMock()))
 

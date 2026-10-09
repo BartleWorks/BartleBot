@@ -33,8 +33,8 @@ from bartlebot.gui.sidebar.option_gutter import (
     keep_slot_when_hidden,
 )
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.discard import discard_widget
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, VariableModel

@@ -9,9 +9,9 @@ import pytest
 from PyQt6.QtCore import QEvent, QRect, QSize, Qt
 from PyQt6.QtTest import QTest
 
-import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.picker_popup import (
+import bartlebot.gui.theming.theme as theme_mod
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.pickers.picker_popup import (
     _BOX,
     _PAD_X,
     POPUP_MIN_HEIGHT,

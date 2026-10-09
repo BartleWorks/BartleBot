@@ -13,8 +13,8 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication, QLabel
 
 from bartlebot.gui.sidebar.option_card import OptionCard
-from bartlebot.gui.widgets.option_widgets import connect_widget, set_widget_value, widget_value
-from bartlebot.gui.widgets.toggle_switch import SWITCH_HEIGHT_PX, SWITCH_WIDTH_PX, ToggleSwitch
+from bartlebot.gui.widgets.buttons.toggle_switch import SWITCH_HEIGHT_PX, SWITCH_WIDTH_PX, ToggleSwitch
+from bartlebot.gui.widgets.inputs.option_widgets import connect_widget, set_widget_value, widget_value
 from bartlebot.options.option_groups import SummaryPart
 
 # ---------------------------------------------------------------------------

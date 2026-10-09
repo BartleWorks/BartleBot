@@ -8,9 +8,9 @@ a color on this pill is a claim about which account is in that slot, and a wrong
 target is worse than no match target.
 """
 
-from bartlebot.gui.account_accent import account_accent, account_tint
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.player_pills import PlayerPillBar
+from bartlebot.gui.theming.account_accent import account_accent, account_tint
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
 
 
 def test_a_bar_offers_four_slots(qapp):
@@ -172,7 +172,7 @@ def test_a_pill_that_is_off_is_drawn_as_a_slot_rather_than_as_an_account(qapp):
 
 
 def test_a_pill_holds_its_slot_not_a_hex_so_a_theme_switch_re_resolves(qapp):
-    from bartlebot.gui.theme import set_theme  # noqa: PLC0415
+    from bartlebot.gui.theming.theme import set_theme  # noqa: PLC0415
 
     bar = PlayerPillBar()
     bar.set_value([1])
@@ -194,7 +194,7 @@ def test_a_pill_holds_its_slot_not_a_hex_so_a_theme_switch_re_resolves(qapp):
 
 
 def test_an_uncolored_badge_is_the_neutral_gray_pill(qapp):
-    from bartlebot.gui.widgets.player_pills import PlayerBadge  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadge  # noqa: PLC0415
 
     badge = PlayerBadge(2)
 
@@ -204,7 +204,7 @@ def test_an_uncolored_badge_is_the_neutral_gray_pill(qapp):
 
 
 def test_a_colored_badge_is_outlined_and_tinted_and_names_the_account_in_its_tooltip(qapp):
-    from bartlebot.gui.widgets.player_pills import PlayerBadge  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadge  # noqa: PLC0415
 
     badge = PlayerBadge(1)
 
@@ -218,7 +218,7 @@ def test_a_colored_badge_is_outlined_and_tinted_and_names_the_account_in_its_too
 
 
 def test_a_badge_row_hides_surplus_badges_and_separators_rather_than_destroying_them(qapp):
-    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
 
     row = PlayerBadgeRow("→")
     first = row._badges[0]
@@ -237,7 +237,7 @@ def test_a_badge_row_hides_surplus_badges_and_separators_rather_than_destroying_
 
 
 def test_a_badge_row_colors_by_slot_and_leaves_unknown_slots_plain(qapp):
-    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
 
     row = PlayerBadgeRow()
     row.set_player_colors([2, 5])

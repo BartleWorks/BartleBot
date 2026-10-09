@@ -76,7 +76,7 @@ sorted for looks.
 Each pill is outlined in its account's color, and the account card carrying that
 color wears it as a stripe down its left edge. The pair is the point: a color on the
 profile pills alone would be decoration, because nothing else on the screen would say
-which account it stands for. bartlebot/gui/account_accent.py owns the mapping and
+which account it stands for. bartlebot/gui/theming/account_accent.py owns the mapping and
 explains where a color comes from.
 
 Both card types are therefore handed the *whole* account list, not just the account
@@ -98,24 +98,24 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 
-from bartlebot import streamer_mode
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.game.game_sizing import FitProblem
-from bartlebot.gui.account_accent import account_accent, account_color_key, account_color_keys
-from bartlebot.gui.theme import THEME
+from bartlebot.gui import streamer_mode
+from bartlebot.gui.theming.account_accent import account_accent, account_color_key, account_color_keys
+from bartlebot.gui.theming.theme import THEME
 
 # Re-exported, not defined here. ``AddCard`` moved to ``widgets/`` when the Combat tab's
 # Duel Combat Strategies section became its second caller -- a terminator card knows
 # nothing about launching, and a sidebar should not import out of ``game_embed`` to draw
 # one. The names stay importable from here because the launch columns and their tests
 # have always spelled them this way, and the card is still what ends *these* columns.
-from bartlebot.gui.widgets.add_card import ADD_CARD_BORDER_WIDTH, AddCard  # noqa: F401
+from bartlebot.gui.widgets.cards.add_card import ADD_CARD_BORDER_WIDTH, AddCard  # noqa: F401
 
 # ``CardMode`` is imported from here by the surfaces that build these cards, since the
 # card and the mode it is built in are one import. The frame itself lives outside
 # game_embed because a second family of cards uses it -- see card_frame.py.
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.tag_pill import AccountPill, NeutralPill
+from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.pills.tag_pill import AccountPill, NeutralPill
 
 # Characters listed in full on an account card before the rest become "+N more", used
 # only when nothing has told the card how wide it is -- during construction, and in the

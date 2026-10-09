@@ -16,7 +16,7 @@ from bartlebot.gui.canvas.param_panel import (
     _NavZoneField,
     _ZoneWidget,
 )
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.param_schema import ParamField
 
 ZONE = ParamField(key="from_zone", type="zone", label="From Zone", required=True, default="")

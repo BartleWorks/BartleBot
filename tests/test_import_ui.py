@@ -18,8 +18,8 @@ from bartlebot.content import bot_roots, share_export, share_import
 from bartlebot.content.share_export import BOT, SUBGRAPH
 from bartlebot.content.share_import import Action
 from bartlebot.content.subgraphs.subgraph_store import load_subgraph
-from bartlebot.gui import import_dialog
-from bartlebot.gui.import_dialog import CHOICES_HEADING, COPIES_NOTE, REST_HEADING, ImportDialog, confirm_import
+from bartlebot.gui.dialogs import import_dialog
+from bartlebot.gui.dialogs.import_dialog import CHOICES_HEADING, COPIES_NOTE, REST_HEADING, ImportDialog, confirm_import
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file, share_paths
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import PlayerCombatStrategy

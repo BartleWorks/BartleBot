@@ -12,7 +12,7 @@ import pytest
 from PyQt6.QtWidgets import QPushButton
 
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 
 #: The library toolbar's own two, picked out by label: the canvas also carries the
 #: subgraph crumb, which is a separate surface with a PRIMARY of its own.

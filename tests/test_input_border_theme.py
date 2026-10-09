@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-import bartlebot.gui.theme as theme_mod
+import bartlebot.gui.theming.theme as theme_mod
 
 
 @pytest.fixture(params=["light", "dark"])
@@ -243,7 +243,7 @@ def test_an_unwritable_icon_cache_drops_the_rules_rather_than_raising(themed_app
     A cache directory that cannot be written is a cosmetic problem — the style's own
     arrow and thick edge come back — and must not be a fatal one.
     """
-    import bartlebot.gui.icon_utils as icon_utils
+    import bartlebot.gui.theming.icon_utils as icon_utils
 
     monkeypatch.setattr(icon_utils, "svg_qss_url", lambda *a, **kw: None)
     qss = themed_app.global_stylesheet()

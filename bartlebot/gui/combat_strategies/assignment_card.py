@@ -64,15 +64,15 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
-from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
-from bartlebot.gui.widgets.icon_button import IconButton
-from bartlebot.gui.widgets.player_pills import PlayerPillBar
-from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.school_picker import SchoolPickerButton
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton
+from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit
+from bartlebot.gui.widgets.labels.elided_label import WrappingElidedLabel
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
+from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
+from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 from bartlebot.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 

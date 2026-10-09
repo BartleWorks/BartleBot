@@ -15,8 +15,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.settings_manager import SettingsManager
 
 _NAME_TO_LEVEL: dict[str, int] = {

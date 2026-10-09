@@ -92,7 +92,7 @@ from bartlebot.gui.canvas.node_item import (
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS, node_display_name
 from bartlebot.options import player_realms
 
@@ -3732,7 +3732,7 @@ class _ColorPickerDialog(QWidget):
     def __init__(self, current_key: int, parent=None) -> None:
         from PyQt6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout
 
-        from bartlebot.gui.widgets.dialog_footer import dialog_footer
+        from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
         # Re-parent as QDialog so exec() works
         self._dialog = QDialog(parent)

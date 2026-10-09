@@ -12,8 +12,8 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtGui import QIcon, QPalette
 
-from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
-from bartlebot.gui.theme import DARK, LIGHT
+from bartlebot.gui.theming.icon_utils import svg_icon, svg_pixmap
+from bartlebot.gui.theming.theme import DARK, LIGHT
 
 
 @pytest.mark.parametrize("theme", [LIGHT, DARK], ids=["light", "dark"])

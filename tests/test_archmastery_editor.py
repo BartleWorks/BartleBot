@@ -19,7 +19,7 @@ from PyQt6.QtGui import QColor, QIcon, QPixmap
 
 from bartlebot.combat import deck_io
 from bartlebot.game import card_art
-from bartlebot.gui.widgets.archmastery_editor import (
+from bartlebot.gui.widgets.cards.archmastery_editor import (
     APP_SETTING_OFF,
     APP_SETTING_ON,
     NO_SCHOOL,

@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from bartlebot.bot.schema import BotConfig
-from bartlebot.gui import safety_warning_dialog
+from bartlebot.gui.dialogs import safety_warning_dialog
 from bartlebot.nodes.utility import handle_level_scaling
 from tests.conftest import FakeClient
 

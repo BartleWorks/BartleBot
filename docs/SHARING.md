@@ -7,10 +7,10 @@ The plan, with the reasoning behind every rule here, is `docs/SHARED_CONTENT.md`
 
 Code: `bartlebot/shared/share_file.py` (the vendor's format, and the three kinds
 BartleBuddy shares), `bartlebot/content/share_export.py` (BartleBot's kinds, and following each
-kind's links), `bartlebot/gui/export_dialog.py` (the export summary);
+kind's links), `bartlebot/gui/dialogs/export_dialog.py` (the export summary);
 `bartlebot/shared/share_match.py` (the vendor's matching rules),
 `bartlebot/content/share_import.py` (checking, matching and writing),
-`bartlebot/gui/import_dialog.py` (the import summary) and `bartlebot/gui/share_drop.py`
+`bartlebot/gui/dialogs/import_dialog.py` (the import summary) and `bartlebot/gui/share_drop.py`
 (dropping a file on the window).
 
 ## The format

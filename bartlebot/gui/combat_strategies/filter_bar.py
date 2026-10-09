@@ -35,13 +35,13 @@ from bartlebot.combat.strategy_tags import (
     count_facets,
     team_label,
 )
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow
-from bartlebot.gui.widgets.school_picker import SchoolPickerButton
-from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton, TagVocabulary, count_label
-from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
+from bartlebot.gui.widgets.layout.discard import discard_widget
+from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow
+from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
+from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton, TagVocabulary, count_label
+from bartlebot.gui.widgets.pills.tag_pill import NeutralChip, TagChip
 
 #: What each tab's counts count.
 KIND_NOUNS: dict[StrategyKind, tuple[str, str]] = {

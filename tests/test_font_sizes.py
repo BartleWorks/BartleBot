@@ -26,7 +26,7 @@ _ROOT = project_root()
 _PACKAGE = _ROOT / "bartlebot"
 
 #: The one module allowed to spell a size out: it defines the tokens.
-_TOKEN_MODULE = _PACKAGE / "gui" / "theme.py"
+_TOKEN_MODULE = _PACKAGE / "gui" / "theming" / "theme.py"
 
 _RULES: list[tuple[str, str, str]] = [
     (
@@ -57,7 +57,7 @@ _RULES: list[tuple[str, str, str]] = [
     (
         "per-module font size constant",
         r"^_?[A-Z_]*FONT_(PX|PT|SIZE)\b\s*=|^\s*[A-Z_]*FONT_(PX|PT|SIZE)\b\s*=\s*\d",
-        "the token belongs in gui/theme.py",
+        "the token belongs in gui/theming/theme.py",
     ),
 ]
 
@@ -94,8 +94,8 @@ def test_a_widget_pinned_to_a_height_still_fits_its_text(qapp) -> None:
     it was given, so the gap between the two is exactly the clipping.
     """
     from bartlebot.gui.canvas.node_browser_dialog import _Chip
-    from bartlebot.gui.widgets.player_pills import PlayerBadge, PlayerSlotPill
-    from bartlebot.gui.widgets.tag_pill import ActionPill, NeutralPill, TagPill
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadge, PlayerSlotPill
+    from bartlebot.gui.widgets.pills.tag_pill import ActionPill, NeutralPill, TagPill
 
     widgets = {
         "PlayerBadge": PlayerBadge(1),
@@ -135,7 +135,7 @@ def test_a_multi_line_value_field_shows_every_line_it_promises(qapp, lines: int)
 
 def test_the_derived_sizes_stay_in_their_order() -> None:
     """The four UI sizes are one ladder, so a body size change keeps their order."""
-    from bartlebot.gui.theme import LIGHT
+    from bartlebot.gui.theming.theme import LIGHT
 
     assert LIGHT.font_micro_px < LIGHT.font_subtext_px < LIGHT.font_small_px
     assert LIGHT.font_small_px < LIGHT.font_body_px < LIGHT.font_heading_px
@@ -151,7 +151,7 @@ def test_no_font_token_varies_by_theme() -> None:
     whichever theme is active, so there is nothing to go stale. Give a theme a font size
     of its own and that exemption turns into a bug this test fails first.
     """
-    from bartlebot.gui.theme import DARK, LIGHT, build_custom_theme
+    from bartlebot.gui.theming.theme import DARK, LIGHT, build_custom_theme
 
     sizes = lambda t: {  # noqa: E731
         name: getattr(t, name) for name in dir(t) if name.startswith("font_") and isinstance(getattr(t, name), int)
@@ -163,7 +163,7 @@ def test_no_font_token_varies_by_theme() -> None:
 def test_the_font_helpers_size_in_pixels() -> None:
     """Not points: a font sized in points reports -1 for its pixel size, and every
     widget that measures its own text would measure the wrong thing."""
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     assert THEME.ui_font().pixelSize() == THEME.font_body_px
     assert THEME.ui_font(THEME.font_micro_px, bold=True).pixelSize() == THEME.font_micro_px
@@ -179,7 +179,7 @@ def test_a_scaled_font_tracks_the_scale_it_is_given() -> None:
     Qt converts points at 96 logical DPI whatever the display scaling, so 0.75pt is
     one pixel and the px token the caller passes is the size at scale 1.
     """
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     assert THEME.scaled_ui_font(12, 1.0).pointSizeF() == pytest.approx(9.0)
     assert THEME.scaled_ui_font(12, 2.0).pointSizeF() == pytest.approx(18.0)

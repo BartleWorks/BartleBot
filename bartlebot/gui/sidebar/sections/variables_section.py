@@ -54,16 +54,16 @@ from bartlebot.gui.sidebar.option_gutter import (
     keep_slot_when_hidden,
 )
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.discard import discard_widget
-from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.icon_button import IconButton, IconTint
-from bartlebot.gui.widgets.option_widgets import TYPE_LABELS
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.gui.widgets.variable_widgets import VariableValueField
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.inputs.option_widgets import TYPE_LABELS
+from bartlebot.gui.widgets.inputs.variable_widgets import VariableValueField
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.layout.discard import discard_widget
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

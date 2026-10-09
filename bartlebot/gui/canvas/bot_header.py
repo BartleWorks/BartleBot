@@ -42,11 +42,11 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.content.bot_tags import suggested_tags
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
-from bartlebot.gui.widgets.tag_pill import NeutralPill
-from bartlebot.gui.widgets.tags_field import TagsField
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
+from bartlebot.gui.widgets.pills.tag_pill import NeutralPill
+from bartlebot.gui.widgets.pills.tags_field import TagsField
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

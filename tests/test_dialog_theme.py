@@ -10,11 +10,11 @@ at once. They were fixed rather than allowlisted for that reason.
 import pytest
 from PyQt6.QtCore import QEvent
 
-import bartlebot.gui.theme as theme_mod
+import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.gui.wiki_import_dialog import WikiImportDialog
+from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 
 @pytest.fixture
@@ -121,7 +121,7 @@ def test_the_strategy_list_recolors(qapp, theme):
 
 
 def test_the_entity_browser_status_follows_the_theme(qapp, theme):
-    from bartlebot.gui.entity_browser import EntityBrowserDialog
+    from bartlebot.gui.dialogs.entity_browser import EntityBrowserDialog
 
     theme("light")
     dlg = EntityBrowserDialog(lambda: [])

@@ -22,9 +22,9 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.theming.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager, default_for
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ needs, and what each of a node's returns does -- the Connections card lists rout
 return value, including the ones the canvas never draws. ``option_groups`` is the same
 split for the option surfaces.
 
-Fold state is the reader's and lives in ``ui_state.json`` (``bartlebot.ui_state``),
+Fold state is the reader's and lives in ``ui_state.json`` (``bartlebot.gui.ui_state``),
 keyed by a surface id and a group id:
 
 * **The node page** has four fixed sections, the same on every node, so it is one

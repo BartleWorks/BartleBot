@@ -121,7 +121,6 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.combat.strategy_summary import summarize_bot
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots
-from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
@@ -139,20 +138,21 @@ from bartlebot.gui.sidebar.strategy_panel import (
     PanelRole,
     StrategyPanel,
 )
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton
-from bartlebot.gui.widgets.add_card import AddCard
-from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
-from bartlebot.gui.widgets.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.deck_card_list import DeckCardList
-from bartlebot.gui.widgets.drag_reorder import DragReorder
-from bartlebot.gui.widgets.elided_label import ElidedLabel
-from bartlebot.gui.widgets.picker_popup import PickerRow, Section
-from bartlebot.gui.widgets.player_pills import PlayerBadge
-from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.account_accent import account_accent
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import set_style_sheet
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.cards.add_card import AddCard
+from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
+from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
+from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
+from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
+from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
+from bartlebot.gui.widgets.pills.player_pills import PlayerBadge
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy

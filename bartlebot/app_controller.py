@@ -45,19 +45,19 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
-from bartlebot.gui.export_dialog import run_export
+from bartlebot.gui.debug.window_show_trace import WindowShowTracer
+from bartlebot.gui.dialogs.export_dialog import run_export
+from bartlebot.gui.dialogs.import_dialog import TITLE as IMPORT_TITLE
+from bartlebot.gui.dialogs.import_dialog import ask_for_file, confirm_import
+from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
+from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
+from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
+from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
+from bartlebot.gui.dialogs.templates_dialog import TemplatesDialog, TemplatesVerb
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
-from bartlebot.gui.import_dialog import TITLE as IMPORT_TITLE
-from bartlebot.gui.import_dialog import ask_for_file, confirm_import
 from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
-from bartlebot.gui.make_copy_dialog import TITLE as MAKE_COPY_TITLE
-from bartlebot.gui.make_copy_dialog import MakeCopyDialog
-from bartlebot.gui.new_bot_dialog import NewBotDialog
-from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
-from bartlebot.gui.templates_dialog import TemplatesDialog, TemplatesVerb
-from bartlebot.gui.window_show_trace import WindowShowTracer
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
@@ -2620,7 +2620,7 @@ class AppController(QObject):
             return
         if not self._check_variables():
             return
-        from bartlebot.gui.safety_warning_dialog import level_scaling_players  # noqa: PLC0415
+        from bartlebot.gui.dialogs.safety_warning_dialog import level_scaling_players  # noqa: PLC0415
 
         clients = self._client_manager.clients
         players = level_scaling_players(self._loaded_config, len(clients))
@@ -2653,7 +2653,10 @@ class AppController(QObject):
         """The rest of the run sequence: the dialogs that ask, then the run itself."""
         if not self._client_manager.clients or self._loaded_config is None:
             return
-        from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
+        from bartlebot.gui.dialogs.safety_warning_dialog import (  # noqa: PLC0415
+            SafetyWarningDialog,
+            collect_safety_warnings,
+        )
 
         safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients, elixir_players)
         if safety_warnings:
@@ -3232,7 +3235,12 @@ class AppController(QObject):
 
     def _apply_theme(self) -> None:
         """Read the theme setting and apply palette + stylesheet to the app."""
-        from bartlebot.gui.theme import THEME, build_custom_theme, set_theme, set_theme_instance  # noqa: PLC0415
+        from bartlebot.gui.theming.theme import (  # noqa: PLC0415
+            THEME,
+            build_custom_theme,
+            set_theme,
+            set_theme_instance,
+        )
 
         sm = SettingsManager.instance()
         theme_mode = sm.get_general("theme", default="system")
@@ -3356,7 +3364,7 @@ class AppController(QObject):
 
     def _offer_recovery(self, candidates: list[dict]) -> None:
         """Show the RecoveryDialog and act on the user's choices."""
-        from bartlebot.gui.recovery_dialog import RecoveryDialog  # noqa: PLC0415
+        from bartlebot.gui.dialogs.recovery_dialog import RecoveryDialog  # noqa: PLC0415
 
         dlg = RecoveryDialog(candidates, parent=self._window)
         if dlg.exec():

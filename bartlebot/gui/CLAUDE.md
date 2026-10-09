@@ -3,7 +3,7 @@
 Conventions for everything under `bartlebot/gui/`. The app-wide rules are in the root `CLAUDE.md`; these are the ones that only bite inside a widget.
 
 ## GUI theming
-Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
+Use `THEME` singleton from `bartlebot/gui/theming/theme.py`. No hardcoded colors in widget code.
 
 ### Font sizes come from a token, and are always px
 
@@ -41,7 +41,7 @@ the time, and Qt never recomputes it: `QApplication.setStyleSheet()` delivers
 `StyleChange` to every widget, but a stylesheet the widget set on *itself* always
 wins and is left exactly as it was. The widget has to re-derive it.
 
-**Inherit `ThemedMixin` (`bartlebot/gui/themed.py`) and put the work in
+**Inherit `ThemedMixin` (`bartlebot/gui/theming/themed.py`) and put the work in
 `apply_theme_styles`.** It is enforced: `tests/test_theme_refresh_guard.py` fails any
 class that builds a `THEME`-derived value without either the mixin or a
 `changeEvent` that handles `StyleChange`.
@@ -84,7 +84,7 @@ Five things that are not obvious:
 - **A factory cannot restyle what it returns.** `field_label(text)` hands a label to a
   caller that has nothing to re-apply, so the staleness lands on the *caller* — which
   is why the guard blames a themed helper's callers. Return a
-  `ThemedTextLabel` (`bartlebot/gui/widgets/themed_label.py`) instead; it owns its own
+  `ThemedTextLabel` (`bartlebot/gui/widgets/labels/themed_label.py`) instead; it owns its own
   color, named by token so it is re-read rather than snapshotted.
 
 Widgets that read `THEME` at paint time (e.g. `QGraphicsItem.paint()`, `_RowWidget`)

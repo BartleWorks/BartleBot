@@ -124,7 +124,7 @@ def test_a_long_condition_never_hides_what_the_edge_sets(canvas):
 
 def test_a_label_with_an_assignment_moving_and_changing_leaves_nothing_unrepainted(canvas, qtbot, tmp_path):
     """The repaint tracer (#73): the label gains and loses its assignment part and follows a moved node."""
-    from bartlebot.gui.canvas.repaint_trace import RepaintTracer  # noqa: PLC0415
+    from bartlebot.gui.debug.repaint_trace import RepaintTracer  # noqa: PLC0415
 
     canvas.setup(_bot())
     canvas.enter_edit_mode()

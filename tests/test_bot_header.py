@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import QApplication, QWidget
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_header import BotHeader, _ElidedLabel
 from bartlebot.gui.game_embed.game_view_panel import client_summary
-from bartlebot.gui.widgets.tag_pill import SuggestedTagPill, TagPill
+from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill, TagPill
 
 
 def _config(**overrides) -> BotConfig:

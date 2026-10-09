@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from bartlebot.combat.strategy_summary import StrategySummary
-from bartlebot.gui.widgets.card_art_tile import ArtIconView
-from bartlebot.gui.widgets.strategy_card import StrategyCard
-from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
+from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView
+from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
+from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY
 
 _ROLES = ("Hitter", "Support", "Healer")
 
@@ -45,7 +45,8 @@ def _with_icons(monkeypatch, *, have: set[str]) -> None:
     pixmap = QPixmap(8, 8)
     pixmap.fill()
     monkeypatch.setattr(
-        "bartlebot.gui.widgets.strategy_card.school_icon", lambda school: QIcon(pixmap) if school in have else None
+        "bartlebot.gui.widgets.cards.strategy_card.school_icon",
+        lambda school: QIcon(pixmap) if school in have else None,
     )
 
 
@@ -76,6 +77,6 @@ def test_a_deck_card_without_art_keeps_the_plain_line(qapp, monkeypatch):
 
 
 def test_role_pills_are_not_the_color_of_any_school(qapp):
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     assert STRATEGY_VOCABULARY.accent("Hitter") == THEME.chip_neutral_bg

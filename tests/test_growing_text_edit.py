@@ -10,7 +10,7 @@ import pytest
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QScrollArea, QVBoxLayout, QWidget
 
-from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 
 
 @pytest.fixture

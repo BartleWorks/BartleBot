@@ -22,8 +22,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QSizePolicy, QVBoxLayout
 
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 # ---------------------------------------------------------------------------
 # The helper itself
@@ -212,38 +212,38 @@ def _link_input_dialog():
 
 def _color_picker_dialog():
     from bartlebot.gui.canvas.edit_scene import _ColorPickerDialog
-    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.theming.theme import THEME
 
     return _ColorPickerDialog(THEME.REGION_PALETTE[0])._dialog
 
 
 def _recovery_dialog():
-    from bartlebot.gui.recovery_dialog import RecoveryDialog
+    from bartlebot.gui.dialogs.recovery_dialog import RecoveryDialog
 
     return RecoveryDialog([{"autosave_path": None, "original_path": None, "modified": datetime.now()}])
 
 
 def _safety_warning_dialog():
-    from bartlebot.gui.safety_warning_dialog import SafetyWarning, SafetyWarningDialog
+    from bartlebot.gui.dialogs.safety_warning_dialog import SafetyWarning, SafetyWarningDialog
 
     return SafetyWarningDialog([SafetyWarning(message="This bot sells drops.")])
 
 
 def _rewards_tag_dialog():
-    from bartlebot.gui.rewards_tag_dialog import RewardsTagDialog
+    from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsTagDialog
 
     # With a suggestion, so Save starts enabled and Enter has somewhere to go.
     return RewardsTagDialog(["Reagents"])
 
 
 def _wiki_import_dialog():
-    from bartlebot.gui.wiki_import_dialog import WikiImportDialog
+    from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog
 
     return WikiImportDialog()
 
 
 def _new_bot_dialog():
-    from bartlebot.gui.new_bot_dialog import NewBotDialog
+    from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
 
     # No templates and no library: the Blank bot card alone, on the page Enter leaves by Next.
     return NewBotDialog([], "no-such-library")

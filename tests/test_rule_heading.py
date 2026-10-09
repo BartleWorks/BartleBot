@@ -6,8 +6,8 @@ pair, which the dark theme leaves all but invisible against ``surface``. A headi
 rule disappears in one theme is a heading that stops being a section boundary there.
 """
 
-from bartlebot.gui.theme import THEME, set_theme
-from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.theming.theme import THEME, set_theme
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 
 
 def test_the_heading_reads_what_it_was_given(qapp):

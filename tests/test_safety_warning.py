@@ -4,7 +4,7 @@ import pytest
 from PyQt6.QtWidgets import QCheckBox
 
 from bartlebot.bot.schema import BotConfig
-from bartlebot.gui.safety_warning_dialog import (
+from bartlebot.gui.dialogs.safety_warning_dialog import (
     QUICKSELL_OPT_OUT_LABEL,
     SafetyWarning,
     SafetyWarningDialog,

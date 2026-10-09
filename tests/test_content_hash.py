@@ -418,7 +418,7 @@ def test_the_pill_adds_official_updated_to_a_modified_official_item_only():
 
 
 def test_the_source_pill_widget_says_it_and_explains(qapp):
-    from bartlebot.gui.widgets.source_pill import OFFICIAL_UPDATED_TIP, source_pill  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.source_pill import OFFICIAL_UPDATED_TIP, source_pill  # noqa: PLC0415
 
     pill = source_pill(Origin.SHIPPED_OVERRIDE, official_updated=True)
     assert pill.text() == "Official (modified) · Official updated"

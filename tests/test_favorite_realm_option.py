@@ -17,8 +17,8 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.game import realms
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
-from bartlebot.gui.widgets.option_widgets import NODE_ONLY_TYPES, OPTION_TYPES, make_option_widget, widget_value
-from bartlebot.gui.widgets.realm_combo import NOT_SET_TEXT, RealmCombo
+from bartlebot.gui.widgets.inputs.option_widgets import NODE_ONLY_TYPES, OPTION_TYPES, make_option_widget, widget_value
+from bartlebot.gui.widgets.inputs.realm_combo import NOT_SET_TEXT, RealmCombo
 from bartlebot.nodes.utility import change_realm as cf
 from bartlebot.options import bot_options
 from bartlebot.settings_manager import SettingsManager

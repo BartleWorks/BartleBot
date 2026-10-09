@@ -20,7 +20,7 @@ from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
 from bartlebot.gui.sidebar.option_card import COLLAPSE_ALL, COLLAPSE_OTHERS, EXPAND_ALL
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
-from bartlebot.gui.widgets.toggle_switch import ToggleSwitch
+from bartlebot.gui.widgets.buttons.toggle_switch import ToggleSwitch
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.options import option_groups as og
 from bartlebot.options.bot_options import SOURCE_APP_SETTING, SOURCE_OVERRIDE

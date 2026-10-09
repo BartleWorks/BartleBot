@@ -30,7 +30,7 @@ with settings that depend on it (Enable Quicksell and its five rows) -- which fo
 the way Windows' ``SettingsExpander`` does and only where it does.
 
 A group's fold is a reading preference, so it lives in ``ui_state.json`` rather than in
-``settings.json`` (``bartlebot.ui_state``), and :data:`SETTINGS_FOLD_DEFAULTS` names
+``settings.json`` (``bartlebot.gui.ui_state``), and :data:`SETTINGS_FOLD_DEFAULTS` names
 every group the dialog has. Whether descriptions are shown is the dialog's own
 ``show_setting_descriptions``, apart from the sidebar's ``show_option_descriptions``.
 
@@ -75,14 +75,14 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.icon_button import IconButton
-from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.ui_state import UiState
+from bartlebot.gui.widgets.buttons.icon_button import IconButton
+from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.ui_state import UiState
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ all are pure string/BeautifulSoup logic with no Qt or network dependencies.
 
 from bs4 import BeautifulSoup
 
-from bartlebot.gui.wiki_import_dialog import (
+from bartlebot.gui.dialogs.wiki_import_dialog import (
     WikiImportDialog,
     _is_item_link,
     _parse_drops,

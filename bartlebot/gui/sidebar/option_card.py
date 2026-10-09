@@ -73,9 +73,9 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX, HeadingAction, disclosure_pixmap
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.options import option_groups
 from bartlebot.options.option_groups import SummaryPart, summary_text
 
@@ -531,7 +531,7 @@ class UiStateFoldStore:
     """
 
     def __init__(self, surface: str, defaults: dict[str, bool], ui_state: Any = None) -> None:
-        from bartlebot.ui_state import UiState  # noqa: PLC0415 - keeps this module's imports light
+        from bartlebot.gui.ui_state import UiState  # noqa: PLC0415 - keeps this module's imports light
 
         self._surface = surface
         self._defaults = dict(defaults)

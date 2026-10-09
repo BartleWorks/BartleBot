@@ -12,9 +12,9 @@ import pytest
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QLabel, QPushButton, QWidget
 
-import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin, set_style_sheet
+import bartlebot.gui.theming.theme as theme_mod
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
 
 
 @pytest.fixture
@@ -202,7 +202,7 @@ def test_a_raising_restyle_does_not_kill_the_app(qapp, caplog):
             raise RuntimeError("boom")
 
     w = _Boom()
-    with caplog.at_level(logging.ERROR, logger="bartlebot.gui.themed"):
+    with caplog.at_level(logging.ERROR, logger="bartlebot.gui.theming.themed"):
         _switch(qapp, w)  # must return normally
     assert "boom" in caplog.text
 

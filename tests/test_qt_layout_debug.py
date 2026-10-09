@@ -11,7 +11,7 @@ than an invented one.
 
 from __future__ import annotations
 
-from bartlebot.qt_layout_debug import (
+from bartlebot.gui.debug.qt_layout_debug import (
     Record,
     SizeSnapshot,
     format_records,

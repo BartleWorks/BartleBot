@@ -6,9 +6,9 @@ between restarts, or that differs between a profile pill and the account card it
 supposed to point at, is worse than no color at all: it invites a match that is wrong.
 """
 
-from bartlebot.gui import account_accent
-from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_color_key, account_color_keys
-from bartlebot.gui.account_accent import account_accent as accent
+from bartlebot.gui.theming import account_accent
+from bartlebot.gui.theming.account_accent import ACCOUNT_PALETTE_SIZE, account_color_key, account_color_keys
+from bartlebot.gui.theming.account_accent import account_accent as accent
 
 
 def _accounts(n: int) -> list[dict]:

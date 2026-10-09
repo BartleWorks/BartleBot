@@ -10,7 +10,7 @@ from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, QRec
 from PyQt6.QtGui import QBrush, QColor, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen, QTransform, QWheelEvent
 from PyQt6.QtWidgets import QApplication, QGraphicsItem, QGraphicsScene, QGraphicsView
 
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.theming.theme import THEME
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
 
 
 @pytest.mark.parametrize(

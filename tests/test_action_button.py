@@ -9,9 +9,9 @@ from dataclasses import replace
 
 import pytest
 
-import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.theme import DARK, LIGHT, THEME
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle, _mix
+import bartlebot.gui.theming.theme as theme_mod
+from bartlebot.gui.theming.theme import DARK, LIGHT, THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle, _mix
 
 
 @pytest.fixture

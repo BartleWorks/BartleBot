@@ -18,7 +18,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.clients.tile_slots import TileKey, TileSlot, plan_tile_changes
 from bartlebot.game.game_sizing import grid_for, required_game_area
-from bartlebot.gui.account_accent import account_color_keys
 from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
@@ -27,12 +26,13 @@ from bartlebot.gui.game_embed.card_columns import (
 )
 from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
-from bartlebot.gui.icon_utils import svg_icon
-from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.link_button import LinkButton
-from bartlebot.gui.widgets.logo_disc import LogoDisc
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.theming.account_accent import account_color_keys
+from bartlebot.gui.theming.icon_utils import svg_icon
+from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

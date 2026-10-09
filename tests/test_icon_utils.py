@@ -14,7 +14,7 @@ everyone.
 
 from PyQt6.QtGui import QPixmap
 
-from bartlebot.gui.icon_utils import svg_pixmap
+from bartlebot.gui.theming.icon_utils import svg_pixmap
 
 ICON = "checkmark"
 
