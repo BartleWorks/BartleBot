@@ -420,6 +420,28 @@ class NeutralChip(QPushButton):
             self._restyle()
 
 
+class KeywordChip(NeutralChip):
+    """A keep-list keyword: :class:`NeutralChip` with how many drops it catches.
+
+    A keyword keeps every drop whose name contains it, a ticked row keeps only itself,
+    and the count is what says which of the two a chip is: "giver · 7" is plainly a
+    family. Only keywords are chips; a ticked item is shown by its row.
+    """
+
+    def __init__(self, keyword: str, count: int = 0, *, parent: QWidget | None = None) -> None:
+        super().__init__(keyword, parent=parent)
+        self.set_count(count)
+
+    def set_count(self, count: int) -> None:
+        """Show *count* as the drops in this bot's table that the keyword keeps."""
+        self.setText(f"{self.value} · {count}  ✕")
+        drops = "drop" if count == 1 else "drops"
+        self.setToolTip(
+            f"Keeps every drop whose name contains “{self.value}”: {count} {drops} in this bot's table.\n"
+            "Click to stop keeping them."
+        )
+
+
 class ActionPill(QPushButton):
     """A gray pill that runs a verb when clicked, and wears no ✕.
 

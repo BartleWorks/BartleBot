@@ -18,6 +18,7 @@ from bartlebot.gui.canvas.drop_keep_list import (
     _COL_KEEP,
     DropKeepListWidget,
     bulk_needs_confirmation,
+    keyword_counts,
     row_visible,
 )
 from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, widget_value
@@ -509,6 +510,42 @@ def test_removing_a_chip_never_leaves_it_parentless(qapp):
 
     assert chip.parent() is not None
     assert not chip.isVisible()
+
+
+def test_a_ticked_item_is_not_a_chip(qapp):
+    """A tick is shown by its row; a chip beside the keywords would read as one more."""
+    w = _make(qapp, keep_list=["Boots", "=Amber"])
+    assert _keyword_chips(w) == ["Boots"]
+
+
+def test_a_chip_counts_the_sellable_drops_its_keyword_keeps(qapp):
+    w = _make(qapp, keep_list=["amber"])
+    assert _keyword_chip(w, "amber").text().startswith("amber · 2")
+
+
+def test_a_chip_count_follows_the_drop_table(qapp):
+    drops = list(_DROPS)
+    w = DropKeepListWidget(lambda: list(drops))
+    w.set_context(_SELL_ALL)
+    w.set_value(["amber"])
+    drops.append(DropModel(name="Amber Amulet", category="Amulets"))
+    w.refresh()
+    assert _keyword_chip(w, "amber").text().startswith("amber · 3")
+
+
+def test_removing_a_chip_keeps_the_ticked_items(qapp):
+    w = _make(qapp, keep_list=["Boots", "=Amber"])
+    _keyword_chip(w, "Boots").click()
+    assert w.get_value() == ["=Amber"]
+
+
+def test_keyword_counts_match_in_game_names_and_skip_what_is_never_sold():
+    drops = [
+        DropModel(name="Mandrake Root", category="Reagents"),
+        DropModel(name="Pin (140, Fire)", match_name="Ruby Pin (140)", category="Pins"),
+        DropModel(name="Ruby Ring", category="Rings"),
+    ]
+    assert keyword_counts(["ruby", "mandrake", "fire"], drops) == {"ruby": 2, "mandrake": 0, "fire": 0}
 
 
 def test_the_default_category_entry_counts_what_it_shows(qapp):

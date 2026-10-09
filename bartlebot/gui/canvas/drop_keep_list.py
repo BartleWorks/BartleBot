@@ -42,7 +42,7 @@ from bartlebot.gui.widgets.drop_tree import (
 from bartlebot.gui.widgets.flow_layout import FlowLayout
 from bartlebot.gui.widgets.list_text import parse_list_text
 from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_pill import NeutralChip
+from bartlebot.gui.widgets.tag_pill import KeywordChip
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds
@@ -107,6 +107,21 @@ def row_visible(
     if not query:
         return True
     return query in name.lower() or (match_name is not None and query in match_name.lower())
+
+
+def keyword_counts(keywords: list[str], entries: list[DropModel]) -> dict[str, int]:
+    """How many sellable drops in *entries* each of *keywords* keeps, for its chip.
+
+    Matched by the in-game name, as the node matches. Drops quicksell never sells are
+    not counted, as the summary line leaves them out: a keyword's count is what it
+    saves from being sold.
+    """
+    sellable = [e.match_key for e in entries if (e.category or "") not in quicksell.NEVER_QUICKSOLD_CATEGORIES]
+    counts = {}
+    for keyword in keywords:
+        normalized = keyword.strip().lower()
+        counts[keyword] = sum(quicksell.matching_keyword(name, [normalized]) is not None for name in sellable)
+    return counts
 
 
 def bulk_needs_confirmation(count: int) -> bool:
@@ -197,6 +212,7 @@ class DropKeepListWidget(QWidget):
 
         self._keywords = QWidget()
         self._keyword_layout = FlowLayout(self._keywords, spacing=4)
+        self._chips: dict[str, KeywordChip] = {}
         self._keywords.setVisible(False)
         outer.addWidget(self._keywords)
 
@@ -393,6 +409,7 @@ class DropKeepListWidget(QWidget):
         self._category.blockSignals(False)
 
     def _apply_states(self, entries: list[DropModel]) -> None:
+        self._update_keyword_counts(entries)
         has_drops = bool(entries)
         self._tree.setVisible(has_drops)
         self._rule.setVisible(has_drops)
@@ -664,10 +681,23 @@ class DropKeepListWidget(QWidget):
         self._set_keep_list([*self._value, *added])
 
     def _remove_keyword(self, word: str) -> None:
-        self._set_keep_list([v for v in self._value if v != word])
+        self._set_keep_list([v for v in self._value if quicksell.is_item_entry(v) or v.strip() != word])
+
+    def _typed_keywords(self) -> list[str]:
+        """The keep list's keywords, as typed; its item entries are the table's to show."""
+        return [v.strip() for v in self._value if not quicksell.is_item_entry(v) and v.strip()]
+
+    def _update_keyword_counts(self, entries: list[DropModel]) -> None:
+        counts = keyword_counts(list(self._chips), entries)
+        for word, chip in self._chips.items():
+            chip.set_count(counts[word])
 
     def _render_keywords(self) -> None:
-        """Rebuild the chip row from the keep list.
+        """Rebuild the chip row from the keep list's keywords.
+
+        Only keywords are chips. A ticked item is a ticked row already, and a chip for
+        it beside the keywords read as one more keyword -- which is what it was matched
+        as, until item entries.
 
         A full rebuild rather than a diff: the list is a handful of short strings the
         user edits one at a time, and ``FlowLayout`` re-wraps the whole row on any
@@ -685,11 +715,13 @@ class DropKeepListWidget(QWidget):
             if widget is not None:
                 widget.hide()
                 widget.deleteLater()
-        for word in self._value:
-            chip = NeutralChip(word, tooltip=f"Stop keeping drops matching “{word}”")
+        self._chips = {}
+        for word in dict.fromkeys(self._typed_keywords()):
+            chip = KeywordChip(word)
             chip.removed.connect(self._remove_keyword)
             self._keyword_layout.addWidget(chip)
-        self._keywords.setVisible(bool(self._value))
+            self._chips[word] = chip
+        self._keywords.setVisible(bool(self._chips))
 
     # ------------------------------------------------------------------
     # Theming
