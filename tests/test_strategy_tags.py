@@ -24,8 +24,8 @@ from bartlebot.combat.strategy_tags import (
     team_label,
     works_with_school,
 )
+from bartlebot.content.store_roots import SOURCE_LABELS, Origin
 from bartlebot.shared.strategy_models import DeckData, DeckPreset
-from bartlebot.store_roots import SOURCE_LABELS, Origin
 
 ANY = frozenset()
 

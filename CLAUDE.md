@@ -12,7 +12,7 @@ To author shipped bots, templates, subgraphs or combat strategies, run with
 `BARTLEBOT_DEV=1`. That points every store's user root at the repo, so a save lands in
 `bots/`, `templates/`, `subgraphs/` or `strategies/` where git sees it, instead of in an
 `%APPDATA%` copy that shadows the repo's or, for a bot or template, is never seen by
-anyone else. `bartlebot/store_roots.py` has the detail, and `bartlebot/bot_roots.py` the
+anyone else. `bartlebot/content/store_roots.py` has the detail, and `bartlebot/content/bot_roots.py` the
 bots' part; logs stay in the repo's `logs/` too. The suite clears it, and
 `test_every_linked_bot_resolves_under_the_shipped_root_alone` and
 `test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone` catch
@@ -20,9 +20,9 @@ a definition or template that only exists on your machine. File › Templates…
 template's draft for anyone, but only the user's own: dev mode is what makes the shipped
 templates under `templates/` editable, since there every template is the user's. Only
 Release on the draft's crumb writes a version users are offered
-(`bartlebot/template_store.py`). New Bot copies the latest released version into a new
+(`bartlebot/content/templates/template_store.py`). New Bot copies the latest released version into a new
 bot, records it in the bot's `template`, and saves the file at once
-(`bartlebot/new_bot.py`).
+(`bartlebot/content/new_bot.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item

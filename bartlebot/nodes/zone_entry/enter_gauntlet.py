@@ -9,7 +9,7 @@ from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
-#: The param holding the entrance prompt's title. Editor-only: see bartlebot/bot_summary.py.
+#: The param holding the entrance prompt's title. Editor-only: see bartlebot/content/bot_summary.py.
 PARAM_GAUNTLET_NAME = "gauntlet_name"
 
 PARAM_SCHEMA: list[ParamField] = [

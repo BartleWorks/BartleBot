@@ -37,9 +37,9 @@ from bartlebot.bot_options import (
     storable_options,
     system_option_names,
 )
+from bartlebot.content.templates.template_store import list_templates
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot.paths import project_root
-from bartlebot.template_store import list_templates
 from tests.conftest import FakeClient
 
 # ---------------------------------------------------------------------------
@@ -1122,7 +1122,7 @@ def test_every_shipped_bot_has_at_least_one_tag():
 def test_no_bot_carries_a_tag_outside_the_vocabulary():
     """BotConfig silently drops unknown tags on load, so a typo would only ever show
     up as a bot missing from a filter. Caught here instead, against the raw JSON."""
-    from bartlebot.bot_tags import BOT_TAGS  # noqa: PLC0415
+    from bartlebot.content.bot_tags import BOT_TAGS  # noqa: PLC0415
 
     offenders: list[str] = []
     for path in _shipped_bot_files():

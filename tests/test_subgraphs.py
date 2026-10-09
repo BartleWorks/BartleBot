@@ -1,4 +1,4 @@
-"""Tests for bartlebot.subgraphs — composing instances into a bot and extracting them back out.
+"""Tests for bartlebot.content.subgraphs.subgraphs — composing instances into a bot and extracting them back out.
 
 The fixture definition is a synthetic seven-node "sync players" chain shaped like the
 boss template's region (relog → gather → three teleports → hub →
@@ -28,11 +28,9 @@ from bartlebot.bot.schema import (
     SubgraphSource,
     TransitionModel,
 )
-from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-from bartlebot.paths import project_root
-from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import (
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import (
     MAX_DEPTH,
     ComposeReport,
     SubgraphCycleError,
@@ -60,6 +58,8 @@ from bartlebot.subgraphs import (
     resolve_member_params,
     taken_ids,
 )
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
+from bartlebot.paths import project_root
 
 _REPO = project_root()
 
@@ -452,7 +452,7 @@ def test_member_ids_never_collide_with_unique_id():
 def test_subgraph_modules_import_no_qt():
     """The policy stays testable without a QApplication or settings, like bot_options."""
     forbidden: list[str] = []
-    for name in ("subgraphs.py", "subgraph_store.py", "store_roots.py"):
+    for name in ("content/subgraphs/subgraphs.py", "content/subgraphs/subgraph_store.py", "content/store_roots.py"):
         tree = ast.parse((_REPO / "bartlebot" / name).read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.module:
@@ -1100,7 +1100,7 @@ def test_an_input_linked_to_nothing_blocks_saving_but_still_loads(library):
 
 def test_a_zone_and_a_nav_zone_can_share_an_input():
     """The Stage 3 lattice in use: the input is typed the narrower of the two."""
-    from bartlebot.subgraphs import binding_type
+    from bartlebot.content.subgraphs.subgraphs import binding_type
 
     defn = _panel_definition()
     bindings = [SubgraphInputBinding(state="go", param="zone"), SubgraphInputBinding(state="enter", param="from_zone")]
@@ -1119,7 +1119,7 @@ def test_an_unset_input_follows_its_default():
 
 
 def test_sync_linked_values_keeps_linked_params_equal_to_their_input():
-    from bartlebot.subgraphs import sync_linked_values  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import sync_linked_values  # noqa: PLC0415
 
     config = definition_to_config(sync_players_definition())
     by_id = {s.id: s for s in config.states}
@@ -1236,7 +1236,7 @@ def test_a_link_to_something_that_is_not_a_nested_instance_is_refused(library):
 
 
 def test_a_nested_link_types_the_outer_input_and_names_where_it_lands(library):
-    from bartlebot.subgraphs import binding_type, input_targets  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import binding_type, input_targets  # noqa: PLC0415
 
     outer = _outer_with_snapshot(library)
     inp = outer.inputs[0]
@@ -1248,7 +1248,7 @@ def test_a_nested_link_types_the_outer_input_and_names_where_it_lands(library):
 
 
 def test_sync_keeps_a_nested_input_equal_to_the_outer_default(library):
-    from bartlebot.subgraphs import reresolve_linked_instances, sync_linked_values  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import reresolve_linked_instances, sync_linked_values  # noqa: PLC0415
 
     config = definition_to_config(_outer_with_snapshot(library))
     inner = next(r for r in config.regions if r.id == "in1")
@@ -1274,7 +1274,7 @@ def test_sync_keeps_a_nested_input_equal_to_the_outer_default(library):
 
 
 def test_a_link_to_a_detached_instance_goes_and_takes_an_input_left_with_nothing(library):
-    from bartlebot.subgraphs import sync_linked_values  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import sync_linked_values  # noqa: PLC0415
 
     config = definition_to_config(_outer_with_snapshot(library))
     detach(config, "in1")
@@ -1321,7 +1321,7 @@ def _outer_linking_the_row(library: SubgraphLibrary, **input_kw) -> SubgraphDefi
 
 
 def test_a_key_of_an_instances_inputs_is_a_named_input_or_a_promoted_nodes_param(library):
-    from bartlebot.subgraphs import resolve_instance_key  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import resolve_instance_key  # noqa: PLC0415
 
     _promote_tp_a(library)
     inner = library.get(SYNC_ID)
@@ -1349,7 +1349,7 @@ def test_an_outer_input_reaches_a_promoted_row_of_the_nested_instance(library):
 
 
 def test_a_promoted_row_link_is_typed_and_lands_like_the_row(library):
-    from bartlebot.subgraphs import binding_type, input_targets  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import binding_type, input_targets  # noqa: PLC0415
 
     outer = _outer_linking_the_row(library)
     inp = outer.inputs[0]

@@ -11,7 +11,6 @@ from datetime import date
 
 import pytest
 
-from bartlebot import template_diff
 from bartlebot.bot.schema import (
     BotConfig,
     BotOptionModel,
@@ -24,10 +23,20 @@ from bartlebot.bot.schema import (
     TransitionModel,
 )
 from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.new_bot import BotDetails, StartingPoint, create_bot
-from bartlebot.subgraphs import drop_states, member_id, nested_regions
-from bartlebot.template_diff import MISSING, Port, Release, Status, TemplateUpdate, apply, diff, finish
-from bartlebot.template_store import list_templates, release, save_draft
+from bartlebot.content.new_bot import BotDetails, StartingPoint, create_bot
+from bartlebot.content.subgraphs.subgraphs import drop_states, member_id, nested_regions
+from bartlebot.content.templates import template_diff
+from bartlebot.content.templates.template_diff import (
+    MISSING,
+    Port,
+    Release,
+    Status,
+    TemplateUpdate,
+    apply,
+    diff,
+    finish,
+)
+from bartlebot.content.templates.template_store import list_templates, release, save_draft
 
 TEMPLATE_ID = "tpl-fixture"
 

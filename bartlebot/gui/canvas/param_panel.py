@@ -60,6 +60,8 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
+from bartlebot.content.subgraphs.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
+from bartlebot.content.templates.setup_steps import value_empty
 from bartlebot.game import zone_names
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.canvas import recording
@@ -99,8 +101,6 @@ from bartlebot.nodes.registry import (
     node_display_name,
 )
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.setup_steps import value_empty
-from bartlebot.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
 
 
 def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:

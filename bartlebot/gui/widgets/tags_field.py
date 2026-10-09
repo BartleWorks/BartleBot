@@ -13,7 +13,7 @@ from __future__ import annotations
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QWidget
 
-from bartlebot.bot_tags import REWARDS
+from bartlebot.content.bot_tags import REWARDS
 from bartlebot.gui.sidebar.sidebar_section import value_label
 from bartlebot.gui.widgets.flow_layout import flow_container
 from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, TagPickerButton, TagVocabulary

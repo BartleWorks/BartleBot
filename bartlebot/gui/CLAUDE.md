@@ -441,7 +441,7 @@ rules it is easy to lose:
   `deck.archmastery_school` alone.
 
 The bot library's category list uses these too, under the same rule: each folder under
-`bots/` is a game badge category (`bartlebot/bot_folders.py`), the row wears that
+`bots/` is a game badge category (`bartlebot/content/bot_folders.py`), the row wears that
 category's badge when one was extracted, and a row with none is its caption alone — at
 the compact height, since only a row with an icon reserves room for one. Rows are looked
 up by the folder name stored in `Qt.UserRole`, never by the caption, which comes from the
@@ -813,7 +813,7 @@ A definition's page with nothing selected (`canvas/signature_page.py`) is #142's
 Description, Ports, Inputs, one fold surface for every definition -- and the Inputs card is
 one tree: the ungrouped inputs, each input group with its members indented, and each
 promoted node as its heading alone. Selecting a line opens its editor in place under it,
-one at a time. `bartlebot/signature_tree.py` is the half that needs no Qt.
+one at a time. `bartlebot/content/subgraphs/signature_tree.py` is the half that needs no Qt.
 
 - **Membership lives in one place, the tree.** An input belongs to the nearest group
   heading above it, so a drag (or Alt+Up/Down) is the only thing that moves an input into

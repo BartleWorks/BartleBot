@@ -95,7 +95,7 @@ Four things that are load-bearing:
   deliberately — a fork is a different bot, and inherits neither the overrides nor
   the combat strategy.
 - **Make my own copy is the one copy that takes them (#149).** An Official bot is
-  read-only, and asking to edit one makes the user's own copy (`bartlebot/bot_fork.py`).
+  read-only, and asking to edit one makes the user's own copy (`bartlebot/content/bot_fork.py`).
   The copy is the same bot to the user, so `carry_over` copies every override and the
   accepted quicksell sales under the new id, duplicates every Bot Combat Strategy
   pointed at it, and maps the active pick to the duplicate. The Official bot keeps its

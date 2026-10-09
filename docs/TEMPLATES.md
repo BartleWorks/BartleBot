@@ -40,7 +40,7 @@ templates/                 beside subgraphs/ and strategies/
     v1.json                a released copy of the draft, never written again
 ```
 
-`bartlebot/template_store.py` is the whole of it, Qt-free. A template is found by the id
+`bartlebot/content/templates/template_store.py` is the whole of it, Qt-free. A template is found by the id
 in its `template.json`, which the draft and every version carry as their own `id`, so a
 rename never moves a folder.
 
@@ -130,7 +130,7 @@ file.
 ## User templates
 
 Every user makes templates of their own (#164) in **File › Templates…**
-(`gui/templates_dialog.py`, logic in `bartlebot/template_gallery.py`). It is a gallery of
+(`gui/templates_dialog.py`, logic in `bartlebot/content/templates/template_gallery.py`). It is a gallery of
 New Bot's cards, one per template, each with its Source pill and a last line giving its
 latest version, how many of the user's bots were made from it, and the template it was
 copied from. A Source filter sits beside the heading. The verbs are a footer row and a
@@ -177,7 +177,7 @@ the same review. It lives under the user root.
 
 ## New Bot
 
-The New Bot dialog (`gui/new_bot_dialog.py`, logic in `bartlebot/new_bot.py`) offers a
+The New Bot dialog (`gui/new_bot_dialog.py`, logic in `bartlebot/content/new_bot.py`) offers a
 blank bot and one card per template, built from its latest released version. Create copies
 that version, drops `template_meta`, mints a fresh id, records `template`, composes from
 the subgraph library, and saves the file at once. The setup steps are not copied into the
@@ -220,7 +220,7 @@ When a template releases a version newer than a bot's base, the bot is offered a
 `_refresh_template_context` hands the canvas no update for one, and its library row never
 says one is available. Developer mode never marks a bot Official, so the maintainer still
 reviews the shipped bots against a new release.
-`bartlebot/template_diff.py` is the Qt-free half.
+`bartlebot/content/templates/template_diff.py` is the Qt-free half.
 
 The diff compares three configs: **base**, **theirs** (the latest version) and **mine**
 (the open bot). Each becomes a set of units:

@@ -35,6 +35,16 @@ from bartlebot.bot.schema import (
     SubgraphDefinition,
     SubgraphPanel,
 )
+from bartlebot.content.subgraphs.subgraph_store import source_label
+from bartlebot.content.subgraphs.subgraphs import (
+    RegionStatus,
+    exposed_key,
+    input_targets,
+    local_id,
+    member_id,
+    port_name,
+    promoted_param_type,
+)
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.node_cards import PageFoldBar, TitleEdit, ToFillLabel, record_line
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
@@ -45,16 +55,6 @@ from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-from bartlebot.subgraph_store import source_label
-from bartlebot.subgraphs import (
-    RegionStatus,
-    exposed_key,
-    input_targets,
-    local_id,
-    member_id,
-    port_name,
-    promoted_param_type,
-)
 
 _STATUS_WORD = {"linked": "linked", "held": "update held", "missing": "missing", "invalid": "invalid", "cycle": "cycle"}
 

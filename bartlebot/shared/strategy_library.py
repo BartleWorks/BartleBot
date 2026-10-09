@@ -10,7 +10,7 @@ written only to the user root:
   strategies/decks/    — DeckPreset           files
 
 Every function here takes both roots as arguments. Which directories they are is the
-product's to say (:func:`bartlebot.store_roots.resolve_shared_roots`), and which
+product's to say (:func:`bartlebot.content.store_roots.resolve_shared_roots`), and which
 install directory's shipped copy is read is :mod:`bartlebot.shared.official_set`'s.
 
 TWO PRODUCTS, ONE FILE

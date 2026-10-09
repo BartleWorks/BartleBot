@@ -54,9 +54,9 @@ from bartlebot.bot.schema import (
     TransitionModel,
     definition_structure_errors,
 )
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.shared.content_hash import HISTORY_FIELDS
-from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import SubgraphLibrary
 
 #: Nesting depth past which composition refuses. A cycle is caught by id before this
 #: is reached; the limit is the second guard, against a chain that is merely absurd.

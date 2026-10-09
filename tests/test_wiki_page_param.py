@@ -185,8 +185,8 @@ def test_a_rejected_url_never_becomes_a_page(qapp, monkeypatch):
 @pytest.fixture
 def definition_canvas(qapp):
     from bartlebot.bot.schema import SUBGRAPH_ENTRY, StateModel, SubgraphDefinition, TransitionModel
+    from bartlebot.content.subgraphs.subgraphs import definition_to_config
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
-    from bartlebot.subgraphs import definition_to_config
 
     # A bot never edits a member in place any more: a combat node inside a subgraph
     # gets its page in the definition document, where it is an ordinary node.
@@ -209,7 +209,7 @@ def definition_canvas(qapp):
 
 
 def test_importing_in_a_definition_sets_the_page_on_the_node(definition_canvas):
-    from bartlebot.subgraphs import config_to_definition
+    from bartlebot.content.subgraphs.subgraphs import config_to_definition
 
     panel = definition_canvas.param_panel
     panel.apply_wiki_import([], "Creature:Lost Soul")

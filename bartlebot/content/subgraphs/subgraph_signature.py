@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from bartlebot.bot.schema import PORT_NODE_TYPES, SUBGRAPH_ENTRY, SubgraphDefinition, SubgraphInput
-from bartlebot.subgraphs import port_name
+from bartlebot.content.subgraphs.subgraphs import port_name
 
 SignatureChangeKind = Literal["input_removed", "input_renamed", "input_without_default", "port_removed", "port_renamed"]
 

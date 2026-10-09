@@ -18,9 +18,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import ComposeReport, compose_bot, local_id
 from bartlebot.gui.canvas.bot_canvas import BotMode
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import ComposeReport, compose_bot, local_id
 from tests.test_subgraphs import REGION, SYNC_ID, _t, linked_bot, m, sync_players_definition
 
 

@@ -27,10 +27,10 @@ from bartlebot.combat.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
+from bartlebot.content.store_roots import declared_id, find_by_id, index_dir, save_by_id, slugify
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.paths import project_root
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.store_roots import declared_id, find_by_id, index_dir, save_by_id, slugify
-from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_subgraph_store import _defn
 
 

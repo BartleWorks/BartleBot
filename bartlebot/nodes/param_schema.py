@@ -233,7 +233,7 @@ class NodeSpec:
     safety_warning: str | None = None
     """Warning message shown in the safety dialog before a bot run. None = no warning."""
     implies_tags: list[str] = field(default_factory=list)
-    """Bot tags this node's presence suggests. See :func:`bartlebot.bot_tags.suggested_tags`."""
+    """Bot tags this node's presence suggests. See :func:`bartlebot.content.bot_tags.suggested_tags`."""
     implies_tags_when: dict[str, str] = field(default_factory=dict)
     """Tag -> key of a bool param on this node; the tag is suggested only while that param is on.
 

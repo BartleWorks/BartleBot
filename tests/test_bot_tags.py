@@ -9,11 +9,11 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, suggested_tags, wants_rewards_prompt
+from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, suggested_tags, wants_rewards_prompt
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import compose_bot
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import compose_bot
 
 
 def test_bot_tags_is_the_flattened_groups():

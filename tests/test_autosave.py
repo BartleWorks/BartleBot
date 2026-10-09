@@ -17,8 +17,8 @@ from PyQt6.QtWidgets import QMessageBox
 from bartlebot import app_controller
 from bartlebot.app_controller import AppController
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraphs import SYNC_ID, linked_bot, sync_players_definition
 

@@ -23,14 +23,14 @@ from functools import lru_cache
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
 from bartlebot.combat.strategy_tags import ROLE, SOURCE, STRATEGY_TAG_GROUPS
+from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
+from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
+from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 from bartlebot.game import card_art
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
-from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
-from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
 #: are 128px (two are 64px) game art, and 20px is the smallest that stays legible.
@@ -161,7 +161,7 @@ def tag_sections(
 
     No descriptions: the names already say what the tags mean, and a second line
     under each one doubled the row height for nothing. What a description would have
-    had to explain is a comment in bartlebot/bot_tags.py, where someone tagging a bot
+    had to explain is a comment in bartlebot/content/bot_tags.py, where someone tagging a bot
     will actually read it.
 
     *group* narrows the popup to one group's tags. The library opens one button per

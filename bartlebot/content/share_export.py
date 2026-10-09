@@ -40,11 +40,13 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from bartlebot import bot_roots
 from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
 from bartlebot.combat import strategy_store
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import StrategyKind
+from bartlebot.content import bot_roots
+from bartlebot.content.store_roots import declared_id
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.shared import share_file
 from bartlebot.shared.share_file import (
     DECK,
@@ -64,8 +66,6 @@ from bartlebot.shared.share_file import (
 from bartlebot.shared.store_files import Origin, slugify
 from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.shared.vendor import PRODUCT
-from bartlebot.store_roots import declared_id
-from bartlebot.subgraph_store import SubgraphLibrary
 
 logger = logging.getLogger(__name__)
 

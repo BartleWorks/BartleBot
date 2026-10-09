@@ -39,7 +39,7 @@ from PyQt6.QtCore import QEvent, QRect, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
-from bartlebot.bot_tags import tag_group
+from bartlebot.content.bot_tags import tag_group
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet

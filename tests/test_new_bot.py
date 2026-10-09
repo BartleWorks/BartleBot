@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta, TemplateRef
-from bartlebot.new_bot import (
+from bartlebot.content.new_bot import (
     FALLBACK_STEM,
     BotDetails,
     StartingPoint,
@@ -16,7 +16,7 @@ from bartlebot.new_bot import (
     starting_points,
     unique_file_name,
 )
-from bartlebot.template_store import release, save_draft
+from bartlebot.content.templates.template_store import release, save_draft
 
 
 def _draft(template_id: str = "tpl-boss", name: str = "Boss Farmer", blurb: str = "Farms one boss.") -> BotConfig:

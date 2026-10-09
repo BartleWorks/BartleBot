@@ -5,7 +5,7 @@ from its latest released version. The second asks for what the bot is called and
 its file goes. Create hands both back to the controller, which builds the bot, saves it
 at once and opens it in Edit mode.
 
-Everything this decides is in :mod:`bartlebot.new_bot`, which has no Qt in it: what a
+Everything this decides is in :mod:`bartlebot.content.new_bot`, which has no Qt in it: what a
 starting point is, the bot it makes, and the file name rule. The dialog only collects
 the answers, so its tests are about the form and that module's are about the result.
 
@@ -41,7 +41,17 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot_folders import folder_badge, folder_caption
+from bartlebot.content.bot_folders import folder_badge, folder_caption
+from bartlebot.content.new_bot import (
+    BOT_FILE_SUFFIX,
+    BotDetails,
+    StartingPoint,
+    clean_stem,
+    file_stem,
+    library_folders,
+    unique_file_name,
+)
+from bartlebot.content.store_roots import Origin
 from bartlebot.game import card_art
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
@@ -55,16 +65,6 @@ from bartlebot.gui.widgets.source_pill import source_pill
 from bartlebot.gui.widgets.tag_picker import tag_icon
 from bartlebot.gui.widgets.tags_field import TagsField
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.new_bot import (
-    BOT_FILE_SUFFIX,
-    BotDetails,
-    StartingPoint,
-    clean_stem,
-    file_stem,
-    library_folders,
-    unique_file_name,
-)
-from bartlebot.store_roots import Origin
 
 _BLANK_NAME = "Blank bot"
 _BLANK_BLURB = "An empty canvas. Build the graph yourself."

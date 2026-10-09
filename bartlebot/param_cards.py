@@ -27,8 +27,8 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from bartlebot.content.templates.setup_steps import field_empty
 from bartlebot.option_groups import SummaryPart
-from bartlebot.setup_steps import field_empty
 
 # ---------------------------------------------------------------------------
 # Surfaces and groups

@@ -125,6 +125,8 @@ from bartlebot.combat.strategy_tags import (
     normalize_strategy_tags,
 )
 from bartlebot.combat.strategy_workset import PROFILE_KINDS, Conflict, SharedUse, StrategyWorkingSet
+from bartlebot.content.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
+from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
@@ -141,8 +143,6 @@ from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
-from bartlebot.store_roots import SOURCE_LABELS
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from bartlebot import store_roots
 from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
     Origin,
@@ -23,6 +22,7 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
     unique_name,
 )
+from bartlebot.content import store_roots
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 # ---------------------------------------------------------------------------

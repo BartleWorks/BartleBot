@@ -7,8 +7,8 @@ library shared between users that drifts between ``travel`` / ``Travel`` / ``Mov
 cannot be filtered.
 
 - **Source** (Official / Official (modified) / Custom) is *derived* from where the
-  definition is, :meth:`~bartlebot.subgraph_store.SubgraphLibrary.origin`, and never
-  stored. Its words are :data:`bartlebot.store_roots.SOURCE_LABELS`, so a filter chip
+  definition is, :meth:`~bartlebot.content.subgraphs.subgraph_store.SubgraphLibrary.origin`, and never
+  stored. Its words are :data:`bartlebot.content.store_roots.SOURCE_LABELS`, so a filter chip
   always says what the pill on the card it matches says.
 - **Category** is *stored*, in the definition file's ``tags``. It says what the subgraph
   does, in the node browser's own category words wherever one fits, because a subgraph is
@@ -27,7 +27,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterable
 
-from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
+from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 
 logger = logging.getLogger(__name__)
 

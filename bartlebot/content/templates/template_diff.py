@@ -50,7 +50,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from bartlebot import template_store, variables
+from bartlebot import variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     BotConfig,
@@ -63,8 +63,7 @@ from bartlebot.bot.schema import (
 )
 from bartlebot.bot_options import storable_options
 from bartlebot.combat import fight_keys
-from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-from bartlebot.subgraphs import (
+from bartlebot.content.subgraphs.subgraphs import (
     drop_states,
     entry_port_of,
     exit_port_of,
@@ -73,7 +72,9 @@ from bartlebot.subgraphs import (
     outermost_linked_regions,
     reresolve_member_params,
 )
-from bartlebot.template_store import id_prefixes, is_template_owned
+from bartlebot.content.templates import template_store
+from bartlebot.content.templates.template_store import id_prefixes, is_template_owned
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 
 logger = logging.getLogger(__name__)
 

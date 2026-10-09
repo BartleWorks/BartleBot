@@ -7,8 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 
-from bartlebot.bot_tags import normalize_tags
-from bartlebot.subgraph_tags import normalize_subgraph_tags
+from bartlebot.content.bot_tags import normalize_tags
+from bartlebot.content.subgraphs.subgraph_tags import normalize_subgraph_tags
 
 #: Return values that fall through to the bot's recovery state when a node's port
 #: for them is left unrouted. Almost every failure in a graph ends up back at the
@@ -478,7 +478,7 @@ class SetupStep(BaseModel):
 
     Every target is a fill-in, and nothing else marks one. A step is done when all of
     its targets are filled and valid; that is worked out from the bot each time
-    (:mod:`bartlebot.setup_steps`) and never stored.
+    (:mod:`bartlebot.content.templates.setup_steps`) and never stored.
     """
 
     text: str
@@ -527,7 +527,7 @@ class BotConfig(BaseModel):
     # Pydantic ignores it in an older file, and ``save()`` drops it.
     drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
-    # What the bot is *for* — see bartlebot/bot_tags.py. Filters the library panel.
+    # What the bot is *for* — see bartlebot/content/bot_tags.py. Filters the library panel.
     tags: list[str] = Field(default_factory=list)
     options: list[BotOptionModel] = Field(default_factory=list)
     # What the bot learns as it runs and reads back on its edges (docs/VARIABLES.md).
@@ -582,7 +582,7 @@ class BotConfig(BaseModel):
     def normalize_tag_list(cls, value):
         """Drop unknown tags, de-duplicate, and order by the vocabulary.
 
-        Tolerant rather than strict — see :func:`bartlebot.bot_tags.normalize_tags`.
+        Tolerant rather than strict — see :func:`bartlebot.content.bot_tags.normalize_tags`.
         Runs on every load *and* on UndoManager's model_dump/model_validate round-trip,
         so the stored order stays stable no matter how the editor wrote it.
         """
@@ -910,14 +910,14 @@ class SubgraphDefinition(BaseModel):
     is stored the way a bot stores one -- its members as a snapshot among ``states``,
     its region carrying ``source`` -- and a plain region is kept as layout. It has no
     ``initial`` or ``recovery_state``: roles are bot-owned. Composition into a bot is
-    :mod:`bartlebot.subgraphs`; storage is :mod:`bartlebot.subgraph_store`.
+    :mod:`bartlebot.content.subgraphs.subgraphs`; storage is :mod:`bartlebot.content.subgraphs.subgraph_store`.
     """
 
     id: str
     name: str
     description: str | None = None
     version: int = 1
-    # What the subgraph does, from the fixed vocabulary of bartlebot.subgraph_tags (#172).
+    # What the subgraph does, from the fixed vocabulary of bartlebot.content.subgraphs.subgraph_tags (#172).
     # Left out of the file while empty, so a definition never given one is written as before.
     tags: list[str] = Field(default_factory=list)
     inputs: list[SubgraphInput] = Field(default_factory=list)

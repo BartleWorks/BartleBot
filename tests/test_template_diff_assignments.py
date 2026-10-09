@@ -19,7 +19,7 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
-from bartlebot.template_diff import Release, SlotValue, Status, TemplateUpdate, apply, diff
+from bartlebot.content.templates.template_diff import Release, SlotValue, Status, TemplateUpdate, apply, diff
 
 TEMPLATE_ID = "tpl-assign"
 SWORDS = VariableModel(name="swords", type="int")

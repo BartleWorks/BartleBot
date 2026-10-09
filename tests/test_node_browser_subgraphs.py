@@ -12,8 +12,8 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QLabel
 
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog, _SubgraphListItem, subgraph_key
-from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_subgraphs import SYNC_ID, sync_players_definition
 
 

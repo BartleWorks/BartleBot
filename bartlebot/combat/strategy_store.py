@@ -16,7 +16,7 @@ The kinds sit under two different user roots:
   bot_strategies/      — BotCombatStrategy    files   — BartleBot's own (%APPDATA%/Bartleby/BartleBot)
 
 The shared three are stored by :mod:`bartlebot.shared.strategy_library`, whose roots
-come from :func:`bartlebot.store_roots.resolve_shared_roots`. Because another product
+come from :func:`bartlebot.content.store_roots.resolve_shared_roots`. Because another product
 can have one of their files open, a save of one passes the fingerprint it was loaded
 with (``expected``) and writes nothing if the file changed on disk since, raising
 :class:`ChangedOnDisk`; a file in a newer format raises :class:`NewerFormat`. With no
@@ -42,11 +42,7 @@ from enum import Enum
 from pathlib import Path
 
 from bartlebot.combat.profile_models import BotCombatStrategy
-from bartlebot.shared import strategy_library as library
-from bartlebot.shared.store_files import record_save_in
-from bartlebot.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.store_roots import (
+from bartlebot.content.store_roots import (
     Origin,
     delete_by_id,
     index_dir,
@@ -58,6 +54,10 @@ from bartlebot.store_roots import (
     resolve_shared_roots,
     save_by_id,
 )
+from bartlebot.shared import strategy_library as library
+from bartlebot.shared.store_files import record_save_in
+from bartlebot.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat
+from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
 

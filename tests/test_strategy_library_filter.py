@@ -15,10 +15,10 @@ Strategy Library window's versions did; the window itself was retired by #4.
 import pytest
 from PyQt6.QtCore import Qt
 
-from bartlebot import store_roots
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_summary import StrategySummary
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import (
     CombatStrategyDialog,
     DialogMode,

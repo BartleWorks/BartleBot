@@ -12,7 +12,7 @@ from pathlib import Path
 from PyQt6.QtGui import QFont, QFontMetrics
 from PyQt6.QtWidgets import QStyle
 
-from bartlebot.bot_folders import (
+from bartlebot.content.bot_folders import (
     ALL_BADGE,
     FOLDER_BADGES,
     UNBADGED_FOLDERS,

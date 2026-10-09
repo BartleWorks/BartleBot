@@ -16,30 +16,28 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import (
-    bot_fork,
-    bot_roots,
-    group_manager,
-    new_bot,
-    option_values,
-    player_realms,
-    recovery_readiness,
-    setup_steps,
-    share_export,
-    share_import,
-    template_diff,
-    template_gallery,
-    template_store,
-    variables,
-)
+from bartlebot import group_manager, option_values, player_realms, recovery_readiness, variables
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
-from bartlebot.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat import strategy_store
 from bartlebot.combat.combat_warnings import collect_combat_warnings
 from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
+from bartlebot.content import bot_fork, bot_roots, new_bot, share_export, share_import
+from bartlebot.content.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
+from bartlebot.content.store_roots import DEV_ENV_VAR, Origin, dev_mode, pill_text
+from bartlebot.content.subgraphs.subgraph_signature import signature_changes
+from bartlebot.content.subgraphs.subgraph_signature import warning_text as signature_warning_text
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, bots_linking, count_subgraph_uses
+from bartlebot.content.subgraphs.subgraphs import (
+    ComposeReport,
+    compose_bot,
+    config_to_definition,
+    definition_change,
+    definition_to_config,
+)
+from bartlebot.content.templates import setup_steps, template_diff, template_gallery, template_store
 from bartlebot.game import restricted_zones, wizard_names, zone_names
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
@@ -65,17 +63,6 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
-from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode, pill_text
-from bartlebot.subgraph_signature import signature_changes
-from bartlebot.subgraph_signature import warning_text as signature_warning_text
-from bartlebot.subgraph_store import SubgraphLibrary, bots_linking, count_subgraph_uses
-from bartlebot.subgraphs import (
-    ComposeReport,
-    compose_bot,
-    config_to_definition,
-    definition_change,
-    definition_to_config,
-)
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
@@ -1058,7 +1045,7 @@ class AppController(QObject):
         """Make my own copy of the open Official bot, and open the copy in Edit mode (#149).
 
         Asked when Edit mode is asked for on an Official bot. The copy is a fork
-        (:mod:`bartlebot.bot_fork`): a new id recording the Official bot's, in the user's
+        (:mod:`bartlebot.content.bot_fork`): a new id recording the Official bot's, in the user's
         own folder, written at once as New Bot writes a new bot. Unlike Save As, it takes
         every option value, Bot Combat Strategy and the active pick with it, so it runs
         exactly as the Official bot did. False when cancelled or nothing was written.
@@ -1825,7 +1812,7 @@ class AppController(QObject):
     def _delete_subgraph(self, subgraph_id: str) -> bool:
         """Delete a definition from the library, from its card there. False when refused or cancelled.
 
-        Deleting removes the user's file only (:mod:`bartlebot.store_roots`), so a
+        Deleting removes the user's file only (:mod:`bartlebot.content.store_roots`), so a
         modified Official one is reverted rather than deleted, and an unedited one has
         nothing to delete. What linked the definition is never broken by it: a bot keeps
         the snapshot it was saved with and runs that, flagged ``missing``, as does a bot
@@ -1899,7 +1886,7 @@ class AppController(QObject):
 
         Written at the version it has: a bot links the id, and an instance keeps the
         label it was given when it was placed, so nothing that links it changes and
-        none of them is offered an update (:func:`~bartlebot.subgraphs.definition_change`).
+        none of them is offered an update (:func:`~bartlebot.content.subgraphs.subgraphs.definition_change`).
         The user's own definitions only. An Official one's name is the shipped file's,
         and renaming it would make a copy that stops its updates arriving -- in dev
         mode every definition is the user's, so that is where an Official one is renamed.
@@ -1947,7 +1934,7 @@ class AppController(QObject):
 
         Only a change to what runs makes a new version (#158): a definition identical
         to the library's copy is not written at all, and one that differs only in
-        layout or in name and description (:func:`~bartlebot.subgraphs.definition_change`)
+        layout or in name and description (:func:`~bartlebot.content.subgraphs.subgraphs.definition_change`)
         is written at the version it has. Refused while
         the document has errors: a definition that cannot compose must not reach the
         bots that link it. A shipped definition is saved as the user's
@@ -2009,7 +1996,7 @@ class AppController(QObject):
         """Warn before a save that changes what a linking bot depends on (#169). False when cancelled.
 
         Asked only when the save removes or renames an input or a port, or adds an input
-        with no default (:mod:`bartlebot.subgraph_signature`), and only when a bot or
+        with no default (:mod:`bartlebot.content.subgraphs.subgraph_signature`), and only when a bot or
         another definition links this one: with nothing linking it, nothing can break.
         A warning, never a refusal: a bot that cannot take the change is held on its
         snapshot.
@@ -2102,7 +2089,7 @@ class AppController(QObject):
     def _revert_definition(self) -> bool:
         """Discard the user's copy of an Official definition, and show the Official one. False when cancelled.
 
-        Deleting the user copy is the revert (:mod:`bartlebot.store_roots`). Every bot
+        Deleting the user copy is the revert (:mod:`bartlebot.content.store_roots`). Every bot
         linking it follows the Official one from its next compose, and unsaved edits
         in the document go with the copy, so it asks first.
         """

@@ -97,7 +97,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_roots
 from bartlebot.combat.combat_grouping import (
     apply_membership,
     build_bindings,
@@ -120,6 +119,7 @@ from bartlebot.combat.strategy_store import (
 )
 from bartlebot.combat.strategy_summary import summarize_bot
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.content import bot_roots
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker

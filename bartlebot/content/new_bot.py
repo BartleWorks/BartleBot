@@ -12,7 +12,7 @@ written; the other is finishing a template update review. It is what lets a late
 of the template be offered to the bot.
 
 Only released versions are starting points. A template with a draft and nothing released
-is not offered: the draft is its maintainer's working copy (see :mod:`bartlebot.template_store`).
+is not offered: the draft is its maintainer's working copy (see :mod:`bartlebot.content.templates.template_store`).
 
 No Qt and no settings here: the dialog (``gui/new_bot_dialog.py``) is a form over these
 functions, and a test calls them on a ``tmp_path``.
@@ -26,11 +26,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
-from bartlebot import template_store
 from bartlebot.bot.schema import BotConfig, TemplateRef
-from bartlebot.bot_folders import UNBADGED_FOLDERS
-from bartlebot.bot_tags import normalize_tags
-from bartlebot.store_roots import Origin, slugify
+from bartlebot.content.bot_folders import UNBADGED_FOLDERS
+from bartlebot.content.bot_tags import normalize_tags
+from bartlebot.content.store_roots import Origin, slugify
+from bartlebot.content.templates import template_store
 
 logger = logging.getLogger(__name__)
 
@@ -169,10 +169,10 @@ def unique_file_name(stem: str, folder: str | Path) -> str:
 def library_folders(*bots_dirs: str | Path) -> list[str]:
     """The bot library's folders a new bot can be saved in, in the library's order.
 
-    By folder name, so the numbers set the order (see :mod:`bartlebot.bot_folders`).
+    By folder name, so the numbers set the order (see :mod:`bartlebot.content.bot_folders`).
     Empty ones are listed too, unlike in the library panel: a new bot is how one fills.
     Every folder in any of ``bots_dirs``, so a user's own folder, empty on a first run,
-    still offers every world the shipped one has (:mod:`bartlebot.bot_roots`).
+    still offers every world the shipped one has (:mod:`bartlebot.content.bot_roots`).
     """
     names = {p.name for d in map(Path, bots_dirs) if d.is_dir() for p in d.iterdir() if p.is_dir()}
     return sorted(n for n in names if n not in UNBADGED_FOLDERS and not n.startswith((".", "_")))

@@ -1,6 +1,6 @@
 """Finding, naming and writing a store's files by the id inside them, in one directory or across a pair.
 
-The file-level half of :mod:`bartlebot.store_roots`, moved here so the shared strategy
+The file-level half of :mod:`bartlebot.content.store_roots`, moved here so the shared strategy
 library (:mod:`bartlebot.shared.strategy_library`) can use it without importing
 anything product-specific. What a product's roots *are* stays with the product;
 everything below takes its directories as arguments.

@@ -1,4 +1,4 @@
-"""Tests for bartlebot.bot_summary: the description a bot's graph implies.
+"""Tests for bartlebot.content.bot_summary: the description a bot's graph implies.
 
 The names come from the checked-in snapshots (zone_names.json, entity_names.json,
 world_names.json), so each case reads as the sentence a user would actually see.
@@ -11,9 +11,9 @@ import json
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
-from bartlebot.bot_summary import BotFacts, Entrance, describe, describe_data, phrase, run_order
+from bartlebot.content.bot_summary import BotFacts, Entrance, describe, describe_data, phrase, run_order
+from bartlebot.content.templates.template_store import list_templates, load_draft
 from bartlebot.paths import project_root
-from bartlebot.template_store import list_templates, load_draft
 
 HAUNTED_CAVE = "WizardCity/WC_Streets/WC_HauntedCave"
 NIGHTSHADES_TOWER = "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1"  # has its own name

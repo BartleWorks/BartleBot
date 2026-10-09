@@ -13,10 +13,16 @@ import json
 
 import pytest
 
-from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig
+from bartlebot.content.templates import setup_steps
+from bartlebot.content.templates.template_store import (
+    DRAFT_FILE,
+    TEMPLATE_ID_PREFIX,
+    find_template,
+    list_templates,
+    sha256_matches,
+)
 from bartlebot.paths import project_root
-from bartlebot.template_store import DRAFT_FILE, TEMPLATE_ID_PREFIX, find_template, list_templates, sha256_matches
 
 _TEMPLATES = list_templates(project_root())
 
@@ -138,9 +144,9 @@ def test_a_card_can_show_a_drafts_blurb(template):
 def test_a_bot_made_from_a_draft_is_stopped_by_its_setup_steps_and_nothing_else(template):
     """What the next release will hand a user: every error is a step to do, and every step has one."""
     from bartlebot.bot.schema import TemplateRef  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import compose_bot  # noqa: PLC0415
     from bartlebot.gui.canvas.edit_scene import _validate_node  # noqa: PLC0415
-    from bartlebot.subgraph_store import SubgraphLibrary  # noqa: PLC0415
-    from bartlebot.subgraphs import compose_bot  # noqa: PLC0415
 
     library = SubgraphLibrary(project_root())
     draft = BotConfig.load(template.folder / DRAFT_FILE)
@@ -167,7 +173,7 @@ def test_every_template_opens_with_sync_players(template):
     In every released version and the draft. Gauntlet included: it syncs in The Commons,
     where it also comes back to for potions.
     """
-    from bartlebot.subgraphs import entry_port_of, linked_regions  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import entry_port_of, linked_regions  # noqa: PLC0415
 
     sync_players = "45419e29-77a2-4923-b779-a0ab2d948878"
     for name in [v.file for v in template.index.versions] + [DRAFT_FILE]:

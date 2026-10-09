@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from bartlebot.content.store_roots import DEV_ENV_VAR, resolve_shared_roots
 from bartlebot.paths import project_root
 from bartlebot.shared import official_set
 from bartlebot.shared.official_set import InstallKey
@@ -28,7 +29,6 @@ from bartlebot.shared.strategy_library import (
 )
 from bartlebot.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.shared.vendor import product_dir, vendor_dir
-from bartlebot.store_roots import DEV_ENV_VAR, resolve_shared_roots
 
 PLAYER = LibraryKind.PLAYER
 

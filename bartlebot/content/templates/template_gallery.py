@@ -17,9 +17,9 @@ them. Which are allowed follows from where a template comes from:
 Developer mode makes the two roots one directory, so every template there reads as
 Custom and the maintainer edits the shipped ones in place, as before. What it cannot do
 is delete one that has been released, since that folder is what ships
-(:func:`bartlebot.template_store.deletion_refused`), or rename one anywhere but in its
+(:func:`bartlebot.content.templates.template_store.deletion_refused`), or rename one anywhere but in its
 draft, which the next release carries
-(:func:`bartlebot.template_store.rename_waits_for_release`).
+(:func:`bartlebot.content.templates.template_store.rename_waits_for_release`).
 
 No Qt and no settings here: the dialog is ``gui/templates_dialog.py``, and a test builds
 a gallery on a ``tmp_path``.
@@ -31,10 +31,10 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from bartlebot import template_store
 from bartlebot.bot.schema import BotConfig
-from bartlebot.store_roots import Origin
-from bartlebot.template_store import Template
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.templates import template_store
+from bartlebot.content.templates.template_store import Template
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class GalleryEntry:
     #: "" when Delete is allowed, else why not.
     delete_refused: str
     #: The name the draft carries when it differs from the card's, which its next release
-    #: will carry (:func:`~bartlebot.template_store.renamed_in_draft`); "" otherwise.
+    #: will carry (:func:`~bartlebot.content.templates.template_store.renamed_in_draft`); "" otherwise.
     renamed_to: str = ""
 
     @property

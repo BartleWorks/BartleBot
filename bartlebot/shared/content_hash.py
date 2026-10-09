@@ -17,7 +17,7 @@ spelled out, hashes the same as long as it says the same thing. Only the top lev
 stripped: a nested field that happens to be named ``history`` is content.
 
 Template releases are the exception, and keep hashing their file bytes
-(:mod:`bartlebot.template_store`): a released file must never change at all, so there a
+(:mod:`bartlebot.content.templates.template_store`): a released file must never change at all, so there a
 reformat *is* a change.
 
 THE HISTORY

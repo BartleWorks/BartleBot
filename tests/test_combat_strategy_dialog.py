@@ -25,7 +25,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
-from bartlebot import store_roots
 from bartlebot.combat.strategy_store import (
     StrategyKind,
     list_duel_strategies,
@@ -34,6 +33,7 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, EDIT_VERB, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     KIND_LABELS,

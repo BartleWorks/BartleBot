@@ -9,7 +9,7 @@ The two checkboxes are the only choices: a bot's own Bot Combat Strategy, and th
 strategy's decks, both on by default. Ticking one re-gathers the file through the
 ``build`` callable the caller passes, so the list is always what Save writes.
 
-Gathering is :mod:`bartlebot.share_export`; this module only shows a plan and writes it.
+Gathering is :mod:`bartlebot.content.share_export`; this module only shows a plan and writes it.
 """
 
 from __future__ import annotations
@@ -32,10 +32,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.content.share_export import FILE_TYPES, NOUNS, Disposition, Entry, ExportPlan
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.share_export import FILE_TYPES, NOUNS, Disposition, Entry, ExportPlan
 
 logger = logging.getLogger(__name__)
 

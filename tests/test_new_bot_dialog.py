@@ -14,15 +14,15 @@ from PyQt6.QtWidgets import QDialog, QLabel, QMessageBox
 
 from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta, TemplateRef
+from bartlebot.content.new_bot import BotDetails, starting_points
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.templates.template_store import release, save_draft
 from bartlebot.gui import new_bot_dialog
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.new_bot_dialog import NewBotDialog
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.tag_pill import TagChip
-from bartlebot.new_bot import BotDetails, starting_points
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.template_store import release, save_draft
 from tests.test_subgraph_integration import ControllerHarness
 
 TEMPLATE_ID = "tpl-boss"

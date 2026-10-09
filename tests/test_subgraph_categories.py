@@ -16,23 +16,23 @@ from pathlib import Path
 import pytest
 from PyQt6.QtWidgets import QLabel, QWidget
 
-from bartlebot import share_export
 from bartlebot.bot.schema import SubgraphDefinition
+from bartlebot.content import share_export
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraph_tags import (
+    SUBGRAPH_CATEGORIES,
+    normalize_subgraph_tags,
+    subgraph_matches,
+    subgraph_tag_group,
+)
+from bartlebot.content.subgraphs.subgraphs import config_to_definition, definition_change, definition_to_config
 from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, filter_bot_metas
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog, subgraph_key
 from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import TagPill
 from bartlebot.paths import project_root
-from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraph_tags import (
-    SUBGRAPH_CATEGORIES,
-    normalize_subgraph_tags,
-    subgraph_matches,
-    subgraph_tag_group,
-)
-from bartlebot.subgraphs import config_to_definition, definition_change, definition_to_config
 from tests.test_subgraphs import SYNC_ID, sync_players_definition
 
 
@@ -54,8 +54,8 @@ def test_the_vocabulary_is_the_node_browsers_words_and_team():
 
 def test_no_category_is_also_a_bot_tag_or_a_source_word():
     """A shared word would put a bot tag's medallion on a subgraph, or match a Source chip."""
-    from bartlebot.bot_tags import BOT_TAGS  # noqa: PLC0415
-    from bartlebot.store_roots import SOURCE_LABELS  # noqa: PLC0415
+    from bartlebot.content.bot_tags import BOT_TAGS  # noqa: PLC0415
+    from bartlebot.content.store_roots import SOURCE_LABELS  # noqa: PLC0415
 
     assert not set(SUBGRAPH_CATEGORIES) & set(BOT_TAGS)
     assert not set(SUBGRAPH_CATEGORIES) & set(SOURCE_LABELS.values())

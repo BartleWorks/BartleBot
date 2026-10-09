@@ -1,6 +1,6 @@
 """Import: a share file's items, matched by id against what the receiver has, and written (#171).
 
-The other half of :mod:`bartlebot.share_export`. ``docs/SHARING.md`` is the reader's
+The other half of :mod:`bartlebot.content.share_export`. ``docs/SHARING.md`` is the reader's
 version of this docstring.
 
 REFUSED BEFORE ANYTHING IS WRITTEN
@@ -63,16 +63,14 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from bartlebot import bot_roots
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
 from bartlebot.combat import strategy_store
 from bartlebot.combat.combat_profile import duplicate_profile, read_bot_names
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import StrategyKind, unique_name
-from bartlebot.game import restricted_zones
-from bartlebot.new_bot import file_stem, library_folders, unique_file_name
-from bartlebot.nodes.registry import NODE_REGISTRY
-from bartlebot.share_export import (
+from bartlebot.content import bot_roots
+from bartlebot.content.new_bot import file_stem, library_folders, unique_file_name
+from bartlebot.content.share_export import (
     BOT,
     BOT_COMBAT_STRATEGY,
     DECK,
@@ -83,6 +81,9 @@ from bartlebot.share_export import (
     Sources,
     app_version,
 )
+from bartlebot.content.store_roots import resolve_roots, resolve_shared_roots
+from bartlebot.game import restricted_zones
+from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot.shared import strategy_library
 from bartlebot.shared.content_hash import content_sha256, next_history
 from bartlebot.shared.share_file import SHARE_FORMAT, ShareFile
@@ -104,7 +105,6 @@ from bartlebot.shared.store_files import Origin, load_in
 from bartlebot.shared.strategy_library import LibraryKind
 from bartlebot.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.shared.vendor import PRODUCT
-from bartlebot.store_roots import resolve_roots, resolve_shared_roots
 
 logger = logging.getLogger(__name__)
 
@@ -434,7 +434,7 @@ def bots_affected(sources: Sources, kind: str, item_id: str) -> list[str]:
         return []
     dirs = _bot_dirs(sources)
     if kind == SUBGRAPH:
-        from bartlebot.subgraph_store import bots_linking  # noqa: PLC0415 - one caller
+        from bartlebot.content.subgraphs.subgraph_store import bots_linking  # noqa: PLC0415 - one caller
 
         return bots_linking(item_id, *dirs)
     names = read_bot_names(*dirs)

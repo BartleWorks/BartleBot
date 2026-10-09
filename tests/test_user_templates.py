@@ -14,14 +14,13 @@ import pytest
 from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
 
-from bartlebot import app_controller, setup_steps, template_diff, template_gallery
+from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, SetupStep, SetupTarget, StateModel, TemplateMeta, TransitionModel
-from bartlebot.gui.canvas.bot_canvas import BotMode
-from bartlebot.new_bot import BotDetails, create_bot, starting_points
-from bartlebot.paths import project_root
-from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.template_store import (
+from bartlebot.content.new_bot import BotDetails, create_bot, starting_points
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.templates import setup_steps, template_diff, template_gallery
+from bartlebot.content.templates.template_store import (
     TEMPLATE_ID_PREFIX,
     NameTaken,
     TemplateIndex,
@@ -46,6 +45,8 @@ from bartlebot.template_store import (
     renamed_in_draft,
     save_draft,
 )
+from bartlebot.gui.canvas.bot_canvas import BotMode
+from bartlebot.paths import project_root
 from tests.test_subgraph_integration import ControllerHarness
 
 OFFICIAL_ID = "tpl-official"

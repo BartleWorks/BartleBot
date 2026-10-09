@@ -181,7 +181,7 @@ def session_log_dir() -> Path:
     An update replaces the install directory whole, so logs there would be lost with it
     (#168). In developer mode the user root is the repo, so they stay in its ``logs/``.
     """
-    from bartlebot.store_roots import resolve_roots  # noqa: PLC0415 - kept off this module's import path
+    from bartlebot.content.store_roots import resolve_roots  # noqa: PLC0415 - kept off this module's import path
 
     _shipped, user = resolve_roots(None, None)
     return user / "logs"

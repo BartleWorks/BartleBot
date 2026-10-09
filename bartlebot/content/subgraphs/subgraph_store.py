@@ -4,14 +4,14 @@
   user    — ``subgraphs/`` under ``%APPDATA%/Bartleby/BartleBot``, where every
             app-initiated write lands; a user file shadows a shipped one of the same id.
             With ``BARTLEBOT_DEV`` set it is the project root, so a shipped definition
-            is authored in place — see :mod:`bartlebot.store_roots`.
+            is authored in place — see :mod:`bartlebot.content.store_roots`.
 
 Files are named after the definition's name (``sync-players.json``) and found by the
-id inside them; :mod:`bartlebot.store_roots` has the naming rules. The root argument convention, :class:`Origin` and the
-shadowing rule are :mod:`bartlebot.store_roots`; this module mirrors
+id inside them; :mod:`bartlebot.content.store_roots` has the naming rules. The root argument convention, :class:`Origin` and the
+shadowing rule are :mod:`bartlebot.content.store_roots`; this module mirrors
 :mod:`bartlebot.combat.strategy_store` function for function so a reader of one knows the
 other. :class:`SubgraphLibrary` is the session's cached view over the pair, which is
-what the composition functions in :mod:`bartlebot.subgraphs` take.
+what the composition functions in :mod:`bartlebot.content.subgraphs.subgraphs` take.
 
 No Qt and no settings here: a test builds a library on a ``tmp_path``.
 """
@@ -23,9 +23,7 @@ import logging
 from pathlib import Path
 
 from bartlebot.bot.schema import SubgraphDefinition
-from bartlebot.shared.content_hash import official_updated
-from bartlebot.shared.store_files import record_save_in
-from bartlebot.store_roots import (
+from bartlebot.content.store_roots import (
     SOURCE_LABELS,  # noqa: F401  (re-exported: the subgraph surfaces import it from here)
     Origin,
     delete_by_id,
@@ -37,6 +35,8 @@ from bartlebot.store_roots import (
     save_by_id,
     source_label,  # noqa: F401  (re-exported)
 )
+from bartlebot.shared.content_hash import official_updated
+from bartlebot.shared.store_files import record_save_in
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ def bots_linking(subgraph_id: str, *bots_dirs: str | Path) -> list[str]:
     """The names of the bot files under ``bots_dirs`` that link ``subgraph_id``, sorted.
 
     Read as :func:`count_subgraph_uses` reads them. What the signature warning names
-    (:mod:`bartlebot.subgraph_signature`). A bot file with no name is named by its file.
+    (:mod:`bartlebot.content.subgraphs.subgraph_signature`). A bot file with no name is named by its file.
     """
     names = [found[0] for path in _bot_files(bots_dirs) if (found := _linked_ids(path)) and subgraph_id in found[1]]
     return sorted(names, key=str.casefold)
@@ -130,7 +130,7 @@ def count_subgraph_uses(*bots_dirs: str | Path) -> dict[str, int]:
     Read from the raw JSON rather than through ``BotConfig`` so an unloadable bot
     costs a skipped file, not an exception, and so a bot on an older schema still
     counts. What the node browser's "Used by N bots" reads, once per dialog. The
-    library's folders are :func:`bartlebot.bot_roots.library_dirs`.
+    library's folders are :func:`bartlebot.content.bot_roots.library_dirs`.
     """
     counts: dict[str, int] = {}
     for path in _bot_files(bots_dirs):
@@ -169,7 +169,7 @@ class SubgraphLibrary:
         """Definition id → why its file failed to load, as of the last reload.
 
         The id is the one the file declares, read without validating the rest, or its
-        stem when even that cannot be read — see :func:`bartlebot.store_roots.declared_id`.
+        stem when even that cannot be read — see :func:`bartlebot.content.store_roots.declared_id`.
         """
         return dict(self._errors)
 
