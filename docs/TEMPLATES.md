@@ -130,7 +130,7 @@ file.
 ## User templates
 
 Every user makes templates of their own (#164) in **File › Templates…**
-(`gui/templates_dialog.py`, logic in `bartlebot/content/templates/template_gallery.py`). It is a gallery of
+(`gui/dialogs/templates_dialog.py`, logic in `bartlebot/content/templates/template_gallery.py`). It is a gallery of
 New Bot's cards, one per template, each with its Source pill and a last line giving its
 latest version, how many of the user's bots were made from it, and the template it was
 copied from. A Source filter sits beside the heading. The verbs are a footer row and a
@@ -177,7 +177,7 @@ the same review. It lives under the user root.
 
 ## New Bot
 
-The New Bot dialog (`gui/new_bot_dialog.py`, logic in `bartlebot/content/new_bot.py`) offers a
+The New Bot dialog (`gui/dialogs/new_bot_dialog.py`, logic in `bartlebot/content/new_bot.py`) offers a
 blank bot and one card per template, built from its latest released version. Create copies
 that version, drops `template_meta`, mints a fresh id, records `template`, composes from
 the subgraph library, and saves the file at once. The setup steps are not copied into the

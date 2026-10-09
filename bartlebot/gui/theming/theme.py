@@ -197,7 +197,7 @@ class _Theme:
     icon_tint: str = "#404040"
 
     # ------------------------------------------------------------------
-    # Combat DSL syntax (gui/widgets/dsl_edit.py)
+    # Combat DSL syntax (gui/widgets/inputs/dsl_edit.py)
     #
     # VS Code's Light+ and Dark+ hues, so the colors mean what they mean in the
     # editor most people already know. The light type and number hues are darkened:

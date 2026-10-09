@@ -34,8 +34,6 @@ dev = [
     # nothing at runtime reads a WAD, and the extracted art is PNG by the time the app
     # sees it -- Qt's build here has no dds plugin, which is why the tool converts.
     "pillow>=11.0",
-    # Rewrites imports for tools/reorg_64.py (#64). Remove it with the tool in Stage 5.
-    "libcst>=1.9.0",
 ]
 
 # Ours, not upstream: these carry fixes the original projects do not have,

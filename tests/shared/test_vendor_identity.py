@@ -80,8 +80,8 @@ def test_shared_layer_imports_nothing_product_specific():
 
     A fourth repo consumed as a pinned dependency, or an installable package, is only
     possible while nothing here reaches into the rest of BartleBot. One import of
-    ``gui.theme`` is all it would take — which is exactly how ``account_slots`` came to
-    be split out of ``gui/account_accent`` in the first place. Not only the GUI and the
+    ``gui.theming.theme`` is all it would take — which is exactly how ``account_slots`` came to
+    be split out of ``gui/theming/account_accent`` in the first place. Not only the GUI and the
     FSM: a helper like ``store_roots`` or ``paths`` would make extracting the layer a
     rewrite instead of a move (#168).
     """

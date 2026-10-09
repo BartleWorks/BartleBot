@@ -50,7 +50,7 @@ class _PlayerChip(QFrame):
         self._enabled_visual = True
         # The account currently in this slot, as a palette slot rather than a color, so a
         # theme switch re-resolves. ``None`` is the normal case — nothing hooked — and
-        # draws the chip exactly as it always did. See gui/account_accent.py.
+        # draws the chip exactly as it always did. See gui/theming/account_accent.py.
         self._color_key = color_key
         self.setAcceptDrops(True)
         self.setFixedHeight(28)

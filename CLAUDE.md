@@ -48,9 +48,34 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 ## Architecture
 
 - **FSM engine** (`bartlebot/bot/machine.py`): `transitions.AsyncMachine` drives a node-based state machine
-- **Nodes** (`bartlebot/nodes/`): async coroutines in `action/` and `condition/` subdirectories
+- **Nodes** (`bartlebot/nodes/`): async coroutines, grouped by kind (`combat/`, `interaction/`, `teleportation/`, `utility/`, `zone_entry/`)
 - **GUI** (`bartlebot/gui/`): PyQt6 with qasync bridging async and Qt event loops
 - **Bot files**: JSON in `bots/`, validated by Pydantic models in `bartlebot/bot/schema.py`
+
+## Layout
+
+`bartlebot/`'s top level is the app shell only: `app_controller`, `logging_setup`,
+`paths` and `settings_manager`. **A new module goes in a package, never beside them.**
+
+| package | holds |
+|---|---|
+| `bot/` | the FSM: the machine, the bot file schema, ambient combat, the health monitor, variables |
+| `nodes/` | the node library, grouped by kind |
+| `game/` | read-only facts about the game: zones, worlds, realms, spells, names, scales, stat caps, sizing, keybindings, wiki lookups. `game/data/` holds the extracted snapshots, and every reader of them lives here |
+| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, combat profiles, fight keys, the built-in default combat config |
+| `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
+| `clients/` | game clients at run time: the client and group managers, accounts, credentials, launch tracking, relog, porting, sightings, tile slots, process and window helpers |
+| `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
+| `launcher/` | auto-select, launch profiles, Remember Realm |
+| `shared/` | what every Bartleby product shares; imports nothing from the rest of `bartlebot` |
+| `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`) |
+
+Logic a widget needs but that needs no Qt goes outside `gui/`, in the package its
+subject belongs to. A module keeps its file name when it moves; a new package gets an
+empty `__init__.py`.
+
+**Tests mirror the tree:** the test for `bartlebot/a/b/c.py` is `tests/a/b/test_c.py`
+(`tests/CLAUDE.md`).
 
 ## Where the rest lives
 
@@ -143,7 +168,7 @@ own art invites a takedown the way one carrying player data invites a link back 
 account.
 
 Names and ids are the exception, and the line worth remembering is *text versus
-asset*: `data/spell_names.json`, `data/zone_names.json` and `data/spell_schools.json`
+asset*: `spell_names.json`, `zone_names.json` and `spell_schools.json` in `bartlebot/game/data/`
 are all extracted from `Root.wad` and all tracked, because a snapshot of names is what
 lets the app talk about the game without shipping any of it.
 

@@ -21,7 +21,7 @@ is delete one that has been released, since that folder is what ships
 draft, which the next release carries
 (:func:`bartlebot.content.templates.template_store.rename_waits_for_release`).
 
-No Qt and no settings here: the dialog is ``gui/templates_dialog.py``, and a test builds
+No Qt and no settings here: the dialog is ``gui/dialogs/templates_dialog.py``, and a test builds
 a gallery on a ``tmp_path``.
 """
 

@@ -240,7 +240,7 @@ class CardColumn(QWidget):
         # is the column's terminator, not an entry in the ordered list.
         self._add_card: QWidget | None = None
         self._build_ui(title, show_settings_link)
-        # The drag, and the first-show warm-up it needs: see ``widgets/drag_reorder.py``.
+        # The drag, and the first-show warm-up it needs: see ``widgets/layout/drag_reorder.py``.
         self._drag = DragReorder(self._rows_layout(), self)
         self._drag.reordered.connect(self.reordered)
         self._drag.watch_for_show(self)

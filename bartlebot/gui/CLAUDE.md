@@ -141,7 +141,7 @@ A menu with no parent, or one parented directly to a window or dialog, is alread
 
 ## Buttons: `ActionButton` and its four weights
 
-Use `ActionButton` (`widgets/action_button.py`), not a bare `QPushButton`. Fusion's
+Use `ActionButton` (`widgets/buttons/action_button.py`), not a bare `QPushButton`. Fusion's
 default chrome is a beveled 3D frame sized to its own label, which flattens SVG icons
 against it and makes a row of buttons size each one to its own text.
 
@@ -193,7 +193,7 @@ decision, not silencing a check.
 ### A dialog's footer comes from `dialog_footer()`
 
 Never lay a `[Cancel] [Save]` row out by hand, and never reach for `QDialogButtonBox` —
-none is left under `gui/`. `dialog_footer()` (`widgets/dialog_footer.py`) builds
+none is left under `gui/`. `dialog_footer()` (`widgets/layout/dialog_footer.py`) builds
 `[extras…] <stretch> [Cancel] [Commit]` and returns the buttons, so a dialog that
 disables or retitles its commit still can.
 
@@ -226,8 +226,8 @@ them, and both follow the same conventions — `ThemedMixin` first in the base l
 
 | widget | look | for |
 |---|---|---|
-| `IconButton` (`widgets/icon_button.py`) | fixed square, glyph, no label | a remove `✕`, a close `×`, a help `?`, a favorite star |
-| `LinkButton` (`widgets/link_button.py`) | accent text, no frame, underline on hover | a control sitting inline in prose or under a card |
+| `IconButton` (`widgets/buttons/icon_button.py`) | fixed square, glyph, no label | a remove `✕`, a close `×`, a help `?`, a favorite star |
+| `LinkButton` (`widgets/buttons/link_button.py`) | accent text, no frame, underline on hover | a control sitting inline in prose or under a card |
 
 Three things about them:
 
@@ -263,7 +263,7 @@ Four, and they are not interchangeable:
 | `SidebarSection` | disclosure triangle + bold label | a region that **folds** |
 | `OptionCard`'s band (`sidebar/option_card.py`) | bordered card, surface band, muted triangle + semibold title | a **group of options that folds**, inside a section |
 | `CardColumn`'s heading | centered bold label + full-width rule | a **column of cards** |
-| `RuleHeading` (`widgets/rule_heading.py`) | left bold label + rule to the right | the regions of a **form** |
+| `RuleHeading` (`widgets/labels/rule_heading.py`) | left bold label + rule to the right | the regions of a **form** |
 
 A triangle promises a fold, so do not use `SidebarSection` for a region that does not
 have one; a centered heading over left-aligned fields reads as belonging to something
@@ -296,7 +296,7 @@ nothing beside them. Two rules:
 ## Account colors, and what a colored thing may claim
 
 A palette slot per account (`shared/account_slots.py`), resolved to a color against the
-live theme (`gui/account_accent.py`). It is a **match target** — find the card wearing
+live theme (`gui/theming/account_accent.py`). It is a **match target** — find the card wearing
 the same hue — never an identifier, and three rules keep it one:
 
 - **Hold the slot, not the hex.** A widget that stores `account_accent(3)` repaints
@@ -315,7 +315,7 @@ is authored offline and outlives whichever account is in slot 1 tonight — a pi
 `Malvin` would be a claim the stored data does not make, and the same card would read
 differently depending on what happened to be hooked. Issue #40 is the rollout.
 
-On the Combat tab every `P#` is a `PlayerBadge` (`widgets/player_pills.py`) — the deck
+On the Combat tab every `P#` is a `PlayerBadge` (`widgets/pills/player_pills.py`) — the deck
 cards, each assignment line and the combat order — and each deck card carries the same
 left stripe as the player card for its slot. Colors are held **per slot, not per
 position**, so a `P3 → P1` order puts slot 3's hue first. The tab polls its account
@@ -374,13 +374,13 @@ it**, builds the surface and asserts the list is empty; reading the code for thi
 has missed it more than once.
 
 The same window opens on the way *out*. **Discard a widget with `discard_widget`
-(`widgets/discard.py`)**, never a bare `setParent(None)` + `deleteLater()`: a widget
+(`widgets/layout/discard.py`)**, never a bare `setParent(None)` + `deleteLater()`: a widget
 shown earlier in the same event-loop turn still has that show to come, and once it is
 unparented the show maps it as a window. Import all redrew each deck card once per slot
 in one turn, and every art tile from the discarded redraws flashed in the corner (#120).
 The helper hides first, which is the whole fix. `test_discard_widget.py` guards it.
 When a flash appears that you can't place, run with `BARTLEBOT_DEV=1`:
-`gui/window_show_trace.py` logs each stray window's class and geometry, which usually
+`gui/debug/window_show_trace.py` logs each stray window's class and geometry, which usually
 names it, plus the Python stack. A deferred show has no Python caller, so for one of those
 the stack ends at the event loop. It also logs windows shown by the game processes.
 
@@ -410,7 +410,7 @@ the summary line carries the counts either way, and a single card with no art is
 skipped rather than given a placeholder — a placeholder per missing card turns an
 install with no art at all into a grid of gray squares.
 
-**A deck is listed by `DeckCardList` (`widgets/deck_card_list.py`), on both surfaces
+**A deck is listed by `DeckCardList` (`widgets/cards/deck_card_list.py`), on both surfaces
 that list one** — the sidebar card's unfolded rows and the dialog's Deck Presets page.
 It was the sidebar's own rows against `QLabel(f"  {name} × {count}")` off the raw dict,
 so the library page listed a deck unsorted, unheaded and unillustrated while the
@@ -520,7 +520,7 @@ An as-needed vertical bar takes its width out of the viewport when the content
 overflows and hands it back when it shrinks, so every card in the pane narrows and
 widens by the bar's width — on a folding card, under the very click that folded it
 (#112). A scroll area of cards, or of a form with sections that fold, calls
-`reserve_scrollbar_gutter` (`widgets/scroll_gutter.py`), the Qt stand-in for CSS
+`reserve_scrollbar_gutter` (`widgets/layout/scroll_gutter.py`), the Qt stand-in for CSS
 `scrollbar-gutter: stable`. Text editors, trees and tables keep the as-needed bar:
 re-wrapping text costs nothing, and a permanent gutter there only costs width.
 
@@ -911,7 +911,7 @@ the declarations are the **Variables section**, under Options on the Edit-mode O
 edge page's **Conditions** rows; its writes are the **`assignments`** rows on a
 `set_variables` node's page and on an edge's page, as **When taken, set** (#189). The two row editors read the
 declarations the canvas hands them each time a page is shown, never a copy of their own,
-and share one value control (`widgets/variable_widgets.VariableValueField`), which only
+and share one value control (`widgets/inputs/variable_widgets.VariableValueField`), which only
 ever offers a value the type takes. Because the Options tab *replaces* the Properties page
 while the author declares, a declaration edit re-shows the page
 (`BotCanvas.reshow_properties`): a page left showing a renamed variable's old name writes
@@ -928,7 +928,7 @@ in the in-app log.
 
 Every list of bots, templates, subgraphs or strategies says where each item comes from,
 in **the same three words** (`store_roots.SOURCE_LABELS`) and **the same pill**
-(`widgets/source_pill.source_pill`): Official filled with the accent, a modified one
+(`widgets/pills/source_pill.source_pill`): Official filled with the accent, a modified one
 outlined in it, Custom gray (#149). Never "Built-in", which says where a file is rather
 than what it promises: Official means shipped, and so tested in game. It is worked out
 from the root a file is in (`bot_roots.is_shipped`, `Origin`) and never read from the
@@ -941,7 +941,7 @@ takes the bot tag pickers' place while the Subgraphs folder is selected, and a b
 left selected is kept, out of sight, rather than applied to subgraphs.
 `docs/SUBGRAPHS.md` has the vocabulary.
 
-**File › Templates… decides nothing itself** (`gui/templates_dialog.py`). Which verbs a
+**File › Templates… decides nothing itself** (`gui/dialogs/templates_dialog.py`). Which verbs a
 card allows comes from `template_gallery.GalleryEntry`, and a verb a card does not allow
 is disabled with the reason as its tooltip, in the footer row and on the card's
 right-click menu alike. Edit, New and Duplicate end the dialog with a request the
@@ -981,7 +981,7 @@ signal, so the old rows are `takeWidget()`-ed and `deleteLater()`-ed, never repl
 
 **An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
 way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
-and the controller offers Make my own copy (`gui/make_copy_dialog.py`). A new way into
+and the controller offers Make my own copy (`gui/dialogs/make_copy_dialog.py`). A new way into
 Edit mode must go through `enter_edit_mode` too, and check the mode after it.
 
 ## One crumb bar, and the levels behind it
@@ -1367,7 +1367,7 @@ already has.
   descriptions" above a list of options reads as the bot's first option; a link
   whose text flips *Show* / *Hide* names its own effect. It sits at the top of the
   section body rather than on the header, which is a click-through row that
-  toggles collapse. `LinkButton` (`gui/widgets/link_button.py`) is the shared
+  toggles collapse. `LinkButton` (`gui/widgets/buttons/link_button.py`) is the shared
   control.
 - **The route to the app settings is written once, at the far end of that same
   row.** Option Values's rows name the level that answered, and one of the four —
@@ -1486,7 +1486,7 @@ already has.
   time, so a stale name there evaluates `False` in silence — and the override
   store. `OptionsSection._rename_option` does all three; deleting does the same
   three in reverse.
-- **One option-type → widget mapping**, in `gui/widgets/option_widgets.py`, used
+- **One option-type → widget mapping**, in `gui/widgets/inputs/option_widgets.py`, used
   by both surfaces and the Add/Edit dialog. `param_panel._make_widget` stays
   separate: it maps *param* fields, a larger vocabulary (zone, xyz, wiki_page)
   no bot option can have. Three copies of this mapping is how the dialog came to

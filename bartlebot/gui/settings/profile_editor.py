@@ -201,7 +201,7 @@ def account_sections(accounts: list[dict], rosters: dict[str, list[dict]]) -> li
     below and outlining its pill on every profile card elsewhere -- so the popup, the
     column and the cards behind the dialog are all naming accounts in one language.
     Resolved against the whole list, because a color is only distinct with respect to
-    the others (see gui/account_accent.py).
+    the others (see gui/theming/account_accent.py).
 
     Nothing is dimmed. ``dim`` means present-but-empty, and an account with no known
     characters is perfectly launchable: the roster is learned as clients connect, so on a

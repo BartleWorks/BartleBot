@@ -1,6 +1,6 @@
 """The combat DSL's vocabulary, and what kind of word belongs at a given point in it.
 
-Feeds the DSL editor's highlighting and completion (``gui/widgets/dsl_edit.py``).
+Feeds the DSL editor's highlighting and completion (``gui/widgets/inputs/dsl_edit.py``).
 Pure — no Qt, no wizwalker — so all of it is testable without a ``QApplication``.
 
 This module *scans*; it does not parse. The grammar is wizsprinter's

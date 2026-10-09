@@ -223,13 +223,13 @@ follow it by.
 | module | holds |
 |---|---|
 | `shared/strategy_models.py` | player strategies, duel strategies and decks, as Pydantic models |
-| `bot/strategy_models.py` | the combat profile (`BotCombatStrategy`) and its fight assignments |
-| `strategy_store.py` | the two roots, load/save/delete per kind, `Origin`, `unique_name` |
-| `strategy_workset.py` | the Save/Cancel boundary |
-| `strategy_summary.py` | every display string, derived once |
-| `combat_grouping.py`, `combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
-| `fight_keys.py` | which stored fight belongs to which combat state |
-| `combat_profile.py` | the profile-then-library lookup, what a profile duel takes with it, and duplicating a profile |
+| `combat/profile_models.py` | the combat profile (`BotCombatStrategy`) and its fight assignments |
+| `combat/strategy_store.py` | the two roots, load/save/delete per kind, `Origin`, `unique_name` |
+| `combat/strategy_workset.py` | the Save/Cancel boundary |
+| `combat/strategy_summary.py` | every display string, derived once |
+| `combat/combat_grouping.py`, `combat/combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
+| `combat/fight_keys.py` | which stored fight belongs to which combat state |
+| `combat/combat_profile.py` | the profile-then-library lookup, what a profile duel takes with it, and duplicating a profile |
 
 All of these are Qt-free and need no `QApplication`. That is deliberate and worth keeping: the boundary, the precedence, the filter rule and the warnings are all testable without a widget, which is why the Qt tests over them are small enough to stay fast.
 

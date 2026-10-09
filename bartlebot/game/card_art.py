@@ -10,7 +10,7 @@ construction because it is not in the tree at all.
 
 This module is the read side, and it is deliberately the *only* thing that knows the
 cache's shape. It is Qt-free so the lookup can be tested without a ``QApplication``;
-turning a path into a pixmap is ``gui/widgets/card_art_tile.py``'s job.
+turning a path into a pixmap is ``gui/widgets/cards/card_art_tile.py``'s job.
 
 THE LOOKUP KEY IS THE TEMPLATE NAME
     ``deck_io`` keys a saved deck by ``SpellTemplate.name()`` -- the internal name,

@@ -89,7 +89,7 @@ Challenge Mode copy as one (#143), so a recorded ordinary zone matches a client 
 ### Challenge Mode and potions: the stat caps
 
 Challenge Mode scales by the **stat caps**, the game's own table in `Root.wad`'s
-`LevelScaledData.xml` (`tools/dump_stat_caps.py` writes it to `data/stat_caps.json`). A
+`LevelScaledData.xml` (`tools/dump_stat_caps.py` writes it to `bartlebot/game/data/stat_caps.json`). A
 stat is scaled by the cap at the dungeon's level over the cap at the player's own, and a
 player is held to the caps of the lowest ten-level step it has not passed: 90 to the level
 90 caps, 91 to 100 to the level 100 caps. Caps apply only in advanced combat, which here

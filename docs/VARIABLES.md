@@ -205,7 +205,7 @@ change goes out on `edit_starting` first, so it is one undo step like a panel ed
 `param_panel._FlagConditionsWidget`). A row picks an option or a variable from one grouped
 list. A variable row offers only the comparisons its type takes
 (`variables.comparisons_for`) and its value in **`VariableValueField`**
-(`widgets/variable_widgets.py`): a checkbox for a bool, a spin box for an int, the enum's
+(`widgets/inputs/variable_widgets.py`): a checkbox for a bool, a spin box for an int, the enum's
 own values for an enum. So **no control ever offers a value the type refuses**. A
 variable cannot be negated, so the NOT box is hidden on its row, keeping its slot.
 
@@ -265,7 +265,7 @@ keeps them. A bot with no variables hides the section.
 
 **A value that just changed is marked**, bold in the accent, with what it was in its
 tooltip. The mark lasts through the first node after the write that touches the game, and
-is cleared when the one after that starts (`bartlebot/variable_watch.LiveVariables`, fed
+is cleared when the one after that starts (`bartlebot/bot/variable_watch.LiveVariables`, fed
 `on_state_change` with `BotMachine.node_type_of`). Clearing it when the next node starts
 would mark nothing anyone could see: a `set_variables` write is followed by the next node
 within milliseconds, and so is the `branch` that usually reads it. For the same reason

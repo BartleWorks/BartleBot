@@ -36,7 +36,7 @@ def _switch_app(qapp, theme, mode: str) -> None:
     """The app-wide broadcast, which is what a real theme switch is.
 
     An ``ActionButton`` restyles itself off its own ``StyleChange``, so an event sent to
-    its dialog alone never reaches it — see gui/widgets/action_button.py.
+    its dialog alone never reaches it — see gui/widgets/buttons/action_button.py.
     """
     theme(mode)
     qapp.setStyleSheet(THEME.global_stylesheet())
