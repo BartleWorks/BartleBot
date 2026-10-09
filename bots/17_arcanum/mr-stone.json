@@ -8,268 +8,362 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Ammut"
+      "name": "Ammut",
+      "category": "Spellements"
     },
     {
-      "name": "Arcticzilla"
+      "name": "Arcticzilla",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Balance Accurate Pin (100)"
+      "name": "Balance Accurate Pin (100)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Conversion Pin (160)"
+      "name": "Balance Conversion Pin (160)",
+      "category": "Pins"
     },
     {
-      "name": "Barbarian's Saga"
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
     },
     {
-      "name": "Blast Off!"
+      "name": "Blast Off!",
+      "category": "Spellements"
     },
     {
-      "name": "Broken Branch Loss Cards"
+      "name": "Broken Branch Loss Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Loss Mask"
+      "name": "Broken Branch Loss Mask",
+      "category": "Hats"
     },
     {
-      "name": "Broken Branch Luckless Cards"
+      "name": "Broken Branch Luckless Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Luckless Mask"
+      "name": "Broken Branch Luckless Mask",
+      "category": "Hats"
     },
     {
-      "name": "Broken Branch Neglect Cards"
+      "name": "Broken Branch Neglect Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Neglect Mask"
+      "name": "Broken Branch Neglect Mask",
+      "category": "Hats"
     },
     {
-      "name": "Broken Branch Panic Cards"
+      "name": "Broken Branch Panic Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Panic Mask"
+      "name": "Broken Branch Panic Mask",
+      "category": "Hats"
     },
     {
-      "name": "Broken Branch Rage Cards"
+      "name": "Broken Branch Rage Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Rage Mask"
+      "name": "Broken Branch Rage Mask",
+      "category": "Hats"
     },
     {
-      "name": "Broken Branch Sorrow Cards"
+      "name": "Broken Branch Sorrow Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Sorrow Mask"
+      "name": "Broken Branch Sorrow Mask",
+      "category": "Hats"
     },
     {
-      "name": "Broken Branch Terror Cards"
+      "name": "Broken Branch Terror Cards",
+      "category": "Decks"
     },
     {
-      "name": "Broken Branch Terror Mask"
+      "name": "Broken Branch Terror Mask",
+      "category": "Hats"
     },
     {
-      "name": "Bunyip's Rage"
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
     },
     {
-      "name": "Cards of False Promises"
+      "name": "Cards of False Promises",
+      "category": "Decks"
     },
     {
-      "name": "Cards of the Burnt Forest"
+      "name": "Cards of the Burnt Forest",
+      "category": "Decks"
     },
     {
-      "name": "Cards of the Changing Tide"
+      "name": "Cards of the Changing Tide",
+      "category": "Decks"
     },
     {
-      "name": "Cards of the Coldhearted"
+      "name": "Cards of the Coldhearted",
+      "category": "Decks"
     },
     {
-      "name": "Cards of the Doomed"
+      "name": "Cards of the Doomed",
+      "category": "Decks"
     },
     {
-      "name": "Cards of the Living Lie"
+      "name": "Cards of the Living Lie",
+      "category": "Decks"
     },
     {
-      "name": "Cards of the Turning Wheel"
+      "name": "Cards of the Turning Wheel",
+      "category": "Decks"
     },
     {
-      "name": "Chameleon Clash"
+      "name": "Chameleon Clash",
+      "category": "Spellements"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Count Croakula"
+      "name": "Count Croakula",
+      "category": "Spellements"
     },
     {
-      "name": "Dark & Stormy"
+      "name": "Dark & Stormy",
+      "category": "Spellements"
     },
     {
-      "name": "Darkmoor Castle Theme"
+      "name": "Darkmoor Castle Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Darkmoor Tragedy Theme"
+      "name": "Darkmoor Tragedy Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Death Accurate Pin (100)"
+      "name": "Death Accurate Pin (100)",
+      "category": "Pins"
     },
     {
-      "name": "Death Conversion Pin (160)"
+      "name": "Death Conversion Pin (160)",
+      "category": "Pins"
     },
     {
-      "name": "Death Conversion Pin (170)"
+      "name": "Death Conversion Pin (170)",
+      "category": "Pins"
     },
     {
-      "name": "Deathly Depths"
+      "name": "Deathly Depths",
+      "category": "Spellements"
     },
     {
-      "name": "Drop Bear Fury"
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Fire Accurate Pin (100)"
+      "name": "Fire Accurate Pin (100)",
+      "category": "Pins"
     },
     {
-      "name": "Flawless Blocking Jade +24"
+      "name": "Flawless Blocking Jade +24",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Blocking Peridot +24"
+      "name": "Flawless Blocking Peridot +24",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Critical Amethyst +23"
+      "name": "Flawless Critical Amethyst +23",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Critical Citrine +23"
+      "name": "Flawless Critical Citrine +23",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Critical Onyx +24"
+      "name": "Flawless Critical Onyx +24",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Critical Peridot +24"
+      "name": "Flawless Critical Peridot +24",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Critical Sapphire +23"
+      "name": "Flawless Critical Sapphire +23",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Critical Sapphire +24"
+      "name": "Flawless Critical Sapphire +24",
+      "category": "Jewels"
     },
     {
-      "name": "Gravestorm"
+      "name": "Gravestorm",
+      "category": "Spellements"
     },
     {
-      "name": "Harmattan Maxios"
+      "name": "Harmattan Maxios",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Heqet"
+      "name": "Heqet",
+      "category": "Spellements"
     },
     {
-      "name": "Improbable Gaze"
+      "name": "Improbable Gaze",
+      "category": "Spellements"
     },
     {
-      "name": "Mask of False Promises"
+      "name": "Mask of False Promises",
+      "category": "Hats"
     },
     {
-      "name": "Mask of the Burnt Forest"
+      "name": "Mask of the Burnt Forest",
+      "category": "Hats"
     },
     {
-      "name": "Mask of the Changing Tide"
+      "name": "Mask of the Changing Tide",
+      "category": "Hats"
     },
     {
-      "name": "Mask of the Coldhearted"
+      "name": "Mask of the Coldhearted",
+      "category": "Hats"
     },
     {
-      "name": "Mask of the Doomed"
+      "name": "Mask of the Doomed",
+      "category": "Hats"
     },
     {
-      "name": "Mask of the Living Lie"
+      "name": "Mask of the Living Lie",
+      "category": "Hats"
     },
     {
-      "name": "Mask of the Turning Wheel"
+      "name": "Mask of the Turning Wheel",
+      "category": "Hats"
     },
     {
-      "name": "Mortality"
+      "name": "Mortality",
+      "category": "Spellements"
     },
     {
-      "name": "Myth Accurate Pin (100)"
+      "name": "Myth Accurate Pin (100)",
+      "category": "Pins"
     },
     {
-      "name": "Old One's Endgame"
+      "name": "Old One's Endgame",
+      "category": "Spellements"
     },
     {
-      "name": "Phantasmania!"
+      "name": "Phantasmania!",
+      "category": "Spellements"
     },
     {
-      "name": "Polished Piercing Jade +6%"
+      "name": "Polished Piercing Jade +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Onyx +6%"
+      "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Piercing Ruby +6%"
+      "name": "Polished Piercing Ruby +6%",
+      "category": "Jewels"
     },
     {
-      "name": "Raging Bull"
+      "name": "Raging Bull",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rusalka's Wrath"
+      "name": "Rusalka's Wrath",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scales of Destiny"
+      "name": "Scales of Destiny",
+      "category": "Spellements"
     },
     {
-      "name": "Shu"
+      "name": "Shu",
+      "category": "Spellements"
     },
     {
-      "name": "Snowball Barrage"
+      "name": "Snowball Barrage",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Starspawn"
+      "name": "Starspawn",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Accurate Pin (80)"
+      "name": "Storm Accurate Pin (80)",
+      "category": "Pins"
     },
     {
-      "name": "Taweret"
+      "name": "Taweret",
+      "category": "Spellements"
     },
     {
-      "name": "The Chariot"
+      "name": "The Chariot",
+      "category": "Spellements"
     },
     {
-      "name": "The Hierophant"
+      "name": "The Hierophant",
+      "category": "Spellements"
     },
     {
-      "name": "The Tower"
+      "name": "The Tower",
+      "category": "Spellements"
     },
     {
-      "name": "The World"
+      "name": "The World",
+      "category": "Spellements"
     },
     {
-      "name": "Thoth"
+      "name": "Thoth",
+      "category": "Spellements"
     },
     {
-      "name": "Unearthly Critical Onyx +44 (Life)"
+      "name": "Unearthly Critical Onyx +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +44"
     },
     {
-      "name": "Unearthly Critical Ruby +42 (Ice)"
+      "name": "Unearthly Critical Ruby +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +42"
     },
     {
-      "name": "Unearthly Critical Sapphire +48 (Balance)"
+      "name": "Unearthly Critical Sapphire +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +48"
     },
     {
-      "name": "Unearthly Damage Citrine +11% (Storm)"
+      "name": "Unearthly Damage Citrine +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +11%"
     },
     {
-      "name": "Unearthly Damage Peridot +10% (Fire)"
+      "name": "Unearthly Damage Peridot +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +10%"
     },
     {
-      "name": "Unearthly Damage Ruby +9% (Ice)"
+      "name": "Unearthly Damage Ruby +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +9%"
     },
     {
-      "name": "Wobbegong Frenzy"
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
     },
     {
-      "name": "Zand the Bandit"
+      "name": "Zand the Bandit",
+      "category": "Spellements"
     }
   ],
   "authors": "BartleBot",
@@ -369,7 +463,7 @@
       },
       "params": {
         "enemy": "DM_Gargoyle_Base_C_01",
-        "wiki_page": "",
+        "wiki_page": "Creature:Mr. Stone",
         "use_default_strategy": false,
         "max_duration": 300.0
       }
@@ -613,5 +707,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "64c4d3705b301b2886ed2a54e68d74ef3f934a472a97a6f8fe7362da83f17052"
+  ]
 }

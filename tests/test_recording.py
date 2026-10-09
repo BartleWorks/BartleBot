@@ -220,7 +220,6 @@ def test_recordable_nodes_contains_all_expected_types():
         "enter_gauntlet",
         "interact",
         "interact_menu",
-        "apply_level_scaling",
         "enter_zone_via_object",
         "mark_location",
         "teleport_to_marked_location",
@@ -776,58 +775,6 @@ async def test_interact_menu_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# apply_level_scaling  (_Interact, distinctive status messages)
-# ---------------------------------------------------------------------------
-
-
-async def test_apply_level_scaling_happy_path(zero_poll):
-    client = FakeClient()
-    client.zone_name.return_value = "Zone/Scale"
-    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), XYZ(2.0, 2.0, 0.0)]
-    client.is_in_npc_range.side_effect = [True, False]
-
-    form = FakeParamForm()
-    on_status, on_btn, try_set_label = _callbacks()
-
-    await run_recording("apply_level_scaling", client, form, on_status, on_btn, try_set_label)
-
-    assert form.str_fields["zone"] == "Zone/Scale"
-    assert "interact_xyz" in form.xyz_fields
-    all_statuses = [c[0][0] for c in on_status.call_args_list]
-    assert any("level-scaling NPC" in s for s in all_statuses)
-
-
-async def test_apply_level_scaling_cancellation(zero_poll):
-    client = FakeClient()
-    client.zone_name.return_value = "Z/A"
-    client.body.position.return_value = XYZ(0.0, 0.0, 0.0)
-    client.is_in_npc_range.return_value = False
-
-    form = FakeParamForm()
-    on_status, on_btn, try_set_label = _callbacks()
-
-    task = asyncio.create_task(run_recording("apply_level_scaling", client, form, on_status, on_btn, try_set_label))
-    await asyncio.sleep(0)
-    task.cancel()
-    await task  # coroutine catches CancelledError internally; task completes normally
-
-    on_status.assert_called_with("")
-    on_btn.assert_called_with("Record")
-
-
-async def test_apply_level_scaling_exception(zero_poll):
-    client = FakeClient()
-    client.zone_name.side_effect = RuntimeError("err")
-
-    form = FakeParamForm()
-    on_status, on_btn, try_set_label = _callbacks()
-
-    await run_recording("apply_level_scaling", client, form, on_status, on_btn, try_set_label)
-
-    assert on_status.call_args_list[-1][0][0].startswith("Error:")
-
-
-# ---------------------------------------------------------------------------
 # enter_zone_via_object  (_Interact with a destination: NPC range, then loading screen)
 # ---------------------------------------------------------------------------
 
@@ -954,15 +901,6 @@ async def test_a_title_read_that_fails_does_not_fail_the_recording(zero_poll, pr
 
     try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
     assert form.xyz_fields["interact_xyz"] == (1.0, 2.0, 3.0)
-
-
-async def test_apply_level_scaling_keeps_its_zone_label(zero_poll, prompt_title):
-    """Only interact and interact_menu are named after their target."""
-    on_status, on_btn, try_set_label = _callbacks()
-
-    await run_recording("apply_level_scaling", _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label)
-
-    try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
 
 
 @pytest.mark.parametrize("node_type", ["interact", "interact_menu"])

@@ -40,9 +40,10 @@ SUBGRAPH_CATEGORIES: tuple[str, ...] = (
     "Zone Entry",  # into a dungeon, a gauntlet or a zone, by its door or an object
     "Teleportation",  # across a world: coordinates, a marked location, a friend, a hub
     "Team",  # bringing several players to one zone, realm and area
-    "Combat",  # a fight and what surrounds it: potions, health, wisps
+    "Combat and Healing",  # a fight and recovering after it: potions, health and mana, wisps
     "Interaction",  # talking to an NPC, clicking through a menu, collecting reagents
-    "Utility",  # anything else: level scaling, selling, relogging, waiting
+    "Control Flow",  # choosing the next step: checks on health, zone or scaling, variables, branches
+    "Utility",  # anything else: applying level scaling, selling, relogging, changing realm, waiting
 )
 
 #: The Source values, in the order a picker offers them.

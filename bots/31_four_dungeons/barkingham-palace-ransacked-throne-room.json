@@ -1,6 +1,6 @@
 {
   "id": "8652dc06-b5af-48fc-a112-90c78a46dab3",
-  "name": "Barkingham Palace - Ransacked Throne Room",
+  "name": "Ransacked Throne Room",
   "description": "Endlessly completes Ransacked Throne Room in Barkingham Palace, Marleybone",
   "version": "1.0",
   "clients": "all",
@@ -160,6 +160,19 @@
       "type": "bool",
       "default": true,
       "description": "If enabled, activates Notes 5-7, which summon minions at the end of the third round"
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Antique Barkingham Ring",
+        "=Duke's Rosy Signet",
+        "=Fallen Palace Guard's Ring",
+        "=Mr. Hound's Ferocious Loop",
+        "=Official Seal of Barkingham",
+        "=Ringlet of Mesmerization",
+        "=Warder's Band of Recovery"
+      ]
     }
   ],
   "states": [
@@ -332,8 +345,8 @@
       "node_type": "interact_menu",
       "label": "Open Collected Notes menu",
       "position": {
-        "x": 2640,
-        "y": 0.0
+        "x": 2640.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
@@ -365,8 +378,8 @@
       "node_type": "click_path",
       "label": "Click Note 5",
       "position": {
-        "x": 3080,
-        "y": 0.0
+        "x": 3080.0,
+        "y": 90.0
       },
       "params": {
         "path": [
@@ -394,8 +407,8 @@
       "node_type": "interact_menu",
       "label": "Open Collected Notes menu",
       "position": {
-        "x": 3520,
-        "y": 0.0
+        "x": 3520.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
@@ -427,8 +440,8 @@
       "node_type": "click_path",
       "label": "Click Note 6",
       "position": {
-        "x": 3960,
-        "y": 0.0
+        "x": 3960.0,
+        "y": 90.0
       },
       "params": {
         "path": [
@@ -456,8 +469,8 @@
       "node_type": "interact_menu",
       "label": "Open Collected Notes menu",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 4400.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
@@ -489,8 +502,8 @@
       "node_type": "click_path",
       "label": "Click Note 7",
       "position": {
-        "x": 4840,
-        "y": 0.0
+        "x": 4840.0,
+        "y": 90.0
       },
       "params": {
         "path": [
@@ -764,11 +777,17 @@
         "state_15",
         "state_17"
       ],
-      "color": 2
+      "color": 2,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
     "version": 1
-  }
+  },
+  "history": [
+    "2689b917a5601d133c68066934f80e0f22e691d8543cd69972d67558a017866e",
+    "6cb8dd24b9f0d863b15476e473adfb1b82b54ab552d873e4a9cdf0ab2fba0517",
+    "b91d848b11ebe17a1396d15ac9e46ca933d36459a7ddc29a4ee0b84f11202e17"
+  ]
 }

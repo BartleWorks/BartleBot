@@ -7,7 +7,7 @@ with its own param keys and prompt text:
   * ``_WalkIn`` — walk into a zone change (``enter_zone``, ``enter_dungeon``,
     ``enter_gauntlet``).
   * ``_Interact`` — walk up to something and use it, optionally through a loading
-    screen (``interact``, ``interact_menu``, ``apply_level_scaling``,
+    screen (``interact``, ``interact_menu``,
     ``enter_zone_via_object``).
   * ``_Point`` — the zone and the player's position, at once.
   * ``_Enemy`` — the mob closest to the player, by name (``handle_combat``).
@@ -474,7 +474,6 @@ _REGISTRY: dict[str, _Workflow] = {
     ),
     "interact": _Interact(names_target=True, players_key="interact_clients"),
     "interact_menu": _Interact(todo="set Menu Path manually", names_target=True, players_key="interact_clients"),
-    "apply_level_scaling": _Interact(approach="Walk to level-scaling NPC…", finish="Leave NPC range to finish…"),
     "enter_zone_via_object": _Interact(
         zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone", names_target=True
     ),

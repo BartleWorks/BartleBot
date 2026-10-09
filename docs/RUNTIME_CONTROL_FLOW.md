@@ -1,11 +1,11 @@
-# Runtime flow control
+# Runtime control flow
 
 Epic #16: bot variables, named values the bot sets as it runs and reads back to choose
 its next node. **The plan is on one page:**
 https://claude.ai/artifact/VnoJzdBGUjJw4a8gZG9U5M
 
 **All five stages landed by 2026-10-08. The page is complete and no longer maintained, but
-it is still the record of the design.** It holds the goals, the flow-control features
+it is still the record of the design.** It holds the goals, the control-flow features
 checked against other tools, the lessons taken from them, every decision with the
 alternative it beat, and each stage's "As built" deviations. Read it when a design
 question comes up, but don't update it: a later fix is not added there. The page is

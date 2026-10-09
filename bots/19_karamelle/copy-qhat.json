@@ -992,10 +992,19 @@
   "tags": [
     "Gear",
     "Spellements",
+    "Seeds",
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Evil Magma Peas"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_8",
@@ -1352,5 +1361,8 @@
   "template": {
     "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
     "version": 1
-  }
+  },
+  "history": [
+    "ebf6732ea09cb3bd47077df6799daff6ea4940e71117584f437f552eb7a8d88e"
+  ]
 }

@@ -1,6 +1,6 @@
 {
   "id": "3f5a60dd-2211-4e72-bfb7-d57dcf90b850",
-  "name": "Barkingham Palace - State Wing",
+  "name": "State Wing",
   "description": "Endlessly completes State Wing in Barkingham Palace, Marleybone",
   "version": "1.0",
   "clients": "all",
@@ -8,280 +8,195 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Adroit Opal"
+      "name": "11 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Balefrost"
+      "name": "12 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Band of Royal Infallibility"
+      "name": "13 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Banshee Onyx"
+      "name": "Arcana of Noble Praxis",
+      "category": "Decks"
     },
     {
-      "name": "Barkingham Boots of Brio"
+      "name": "Barkingham Cards of Acumen",
+      "category": "Decks"
     },
     {
-      "name": "Barkingham Clogs of Repose"
+      "name": "Barkingham Case of Splendor",
+      "category": "Decks"
     },
     {
-      "name": "Black Spider"
+      "name": "Barkingham Pack of Malaise",
+      "category": "Decks"
     },
     {
-      "name": "Blue Ghost"
+      "name": "Barkingham Set of Integrity",
+      "category": "Decks"
     },
     {
-      "name": "Bone"
+      "name": "Boots of the Forlorn Watch",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Forlorn Watch"
+      "name": "Case of the Royal Flame",
+      "category": "Decks"
     },
     {
-      "name": "Buttered Bread"
+      "name": "Ceremonial Boots of Triumph",
+      "category": "Boots"
     },
     {
-      "name": "Cat Thug"
+      "name": "Clean Sweep",
+      "category": "Spellements"
     },
     {
-      "name": "Chipped Damage Citrine +7"
+      "name": "Deck of the Ferocious Hound (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of the Ferocious Hound"
     },
     {
-      "name": "Chipped Defense Opal +8"
+      "name": "Deck of the Lush Kingdom",
+      "category": "Decks"
     },
     {
-      "name": "Chipped Defense Sapphire +14"
+      "name": "Deck of the Roiling Court",
+      "category": "Decks"
     },
     {
-      "name": "Clockwork"
+      "name": "Frosted Deck of Barkingham",
+      "category": "Decks"
     },
     {
-      "name": "Clockwork Spider"
+      "name": "Haze Over Barkingham Cards",
+      "category": "Decks"
     },
     {
-      "name": "Copper"
+      "name": "Her Majesty's Regal Array",
+      "category": "Decks"
     },
     {
-      "name": "Crabling"
+      "name": "Jackall & Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Cyclops Peridot"
+      "name": "Jackall's Mystifying Cards (Tear)",
+      "category": "Decks",
+      "match_name": "Jackall's Mystifying Cards"
     },
     {
-      "name": "Dark Sprite"
+      "name": "Jacques Scratches!",
+      "category": "Spellements"
     },
     {
-      "name": "Darkwind"
+      "name": "Mark of Meowiarty",
+      "category": "Spellements"
     },
     {
-      "name": "Deadly Scratcher"
+      "name": "Myth Potbelly",
+      "category": "Pets"
     },
     {
-      "name": "Delicious Cookie"
+      "name": "Palace Guard's Firewalkers",
+      "category": "Boots"
     },
     {
-      "name": "Doom and Gloom"
+      "name": "Palace Guard's Rain Waders",
+      "category": "Boots"
     },
     {
-      "name": "Dr. Jalapeno"
+      "name": "Pops' Knuckles",
+      "category": "Spellements"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Queen's Case of Resilience (Tear)",
+      "category": "Decks",
+      "match_name": "Queen's Case of Resilience"
     },
     {
-      "name": "Evil Snowman Sapphire"
+      "name": "Rains of Barkingham Set",
+      "category": "Decks"
     },
     {
-      "name": "Flaming Soup"
+      "name": "Rangers of the Royal Flame",
+      "category": "Boots"
     },
     {
-      "name": "Flapjacks"
+      "name": "Ratstabber",
+      "category": "Spellements"
     },
     {
-      "name": "Flawed Accurate Opal +2%"
+      "name": "Regal Gallery of Dignity (Tear)",
+      "category": "Decks",
+      "match_name": "Regal Gallery of Dignity"
     },
     {
-      "name": "Flawed Health Opal +29"
+      "name": "Royal Boots of Whirlwind",
+      "category": "Boots"
     },
     {
-      "name": "Flawed Health Opal +30"
+      "name": "Royal Ceremonial Snowshoes",
+      "category": "Boots"
     },
     {
-      "name": "Glowing Star Fruit"
+      "name": "Royal Footgear of Charisma",
+      "category": "Boots"
     },
     {
-      "name": "Glowing Taffy"
+      "name": "Royal Footguards of Accord",
+      "category": "Boots"
     },
     {
-      "name": "Goat Cheese"
+      "name": "Royal Shoes of Remembrance",
+      "category": "Boots"
     },
     {
-      "name": "Golden Grapes"
+      "name": "Set of the Thriving Monarch",
+      "category": "Decks"
     },
     {
-      "name": "Gummy Humongofrog"
+      "name": "Sherlock's Brilliant Hand (Tear)",
+      "category": "Decks",
+      "match_name": "Sherlock's Brilliant Hand"
     },
     {
-      "name": "Hat of the Forlorn Watch"
+      "name": "Trickster's Pack of Lies (Tear)",
+      "category": "Decks",
+      "match_name": "Trickster's Pack of Lies"
     },
     {
-      "name": "Humongofrog"
+      "name": "Watson's Cold Case (Tear)",
+      "category": "Decks",
+      "match_name": "Watson's Cold Case"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Whiplash",
+      "category": "Spellements"
     },
     {
-      "name": "Intrepid Opal"
+      "name": "Yeoman's Boots of Reverie",
+      "category": "Boots"
     },
     {
-      "name": "Iron"
+      "name": "Yeoman's Crisp Cards",
+      "category": "Decks"
     },
     {
-      "name": "Iron Golem"
+      "name": "Yeoman's Shoes of Bounty",
+      "category": "Boots"
     },
     {
-      "name": "Jelly Baby"
+      "name": "Yeoman's Walkers of Unity",
+      "category": "Boots"
     },
     {
-      "name": "King Banana"
-    },
-    {
-      "name": "Kola Nuts"
-    },
-    {
-      "name": "Kraken"
-    },
-    {
-      "name": "Lead"
-    },
-    {
-      "name": "Leather Straps"
-    },
-    {
-      "name": "Leprechaun"
-    },
-    {
-      "name": "Meteor Strike"
-    },
-    {
-      "name": "Myth Potbelly"
-    },
-    {
-      "name": "Nickel"
-    },
-    {
-      "name": "Palace Guard's Firewalkers"
-    },
-    {
-      "name": "Palace Guard's Rain Topper"
-    },
-    {
-      "name": "Palace Guard's Rain Waders"
-    },
-    {
-      "name": "Palace Guard's Stovepipe"
-    },
-    {
-      "name": "Pest Zapper"
-    },
-    {
-      "name": "Power Play"
-    },
-    {
-      "name": "Pyrite"
-    },
-    {
-      "name": "Quick Learner Opal"
-    },
-    {
-      "name": "Red Ghost"
-    },
-    {
-      "name": "Regal Token of Luminosity"
-    },
-    {
-      "name": "Relic of Imperial Perpetuum"
-    },
-    {
-      "name": "Relic of the Reign of Ice"
-    },
-    {
-      "name": "Sanctuary"
-    },
-    {
-      "name": "Sandstorm"
-    },
-    {
-      "name": "Seraph"
-    },
-    {
-      "name": "Seraph"
-    },
-    {
-      "name": "Solemn Kingdom Heirloom"
-    },
-    {
-      "name": "Spicy Drumstick"
-    },
-    {
-      "name": "Spider Silk"
-    },
-    {
-      "name": "Sprite Jade"
-    },
-    {
-      "name": "Storm Shark Amethyst"
-    },
-    {
-      "name": "Strawberry Cupcake"
-    },
-    {
-      "name": "Street Sweeper"
-    },
-    {
-      "name": "Submarine Sandwich"
-    },
-    {
-      "name": "Sunbird Ruby"
-    },
-    {
-      "name": "Time of Legend"
-    },
-    {
-      "name": "Trophy of the Raucous Court"
-    },
-    {
-      "name": "Uni-Corn"
-    },
-    {
-      "name": "Vampire"
-    },
-    {
-      "name": "Venus Fly Trap"
-    },
-    {
-      "name": "White Laugh-O-Dil"
-    },
-    {
-      "name": "Wooden Skeleton Key"
-    },
-    {
-      "name": "Wyldfire"
-    },
-    {
-      "name": "Yeoman's Shoes of Bounty"
-    },
-    {
-      "name": "Yeoman's Top Hat of Reverie"
-    },
-    {
-      "name": "Yeoman's Topper of Unity"
-    },
-    {
-      "name": "Yeoman's Walkers of Unity"
-    },
-    {
-      "name": "Yeoman's Winter Boots"
+      "name": "Yeoman's Winter Boots",
+      "category": "Boots"
     }
   ],
   "authors": "BartleBot",
@@ -292,7 +207,21 @@
     "Challenge Mode",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Ceremonial Boots of Triumph",
+        "=Rangers of the Royal Flame",
+        "=Royal Boots of Whirlwind",
+        "=Royal Ceremonial Snowshoes",
+        "=Royal Footgear of Charisma",
+        "=Royal Footguards of Accord",
+        "=Royal Shoes of Remembrance"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -616,7 +545,8 @@
         "enemy": "G14-BP-Thug-RightHand",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:The Woman's Right Hand"
       }
     },
     {
@@ -988,10 +918,52 @@
           "y": 0.0
         }
       }
+    },
+    {
+      "id": "bd42d82d",
+      "label": "The Woman's Right Hand",
+      "members": [
+        "state_19",
+        "state_18",
+        "state_17",
+        "state_16"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "70717a81",
+      "label": "Second room",
+      "members": [
+        "state_12",
+        "state_13",
+        "state_14",
+        "state_15"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "f0e31dd9",
+      "label": "First room",
+      "members": [
+        "state_10",
+        "state_6",
+        "state_11",
+        "state_9",
+        "state_7",
+        "state_8"
+      ],
+      "color": 1,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "247938f5fc77795a9ede205ecc3621737388ef8203fadc065956cbf318997bf4",
+    "da2f419dcb3d88ef622b60d4ec1efbaf6f844508f0f17df6a81b9c66a6b1eedd"
+  ]
 }

@@ -8,268 +8,356 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Allocados"
+      "name": "Allocados",
+      "category": "Snacks"
     },
     {
-      "name": "Angel Oak"
+      "name": "Angel Oak",
+      "category": "Seeds"
     },
     {
-      "name": "Azteca Combat Theme"
+      "name": "Azteca Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Azteca Dungeon Theme"
+      "name": "Azteca Dungeon Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Azteca Swamp Theme"
+      "name": "Azteca Swamp Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Basilisk"
+      "name": "Basilisk",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Bedrock Bonbons"
+      "name": "Bedrock Bonbons",
+      "category": "Snacks"
     },
     {
-      "name": "Black Lotus"
+      "name": "Black Lotus",
+      "category": "Reagents"
     },
     {
-      "name": "Black Pearl"
+      "name": "Black Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Black Sun Chac's Armor"
+      "name": "Black Sun Chac's Armor",
+      "category": "Robes"
     },
     {
-      "name": "Blood Moss"
+      "name": "Blood Moss",
+      "category": "Reagents"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Cacao Beans"
+      "name": "Cacao Beans",
+      "category": "Snacks"
     },
     {
-      "name": "Cactus Fruit"
+      "name": "Cactus Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Catch Opal"
+      "name": "Catch Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Chapulines"
+      "name": "Chapulines",
+      "category": "Snacks"
     },
     {
-      "name": "Chastisement"
+      "name": "Chastisement",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Clear Accurate Jade +9%"
+      "name": "Clear Accurate Jade +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Defense Peridot +38"
+      "name": "Clear Defense Peridot +38",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Piercing Peridot +5%"
+      "name": "Clear Piercing Peridot +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Piercing Ruby +5%"
+      "name": "Clear Piercing Ruby +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Clear PIP Opal +8%"
+      "name": "Clear PIP Opal +8%",
+      "category": "Jewels"
     },
     {
-      "name": "Coatl Lord's Hat"
+      "name": "Coatl Lord's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Colossal"
+      "name": "Colossal",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cycle of Life"
+      "name": "Cycle of Life",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deep Mushroom"
+      "name": "Deep Mushroom",
+      "category": "Reagents"
     },
     {
-      "name": "Dr. Von's Monster"
+      "name": "Dr. Von's Monster",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Earth Dino Shield"
+      "name": "Earth Dino Shield",
+      "category": "Housing Items"
     },
     {
-      "name": "Fern Jelly"
+      "name": "Fern Jelly",
+      "category": "Snacks"
     },
     {
-      "name": "Fire Blossom"
+      "name": "Fire Blossom",
+      "category": "Reagents"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Fossil"
+      "name": "Fossil",
+      "category": "Reagents"
     },
     {
-      "name": "Fried Ice Cream"
+      "name": "Fried Ice Cream",
+      "category": "Snacks"
     },
     {
-      "name": "Furnace"
+      "name": "Furnace",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Galvanic Field"
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gargantuan"
+      "name": "Gargantuan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Glorious Feathered Mantle"
+      "name": "Glorious Feathered Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Gnomes!"
+      "name": "Gnomes!",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Golden Head of the Cold House"
+      "name": "Golden Head of the Cold House",
+      "category": "Amulets"
     },
     {
-      "name": "Golden Pearl"
+      "name": "Golden Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "House of Plague Greenstone"
+      "name": "House of Plague Greenstone",
+      "category": "Amulets"
     },
     {
-      "name": "Jaguar Prince's Leapers"
+      "name": "Jaguar Prince's Leapers",
+      "category": "Boots"
     },
     {
-      "name": "Keeper of the Codex Crown"
+      "name": "Keeper of the Codex Crown",
+      "category": "Hats"
     },
     {
-      "name": "Lava Lily"
+      "name": "Lava Lily",
+      "category": "Reagents"
     },
     {
-      "name": "Lord of Night"
+      "name": "Lord of Night",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lord of the Swamp's Scepter"
+      "name": "Lord of the Swamp's Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Maize"
+      "name": "Maize",
+      "category": "Snacks"
     },
     {
-      "name": "Marzipan Maize"
+      "name": "Marzipan Maize",
+      "category": "Snacks"
     },
     {
-      "name": "Mega-Upset Opal"
+      "name": "Mega-Upset Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Mend"
+      "name": "Mend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mist Wood"
+      "name": "Mist Wood",
+      "category": "Reagents"
     },
     {
-      "name": "Nightshade"
+      "name": "Nightshade",
+      "category": "Reagents"
     },
     {
-      "name": "Ore"
+      "name": "Ore",
+      "category": "Reagents"
     },
     {
-      "name": "Philosoraptor's Ideal Mantle"
+      "name": "Philosoraptor's Ideal Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Philososaur's Robes"
+      "name": "Philososaur's Robes",
+      "category": "Robes"
     },
     {
-      "name": "Polymorph Icehorn"
+      "name": "Polymorph Icehorn",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Polymorph Jaguar"
+      "name": "Polymorph Jaguar",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Polymorph Pteranodon"
+      "name": "Polymorph Pteranodon",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Potent Trap"
+      "name": "Potent Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Primordial"
+      "name": "Primordial",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Punishment"
+      "name": "Punishment",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Quetzal Pretzel"
+      "name": "Quetzal Pretzel",
+      "category": "Snacks"
     },
     {
-      "name": "Red Bell Pepper"
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
     },
     {
-      "name": "Red Mandrake"
+      "name": "Red Mandrake",
+      "category": "Reagents"
     },
     {
-      "name": "Reliquary"
+      "name": "Reliquary",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Saber-Tooth Cider"
+      "name": "Saber-Tooth Cider",
+      "category": "Snacks"
     },
     {
-      "name": "Sharp Opal"
+      "name": "Sharp Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sharpened Blade"
+      "name": "Sharpened Blade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sirens"
+      "name": "Sirens",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sleet Storm"
+      "name": "Sleet Storm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stone Block"
+      "name": "Stone Block",
+      "category": "Reagents"
     },
     {
-      "name": "Storm Owl's Favored Trackers"
+      "name": "Storm Owl's Favored Trackers",
+      "category": "Boots"
     },
     {
-      "name": "Stumble On Opal"
+      "name": "Stumble On Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sun Jar"
+      "name": "Sun Jar",
+      "category": "Housing Items"
     },
     {
-      "name": "Sun's Death Smiling Pendant"
+      "name": "Sun's Death Smiling Pendant",
+      "category": "Amulets"
     },
     {
-      "name": "Sunstone"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "Tenochti-Flan"
+      "name": "Tenochti-Flan",
+      "category": "Snacks"
     },
     {
-      "name": "The Enchanter"
+      "name": "The Enchanter",
+      "category": "Hats"
     },
     {
-      "name": "Tortilla Chips"
+      "name": "Tortilla Chips",
+      "category": "Snacks"
     },
     {
-      "name": "Turquoise"
+      "name": "Turquoise",
+      "category": "Reagents"
     },
     {
-      "name": "Venus Fly Trap"
+      "name": "Venus Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Virulence"
+      "name": "Virulence",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wide Drum"
+      "name": "Wide Drum",
+      "category": "Housing Items"
     },
     {
-      "name": "Winter's Pyramid Deck"
+      "name": "Winter's Pyramid Deck",
+      "category": "Decks"
     },
     {
-      "name": "Woolly Mammoth"
+      "name": "Woolly Mammoth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Zocalo Wings"
+      "name": "Zocalo Wings",
+      "category": "Snacks"
     }
   ],
   "authors": "BartleBot",
@@ -369,7 +457,7 @@
       },
       "params": {
         "enemy": "AZ-Tritops-Undead-F",
-        "wiki_page": "",
+        "wiki_page": "Creature:Guillermo Shatterer",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -586,5 +674,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "08ea7bdbd3f77895c0d14021d48ffb1d6fde89a7bcc2501503dd1adbf792b846"
+  ]
 }

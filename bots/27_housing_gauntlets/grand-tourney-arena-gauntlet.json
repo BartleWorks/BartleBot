@@ -8,262 +8,654 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Accurate Talent Opal"
+      "name": "Accurate Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Acorn"
+      "name": "Acorn",
+      "category": "Reagents"
     },
     {
-      "name": "Aether"
+      "name": "Aether",
+      "category": "Reagents"
     },
     {
-      "name": "Aquamarine"
+      "name": "Aquamarine",
+      "category": "Reagents"
     },
     {
-      "name": "Asparagus Spears"
+      "name": "Arrow Root",
+      "category": "Snacks"
     },
     {
-      "name": "Basilisk"
+      "name": "Asparagus Spears",
+      "category": "Snacks"
     },
     {
-      "name": "Bearberry"
+      "name": "Balance-Giver Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Black Cap Crisps"
+      "name": "Bananas! Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Black Spider"
+      "name": "Basilisk",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blaze Beast"
+      "name": "Bearberry",
+      "category": "Snacks"
     },
     {
-      "name": "Blue Ghost"
+      "name": "Big Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Bog Witch Beetroot"
+      "name": "Black Cap Crisps",
+      "category": "Snacks"
     },
     {
-      "name": "Brass"
+      "name": "Black Spider",
+      "category": "Pets"
     },
     {
-      "name": "Bronze"
+      "name": "Blaze Beast",
+      "category": "Pets"
     },
     {
-      "name": "Caliburnt Toast"
+      "name": "Blue Ghost",
+      "category": "Pets"
     },
     {
-      "name": "Ceara Ashbury Bobblehead"
+      "name": "Bog Witch Beetroot",
+      "category": "Snacks"
     },
     {
-      "name": "Chimera"
+      "name": "Bog Witch Bobblehead",
+      "category": "Housing Items"
     },
     {
-      "name": "Chocolate Comet"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Clear Critical Amethyst +10"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Clear Critical Peridot +10"
+      "name": "Caliburnt Toast",
+      "category": "Snacks"
     },
     {
-      "name": "Clear Damage Ruby +19"
+      "name": "Ceara Ashbury Bobblehead",
+      "category": "Housing Items"
     },
     {
-      "name": "Cobalt"
+      "name": "Chimera",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cornbread Fruit Bush"
+      "name": "Chocolate Comet",
+      "category": "Snacks"
     },
     {
-      "name": "Crab Knight Cakes"
+      "name": "Clear Accurate Amethyst +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Crystal Ball"
+      "name": "Clear Accurate Jade +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Crystal Custard"
+      "name": "Clear Accurate Sapphire +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Dark Sprite"
+      "name": "Clear Blocking Amethyst +9",
+      "category": "Jewels"
     },
     {
-      "name": "Deepwater Toffee"
+      "name": "Clear Blocking Jade +9",
+      "category": "Jewels"
     },
     {
-      "name": "Dimension Shift Peridot"
+      "name": "Clear Blocking Ruby +9",
+      "category": "Jewels"
     },
     {
-      "name": "Dryad"
+      "name": "Clear Blocking Sapphire +9",
+      "category": "Jewels"
     },
     {
-      "name": "Efreet"
+      "name": "Clear Critical Amethyst +10",
+      "category": "Jewels"
     },
     {
-      "name": "Enfeeble Amethyst"
+      "name": "Clear Critical Opal +5",
+      "category": "Jewels"
     },
     {
-      "name": "Faerie Court Boots"
+      "name": "Clear Critical Peridot +10",
+      "category": "Jewels"
     },
     {
-      "name": "Faerie Court Steel Leaf"
+      "name": "Clear Damage Onyx +19",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Blossom"
+      "name": "Clear Damage Peridot +19",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Dragon"
+      "name": "Clear Damage Ruby +19",
+      "category": "Jewels"
     },
     {
-      "name": "Fire Elf"
+      "name": "Clear Health Opal +80",
+      "category": "Jewels"
     },
     {
-      "name": "Forest Beast"
+      "name": "Clear Piercing Amethyst +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Frost Giant"
+      "name": "Clear Piercing Peridot +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Giant Talent Opal"
+      "name": "Clear Piercing Ruby +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Grandfather Clock"
+      "name": "Clear Piercing Sapphire +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Great Spiral Glyph"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Grendelweed"
+      "name": "Cornbread Fruit Bush",
+      "category": "Seeds"
     },
     {
-      "name": "Helephant Ears"
+      "name": "Couch Potatoes",
+      "category": "Seeds"
     },
     {
-      "name": "High Road Haggis"
+      "name": "Cow Pie",
+      "category": "Snacks"
     },
     {
-      "name": "King Artorius Bobblehead"
+      "name": "Crab Knight Cakes",
+      "category": "Snacks"
     },
     {
-      "name": "Lady's Favor"
+      "name": "Crabling",
+      "category": "Pets"
     },
     {
-      "name": "Large Willow Tree"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Lectern"
+      "name": "Crystal Ball",
+      "category": "Housing Items"
     },
     {
-      "name": "Lemon Harts"
+      "name": "Crystal Custard",
+      "category": "Snacks"
     },
     {
-      "name": "Levee Breaking Lute"
+      "name": "Dark Sprite",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Mandolin of Evermore"
+      "name": "Deepwater Toffee",
+      "category": "Snacks"
     },
     {
-      "name": "Mask of the Faerie Court"
+      "name": "Desert Beast",
+      "category": "Pets"
     },
     {
-      "name": "Mass Infection Onyx"
+      "name": "Dimension Shift Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Mass Triage Jade"
+      "name": "Dogged Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Misty Mountain Mandolin"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Monstrous Talent Opal"
+      "name": "Efreet",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Muscle Sprouts"
+      "name": "Enfeeble Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Mythic Beast"
+      "name": "Faerie Court Boots (Level 100+)",
+      "category": "Boots",
+      "match_name": "Faerie Court Boots"
     },
     {
-      "name": "Ogre Meanies"
+      "name": "Faerie Court Steel Leaf (Level 100+)",
+      "category": "Robes",
+      "match_name": "Faerie Court Steel Leaf"
     },
     {
-      "name": "Pixie Parsnips"
+      "name": "Fire Blossom",
+      "category": "Reagents"
     },
     {
-      "name": "Pixie's Armor of Encanta"
+      "name": "Fire Dragon",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pixie's Enchanted Boots"
+      "name": "Fire Elf",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pixie's Mask of Encanta"
+      "name": "Fire-Boon Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Pomegranite"
+      "name": "Floor Brazier",
+      "category": "Housing Items"
     },
     {
-      "name": "Red Bell Pepper"
+      "name": "Flummox Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Rye Bread Fruit Bush"
+      "name": "Forest Beast",
+      "category": "Pets"
     },
     {
-      "name": "Seraph Food Cake"
+      "name": "Frost Flower",
+      "category": "Reagents"
     },
     {
-      "name": "Shadow Beast"
+      "name": "Frost Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Shepherd's Crook Pie"
+      "name": "Giant Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sir Pike Del Lago Bobblehead"
+      "name": "Glowing Rock Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Snow Beast"
+      "name": "Grandfather Clock",
+      "category": "Housing Items"
     },
     {
-      "name": "Spark Beast"
+      "name": "Great Spiral Glyph",
+      "category": "Housing Items"
     },
     {
-      "name": "Spiral Shield"
+      "name": "Grendelweed",
+      "category": "Reagents"
+    },
+    {
+      "name": "Grilled Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Halt Leader Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Healer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "High Road Haggis",
+      "category": "Snacks"
+    },
+    {
+      "name": "Kelp",
+      "category": "Reagents"
+    },
+    {
+      "name": "King Artorius Bobblehead",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lady of the Lake Bobblehead",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lady's Favor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Willow Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lava Lily",
+      "category": "Reagents"
+    },
+    {
+      "name": "Lectern",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lemon Harts",
+      "category": "Snacks"
+    },
+    {
+      "name": "Leprechaun",
+      "category": "Pets"
+    },
+    {
+      "name": "Levee Breaking Lute (Level 100+)",
+      "category": "Wands",
+      "match_name": "Levee Breaking Lute"
+    },
+    {
+      "name": "Lock Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mandolin of Evermore (Level 100+)",
+      "category": "Wands",
+      "match_name": "Mandolin of Evermore"
+    },
+    {
+      "name": "Mask of the Faerie Court (Level 100+)",
+      "category": "Hats",
+      "match_name": "Mask of the Faerie Court"
+    },
+    {
+      "name": "Mass Infection Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mass Triage Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mist Wood",
+      "category": "Reagents"
+    },
+    {
+      "name": "Misty Mountain Mandolin (Level 100+)",
+      "category": "Wands",
+      "match_name": "Misty Mountain Mandolin"
+    },
+    {
+      "name": "Monstrous Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Moon Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Muscle Sprouts",
+      "category": "Snacks"
+    },
+    {
+      "name": "Myth-Giver Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mythic Beast",
+      "category": "Pets"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ogre Meanies",
+      "category": "Snacks"
+    },
+    {
+      "name": "Opaque Blocking Opal +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Opal +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Damage Ruby +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Damage Sapphire +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Citrine +36",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Peridot +36",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Open Burned Book",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pixie Parsnips",
+      "category": "Snacks"
+    },
+    {
+      "name": "Pixie's Armor of Encanta (Level 100+)",
+      "category": "Robes",
+      "match_name": "Pixie's Armor of Encanta"
+    },
+    {
+      "name": "Pixie's Enchanted Boots (Level 100+)",
+      "category": "Boots",
+      "match_name": "Pixie's Enchanted Boots"
+    },
+    {
+      "name": "Pixie's Enchanted Boots (Level 90+)",
+      "category": "Boots",
+      "match_name": "Pixie's Enchanted Boots"
+    },
+    {
+      "name": "Pixie's Mask of Encanta (Level 100+)",
+      "category": "Hats",
+      "match_name": "Pixie's Mask of Encanta"
+    },
+    {
+      "name": "Polished Damage Opal +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pomegranite",
+      "category": "Snacks"
+    },
+    {
+      "name": "Quick-Witted Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Restorative Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Rye Bread Fruit Bush",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sandstone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Scrap Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Seraph",
+      "category": "Pets"
+    },
+    {
+      "name": "Seraph Food Cake",
+      "category": "Snacks"
+    },
+    {
+      "name": "Shadow Beast",
+      "category": "Pets"
+    },
+    {
+      "name": "Shell",
+      "category": "Reagents"
+    },
+    {
+      "name": "Shepherd's Crook Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Shh! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shush! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sir Pike Del Lago Bobblehead",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snow Beast",
+      "category": "Pets"
+    },
+    {
+      "name": "SnowBorn Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spark Beast",
+      "category": "Pets"
+    },
+    {
+      "name": "Spiral Shield",
+      "category": "Housing Items"
     },
     {
       "name": "Spirit Trap Citrine (Triangle)",
+      "category": "Jewels",
       "match_name": "Spirit Trap Citrine"
     },
     {
-      "name": "Spring"
+      "name": "Spring",
+      "category": "Reagents"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Toad in the Hole"
+      "name": "Storm-Boon Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Weirwood Cake"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "World's Fool Armor"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "World's Fool Boots"
+      "name": "Toad in the Hole",
+      "category": "Snacks"
     },
     {
-      "name": "World's Fool Mask"
+      "name": "Tower Shield Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Wyrmy Apple"
+      "name": "Ultra Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Weirwood Cake",
+      "category": "Snacks"
+    },
+    {
+      "name": "World's Fool Armor (Level 100+)",
+      "category": "Robes",
+      "match_name": "World's Fool Armor"
+    },
+    {
+      "name": "World's Fool Boots (Level 100+)",
+      "category": "Boots",
+      "match_name": "World's Fool Boots"
+    },
+    {
+      "name": "World's Fool Mask (Level 100+)",
+      "category": "Hats",
+      "match_name": "World's Fool Mask"
+    },
+    {
+      "name": "Wormy Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Wyrmy Apple",
+      "category": "Snacks"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Seeds",
     "Gauntlet"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Pixie's Enchanted Boots",
+        "=Pixie's Mask of Encanta",
+        "=Pixie's Armor of Encanta",
+        "=Couch Potatoes"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_11",
@@ -371,7 +763,8 @@
         "enemy": "DD-AV01-DeerKnight-??",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 600.0
+        "max_duration": 600.0,
+        "wiki_page": "Creature:Sir Lyonel LaughingStorm (Tier 5)"
       }
     },
     {
@@ -457,7 +850,8 @@
         "enemy": "DD-AV01-FoxKnight-??",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 600.0
+        "max_duration": 600.0,
+        "wiki_page": "Creature:Lady Tanselle DreamingStar (Tier 5)"
       }
     },
     {
@@ -543,7 +937,8 @@
         "enemy": "DD-AV01-BadgerKnight-??",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 600.0
+        "max_duration": 600.0,
+        "wiki_page": "Creature:Sir Dunc (Tier 5)"
       }
     },
     {
@@ -629,7 +1024,8 @@
         "enemy": "DD-AV01-DogKnight-??",
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
-        "max_duration": 600.0
+        "max_duration": 600.0,
+        "wiki_page": "Creature:Sir Steffan BadApple (Tier 5)"
       }
     },
     {
@@ -715,7 +1111,8 @@
         "enemy": "DD-AV01-CrabKnight-??",
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
-        "max_duration": 600.0
+        "max_duration": 600.0,
+        "wiki_page": "Creature:Sir Claudas D'Agrodolce (Tier 5)"
       }
     },
     {
@@ -1134,5 +1531,8 @@
   "template": {
     "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
     "version": 1
-  }
+  },
+  "history": [
+    "0a96f7073c4b98a133b6e9218839ea469b91ae0c54f86ea76d1ab7822b7a3f7d"
+  ]
 }

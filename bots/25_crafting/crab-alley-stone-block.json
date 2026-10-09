@@ -8,10 +8,12 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Fossil"
+      "name": "Fossil",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Block"
+      "name": "Stone Block",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",
@@ -264,5 +266,8 @@
   "template": {
     "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
     "version": 1
-  }
+  },
+  "history": [
+    "09b3224faed313daacbf9a41911e0c3de22065fc651d08583f35002f27ab7e8a"
+  ]
 }

@@ -6,10 +6,609 @@
   "clients": "all",
   "initial": "t_sync_players_1_state_2",
   "recovery_state": "t_sync_players_1_state_1",
-  "drops": [],
+  "drops": [
+    {
+      "name": "Aether",
+      "category": "Reagents"
+    },
+    {
+      "name": "Agave Leaves",
+      "category": "Reagents"
+    },
+    {
+      "name": "Agave Nectar",
+      "category": "Reagents"
+    },
+    {
+      "name": "Age of Reckoning",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Alkali Armor of Fiction",
+      "category": "Robes"
+    },
+    {
+      "name": "Alkali Armor of Vibrancy",
+      "category": "Robes"
+    },
+    {
+      "name": "Alkali Burning Sands Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Alkali Monsoon Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Alkali Monsoon Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Alkali Walkers of Fiction",
+      "category": "Boots"
+    },
+    {
+      "name": "Alkali Walkers of Withering",
+      "category": "Boots"
+    },
+    {
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Angel Oak",
+      "category": "Seeds"
+    },
+    {
+      "name": "Aquamarine",
+      "category": "Reagents"
+    },
+    {
+      "name": "Astral Shard",
+      "category": "Reagents"
+    },
+    {
+      "name": "Astraphobia",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Basilisk",
+      "category": "Spellements"
+    },
+    {
+      "name": "Beetle Cream Soda",
+      "category": "Snacks"
+    },
+    {
+      "name": "Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Celestial Calendar",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chalupacabra",
+      "category": "Snacks"
+    },
+    {
+      "name": "Charred Eerem Headwrap",
+      "category": "Hats"
+    },
+    {
+      "name": "Chimera",
+      "category": "Spellements"
+    },
+    {
+      "name": "Climaclysm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Clockwork Flower",
+      "category": "Seeds"
+    },
+    {
+      "name": "Combustion",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Cornbread Fruit Bush",
+      "category": "Seeds"
+    },
+    {
+      "name": "Deadly Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Dr. Von's Monster",
+      "category": "Spellements"
+    },
+    {
+      "name": "Draconium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Eerem Band of Harmony",
+      "category": "Rings"
+    },
+    {
+      "name": "Eerem Hailstone Talisman",
+      "category": "Amulets"
+    },
+    {
+      "name": "Eerem Headwrap of Clangor",
+      "category": "Hats"
+    },
+    {
+      "name": "Eerem Headwrap of Pulse",
+      "category": "Hats"
+    },
+    {
+      "name": "Eerem Raiment of Hail",
+      "category": "Robes"
+    },
+    {
+      "name": "Eerem Raiment of Menace",
+      "category": "Robes"
+    },
+    {
+      "name": "Eerem Razor of Discovery",
+      "category": "Athames"
+    },
+    {
+      "name": "Eerem Spread of Pulse",
+      "category": "Decks"
+    },
+    {
+      "name": "Eerem Talisman of Char",
+      "category": "Amulets"
+    },
+    {
+      "name": "Eerem Talisman of Pulse",
+      "category": "Amulets"
+    },
+    {
+      "name": "Epic Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
+    },
+    {
+      "name": "Evil Snow Peas",
+      "category": "Seeds"
+    },
+    {
+      "name": "Eye Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Blossom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Gallant Istanboa Array",
+      "category": "Decks"
+    },
+    {
+      "name": "Gnomes!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Golden Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Hard Boiled Beetle Eggs",
+      "category": "Snacks"
+    },
+    {
+      "name": "Honey Bee Plant",
+      "category": "Seeds"
+    },
+    {
+      "name": "Honey Sickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hot Cross Buns",
+      "category": "Snacks"
+    },
+    {
+      "name": "Iridium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Iron Sultan",
+      "category": "Spellements"
+    },
+    {
+      "name": "Istanboa Khanjar of Icefall",
+      "category": "Athames"
+    },
+    {
+      "name": "Istanboa Khanjar of Ruin",
+      "category": "Athames"
+    },
+    {
+      "name": "Istanboa Pendant of Ruin",
+      "category": "Amulets"
+    },
+    {
+      "name": "Ivy League",
+      "category": "Seeds"
+    },
+    {
+      "name": "Key Limes",
+      "category": "Seeds"
+    },
+    {
+      "name": "King Artorius (Balance)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Death)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Fire)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Ice)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Life)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Myth)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Storm)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Parsley",
+      "category": "Seeds"
+    },
+    {
+      "name": "Lord of Winter",
+      "category": "Spellements"
+    },
+    {
+      "name": "MaCaw",
+      "category": "Pets"
+    },
+    {
+      "name": "Merle's Whisker",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mirage Canyon Theme 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Chronoverge Com Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Chronoverge Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage City Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage City Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage City Theme 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Desert Canyons Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Desert Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Jungle Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Magic Carpet Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Serpent Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mirage Spider Speaks Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mithril",
+      "category": "Reagents"
+    },
+    {
+      "name": "Moon Flower",
+      "category": "Seeds"
+    },
+    {
+      "name": "Mustachios",
+      "category": "Snacks"
+    },
+    {
+      "name": "Myriarch Tabarzin of Rime",
+      "category": "Wands"
+    },
+    {
+      "name": "Nested Fury",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Pink Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Purple Snow Apples",
+      "category": "Seeds"
+    },
+    {
+      "name": "Qismah's Curse",
+      "category": "Spellements"
+    },
+    {
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Raging Bull",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rain of Fire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Couch Potatoes",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Grapes of Wrath",
+      "category": "Seeds"
+    },
+    {
+      "name": "Renew Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Rusalka's Wrath",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rye Bread Fruit Bush",
+      "category": "Seeds"
+    },
+    {
+      "name": "Satyr Chow",
+      "category": "Snacks"
+    },
+    {
+      "name": "Scales",
+      "category": "Reagents"
+    },
+    {
+      "name": "Scorching Scimitars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scorpion Bow of Composure",
+      "category": "Wands"
+    },
+    {
+      "name": "Scorpion Bow of Fervor",
+      "category": "Wands"
+    },
+    {
+      "name": "Shiny Blocking Onyx +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Blocking Peridot +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Jade +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Peridot +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Sapphire +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Damage Sapphire +26",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Defense Hematite +52",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Defense Peridot +51",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Defense Peridot +52",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Defense Sapphire +51",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Health Opal +111",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Health Opal +112",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Health Opal +113",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Health Opal +114",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Mana Opal +46",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Mana Opal +47",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ships 'n' Queso",
+      "category": "Snacks"
+    },
+    {
+      "name": "Silver",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sirens",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snowball Barrage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spinysaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stardust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Storm Owl",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sun Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sunion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sunstone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Titanium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
+    },
+    {
+      "name": "Turmeric",
+      "category": "Reagents"
+    },
+    {
+      "name": "Turquoise",
+      "category": "Reagents"
+    },
+    {
+      "name": "Veggie Juice",
+      "category": "Snacks"
+    },
+    {
+      "name": "Vine",
+      "category": "Reagents"
+    },
+    {
+      "name": "White Desparagus",
+      "category": "Seeds"
+    },
+    {
+      "name": "White Tiger Lily",
+      "category": "Seeds"
+    },
+    {
+      "name": "Winged Sorrow",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wings of Fate",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Witch's House Call",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Woolly Mammoth",
+      "category": "Spellements"
+    }
+  ],
   "authors": "BartleBot",
   "tags": [
+    "Jewels",
     "Spellements",
+    "Seeds",
     "Boss",
     "Team-Up"
   ],
@@ -18,7 +617,8 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Epic Opal"
+        "=Epic Opal",
+        "=Evil Magma Peas"
       ]
     }
   ],
@@ -83,7 +683,7 @@
       },
       "params": {
         "enemy": "MR_Djinn_MageF_B_Boss_01",
-        "wiki_page": "",
+        "wiki_page": "Creature:Eerkala",
         "use_default_strategy": false,
         "max_duration": 600.0
       }
@@ -135,7 +735,7 @@
       "label": "Relog",
       "position": {
         "x": 0.0,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "relog_clients": [
@@ -152,7 +752,7 @@
       "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": 90.0
+        "y": 0.0
       },
       "params": {
         "zone": "Mirage/MR_Z08_EeremPalace"
@@ -163,8 +763,8 @@
       "node_type": "handle_level_scaling",
       "label": "Handle level scaling",
       "position": {
-        "x": 440,
-        "y": 0.0
+        "x": 440.0,
+        "y": -90.0
       },
       "params": {
         "scales": ""
@@ -202,18 +802,6 @@
           "y": -30.55,
           "z": 100.78
         }
-      }
-    },
-    {
-      "id": "state_21",
-      "node_type": "sleep",
-      "label": "Sleep",
-      "position": {
-        "x": 880,
-        "y": 90.0
-      },
-      "params": {
-        "duration": 1.0
       }
     }
   ],
@@ -347,26 +935,6 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_14",
-      "dest": "state_21",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "t_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -402,7 +970,7 @@
         },
         "anchor": {
           "x": 0.0,
-          "y": 0.0
+          "y": -90.0
         }
       }
     }
@@ -410,5 +978,8 @@
   "template": {
     "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
     "version": 1
-  }
+  },
+  "history": [
+    "726e25aee193fb2bb549c825f6fe16787097237d46d6d4aac454fbe1138199de"
+  ]
 }

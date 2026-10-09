@@ -71,8 +71,8 @@ gardening, skeleton keys) are post-1.0.0 and are not costed here.
 ## Method
 
 Each bot is classified by node signature, in this order: any `collect_reagent` → reagent;
-any `enter_gauntlet` → gauntlet; any level scaling node (`check_level_scaling`,
-`apply_level_scaling` or `handle_level_scaling`) → spellement; no `enter_dungeon` but combat →
+any `enter_gauntlet` → gauntlet; any level scaling node (`check_level_scaling`
+or `handle_level_scaling`) → spellement; no `enter_dungeon` but combat →
 mob; `enter_dungeon` with at most one combat → boss; otherwise dungeon.
 
 Every node a bot has beyond its template's own node histogram falls in one of four buckets.
@@ -82,7 +82,7 @@ bot that already opens that way folds nothing for it.
 | bucket | meaning | what it costs |
 |---|---|---|
 | **nav to fold** | `teleport_to_world_hub`, `go_to_world` (since removed), `enter_zone_via_object`, `check_zone`, `teleport_to_friend` (not in gauntlet, whose template has one), and any `relog`, `sync_in_zone` or `change_realm` beyond the template's | mechanical: the Sync players node and its zone input replace all of it |
-| **scaling to fold** | `check_level_scaling`, `apply_level_scaling` | mechanical: one `handle_level_scaling`, which checks, travels, applies and returns (`docs/LEVEL_SCALING.md`) |
+| **scaling to fold** | `check_level_scaling` (and the since-removed `apply_level_scaling`) | mechanical: one `handle_level_scaling`, which checks, travels, applies and returns (`docs/LEVEL_SCALING.md`) |
 | **slot** | the bot's own content: extra combats, interacts, coordinate teleports, room-to-room `enter_zone`, extra reagent spawns, marks and recalls | irreducible; it is what the bot adds to the template |
 | **outlier** | a node no template can express | a decision, per node |
 
@@ -371,7 +371,7 @@ other 6 bots only if players can mark inside their farm dungeon.
 `spiral_cup_gauntlet` waits for health after porting to its friend, before entering. Gauntlet
 Farmer does that job differently: Check health and mana sends players back to Sync players in
 The Commons, where `handle_potions` can refill. Rebuilt on the template, the bot no longer needs
-the wait, and nothing else uses the node, so it goes when that bot is rebuilt. Boss rematches
+the wait, and nothing else uses the node, so it was removed (the bot file had already lost it). Boss rematches
 get their own answer after 1.0.0.
 
 ## What needs the game
@@ -487,8 +487,8 @@ content and survives.
 | node | uses today | after the rewrite | verdict |
 |---|---|---|---|
 | `wait_for_health` | 1 | 0 | **remove** (decided) |
-| `check_level_scaling` | 16 | 0 | **remove**: `handle_level_scaling` checks first |
-| `apply_level_scaling` | 15 | 0 | **remove from the library**, but see below |
+| `check_level_scaling` | 16 | 0 | **kept** as a condition node (decided 2026-10-09), though no bot uses it |
+| `apply_level_scaling` | 15 | 0 | **removed**: the node is deleted outright |
 | `go_to_world` | 6 | 0 | **removed**: each use is now a `sync_in_zone` to the zone its World Gate lands in |
 | `check_zone` | 42 | 0 | **kept for now**: every use is an opening or recovery hub that Sync players replaces |
 | `check_if_dropped` | 0 | 0 | **removed**: never adopted; no template has a "farm until it drops" loop |
@@ -498,12 +498,11 @@ content and survives.
 | `teleport_to_world_hub` | 63 bots | 0 bots | keep: a step zone navigation runs. The last mid-route hops, in `house_of_scales` and `aeriel_shores_aethyr_burst`, were removed by hand. `spiral_cup_portal_of_peril`'s was its way out, and is the recall now |
 | `enter_zone_via_object` | 19 bots | 9 bots | keep: in-dungeon teleporters and skips |
 
-**`apply_level_scaling` no longer holds anything else up.** `tools/scales_table.py add` used to
+**`apply_level_scaling` was deleted once nothing used it.** `tools/scales_table.py add` used to
 build a new entry from a scratch bot with an `apply_level_scaling` recorded on the Scales; it now
 reads an `interact`, which records the same zone, point and reset. `apply_elixir` and the two
-option specs moved into `handle_level_scaling`, which `apply_level_scaling` now imports them from.
-So once the last bot is rebuilt, both old nodes are deleted outright: no bot uses them, so they
-need no hidden-but-registered state in between.
+option specs moved into `handle_level_scaling`. No bot uses the node, so it was deleted outright,
+with no hidden-but-registered state in between. `check_level_scaling` is kept.
 
 `go_to_world` went because a Sync in zone to the zone a world's gate lands in does the same
 thing, through a route the planner picks. Its six uses were converted in place, keeping their

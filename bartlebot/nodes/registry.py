@@ -6,8 +6,6 @@ from bartlebot.nodes.combat.handle_combat import NODE_SPEC as _handle_combat_spe
 from bartlebot.nodes.combat.handle_combat import run as handle_combat_run
 from bartlebot.nodes.combat.handle_potions import NODE_SPEC as _handle_potions_spec
 from bartlebot.nodes.combat.handle_potions import run as handle_potions_run
-from bartlebot.nodes.combat.wait_for_health import NODE_SPEC as _wait_for_health_spec
-from bartlebot.nodes.combat.wait_for_health import run as wait_for_health_run
 from bartlebot.nodes.interaction.click_path import NODE_SPEC as _click_path_spec
 from bartlebot.nodes.interaction.click_path import run as click_path_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
@@ -31,8 +29,6 @@ from bartlebot.nodes.teleportation.teleport_to_marked_location import NODE_SPEC 
 from bartlebot.nodes.teleportation.teleport_to_marked_location import run as teleport_to_marked_location_run
 from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _teleport_to_world_hub_spec
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
-from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
-from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
 from bartlebot.nodes.utility.branch import NODE_SPEC as _branch_spec
 from bartlebot.nodes.utility.branch import run as branch_run
 from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
@@ -61,7 +57,6 @@ from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
 
 NODE_REGISTRY: dict = {
-    "apply_level_scaling": apply_level_scaling_run,
     "change_realm": change_realm_run,
     "click_path": click_path_run,
     "enter_zone": enter_zone_run,
@@ -84,7 +79,6 @@ NODE_REGISTRY: dict = {
     "teleport_to_friend": teleport_to_friend_run,
     "sleep": sleep_run,
     "wait_for_dialogue": wait_for_dialogue_run,
-    "wait_for_health": wait_for_health_run,
     "check_level_scaling": check_level_scaling_run,
     "check_zone": check_zone_run,
     "handle_level_scaling": handle_level_scaling_run,
@@ -94,7 +88,6 @@ NODE_REGISTRY: dict = {
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
-    "apply_level_scaling": _apply_level_scaling_spec,
     "change_realm": _change_realm_spec,
     "click_path": _click_path_spec,
     "enter_zone": _enter_zone_spec,
@@ -117,7 +110,6 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "teleport_to_friend": _teleport_to_friend_spec,
     "sleep": _sleep_spec,
     "wait_for_dialogue": _wait_for_dialogue_spec,
-    "wait_for_health": _wait_for_health_spec,
     "check_level_scaling": _check_level_scaling_spec,
     "check_zone": _check_zone_spec,
     "handle_level_scaling": _handle_level_scaling_spec,
@@ -164,13 +156,11 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         ],
     ),
     (
-        "Combat",
+        "Combat and Healing",
         [
-            "check_health_and_mana",
             "collect_wisps",
             "handle_combat",
             "handle_potions",
-            "wait_for_health",
         ],
     ),
     (
@@ -184,17 +174,22 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         ],
     ),
     (
-        "Utility",
+        "Control Flow",
         [
-            "apply_level_scaling",
             "branch",
-            "change_realm",
+            "check_health_and_mana",
             "check_level_scaling",
             "check_zone",
+            "set_variables",
+        ],
+    ),
+    (
+        "Utility",
+        [
+            "change_realm",
             "handle_level_scaling",
             "quicksell",
             "relog",
-            "set_variables",
             "sleep",
         ],
     ),

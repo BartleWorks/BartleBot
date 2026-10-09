@@ -325,9 +325,10 @@ holds the vocabulary and the rule.
 | Zone Entry | gets into a dungeon, a gauntlet or a zone, by its door or an object |
 | Teleportation | moves across a world: to coordinates, a marked location, a friend, a hub |
 | Team | brings several players to one zone, realm and area |
-| Combat | runs a fight and what surrounds it: potions, health, wisps |
+| Combat and Healing | runs a fight and recovers after it: potions, waiting for health and mana, wisps |
 | Interaction | talks to an NPC, clicks through a menu, collects reagents |
-| Utility | does anything else: level scaling, selling, relogging, waiting |
+| Control Flow | chooses the next step: checks on health, zone or scaling, variables, branches |
+| Utility | does anything else: applying level scaling, selling, relogging, changing realm, waiting |
 
 The words are the node browser's own tabs wherever one fits, since a subgraph is a node the
 user made and is added from that dialog. **Team** is the one it lacks: a node never brings

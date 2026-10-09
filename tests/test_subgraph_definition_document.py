@@ -457,27 +457,27 @@ def _answer_meta_dialog(monkeypatch, name, description=None, categories=None):
 
 def test_saving_a_region_asks_for_its_categories(harness, library, monkeypatch):
     monkeypatch.setattr("bartlebot.gui.canvas.bot_canvas.rekey_bot_strategy_states", lambda *a: 0)
-    shown = _answer_meta_dialog(monkeypatch, "Farm loop", categories=["Combat", "Utility"])
+    shown = _answer_meta_dialog(monkeypatch, "Farm loop", categories=["Combat and Healing", "Utility"])
     canvas = _canvas(harness)
     farm = next(r for r in canvas.config.regions if r.source is None)
 
     assert canvas.save_region_as_subgraph(farm.id)
 
     assert shown[0]["categories"] == [], "a new definition starts with none"
-    assert library.get(canvas.config.definition.id).tags == ["Combat", "Utility"]
-    assert canvas.config.definition.tags == ["Combat", "Utility"], "the open definition's header shows them"
+    assert library.get(canvas.config.definition.id).tags == ["Combat and Healing", "Utility"]
+    assert canvas.config.definition.tags == ["Combat and Healing", "Utility"], "the open definition's header shows them"
 
 
 def test_save_as_new_starts_from_the_originals_categories(harness, library, monkeypatch):
     library.save(library.get(SYNC_ID).model_copy(update={"tags": ["Team"]}))
     canvas = harness._window.bot_canvas
     canvas.open_definition_of(REGION)
-    shown = _answer_meta_dialog(monkeypatch, "Sync, then fight", categories=["Team", "Combat"])
+    shown = _answer_meta_dialog(monkeypatch, "Sync, then fight", categories=["Team", "Combat and Healing"])
 
     assert harness._save_definition_as()
 
     assert shown[0]["categories"] == ["Team"]
-    assert library.get(canvas.config.definition.id).tags == ["Team", "Combat"]
+    assert library.get(canvas.config.definition.id).tags == ["Team", "Combat and Healing"]
     assert library.get(SYNC_ID).tags == ["Team"], "the original keeps its own"
 
 

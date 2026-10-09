@@ -367,6 +367,7 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
     "Spellements",
     "Boss"
   ],
@@ -669,5 +670,8 @@
   "template": {
     "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
     "version": 1
-  }
+  },
+  "history": [
+    "188370a06c7114f80a9fad0f61c8066de8c6ddc58bd1ebfc6d6dcf350340c749"
+  ]
 }

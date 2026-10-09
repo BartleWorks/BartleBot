@@ -991,35 +991,11 @@
   "options": [],
   "states": [
     {
-      "id": "t_8",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "t_9",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 880,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
       "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter Throne Room",
       "position": {
-        "x": 1760,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -1044,7 +1020,7 @@
       "node_type": "handle_combat",
       "label": "Defeat the Jade Oni",
       "position": {
-        "x": 3520,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -1059,7 +1035,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3960,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -1072,35 +1048,11 @@
       }
     },
     {
-      "id": "t_13",
-      "node_type": "enter_zone",
-      "label": "Exit Throne Room",
-      "position": {
-        "x": 4400,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "MooShu/Interiors/MS_Emperor_Palace",
-        "to_zone": "MooShu/MS_Hub",
-        "stagger": false,
-        "xyz": {
-          "x": 537.39,
-          "y": -14.89,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 208.1,
-          "y": -5.69,
-          "z": 0.0
-        }
-      }
-    },
-    {
       "id": "t_sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": 0.0,
+        "x": 440.0,
         "y": 0.0
       },
       "params": {
@@ -1117,7 +1069,7 @@
       "node_type": "sync_in_zone",
       "label": "Sync in zone",
       "position": {
-        "x": 440.0,
+        "x": 880.0,
         "y": 90.0
       },
       "params": {
@@ -1129,7 +1081,7 @@
       "node_type": "handle_level_scaling",
       "label": "Handle level scaling",
       "position": {
-        "x": 2200,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -1141,7 +1093,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -1158,7 +1110,7 @@
       "node_type": "interact",
       "label": "Summon the Jade Oni",
       "position": {
-        "x": 2640,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
@@ -1184,7 +1136,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter Jade Oni's render radius",
       "position": {
-        "x": 3080,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
@@ -1201,8 +1153,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
       "position": {
-        "x": 4400,
-        "y": 90.0
+        "x": 4840.0,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -1218,35 +1170,39 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 4840,
-        "y": 90.0
+        "x": 5280.0,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
       }
+    },
+    {
+      "id": "state_11",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_potions",
+      "label": "Handle Potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "t_12",
-      "dest": "t_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_8",
-      "dest": "t_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "t_10",
@@ -1271,36 +1227,6 @@
       "trigger": "advance",
       "source": "t_sync_players_1_state_1",
       "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_13",
-      "dest": "t_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_9",
-      "dest": "t_15",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1349,16 +1275,6 @@
     },
     {
       "trigger": "advance",
-      "source": "t_14",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_10",
       "dest": "t_11",
       "when": "SUCCESS",
@@ -1381,6 +1297,46 @@
       "trigger": "advance",
       "source": "state_8",
       "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_15",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1420,7 +1376,7 @@
           }
         },
         "anchor": {
-          "x": 0.0,
+          "x": 440.0,
           "y": 0.0
         }
       }
@@ -1429,5 +1385,8 @@
   "template": {
     "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
     "version": 1
-  }
+  },
+  "history": [
+    "d81a3e29a36be96d7570d9ac2dc11464b837eed6d1e9d22a5d66299c09fb8e4b"
+  ]
 }

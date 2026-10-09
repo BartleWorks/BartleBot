@@ -1,6 +1,6 @@
 {
   "id": "21c704ee-857c-4622-9af3-cb2ec9714022",
-  "name": "Barkingham Palace - Main Hall",
+  "name": "Main Hall",
   "description": "Endlessly completes Main Hall in Barkingham Palace, Marleybone",
   "version": "1.0",
   "clients": "all",
@@ -8,160 +8,212 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "13 Royal Brooch"
+      "name": "13 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "15 Royal Brooch"
+      "name": "15 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Amulet of the Misty Palace"
+      "name": "Amulet of the Misty Palace",
+      "category": "Amulets"
     },
     {
-      "name": "Barkingham Cinder Smock"
+      "name": "Barkingham Cinder Smock",
+      "category": "Robes"
     },
     {
-      "name": "Barkingham Fog Coat"
+      "name": "Barkingham Fog Coat",
+      "category": "Robes"
     },
     {
-      "name": "Barkingham Frostbreaker"
+      "name": "Barkingham Frostbreaker",
+      "category": "Robes"
     },
     {
-      "name": "Barkingham Hearthfire Relic"
+      "name": "Barkingham Hearthfire Relic",
+      "category": "Amulets"
     },
     {
-      "name": "Barkingham Robe of Repose"
+      "name": "Barkingham Robe of Repose",
+      "category": "Robes"
     },
     {
-      "name": "Barkingham Vial of Numbing"
+      "name": "Barkingham Vial of Numbing",
+      "category": "Amulets"
     },
     {
-      "name": "Ceremonial Array of Triumph"
+      "name": "Ceremonial Array of Triumph",
+      "category": "Robes"
     },
     {
-      "name": "Clean Sweep"
+      "name": "Clean Sweep",
+      "category": "Spellements"
     },
     {
-      "name": "Crown Jewel Necklace"
+      "name": "Crown Jewel Necklace",
+      "category": "Amulets"
     },
     {
-      "name": "Crown's Charm of Adroitness"
+      "name": "Crown's Charm of Adroitness",
+      "category": "Amulets"
     },
     {
-      "name": "Empire's Torc of Calamity"
+      "name": "Empire's Torc of Calamity",
+      "category": "Amulets"
     },
     {
-      "name": "Enfield Trickster's Ampul"
+      "name": "Enfield Trickster's Ampul",
+      "category": "Amulets"
     },
     {
-      "name": "Grenadier's Vial of Tumult"
+      "name": "Grenadier's Vial of Tumult",
+      "category": "Amulets"
     },
     {
-      "name": "Hound's Choker of Squalls"
+      "name": "Hound's Choker of Squalls",
+      "category": "Amulets"
     },
     {
-      "name": "Jackall & Hound"
+      "name": "Jackall & Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Jackall's Vial of Duplicity"
+      "name": "Jackall's Vial of Duplicity",
+      "category": "Amulets"
     },
     {
-      "name": "Jacques Scratches!"
+      "name": "Jacques Scratches!",
+      "category": "Spellements"
     },
     {
-      "name": "Lanyon Scratcher's Bauble"
+      "name": "Lanyon Scratcher's Bauble",
+      "category": "Amulets"
     },
     {
-      "name": "Life Potbelly"
+      "name": "Life Potbelly",
+      "category": "Pets"
     },
     {
-      "name": "Locket of the Opera Nova"
+      "name": "Locket of the Opera Nova",
+      "category": "Amulets"
     },
     {
-      "name": "Mark of Meowiarty"
+      "name": "Mark of Meowiarty",
+      "category": "Spellements"
     },
     {
-      "name": "Mycroft's Medallion"
+      "name": "Mycroft's Medallion",
+      "category": "Amulets"
     },
     {
-      "name": "Necklace of the Monarchy"
+      "name": "Necklace of the Monarchy",
+      "category": "Amulets"
     },
     {
-      "name": "Ornament of Mesmerization"
+      "name": "Ornament of Mesmerization",
+      "category": "Amulets"
     },
     {
-      "name": "Outfit of the Forlorn Watch"
+      "name": "Outfit of the Forlorn Watch",
+      "category": "Robes"
     },
     {
-      "name": "Palace Guard's Firebreaker"
+      "name": "Palace Guard's Firebreaker",
+      "category": "Robes"
     },
     {
-      "name": "Palace Guard's Rain Gear"
+      "name": "Palace Guard's Rain Gear",
+      "category": "Robes"
     },
     {
-      "name": "Pops' Knuckles"
+      "name": "Pops' Knuckles",
+      "category": "Spellements"
     },
     {
-      "name": "Queen's Jewel of Barkingham"
+      "name": "Queen's Jewel of Barkingham",
+      "category": "Amulets"
     },
     {
-      "name": "Raiment of the Royal Flame"
+      "name": "Raiment of the Royal Flame",
+      "category": "Robes"
     },
     {
-      "name": "Ratstabber"
+      "name": "Ratstabber",
+      "category": "Spellements"
     },
     {
-      "name": "Royal Ceremonial Snowgear"
+      "name": "Royal Ceremonial Snowgear",
+      "category": "Robes"
     },
     {
-      "name": "Royal Coat of Alliance"
+      "name": "Royal Coat of Alliance",
+      "category": "Robes"
     },
     {
-      "name": "Royal Coat of Wit"
+      "name": "Royal Coat of Wit",
+      "category": "Robes"
     },
     {
-      "name": "Royal Outfit of Remembrance"
+      "name": "Royal Outfit of Remembrance",
+      "category": "Robes"
     },
     {
-      "name": "Royal Uniform of Accord"
+      "name": "Royal Uniform of Accord",
+      "category": "Robes"
     },
     {
-      "name": "Royal Uniform of Whirlwind"
+      "name": "Royal Uniform of Whirlwind",
+      "category": "Robes"
     },
     {
-      "name": "Royal Vestment of Charisma"
+      "name": "Royal Vestment of Charisma",
+      "category": "Robes"
     },
     {
-      "name": "Sherlock's Lens of Hegemony"
+      "name": "Sherlock's Lens of Hegemony",
+      "category": "Amulets"
     },
     {
-      "name": "Smock of Barkingham Brio"
+      "name": "Smock of Barkingham Brio",
+      "category": "Robes"
     },
     {
-      "name": "Torc of the Woman"
+      "name": "Torc of the Woman",
+      "category": "Amulets"
     },
     {
-      "name": "Vial of the Palace Menace"
+      "name": "Vial of the Palace Menace",
+      "category": "Amulets"
     },
     {
-      "name": "Watson's Amulet of Purpose"
+      "name": "Watson's Amulet of Purpose",
+      "category": "Amulets"
     },
     {
-      "name": "Whiplash"
+      "name": "Whiplash",
+      "category": "Spellements"
     },
     {
-      "name": "Yeoman's Ampul of Winter"
+      "name": "Yeoman's Ampul of Winter",
+      "category": "Amulets"
     },
     {
-      "name": "Yeoman's Cloak of Reverie"
+      "name": "Yeoman's Cloak of Reverie",
+      "category": "Robes"
     },
     {
-      "name": "Yeoman's Robe of Bounty"
+      "name": "Yeoman's Robe of Bounty",
+      "category": "Robes"
     },
     {
-      "name": "Yeoman's Vestment of Unity"
+      "name": "Yeoman's Vestment of Unity",
+      "category": "Robes"
     },
     {
-      "name": "Yeoman's Winter Uniform"
+      "name": "Yeoman's Winter Uniform",
+      "category": "Robes"
     }
   ],
   "authors": "BartleBot",
@@ -177,7 +229,21 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Potbelly"
+        "Potbelly",
+        "=Ceremonial Array of Triumph",
+        "=Raiment of the Royal Flame",
+        "=Royal Ceremonial Snowgear",
+        "=Royal Outfit of Remembrance",
+        "=Royal Uniform of Accord",
+        "=Royal Uniform of Whirlwind",
+        "=Royal Vestment of Charisma",
+        "=Crown Jewel Necklace",
+        "=Enfield Trickster's Ampul",
+        "=Lanyon Scratcher's Bauble",
+        "=Locket of the Opera Nova",
+        "=Mycroft's Medallion",
+        "=Queen's Jewel of Barkingham",
+        "=Torc of the Woman"
       ]
     }
   ],
@@ -467,7 +533,8 @@
       "params": {
         "enemy": "G14-BP-Golem_Steel_Boss",
         "use_default_strategy": false,
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Noxious Gas Golem"
       }
     },
     {
@@ -784,10 +851,48 @@
           "y": 0.0
         }
       }
+    },
+    {
+      "id": "c8111b9a",
+      "label": "Corrupted Grenadiers",
+      "members": [
+        "state_9",
+        "state_10",
+        "state_8",
+        "state_11"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "4bfcf6d2",
+      "label": "Chief Whip",
+      "members": [
+        "state_13",
+        "state_14",
+        "state_12"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "1842cd27",
+      "label": "Noxious Gas Golem",
+      "members": [
+        "state_17",
+        "state_16",
+        "state_15"
+      ],
+      "color": 6,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "9924cd06186335887e4305aeed6b357d219cd543bf8bad1ee2dfddf932800744",
+    "3e2bdcd7b15804b85a0e487852b97dbe25f02ff72361eda5b80f262049ba0961"
+  ]
 }

@@ -395,8 +395,8 @@ OBJECT_USE_DELAY = 1.0
 # interacting while the first is mid-interaction has its keypress swallowed. The delay
 # covers the object becoming free again, which has no readable signal of its own.
 #
-# Distinct from LEVEL_SCALING_STAGGER_DELAY, which paces the one station apply_level_scaling
-# is hardcoded against; these are separate knobs because there is no reason to believe every
+# Distinct from LEVEL_SCALING_STAGGER_DELAY, which paces the one level-scaling station
+# handle_level_scaling uses; these are separate knobs because there is no reason to believe every
 # contended object frees up at the same rate.
 
 INTERACT_ANIMATION_DELAY = 0.0

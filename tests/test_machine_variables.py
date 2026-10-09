@@ -460,13 +460,13 @@ async def test_a_node_that_touches_the_game_resets_the_count(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_both_nodes_are_registered_utility_nodes_returning_success():
+def test_both_nodes_are_registered_control_flow_nodes_returning_success():
     from bartlebot.nodes.registry import NODE_TYPE_TO_CATEGORY
 
     for name, module in (("set_variables", set_variables), ("branch", branch)):
         assert NODE_REGISTRY[name] is module.run
         assert NODE_SPECS[name] is module.NODE_SPEC
-        assert NODE_TYPE_TO_CATEGORY[name] == "Utility"
+        assert NODE_TYPE_TO_CATEGORY[name] == "Control Flow"
         assert [r.name for r in module.NODE_SPEC.returns] == ["SUCCESS"]
     assert variables.VARIABLE_ONLY_NODE_TYPES == {"set_variables", "branch"}
 

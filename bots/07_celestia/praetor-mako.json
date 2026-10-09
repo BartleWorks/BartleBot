@@ -8,502 +8,668 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Accurate"
+      "name": "Accurate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Atavistic Balance Dirk"
+      "name": "Atavistic Balance Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Atavistic Death Dirk"
+      "name": "Atavistic Death Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Atavistic Fire Dirk"
+      "name": "Atavistic Fire Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Atavistic Ice Dirk"
+      "name": "Atavistic Ice Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Atavistic Life Dirk"
+      "name": "Atavistic Life Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Atavistic Myth Dirk"
+      "name": "Atavistic Myth Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Atavistic Storm Dirk"
+      "name": "Atavistic Storm Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Balance Accurate Pin (30)"
+      "name": "Balance Accurate Pin (30)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Accurate Pin (60)"
+      "name": "Balance Accurate Pin (60)",
+      "category": "Pins"
     },
     {
-      "name": "Banshee"
+      "name": "Banshee",
+      "category": "Spellements"
     },
     {
-      "name": "Blade of Life Jade"
+      "name": "Blade of Life Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Blight Hound"
+      "name": "Blight Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Blizzard Lizard Sapphire"
+      "name": "Blizzard Lizard Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Boots of Accord"
+      "name": "Boots of Accord",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Catastrophe"
+      "name": "Boots of Catastrophe",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Celestian Totality"
+      "name": "Boots of Celestian Totality",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Bygone Balance Dirk"
+      "name": "Bygone Balance Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Bygone Death Dirk"
+      "name": "Bygone Death Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Bygone Fire Dirk"
+      "name": "Bygone Fire Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Bygone Ice Dirk"
+      "name": "Bygone Ice Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Bygone Life Dirk"
+      "name": "Bygone Life Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Bygone Myth Dirk"
+      "name": "Bygone Myth Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Bygone Storm Dirk"
+      "name": "Bygone Storm Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Cat Bandit Opal"
+      "name": "Cat Bandit Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Cauliflowers",
+      "category": "Snacks"
     },
     {
-      "name": "Celestian Abyss Boots"
+      "name": "Celestian Abyss Boots",
+      "category": "Boots"
     },
     {
-      "name": "Celestian Cinder Shoes"
+      "name": "Celestian Cinder Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Celestian Frostbit Footgear"
+      "name": "Celestian Frostbit Footgear",
+      "category": "Boots"
     },
     {
-      "name": "Celestian Tempest Trekkers"
+      "name": "Celestian Tempest Trekkers",
+      "category": "Boots"
     },
     {
-      "name": "Centaur"
+      "name": "Centaur",
+      "category": "Spellements"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Colossus"
+      "name": "Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Combustible Band"
+      "name": "Combustible Band",
+      "category": "Rings"
     },
     {
-      "name": "Cyclops"
+      "name": "Cyclops",
+      "category": "Spellements"
     },
     {
-      "name": "Cyclops Minion"
+      "name": "Cyclops Minion",
+      "category": "Spellements"
     },
     {
-      "name": "Dagger of Typhoons"
+      "name": "Dagger of Typhoons",
+      "category": "Athames"
     },
     {
-      "name": "Darkwind"
+      "name": "Darkwind",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Death Accurate Pin (30)"
+      "name": "Death Accurate Pin (30)",
+      "category": "Pins"
     },
     {
-      "name": "Death Accurate Pin (60)"
+      "name": "Death Accurate Pin (60)",
+      "category": "Pins"
     },
     {
-      "name": "Delicious Cookie"
+      "name": "Delicious Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Devoted Vestment"
+      "name": "Devoted Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Dirk of Delusion"
+      "name": "Dirk of Delusion",
+      "category": "Athames"
     },
     {
-      "name": "Dragonflies"
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dull Critical Opal +2"
+      "name": "Dull Critical Opal +2",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Defense Sapphire +26"
+      "name": "Dull Defense Sapphire +26",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Health Opal +51"
+      "name": "Dull Health Opal +51",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Health Opal +52"
+      "name": "Dull Health Opal +52",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Health Opal +53"
+      "name": "Dull Health Opal +53",
+      "category": "Jewels"
     },
     {
-      "name": "Earth Walker"
+      "name": "Earth Walker",
+      "category": "Spellements"
     },
     {
-      "name": "Everlasting Celestian Boots"
+      "name": "Everlasting Celestian Boots",
+      "category": "Boots"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Accurate Pin (50)"
+      "name": "Fire Accurate Pin (50)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Dragon"
+      "name": "Fire Dragon",
+      "category": "Spellements"
     },
     {
-      "name": "Fire-Eye Ruby"
+      "name": "Fire-Eye Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fish Fin"
+      "name": "Fish Fin",
+      "category": "Reagents"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Forest Lord"
+      "name": "Forest Lord",
+      "category": "Spellements"
     },
     {
-      "name": "Forgotten Facade"
+      "name": "Forgotten Facade",
+      "category": "Hats"
     },
     {
-      "name": "Forsaken Headgear"
+      "name": "Forsaken Headgear",
+      "category": "Hats"
     },
     {
-      "name": "Frost Giant"
+      "name": "Frost Giant",
+      "category": "Spellements"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Glowing Star Fruit"
+      "name": "Glowing Star Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Glowing Taffy"
+      "name": "Glowing Taffy",
+      "category": "Snacks"
     },
     {
-      "name": "Helephant"
+      "name": "Helephant",
+      "category": "Spellements"
     },
     {
-      "name": "Helm of Burning Ambition"
+      "name": "Helm of Burning Ambition",
+      "category": "Hats"
     },
     {
-      "name": "Hexfin's Flurry Band"
+      "name": "Hexfin's Flurry Band",
+      "category": "Rings"
     },
     {
-      "name": "Hexfin's Frostbit Bodkin"
+      "name": "Hexfin's Frostbit Bodkin",
+      "category": "Athames"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Spellements"
     },
     {
-      "name": "Ice Accurate Pin (30)"
+      "name": "Ice Accurate Pin (30)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Accurate Pin (60)"
+      "name": "Ice Accurate Pin (60)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Rangers"
+      "name": "Ice Rangers",
+      "category": "Boots"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Spellements"
     },
     {
-      "name": "Icestar Stalkers"
+      "name": "Icestar Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Immolate"
+      "name": "Immolate",
+      "category": "Spellements"
     },
     {
-      "name": "Insightful Topper"
+      "name": "Insightful Topper",
+      "category": "Hats"
     },
     {
-      "name": "Kraken"
+      "name": "Kraken",
+      "category": "Spellements"
     },
     {
-      "name": "Kris of the Piscean Guard"
+      "name": "Kris of the Piscean Guard",
+      "category": "Athames"
     },
     {
-      "name": "Large Willow Tree"
+      "name": "Large Willow Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Legendary Vial"
+      "name": "Legendary Vial",
+      "category": "Amulets"
     },
     {
-      "name": "Life Accurate Pin (20)"
+      "name": "Life Accurate Pin (20)",
+      "category": "Pins"
     },
     {
-      "name": "Life Accurate Pin (60)"
+      "name": "Life Accurate Pin (60)",
+      "category": "Pins"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Majestic Signet"
+      "name": "Majestic Signet",
+      "category": "Rings"
     },
     {
-      "name": "Mako's Timeless Trekkers"
+      "name": "Mako's Timeless Trekkers",
+      "category": "Boots"
     },
     {
-      "name": "Mako's Wanderlust Raiment"
+      "name": "Mako's Wanderlust Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Mass Ice Prism Sapphire"
+      "name": "Mass Ice Prism Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Mass Life Prism Jade"
+      "name": "Mass Life Prism Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Mass Myth Prism Peridot"
+      "name": "Mass Myth Prism Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Minotaur"
+      "name": "Minotaur",
+      "category": "Spellements"
     },
     {
-      "name": "Monstrous"
+      "name": "Monstrous",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Myth Accurate Pin (50)"
+      "name": "Myth Accurate Pin (50)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Accurate Pin (60)"
+      "name": "Myth Accurate Pin (60)",
+      "category": "Pins"
     },
     {
-      "name": "Nature's Wrath"
+      "name": "Nature's Wrath",
+      "category": "Spellements"
     },
     {
-      "name": "Nereus's Hoarfrost Helm"
+      "name": "Nereus's Hoarfrost Helm",
+      "category": "Hats"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Orthrus"
+      "name": "Orthrus",
+      "category": "Spellements"
     },
     {
-      "name": "Phoenix"
+      "name": "Phoenix",
+      "category": "Spellements"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Plain Blocking Onyx +6"
+      "name": "Plain Blocking Onyx +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Blocking Peridot +6"
+      "name": "Plain Blocking Peridot +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Damage Ruby +15"
+      "name": "Plain Damage Ruby +15",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Damage Sapphire +15"
+      "name": "Plain Damage Sapphire +15",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Defense Opal +16"
+      "name": "Plain Defense Opal +16",
+      "category": "Jewels"
     },
     {
-      "name": "Polar Boots"
+      "name": "Polar Boots",
+      "category": "Boots"
     },
     {
-      "name": "Power Nova"
+      "name": "Power Nova",
+      "category": "Spellements"
     },
     {
-      "name": "Precision"
+      "name": "Precision",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Reckless Raiment"
+      "name": "Reckless Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Rime Runners"
+      "name": "Rime Runners",
+      "category": "Boots"
     },
     {
-      "name": "Ring of Rapport"
+      "name": "Ring of Rapport",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Rare Origins"
+      "name": "Ring of Rare Origins",
+      "category": "Rings"
     },
     {
-      "name": "Rising Tide Topper"
+      "name": "Rising Tide Topper",
+      "category": "Hats"
     },
     {
-      "name": "Salgio's Tinder Cloak"
+      "name": "Salgio's Tinder Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Sandstone"
+      "name": "Sandstone",
+      "category": "Reagents"
     },
     {
-      "name": "Scales"
+      "name": "Scales",
+      "category": "Reagents"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Spellements"
     },
     {
-      "name": "Seraph"
+      "name": "Seraph",
+      "category": "Spellements"
     },
     {
-      "name": "Shark Tooth"
+      "name": "Shark Tooth",
+      "category": "Reagents"
     },
     {
-      "name": "Shroud of Snowfall"
+      "name": "Shroud of Snowfall",
+      "category": "Hats"
     },
     {
-      "name": "Silver Trumpet Vine"
+      "name": "Silver Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
     },
     {
-      "name": "Slick-N-Slide Opal"
+      "name": "Slick-N-Slide Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sniper"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sniper Talent Opal"
+      "name": "Sniper Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Spicy Drumstick"
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Sprite"
+      "name": "Sprite",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Stone Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Storied Celestian Sabatons"
+      "name": "Storied Celestian Sabatons",
+      "category": "Boots"
     },
     {
-      "name": "Storm Accurate Pin (50)"
+      "name": "Storm Accurate Pin (50)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Lord"
+      "name": "Storm Lord",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Shark"
+      "name": "Storm Shark",
+      "category": "Spellements"
     },
     {
-      "name": "Storm-Tooth Amethyst"
+      "name": "Storm-Tooth Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stormzilla"
+      "name": "Stormzilla",
+      "category": "Spellements"
     },
     {
-      "name": "Storyteller's Cap"
+      "name": "Storyteller's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Storyteller's Tunic"
+      "name": "Storyteller's Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Strawberry Cupcake"
+      "name": "Strawberry Cupcake",
+      "category": "Snacks"
     },
     {
-      "name": "Sturdy Opal"
+      "name": "Sturdy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Submarine Sandwich"
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
     },
     {
-      "name": "Sunbird"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Sunstone"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "Synthesis Cover"
+      "name": "Synthesis Cover",
+      "category": "Hats"
     },
     {
-      "name": "Thundercloud Coif"
+      "name": "Thundercloud Coif",
+      "category": "Hats"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tolerant Boots"
+      "name": "Tolerant Boots",
+      "category": "Boots"
     },
     {
-      "name": "Tragic Tunic"
+      "name": "Tragic Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Triton"
+      "name": "Triton",
+      "category": "Spellements"
     },
     {
-      "name": "Turbulent Tunic"
+      "name": "Turbulent Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Vampire"
+      "name": "Vampire",
+      "category": "Spellements"
     },
     {
-      "name": "Vengeance"
+      "name": "Vengeance",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Versatile Celestian Boots"
+      "name": "Versatile Celestian Boots",
+      "category": "Boots"
     },
     {
-      "name": "Versatile Steel"
+      "name": "Versatile Steel",
+      "category": "Athames"
     },
     {
-      "name": "Vile Outfit"
+      "name": "Vile Outfit",
+      "category": "Robes"
     },
     {
-      "name": "Virtue Shoes"
+      "name": "Virtue Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Vital Headdress"
+      "name": "Vital Headdress",
+      "category": "Hats"
     },
     {
-      "name": "Whimsical Surcoat"
+      "name": "Whimsical Surcoat",
+      "category": "Robes"
     },
     {
-      "name": "Wisp Bonus Opal"
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Wraith"
+      "name": "Wraith",
+      "category": "Spellements"
     },
     {
-      "name": "Wyldfire"
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
     }
   ],
   "authors": "BartleBot",
@@ -518,7 +684,13 @@
       "type": "drop_keep_list",
       "default": [
         "Atavistic",
-        "Accurate"
+        "=Myth Accurate Pin (60)",
+        "=Life Accurate Pin (60)",
+        "=Ice Accurate Pin (60)",
+        "=Death Accurate Pin (60)",
+        "=Balance Accurate Pin (60)",
+        "=Storm Accurate Pin (50)",
+        "=Fire Accurate Pin (50)"
       ]
     }
   ],
@@ -612,7 +784,7 @@
       },
       "params": {
         "enemy": "CL-SharkKing-Boss-R10",
-        "wiki_page": "",
+        "wiki_page": "Creature:Praetor Mako",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -829,5 +1001,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "61e36c80bd246a8f193ab0af026c476ef19a4c433e2a86e80efc965d712066bd"
+  ]
 }

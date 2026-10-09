@@ -36,9 +36,6 @@
       "category": "Wands"
     },
     {
-      "name": "and boots"
-    },
-    {
       "name": "Arbiter's Raiment",
       "category": "Robes"
     },
@@ -1211,9 +1208,6 @@
       "category": "Spellements"
     },
     {
-      "name": "Level 50 hat"
-    },
-    {
       "name": "Lightning Bats",
       "category": "Spellements"
     },
@@ -1432,9 +1426,6 @@
     {
       "name": "Ring of the Forefathers",
       "category": "Rings"
-    },
-    {
-      "name": "robe"
     },
     {
       "name": "Robe of Radiance",
@@ -1862,6 +1853,49 @@
       "type": "bool",
       "default": false,
       "description": "Whether or not to reset after defeating one or both Gurtok demons. If set to True, does NOT defeat Malistaire Drake at the end of the dungeon."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Gurtok Apotheosis Ringlet",
+        "=Gurtok Celsius Band",
+        "=Gurtok Chillblade",
+        "=Gurtok Ender's Blade",
+        "=Gurtok Everthorn",
+        "=Gurtok Firetusk",
+        "=Gurtok Fulgis Circlet",
+        "=Gurtok Ignus Signet",
+        "=Gurtok Mortis Seal",
+        "=Gurtok Mythslayer",
+        "=Gurtok Oroboros Loop",
+        "=Gurtok Scaleblade",
+        "=Gurtok Telluric Steel",
+        "=Gurtok Vivus Ring",
+        "=Ascendant Staff",
+        "=Kraysys' Hood of the Hidden",
+        "=Kraysys' Unfaithful Cowl",
+        "=Kraysys' Boots of Retreat",
+        "=Kraysys' Subterfuge Slippers",
+        "=Snowcrusher's Galvanic Shroud",
+        "=Snowcrusher's Mantle of Embers",
+        "=Spiderkeeper's Darkshroud",
+        "=Spiderkeeper's Icemantle",
+        "=Spiderkeeper's Storyveil",
+        "=Snowcrusher's Shoes of Shelter",
+        "=Snowcrusher's Snowstompers",
+        "=Snowcrusher's Tread of Tension",
+        "=Spiderkeeper's Charstriders",
+        "=Spiderkeeper's Thundershoes",
+        "=Avalanche's Legendary Cutlass",
+        "=Dean Darkflame's Cleaver",
+        "=Longblade of the Homunculus",
+        "=Redwind's Viridian Blade",
+        "=Soulsinger's Soulsword",
+        "=Shockblade of the Hoarder",
+        "=Sword of the Steward",
+        "=Darkwind Amethyst"
+      ]
     }
   ],
   "states": [
@@ -1966,8 +2000,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 11440,
-        "y": 0.0
+        "x": 11440.0,
+        "y": 90.0
       },
       "params": {
         "zone": "",
@@ -2115,8 +2149,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Firebender",
       "position": {
-        "x": 5280,
-        "y": 0.0
+        "x": 5280.0,
+        "y": 90.0
       },
       "params": {
         "enemy": "Helephant-Fire-Boss-R9",
@@ -2301,8 +2335,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter Gurtok Piercer render radius",
       "position": {
-        "x": 5720,
-        "y": 0.0
+        "x": 5720.0,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -2318,8 +2352,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 6160,
-        "y": 0.0
+        "x": 6160.0,
+        "y": 90.0
       },
       "params": {
         "duration": 4.0
@@ -2330,8 +2364,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Piercer",
       "position": {
-        "x": 6600,
-        "y": 0.0
+        "x": 6600.0,
+        "y": 180.0
       },
       "params": {
         "enemy": "Helephant-Death-Boss-R9",
@@ -2907,10 +2941,52 @@
       ],
       "color": 6,
       "collapsed": true
+    },
+    {
+      "id": "4c5606dc",
+      "label": "Gurtoks",
+      "members": [
+        "state_19",
+        "state_17",
+        "state_20",
+        "state_9",
+        "state_18",
+        "state_5"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "e58a0c9c",
+      "label": "Soul Servants",
+      "members": [
+        "state_21",
+        "state_28",
+        "state_29",
+        "state_30"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "f92281e4",
+      "label": "Malistaire Drake",
+      "members": [
+        "state_36",
+        "state_37",
+        "state_32",
+        "state_35"
+      ],
+      "color": 5,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "979ac7015b26d0ca2f9444a8fdc372026d3b6709a4f29833d14e9b25d8d7f77f",
+    "8d6516b64d2bc27ae9de497b2b85e21d928545f27d44a07b57711c356f0516c1"
+  ]
 }

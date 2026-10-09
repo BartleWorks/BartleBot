@@ -8,10 +8,12 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Blood Moss"
+      "name": "Blood Moss",
+      "category": "Reagents"
     },
     {
-      "name": "Red Mandrake"
+      "name": "Red Mandrake",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",

@@ -1,6 +1,6 @@
 {
   "id": "6bde91cf-e9e9-45ea-b32c-dad28e9954a2",
-  "name": "Barkingham Palace - Rooftop",
+  "name": "Rooftop",
   "description": "Endlessly completes Rooftop in Barkingham Palace, Marleybone",
   "version": "1.0",
   "clients": "all",
@@ -8,673 +8,220 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Azoth"
+      "name": "11 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Balefrost"
+      "name": "12 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Band of Royal Infallibility"
+      "name": "13 Royal Brooch",
+      "category": "Reagents"
     },
     {
-      "name": "Banshee Onyx"
+      "name": "Barkingham Bombin of Brio",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Band of Virtue"
+      "name": "Barkingham Derby of Cinders",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Blade of Blight"
+      "name": "Barkingham Derby of Repose",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Bombin of Brio"
+      "name": "Barkingham Fog Bowler",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Boots of Brio"
+      "name": "Barkingham Frost Cover",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Cinder Shoes"
+      "name": "Barkingham Wand of Largess",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Cinder Smock"
+      "name": "Barkingham's Mace of Sleet",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Clogs of Repose"
+      "name": "Baton of the Just Monarchy",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Derby of Cinders"
+      "name": "Baton of the Radiant Queen",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Derby of Repose"
+      "name": "Baton of the Royal Flame",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Fog Bowler"
+      "name": "Ceremonial Helm of Triumph",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Fog Coat"
+      "name": "Clean Sweep",
+      "category": "Spellements"
     },
     {
-      "name": "Barkingham Fog Walkers"
+      "name": "Clouds of Barkingham Baton",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Frost Cover"
+      "name": "Dread Mace of Barkingham",
+      "category": "Wands"
     },
     {
-      "name": "Barkingham Frost Striders"
+      "name": "Fire Potbelly",
+      "category": "Pets"
     },
     {
-      "name": "Barkingham Frostbreaker"
+      "name": "Hat of the Forlorn Watch",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Robe of Repose"
+      "name": "Helmet of the Royal Flame",
+      "category": "Hats"
     },
     {
-      "name": "Barkingham Shoes of Wit"
+      "name": "Ice Potbelly",
+      "category": "Pets"
     },
     {
-      "name": "Barkingham Steel Splinter"
+      "name": "Jackall & Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Barkingham Wand of Largess"
+      "name": "Jacques Scratches!",
+      "category": "Spellements"
     },
     {
-      "name": "Barkingham's Mace of Sleet"
+      "name": "Mace of Noble Conquest",
+      "category": "Wands"
     },
     {
-      "name": "Baton of the Just Monarchy"
+      "name": "Mace of the Endless Reign",
+      "category": "Wands"
     },
     {
-      "name": "Baton of the Radiant Queen"
+      "name": "Mark of Meowiarty",
+      "category": "Spellements"
     },
     {
-      "name": "Baton of the Royal Flame"
+      "name": "Noble Trophy of Equality",
+      "category": "Wands"
     },
     {
-      "name": "Big Downer Opal"
+      "name": "Palace Guard's Rain Topper",
+      "category": "Hats"
     },
     {
-      "name": "Black Mantle"
+      "name": "Palace Guard's Stovepipe",
+      "category": "Hats"
     },
     {
-      "name": "Black Spider"
+      "name": "Pops' Knuckles",
+      "category": "Spellements"
     },
     {
-      "name": "Bladestorm"
+      "name": "Ratstabber",
+      "category": "Spellements"
     },
     {
-      "name": "Blue Ghost"
+      "name": "Regal Token of Luminosity",
+      "category": "Wands"
     },
     {
-      "name": "Blustering Scamp"
+      "name": "Regent's Baton of Ethos",
+      "category": "Wands"
     },
     {
-      "name": "Bomber Opal"
+      "name": "Relic of Imperial Perpetuum",
+      "category": "Wands"
     },
     {
-      "name": "Bone"
+      "name": "Relic of the Reign of Ice",
+      "category": "Wands"
     },
     {
-      "name": "Boots of the Forlorn Watch"
+      "name": "Royal Barbut of Whirlwind",
+      "category": "Hats"
     },
     {
-      "name": "Buttered Bread"
+      "name": "Royal Bascinet of Charisma",
+      "category": "Hats"
     },
     {
-      "name": "Cat Tail"
+      "name": "Royal Bequest of Eidolon",
+      "category": "Wands"
     },
     {
-      "name": "Cat Thug"
+      "name": "Royal Cap of Alliance",
+      "category": "Hats"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Royal Ceremonial Snowcover",
+      "category": "Hats"
     },
     {
-      "name": "Ceremonial Array of Triumph"
+      "name": "Royal Conical of Accord",
+      "category": "Hats"
     },
     {
-      "name": "Ceremonial Boots of Triumph"
+      "name": "Royal Helm of Remembrance",
+      "category": "Hats"
     },
     {
-      "name": "Ceremonial Helm of Triumph"
+      "name": "Scepter of Royal Triumph",
+      "category": "Wands"
     },
     {
-      "name": "Chief Whip's Hail Stone"
+      "name": "Solemn Kingdom Heirloom",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Damage Citrine +7"
+      "name": "Staff of the Royal Paragon",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Damage Peridot +7"
+      "name": "The Queen's Crystal Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Damage Ruby +7"
+      "name": "Topper of Royal Wit",
+      "category": "Hats"
     },
     {
-      "name": "Chipped Defense Amethyst +14"
+      "name": "Trophy of the Raucous Court",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Defense Onyx +14"
+      "name": "Wand of the Royal Paragon",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Defense Opal +8"
+      "name": "Whiplash",
+      "category": "Spellements"
     },
     {
-      "name": "Chipped Defense Peridot +14"
+      "name": "Yeoman's Cap of Bounty",
+      "category": "Hats"
     },
     {
-      "name": "Chipped Defense Ruby +14"
+      "name": "Yeoman's Top Hat of Reverie",
+      "category": "Hats"
     },
     {
-      "name": "Chipped Defense Sapphire +14"
+      "name": "Yeoman's Topper of Unity",
+      "category": "Hats"
     },
     {
-      "name": "Chipped Health Opal +21"
-    },
-    {
-      "name": "Chipped Health Opal +23"
-    },
-    {
-      "name": "Cleanse Ward"
-    },
-    {
-      "name": "Clockwork"
-    },
-    {
-      "name": "Clockwork Spider"
-    },
-    {
-      "name": "Clouds of Barkingham Baton"
-    },
-    {
-      "name": "Copper"
-    },
-    {
-      "name": "Crabling"
-    },
-    {
-      "name": "Cracked Damage Opal +3"
-    },
-    {
-      "name": "Cyclops Peridot"
-    },
-    {
-      "name": "Dark Sprite"
-    },
-    {
-      "name": "Darkwind"
-    },
-    {
-      "name": "Deadly Fly Trap"
-    },
-    {
-      "name": "Deadly Scratcher"
-    },
-    {
-      "name": "Deer Knight Onyx"
-    },
-    {
-      "name": "Delicious Cookie"
-    },
-    {
-      "name": "Dependable Opal"
-    },
-    {
-      "name": "Doom and Gloom"
-    },
-    {
-      "name": "Dr. Jalapeno"
-    },
-    {
-      "name": "Dragonflies"
-    },
-    {
-      "name": "Dread Mace of Barkingham"
-    },
-    {
-      "name": "Dryad"
-    },
-    {
-      "name": "Duke's Rosy Signet"
-    },
-    {
-      "name": "Ectoplasm"
-    },
-    {
-      "name": "Enfield Circle of Trickery"
-    },
-    {
-      "name": "Evil Snowman Sapphire"
-    },
-    {
-      "name": "Fiery Boom Shroom"
-    },
-    {
-      "name": "Fire-Giver Ruby"
-    },
-    {
-      "name": "Flaming Soup"
-    },
-    {
-      "name": "Flapjacks"
-    },
-    {
-      "name": "Flawed Accurate Opal +2%"
-    },
-    {
-      "name": "Flawed Damage Jade +10"
-    },
-    {
-      "name": "Flawed Damage Opal +5"
-    },
-    {
-      "name": "Flawed Defense Citrine +17"
-    },
-    {
-      "name": "Flawed Defense Opal +9"
-    },
-    {
-      "name": "Flawed Healing Opal +2%"
-    },
-    {
-      "name": "Flawed Health Opal +29"
-    },
-    {
-      "name": "Flawed Mending Opal +2%"
-    },
-    {
-      "name": "Flawed Resilient Opal +2%"
-    },
-    {
-      "name": "Glowing Star Fruit"
-    },
-    {
-      "name": "Glowing Taffy"
-    },
-    {
-      "name": "Goat Cheese"
-    },
-    {
-      "name": "Golden Grapes"
-    },
-    {
-      "name": "Grenadier's Blasting Ring"
-    },
-    {
-      "name": "Guidance"
-    },
-    {
-      "name": "Gummy Humongofrog"
-    },
-    {
-      "name": "Hat of the Forlorn Watch"
-    },
-    {
-      "name": "Helmet of the Royal Flame"
-    },
-    {
-      "name": "Hex"
-    },
-    {
-      "name": "Humongofrog"
-    },
-    {
-      "name": "Ice Wyvern"
-    },
-    {
-      "name": "Ice-Away Sapphire"
-    },
-    {
-      "name": "Ice-Eye Sapphire"
-    },
-    {
-      "name": "Iron"
-    },
-    {
-      "name": "Iron Golem"
-    },
-    {
-      "name": "Jackall's Ring of Duality"
-    },
-    {
-      "name": "Jelly Baby"
-    },
-    {
-      "name": "King Banana"
-    },
-    {
-      "name": "Kola Nuts"
-    },
-    {
-      "name": "Kraken"
-    },
-    {
-      "name": "Lead"
-    },
-    {
-      "name": "Leather Straps"
-    },
-    {
-      "name": "Leprechaun"
-    },
-    {
-      "name": "Life-Eye Jade"
-    },
-    {
-      "name": "Locust Swarm Citrine"
-    },
-    {
-      "name": "Mace of Noble Conquest"
-    },
-    {
-      "name": "Mace of the Endless Reign"
-    },
-    {
-      "name": "Maelstrom Snap Dragon"
-    },
-    {
-      "name": "Meteor Strike"
-    },
-    {
-      "name": "Minotaur"
-    },
-    {
-      "name": "Mote of Beauty"
-    },
-    {
-      "name": "Mute Opal"
-    },
-    {
-      "name": "Myth-Away Peridot"
-    },
-    {
-      "name": "Myth-Boon Peridot"
-    },
-    {
-      "name": "Nickel"
-    },
-    {
-      "name": "Ninja Fig"
-    },
-    {
-      "name": "Noble Trophy of Equality"
-    },
-    {
-      "name": "Orange Dandelion"
-    },
-    {
-      "name": "Palace Guard's Firewalkers"
-    },
-    {
-      "name": "Palace Guard's Rain Topper"
-    },
-    {
-      "name": "Palace Guard's Rain Waders"
-    },
-    {
-      "name": "Palace Guard's Stovepipe"
-    },
-    {
-      "name": "Pest Zapper"
-    },
-    {
-      "name": "Phoenix"
-    },
-    {
-      "name": "Pierce"
-    },
-    {
-      "name": "Pink Dandelion"
-    },
-    {
-      "name": "Pink Laugh-O-Dil"
-    },
-    {
-      "name": "Plague"
-    },
-    {
-      "name": "Power Play"
-    },
-    {
-      "name": "Pyrite"
-    },
-    {
-      "name": "Raiment of the Royal Flame"
-    },
-    {
-      "name": "Rangers of the Royal Flame"
-    },
-    {
-      "name": "Recovery Opal"
-    },
-    {
-      "name": "Red Ghost"
-    },
-    {
-      "name": "Regal Token of Luminosity"
-    },
-    {
-      "name": "Regenerate"
-    },
-    {
-      "name": "Regent's Baton of Ethos"
-    },
-    {
-      "name": "Relic of Imperial Perpetuum"
-    },
-    {
-      "name": "Relic of the Reign of Ice"
-    },
-    {
-      "name": "Ring of Marleybone Fog"
-    },
-    {
-      "name": "Royal Barbut of Whirlwind"
-    },
-    {
-      "name": "Royal Bascinet of Charisma"
-    },
-    {
-      "name": "Royal Bequest of Eidolon"
-    },
-    {
-      "name": "Royal Boots of Alliance"
-    },
-    {
-      "name": "Royal Boots of Whirlwind"
-    },
-    {
-      "name": "Royal Cap of Alliance"
-    },
-    {
-      "name": "Royal Ceremonial Snowcover"
-    },
-    {
-      "name": "Royal Ceremonial Snowgear"
-    },
-    {
-      "name": "Royal Ceremonial Snowshoes"
-    },
-    {
-      "name": "Royal Coat of Alliance"
-    },
-    {
-      "name": "Royal Coat of Wit"
-    },
-    {
-      "name": "Royal Conical of Accord"
-    },
-    {
-      "name": "Royal Cutlass of Efficacy"
-    },
-    {
-      "name": "Royal Footgear of Charisma"
-    },
-    {
-      "name": "Royal Footguards of Accord"
-    },
-    {
-      "name": "Royal Helm of Remembrance"
-    },
-    {
-      "name": "Royal Outfit of Remembrance"
-    },
-    {
-      "name": "Royal Shoes of Remembrance"
-    },
-    {
-      "name": "Royal Uniform of Accord"
-    },
-    {
-      "name": "Royal Uniform of Whirlwind"
-    },
-    {
-      "name": "Royal Vestment of Charisma"
-    },
-    {
-      "name": "Salmonberry"
-    },
-    {
-      "name": "Sanctuary"
-    },
-    {
-      "name": "Sandstorm"
-    },
-    {
-      "name": "Satyr Jade"
-    },
-    {
-      "name": "Scepter of Royal Triumph"
-    },
-    {
-      "name": "Scrap Iron"
-    },
-    {
-      "name": "Seraph"
-    },
-    {
-      "name": "Shiny Tomato"
-    },
-    {
-      "name": "Signet of Royal Ingenuity"
-    },
-    {
-      "name": "Siphonizer Opal"
-    },
-    {
-      "name": "Smock of Barkingham Brio"
-    },
-    {
-      "name": "Smoke Screen"
-    },
-    {
-      "name": "Solemn Kingdom Heirloom"
-    },
-    {
-      "name": "Spicy Drumstick"
-    },
-    {
-      "name": "Spider Silk"
-    },
-    {
-      "name": "Sprite Jade"
-    },
-    {
-      "name": "Staff of the Royal Paragon"
-    },
-    {
-      "name": "Stall Opal"
-    },
-    {
-      "name": "Storm Shark Amethyst"
-    },
-    {
-      "name": "Storm-Boon Amethyst"
-    },
-    {
-      "name": "Stormzilla"
-    },
-    {
-      "name": "Strawberry Cupcake"
-    },
-    {
-      "name": "Street Sweeper"
-    },
-    {
-      "name": "Submarine Sandwich"
-    },
-    {
-      "name": "Sunbird Ruby"
-    },
-    {
-      "name": "Super-Stall Opal"
-    },
-    {
-      "name": "The Queen's Crystal Scepter"
-    },
-    {
-      "name": "Time of Legend"
-    },
-    {
-      "name": "Tin"
-    },
-    {
-      "name": "Topper of Royal Wit"
-    },
-    {
-      "name": "Triage"
-    },
-    {
-      "name": "Trophy of the Raucous Court"
-    },
-    {
-      "name": "Uni-Corn"
-    },
-    {
-      "name": "Vampire"
-    },
-    {
-      "name": "Venus Fly Trap"
-    },
-    {
-      "name": "Wand of the Royal Paragon"
-    },
-    {
-      "name": "White Laugh-O-Dil"
-    },
-    {
-      "name": "Wooden Skeleton Key"
-    },
-    {
-      "name": "Wyldfire"
-    },
-    {
-      "name": "Wyldfire Ruby"
-    },
-    {
-      "name": "Yeoman's Boots of Reverie"
-    },
-    {
-      "name": "Yeoman's Cap of Bounty"
-    },
-    {
-      "name": "Yeoman's Cloak of Reverie"
-    },
-    {
-      "name": "Yeoman's Shoes of Bounty"
-    },
-    {
-      "name": "Yeoman's Top Hat of Reverie"
-    },
-    {
-      "name": "Yeoman's Topper of Unity"
-    },
-    {
-      "name": "Yeoman's Walkers of Unity"
-    },
-    {
-      "name": "Yeoman's Winter Boots"
-    },
-    {
-      "name": "Yeoman's Winter Top"
+      "name": "Yeoman's Winter Top",
+      "category": "Hats"
     }
   ],
   "authors": "BartleBot",
@@ -684,7 +231,21 @@
     "Dungeon",
     "Challenge Mode"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Ceremonial Helm of Triumph",
+        "=Helmet of the Royal Flame",
+        "=Royal Barbut of Whirlwind",
+        "=Royal Bascinet of Charisma",
+        "=Royal Ceremonial Snowcover",
+        "=Royal Conical of Accord",
+        "=Royal Helm of Remembrance"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -1072,7 +633,8 @@
         "enemy": "G14-BP-Dr_Jackall",
         "use_bot_default": true,
         "combat_config": "",
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "wiki_page": "Creature:Doctor Jackall"
       }
     },
     {
@@ -1455,7 +1017,8 @@
         "state_8",
         "state_9"
       ],
-      "color": 2
+      "color": 2,
+      "collapsed": true
     },
     {
       "id": "d25af148",
@@ -1466,7 +1029,8 @@
         "state_10",
         "state_11"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
     },
     {
       "id": "15e2f2c2",
@@ -1477,7 +1041,8 @@
         "state_14",
         "state_15"
       ],
-      "color": 4
+      "color": 4,
+      "collapsed": true
     },
     {
       "id": "7ffa2a42",
@@ -1488,11 +1053,17 @@
         "state_18",
         "state_19"
       ],
-      "color": 5
+      "color": 5,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "aa5687320c99ecfe465fdd48f24ae230d485b95300f0da7537e4de5e094c3ae5",
+    "5d1eb5243284b3c55fd302ff21c31ef3f7b9286fcd406486d87b04604feefd75",
+    "bab01867f049663e6d93f9eac5346d4faee78962d3b2627b2c3365200dd50cb8"
+  ]
 }

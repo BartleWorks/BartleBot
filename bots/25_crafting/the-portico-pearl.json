@@ -8,25 +8,32 @@
   "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
-      "name": "Aether"
+      "name": "Aether",
+      "category": "Reagents"
     },
     {
-      "name": "Aquamarine"
+      "name": "Aquamarine",
+      "category": "Reagents"
     },
     {
-      "name": "Black Pearl"
+      "name": "Black Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Golden Pearl"
+      "name": "Golden Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Kelp"
+      "name": "Kelp",
+      "category": "Reagents"
     },
     {
-      "name": "Pearl"
+      "name": "Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Shell"
+      "name": "Shell",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",

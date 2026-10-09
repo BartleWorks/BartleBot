@@ -8,778 +8,1036 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Accurate"
+      "name": "Accurate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Add Health Opal"
+      "name": "Add Health Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Ape Grapes"
+      "name": "Ape Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Athame of the Lotus"
+      "name": "Athame of the Lotus",
+      "category": "Athames"
     },
     {
-      "name": "Balance-Eye Citrine"
+      "name": "Balance-Eye Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-It Citrine"
+      "name": "Balance-It Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Bamboo Obelisk"
+      "name": "Bamboo Obelisk",
+      "category": "Housing Items"
     },
     {
-      "name": "Band of the Primitives"
+      "name": "Band of the Primitives",
+      "category": "Rings"
     },
     {
-      "name": "Banshee"
+      "name": "Banshee",
+      "category": "Spellements"
     },
     {
-      "name": "Bell Pagoda"
+      "name": "Bell Pagoda",
+      "category": "Housing Items"
     },
     {
-      "name": "Benign Cap"
+      "name": "Benign Cap",
+      "category": "Hats"
     },
     {
-      "name": "Black Mantle"
+      "name": "Black Mantle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blemished Damage Amethyst +11"
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Citrine +11"
+      "name": "Blemished Damage Citrine +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Onyx +11"
+      "name": "Blemished Damage Onyx +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Sapphire +11"
+      "name": "Blemished Damage Sapphire +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Onyx +21"
+      "name": "Blemished Defense Onyx +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Opal +11"
+      "name": "Blemished Defense Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Opal +12"
+      "name": "Blemished Defense Opal +12",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Ruby +21"
+      "name": "Blemished Defense Ruby +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Health Opal +40"
+      "name": "Blemished Health Opal +40",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Mana Opal +18"
+      "name": "Blemished Mana Opal +18",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished PIP Opal +4%"
+      "name": "Blemished PIP Opal +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Blended Wool Tunic"
+      "name": "Blended Wool Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Blood Bat"
+      "name": "Blood Bat",
+      "category": "Spellements"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of Chimes"
+      "name": "Boots of Chimes",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Verse"
+      "name": "Boots of the Verse",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Brogans of Decrepitude"
+      "name": "Brogans of Decrepitude",
+      "category": "Boots"
     },
     {
-      "name": "Cap of Consideration"
+      "name": "Cap of Consideration",
+      "category": "Hats"
     },
     {
-      "name": "Cap of Song"
+      "name": "Cap of Song",
+      "category": "Hats"
     },
     {
-      "name": "Cap of the Verse"
+      "name": "Cap of the Verse",
+      "category": "Hats"
     },
     {
-      "name": "Cat Tail"
+      "name": "Cat Tail",
+      "category": "Reagents"
     },
     {
-      "name": "Cloak of Charity"
+      "name": "Cloak of Charity",
+      "category": "Robes"
     },
     {
-      "name": "Cloak of Clarity"
+      "name": "Cloak of Clarity",
+      "category": "Robes"
     },
     {
-      "name": "Cloak of Concentration"
+      "name": "Cloak of Concentration",
+      "category": "Robes"
     },
     {
-      "name": "Cloak of Deliberation"
+      "name": "Cloak of Deliberation",
+      "category": "Robes"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Colossus"
+      "name": "Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of Cooperation"
+      "name": "Cowl of Cooperation",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Soul-Searching"
+      "name": "Cowl of Soul-Searching",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Sympathy"
+      "name": "Cowl of Sympathy",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Tact"
+      "name": "Cowl of Tact",
+      "category": "Hats"
     },
     {
-      "name": "Crunch Apple"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Cyclops"
+      "name": "Cyclops",
+      "category": "Spellements"
     },
     {
-      "name": "Cyclops Minion"
+      "name": "Cyclops Minion",
+      "category": "Spellements"
     },
     {
-      "name": "Dark Sprite"
+      "name": "Dark Sprite",
+      "category": "Spellements"
     },
     {
-      "name": "Darkwind"
+      "name": "Darkwind",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dashing Cloak"
+      "name": "Dashing Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Death Oni's Abstract Hat"
+      "name": "Death Oni's Abstract Hat",
+      "category": "Hats"
     },
     {
-      "name": "Death Oni's Garments"
+      "name": "Death Oni's Garments",
+      "category": "Robes"
     },
     {
-      "name": "Death Oni's Introverted Shoes"
+      "name": "Death Oni's Introverted Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Death Oni's Necklace of Doom"
+      "name": "Death Oni's Necklace of Doom",
+      "category": "Amulets"
     },
     {
-      "name": "Death Oni's Peridot Blade"
+      "name": "Death Oni's Peridot Blade",
+      "category": "Wands"
     },
     {
-      "name": "Death Oni's Tunic"
+      "name": "Death Oni's Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Death-Shot Onyx"
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Deathbat"
+      "name": "Deathbat",
+      "category": "Pets"
     },
     {
-      "name": "Deck of the Lotus"
+      "name": "Deck of the Lotus",
+      "category": "Decks"
     },
     {
-      "name": "Determined Opal"
+      "name": "Determined Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Dire Ghoul"
+      "name": "Dire Ghoul",
+      "category": "Pets"
     },
     {
-      "name": "Dirt Pile"
+      "name": "Dirt Pile",
+      "category": "Housing Items"
     },
     {
-      "name": "Dream Tanto of Ages"
+      "name": "Dream Tanto of Ages",
+      "category": "Athames"
     },
     {
-      "name": "Earth Walker"
+      "name": "Earth Walker",
+      "category": "Spellements"
     },
     {
-      "name": "Ecstatic Garments"
+      "name": "Ecstatic Garments",
+      "category": "Robes"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Energy Opal"
+      "name": "Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Engrossed Hat"
+      "name": "Engrossed Hat",
+      "category": "Hats"
     },
     {
-      "name": "Engrossed Shoes"
+      "name": "Engrossed Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Enlivened Garment"
+      "name": "Enlivened Garment",
+      "category": "Robes"
     },
     {
-      "name": "Euphonic Cloak"
+      "name": "Euphonic Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Exhaust Opal"
+      "name": "Exhaust Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Flawed Accurate Amethyst +4%"
+      "name": "Flawed Accurate Amethyst +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Onyx +4%"
+      "name": "Flawed Accurate Onyx +4%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Accurate Opal +2%"
+      "name": "Flawed Accurate Opal +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Damage Opal +5"
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Amethyst +18"
+      "name": "Flawed Defense Amethyst +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Citrine +18"
+      "name": "Flawed Defense Citrine +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Jade +18"
+      "name": "Flawed Defense Jade +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Onyx +18"
+      "name": "Flawed Defense Onyx +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Ruby +18"
+      "name": "Flawed Defense Ruby +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Sapphire +18"
+      "name": "Flawed Defense Sapphire +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +32"
+      "name": "Flawed Health Opal +32",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +33"
+      "name": "Flawed Health Opal +33",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Mana Opal +15"
+      "name": "Flawed Mana Opal +15",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Mending Opal +2%"
+      "name": "Flawed Mending Opal +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Footwraps of Charity"
+      "name": "Footwraps of Charity",
+      "category": "Boots"
     },
     {
-      "name": "Footwraps of Predicament"
+      "name": "Footwraps of Predicament",
+      "category": "Boots"
     },
     {
-      "name": "Friendly Shoes"
+      "name": "Friendly Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Frost Obelisk"
+      "name": "Frost Obelisk",
+      "category": "Housing Items"
     },
     {
-      "name": "Gallant Tunic"
+      "name": "Gallant Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Garment of Dilemma"
+      "name": "Garment of Dilemma",
+      "category": "Robes"
     },
     {
-      "name": "Garment of Watchfulness"
+      "name": "Garment of Watchfulness",
+      "category": "Robes"
     },
     {
-      "name": "Garments of Chants"
+      "name": "Garments of Chants",
+      "category": "Robes"
     },
     {
-      "name": "Garments of Generations"
+      "name": "Garments of Generations",
+      "category": "Robes"
     },
     {
-      "name": "Garments of the Observant"
+      "name": "Garments of the Observant",
+      "category": "Robes"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Ghoul"
+      "name": "Ghoul",
+      "category": "Spellements"
     },
     {
-      "name": "Gold Tori Gates"
+      "name": "Gold Tori Gates",
+      "category": "Housing Items"
     },
     {
-      "name": "Golden Peanut"
+      "name": "Golden Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Squash"
+      "name": "Golden Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Gong of the Oni"
+      "name": "Gong of the Oni",
+      "category": "Housing Items"
     },
     {
-      "name": "Haskarr's Barbarish Boots"
+      "name": "Haskarr's Barbarish Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hat of Discontent"
+      "name": "Hat of Discontent",
+      "category": "Hats"
     },
     {
-      "name": "Hat of Niceties"
+      "name": "Hat of Niceties",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Lotus"
+      "name": "Hat of the Lotus",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Nimble"
+      "name": "Hat of the Nimble",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Triad"
+      "name": "Hat of the Triad",
+      "category": "Hats"
     },
     {
-      "name": "Hat of Unison"
+      "name": "Hat of Unison",
+      "category": "Hats"
     },
     {
-      "name": "Headgear of the Sylph"
+      "name": "Headgear of the Sylph",
+      "category": "Hats"
     },
     {
-      "name": "Headwraps of Generations"
+      "name": "Headwraps of Generations",
+      "category": "Hats"
     },
     {
-      "name": "Headwraps of Nourishment"
+      "name": "Headwraps of Nourishment",
+      "category": "Hats"
     },
     {
-      "name": "Heedful Headwraps"
+      "name": "Heedful Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Heedful Robe"
+      "name": "Heedful Robe",
+      "category": "Robes"
     },
     {
-      "name": "Helephant"
+      "name": "Helephant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Helm of Sandcastles"
+      "name": "Helm of Sandcastles",
+      "category": "Hats"
     },
     {
-      "name": "Hooked Lantern"
+      "name": "Hooked Lantern",
+      "category": "Housing Items"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern Sapphire"
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Shot Sapphire"
+      "name": "Ice-Shot Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Immersive Sandals"
+      "name": "Immersive Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Imp"
+      "name": "Imp",
+      "category": "Spellements"
     },
     {
-      "name": "Impulsive Vestment"
+      "name": "Impulsive Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Indulgent Boots"
+      "name": "Indulgent Boots",
+      "category": "Boots"
     },
     {
-      "name": "Indulgent Vestment"
+      "name": "Indulgent Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Industrial Helm"
+      "name": "Industrial Helm",
+      "category": "Hats"
     },
     {
-      "name": "Industrial Uniform"
+      "name": "Industrial Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Kagemoosha's Boots"
+      "name": "Kagemoosha's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Kagemoosha's Citrine Blade"
+      "name": "Kagemoosha's Citrine Blade",
+      "category": "Wands"
     },
     {
-      "name": "Kagemoosha's Cowl"
+      "name": "Kagemoosha's Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Kagemoosha's Robe"
+      "name": "Kagemoosha's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Kagemoosha's Sandals"
+      "name": "Kagemoosha's Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Kagemoosha's Shroud"
+      "name": "Kagemoosha's Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Kraken Amethyst"
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Watermelon"
+      "name": "Large Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Leech Opal"
+      "name": "Leech Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Leprechaun"
+      "name": "Leprechaun",
+      "category": "Spellements"
     },
     {
-      "name": "Life-Proof Jade"
+      "name": "Life-Proof Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Lunar Tablet"
+      "name": "Lunar Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "Lyrical Footwraps"
+      "name": "Lyrical Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Lyrical Garments"
+      "name": "Lyrical Garments",
+      "category": "Robes"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Mask of Impression"
+      "name": "Mask of Impression",
+      "category": "Hats"
     },
     {
-      "name": "Meteor Strike Ruby"
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Monstrous"
+      "name": "Monstrous",
+      "category": "Treasure Cards"
     },
     {
-      "name": "MooShu Battle Theme"
+      "name": "MooShu Battle Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Haunted Theme"
+      "name": "MooShu Haunted Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Mystical Theme"
+      "name": "MooShu Mystical Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Plague Theme"
+      "name": "MooShu Plague Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu War Theme"
+      "name": "MooShu War Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Myth-Away Peridot"
+      "name": "Myth-Away Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Nature's Wrath"
+      "name": "Nature's Wrath",
+      "category": "Spellements"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Pigs"
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Nomoonaga's Analytical Ring"
+      "name": "Nomoonaga's Analytical Ring",
+      "category": "Rings"
     },
     {
-      "name": "Nomoonaga's Band"
+      "name": "Nomoonaga's Band",
+      "category": "Rings"
     },
     {
-      "name": "Nomoonaga's Deck"
+      "name": "Nomoonaga's Deck",
+      "category": "Decks"
     },
     {
-      "name": "Nomoonaga's Diligent Cap"
+      "name": "Nomoonaga's Diligent Cap",
+      "category": "Hats"
     },
     {
-      "name": "Nomoonaga's Kris of Hope"
+      "name": "Nomoonaga's Kris of Hope",
+      "category": "Athames"
     },
     {
-      "name": "Nomoonaga's Lively Garment"
+      "name": "Nomoonaga's Lively Garment",
+      "category": "Robes"
     },
     {
-      "name": "Nosferatu's Cloak"
+      "name": "Nosferatu's Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Nunu's Mask of the Twisted"
+      "name": "Nunu's Mask of the Twisted",
+      "category": "Hats"
     },
     {
-      "name": "Painful Vestment"
+      "name": "Painful Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Peculiar Boots"
+      "name": "Peculiar Boots",
+      "category": "Boots"
     },
     {
-      "name": "Pest Zapper"
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Potted Bamboo Plant"
+      "name": "Potted Bamboo Plant",
+      "category": "Housing Items"
     },
     {
-      "name": "Potted Heartblossom"
+      "name": "Potted Heartblossom",
+      "category": "Housing Items"
     },
     {
-      "name": "Power Play Citrine"
+      "name": "Power Play Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Problematic Headwraps"
+      "name": "Problematic Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Proficient Shoes"
+      "name": "Proficient Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Profound Robes"
+      "name": "Profound Robes",
+      "category": "Robes"
     },
     {
-      "name": "Profound Slippers"
+      "name": "Profound Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Pyrite"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Quick-Witted Vestment"
+      "name": "Quick-Witted Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Ring of Regard"
+      "name": "Ring of Regard",
+      "category": "Rings"
     },
     {
-      "name": "Robe of Cognition"
+      "name": "Robe of Cognition",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Conceit"
+      "name": "Robe of Conceit",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Song"
+      "name": "Robe of Song",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Chipper"
+      "name": "Robe of the Chipper",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Lithe"
+      "name": "Robe of the Lithe",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Verse"
+      "name": "Robe of the Verse",
+      "category": "Robes"
     },
     {
-      "name": "Robes of Struggling"
+      "name": "Robes of Struggling",
+      "category": "Robes"
     },
     {
-      "name": "Robes of the Triad"
+      "name": "Robes of the Triad",
+      "category": "Robes"
     },
     {
-      "name": "Samoorai"
+      "name": "Samoorai",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Samoorai Statue"
+      "name": "Samoorai Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Sandals of Hymns"
+      "name": "Sandals of Hymns",
+      "category": "Boots"
     },
     {
-      "name": "Sandals of the Determined"
+      "name": "Sandals of the Determined",
+      "category": "Boots"
     },
     {
-      "name": "Sandals of the Quick-Witted"
+      "name": "Sandals of the Quick-Witted",
+      "category": "Boots"
     },
     {
-      "name": "Sandals of the Universe"
+      "name": "Sandals of the Universe",
+      "category": "Boots"
     },
     {
-      "name": "Sapphire Ring of Power"
+      "name": "Sapphire Ring of Power",
+      "category": "Rings"
     },
     {
-      "name": "Satyr"
+      "name": "Satyr",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorpion"
+      "name": "Scorpion",
+      "category": "Spellements"
     },
     {
-      "name": "Seraph"
+      "name": "Seraph",
+      "category": "Spellements"
     },
     {
-      "name": "Shoes of Dilemma"
+      "name": "Shoes of Dilemma",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Hinderance"
+      "name": "Shoes of Hinderance",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Scruples"
+      "name": "Shoes of Scruples",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Song"
+      "name": "Shoes of Song",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Struggling"
+      "name": "Shoes of Struggling",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of the Whim"
+      "name": "Shoes of the Whim",
+      "category": "Boots"
     },
     {
-      "name": "Shoes of Woe"
+      "name": "Shoes of Woe",
+      "category": "Boots"
     },
     {
-      "name": "Shroud of Chants"
+      "name": "Shroud of Chants",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of Conceit"
+      "name": "Shroud of Conceit",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of Music"
+      "name": "Shroud of Music",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of the Opus"
+      "name": "Shroud of the Opus",
+      "category": "Hats"
     },
     {
-      "name": "Silence Opal"
+      "name": "Silence Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Silver Lantern"
+      "name": "Silver Lantern",
+      "category": "Housing Items"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
     },
     {
-      "name": "Skeletal Pirate Onyx"
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Slippers of the Opus"
+      "name": "Slippers of the Opus",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of Yodels"
+      "name": "Slippers of Yodels",
+      "category": "Boots"
     },
     {
-      "name": "Solar Obelisk"
+      "name": "Solar Obelisk",
+      "category": "Housing Items"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Speculative Tunic"
+      "name": "Speculative Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Sprightly Garments"
+      "name": "Sprightly Garments",
+      "category": "Robes"
     },
     {
-      "name": "Sprightly Slippers"
+      "name": "Sprightly Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Square Root"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Square Watermelon"
+      "name": "Square Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Statue of Hyottoko"
+      "name": "Statue of Hyottoko",
+      "category": "Housing Items"
     },
     {
-      "name": "Storm-Eye Amethyst"
+      "name": "Storm-Eye Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stressed Mask"
+      "name": "Stressed Mask",
+      "category": "Hats"
     },
     {
-      "name": "Stressed Sandals"
+      "name": "Stressed Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Tall Boulder"
+      "name": "Tall Boulder",
+      "category": "Housing Items"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tormented Cloak"
+      "name": "Tormented Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Troll"
+      "name": "Troll",
+      "category": "Spellements"
     },
     {
-      "name": "Tunic of Impression"
+      "name": "Tunic of Impression",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Melodies"
+      "name": "Tunic of Melodies",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Preoccupation"
+      "name": "Tunic of Preoccupation",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Soul-Searching"
+      "name": "Tunic of Soul-Searching",
+      "category": "Robes"
     },
     {
-      "name": "Vampire"
+      "name": "Vampire",
+      "category": "Spellements"
     },
     {
-      "name": "Vestment of Arias"
+      "name": "Vestment of Arias",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Commotion"
+      "name": "Vestment of Commotion",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Cooperation"
+      "name": "Vestment of Cooperation",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Dreaming"
+      "name": "Vestment of Dreaming",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Hymns"
+      "name": "Vestment of Hymns",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Niceties"
+      "name": "Vestment of Niceties",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of the Eager"
+      "name": "Vestment of the Eager",
+      "category": "Robes"
     },
     {
-      "name": "Vexing Tunic"
+      "name": "Vexing Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Vigilant Cap"
+      "name": "Vigilant Cap",
+      "category": "Hats"
     },
     {
-      "name": "Vigilant Sandals"
+      "name": "Vigilant Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Votive Tablet"
+      "name": "Votive Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Wing Chun Dummy"
+      "name": "Wing Chun Dummy",
+      "category": "Housing Items"
     },
     {
-      "name": "Wisp Bonus Opal"
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Wooden Skeleton Key"
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "Wyldfire"
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Zippy Shroud"
+      "name": "Zippy Shroud",
+      "category": "Hats"
     }
   ],
   "authors": "BartleBot",
@@ -792,7 +1050,12 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Oni"
+        "=Death Oni's Tunic",
+        "=Death Oni's Peridot Blade",
+        "=Death Oni's Introverted Shoes",
+        "=Kagemoosha's Citrine Blade",
+        "=Death Oni's Garments",
+        "=Death Oni's Abstract Hat"
       ]
     },
     {
@@ -903,7 +1166,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 9680,
+        "x": 9240.0,
         "y": 0.0
       },
       "params": {
@@ -1043,6 +1306,7 @@
       },
       "params": {
         "enemy": "Pig-Death-Warrior-MSBoss-L48",
+        "wiki_page": "Creature:Nomoonaga",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
@@ -1173,6 +1437,7 @@
       },
       "params": {
         "enemy": "Pig-Death-Lord-MSBoss-L49",
+        "wiki_page": "Creature:Kagemoosha",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
@@ -1216,19 +1481,10 @@
       },
       "params": {
         "enemy": "Oni-Death-MSBoss-L61",
+        "wiki_page": "Creature:Death Oni",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
-    },
-    {
-      "id": "state_23",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 9240,
-        "y": 0.0
-      },
-      "params": {}
     },
     {
       "id": "t_8",
@@ -1483,28 +1739,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_23",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_3",
       "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1535,6 +1771,16 @@
       "trigger": "advance",
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1578,10 +1824,52 @@
           "y": 0.0
         }
       }
+    },
+    {
+      "id": "fe2ac947",
+      "label": "Nomoonaga",
+      "members": [
+        "state_13",
+        "state_11",
+        "state_10",
+        "state_8",
+        "state_22",
+        "state_9",
+        "state_12"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "341d782a",
+      "label": "Kagemoosha",
+      "members": [
+        "state_15",
+        "state_18",
+        "state_16",
+        "state_17",
+        "state_14"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "9d9e4ee3",
+      "label": "Death Oni",
+      "members": [
+        "state_19",
+        "state_21",
+        "state_20"
+      ],
+      "color": 5,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "05ad24d69427b8a099d4cfcc35be47ad4caa8b7d5372b1a6e0ea45f1b9c5450a"
+  ]
 }

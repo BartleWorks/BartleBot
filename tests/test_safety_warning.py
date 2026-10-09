@@ -645,7 +645,7 @@ def test_the_warning_names_the_team_size_and_the_player_count():
 _SCALING_PLAYERS = [{"name": "Level Scaling Players", "type": "player_list", "default": [1, 3]}]
 
 
-@pytest.mark.parametrize("node_type", ["handle_level_scaling", "check_level_scaling", "apply_level_scaling"])
+@pytest.mark.parametrize("node_type", ["handle_level_scaling", "check_level_scaling"])
 def test_a_bot_with_any_level_scaling_node_names_its_players_for_the_elixir_read(node_type):
     config = _config({"node_type": node_type}, options=_SCALING_PLAYERS)
 

@@ -8,744 +8,892 @@
   "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Amazing Accurate Amethyst +15%"
+      "name": "Amazing Accurate Amethyst +15%",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Accurate Citrine +15%"
+      "name": "Amazing Accurate Citrine +15%",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Accurate Jade +15%"
+      "name": "Amazing Accurate Jade +15%",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Accurate Onyx +15%"
+      "name": "Amazing Accurate Onyx +15%",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Accurate Peridot +15%"
+      "name": "Amazing Accurate Peridot +15%",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Accurate Sapphire +15%"
+      "name": "Amazing Accurate Sapphire +15%",
+      "category": "Jewels"
     },
     {
       "name": "Amazing Archmastery Opal +14 (Tear)",
+      "category": "Jewels",
       "match_name": "Amazing Archmastery Opal +14"
     },
     {
-      "name": "Amazing Health Opal +136"
+      "name": "Amazing Health Opal +136",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Health Opal +137"
+      "name": "Amazing Health Opal +137",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Health Opal +139"
+      "name": "Amazing Health Opal +139",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Health Opal +140"
+      "name": "Amazing Health Opal +140",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Health Opal +143"
+      "name": "Amazing Health Opal +143",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Health Opal +144"
+      "name": "Amazing Health Opal +144",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Health Opal +145"
+      "name": "Amazing Health Opal +145",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Mana Opal +58"
+      "name": "Amazing Mana Opal +58",
+      "category": "Jewels"
     },
     {
-      "name": "Amazing Mana Opal +59"
+      "name": "Amazing Mana Opal +59",
+      "category": "Jewels"
     },
     {
-      "name": "Arcticzilla"
+      "name": "Arcticzilla",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ashen Bones"
+      "name": "Ashen Bones",
+      "category": "Treasure Cards"
     },
     {
       "name": "Balance Crushing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (150)"
     },
     {
       "name": "Balance Crushing Pin (160, Life)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (160)"
     },
     {
       "name": "Balance Crushing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (160)"
     },
     {
       "name": "Balance Disabling Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (150)"
     },
     {
       "name": "Balance Disabling Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (160)"
     },
     {
       "name": "Balance Punishing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (150)"
     },
     {
       "name": "Balance Punishing Pin (160, Fire)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (160)"
     },
     {
       "name": "Balance Punishing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (160)"
     },
     {
-      "name": "Balanceblade"
+      "name": "Balanceblade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Banshee (Tier 2b)"
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
     },
     {
-      "name": "Barbarian's Saga"
+      "name": "Bell Pepper Steak",
+      "category": "Snacks"
     },
     {
-      "name": "Bell Pepper Steak"
+      "name": "Black Sun Seeds",
+      "category": "Snacks"
     },
     {
-      "name": "Black Sun Seeds"
+      "name": "Blast Off!",
+      "category": "Spellements"
     },
     {
-      "name": "Blast Off!"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Blood Bat (Tier 2b)"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bone"
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
     },
     {
-      "name": "Brass"
+      "name": "Cleanse Charm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Bunyip's Rage"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cleanse Charm"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cobalt"
+      "name": "Count Croakula",
+      "category": "Spellements"
     },
     {
-      "name": "Copper"
+      "name": "Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Count Croakula"
+      "name": "Dark & Stormy",
+      "category": "Spellements"
     },
     {
-      "name": "Cracker"
-    },
-    {
-      "name": "Cyclops (Tier 2b)"
-    },
-    {
-      "name": "Dark & Stormy"
-    },
-    {
-      "name": "Dark Sprite (Tier 2b)"
-    },
-    {
-      "name": "Deadly Minotaur"
+      "name": "Deadly Minotaur",
+      "category": "Treasure Cards"
     },
     {
       "name": "Death Crushing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (150)"
     },
     {
       "name": "Death Crushing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (160)"
     },
     {
       "name": "Death Disabling Pin (150, Fire)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (150)"
     },
     {
       "name": "Death Disabling Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (150)"
     },
     {
       "name": "Death Punishing Pin (150, Myth)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (150)"
     },
     {
       "name": "Death Punishing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (150)"
     },
     {
       "name": "Death Punishing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (160)"
     },
     {
-      "name": "Deathly Depths"
+      "name": "Deathly Depths",
+      "category": "Spellements"
     },
     {
-      "name": "Dog Tracy Amethyst"
+      "name": "Dog Tracy Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Drop Bear Fury"
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
     },
     {
-      "name": "Duck Savage Sapphire"
+      "name": "Duck Savage Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Dynamic Enforcer's Boots"
+      "name": "Dynamic Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Dynamic Enforcer's Uniform"
+      "name": "Dynamic Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Dynamic Protector's Boots"
+      "name": "Dynamic Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Dynamic Protector's Uniform"
+      "name": "Dynamic Protector's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Elemental Blade"
+      "name": "Elemental Blade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elemental Trap"
+      "name": "Elemental Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Empower"
+      "name": "Empower",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Carrot"
+      "name": "Evil Carrot",
+      "category": "Snacks"
     },
     {
-      "name": "Evil Snowman (Tier 2b)"
-    },
-    {
-      "name": "Fern Jelly"
-    },
-    {
-      "name": "Fire Cat (Tier 2b)"
+      "name": "Fern Jelly",
+      "category": "Snacks"
     },
     {
       "name": "Fire Crushing Pin (150, Myth)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (150)"
     },
     {
       "name": "Fire Crushing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (150)"
     },
     {
       "name": "Fire Crushing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (160)"
     },
     {
       "name": "Fire Disabling Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (150)"
     },
     {
       "name": "Fire Disabling Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (160)"
     },
     {
-      "name": "Fire Elf (Tier 2b)"
-    },
-    {
       "name": "Fire Punishing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (150)"
     },
     {
-      "name": "Fire Trap"
+      "name": "Fire Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fireblade"
+      "name": "Fireblade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fish Fin"
+      "name": "Fish Fin",
+      "category": "Reagents"
     },
     {
-      "name": "Flaming Carrot"
+      "name": "Flaming Carrot",
+      "category": "Snacks"
     },
     {
-      "name": "Flaming Jalapeno"
+      "name": "Flaming Jalapeno",
+      "category": "Snacks"
     },
     {
-      "name": "Flawless Accurate Amethyst +16%"
+      "name": "Flawless Accurate Amethyst +16%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Accurate Citrine +16%"
+      "name": "Flawless Accurate Citrine +16%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Accurate Onyx +16%"
+      "name": "Flawless Accurate Onyx +16%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Accurate Peridot +16%"
+      "name": "Flawless Accurate Peridot +16%",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Accurate Sapphire +16%"
+      "name": "Flawless Accurate Sapphire +16%",
+      "category": "Jewels"
     },
     {
       "name": "Flawless Archmastery Opal +15 (Tear)",
+      "category": "Jewels",
       "match_name": "Flawless Archmastery Opal +15"
     },
     {
-      "name": "Flawless Health Opal +147"
+      "name": "Flawless Health Opal +147",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +148"
+      "name": "Flawless Health Opal +148",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +149"
+      "name": "Flawless Health Opal +149",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +150"
+      "name": "Flawless Health Opal +150",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +151"
+      "name": "Flawless Health Opal +151",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +152"
+      "name": "Flawless Health Opal +152",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +153"
+      "name": "Flawless Health Opal +153",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +154"
+      "name": "Flawless Health Opal +154",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Health Opal +155"
+      "name": "Flawless Health Opal +155",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Mana Opal +61"
+      "name": "Flawless Mana Opal +61",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Mana Opal +62"
+      "name": "Flawless Mana Opal +62",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Mana Opal +63"
+      "name": "Flawless Mana Opal +63",
+      "category": "Jewels"
     },
     {
-      "name": "Flawless Mana Opal +64"
+      "name": "Flawless Mana Opal +64",
+      "category": "Jewels"
     },
     {
-      "name": "Freeze Ray"
+      "name": "Freeze Ray",
+      "category": "Spellements"
     },
     {
-      "name": "Frost Beetle (Tier 2b)"
+      "name": "Furious Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Furious Enforcer's Boots"
+      "name": "Furious Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Furious Enforcer's Uniform"
+      "name": "Furious Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Furious Protector's Boots"
+      "name": "Furious Protector's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Furious Protector's Uniform"
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
     },
     {
-      "name": "Ghoul (Tier 2b)"
+      "name": "Glimpse of Infinity Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Glimpse of Infinity"
+      "name": "Glowing Dragon Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Glimpse of Infinity Ruby"
+      "name": "Gravestorm",
+      "category": "Spellements"
     },
     {
-      "name": "Glowing Dragon Fruit"
+      "name": "Grim Reader",
+      "category": "Spellements"
     },
     {
-      "name": "Gravestorm"
+      "name": "Grrnadier",
+      "category": "Spellements"
     },
     {
-      "name": "Grim Reader"
+      "name": "Harmattan Maxios",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Grrnadier"
+      "name": "Heavenly Bubblegum",
+      "category": "Snacks"
     },
     {
-      "name": "Harmattan Maxios"
-    },
-    {
-      "name": "Heavenly Bubblegum"
-    },
-    {
-      "name": "Hex"
+      "name": "Hex",
+      "category": "Treasure Cards"
     },
     {
       "name": "Ice Crushing Pin (150, Myth)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (150)"
     },
     {
       "name": "Ice Crushing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (150)"
     },
     {
-      "name": "Ice Disabing Pin (150, Storm)",
-      "match_name": "Ice Disabing Pin (150)"
+      "name": "Ice Disabling Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (150)"
     },
     {
       "name": "Ice Disabling Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (160)"
     },
     {
       "name": "Ice Punishing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (150)"
     },
     {
       "name": "Ice Punishing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (160)"
     },
     {
-      "name": "Iceblade"
+      "name": "Iceblade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Imp (Tier 2b)"
+      "name": "Improbable Gaze",
+      "category": "Spellements"
     },
     {
-      "name": "Improbable Gaze"
+      "name": "Just Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Just Enforcer's Boots"
+      "name": "Just Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Just Enforcer's Uniform"
+      "name": "Just Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Just Protector's Boots"
+      "name": "Just Protector's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Just Protector's Uniform"
+      "name": "Lava Guava",
+      "category": "Snacks"
     },
     {
-      "name": "Lava Guava"
+      "name": "Legendary Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Legendary Enforcer's Boots"
+      "name": "Legendary Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Legendary Enforcer's Uniform"
+      "name": "Legendary Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Legendary Protector's Boots"
-    },
-    {
-      "name": "Legendary Protector's Uniform"
-    },
-    {
-      "name": "Leprechaun (Tier 2b)"
+      "name": "Legendary Protector's Uniform",
+      "category": "Robes"
     },
     {
       "name": "Life Crushing Pin (150, Fire)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (150)"
     },
     {
       "name": "Life Crushing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (160)"
     },
     {
       "name": "Life Disabling Pin (150, Fire)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (150)"
     },
     {
       "name": "Life Disabling Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (150)"
     },
     {
       "name": "Life Disabling Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (160)"
     },
     {
       "name": "Life Punishing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (150)"
     },
     {
-      "name": "Lifeblade"
+      "name": "Lifeblade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lightning Bats (Tier 2b)"
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
     },
     {
-      "name": "Locust Swarm (Tier 2b)"
+      "name": "Lord of the Squall",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lord of the Jungle"
+      "name": "Mandar Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Lord of the Squall"
+      "name": "Mini Pumpkin",
+      "category": "Snacks"
     },
     {
-      "name": "Mandar Peridot"
+      "name": "Misfortune Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Mini Pumpkin"
+      "name": "Mockenspiel",
+      "category": "Spellements"
     },
     {
-      "name": "Misfortune Cookie"
+      "name": "Morbid Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Mockenspiel"
+      "name": "Morbid Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Morbid Enforcer's Boots"
+      "name": "Morbid Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Morbid Enforcer's Uniform"
-    },
-    {
-      "name": "Morbid Protector's Boots"
-    },
-    {
-      "name": "Morbid Protector's Uniform"
+      "name": "Morbid Protector's Uniform",
+      "category": "Robes"
     },
     {
       "name": "Myth Crushing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (150)"
     },
     {
       "name": "Myth Crushing Pin (160, Balance)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (160)"
     },
     {
       "name": "Myth Crushing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (160)"
     },
     {
       "name": "Myth Disabling Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (150)"
     },
     {
       "name": "Myth Disabling Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (160)"
     },
     {
       "name": "Myth Punishing Pin (150, Storm)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (150)"
     },
     {
       "name": "Myth Punishing Pin (160, Death)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (160)"
     },
     {
       "name": "Myth Punishing Pin (160, Storm)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (160)"
     },
     {
-      "name": "Myth Trap"
+      "name": "Myth Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Nana's Pumpkin Spice Milkshake"
+      "name": "Nana's Pumpkin Spice Milkshake",
+      "category": "Snacks"
     },
     {
-      "name": "Nature's Wrath (Tier 2b)"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Nickel"
+      "name": "Old One's Endgame",
+      "category": "Spellements"
     },
     {
-      "name": "Old One's Endgame"
+      "name": "PB Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "PB Cookie"
+      "name": "Phantasmania!",
+      "category": "Spellements"
     },
     {
-      "name": "Phantasmania!"
+      "name": "Pierce",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pierce"
+      "name": "Popsicle",
+      "category": "Snacks"
     },
     {
-      "name": "Popsicle"
+      "name": "Raging Bull",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Raging Bull"
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Rainbow Serpent"
+      "name": "Reshuffle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Reshuffle"
+      "name": "Rusalka's Wrath",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rusalka's Wrath"
+      "name": "S'more Machine",
+      "category": "Spellements"
     },
     {
-      "name": "S'more Machine"
+      "name": "Scales of Destiny",
+      "category": "Spellements"
     },
     {
-      "name": "Scales of Destiny"
+      "name": "Scales of Destiny Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Scales of Destiny Citrine"
+      "name": "Scion of Balance",
+      "category": "Spellements"
     },
     {
-      "name": "Scarab (Tier 2b)"
+      "name": "Scion of Ice",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Balance"
+      "name": "Scion of Life",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Ice"
+      "name": "Shatterhorn",
+      "category": "Spellements"
     },
     {
-      "name": "Scion of Life"
+      "name": "Sirocco Djinni",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorpion (Tier 2b)"
+      "name": "Snack Attack",
+      "category": "Spellements"
     },
     {
-      "name": "Shatterhorn"
+      "name": "Snowball Barrage",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sirocco Djinni"
+      "name": "Solomon Crane Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Snack Attack"
+      "name": "Sound of Musicology",
+      "category": "Spellements"
     },
     {
-      "name": "Snow Serpent (Tier 2b)"
+      "name": "Spicy Chips",
+      "category": "Snacks"
     },
     {
-      "name": "Snowball Barrage"
+      "name": "Spirit Blade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Solomon Crane Onyx"
+      "name": "Spirit Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sound of Musicology"
+      "name": "Starspawn",
+      "category": "Spellements"
     },
     {
-      "name": "Spicy Chips"
+      "name": "Starspawn Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Spirit Blade"
+      "name": "Steely Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Spirit Trap"
+      "name": "Steely Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Starspawn"
+      "name": "Steely Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Starspawn Jade"
-    },
-    {
-      "name": "Steely Enforcer's Boots"
-    },
-    {
-      "name": "Steely Enforcer's Uniform"
-    },
-    {
-      "name": "Steely Protector's Boots"
-    },
-    {
-      "name": "Steely Protector's Uniform"
+      "name": "Steely Protector's Uniform",
+      "category": "Robes"
     },
     {
       "name": "Storm Punishing Pin (150, Life)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (150)"
     },
     {
-      "name": "Storm Shark (Tier 2b)"
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Trap"
+      "name": "Stormblade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stormblade"
+      "name": "Tamales",
+      "category": "Snacks"
     },
     {
-      "name": "Sunbird (Tier 2b)"
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
     },
     {
-      "name": "Tamales"
+      "name": "Thunderous Enforcer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Tatzlewurm Terror"
+      "name": "Thunderous Enforcer's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Thunder Snake (Tier 2b)"
+      "name": "Thunderous Protector's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Thunderous Enforcer's Boots"
+      "name": "Thunderous Protector's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Thunderous Enforcer's Uniform"
+      "name": "Tree of Strife",
+      "category": "Spellements"
     },
     {
-      "name": "Thunderous Protector's Boots"
+      "name": "Tungsten",
+      "category": "Reagents"
     },
     {
-      "name": "Thunderous Protector's Uniform"
+      "name": "Turmeric",
+      "category": "Reagents"
     },
     {
-      "name": "Tree of Strife"
+      "name": "Wallaru Billabong Resort Com Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Troll (Tier 2b)"
+      "name": "Wallaru Billabong Resort Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Tungsten"
+      "name": "Wallaru Doom Moon Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Turmeric"
+      "name": "Wallaru Doom Moon Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Billabong Resort Com Theme"
+      "name": "Wallaru Eucalyptus Forest Com Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Billabong Resort Theme"
+      "name": "Wallaru Eucalyptus Forest Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Doom Moon Combat Theme"
+      "name": "Wallaru Hope Springs Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Doom Moon Theme"
+      "name": "Wallaru Outback Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Eucalyptus Forest Com Theme"
+      "name": "Wallaru Ranch Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Eucalyptus Forest Theme"
+      "name": "Wallaru The Dreaming Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Hope Springs Theme"
+      "name": "Wallaru Wobbegong Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Outback Theme"
+      "name": "Wallaru Wobbegong Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Wallaru Ranch Combat Theme"
+      "name": "Winged Sorrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wallaru The Dreaming Theme"
+      "name": "Wings of Fate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wallaru Wobbegong Combat Theme"
+      "name": "Witch's House Call",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wallaru Wobbegong Theme"
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
     },
     {
-      "name": "Winged Sorrow"
+      "name": "Wrath's Grape Juice",
+      "category": "Snacks"
     },
     {
-      "name": "Wings of Fate"
-    },
-    {
-      "name": "Witch's House Call"
-    },
-    {
-      "name": "Wobbegong Frenzy"
-    },
-    {
-      "name": "Wrath's Grape Juice"
-    },
-    {
-      "name": "Zand the Bandit"
+      "name": "Zand the Bandit",
+      "category": "Spellements"
     }
   ],
   "authors": "BartleBot",
@@ -759,7 +907,7 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "155"
+        "=Flawless Health Opal +155"
       ]
     }
   ],
@@ -853,7 +1001,7 @@
       },
       "params": {
         "enemy": "WL_Frog_Owner_A_01",
-        "wiki_page": "",
+        "wiki_page": "Creature:Mr. Cane",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
@@ -1070,5 +1218,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "a145a9fb9461693dccdfec92e157e02204494a2d732a2e3fdea52ffaf93cfad4"
+  ]
 }
