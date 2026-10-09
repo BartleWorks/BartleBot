@@ -6,7 +6,7 @@ from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QFontMetricsF, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphicsItem
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.canvas.node_item import NODE_W, NodeItem
 from bartlebot.gui.theme import THEME

@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QScrollArea
 
-from bartlebot import param_cards
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.theme import THEME
-from bartlebot.option_groups import summary_text
+from bartlebot.options import param_cards
+from bartlebot.options.option_groups import summary_text
 from bartlebot.ui_state import UiState
 
 

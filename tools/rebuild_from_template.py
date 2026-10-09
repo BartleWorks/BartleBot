@@ -57,7 +57,6 @@ from bartlebot.bot.schema import (  # noqa: E402
     StateModel,
     TransitionModel,
 )
-from bartlebot.bot_options import required_option_specs  # noqa: E402
 from bartlebot.content.bot_tags import normalize_tags, suggested_tags  # noqa: E402
 from bartlebot.content.new_bot import BotDetails, StartingPoint, create_bot, starting_points  # noqa: E402
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary  # noqa: E402
@@ -67,6 +66,7 @@ from bartlebot.game import scales, zone_nav  # noqa: E402
 from bartlebot.gui.canvas.edit_scene import _reachable_states  # noqa: E402
 from bartlebot.gui.canvas.layout import auto_layout  # noqa: E402
 from bartlebot.nodes.registry import NODE_SPECS  # noqa: E402
+from bartlebot.options.bot_options import required_option_specs  # noqa: E402
 
 BOTS_DIR = PROJECT_ROOT / "bots"
 

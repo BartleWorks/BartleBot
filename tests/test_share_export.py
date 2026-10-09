@@ -499,4 +499,4 @@ def test_nothing_that_writes_a_share_file_imports_settings(module):
             imported.add(node.module)
         elif isinstance(node, ast.Import):
             imported.update(alias.name for alias in node.names)
-    assert not imported & {"bartlebot.settings_manager", "bartlebot.option_values"}
+    assert not imported & {"bartlebot.settings_manager", "bartlebot.options.option_values"}

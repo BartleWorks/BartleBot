@@ -23,7 +23,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
-from bartlebot import variables
+from bartlebot.bot import variables
+from bartlebot.bot.variable_watch import LiveVariables
 from bartlebot.gui.sidebar.option_gutter import (
     HelpToggle,
     OverrideBar,
@@ -34,7 +35,6 @@ from bartlebot.gui.sidebar.option_gutter import (
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.variable_watch import LiveVariables
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, VariableModel

@@ -697,7 +697,7 @@ async def test_all_shop_open_one_false():
 
 def test_refill_potions_is_an_option_the_app_setting_answers():
     """Declared null, so the author has no opinion and the user's app setting decides."""
-    from bartlebot import bot_options
+    from bartlebot.options import bot_options
     from bartlebot.settings_manager import _DEFAULTS
 
     spec = next(o for o in hp.NODE_SPEC.required_bot_options if o.name == hp.OPTION_REFILL)
@@ -710,7 +710,7 @@ def test_refill_potions_is_an_option_the_app_setting_answers():
 
 
 def test_refill_potions_resolves_to_the_app_setting_when_nothing_outranks_it():
-    from bartlebot import bot_options
+    from bartlebot.options import bot_options
 
     assert bot_options.resolve_option(hp.OPTION_REFILL, declaration=None, app_value=False).value is False
     assert bot_options.resolve_option(hp.OPTION_REFILL, override=True, app_value=False).value is True

@@ -285,7 +285,7 @@ def _ports(machine: BotMachine, fighter, *, refused=()):
 
 
 def _separate(machine: BotMachine) -> None:
-    from bartlebot import player_realms
+    from bartlebot.options import player_realms
 
     machine.get_option = lambda name, default=None: player_realms.SEPARATE if name == player_realms.OPTION else default
 

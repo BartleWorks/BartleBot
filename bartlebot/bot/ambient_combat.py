@@ -39,7 +39,6 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from bartlebot import player_realms
 from bartlebot.clients import port_map
 from bartlebot.nodes import combat_runner, node_helpers
 from bartlebot.nodes.combat import collect_wisps
@@ -50,6 +49,7 @@ from bartlebot.nodes.timing import (
     POLL_INTERVAL,
     WISP_COLLECT_TIMEOUT,
 )
+from bartlebot.options import player_realms
 
 logger = logging.getLogger(__name__)
 

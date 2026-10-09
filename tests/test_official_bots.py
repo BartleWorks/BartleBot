@@ -141,7 +141,7 @@ def test_an_official_bot_is_never_marked_unsaved_or_written(harness, official_pa
 def test_run_mode_option_values_still_apply_to_an_official_bot(harness, official_path):
     """Option values live in settings, keyed on the bot's id, so nothing of the file changes."""
     from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415
-    from bartlebot.option_values import option_value  # noqa: PLC0415
+    from bartlebot.options.option_values import option_value  # noqa: PLC0415
 
     bot = _bot()
     bot.options = [BotOptionModel(name="laps", type="int", default=1)]

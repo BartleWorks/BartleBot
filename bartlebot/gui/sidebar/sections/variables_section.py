@@ -44,7 +44,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import VariableModel
 from bartlebot.gui.sidebar.option_gutter import (
     GUTTER_BTN_PX,

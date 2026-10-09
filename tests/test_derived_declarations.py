@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 
 from bartlebot.bot.schema import BotConfig, DropModel, StateModel
-from bartlebot.bot_options import (
+from bartlebot.options.bot_options import (
     compose_options,
     options_signature,
     orphaned_flag_options,

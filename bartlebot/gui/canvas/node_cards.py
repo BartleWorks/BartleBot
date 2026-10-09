@@ -4,7 +4,7 @@ Both pages are the same shape: the name once, as an editable title; a gray line 
 what the node is; a row with Show / Hide descriptions and Collapse all / Expand all;
 then ``OptionCard``\\s. These are the parts that are not already somebody else's --
 the card is #138's, the gutter and the description switches are the option surfaces'.
-What each card *says* is ``bartlebot.param_cards``, which needs no Qt.
+What each card *says* is ``bartlebot.options.param_cards``, which needs no Qt.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from bartlebot.gui.sidebar.option_gutter import DescriptionSwitches
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.param_cards import to_fill_text
+from bartlebot.options.param_cards import to_fill_text
 
 
 class TitleEdit(ThemedMixin, QLineEdit):

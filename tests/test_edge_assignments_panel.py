@@ -11,7 +11,7 @@ import time
 import pytest
 from PyQt6.QtCore import QPointF
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import AssignmentModel, BotConfig, FlagCondition, StateModel, TransitionModel, VariableModel
 from bartlebot.gui.canvas.edge_item import EdgeItem
 

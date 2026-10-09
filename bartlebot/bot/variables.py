@@ -380,7 +380,7 @@ def check(config: BotConfig, specs=None) -> Report:
     ``specs`` is the NodeSpec registry, for which options the nodes declare; the real one
     when None. A bot with no variables and no use of one has nothing to report.
     """
-    from bartlebot.bot_options import compose_options  # noqa: PLC0415 - bot_options imports the registry late
+    from bartlebot.options.bot_options import compose_options  # noqa: PLC0415 - bot_options imports the registry late
 
     report = Report()
     error, warn = report.errors.append, report.warnings.append
@@ -692,7 +692,7 @@ def name_problem(config: BotConfig, name: str, *, current: str | None = None, sp
     ``current`` is the name being edited, which the variable may keep. An option's name
     is refused too: the two share the condition rows' one list.
     """
-    from bartlebot.bot_options import compose_options  # noqa: PLC0415 - bot_options imports the registry late
+    from bartlebot.options.bot_options import compose_options  # noqa: PLC0415 - bot_options imports the registry late
 
     name = name.strip()
     if not name:

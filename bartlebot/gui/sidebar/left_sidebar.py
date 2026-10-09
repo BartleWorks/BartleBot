@@ -33,7 +33,6 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
-from bartlebot.bot_options import options_signature
 from bartlebot.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from bartlebot.gui import screen_fit
 from bartlebot.gui.sidebar.combat_tab import CombatTab
@@ -43,6 +42,7 @@ from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.variable_values_section import VariableValuesSection
 from bartlebot.gui.sidebar.sections.variables_section import VariablesSection
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.options.bot_options import options_signature
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

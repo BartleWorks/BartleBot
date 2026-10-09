@@ -71,7 +71,7 @@ class VariableModel(BaseModel):
 
     Kept loose here, like a condition row's value: a declaration that breaks a rule
     (a duplicate name, an initial value of the wrong type) still loads, so the editor can
-    show it, and :mod:`bartlebot.variables` refuses the run instead.
+    show it, and :mod:`bartlebot.bot.variables` refuses the run instead.
     """
 
     name: str
@@ -110,7 +110,7 @@ class FlagCondition(BaseModel):
     ``negate`` inverts the truthiness check. A variable row is ``{variable, compare,
     value}``: ``variable`` names a :class:`VariableModel`, and the row is true when its
     current value ``compare``-s against ``value``. Only an int takes the four ordering
-    comparisons; ``bartlebot.variables`` refuses them on a bool or an enum. Exactly one of ``option`` and
+    comparisons; ``bartlebot.bot.variables`` refuses them on a bool or an enum. Exactly one of ``option`` and
     ``variable`` is set. Multiple FlagConditions are combined by their parent's ``op``
     field, so options and variables mix in one AND/OR expression.
 
@@ -242,7 +242,7 @@ class BotOptionModel(BaseModel):
         "player_realms",
     ]
     # The author's recommended value -- *not* the user's current one, which lives in
-    # settings.json (see bartlebot.bot_options). None means the author has no opinion,
+    # settings.json (see bartlebot.options.bot_options). None means the author has no opinion,
     # which is what lets the app setting below it be reachable at all.
     default: bool | int | float | str | list[int] | list[str] | None = None
     description: str | None = None
@@ -637,7 +637,7 @@ class BotConfig(BaseModel):
         which the machine names in the log when that edge is the one taken, and one with
         assignments carries their rows under ``assign``, which the machine applies then.
         """
-        from bartlebot.variables import describe_guard  # noqa: PLC0415 - avoids an import cycle
+        from bartlebot.bot.variables import describe_guard  # noqa: PLC0415 - avoids an import cycle
 
         self.sort_transitions()
         conditions_registry: dict[str, dict] = {}
@@ -706,14 +706,14 @@ class BotConfig(BaseModel):
         An option a node requires is composed at load time from its NodeSpec, so
         writing it back would put 80 copies of one description in the library and
         let a value the user edited ride out to everyone who opens the bot. The
-        prune is in :mod:`bartlebot.bot_options`; it keeps only what is
+        prune is in :mod:`bartlebot.options.bot_options`; it keeps only what is
         authorial -- a hand-added option, or a required one whose default the
         author deliberately changed.
 
         Done at dump time rather than on ``self``: the in-memory config is what
         the editor is showing, and a save is not an edit.
         """
-        from bartlebot.bot_options import storable_options  # noqa: PLC0415 - avoids an import cycle
+        from bartlebot.options.bot_options import storable_options  # noqa: PLC0415 - avoids an import cycle
 
         data = self.model_dump(exclude_none=True)
         data["options"] = [o.model_dump(exclude_none=True) for o in storable_options(self)]

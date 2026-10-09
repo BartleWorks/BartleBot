@@ -27,7 +27,6 @@ from dataclasses import replace
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
-from bartlebot import param_cards
 from bartlebot.bot.schema import (
     SUBGRAPH_ENTRY,
     BotConfig,
@@ -55,6 +54,7 @@ from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
+from bartlebot.options import param_cards
 
 _STATUS_WORD = {"linked": "linked", "held": "update held", "missing": "missing", "invalid": "invalid", "cycle": "cycle"}
 

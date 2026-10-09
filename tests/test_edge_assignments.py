@@ -13,7 +13,7 @@ import logging
 import pytest
 from pydantic import ValidationError
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import (
     SUBGRAPH_ENTRY,

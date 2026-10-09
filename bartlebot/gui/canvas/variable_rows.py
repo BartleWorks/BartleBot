@@ -26,7 +26,7 @@ from typing import Any
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QVBoxLayout, QWidget
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import AssignmentModel, FlagCondition, VariableModel
 from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.discard import discard_widget

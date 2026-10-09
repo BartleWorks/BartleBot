@@ -16,7 +16,6 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import player_realms
 from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
@@ -49,6 +48,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     ZONE_CHANGE_TIMEOUT,
     ZONE_SETTLE_GRACE,
 )
+from bartlebot.options import player_realms
 
 
 async def all_in_npc_range(clients: list) -> bool:

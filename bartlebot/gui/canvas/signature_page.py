@@ -64,7 +64,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import param_cards
 from bartlebot.bot.schema import SUBGRAPH_ENTRY, SUBGRAPH_EXIT, BotConfig, SubgraphInput, SubgraphPanel
 from bartlebot.content.subgraphs import signature_tree as st
 from bartlebot.content.subgraphs.signature_tree import GROUP, INPUT, NODE, TreeRow
@@ -84,6 +83,7 @@ from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
+from bartlebot.options import param_cards
 
 #: The cards' gap: the same as the option surfaces' and the node pages'.
 _CARD_SPACING_PX = 8

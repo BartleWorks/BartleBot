@@ -17,7 +17,6 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QFormLayout, QLabel
 
-from bartlebot import bot_options
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.authoring_tab import AuthoringTab
@@ -29,6 +28,7 @@ from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.options import bot_options
 from bartlebot.settings_manager import _DEFAULTS, _SECTION_MODELS, SettingsManager
 
 # ---------------------------------------------------------------------------

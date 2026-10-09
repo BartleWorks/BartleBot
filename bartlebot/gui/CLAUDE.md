@@ -769,7 +769,7 @@ Hide descriptions and Collapse all / Expand all (`PageFoldBar`); then #138's
 `OptionCard`s. The node page's are Parameters, Connections, Notes and Role, and the
 whole page scrolls as one -- before, only the params scrolled and the other three sat
 pinned under them. The subgraph node page's are the ungrouped inputs, one per input
-group, and Role. What a card *says* is `bartlebot/param_cards.py`, which needs no Qt.
+group, and Role. What a card *says* is `bartlebot/options/param_cards.py`, which needs no Qt.
 
 - **One row builder, `_DynamicParamForm`, draws both pages' rows**, behind the option
   surfaces' `[bar][reset][?]` gutter. A row is a head line and a control. Actions on a
@@ -1234,7 +1234,7 @@ settings UI against `package.json`), and edit mode is the context this app
 already has.
 
 - **Both surfaces draw their rows in folding cards** (#138): *This dungeon*, *Team*,
-  *Quicksell*, *General*, in that order in every bot. `bartlebot/option_groups.py`
+  *Quicksell*, *General*, in that order in every bot. `bartlebot/options/option_groups.py`
   decides which option goes where (`BotOptionSpec.group`), `sidebar/option_card.py` draws
   a card, and `CardFolds` there owns the folding for a surface. The rules a later change
   is most likely to break:

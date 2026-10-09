@@ -23,7 +23,7 @@ from bartlebot.nodes.wizard_city import (
     go_to_ravenwood,
 )
 from bartlebot.nodes.zone_entry import enter_zone
-from bartlebot.option_groups import GROUP_GENERAL
+from bartlebot.options.option_groups import GROUP_GENERAL
 
 # ── Navigation coordinates ─────────────────────────────────────────────────────
 # The route as far as Ravenwood lives in bartlebot.nodes.wizard_city. Only the Commons leg

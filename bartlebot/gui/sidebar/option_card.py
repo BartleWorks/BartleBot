@@ -1,7 +1,7 @@
 """``OptionCard`` -- one folding group of bot options on Option Values and Options (#138).
 
 The two option surfaces draw a bot's options as a column of these rather than one flat
-list: *This dungeon*, *Team*, *Quicksell* and *General* (``bartlebot.option_groups``
+list: *This dungeon*, *Team*, *Quicksell* and *General* (``bartlebot.options.option_groups``
 decides which option goes where). Folding the groups nobody is working in is what puts
 a thirteen-option bot on a 1080p screen.
 
@@ -71,13 +71,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import option_groups
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX, HeadingAction, disclosure_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.option_groups import SummaryPart, summary_text
+from bartlebot.options import option_groups
+from bartlebot.options.option_groups import SummaryPart, summary_text
 
 logger = logging.getLogger(__name__)
 

@@ -11,7 +11,6 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from bartlebot import bot_options
 from bartlebot.bot.schema import (
     SUBGRAPH_ENTRY,
     BotConfig,
@@ -30,6 +29,7 @@ from bartlebot.bot.schema import (
 from bartlebot.content.subgraphs.subgraphs import definition_problems
 from bartlebot.content.templates import template_diff
 from bartlebot.content.templates.template_diff import MISSING, Release, TemplateUpdate, apply, diff
+from bartlebot.options import bot_options
 
 
 def _state(sid: str, node_type: str = "sleep", **params) -> StateModel:

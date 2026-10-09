@@ -8,7 +8,7 @@ either would leave a row naming a variable the bot does not declare.
 
 from __future__ import annotations
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     BotConfig,

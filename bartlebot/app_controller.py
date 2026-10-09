@@ -16,7 +16,7 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import option_values, player_realms, variables
+from bartlebot.bot import variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
 from bartlebot.clients import group_manager, recovery_readiness
@@ -62,6 +62,7 @@ from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_siz
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
+from bartlebot.options import option_values, player_realms
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
@@ -2730,7 +2731,7 @@ class AppController(QObject):
 
         Tells rather than asks, as the two checks before it do: a condition on an undeclared
         variable, or a write its type refuses, is a graph that cannot run as drawn
-        (``bartlebot.variables``). Warnings are the author's and never stop a run.
+        (``bartlebot.bot.variables``). Warnings are the author's and never stop a run.
         """
         if self._loaded_config is None:
             return True

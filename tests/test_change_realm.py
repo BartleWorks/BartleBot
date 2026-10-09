@@ -14,7 +14,6 @@ import pytest
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.utility.change_realm as cr
 import bartlebot.nodes.utility.realm_list as rl
-from bartlebot import bot_options
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.game import dialog_captions
 from bartlebot.nodes.paths import (
@@ -28,6 +27,7 @@ from bartlebot.nodes.paths import (
     realm_button_path,
     realm_name_path,
 )
+from bartlebot.options import bot_options
 from tests.conftest import FakeClient, FakeMachine, message_box_patches, see_each_other
 
 
@@ -275,7 +275,7 @@ async def test_realm_hop_timeout_fails():
 
 def test_the_node_declares_the_realm_with_no_opinion_of_its_own():
     """Null, always: an author cannot have a view on which realm you farm in."""
-    from bartlebot import bot_options
+    from bartlebot.options import bot_options
 
     spec = next(o for o in cr.NODE_SPEC.required_bot_options if o.name == cr.OPTION_FAVORITE_REALM)
 

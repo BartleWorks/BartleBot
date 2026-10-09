@@ -41,7 +41,7 @@ async def test_safety_delay_off_or_absent_sleeps_the_duration():
 
 def test_safety_delay_is_an_option_of_the_bot_only_while_a_sleep_reads_it():
     from bartlebot.bot.schema import BotConfig, StateModel  # noqa: PLC0415
-    from bartlebot.bot_options import required_option_specs  # noqa: PLC0415
+    from bartlebot.options.bot_options import required_option_specs  # noqa: PLC0415
 
     def bot(use: bool) -> BotConfig:
         state = StateModel(id="a", node_type="sleep", params={"duration": 1.0, "use_safety_delay": use})

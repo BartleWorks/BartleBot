@@ -19,10 +19,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_options
 from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.utility import quicksell
+from bartlebot.options import bot_options
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

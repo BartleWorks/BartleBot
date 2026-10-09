@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import VariableModel
 
 #: How many game nodes may start after a write before its mark goes: the first is the

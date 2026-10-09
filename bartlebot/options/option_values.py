@@ -1,6 +1,6 @@
 """Resolving a bot option against *this machine's* settings.
 
-:mod:`bartlebot.bot_options` is the policy and stays pure -- it decides between
+:mod:`bartlebot.options.bot_options` is the policy and stays pure -- it decides between
 four values it is handed.  Two of those four live in ``SettingsManager``, which
 that module must not import, so every caller has had to gather them itself.
 
@@ -18,8 +18,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from bartlebot import bot_options
-from bartlebot.bot_options import UNSET, OptionResolution
+from bartlebot.options import bot_options
+from bartlebot.options.bot_options import UNSET, OptionResolution
 
 logger = logging.getLogger(__name__)
 

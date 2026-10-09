@@ -1316,7 +1316,7 @@ def test_ports_reorder_from_their_menu(doc):
 
 
 def test_the_description_folds_once_written(doc):
-    from bartlebot import param_cards  # noqa: PLC0415
+    from bartlebot.options import param_cards  # noqa: PLC0415
 
     assert doc.config.description, "the fixture has one"
     page = _page(doc)

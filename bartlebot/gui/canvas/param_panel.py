@@ -50,7 +50,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import param_cards, variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     FlagCondition,
@@ -100,6 +100,7 @@ from bartlebot.nodes.registry import (
     NODE_SPECS,
     node_display_name,
 )
+from bartlebot.options import param_cards
 from bartlebot.settings_manager import SettingsManager
 
 

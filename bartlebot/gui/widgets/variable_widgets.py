@@ -24,7 +24,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import VariableModel
 from bartlebot.gui.widgets.discard import discard_widget
 

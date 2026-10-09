@@ -46,7 +46,7 @@ recall to a mark are assumed to keep realms too; neither is verified.
 
 **A node param says where the players go; this option says how they are arranged.** No node param
 decides the arrangement, so the two cannot contradict each other. Two values
-(`bartlebot/player_realms.py`):
+(`bartlebot/options/player_realms.py`):
 
 - **Together** (the default): every player on one realm and in one area.
 - **Separate**: never move a player onto another player's realm. An existing split is left as it

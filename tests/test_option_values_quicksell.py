@@ -27,13 +27,13 @@ from PyQt6.QtCore import Qt
 
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
-from bartlebot.bot_options import UNSET
 from bartlebot.gui.canvas.drop_keep_list import _COL_ITEM, _COL_KEEP, DropKeepListWidget
 from bartlebot.gui.sidebar.option_gutter import CHILD_INDENT_PX, ChildBranch
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_MINIMUM_TEAM_SIZE, OPTION_TEAM_UP, PARAM_OFFERS_TEAM_UP
+from bartlebot.options.bot_options import UNSET
 from bartlebot.settings_manager import SettingsManager
 
 

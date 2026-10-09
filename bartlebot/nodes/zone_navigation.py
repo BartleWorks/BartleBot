@@ -40,7 +40,6 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from bartlebot import player_realms
 from bartlebot.clients import port_map, sightings
 from bartlebot.game import worlds, zone_lists, zone_nav
 from bartlebot.game.restricted_zones import check_zone
@@ -50,6 +49,7 @@ from bartlebot.nodes.teleportation import teleport_to_world_hub
 from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
 from bartlebot.nodes.utility import change_realm, realm_list, sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
+from bartlebot.options import player_realms
 
 MAX_STEPS = 30
 """No route needs this many. Reaching it means steps keep landing somewhere the plan did not expect."""

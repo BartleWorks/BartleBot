@@ -44,7 +44,6 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from bartlebot import player_realms
 from bartlebot.clients import sightings
 from bartlebot.game import realms
 from bartlebot.nodes import node_helpers
@@ -52,7 +51,8 @@ from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, Nod
 from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT, TRIGGER_TIMEOUT
 from bartlebot.nodes.utility import realm_list
 from bartlebot.nodes.utility.realm_list import REALMS_PER_PAGE
-from bartlebot.option_groups import GROUP_GENERAL
+from bartlebot.options import player_realms
+from bartlebot.options.option_groups import GROUP_GENERAL
 
 _TAG = "change_realm"
 

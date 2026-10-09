@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot import bot_options, player_realms
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel
 from bartlebot.content.templates.template_store import list_templates
 from bartlebot.gui.canvas.edit_scene import _validate_node
@@ -24,6 +23,7 @@ from bartlebot.gui.widgets.option_widgets import (
 )
 from bartlebot.gui.widgets.player_realms_choice import PlayerRealmsChoice
 from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.options import bot_options, player_realms
 from bartlebot.paths import project_root
 
 _ROOT = project_root()

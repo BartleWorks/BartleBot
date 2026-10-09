@@ -1,9 +1,9 @@
 """The pure half of the node page's and subgraph node page's folding cards (#142)."""
 
-from bartlebot import param_cards as pc
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.nodes.param_schema import ParamField
-from bartlebot.option_groups import summary_text
+from bartlebot.options import param_cards as pc
+from bartlebot.options.option_groups import summary_text
 
 
 def _state(sid="a", stops=None):

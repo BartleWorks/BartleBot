@@ -45,7 +45,7 @@ Three things that fall out of it:
   what keeps the keep-list logic and the picker pure and testable without settings.
   `resolve_combat()`'s `source_label` is the older precedent.
 - **Anything showing the user what will happen has to resolve the same way**, through
-  the same gatherer, and say which level answered. `bartlebot/option_values.py` is that
+  the same gatherer, and say which level answered. `bartlebot/options/option_values.py` is that
   gatherer — `bot_options` stays pure and never imports `SettingsManager`, so the run
   loop, the Option Values rows and the safety dialog each hand it the same two impure inputs
   rather than each fetching them their own way.
@@ -76,7 +76,7 @@ nearly every node:
 user override  ->  declaration (if non-null)  ->  app setting  ->  BotOptionSpec.default
 ```
 
-The policy is `bartlebot/bot_options.py`: pure, like `bartlebot/clients/relog.py` — no Qt,
+The policy is `bartlebot/options/bot_options.py`: pure, like `bartlebot/clients/relog.py` — no Qt,
 no settings, no client, so precedence is testable without any of them. The machine
 gathers the four inputs; `resolve_option` decides between them and never raises.
 
@@ -215,7 +215,7 @@ can only be about this dungeon, so it goes in *This dungeon*. `BotOptionSpec.hea
 marks the one option drawn as its card's switch rather than as a row; with it off, every row
 on the card is disabled. The order is fixed rather than following the graph, so an option is
 in the same place in every bot — even a bot with two options gets two cards, which is what
-teaches where things are before a long list arrives. `bartlebot/option_groups.py` is the pure
+teaches where things are before a long list arrives. `bartlebot/options/option_groups.py` is the pure
 half (grouping, the first-run folds, and what a folded card's summary says);
 `gui/sidebar/option_card.py` draws it. Which cards are folded is the reader's, stored per
 group in `settings.json` (`option_group_collapsed`), the same for every bot and both tabs.

@@ -5,7 +5,6 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import player_realms
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -18,7 +17,8 @@ from bartlebot.nodes.paths import (
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
 )
-from bartlebot.option_groups import GROUP_DUNGEON, GROUP_TEAM
+from bartlebot.options import player_realms
+from bartlebot.options.option_groups import GROUP_DUNGEON, GROUP_TEAM
 
 #: Option names, so the safety dialog and the tests name them from one place.
 OPTION_TEAM_UP = "Team-Up"

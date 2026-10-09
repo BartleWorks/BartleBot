@@ -10,7 +10,6 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from bartlebot import bot_options
 from bartlebot.content.store_roots import dev_mode, is_inside
 from bartlebot.game.game_sizing import (
     BOTCANVAS_MIN_HEIGHT,
@@ -21,6 +20,7 @@ from bartlebot.game.game_sizing import (
     required_window_size,
     screen_budget,
 )
+from bartlebot.options import bot_options
 from bartlebot.paths import project_root
 from bartlebot.shared.account_store import AccountStore
 from bartlebot.shared.vendor import PRODUCT, product_dir, vendor_dir

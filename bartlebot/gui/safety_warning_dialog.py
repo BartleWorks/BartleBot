@@ -22,7 +22,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_options, option_values
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
@@ -30,6 +29,7 @@ from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import handle_level_scaling, quicksell
 from bartlebot.nodes.zone_entry import enter_dungeon
+from bartlebot.options import bot_options, option_values
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

@@ -19,13 +19,13 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.friend_name_edit import FriendNameEdit
 from bartlebot.gui.widgets.option_widgets import make_option_widget, widget_value
 from bartlebot.nodes.teleportation import teleport_to_friend as ttf
+from bartlebot.options import bot_options
 from bartlebot.settings_manager import SettingsManager
 
 _OPTION = ttf.OPTION_FRIEND_NAME

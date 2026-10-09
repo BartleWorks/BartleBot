@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.game import realms
@@ -21,6 +20,7 @@ from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSec
 from bartlebot.gui.widgets.option_widgets import NODE_ONLY_TYPES, OPTION_TYPES, make_option_widget, widget_value
 from bartlebot.gui.widgets.realm_combo import NOT_SET_TEXT, RealmCombo
 from bartlebot.nodes.utility import change_realm as cf
+from bartlebot.options import bot_options
 from bartlebot.settings_manager import SettingsManager
 
 _OPTION = cf.OPTION_FAVORITE_REALM

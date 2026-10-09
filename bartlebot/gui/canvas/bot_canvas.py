@@ -53,7 +53,6 @@ from bartlebot.bot.schema import (
     SubgraphInputBinding,
     SubgraphPanel,
 )
-from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.combat.strategy_store import list_bot_strategies, rekey_bot_strategy_states
 from bartlebot.combat.strategy_tags import SOURCE
 from bartlebot.content import bot_roots, bot_summary
@@ -125,6 +124,7 @@ from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
+from bartlebot.options.bot_options import compose_options, orphaned_flag_options
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

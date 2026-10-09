@@ -47,15 +47,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import option_groups
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.bot_options import (
-    USER_OWNED_OPTIONS,
-    compose_options,
-    is_user_owned,
-    option_specs_for,
-    required_option_specs,
-)
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.sidebar.option_gutter import (
     GUTTER_BTN_PX,
@@ -85,6 +77,14 @@ from bartlebot.gui.widgets.option_widgets import (
 )
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.options import option_groups
+from bartlebot.options.bot_options import (
+    USER_OWNED_OPTIONS,
+    compose_options,
+    is_user_owned,
+    option_specs_for,
+    required_option_specs,
+)
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
