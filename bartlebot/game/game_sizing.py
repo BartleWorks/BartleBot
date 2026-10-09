@@ -86,7 +86,7 @@ GAME_PANEL_CHROME_PX = 32
 # that an explicitly set ``minimumSize`` wins outright (``qSmartMinSize``). So each pane
 # sets these on itself and its content is clipped -- or scrolls, where a scroll area is
 # already in the way -- rather than being allowed to raise the window's floor.
-# ``tests/test_window_minimum.py`` is the guard.
+# ``tests/gui/test_window_minimum.py`` is the guard.
 
 # Minimum BotCanvas size (toolbar + enough graph space)
 BOTCANVAS_MIN_WIDTH = 320

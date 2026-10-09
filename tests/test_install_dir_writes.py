@@ -27,8 +27,8 @@ from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
 from bartlebot.shared.vendor import vendor_dir
-from tests.test_subgraph_integration import ControllerHarness
-from tests.test_subgraph_store import _defn
+from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
+from tests.content.subgraphs.test_subgraph_store import _defn
 
 
 def _default_write_paths() -> dict[str, Path]:

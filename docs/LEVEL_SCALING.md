@@ -153,7 +153,7 @@ Poseidon Adventure) add a gateway after it. A sigil that is indoors (Cavity Cham
 gateways before it, because its room is not a navigation destination. Every entry has at
 least one sigil; the first one is where "inside the dungeon" begins.
 
-`tests/test_scales.py` holds the shipped table to its rules: every entrance is a navigation
+`tests/game/test_scales.py` holds the shipped table to its rules: every entrance is a navigation
 destination, every entry's steps chain from its entrance to its Scales, and every entry
 loads.
 

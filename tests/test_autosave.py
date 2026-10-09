@@ -19,8 +19,8 @@ from bartlebot.app_controller import AppController
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.settings_manager import SettingsManager
-from tests.test_subgraph_integration import ControllerHarness
-from tests.test_subgraphs import SYNC_ID, linked_bot, sync_players_definition
+from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
+from tests.content.subgraphs.test_subgraphs import SYNC_ID, linked_bot, sync_players_definition
 
 
 @pytest.fixture

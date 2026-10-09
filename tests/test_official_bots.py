@@ -33,7 +33,7 @@ from bartlebot.gui.canvas.bot_canvas import (
 )
 from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
 from bartlebot.settings_manager import SettingsManager
-from tests.test_subgraph_integration import ControllerHarness
+from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 
 OFFICIAL_ID = "official"
 
@@ -363,7 +363,7 @@ def test_every_source_word_is_one_of_the_three():
 
 
 def test_the_subgraphs_folder_shows_each_definitions_source(qapp, tmp_path):
-    from tests.test_subgraphs import sync_players_definition  # noqa: PLC0415
+    from tests.content.subgraphs.test_subgraphs import sync_players_definition  # noqa: PLC0415
 
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     SubgraphLibrary(shipped).save(sync_players_definition())

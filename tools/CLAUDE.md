@@ -226,7 +226,7 @@ hand rather than normalized from the world key:
   different Empyrea depending on iteration order. World emblems come from `Buttons/` only;
   `BadgeCategory/` supplies nothing but the dungeon badge.
 
-`tests/test_world_icons.py` is the guard, and the assertion that matters is that every
+`tests/tools/test_world_icons.py` is the guard, and the assertion that matters is that every
 world in `zone_nav`'s map has an entry — a world added to the map with no emblem loses its
 icon silently, behind a header that still reads correctly.
 

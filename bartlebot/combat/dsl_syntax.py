@@ -18,7 +18,7 @@ keeps a stack of the brackets it is inside, and classifies each word against the
 innermost.
 
 The word lists are copied here rather than read from wizsprinter at run time,
-because importing the grammar module imports wizwalker. ``tests/test_dsl_syntax.py``
+because importing the grammar module imports wizwalker. ``tests/combat/test_dsl_syntax.py``
 checks each list against the grammar and the combat code, so a keyword added
 upstream fails a test rather than going quietly uncolored.
 """
