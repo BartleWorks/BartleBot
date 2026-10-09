@@ -76,7 +76,7 @@ nearly every node:
 user override  ->  declaration (if non-null)  ->  app setting  ->  BotOptionSpec.default
 ```
 
-The policy is `bartlebot/bot_options.py`: pure, like `bartlebot/relog.py` — no Qt,
+The policy is `bartlebot/bot_options.py`: pure, like `bartlebot/clients/relog.py` — no Qt,
 no settings, no client, so precedence is testable without any of them. The machine
 gathers the four inputs; `resolve_option` decides between them and never raises.
 

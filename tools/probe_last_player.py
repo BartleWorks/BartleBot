@@ -22,7 +22,7 @@ it in one run. It is also the only tool that lists the stored rosters (``--show`
 
 WHY IT EXISTED
 
-The launch cards can say which characters live on an account (``bartlebot.character_roster``)
+The launch cards can say which characters live on an account (``bartlebot.clients.character_roster``)
 but not *pick* one. ``tools/probe_character_gid.py`` documents why the obvious routes are
 dead ends -- there is nothing per-character to click at character select, and names are not
 unique -- and names the one remaining lever:
@@ -66,7 +66,7 @@ HOW TO RUN
 
     config.xml's original LastPlayer is restored on the way out unless --keep is passed.
 
-NO REAL PLAYER DATA: gids are masked the way ``bartlebot.account_identity`` masks a user
+NO REAL PLAYER DATA: gids are masked the way ``bartlebot.clients.account_identity`` masks a user
 id; --with-ids prints them in full. Wizard names are printed unmasked because choosing a
 character is the point of the listing -- do not paste this output into an issue. See the
 "No real player data" section of CLAUDE.md.
@@ -88,9 +88,9 @@ from wizwalker.utils import (
     set_window_title,
 )
 
-from bartlebot import character_roster
-from bartlebot.account_identity import mask
-from bartlebot.credentials import CredentialStore
+from bartlebot.clients import character_roster
+from bartlebot.clients.account_identity import mask
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.launcher import auto_select, launch_profile
 from bartlebot.nodes.node_helpers import get_text_by_path
 from bartlebot.nodes.paths import CHAR_SELECT_PATH

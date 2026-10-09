@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot.authoring_tools import AuthoringAction
+from bartlebot.clients.authoring_tools import AuthoringAction
 from bartlebot.gui.game_embed.game_view_panel import AUTHORING_GROUPS, AuthoringBar, GameViewPanel
 
 

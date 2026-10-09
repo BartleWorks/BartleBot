@@ -19,7 +19,7 @@ import pytest
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.credentials import CredentialStore
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_color_keys
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.settings.accounts_tab import _AccountColorPicker, _slots_in_use

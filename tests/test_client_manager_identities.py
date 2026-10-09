@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 import bartlebot.game.wizard_names as wn
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients.client_manager import ClientManager
 from tests.conftest import FakeClient
 
 # "Luke SkullHunter" in the shipped tables -- synthetic, see CLAUDE.md "No real player data".

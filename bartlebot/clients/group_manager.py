@@ -1091,7 +1091,7 @@ async def teleport_to_group_member(client, name: str) -> None:
     """Start a port to a member of this client's group. Raises ValueError if it cannot start.
 
     The group route to a player, for two of ours who are grouped but not friends (see
-    bartlebot.port_map): open the social window on the Group tab, click the member's roster
+    bartlebot.clients.port_map): open the social window on the Group tab, click the member's roster
     line, and press Go To Player on the popup it opens. The same contract as
     node_helpers.teleport_via_friends_list, so node_helpers.port_clients can drive either.
 

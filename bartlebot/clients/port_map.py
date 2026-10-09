@@ -23,7 +23,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 
-from bartlebot import group_manager
+from bartlebot.clients import group_manager
 from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT

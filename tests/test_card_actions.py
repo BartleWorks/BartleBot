@@ -19,8 +19,8 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QDialog, QMessageBox
 
-from bartlebot import character_roster
-from bartlebot.credentials import CredentialStore
+from bartlebot.clients import character_roster
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager

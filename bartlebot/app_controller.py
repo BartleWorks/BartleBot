@@ -16,11 +16,13 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, option_values, player_realms, recovery_readiness, variables
-from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
+from bartlebot import option_values, player_realms, variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients import group_manager, recovery_readiness
+from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
+from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.window_kill import force_close_client
 from bartlebot.combat import strategy_store
 from bartlebot.combat.combat_warnings import collect_combat_warnings
 from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
@@ -63,7 +65,6 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
-from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine, Sequence
@@ -246,7 +247,7 @@ class AppController(QObject):
         self._window.set_auto_select_driver(self._client_manager.drive_client_in)
 
         # The authoring utilities (#81): Bar A's buttons, and the hotkeys that fire them
-        # from inside a game window. See bartlebot.authoring_tools and gui.global_hotkeys.
+        # from inside a game window. See bartlebot.clients.authoring_tools and gui.global_hotkeys.
         self._authoring = AuthoringTools(
             clients=lambda: self._client_manager.clients,
             bot_config=lambda: self._loaded_config,
@@ -428,7 +429,7 @@ class AppController(QObject):
         # Client list changes → start button state. The game view is not connected here:
         # a tile's position follows its slot rather than its player index, so ClientManager
         # syncs the view itself, on every detection tick, including ticks where the client
-        # list did not change at all. See bartlebot.tile_slots.
+        # list did not change at all. See bartlebot.clients.tile_slots.
         self._client_manager.clients_changed.connect(self._on_clients_changed)
 
         # Wizard names → game tile pills. The sidebar reads the cache directly in its own
@@ -2878,13 +2879,13 @@ class AppController(QObject):
             logger.info("Exited freecam for %d player(s) before the run", exited)
 
     async def _survey_pre_run_ports(self, states: list | None) -> None:
-        """Read who among the clients can port to whom, for zone navigation. See bartlebot.port_map.
+        """Read who among the clients can port to whom, for zone navigation. See bartlebot.clients.port_map.
 
         Runs whether or not auto-grouping is on: a friends list is one text read per client,
         and a route planned around a port that cannot happen costs far more. Never raises —
         a node that finds no map surveys for itself.
         """
-        from bartlebot import port_map  # noqa: PLC0415
+        from bartlebot.clients import port_map  # noqa: PLC0415
 
         clients = self._client_manager.clients
         machine = self._current_machine

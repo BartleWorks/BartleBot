@@ -7,9 +7,12 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
-from bartlebot import account_identity, recovery_readiness, relog
-from bartlebot.credentials import CredentialStore
-from bartlebot.launch_tracker import LaunchStage, LaunchTracker
+from bartlebot.clients import account_identity, recovery_readiness, relog
+from bartlebot.clients.credentials import CredentialStore
+from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
+from bartlebot.clients.process_resources import gdi_object_count
+from bartlebot.clients.tile_slots import TileSlot, build_tile_slots
+from bartlebot.clients.window_kill import force_close_client
 from bartlebot.launcher import auto_select
 from bartlebot.nodes.timing import (
     CLIENT_DETECT_ERROR_BACKOFF,
@@ -20,9 +23,6 @@ from bartlebot.nodes.timing import (
     RELOG_WATCH_INTERVAL,
 )
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.tile_slots import TileSlot, build_tile_slots
-from bartlebot.utils.process_resources import gdi_object_count
-from bartlebot.utils.window_kill import force_close_client
 
 logger = logging.getLogger(__name__)
 
@@ -751,7 +751,7 @@ class ClientManager(QObject):
         client vanishing at once. character_roster's own calls swallow their failures,
         so the remaining risk is a client object going away mid-pass.
         """
-        from bartlebot import character_roster  # noqa: PLC0415
+        from bartlebot.clients import character_roster  # noqa: PLC0415
         from bartlebot.game import wizard_names  # noqa: PLC0415
 
         for client in clients:
@@ -789,7 +789,7 @@ class ClientManager(QObject):
         Public because the launch screen asks about accounts that are not running, which
         is precisely the case no client object can answer.
         """
-        from bartlebot import character_roster  # noqa: PLC0415
+        from bartlebot.clients import character_roster  # noqa: PLC0415
 
         roster = self._rosters.get(username)
         if roster is None:
@@ -1440,7 +1440,7 @@ class ClientManager(QObject):
         Never raises and never stops the bot: running ungrouped is a degraded run, but
         stopping outright turns one crash into a dead overnight session.
         """
-        from bartlebot import group_manager  # noqa: PLC0415
+        from bartlebot.clients import group_manager  # noqa: PLC0415
         from bartlebot.game import wizard_names  # noqa: PLC0415
 
         if not SettingsManager.instance().auto_group_players:
@@ -1654,7 +1654,7 @@ class ClientManager(QObject):
 
         Both triggers live here rather than in loops of their own because they ask the same
         question — is now a safe moment to take clients away from the FSM — and because
-        either kind of relog resets the timer. The policy itself is in ``bartlebot.relog``;
+        either kind of relog resets the timer. The policy itself is in ``bartlebot.clients.relog``;
         this supplies only the clock and the readings.
 
         Never raises: it outlives every node, and an exception escaping here would take the

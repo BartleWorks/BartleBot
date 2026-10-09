@@ -62,7 +62,7 @@ import sys
 
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager
+from bartlebot.clients import group_manager
 from bartlebot.game import wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (

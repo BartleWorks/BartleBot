@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.authoring_tools import ACTION_LABELS, AuthoringAction
+from bartlebot.clients.authoring_tools import ACTION_LABELS, AuthoringAction
 from bartlebot.gui.game_embed.game_view import GameView
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin

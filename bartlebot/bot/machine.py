@@ -10,9 +10,10 @@ from typing import TYPE_CHECKING, Any
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import bot_options, option_values, sightings, variables
+from bartlebot import bot_options, option_values, variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
+from bartlebot.clients import sightings
 from bartlebot.game import restricted_zones
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ def _format_duration(seconds: float) -> str:
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
-    from bartlebot.port_map import PortMap
+    from bartlebot.clients.port_map import PortMap
 
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 

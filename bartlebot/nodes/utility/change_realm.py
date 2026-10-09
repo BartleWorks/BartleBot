@@ -44,7 +44,8 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from bartlebot import player_realms, sightings
+from bartlebot import player_realms
+from bartlebot.clients import sightings
 from bartlebot.game import realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec

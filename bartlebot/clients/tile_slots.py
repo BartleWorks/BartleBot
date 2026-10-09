@@ -147,7 +147,7 @@ def build_tile_slots(
     is every window that may be shown -- hooked or not, but excluding ones deliberately
     unhooked or whose hooks failed. *client_hwnds* is the live client list, in order, and
     is the only thing that decides a player index. *launching* maps each account with a
-    launch running to its ``LaunchAttempt`` (see ``bartlebot.launch_tracker``); any
+    launch running to its ``LaunchAttempt`` (see ``bartlebot.clients.launch_tracker``); any
     collection of usernames works too, and then the pending tiles carry no stage caption.
 
     A window with no account is skipped unless it is already a live client. Nothing else

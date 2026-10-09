@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 from PyQt6.QtCore import QByteArray
 
-from bartlebot.authoring_tools import AuthoringAction
+from bartlebot.clients.authoring_tools import AuthoringAction
 from bartlebot.gui.game_embed.game_view_panel import authoring_enabled, authoring_tooltip
 from bartlebot.gui.global_hotkeys import (
     MOD_ALT,

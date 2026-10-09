@@ -9,9 +9,8 @@ import sys
 
 import pytest
 
-from bartlebot.gui.game_embed import win32_window
-from bartlebot.utils import window_kill
-from bartlebot.utils.window_kill import (
+from bartlebot.clients import window_kill
+from bartlebot.clients.window_kill import (
     DIALOG_CLASS,
     STILL_ACTIVE,
     WM_CLOSE,
@@ -21,6 +20,7 @@ from bartlebot.utils.window_kill import (
     popup_windows,
     terminate_process,
 )
+from bartlebot.gui.game_embed import win32_window
 
 GAME_CLASS = "Wizard Graphical Client"
 

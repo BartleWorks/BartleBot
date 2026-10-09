@@ -20,7 +20,7 @@ A client loads only the players in its own zone, realm and instance, and only ne
   client is Unknown even when seen, since a leaver stays in the others' lists for about a second
   into its loading screen.
 
-A check costs ~5 ms a client. `bartlebot/sightings.py` holds the rules, pure;
+A check costs ~5 ms a client. `bartlebot/clients/sightings.py` holds the rules, pure;
 `node_helpers.read_sightings(clients, machine)` takes the readings and never raises.
 
 Sharing a zone, realm and instance is transitive, so a check yields **groups**: if A sees B and B

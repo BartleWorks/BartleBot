@@ -191,7 +191,7 @@ def default_user32():
     process-wide and would share these prototypes with wizwalker and pymem. Declaring
     argtypes on a shared function object breaks any other caller that passes a
     differently-typed argument — see the EnumWindows failure documented in
-    ``bartlebot/utils/window_kill.py``. Nothing here has collided yet; this keeps it
+    ``bartlebot/clients/window_kill.py``. Nothing here has collided yet; this keeps it
     that way.
     """
     global _user32_cache

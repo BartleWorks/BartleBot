@@ -10,7 +10,7 @@ A declaration of ``None`` means *the author has no opinion*, which is what makes
 the middle two levels both reachable.  Without it whichever sits second is dead
 weight, because a declaration is written for every required option.
 
-Pure policy, like :mod:`bartlebot.relog` and ``client_refresh_interval()`` --
+Pure policy, like :mod:`bartlebot.clients.relog` and ``client_refresh_interval()`` --
 no Qt, no ``SettingsManager``, no client.  The caller gathers the four inputs and
 this decides between them, so precedence is testable without a settings file.
 

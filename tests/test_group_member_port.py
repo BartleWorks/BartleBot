@@ -1,6 +1,6 @@
 """Tests for porting to a group member through the Group tab (group_manager.teleport_to_group_member).
 
-The group route to a player, used by bartlebot.port_map for two of our clients who are grouped
+The group route to a player, used by bartlebot.clients.port_map for two of our clients who are grouped
 but not friends. Runs against the group manager tests' FakeUI, which models the social window.
 """
 
@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import bartlebot.group_manager as gm
+import bartlebot.clients.group_manager as gm
 import bartlebot.nodes.node_helpers as nh
 from bartlebot.nodes.paths import FRIENDLY_PLAYER_GO_TO_BUTTON_PATH, FRIENDLY_PLAYER_MENU_PATH, group_member_name_path
 from tests.test_group_manager import FakeUI

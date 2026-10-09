@@ -69,6 +69,6 @@ What must not be broken:
   through recovery like a crash. The node runs where its author put it and advances
   normally; that caveat belongs in its help text, not in engine machinery.
 
-Policy lives in `bartlebot/relog.py` (`relog_due`, `gdi_relog_due`) as pure functions, so
+Policy lives in `bartlebot/clients/relog.py` (`relog_due`, `gdi_relog_due`) as pure functions, so
 it is testable without a clock, a client, or Qt -- `client_refresh_interval()` is the
 precedent.

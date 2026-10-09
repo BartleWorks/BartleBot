@@ -21,9 +21,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot import account_identity
 from bartlebot import settings_manager as sm_mod
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients import account_identity
+from bartlebot.clients.client_manager import ClientManager
 from bartlebot.settings_manager import SettingsManager
 
 KEY = b"\x03" * 32
@@ -63,7 +63,7 @@ def _client(hwnd: int, user_id: int):
 
 
 async def _identify(harness, settings, clients) -> None:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = settings
         await ClientManager._refresh_account_identity(harness, clients)
 

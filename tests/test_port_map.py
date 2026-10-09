@@ -1,14 +1,14 @@
-"""Tests for bartlebot.port_map: who can port to whom, and porting clients to each other in waves."""
+"""Tests for bartlebot.clients.port_map: who can port to whom, and porting clients to each other in waves."""
 
 from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot import group_manager, port_map
+from bartlebot.clients import group_manager, port_map
+from bartlebot.clients.group_manager import GroupState
+from bartlebot.clients.port_map import PortMap
 from bartlebot.game import wizard_names
-from bartlebot.group_manager import GroupState
 from bartlebot.nodes import node_helpers
-from bartlebot.port_map import PortMap
 from tests.conftest import FakeClient, FakeMachine, see_each_other
 
 # Synthetic names from tools/name_key_samples.json -- never a real player's.

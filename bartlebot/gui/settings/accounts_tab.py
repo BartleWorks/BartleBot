@@ -50,8 +50,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import character_roster
-from bartlebot.credentials import CredentialStore
+from bartlebot.clients import character_roster
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_accent, account_color_keys, pinned_color_key
 from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,

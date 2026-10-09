@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients.client_manager import ClientManager
 
 
 async def _until(predicate, timeout: float = 2.0) -> None:
@@ -88,7 +88,7 @@ def harness() -> RelogHarness:
 
 def _closes_cleanly():
     """Patch force_close_client to succeed, recording what it was asked to close."""
-    return patch("bartlebot.client_manager.force_close_client", AsyncMock(return_value=True))
+    return patch("bartlebot.clients.client_manager.force_close_client", AsyncMock(return_value=True))
 
 
 class TestRefusals:
@@ -177,7 +177,7 @@ class TestTheCycle:
             in_flight -= 1
             return True
 
-        with patch("bartlebot.client_manager.force_close_client", _close):
+        with patch("bartlebot.clients.client_manager.force_close_client", _close):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is True
         assert peak == 2
 
@@ -194,7 +194,7 @@ class TestTheCycle:
             seen.append(set(harness._relogging_hwnds))
             return True
 
-        with patch("bartlebot.client_manager.force_close_client", _close):
+        with patch("bartlebot.clients.client_manager.force_close_client", _close):
             await harness.relog_clients(harness._clients, reason="scheduled")
         # Both hwnds are marked before the first close, because a window can be reaped by
         # _client_loop the moment it dies.
@@ -207,7 +207,7 @@ class TestTheCycle:
             closed.append(hwnd)
             return hwnd == 101  # the second one survives everything
 
-        with patch("bartlebot.client_manager.force_close_client", _close), caplog.at_level(logging.ERROR):
+        with patch("bartlebot.clients.client_manager.force_close_client", _close), caplog.at_level(logging.ERROR):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is False
         assert "would not close" in caplog.text
         # The healthy client is still closed: recovery brings back whatever died, and the
@@ -218,7 +218,7 @@ class TestTheCycle:
         """One client that cannot be closed must not take the other close with it, nor the
         relog watch loop that called this."""
         with (
-            patch("bartlebot.client_manager.force_close_client", AsyncMock(side_effect=OSError("boom"))),
+            patch("bartlebot.clients.client_manager.force_close_client", AsyncMock(side_effect=OSError("boom"))),
             caplog.at_level(logging.ERROR),
         ):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is False
@@ -234,7 +234,7 @@ class TestTheCycle:
             await release.wait()
             return True
 
-        with patch("bartlebot.client_manager.force_close_client", _slow_close):
+        with patch("bartlebot.clients.client_manager.force_close_client", _slow_close):
             first = asyncio.create_task(harness.relog_clients(harness._clients, reason="scheduled"))
             await started.wait()
             assert await harness.relog_clients(harness._clients, reason="GDI quota") is False
@@ -275,19 +275,19 @@ class TestRemovalIsLoggedAsARelog:
 
 class TestGdiSampling:
     def test_a_healthy_fleet_needs_no_relog(self, harness):
-        with patch("bartlebot.client_manager.gdi_object_count", return_value=3_200):
+        with patch("bartlebot.clients.client_manager.gdi_object_count", return_value=3_200):
             assert harness._clients_near_gdi_quota() == []
 
     def test_only_the_starved_client_is_returned(self, harness, caplog):
         counts = {1001: 3_200, 1002: 9_400}
-        with patch("bartlebot.client_manager.gdi_object_count", side_effect=lambda pid: counts[pid]):
+        with patch("bartlebot.clients.client_manager.gdi_object_count", side_effect=lambda pid: counts[pid]):
             with caplog.at_level(logging.WARNING):
                 starved = harness._clients_near_gdi_quota()
         assert [c.window_handle for c in starved] == [102]
         assert "9400 GDI objects" in caplog.text.replace(",", "")
 
     def test_a_failed_read_is_not_a_trigger(self, harness):
-        with patch("bartlebot.client_manager.gdi_object_count", return_value=0):
+        with patch("bartlebot.clients.client_manager.gdi_object_count", return_value=0):
             assert harness._clients_near_gdi_quota() == []
 
 
@@ -300,18 +300,21 @@ class TestWatchLoop:
         harness._stop_relog_watch = ClientManager._stop_relog_watch.__get__(harness)
         harness._relog_watch_loop = ClientManager._relog_watch_loop.__get__(harness)
         harness._relog_watch_task = None
-        monkeypatch.setattr("bartlebot.client_manager.RELOG_WATCH_INTERVAL", 0.01)
+        monkeypatch.setattr("bartlebot.clients.client_manager.RELOG_WATCH_INTERVAL", 0.01)
         return harness
 
     def _settings(self, hours: float):
         settings = MagicMock()
         settings.relog_interval_hours = hours
-        return patch("bartlebot.client_manager.SettingsManager.instance", return_value=settings)
+        return patch("bartlebot.clients.client_manager.SettingsManager.instance", return_value=settings)
 
     async def test_relogs_once_the_interval_has_elapsed(self, watching):
         watching.relog_clients = AsyncMock(return_value=True)
         # 0.01 hours is 36 s of wall clock, so the clock is what has to move, not the test.
-        with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", return_value=3_200) as gdi:
+        with (
+            self._settings(hours=0.0),
+            patch("bartlebot.clients.client_manager.gdi_object_count", return_value=3_200) as gdi,
+        ):
             watching._start_relog_watch()
             # Waiting on the ticks themselves: "not relogged" only means something
             # once the loop has run and declined to.
@@ -322,7 +325,7 @@ class TestWatchLoop:
 
     async def test_a_tiny_interval_fires_and_names_the_reason(self, watching):
         watching.relog_clients = AsyncMock(return_value=True)
-        with self._settings(hours=1e-9), patch("bartlebot.client_manager.gdi_object_count", return_value=3_200):
+        with self._settings(hours=1e-9), patch("bartlebot.clients.client_manager.gdi_object_count", return_value=3_200):
             watching._start_relog_watch()
             await _until(lambda: watching.relog_clients.await_args is not None)
             watching._stop_relog_watch()
@@ -330,7 +333,7 @@ class TestWatchLoop:
 
     async def test_a_starved_client_is_relogged_without_the_timer(self, watching):
         watching.relog_clients = AsyncMock(return_value=True)
-        with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", return_value=9_999):
+        with self._settings(hours=0.0), patch("bartlebot.clients.client_manager.gdi_object_count", return_value=9_999):
             watching._start_relog_watch()
             await _until(lambda: watching.relog_clients.await_args is not None)
             watching._stop_relog_watch()
@@ -343,7 +346,7 @@ class TestWatchLoop:
             calls.append(1)
             raise OSError("no such process")
 
-        with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", _explode):
+        with self._settings(hours=0.0), patch("bartlebot.clients.client_manager.gdi_object_count", _explode):
             with caplog.at_level(logging.ERROR):
                 watching._start_relog_watch()
                 await _until(lambda: len(calls) > 1)
@@ -352,7 +355,7 @@ class TestWatchLoop:
         assert "Relog watch loop error" in caplog.text
 
     async def test_stopping_the_watch_cancels_the_task(self, watching):
-        with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", return_value=3_200):
+        with self._settings(hours=0.0), patch("bartlebot.clients.client_manager.gdi_object_count", return_value=3_200):
             watching._start_relog_watch()
             task = watching._relog_watch_task
             watching._stop_relog_watch()

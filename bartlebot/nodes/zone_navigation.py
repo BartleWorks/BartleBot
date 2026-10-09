@@ -40,7 +40,8 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from bartlebot import player_realms, port_map, sightings
+from bartlebot import player_realms
+from bartlebot.clients import port_map, sightings
 from bartlebot.game import worlds, zone_lists, zone_nav
 from bartlebot.game.restricted_zones import check_zone
 from bartlebot.nodes import node_helpers, wizard_city

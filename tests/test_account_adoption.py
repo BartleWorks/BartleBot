@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot import account_identity
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients import account_identity
+from bartlebot.clients.client_manager import ClientManager
 
 KEY = b"\x01" * 32
 UID_ONE = 196751008724043973
@@ -62,7 +62,7 @@ async def _run(harness: IdentityHarness, clients: list) -> None:
     and opening a second loop inside a sync test leaves a closed loop behind that breaks
     unrelated tests later in the session.
     """
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = harness.settings
         await ClientManager._refresh_account_identity(harness, clients)
 
@@ -107,7 +107,7 @@ async def test_will_not_adopt_an_account_a_live_client_already_answers_for(caplo
     harness = IdentityHarness(_accounts(("user1", UID_ONE)))
     harness._hwnd_account_map = {100: "user1"}
 
-    with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+    with caplog.at_level("WARNING", logger="bartlebot.clients.client_manager"):
         await _run(harness, [_client(100, UID_ONE), _client(200, UID_ONE)])
 
     assert 200 not in harness._hwnd_account_map

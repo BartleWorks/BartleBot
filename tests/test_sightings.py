@@ -1,6 +1,6 @@
 """Tests for telling whether clients share a zone, realm and instance (#130).
 
-The rules are pure (bartlebot.sightings), read_sightings takes the readings from FakeClients,
+The rules are pure (bartlebot.clients.sightings), read_sightings takes the readings from FakeClients,
 BotMachine owns the record, and ClientHealthMonitor's loading watcher is what clears it.
 """
 
@@ -12,8 +12,8 @@ from wizwalker import XYZ
 import bartlebot.bot.client_health_monitor as health_module
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.machine import BotMachine
+from bartlebot.clients.sightings import SIGHT_RANGE, Reading, Sight, Sightings, TogetherRecord, classify
 from bartlebot.nodes import node_helpers
-from bartlebot.sightings import SIGHT_RANGE, Reading, Sight, Sightings, TogetherRecord, classify
 from tests.conftest import FakeClient, FakeMachine, see_each_other
 
 HERE = XYZ(0.0, 0.0, 0.0)

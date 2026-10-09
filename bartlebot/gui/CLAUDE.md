@@ -617,7 +617,7 @@ undo by accident:
 
 A tile's position and a tile's caption come from **two different numbers**, and conflating
 them is the bug class this split exists to prevent. The full reasoning is in
-`bartlebot/tile_slots.py`; the short form:
+`bartlebot/clients/tile_slots.py`; the short form:
 
 | | is a position in | pinned by | decides |
 |---|---|---|---|

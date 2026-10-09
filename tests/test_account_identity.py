@@ -9,8 +9,8 @@ import base64
 
 import pytest
 
-from bartlebot import account_identity
-from bartlebot.account_identity import (
+from bartlebot.clients import account_identity
+from bartlebot.clients.account_identity import (
     SCHEME,
     fingerprint,
     mask,

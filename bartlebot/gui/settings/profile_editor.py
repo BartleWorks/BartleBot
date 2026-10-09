@@ -78,8 +78,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import character_roster
-from bartlebot.credentials import CredentialStore
+from bartlebot.clients import character_roster
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui import screen_fit
 from bartlebot.gui.account_accent import account_accent, account_color_keys
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order

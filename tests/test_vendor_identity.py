@@ -17,7 +17,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from bartlebot import account_identity, character_roster, credentials
+from bartlebot.clients import account_identity, character_roster, credentials
 from bartlebot.paths import project_root
 from bartlebot.shared.vendor import PRODUCT, VENDOR, keyring_service, product_dir, vendor_dir
 

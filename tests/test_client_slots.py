@@ -1,7 +1,7 @@
 """Tests for ClientManager slot bookkeeping and game-view tile reconciliation.
 
 Slots and player indices are different numbers, and most of this file is about keeping
-them apart -- see ``bartlebot.tile_slots`` for why they had to be separated at all. A slot
+them apart -- see ``bartlebot.clients.tile_slots`` for why they had to be separated at all. A slot
 is a position in ``_client_order``, pinned before the windows exist and held for as long as
 the account is running; a player index is a position in the live client list, which is
 compacted and therefore moves as clients hook, crash and recover.
@@ -26,7 +26,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bartlebot.tile_slots import TileSlot, plan_tile_changes
+from bartlebot.clients.tile_slots import TileSlot, plan_tile_changes
 from tests.test_recovery import RecoveryHarness, _make_machine, _mock_create_task
 
 # ---------------------------------------------------------------------------
@@ -119,13 +119,13 @@ def _hook(harness: RecoveryHarness, *hwnds: int) -> None:
 
 
 def _tiles(harness: RecoveryHarness, accounts: list[dict] | None = None) -> list[TileSlot]:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=accounts or [])
         return harness.tile_slots()
 
 
 def _sync(harness: RecoveryHarness) -> None:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=[])
         harness._sync_tiles()
 
