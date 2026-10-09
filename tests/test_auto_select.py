@@ -15,8 +15,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
-from bartlebot.launch_tracker import LaunchStage
+from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.launch_tracker import LaunchStage
 from bartlebot.launcher import auto_select
 from bartlebot.launcher.auto_select import (
     _VK_RETURN,
@@ -436,7 +436,7 @@ async def test_setting_off_drives_only_as_far_as_character_select(keys, fast):
     """
     driver = AsyncMock(return_value=True)
     with (
-        patch("bartlebot.client_manager.SettingsManager") as sm,
+        patch("bartlebot.clients.client_manager.SettingsManager") as sm,
         patch.object(auto_select, "drive_to_character_select", driver),
         patch.object(auto_select, "drive_client_in", AsyncMock(return_value=True)) as full,
     ):
@@ -450,7 +450,7 @@ async def test_setting_off_drives_only_as_far_as_character_select(keys, fast):
 async def test_setting_on_runs_the_drive(keys, fast):
     driver = AsyncMock(return_value=True)
     with (
-        patch("bartlebot.client_manager.SettingsManager") as sm,
+        patch("bartlebot.clients.client_manager.SettingsManager") as sm,
         patch.object(auto_select, "drive_client_in", driver),
     ):
         sm.instance.return_value = MagicMock(auto_select_character=True)
@@ -468,7 +468,7 @@ async def test_driver_borrows_the_pending_client(keys, fast, monkeypatch):
     pending = FakeGameClient()
     gate = _Gate()
     gate._handler = MagicMock(clients=[pending])
-    monkeypatch.setattr("bartlebot.client_manager.get_window_title", lambda _h: TITLE)
+    monkeypatch.setattr("bartlebot.clients.client_manager.get_window_title", lambda _h: TITLE)
 
     assert gate.pending_client_titled(TITLE) is pending
     assert gate.client_titled(TITLE) is None  # not published yet

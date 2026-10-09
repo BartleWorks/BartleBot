@@ -8,7 +8,7 @@ either would leave a row naming a variable the bot does not declare.
 
 from __future__ import annotations
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     BotConfig,
@@ -19,7 +19,7 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
-from bartlebot.template_diff import Release, SlotValue, Status, TemplateUpdate, apply, diff
+from bartlebot.content.templates.template_diff import Release, SlotValue, Status, TemplateUpdate, apply, diff
 
 TEMPLATE_ID = "tpl-assign"
 SWORDS = VariableModel(name="swords", type="int")

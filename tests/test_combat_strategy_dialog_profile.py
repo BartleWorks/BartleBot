@@ -12,7 +12,6 @@ from unittest.mock import patch
 import pytest
 from PyQt6.QtWidgets import QInputDialog, QMessageBox, QSplitter
 
-from bartlebot import store_roots
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
     StrategyKind,
@@ -25,6 +24,7 @@ from bartlebot.combat.strategy_store import (
 )
 from bartlebot.combat.strategy_tags import PROFILE_SOURCE
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.assignment_card import strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     CREATE_PROFILE_TEXT,

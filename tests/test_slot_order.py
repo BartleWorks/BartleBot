@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients.client_manager import ClientManager
 from bartlebot.launcher.launch_profile import launch_profile
 
 

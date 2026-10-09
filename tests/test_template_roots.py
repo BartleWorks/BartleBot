@@ -12,11 +12,11 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot import setup_steps, template_diff
 from bartlebot.bot.schema import BotConfig, SetupStep, SetupTarget, StateModel, TemplateMeta
-from bartlebot.new_bot import BotDetails, create_bot, starting_points
-from bartlebot.store_roots import Origin
-from bartlebot.template_store import (
+from bartlebot.content.new_bot import BotDetails, create_bot, starting_points
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.templates import setup_steps, template_diff
+from bartlebot.content.templates.template_store import (
     ReleaseRefused,
     find_template,
     list_templates,
@@ -83,7 +83,7 @@ def test_a_user_template_declaring_an_official_id_is_ignored_with_a_warning(root
     _released(shipped, "t-same", name="Official")
     _released(user, "t-same", name="Hand copy")
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.template_store"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.content.templates.template_store"):
         found = list_templates(shipped, user)
 
     assert [(t.name, t.origin) for t in found] == [("Official", Origin.SHIPPED)]

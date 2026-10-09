@@ -246,11 +246,11 @@ def block_separate_if_merging(widget: QWidget, config) -> None:
     """Gray out a Player Realms control's Separate choice when *config* cannot be Separate.
 
     A no-op for any other control, so both surfaces can call it on every row. See
-    :mod:`bartlebot.player_realms` for the rule; this is the first of its three enforcers.
+    :mod:`bartlebot.options.player_realms` for the rule; this is the first of its three enforcers.
     """
     if config is None or not hasattr(widget, "block_separate"):
         return
-    from bartlebot import player_realms  # noqa: PLC0415
+    from bartlebot.options import player_realms  # noqa: PLC0415
 
     blockers = player_realms.separate_blocked_by(config)
     widget.block_separate(player_realms.blocked_reason(blockers) if blockers else "")

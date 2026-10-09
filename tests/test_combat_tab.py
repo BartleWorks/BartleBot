@@ -20,11 +20,11 @@ from unittest.mock import patch
 import pytest
 from PyQt6.QtWidgets import QInputDialog, QScrollArea
 
-from bartlebot import store_roots
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store as store_mod
 from bartlebot.combat.combat_warnings import exposed_combat_states
 from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.sidebar.combat_tab import (
     _APPLY_DECK,

@@ -13,7 +13,7 @@ import json
 import pytest
 from PIL import Image, ImageDraw
 
-from bartlebot.bot_tags import BOT_TAGS
+from bartlebot.content.bot_tags import BOT_TAGS
 from bartlebot.game import card_art
 from bartlebot.game.card_art import tag_icon_name
 from tools.extract_card_art import (

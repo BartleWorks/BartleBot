@@ -76,7 +76,7 @@ SPIRAL_DOOR_WORLDS: tuple[str, ...] = (
 """Worlds the World Tree spiral door offers, in progression order.
 
 This is story order, which is what the door lists. The folders under ``bots/`` follow
-the badge page instead (see ``bartlebot/bot_folders.py``), which puts Wysteria after
+the badge page instead (see ``bartlebot/content/bot_folders.py``), which puts Wysteria after
 Khrysalis and Arcanum after Empyrea, so the two orders are not interchangeable.
 
 Deliberately excluded, and why -- these all have WorldNames entries, and several have

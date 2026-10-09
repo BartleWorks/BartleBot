@@ -4,8 +4,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
-from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
-from bartlebot.option_groups import GROUP_GENERAL
+from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
+from bartlebot.options.option_groups import GROUP_GENERAL
 
 
 @dataclass
@@ -61,7 +61,7 @@ class BotOptionSpec:
                      param counts as off, so a file written before the param existed keeps
                      the option it still needs.
         group:       Which card the option is drawn in on Option Values and Options -- one of the
-                     ``GROUP_*`` names in ``bartlebot.option_groups``. Every node-declared
+                     ``GROUP_*`` names in ``bartlebot.options.option_groups``. Every node-declared
                      option names one; ``test_every_node_option_declares_a_group`` keeps it
                      so. An option no node declares belongs to *This dungeon*.
         heads_group: Draw this option as its card's header switch rather than as a row,
@@ -115,7 +115,7 @@ class ParamField:
                       There is deliberately no param type for a value the *user* owns. "tri_bool" and
                       "app_setting_str" were two such, invented before there was anywhere else for a
                       user's value to live; both are gone. A value the user owns is a **bot option**
-                      with a null declaration — see bartlebot/bot_options.py — which reaches every node
+                      with a null declaration — see bartlebot/options/bot_options.py — which reaches every node
                       in the bot at once instead of once per node that thought to offer it.
                       "wiki_page" records the Wizard101 Central Wiki page a node's data came from. Editor-only —
                       no node reads it at run time. Stored as a bare page title, never a URL; resolve it
@@ -233,7 +233,7 @@ class NodeSpec:
     safety_warning: str | None = None
     """Warning message shown in the safety dialog before a bot run. None = no warning."""
     implies_tags: list[str] = field(default_factory=list)
-    """Bot tags this node's presence suggests. See :func:`bartlebot.bot_tags.suggested_tags`."""
+    """Bot tags this node's presence suggests. See :func:`bartlebot.content.bot_tags.suggested_tags`."""
     implies_tags_when: dict[str, str] = field(default_factory=dict)
     """Tag -> key of a bool param on this node; the tag is suggested only while that param is on.
 
@@ -244,7 +244,7 @@ class NodeSpec:
     """Whether this node puts every player on one realm by its nature -- a port onto one player.
 
     A bot holding such a node cannot be ``Player Realms: Separate``. See
-    :mod:`bartlebot.player_realms` for the three places that is enforced.
+    :mod:`bartlebot.options.player_realms` for the three places that is enforced.
     """
 
 

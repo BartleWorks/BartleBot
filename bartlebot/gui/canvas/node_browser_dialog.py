@@ -36,8 +36,17 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_roots
 from bartlebot.bot.schema import PORT_NODE_TYPES, SubgraphDefinition
+from bartlebot.content import bot_roots
+from bartlebot.content.store_roots import SOURCE_LABELS, Origin
+from bartlebot.content.subgraphs.subgraph_store import (
+    SUBGRAPH_KEY_PREFIX,
+    SubgraphLibrary,
+    count_subgraph_uses,
+    source_label,
+)
+from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SOURCE, SUBGRAPH_CATEGORIES, subgraph_matches
+from bartlebot.content.subgraphs.subgraphs import entry_nodes, exit_nodes, port_name
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
@@ -51,10 +60,6 @@ from bartlebot.gui.widgets.tag_pill import TagPill
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import SOURCE_LABELS, Origin
-from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses, source_label
-from bartlebot.subgraph_tags import CATEGORY, SOURCE, SUBGRAPH_CATEGORIES, subgraph_matches
-from bartlebot.subgraphs import entry_nodes, exit_nodes, port_name
 
 
 def subgraph_key(subgraph_id: str) -> str:

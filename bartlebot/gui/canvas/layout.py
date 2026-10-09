@@ -43,7 +43,7 @@ def auto_layout(config: BotConfig) -> None:
     if not config.states:
         return
 
-    from bartlebot.subgraphs import folded_regions, nested_regions, region_anchor  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import folded_regions, nested_regions, region_anchor  # noqa: PLC0415
 
     folded = folded_regions(config)
     call_of = {m: r.id for r in folded for m in r.members}

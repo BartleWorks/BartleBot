@@ -4,7 +4,7 @@ A user exports the thing they mean -- a bot, a Bot Combat Strategy, a subgraph, 
 strategy, a player strategy or a deck -- and the export follows its links. Every format
 here is the vendor's, not one product's: BartleBuddy reads and writes the three kinds
 this module owns (duel strategies, player strategies and decks), and BartleBot adds its
-own kinds on top (:mod:`bartlebot.share_export`). ``docs/SHARING.md`` is the reader's
+own kinds on top (:mod:`bartlebot.content.share_export`). ``docs/SHARING.md`` is the reader's
 version of this docstring.
 
 THE FORMAT

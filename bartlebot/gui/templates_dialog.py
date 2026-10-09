@@ -9,7 +9,7 @@ user's own templates beside the Official ones (New Bot has pills only).
 The verbs are a footer row, as the strategy dialog's are, and a card's right-click menu
 offers the same ones: **New** (a blank template), **Duplicate** (a fork), **Rename**,
 **Delete**, and the commit, **Edit**, which opens the selected template's draft. A
-double-click is Edit. Which verbs a card allows is :mod:`bartlebot.template_gallery`'s
+double-click is Edit. Which verbs a card allows is :mod:`bartlebot.content.templates.template_gallery`'s
 to say; a verb a card does not allow is disabled with the reason as its tooltip.
 
 The dialog decides nothing and writes nothing. Edit, New and Duplicate end it with a
@@ -37,6 +37,8 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.combat.strategy_tags import SOURCE
+from bartlebot.content.store_roots import SOURCE_LABELS
+from bartlebot.content.templates.template_gallery import GalleryEntry
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.new_bot_dialog import StartCard
 from bartlebot.gui.theme import THEME
@@ -45,8 +47,6 @@ from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.tag_picker import TagPickerButton, source_vocabulary, tag_icon
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.store_roots import SOURCE_LABELS
-from bartlebot.template_gallery import GalleryEntry
 
 #: Two columns, as New Bot's gallery has.
 _GALLERY_COLUMNS = 2

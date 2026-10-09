@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from bartlebot import character_roster
+from bartlebot.clients import character_roster
 
 LUKE = {"gid": 1001, "name": "Luke SkullHunter"}
 MISHA = {"gid": 1002, "name": "Misha SkullSeer"}

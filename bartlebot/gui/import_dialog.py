@@ -9,7 +9,7 @@ through the ``build`` callable, since a copy rewrites the links of everything af
 
 Nothing here asks for an id, or for any text at all: every choice is a pick from a list.
 
-Matching and writing are :mod:`bartlebot.share_import`; this module only shows a plan.
+Matching and writing are :mod:`bartlebot.content.share_import`; this module only shows a plan.
 """
 
 from __future__ import annotations
@@ -31,11 +31,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.share_export import EXTENSIONS, FILE_TYPES, NOUNS
-from bartlebot.share_import import (
+from bartlebot.content.share_export import EXTENSIONS, FILE_TYPES, NOUNS
+from bartlebot.content.share_import import (
     ACTION_TEXT,
     OUTCOME_TEXT,
     Action,
@@ -45,6 +42,9 @@ from bartlebot.share_import import (
     affected_text,
     headline,
 )
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 logger = logging.getLogger(__name__)
 

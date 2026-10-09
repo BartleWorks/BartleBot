@@ -1,6 +1,6 @@
 """The combat-strategy tag vocabulary, and the one rule for filtering the library by it (#125).
 
-Shaped like :mod:`bartlebot.bot_tags`: ordered groups, a fixed vocabulary, and a
+Shaped like :mod:`bartlebot.content.bot_tags`: ordered groups, a fixed vocabulary, and a
 selection that ORs within a group and ANDs across groups, as in ``filter_bot_metas``.
 Adding a tag is a code change, for the same reason it is there.
 
@@ -9,7 +9,7 @@ Two kinds of group, and the difference is where the value comes from:
 - **Source** (Official / Official (modified) / Custom) is *derived* from the working
   set's :meth:`~bartlebot.combat.strategy_workset.StrategyWorkingSet.status` and never
   stored. Stored, it would go stale on the first edit of an Official one, and a user copy
-  would claim to be one. Its words are :data:`bartlebot.store_roots.SOURCE_LABELS`, so
+  would claim to be one. Its words are :data:`bartlebot.content.store_roots.SOURCE_LABELS`, so
   a filter chip always says what the pill on the card it matches says. The one
   exception is :data:`PROFILE_SOURCE`, for an entry that belongs to the active combat
   profile (#118): its pill carries the profile's own name, which a fixed vocabulary
@@ -39,8 +39,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from bartlebot.combat.strategy_store import StrategyKind
+from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.shared.strategy_models import ROLE_TAGS, normalize_role_tags
-from bartlebot.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 
 logger = logging.getLogger(__name__)
 

@@ -42,7 +42,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_roots, bot_summary, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -54,11 +53,29 @@ from bartlebot.bot.schema import (
     SubgraphInputBinding,
     SubgraphPanel,
 )
-from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
-from bartlebot.bot_options import compose_options, orphaned_flag_options
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.combat.strategy_store import list_bot_strategies, rekey_bot_strategy_states
 from bartlebot.combat.strategy_tags import SOURCE
+from bartlebot.content import bot_roots, bot_summary
+from bartlebot.content.bot_folders import ALL_BADGE, folder_badge, folder_caption
+from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
+from bartlebot.content.store_roots import SOURCE_LABELS, Origin, dev_mode
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES, subgraph_tag_group
+from bartlebot.content.subgraphs.subgraphs import (
+    ComposeReport,
+    compose_bot,
+    convert_region_to_instance,
+    definition_problems,
+    extract_definition,
+    node_panels,
+    normalize_input_types,
+    promoted_param_type,
+    reresolve_linked_instances,
+    reresolve_member_params,
+    resolve_instance_key,
+    sync_linked_values,
+)
+from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game import card_art, scales
 from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
@@ -107,24 +124,8 @@ from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
+from bartlebot.options.bot_options import compose_options, orphaned_flag_options
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import SOURCE_LABELS, Origin, dev_mode
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES, subgraph_tag_group
-from bartlebot.subgraphs import (
-    ComposeReport,
-    compose_bot,
-    convert_region_to_instance,
-    definition_problems,
-    extract_definition,
-    node_panels,
-    normalize_input_types,
-    promoted_param_type,
-    reresolve_linked_instances,
-    reresolve_member_params,
-    resolve_instance_key,
-    sync_linked_values,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -268,7 +269,7 @@ class _BotMeta:
     #: Set on a card for a subgraph definition, which opens as a document rather than a file.
     subgraph_id: str | None = None
     #: The sentence the graph implies, for a bot with no description; "" when it has one,
-    #: or the graph implies nothing. See bartlebot/bot_summary.py.
+    #: or the graph implies nothing. See bartlebot/content/bot_summary.py.
     generated: str = ""
     #: Setup steps of the bot's template still to do; 0 for a bot made from none.
     setup_left: int = 0
@@ -445,7 +446,7 @@ def filter_bot_metas(
     of them, or when none is selected. Source is one more group, so it ANDs with the tags.
 
     *group_of* says which group a tag is in: the bot tags' by default, and for the
-    Subgraphs folder :func:`~bartlebot.subgraph_tags.subgraph_tag_group`, whose one
+    Subgraphs folder :func:`~bartlebot.content.subgraphs.subgraph_tags.subgraph_tag_group`, whose one
     stored group is Category (#172). A subgraph's ``tags`` are its categories.
 
     Returns the surviving metas and, for each one the text matched by drop name, the
@@ -454,7 +455,7 @@ def filter_bot_metas(
 
     Tags **OR within a group and AND across groups**: "Gear or Jewels, *and* Dungeon".
     That is the faceted model two labeled buttons imply, and it is the only one that
-    stays useful — the groups answer different questions (:mod:`bartlebot.bot_tags`:
+    stays useful — the groups answer different questions (:mod:`bartlebot.content.bot_tags`:
     Rewards is what a run yields, Activities is what it does), so ANDing across them
     narrows, while ANDing *within* one asks for a bot that drops both Gear and Jewels
     and usually returns nothing. Cross-group pairs like "Dungeon + Spellements" behave
@@ -464,7 +465,7 @@ def filter_bot_metas(
     intersects whatever the tags left.
 
     Pure, and at module level, so the filtering can be tested without a QApplication
-    — same reasoning as :mod:`bartlebot.bot_roots`.
+    — same reasoning as :mod:`bartlebot.content.bot_roots`.
     """
     q = query.strip().casefold()
     wanted: dict[str, set[str]] = {}
@@ -1348,7 +1349,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         """The menu a Subgraphs card shows on a right-click. Public so a test can read it.
 
         Delete removes the user's file, so what it says depends on where the definition
-        is (:class:`~bartlebot.store_roots.Origin`): a custom one is deleted, a modified
+        is (:class:`~bartlebot.content.store_roots.Origin`): a custom one is deleted, a modified
         Official one is reverted, and an unedited Official one has nothing to remove. Rename is
         offered on the user's own definitions only, never on an Official one, modified or not.
         """

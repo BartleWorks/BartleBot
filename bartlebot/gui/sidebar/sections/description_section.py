@@ -23,7 +23,7 @@ Two things fall out of that:
   split as ever — the wrapping label above Option Values is where a long block is *read*.
 
 **An empty description stands in for itself with the one the graph implies**
-(``bartlebot/bot_summary.py``).  Above Option Values it is shown in italics, so it never reads
+(``bartlebot/content/bot_summary.py``).  Above Option Values it is shown in italics, so it never reads
 as something the author wrote.  Above Options it sits under the empty editor with a
 *Use this* link rather than in the placeholder, which Qt draws as one unwrapped line and
 clips — and the generated sentence is usually longer than the prompt.  It is never
@@ -43,7 +43,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from bartlebot import bot_summary
+from bartlebot.content import bot_summary
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin

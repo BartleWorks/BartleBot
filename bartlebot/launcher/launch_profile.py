@@ -21,9 +21,9 @@ from wizwalker.utils import (
     start_instance,
 )
 
-from bartlebot.credentials import CredentialStore
+from bartlebot.clients.credentials import CredentialStore
+from bartlebot.clients.launch_tracker import LaunchStage
 from bartlebot.game.game_sizing import ui_size_for
-from bartlebot.launch_tracker import LaunchStage
 from bartlebot.nodes.timing import (
     LAUNCH_LOGIN_SCREEN_TIMEOUT,
     LAUNCH_SPAWN_TIMEOUT,

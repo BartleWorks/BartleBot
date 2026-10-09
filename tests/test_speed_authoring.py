@@ -15,8 +15,8 @@ import pytest
 
 from bartlebot import app_controller
 from bartlebot.app_controller import AppController
-from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
+from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed
 from bartlebot.game.game_keybindings import GameBinding
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.edit_scene import authoring_anchor

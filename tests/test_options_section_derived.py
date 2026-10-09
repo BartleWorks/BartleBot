@@ -185,7 +185,7 @@ def test_a_specs_bounds_reach_the_composed_option_and_never_the_file(qapp):
     """Derived, exactly like ``type`` and ``description``: the spin box has to know
     the range, and a bot file has no business carrying it."""
     from bartlebot.bot.schema import BotOptionModel
-    from bartlebot.bot_options import compose_options, storable_options
+    from bartlebot.options.bot_options import compose_options, storable_options
 
     # An author who pinned their own default is the case where a declaration *is*
     # written -- so it is the case that proves the bounds are not.
@@ -203,8 +203,8 @@ def test_a_specs_bounds_reach_the_composed_option_and_never_the_file(qapp):
 def test_a_specs_minimum_reaches_the_spin_box(qapp):
     """One option-type -> widget mapping, so both surfaces and the Add/Edit dialog
     pick the range up for free."""
-    from bartlebot.bot_options import compose_options
     from bartlebot.gui.widgets.option_widgets import make_option_widget
+    from bartlebot.options.bot_options import compose_options
 
     opt = next(o for o in compose_options(_config()) if o.name == "Safety Delay")
     widget = make_option_widget(opt.type, opt.default, minimum=opt.minimum, maximum=opt.maximum, suffix=opt.suffix)

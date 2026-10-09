@@ -47,7 +47,7 @@ def test_streamer_mode_drops_the_name_and_keeps_the_label():
 # the names arrived gets one, which is exactly what went wrong the first time.
 #
 # Names arrive keyed by **player** index and tiles are keyed by **slot**, which are only
-# the same number while every account is in game (see bartlebot.tile_slots). _tile_players
+# the same number while every account is in game (see bartlebot.clients.tile_slots). _tile_players
 # is the join between them, so every stub here has to state it.
 # ---------------------------------------------------------------------------
 

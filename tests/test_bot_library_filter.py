@@ -340,7 +340,7 @@ def _write_bot(folder: Path, name: str) -> None:
 
 @pytest.fixture
 def library(tmp_path, monkeypatch):
-    from bartlebot import bot_roots  # noqa: PLC0415
+    from bartlebot.content import bot_roots  # noqa: PLC0415
     from bartlebot.game import card_art  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 

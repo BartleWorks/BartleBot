@@ -11,10 +11,10 @@ from PyQt6.QtWidgets import QInputDialog, QMessageBox
 
 from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta, TransitionModel
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.templates.template_store import find_template, load_version, release, save_draft
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.canvas.subgraph_widgets import CrumbMode
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.template_store import find_template, load_version, release, save_draft
 from tests.test_subgraph_integration import ControllerHarness
 
 TEMPLATE_ID = "tpl-boss"

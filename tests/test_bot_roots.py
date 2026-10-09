@@ -6,10 +6,10 @@ import json
 import logging
 from pathlib import Path
 
-from bartlebot import bot_roots
+from bartlebot.content import bot_roots
+from bartlebot.content.store_roots import DEV_ENV_VAR
 from bartlebot.paths import project_root
 from bartlebot.shared.vendor import product_dir
-from bartlebot.store_roots import DEV_ENV_VAR
 
 
 def _bot(path: Path, bot_id: str, name: str = "Bot") -> Path:
@@ -108,7 +108,7 @@ def test_a_user_bot_declaring_an_official_id_is_left_out_with_a_warning(tmp_path
     official = _bot(shipped / "01_wizard_city" / "official.json", "same-id", "Official")
     _bot(user / "01_wizard_city" / "hand-copy.json", "same-id", "Hand copy")
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.bot_roots"):
+    with caplog.at_level(logging.WARNING, logger="bartlebot.content.bot_roots"):
         files = bot_roots.library_files(shipped, user)
 
     assert [f.path for f in files] == [official]

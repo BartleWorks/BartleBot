@@ -22,6 +22,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from bartlebot.clients.window_kill import terminate_process
 from bartlebot.game import dialog_captions, restricted_zones
 from bartlebot.nodes.paths import (
     MESSAGE_BOX_CAPTION_PATH,
@@ -36,7 +37,6 @@ from bartlebot.nodes.timing import (
     NETWORK_LINK_POLL_INTERVAL,
     POLL_INTERVAL,
 )
-from bartlebot.utils.window_kill import terminate_process
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +277,7 @@ class ClientHealthMonitor:
 
         Ahead of the flagged check on purpose: a relog flags its clients, and a relog is
         exactly when a realm can change. The machine's record of who shares a realm only
-        stays true while nobody it names loads (``bartlebot.sightings.TogetherRecord``).
+        stays true while nobody it names loads (``bartlebot.clients.sightings.TogetherRecord``).
         """
         if self._on_loading:
             try:

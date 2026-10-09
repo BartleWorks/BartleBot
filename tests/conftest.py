@@ -12,7 +12,7 @@ import pytest
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
 
-from bartlebot import sightings
+from bartlebot.clients import sightings
 from bartlebot.paths import project_root
 
 # ---------------------------------------------------------------------------

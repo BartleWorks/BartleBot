@@ -39,10 +39,10 @@ from pathlib import Path
 from typing import Any
 
 from bartlebot.bot.schema import BotConfig, RegionModel, SetupStep, SetupTarget, StateModel
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import input_targets, member_id
 from bartlebot.game import scales, zone_nav
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import input_targets, member_id
 
 logger = logging.getLogger(__name__)
 
@@ -224,7 +224,7 @@ def describe_target(config: BotConfig, target: SetupTarget) -> str:
 def _released_steps(shipped_dir: str, user_dir: str, template_id: str, version: int) -> tuple[SetupStep, ...]:
     # Cached for good: a released version never changes. Keyed on the folders so a
     # test's store on a tmp_path never answers for the shipped one.
-    from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
+    from bartlebot.content.templates import template_store  # noqa: PLC0415 - template_store imports this module
 
     template = template_store.find_template(template_id, Path(shipped_dir).parent, Path(user_dir).parent)
     if template is None:
@@ -252,7 +252,7 @@ def steps_for(
         return list(config.template_meta.setup)
     if config.template is None:
         return []
-    from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
+    from bartlebot.content.templates import template_store  # noqa: PLC0415 - template_store imports this module
 
     folders = tuple(str(d) for d in template_store.templates_dirs(root, user_root))
     try:
@@ -341,7 +341,7 @@ def file_reads_library(
     ref = data.get("template")
     if not isinstance(ref, dict) or not isinstance(ref.get("id"), str) or not isinstance(ref.get("version"), int):
         return False
-    from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
+    from bartlebot.content.templates import template_store  # noqa: PLC0415 - template_store imports this module
 
     try:
         folders = tuple(str(d) for d in template_store.templates_dirs(root, user_root))

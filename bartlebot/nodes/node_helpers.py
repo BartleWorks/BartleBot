@@ -16,7 +16,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import player_realms, sightings
+from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
@@ -48,6 +48,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     ZONE_CHANGE_TIMEOUT,
     ZONE_SETTLE_GRACE,
 )
+from bartlebot.options import player_realms
 
 
 async def all_in_npc_range(clients: list) -> bool:
@@ -1591,7 +1592,7 @@ async def _reading(client) -> sightings.Reading:
 
 
 async def read_sightings(clients: list, machine=None) -> sightings.Sightings:
-    """Check which of *clients* share a zone, realm and instance. See :mod:`bartlebot.sightings`.
+    """Check which of *clients* share a zone, realm and instance. See :mod:`bartlebot.clients.sightings`.
 
     One id read, one entity-list read and one set intersection per client, about 5 ms each.
     Nothing here raises: a read that fails makes its pairs Unknown.

@@ -24,7 +24,7 @@ from bartlebot import settings_manager as sm_mod
 from bartlebot.app_controller import AppController
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel
-from bartlebot.bot_options import (
+from bartlebot.options.bot_options import (
     SOURCE_APP_SETTING,
     SOURCE_BOT_FILE,
     SOURCE_NODE_DEFAULT,

@@ -30,7 +30,7 @@ from uuid import uuid4
 from bartlebot.bot.schema import BotConfig, ForkedFrom
 from bartlebot.combat.combat_profile import duplicate_profile
 from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
-from bartlebot.new_bot import file_stem, unique_file_name
+from bartlebot.content.new_bot import file_stem, unique_file_name
 from bartlebot.shared.content_hash import content_sha256
 
 logger = logging.getLogger(__name__)

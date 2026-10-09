@@ -24,7 +24,7 @@ from bartlebot.nodes.paths import (
     quicksell_item_checkbox_path,
     quicksell_item_title_path,
 )
-from bartlebot.option_groups import GROUP_QUICKSELL
+from bartlebot.options.option_groups import GROUP_QUICKSELL
 
 logger = logging.getLogger(__name__)
 
@@ -351,7 +351,7 @@ def resolve_options_for(config, settings=None) -> dict:
     the picker, the safety dialog and the run cannot drift apart about what this
     bot will sell.
     """
-    from bartlebot import option_values  # noqa: PLC0415 - avoids a settings import at node load
+    from bartlebot.options import option_values  # noqa: PLC0415 - avoids a settings import at node load
 
     return resolve_options(
         lambda name, default=None: option_values.option_value(config, name, default, settings=settings),
@@ -372,7 +372,7 @@ def declared_sales(config, settings=None) -> list[str]:
     Returns option names in ``SELL_FLAG_OPTIONS`` order; empty when nothing is
     declared, or when the declaration agrees with the user or is safer.
     """
-    from bartlebot import bot_options, option_values  # noqa: PLC0415 - avoids a settings import at node load
+    from bartlebot.options import bot_options, option_values  # noqa: PLC0415 - avoids a settings import at node load
 
     sales = []
     for key, name in SELL_FLAG_OPTIONS.items():

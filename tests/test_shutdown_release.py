@@ -13,7 +13,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 from bartlebot.app_controller import AppController
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients.client_manager import ClientManager
 
 
 def _client(hwnd: int, pid: int, log: list) -> MagicMock:
@@ -43,7 +43,7 @@ async def test_leaving_the_windows_open_unhooks_and_vacates_every_tile(monkeypat
     log: list = []
     closed: list = []
     monkeypatch.setattr(
-        "bartlebot.client_manager.force_close_client",
+        "bartlebot.clients.client_manager.force_close_client",
         AsyncMock(side_effect=lambda hwnd, pid=None: closed.append(hwnd) or True),
     )
     game_view = MagicMock()
@@ -63,7 +63,7 @@ async def test_leaving_the_windows_open_unhooks_and_vacates_every_tile(monkeypat
 async def test_closing_the_windows_unhooks_first_and_takes_the_unhooked_ones_too(monkeypatch):
     log: list = []
     monkeypatch.setattr(
-        "bartlebot.client_manager.force_close_client",
+        "bartlebot.clients.client_manager.force_close_client",
         AsyncMock(side_effect=lambda hwnd, pid=None: log.append(("close", hwnd, pid)) or True),
     )
     manager = _manager([_client(1, 11, log)], [_client(3, 33, log)])
@@ -79,7 +79,7 @@ async def test_closing_the_windows_unhooks_first_and_takes_the_unhooked_ones_too
 
 async def test_a_window_that_will_not_close_is_reported_rather_than_waited_on(monkeypatch):
     monkeypatch.setattr(
-        "bartlebot.client_manager.force_close_client",
+        "bartlebot.clients.client_manager.force_close_client",
         AsyncMock(side_effect=lambda hwnd, pid=None: hwnd != 2),
     )
     manager = _manager([_client(1, 11, []), _client(2, 22, [])], [])
@@ -91,7 +91,7 @@ async def test_the_detection_loop_is_stopped_before_anything_is_released(monkeyp
     """A tick landing mid-shutdown would re-hook and re-embed what was just let go."""
     order: list = []
     manager = _manager([_client(1, 11, order)], [])
-    monkeypatch.setattr("bartlebot.client_manager.force_close_client", AsyncMock(return_value=True))
+    monkeypatch.setattr("bartlebot.clients.client_manager.force_close_client", AsyncMock(return_value=True))
 
     async def _loop():
         await asyncio.Event().wait()

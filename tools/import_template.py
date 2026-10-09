@@ -1,6 +1,6 @@
 """Turn an old ``bots/templates/<name>_template.json`` into a draft in the template store.
 
-A one-off for Stage 10.1 (see ``bartlebot/template_store.py``). Before it, a template
+A one-off for Stage 10.1 (see ``bartlebot/content/templates/template_store.py``). Before it, a template
 was an ordinary bot file that users opened and saved under a new name. After it, each
 is a folder under ``templates/`` holding ``draft.json`` and an index, and nothing is
 released until the maintainer releases it.
@@ -32,7 +32,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from bartlebot.bot.schema import BotConfig, TemplateMeta  # noqa: E402
-from bartlebot.template_store import TEMPLATE_ID_PREFIX, find_template, save_draft  # noqa: E402
+from bartlebot.content.templates.template_store import TEMPLATE_ID_PREFIX, find_template, save_draft  # noqa: E402
 from tools.renumber_states import renumber  # noqa: E402
 
 _SUFFIX = " Template"

@@ -5,7 +5,7 @@ copy: option values and combat setup live in settings, which the user changes in
 mode as for any bot. Changing the graph does, and this asks for it, with the copy's
 name prefilled from the Official bot's and editable.
 
-The copy itself is :mod:`bartlebot.bot_fork`; the controller makes it and opens it.
+The copy itself is :mod:`bartlebot.content.bot_fork`; the controller makes it and opens it.
 """
 
 from __future__ import annotations

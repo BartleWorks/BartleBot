@@ -2,7 +2,7 @@
 
 Its own tab, not a Canvas section: the utilities drive the clients rather than the graph,
 and not a Game tab row either, because nothing here happens to a client as it launches.
-See ``bartlebot.authoring_tools`` for what the utilities do and
+See ``bartlebot.clients.authoring_tools`` for what the utilities do and
 ``bartlebot.gui.global_hotkeys`` for why the keys only work inside a game window.
 """
 
@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QDoubleSpinBox, QKeySequenceEdit
 
-from bartlebot.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
+from bartlebot.clients.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
 from bartlebot.game.game_keybindings import GameBinding, read_game_keybindings
 from bartlebot.gui.global_hotkeys import parse_binding
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm

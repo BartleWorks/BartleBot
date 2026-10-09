@@ -4,7 +4,7 @@ Two answers, both always visible, because neither is the absence of the other: S
 not "Together, unticked". Speaks the get/set/changed protocol every node-only option control
 shares, so ``option_widgets`` dispatches to it without naming the class.
 
-A bot holding a node that merges players cannot be Separate (:mod:`bartlebot.player_realms`),
+A bot holding a node that merges players cannot be Separate (:mod:`bartlebot.options.player_realms`),
 and :meth:`PlayerRealmsChoice.block_separate` is how a row says so: the Separate radio grays
 out and its tooltip names the nodes responsible. A value that already says Separate -- an
 override from before the node was added -- stays shown rather than being rewritten behind
@@ -16,7 +16,7 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QRadioButton, QWidget
 
-from bartlebot import player_realms
+from bartlebot.options import player_realms
 
 
 class PlayerRealmsChoice(QWidget):

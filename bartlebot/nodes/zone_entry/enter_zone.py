@@ -3,10 +3,10 @@ import logging
 
 from wizwalker import XYZ
 
-from bartlebot import player_realms
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
+from bartlebot.options import player_realms
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

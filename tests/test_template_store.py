@@ -9,8 +9,7 @@ from datetime import date
 import pytest
 
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource, TemplateMeta, TemplateRef
-from bartlebot.paths import project_root
-from bartlebot.template_store import (
+from bartlebot.content.templates.template_store import (
     DRAFT_FILE,
     INDEX_FILE,
     TEMPLATE_ID_PREFIX,
@@ -27,6 +26,7 @@ from bartlebot.template_store import (
     save_draft,
     used_ids,
 )
+from bartlebot.paths import project_root
 
 
 def _draft(template_id: str = "tpl-boss", name: str = "Boss Farmer", *state_ids: str) -> BotConfig:

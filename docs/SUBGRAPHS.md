@@ -247,7 +247,7 @@ component's internals.
 Definitions live under `subgraphs/` in the same ordered pair of roots as combat
 strategies (`docs/COMBAT_CONFIG.md`): the project root ships them and is never written;
 the product directory under `%APPDATA%/Bartleby/BartleBot` takes every app-initiated
-write and shadows a shipped file of the same id. `bartlebot/subgraph_store.py` mirrors
+write and shadows a shipped file of the same id. `bartlebot/content/subgraphs/subgraph_store.py` mirrors
 `strategy_store.py` function for function, and the `Origin` enum (`SHIPPED`,
 `SHIPPED_OVERRIDE`, `USER`, `MISSING`) is the one from the strategy store, not a copy,
 so the region page can say honestly whether removing a definition deletes or reverts it.
@@ -317,7 +317,7 @@ Once users make and share subgraphs, a flat list stops working, so a definition 
 it does with a **category** (#172), and every list of subgraphs filters by it. It has the
 shape `bartlebot/combat/strategy_tags.py` gave combat strategies: a stored group with a fixed
 vocabulary, normalized on load, beside a **Source** group (Official, Official (modified),
-Custom) worked out from where the file is and never stored. `bartlebot/subgraph_tags.py`
+Custom) worked out from where the file is and never stored. `bartlebot/content/subgraphs/subgraph_tags.py`
 holds the vocabulary and the rule.
 
 | category | for a subgraph that |
@@ -369,7 +369,7 @@ chips and pills.
 **Adding a category** is a code change, for the reason it is for bot tags: a library shared
 between users that drifts between spellings cannot be filtered.
 
-1. Add the word to `SUBGRAPH_CATEGORIES` in `bartlebot/subgraph_tags.py`, where its place
+1. Add the word to `SUBGRAPH_CATEGORIES` in `bartlebot/content/subgraphs/subgraph_tags.py`, where its place
    in the tuple is its place in every picker and in every file. Give it a one-line comment
    saying what belongs in it.
 2. Keep it apart from the bot tags and the Source words:
@@ -395,7 +395,7 @@ links it, when the save:
 | removes an Entry or Exit | the bot's edges to it have nowhere to go |
 | renames an Entry or Exit: its label | an edge drawn to "Done" now leaves "Failed" |
 
-`bartlebot/subgraph_signature.py` finds them. A rename is told from a removal by an added
+`bartlebot/content/subgraphs/subgraph_signature.py` finds them. A rename is told from a removal by an added
 input driving the same params. Nothing else warns: a new label on an input, a moved node,
 a member's param, a new input with a default, a new port, a name or description. Save is
 the default, and Cancel writes nothing. It is a warning, not a refusal, the rule Home

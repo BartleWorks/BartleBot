@@ -10,10 +10,12 @@ from typing import TYPE_CHECKING, Any
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import bot_options, option_values, sightings, variables
+from bartlebot.bot import variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
+from bartlebot.clients import sightings
 from bartlebot.game import restricted_zones
+from bartlebot.options import bot_options, option_values
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ def _format_duration(seconds: float) -> str:
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
-    from bartlebot.port_map import PortMap
+    from bartlebot.clients.port_map import PortMap
 
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 
@@ -304,7 +306,7 @@ class BotMachine:
         runs once per client in parallel, so either writing would let two of them change one
         value -- a write from any other task raises :class:`VariableWriteRefused`. A name
         the bot does not declare, or a value its type cannot hold, raises
-        :class:`bartlebot.variables.VariableError`.
+        :class:`bartlebot.bot.variables.VariableError`.
 
         Contains no ``await``, so a cancel can never land halfway through a write.
         """
@@ -381,7 +383,7 @@ class BotMachine:
 
         Four levels, most local first -- the user's own value, the author's
         declaration, the app setting, then the node's default. The policy is in
-        :mod:`bartlebot.bot_options`; this only gathers the inputs, so the
+        :mod:`bartlebot.options.bot_options`; this only gathers the inputs, so the
         precedence rules stay testable without a settings file or a bot.
 
         *default* is the caller's floor, used when nothing else has an answer --

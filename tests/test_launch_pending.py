@@ -20,10 +20,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
+from bartlebot.clients.tile_slots import TileSlot, build_tile_slots, plan_tile_changes
 from bartlebot.gui.game_embed.client_tile import launch_status_text
-from bartlebot.launch_tracker import LaunchStage, LaunchTracker
 from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
-from bartlebot.tile_slots import TileSlot, build_tile_slots, plan_tile_changes
 from tests.test_client_slots import FakeClient, FakeGameView
 from tests.test_recovery import RecoveryHarness
 
@@ -36,19 +36,19 @@ def harness() -> RecoveryHarness:
 
 
 def _sync(harness: RecoveryHarness) -> None:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=[])
         harness._sync_tiles()
 
 
 def _begin(harness: RecoveryHarness, usernames: list[str]) -> list[str]:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=[])
         return harness.begin_launch(usernames)
 
 
 def _end(harness: RecoveryHarness, usernames: list[str]) -> None:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=[])
         harness.end_launch(usernames)
 
@@ -434,7 +434,7 @@ class TestGameViewPendingTiles:
 
 
 def _tiles_now(harness) -> list[TileSlot]:
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=[])
         return harness.tile_slots()
 

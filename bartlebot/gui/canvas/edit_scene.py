@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import player_realms, setup_steps, variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -44,6 +44,30 @@ from bartlebot.bot.schema import (
     TransitionModel,
     uses_variables,
 )
+from bartlebot.content.subgraphs.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
+from bartlebot.content.subgraphs.subgraphs import (
+    ComposeReport,
+    SubgraphCycleError,
+    boundary_ports,
+    collapse_blocker,
+    folded_regions,
+    input_targets,
+    is_collapsed,
+    is_nested_in,
+    linked_region_of,
+    linked_regions,
+    local_id,
+    materialize_region,
+    member_id,
+    mint_instance_id,
+    nested_regions,
+    port_name,
+    region_anchor,
+    taken_ids,
+)
+from bartlebot.content.subgraphs.subgraphs import detach as detach_subgraph
+from bartlebot.content.templates import setup_steps
+from bartlebot.content.templates.template_store import own_id_prefix
 from bartlebot.game import scales
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, CollapsedRegionItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import (
@@ -70,29 +94,7 @@ from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS, node_display_name
-from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
-from bartlebot.subgraphs import (
-    ComposeReport,
-    SubgraphCycleError,
-    boundary_ports,
-    collapse_blocker,
-    folded_regions,
-    input_targets,
-    is_collapsed,
-    is_nested_in,
-    linked_region_of,
-    linked_regions,
-    local_id,
-    materialize_region,
-    member_id,
-    mint_instance_id,
-    nested_regions,
-    port_name,
-    region_anchor,
-    taken_ids,
-)
-from bartlebot.subgraphs import detach as detach_subgraph
-from bartlebot.template_store import own_id_prefix
+from bartlebot.options import player_realms
 
 logger = logging.getLogger(__name__)
 
@@ -581,7 +583,7 @@ class FoldPorts:
     One shape for both kinds of folded node. An instance's comes from its snapshot's
     port map through the derived member ids, named by its definition; a collapsed
     plain region's is inferred from the edges crossing its boundary
-    (:func:`~bartlebot.subgraphs.boundary_ports`). Nothing that reads one needs to
+    (:func:`~bartlebot.content.subgraphs.subgraphs.boundary_ports`). Nothing that reads one needs to
     know which it has.
     """
 

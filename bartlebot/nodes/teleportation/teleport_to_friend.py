@@ -8,7 +8,7 @@ from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
-from bartlebot.option_groups import GROUP_TEAM
+from bartlebot.options.option_groups import GROUP_TEAM
 
 logger = logging.getLogger(__name__)
 

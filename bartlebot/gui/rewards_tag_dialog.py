@@ -19,7 +19,7 @@ import enum
 
 from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout
 
-from bartlebot.bot_tags import REWARDS, TAG_GROUPS
+from bartlebot.content.bot_tags import REWARDS, TAG_GROUPS
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.flow_layout import flow_container

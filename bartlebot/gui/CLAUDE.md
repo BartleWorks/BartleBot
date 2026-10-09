@@ -441,7 +441,7 @@ rules it is easy to lose:
   `deck.archmastery_school` alone.
 
 The bot library's category list uses these too, under the same rule: each folder under
-`bots/` is a game badge category (`bartlebot/bot_folders.py`), the row wears that
+`bots/` is a game badge category (`bartlebot/content/bot_folders.py`), the row wears that
 category's badge when one was extracted, and a row with none is its caption alone — at
 the compact height, since only a row with an icon reserves room for one. Rows are looked
 up by the folder name stored in `Qt.UserRole`, never by the caption, which comes from the
@@ -617,7 +617,7 @@ undo by accident:
 
 A tile's position and a tile's caption come from **two different numbers**, and conflating
 them is the bug class this split exists to prevent. The full reasoning is in
-`bartlebot/tile_slots.py`; the short form:
+`bartlebot/clients/tile_slots.py`; the short form:
 
 | | is a position in | pinned by | decides |
 |---|---|---|---|
@@ -769,7 +769,7 @@ Hide descriptions and Collapse all / Expand all (`PageFoldBar`); then #138's
 `OptionCard`s. The node page's are Parameters, Connections, Notes and Role, and the
 whole page scrolls as one -- before, only the params scrolled and the other three sat
 pinned under them. The subgraph node page's are the ungrouped inputs, one per input
-group, and Role. What a card *says* is `bartlebot/param_cards.py`, which needs no Qt.
+group, and Role. What a card *says* is `bartlebot/options/param_cards.py`, which needs no Qt.
 
 - **One row builder, `_DynamicParamForm`, draws both pages' rows**, behind the option
   surfaces' `[bar][reset][?]` gutter. A row is a head line and a control. Actions on a
@@ -813,7 +813,7 @@ A definition's page with nothing selected (`canvas/signature_page.py`) is #142's
 Description, Ports, Inputs, one fold surface for every definition -- and the Inputs card is
 one tree: the ungrouped inputs, each input group with its members indented, and each
 promoted node as its heading alone. Selecting a line opens its editor in place under it,
-one at a time. `bartlebot/signature_tree.py` is the half that needs no Qt.
+one at a time. `bartlebot/content/subgraphs/signature_tree.py` is the half that needs no Qt.
 
 - **Membership lives in one place, the tree.** An input belongs to the nearest group
   heading above it, so a drag (or Alt+Up/Down) is the only thing that moves an input into
@@ -1234,7 +1234,7 @@ settings UI against `package.json`), and edit mode is the context this app
 already has.
 
 - **Both surfaces draw their rows in folding cards** (#138): *This dungeon*, *Team*,
-  *Quicksell*, *General*, in that order in every bot. `bartlebot/option_groups.py`
+  *Quicksell*, *General*, in that order in every bot. `bartlebot/options/option_groups.py`
   decides which option goes where (`BotOptionSpec.group`), `sidebar/option_card.py` draws
   a card, and `CardFolds` there owns the folding for a surface. The rules a later change
   is most likely to break:

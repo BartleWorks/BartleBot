@@ -1,6 +1,6 @@
 """Setup steps (10.4): fill-ins, what "done" means, the error a blank one raises, and what Release refuses.
 
-The rules are Qt-free (``bartlebot/setup_steps.py``), so most of this needs no
+The rules are Qt-free (``bartlebot/content/templates/setup_steps.py``), so most of this needs no
 ``QApplication``. The scene's half is checked through ``_validate_node``, the function
 both the node badges and the Run button's error count are built on.
 """
@@ -11,7 +11,6 @@ from datetime import date
 
 import pytest
 
-from bartlebot import setup_steps
 from bartlebot.bot.schema import (
     BotConfig,
     RegionModel,
@@ -22,9 +21,10 @@ from bartlebot.bot.schema import (
     TemplateMeta,
     TemplateRef,
 )
+from bartlebot.content.new_bot import BotDetails, create_bot, starting_points
+from bartlebot.content.templates import setup_steps
+from bartlebot.content.templates.template_store import ReleaseRefused, release, release_problems, save_draft
 from bartlebot.gui.canvas.edit_scene import _validate_node
-from bartlebot.new_bot import BotDetails, create_bot, starting_points
-from bartlebot.template_store import ReleaseRefused, release, release_problems, save_draft
 
 TEMPLATE_ID = "tpl-boss"
 #: A destination on the shipped zone map, and a path that is on no map.
@@ -386,7 +386,7 @@ def test_the_store_lists_step_problems_with_its_own(tmp_path):
     draft = _draft()
     _state(draft, "t_4").params["enemy"] = "Lamia"
     save_draft(draft, tmp_path)
-    from bartlebot.template_store import find_template  # noqa: PLC0415
+    from bartlebot.content.templates.template_store import find_template  # noqa: PLC0415
 
     problems = release_problems(draft, find_template(TEMPLATE_ID, tmp_path))
 

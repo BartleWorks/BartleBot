@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot import share_export
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, SubgraphSource, TemplateRef
 from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
@@ -21,8 +20,8 @@ from bartlebot.combat.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.settings_manager import SettingsManager
-from bartlebot.share_export import (
+from bartlebot.content import share_export
+from bartlebot.content.share_export import (
     BOT,
     BOT_COMBAT_STRATEGY,
     DECK,
@@ -33,6 +32,8 @@ from bartlebot.share_export import (
     Disposition,
     Sources,
 )
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, save_subgraph
+from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import share_file
 from bartlebot.shared.content_hash import content_sha256
 from bartlebot.shared.strategy_models import (
@@ -42,7 +43,6 @@ from bartlebot.shared.strategy_models import (
     PlayerAssignment,
     PlayerCombatStrategy,
 )
-from bartlebot.subgraph_store import SubgraphLibrary, save_subgraph
 from tests.test_subgraph_store import _defn
 
 # ---------------------------------------------------------------------------
@@ -488,7 +488,7 @@ def test_no_settings_value_can_reach_a_share_file(roots, tmp_path):
     assert not any(_SENTINEL in text for text in after)
 
 
-@pytest.mark.parametrize("module", ["bartlebot/share_export.py", "bartlebot/shared/share_file.py"])
+@pytest.mark.parametrize("module", ["bartlebot/content/share_export.py", "bartlebot/shared/share_file.py"])
 def test_nothing_that_writes_a_share_file_imports_settings(module):
     from bartlebot.paths import project_root
 
@@ -499,4 +499,4 @@ def test_nothing_that_writes_a_share_file_imports_settings(module):
             imported.add(node.module)
         elif isinstance(node, ast.Import):
             imported.update(alias.name for alias in node.names)
-    assert not imported & {"bartlebot.settings_manager", "bartlebot.option_values"}
+    assert not imported & {"bartlebot.settings_manager", "bartlebot.options.option_values"}

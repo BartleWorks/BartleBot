@@ -1,6 +1,6 @@
 """Node: write the bot's variables, in order, and return SUCCESS."""
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [

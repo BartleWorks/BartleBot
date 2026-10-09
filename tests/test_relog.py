@@ -1,11 +1,11 @@
-"""Unit tests for the relog policy in bartlebot/relog.py.
+"""Unit tests for the relog policy in bartlebot/clients/relog.py.
 
 The policy is pure on purpose: these run with no clock, no client, and no settings.
 """
 
 import pytest
 
-from bartlebot.relog import GDI_QUOTA, GDI_RELOG_THRESHOLD, gdi_relog_due, relog_due
+from bartlebot.clients.relog import GDI_QUOTA, GDI_RELOG_THRESHOLD, gdi_relog_due, relog_due
 
 HOUR = 3600.0
 

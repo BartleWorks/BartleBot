@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
-from bartlebot.launch_tracker import LaunchTracker
+from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.launch_tracker import LaunchTracker
 from tests.test_client_slots import FakeGameView
 
 # ---------------------------------------------------------------------------

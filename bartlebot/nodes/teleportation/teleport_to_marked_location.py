@@ -5,7 +5,6 @@ import logging
 
 from wizwalker import XYZ
 
-from bartlebot import player_realms
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.node_helpers import POSITION_MARGIN, TRIGGER_MARGIN
@@ -13,6 +12,7 @@ from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH
 from bartlebot.nodes.teleportation import mark_location
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT
+from bartlebot.options import player_realms
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients.client_manager import ClientManager
 
 
 class FakeClient:

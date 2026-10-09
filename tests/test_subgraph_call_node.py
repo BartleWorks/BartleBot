@@ -11,9 +11,9 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtCore import QPointF
 
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import compose_bot
 from bartlebot.gui.canvas.call_node_item import CallNodeItem
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import compose_bot
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
 
 

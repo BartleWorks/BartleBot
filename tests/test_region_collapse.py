@@ -20,14 +20,14 @@ from bartlebot.bot.schema import (
     SubgraphSource,
     TransitionModel,
 )
-from bartlebot.gui.canvas.call_node_item import CollapsedRegionItem
-from bartlebot.subgraphs import (
+from bartlebot.content.subgraphs.subgraphs import (
     boundary_ports,
     collapse_blocker,
     definition_ports,
     extract_definition,
     folded_regions,
 )
+from bartlebot.gui.canvas.call_node_item import CollapsedRegionItem
 
 
 def _t(src: str, dst: str, when: str | None = "SUCCESS") -> TransitionModel:

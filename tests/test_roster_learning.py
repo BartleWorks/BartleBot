@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bartlebot import character_roster
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients import character_roster
+from bartlebot.clients.client_manager import ClientManager
 from bartlebot.game import wizard_names
 
 

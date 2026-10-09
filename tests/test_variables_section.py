@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QDialog, QMessageBox, QSpinBox
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     BotConfig,
     BotOptionModel,

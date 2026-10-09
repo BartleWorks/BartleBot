@@ -8,7 +8,7 @@ whole point of the split: a shared bot stays byte-identical no matter how many
 people tune it.
 
 The rows sit in **folding cards** (#138): *This dungeon*, *Team*, *Quicksell* and
-*General*, in that order in every bot (``bartlebot.option_groups`` says which option
+*General*, in that order in every bot (``bartlebot.options.option_groups`` says which option
 goes where, and ``option_card`` draws one).  A flat list of thirteen options ran 859px
 tall against a 404px sidebar at 1080p; folding the groups nobody is working in is
 what gets the rest on screen.  Which cards are folded is the reader's, remembered in
@@ -65,8 +65,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_options, option_groups
-from bartlebot.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.sidebar.option_gutter import (
     DescriptionSwitches,
@@ -88,6 +86,8 @@ from bartlebot.gui.widgets.option_widgets import (
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.toggle_switch import ToggleSwitch
+from bartlebot.options import bot_options, option_groups
+from bartlebot.options.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:

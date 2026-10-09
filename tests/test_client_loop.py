@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
+from bartlebot.clients.client_manager import ClientManager
 
 # ---------------------------------------------------------------------------
 # Test harness
@@ -125,7 +125,7 @@ def _fast_loop(monkeypatch):
         "CLIENT_DETECT_INTERVAL_IDLE",
         "CLIENT_DETECT_ERROR_BACKOFF",
     ):
-        monkeypatch.setattr(f"bartlebot.client_manager.{name}", _TEST_INTERVAL)
+        monkeypatch.setattr(f"bartlebot.clients.client_manager.{name}", _TEST_INTERVAL)
 
 
 @pytest.fixture
@@ -283,7 +283,7 @@ async def test_stop_cancels_in_flight_activation(harness):
 async def test_has_client_titled(harness, monkeypatch):
     """The completion predicate auto-select and recovery both wait on."""
     monkeypatch.setattr(
-        "bartlebot.client_manager.get_window_title",
+        "bartlebot.clients.client_manager.get_window_title",
         lambda hwnd: {100: "[Alpha] Wizard101"}.get(hwnd, ""),
     )
     harness._clients = [FakeHookClient(100)]

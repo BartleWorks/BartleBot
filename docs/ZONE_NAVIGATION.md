@@ -300,7 +300,7 @@ that was there, where porting to it is one loading screen for everyone. Nobody e
 cannot port to one another travel together instead, regrouping first if they are split: at the hub
 within one world, at home across worlds.
 
-**Who can port to whom** is `bartlebot/port_map.py`, surveyed in pre-run setup: every client's
+**Who can port to whom** is `bartlebot/clients/port_map.py`, surveyed in pre-run setup: every client's
 online friends list, then the Group tab if the friends lists leave a pair unconnected. A port goes
 through the friends list where there is one, else through the group (the member's roster line, then
 Go To Player). Ports run in waves, so a client with no route to the traveller still gets there

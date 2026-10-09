@@ -27,7 +27,6 @@ from PyQt6.QtWidgets import (
     QSpinBox,
 )
 
-from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import (
     BotConfig,
@@ -49,6 +48,7 @@ from bartlebot.gui.widgets.option_widgets import (
     widget_value,
 )
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
+from bartlebot.options import bot_options
 from bartlebot.settings_manager import SettingsManager
 
 

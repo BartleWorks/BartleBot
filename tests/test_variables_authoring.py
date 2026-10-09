@@ -1,4 +1,4 @@
-"""bartlebot.variables, the half the editors use (#187): what a row may offer, how an edge's
+"""bartlebot.bot.variables, the half the editors use (#187): what a row may offer, how an edge's
 condition reads on the canvas, and what a rename or a delete has to find.
 
 No Qt: the widgets that call these are tested in test_variables_section.py and
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     BotConfig,
     BotOptionModel,

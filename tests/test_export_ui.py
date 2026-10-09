@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 from PyQt6.QtWidgets import QDialog, QMessageBox
 
-from bartlebot import bot_roots, share_export, store_roots
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
@@ -22,6 +21,8 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.content import bot_roots, share_export, store_roots
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.gui import export_dialog
 from bartlebot.gui.canvas.bot_canvas import EXPORT_TEXT, _BotLibraryPanel
 from bartlebot.gui.combat_strategies.dialog import EXPORT_UNSAVED_TIP, CombatStrategyDialog
@@ -30,7 +31,6 @@ from bartlebot.gui.sidebar.combat_tab import _EXPORT_BCS
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import share_file
 from bartlebot.shared.strategy_models import DeckData, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_combat_tab import _config, _tab_for, store  # noqa: F401  (store is a fixture)
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraph_store import _defn

@@ -9,7 +9,7 @@ from bartlebot.paths import project_root
 sys.path.insert(0, str(project_root()))
 
 from bartlebot.bot.schema import BotConfig  # noqa: E402
-from bartlebot.template_store import find_template, load_draft  # noqa: E402
+from bartlebot.content.templates.template_store import find_template, load_draft  # noqa: E402
 from tools import import_template  # noqa: E402
 
 

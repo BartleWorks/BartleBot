@@ -9,9 +9,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bartlebot import recovery_readiness
-from bartlebot.client_manager import ClientManager
-from bartlebot.recovery_readiness import NO_ACCOUNT, client_label, warning_text
+from bartlebot.clients import recovery_readiness
+from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.recovery_readiness import NO_ACCOUNT, client_label, warning_text
 
 # ---------------------------------------------------------------------------
 # Wording
@@ -72,7 +72,7 @@ def _client(hwnd: int):
 @pytest.fixture
 def passwords():
     """Patch CredentialStore so no test touches Credential Manager."""
-    with patch("bartlebot.client_manager.CredentialStore") as store:
+    with patch("bartlebot.clients.client_manager.CredentialStore") as store:
         store.display_name.side_effect = lambda username, alias: alias or username
         store.retrieve.return_value = "hunter2"
         yield store
@@ -80,7 +80,7 @@ def passwords():
 
 @pytest.fixture(autouse=True)
 def _accounts():
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
         sm.instance.return_value = MagicMock(accounts=[{"username": "user1", "alias": "Jeff"}])
         yield
 

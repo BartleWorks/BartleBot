@@ -8,12 +8,12 @@ sight (#133), and the realm step Player Sync used to run separately is part of i
 
 import logging
 
-from bartlebot import player_realms
 from bartlebot.game import realms, zone_names
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
-from bartlebot.option_groups import GROUP_GENERAL
+from bartlebot.options import player_realms
+from bartlebot.options.option_groups import GROUP_GENERAL
 
 PARAM_KEEP_CURRENT_REALM = "keep_current_realm"
 

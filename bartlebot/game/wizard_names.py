@@ -15,7 +15,7 @@ that in as the primary route is still to come; today the two UI routes below do 
                          all — but only valid during a duel.
 
 Names are needed so one client can find another in its friends list; see
-bartlebot.group_manager. Callers use the cache here rather than calling detection on a hot
+bartlebot.clients.group_manager. Callers use the cache here rather than calling detection on a hot
 path.
 """
 
@@ -44,7 +44,7 @@ def strip_markup(raw: str | None) -> str:
 
     Public because every wizard name read out of the UI needs the same treatment wherever
     it comes from — the character page here, the combat nameplate below, and the group
-    roster in bartlebot.group_manager.
+    roster in bartlebot.clients.group_manager.
     """
     if not raw:
         return ""

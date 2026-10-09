@@ -7,8 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 
-from bartlebot.bot_tags import normalize_tags
-from bartlebot.subgraph_tags import normalize_subgraph_tags
+from bartlebot.content.bot_tags import normalize_tags
+from bartlebot.content.subgraphs.subgraph_tags import normalize_subgraph_tags
 
 #: Return values that fall through to the bot's recovery state when a node's port
 #: for them is left unrouted. Almost every failure in a graph ends up back at the
@@ -71,7 +71,7 @@ class VariableModel(BaseModel):
 
     Kept loose here, like a condition row's value: a declaration that breaks a rule
     (a duplicate name, an initial value of the wrong type) still loads, so the editor can
-    show it, and :mod:`bartlebot.variables` refuses the run instead.
+    show it, and :mod:`bartlebot.bot.variables` refuses the run instead.
     """
 
     name: str
@@ -110,7 +110,7 @@ class FlagCondition(BaseModel):
     ``negate`` inverts the truthiness check. A variable row is ``{variable, compare,
     value}``: ``variable`` names a :class:`VariableModel`, and the row is true when its
     current value ``compare``-s against ``value``. Only an int takes the four ordering
-    comparisons; ``bartlebot.variables`` refuses them on a bool or an enum. Exactly one of ``option`` and
+    comparisons; ``bartlebot.bot.variables`` refuses them on a bool or an enum. Exactly one of ``option`` and
     ``variable`` is set. Multiple FlagConditions are combined by their parent's ``op``
     field, so options and variables mix in one AND/OR expression.
 
@@ -242,7 +242,7 @@ class BotOptionModel(BaseModel):
         "player_realms",
     ]
     # The author's recommended value -- *not* the user's current one, which lives in
-    # settings.json (see bartlebot.bot_options). None means the author has no opinion,
+    # settings.json (see bartlebot.options.bot_options). None means the author has no opinion,
     # which is what lets the app setting below it be reachable at all.
     default: bool | int | float | str | list[int] | list[str] | None = None
     description: str | None = None
@@ -478,7 +478,7 @@ class SetupStep(BaseModel):
 
     Every target is a fill-in, and nothing else marks one. A step is done when all of
     its targets are filled and valid; that is worked out from the bot each time
-    (:mod:`bartlebot.setup_steps`) and never stored.
+    (:mod:`bartlebot.content.templates.setup_steps`) and never stored.
     """
 
     text: str
@@ -527,7 +527,7 @@ class BotConfig(BaseModel):
     # Pydantic ignores it in an older file, and ``save()`` drops it.
     drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
-    # What the bot is *for* — see bartlebot/bot_tags.py. Filters the library panel.
+    # What the bot is *for* — see bartlebot/content/bot_tags.py. Filters the library panel.
     tags: list[str] = Field(default_factory=list)
     options: list[BotOptionModel] = Field(default_factory=list)
     # What the bot learns as it runs and reads back on its edges (docs/VARIABLES.md).
@@ -582,7 +582,7 @@ class BotConfig(BaseModel):
     def normalize_tag_list(cls, value):
         """Drop unknown tags, de-duplicate, and order by the vocabulary.
 
-        Tolerant rather than strict — see :func:`bartlebot.bot_tags.normalize_tags`.
+        Tolerant rather than strict — see :func:`bartlebot.content.bot_tags.normalize_tags`.
         Runs on every load *and* on UndoManager's model_dump/model_validate round-trip,
         so the stored order stays stable no matter how the editor wrote it.
         """
@@ -637,7 +637,7 @@ class BotConfig(BaseModel):
         which the machine names in the log when that edge is the one taken, and one with
         assignments carries their rows under ``assign``, which the machine applies then.
         """
-        from bartlebot.variables import describe_guard  # noqa: PLC0415 - avoids an import cycle
+        from bartlebot.bot.variables import describe_guard  # noqa: PLC0415 - avoids an import cycle
 
         self.sort_transitions()
         conditions_registry: dict[str, dict] = {}
@@ -706,14 +706,14 @@ class BotConfig(BaseModel):
         An option a node requires is composed at load time from its NodeSpec, so
         writing it back would put 80 copies of one description in the library and
         let a value the user edited ride out to everyone who opens the bot. The
-        prune is in :mod:`bartlebot.bot_options`; it keeps only what is
+        prune is in :mod:`bartlebot.options.bot_options`; it keeps only what is
         authorial -- a hand-added option, or a required one whose default the
         author deliberately changed.
 
         Done at dump time rather than on ``self``: the in-memory config is what
         the editor is showing, and a save is not an edit.
         """
-        from bartlebot.bot_options import storable_options  # noqa: PLC0415 - avoids an import cycle
+        from bartlebot.options.bot_options import storable_options  # noqa: PLC0415 - avoids an import cycle
 
         data = self.model_dump(exclude_none=True)
         data["options"] = [o.model_dump(exclude_none=True) for o in storable_options(self)]
@@ -910,14 +910,14 @@ class SubgraphDefinition(BaseModel):
     is stored the way a bot stores one -- its members as a snapshot among ``states``,
     its region carrying ``source`` -- and a plain region is kept as layout. It has no
     ``initial`` or ``recovery_state``: roles are bot-owned. Composition into a bot is
-    :mod:`bartlebot.subgraphs`; storage is :mod:`bartlebot.subgraph_store`.
+    :mod:`bartlebot.content.subgraphs.subgraphs`; storage is :mod:`bartlebot.content.subgraphs.subgraph_store`.
     """
 
     id: str
     name: str
     description: str | None = None
     version: int = 1
-    # What the subgraph does, from the fixed vocabulary of bartlebot.subgraph_tags (#172).
+    # What the subgraph does, from the fixed vocabulary of bartlebot.content.subgraphs.subgraph_tags (#172).
     # Left out of the file while empty, so a definition never given one is written as before.
     tags: list[str] = Field(default_factory=list)
     inputs: list[SubgraphInput] = Field(default_factory=list)

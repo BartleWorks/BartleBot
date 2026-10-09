@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from wizwalker import XYZ
 
-from bartlebot import authoring_tools
-from bartlebot.authoring_tools import (
+from bartlebot.clients import authoring_tools
+from bartlebot.clients.authoring_tools import (
     AuthoringAction,
     AuthoringTools,
     boosted_speed_value,

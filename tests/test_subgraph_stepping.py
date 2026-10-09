@@ -19,13 +19,13 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.bot.schema import RegionModel
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import compose_bot, definition_to_config
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.canvas.call_node_item import CallNodeItem
 from bartlebot.gui.canvas.subgraph_widgets import CrumbMode
 from bartlebot.gui.theme import THEME
-from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import compose_bot, definition_to_config
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
 

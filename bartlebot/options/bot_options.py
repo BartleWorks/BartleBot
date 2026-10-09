@@ -10,7 +10,7 @@ A declaration of ``None`` means *the author has no opinion*, which is what makes
 the middle two levels both reachable.  Without it whichever sits second is dead
 weight, because a declaration is written for every required option.
 
-Pure policy, like :mod:`bartlebot.relog` and ``client_refresh_interval()`` --
+Pure policy, like :mod:`bartlebot.clients.relog` and ``client_refresh_interval()`` --
 no Qt, no ``SettingsManager``, no client.  The caller gathers the four inputs and
 this decides between them, so precedence is testable without a settings file.
 
@@ -179,7 +179,7 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
     if declared_type == "float":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
     if declared_type == "player_realms":
-        from bartlebot.player_realms import VALUES  # noqa: PLC0415 - keeps this module importable alone
+        from bartlebot.options.player_realms import VALUES  # noqa: PLC0415 - keeps this module importable alone
 
         return value in VALUES
     if declared_type in ("str", "friend_name", "realm"):
@@ -479,7 +479,7 @@ def orphaned_flag_options(config, specs=None) -> list[tuple]:
     orphans: list[tuple] = []
     for trans in config.transitions:
         rows = [*trans.flags, *(fc for group in trans.flag_groups for fc in group.flags)]
-        # A variable row guards on no option; bartlebot.variables checks those.
+        # A variable row guards on no option; bartlebot.bot.variables checks those.
         names: list[str] = [fc.option for fc in rows if fc.option is not None]
         for name in names:
             if name not in declared and (trans, name) not in orphans:

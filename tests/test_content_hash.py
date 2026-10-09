@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot import bot_roots
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
@@ -24,6 +23,9 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.content import bot_roots
+from bartlebot.content.store_roots import Origin, pill_text
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
 from bartlebot.paths import project_root
 from bartlebot.shared.content_hash import (
     HISTORY_CAP,
@@ -40,8 +42,6 @@ from bartlebot.shared.strategy_models import (
     PlayerAssignment,
     PlayerCombatStrategy,
 )
-from bartlebot.store_roots import Origin, pill_text
-from bartlebot.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
 from tests.test_subgraph_store import _defn
 
 
@@ -249,7 +249,7 @@ def test_saving_over_another_bots_file_is_not_its_past(tmp_path):
 
 
 def test_make_my_own_copy_starts_a_fresh_history():
-    from bartlebot.bot_fork import make_fork  # noqa: PLC0415
+    from bartlebot.content.bot_fork import make_fork  # noqa: PLC0415
 
     official = _bot(history=["x"])
     fork = make_fork(official, "Mine")

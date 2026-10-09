@@ -27,7 +27,7 @@ Release
 
 Setup steps
     A version lists what the user has to fill in (``template_meta.setup``), and a
-    fill-in is blank in every release, which Release enforces. :mod:`bartlebot.setup_steps`
+    fill-in is blank in every release, which Release enforces. :mod:`bartlebot.content.templates.setup_steps`
     reads them back for a bot through its ``template``.
 
 Template-owned ids
@@ -50,7 +50,7 @@ User templates
 
 Two roots
     Templates are read from ``templates/`` under both roots
-    (:func:`bartlebot.store_roots.resolve_roots`): the Official ones shipped in the
+    (:func:`bartlebot.content.store_roots.resolve_roots`): the Official ones shipped in the
     install directory, and the user's own. :func:`save_draft` and :func:`release` write
     only to the user root. A template is copied into a bot rather than linked, so a user
     template never overrides an Official one: a user-root folder declaring an Official
@@ -77,11 +77,11 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig, TemplateMeta, TemplateRef, atomic_write_json
-from bartlebot.store_roots import Origin, resolve_roots, slugify
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import outermost_linked_regions
+from bartlebot.content.store_roots import Origin, resolve_roots, slugify
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import outermost_linked_regions
+from bartlebot.content.templates import setup_steps
 
 logger = logging.getLogger(__name__)
 
@@ -456,7 +456,7 @@ def release_problems(
     ``canvas_errors`` are the editor's error lines for the draft, which the caller
     supplies, since working them out needs the scene. ``library`` (a ``SubgraphLibrary``)
     is what a fill-in on a named subgraph input is read through; see
-    :func:`bartlebot.setup_steps.draft_problems`. ``root`` and ``user_root`` are where
+    :func:`bartlebot.content.templates.setup_steps.draft_problems`. ``root`` and ``user_root`` are where
     a fork's source is looked up, to check the ids it inherited.
     """
     problems = list(canvas_errors)

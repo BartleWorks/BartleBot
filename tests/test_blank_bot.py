@@ -11,10 +11,10 @@ import pytest
 from PyQt6.QtCore import QPointF
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.content.new_bot import BotDetails, create_bot
+from bartlebot.content.subgraphs.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import member_id
 from bartlebot.gui.canvas.bot_canvas import NO_NODES_ERROR, BotMode
-from bartlebot.new_bot import BotDetails, create_bot
-from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary
-from bartlebot.subgraphs import member_id
 
 
 def _blank() -> BotConfig:

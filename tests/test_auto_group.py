@@ -9,11 +9,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-import bartlebot.client_manager as cm
+import bartlebot.clients.client_manager as cm
+import bartlebot.clients.group_manager as gm
 import bartlebot.game.wizard_names as wn
-import bartlebot.group_manager as gm
-from bartlebot.client_manager import ClientManager
-from bartlebot.group_manager import GroupResult, GroupState
+from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.group_manager import GroupResult, GroupState
 from tests.conftest import FakeClient
 
 # Both hooks survey group state before deciding whether to regroup. These stand in for the

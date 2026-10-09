@@ -41,7 +41,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot_tags import suggested_tags
+from bartlebot.content.bot_tags import suggested_tags
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY

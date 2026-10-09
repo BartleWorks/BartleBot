@@ -18,7 +18,7 @@ from pathlib import Path
 
 from PyQt6.QtCore import QEvent, QMimeData, QObject, QTimer, pyqtSignal
 
-from bartlebot.share_export import EXTENSIONS
+from bartlebot.content.share_export import EXTENSIONS
 
 _SUFFIXES = frozenset(EXTENSIONS.values())
 

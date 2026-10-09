@@ -11,7 +11,7 @@ import time
 import pytest
 from PyQt6.QtCore import QPointF
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import AssignmentModel, BotConfig, FlagCondition, StateModel, TransitionModel, VariableModel
 from bartlebot.gui.canvas.edge_item import EdgeItem
 
@@ -232,9 +232,9 @@ def test_a_rename_on_the_options_tab_reshows_the_rows_with_the_new_name(canvas):
 def test_every_transition_a_call_nodes_edge_stands_for_takes_its_assignments(qapp, tmp_path, monkeypatch):
     from PyQt6.QtWidgets import QMessageBox  # noqa: PLC0415
 
+    from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import compose_bot  # noqa: PLC0415
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
-    from bartlebot.subgraph_store import SubgraphLibrary  # noqa: PLC0415
-    from bartlebot.subgraphs import compose_bot  # noqa: PLC0415
     from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, sync_players_definition  # noqa: PLC0415
 
     for name in ("question", "warning", "critical", "information"):

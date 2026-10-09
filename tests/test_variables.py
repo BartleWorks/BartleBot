@@ -1,4 +1,4 @@
-"""bartlebot.variables: comparisons, writes, and every error and warning a bot's variables can have.
+"""bartlebot.bot.variables: comparisons, writes, and every error and warning a bot's variables can have.
 
 No machine and no Qt: the run-time half is test_machine_variables.py.
 """
@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.schema import (
     AssignmentModel,
     BotConfig,
@@ -18,8 +18,8 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
+from bartlebot.bot.variables import VariableError, apply_assignments, check, compare, run_refusal
 from bartlebot.paths import project_root
-from bartlebot.variables import VariableError, apply_assignments, check, compare, run_refusal
 
 SWORDS = VariableModel(name="swords", type="int")
 FOUND = VariableModel(name="found", type="bool")

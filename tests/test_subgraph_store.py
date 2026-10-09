@@ -1,4 +1,4 @@
-"""Tests for bartlebot.subgraph_store — the two-root subgraph library."""
+"""Tests for bartlebot.content.subgraphs.subgraph_store — the two-root subgraph library."""
 
 from __future__ import annotations
 
@@ -10,9 +10,8 @@ from bartlebot.bot.schema import (
     SubgraphSource,
     TransitionModel,
 )
-from bartlebot.paths import project_root
-from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import (
+from bartlebot.content.store_roots import Origin
+from bartlebot.content.subgraphs.subgraph_store import (
     SubgraphLibrary,
     count_subgraph_uses,
     delete_subgraph,
@@ -21,6 +20,7 @@ from bartlebot.subgraph_store import (
     origin_of,
     save_subgraph,
 )
+from bartlebot.paths import project_root
 
 
 def _defn(sg_id: str = "sg-a", name: str = "A", version: int = 1) -> SubgraphDefinition:
@@ -157,7 +157,7 @@ def test_every_shipped_bot_and_template_composes_cleanly():
     ``cycle``, and no nested instance held inside it.
     """
     from bartlebot.bot.schema import BotConfig  # noqa: PLC0415
-    from bartlebot.subgraphs import compose_bot  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import compose_bot  # noqa: PLC0415
 
     shipped = project_root()
     library = SubgraphLibrary(shipped, shipped)

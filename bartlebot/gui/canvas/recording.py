@@ -270,7 +270,7 @@ class _WalkIn(_Workflow):
     With *names_target*, the entrance prompt's title — the dungeon's name — names the node
     ``Enter …``; the zone change names it when the title cannot be read. A *name_key* keeps
     the title as a param too, where a label the author may retype cannot be relied on to
-    hold it (see bartlebot/bot_summary.py) — written empty when the title cannot be read, so
+    hold it (see bartlebot/content/bot_summary.py) — written empty when the title cannot be read, so
     a recording never leaves a name behind from an entrance it did not record. With *names_zones*,
     the zones name it ``Enter <destination> from <origin>`` when their names tell them
     apart, and ``A → B`` by path segment when they do not.
@@ -510,7 +510,7 @@ def recording_hint(node_type: str, schema, params) -> str:
         return ""
     names = [f.label for f in fields]
     listed = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
-    from bartlebot.setup_steps import field_empty  # noqa: PLC0415 - keeps this module's imports light
+    from bartlebot.content.templates.setup_steps import field_empty  # noqa: PLC0415 - keeps this module's imports light
 
     if all(field_empty(f, params) for f in fields):
         return f"Not recorded. Record fills {listed}."

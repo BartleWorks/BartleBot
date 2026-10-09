@@ -4,7 +4,7 @@ No real process: user32/kernel32 are fakes, so each test states exactly what the
 answers and what the caller is left holding.
 """
 
-from bartlebot.utils.process_resources import (
+from bartlebot.clients.process_resources import (
     GR_GDIOBJECTS,
     GR_USEROBJECTS,
     PROCESS_QUERY_LIMITED_INFORMATION,

@@ -31,15 +31,15 @@ from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadEr
 import bartlebot.nodes.zone_entry.enter_zone as gtz
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, FlagGroup, StateModel, TransitionModel
-from bartlebot.bot_options import (
+from bartlebot.content.templates.template_store import list_templates
+from bartlebot.nodes.registry import NODE_REGISTRY
+from bartlebot.options.bot_options import (
     orphaned_flag_options,
     required_option_specs,
     storable_options,
     system_option_names,
 )
-from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot.paths import project_root
-from bartlebot.template_store import list_templates
 from tests.conftest import FakeClient
 
 # ---------------------------------------------------------------------------
@@ -962,7 +962,7 @@ def test_no_bot_declares_a_user_owned_option():
     The sell flags are deliberately not here: a bot whose target drop is a pet has to be
     able to say so, and the keep list cannot spare an individual pet.
     """
-    from bartlebot.bot_options import USER_OWNED_OPTIONS  # noqa: PLC0415
+    from bartlebot.options.bot_options import USER_OWNED_OPTIONS  # noqa: PLC0415
 
     offenders: list[str] = []
     for path in _all_bot_files():
@@ -1122,7 +1122,7 @@ def test_every_shipped_bot_has_at_least_one_tag():
 def test_no_bot_carries_a_tag_outside_the_vocabulary():
     """BotConfig silently drops unknown tags on load, so a typo would only ever show
     up as a bot missing from a filter. Caught here instead, against the raw JSON."""
-    from bartlebot.bot_tags import BOT_TAGS  # noqa: PLC0415
+    from bartlebot.content.bot_tags import BOT_TAGS  # noqa: PLC0415
 
     offenders: list[str] = []
     for path in _shipped_bot_files():

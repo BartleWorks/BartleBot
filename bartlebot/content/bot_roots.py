@@ -26,9 +26,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.content.store_roots import declared_id, dev_mode, is_inside, resolve_roots
 from bartlebot.paths import project_root
 from bartlebot.shared import content_hash
-from bartlebot.store_roots import declared_id, dev_mode, is_inside, resolve_roots
 
 logger = logging.getLogger(__name__)
 

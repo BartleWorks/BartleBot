@@ -65,7 +65,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def _config(tags: int):
     """A bot with enough metadata that every field in the bar has something to show."""
     from bartlebot.bot.schema import BotConfig, StateModel
-    from bartlebot.bot_tags import BOT_TAGS
+    from bartlebot.content.bot_tags import BOT_TAGS
 
     return BotConfig(
         id="layout-probe",

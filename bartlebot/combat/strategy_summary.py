@@ -17,8 +17,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from bartlebot.content.store_roots import Origin
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.store_roots import Origin
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

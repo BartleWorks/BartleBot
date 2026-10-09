@@ -9,14 +9,14 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
-from bartlebot import option_groups as og
-from bartlebot import player_realms
 from bartlebot.bot.schema import BotConfig
-from bartlebot.bot_options import compose_options, option_specs_for
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_MINIMUM_TEAM_SIZE, OPTION_TEAM_UP
+from bartlebot.options import option_groups as og
+from bartlebot.options import player_realms
+from bartlebot.options.bot_options import compose_options, option_specs_for
 from bartlebot.paths import project_root
 
 _ROOT = project_root()

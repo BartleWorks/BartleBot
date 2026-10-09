@@ -3,7 +3,7 @@
 An Official bot is one in the install directory (``bot_roots.is_shipped``), which every
 app update replaces. It runs as any bot does -- option values and combat setup live in
 settings -- but never enters Edit mode and is never saved: asking to edit it offers Make
-my own copy, which is :mod:`bartlebot.bot_fork` behind the controller.
+my own copy, which is :mod:`bartlebot.content.bot_fork` behind the controller.
 """
 
 from __future__ import annotations
@@ -14,10 +14,13 @@ from pathlib import Path
 import pytest
 from PyQt6.QtWidgets import QDialog, QLabel
 
-from bartlebot import bot_roots, template_diff
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat.profile_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
+from bartlebot.content import bot_roots
+from bartlebot.content.store_roots import DEV_ENV_VAR, SOURCE_LABELS, Origin
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.templates import template_diff
 from bartlebot.gui.canvas.bot_canvas import (
     BotMode,
     _BotCard,
@@ -30,8 +33,6 @@ from bartlebot.gui.canvas.bot_canvas import (
 )
 from bartlebot.gui.make_copy_dialog import MakeCopyDialog
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import DEV_ENV_VAR, SOURCE_LABELS, Origin
-from bartlebot.subgraph_store import SubgraphLibrary
 from tests.test_subgraph_integration import ControllerHarness
 
 OFFICIAL_ID = "official"
@@ -140,7 +141,7 @@ def test_an_official_bot_is_never_marked_unsaved_or_written(harness, official_pa
 def test_run_mode_option_values_still_apply_to_an_official_bot(harness, official_path):
     """Option values live in settings, keyed on the bot's id, so nothing of the file changes."""
     from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415
-    from bartlebot.option_values import option_value  # noqa: PLC0415
+    from bartlebot.options.option_values import option_value  # noqa: PLC0415
 
     bot = _bot()
     bot.options = [BotOptionModel(name="laps", type="int", default=1)]

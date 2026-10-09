@@ -1002,7 +1002,7 @@ async def test_enter_gauntlet_records_only_the_dungeon_zone(zero_poll, prompt_ti
 @pytest.mark.parametrize(("node_type", "key"), [("enter_dungeon", "dungeon_name"), ("enter_gauntlet", "gauntlet_name")])
 async def test_the_entrance_title_is_kept_as_the_nodes_name(zero_poll, prompt_title, node_type, key):
     """The label is the author's to retype, so the name the generated description uses
-    is kept where it cannot be: see bartlebot/bot_summary.py."""
+    is kept where it cannot be: see bartlebot/content/bot_summary.py."""
     prompt_title.return_value = "<center>Skull Fort (Challenge)"
     form = FakeParamForm()
 

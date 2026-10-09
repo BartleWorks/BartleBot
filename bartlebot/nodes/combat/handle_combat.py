@@ -4,7 +4,6 @@ import asyncio
 import logging
 import time
 
-from bartlebot import player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
     FightCenter,
@@ -17,6 +16,7 @@ from bartlebot.nodes.combat_runner import (
     start_combat_drop_poll,
 )
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.options import player_realms
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

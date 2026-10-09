@@ -16,10 +16,10 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.bot.schema import SUBGRAPH_EXIT, StateModel, SubgraphInput
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraph_tags import SUBGRAPH_CATEGORIES
+from bartlebot.content.subgraphs.subgraphs import definition_to_config
 from bartlebot.gui.canvas.bot_canvas import BotMode
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraph_tags import SUBGRAPH_CATEGORIES
-from bartlebot.subgraphs import definition_to_config
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
 
@@ -686,8 +686,8 @@ def test_a_new_input_can_be_promoted_straight_into_a_group(qapp):
 
 
 def test_every_surface_names_the_source_the_same_way():
-    from bartlebot.store_roots import Origin  # noqa: PLC0415
-    from bartlebot.subgraph_store import source_label  # noqa: PLC0415
+    from bartlebot.content.store_roots import Origin  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraph_store import source_label  # noqa: PLC0415
 
     assert source_label(Origin.SHIPPED) == "Source: Official"
     assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Official (modified)"
@@ -795,9 +795,9 @@ def test_a_zone_input_linked_with_a_nav_zone_becomes_a_nav_zone(doc):
 
 
 def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
+    from bartlebot.content.subgraphs.subgraphs import promoted_param_type  # noqa: PLC0415
     from bartlebot.gui.canvas import recording  # noqa: PLC0415
     from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
-    from bartlebot.subgraphs import promoted_param_type  # noqa: PLC0415
 
     doc.config.states.append(StateModel(id="mark", node_type="mark_location", params={"zone": ""}))
     _add_sync_in_zone(doc)
@@ -889,8 +889,8 @@ def _zone_of(canvas, local: str) -> str:
 
 
 def test_a_nested_nodes_inputs_offer_link_in_a_definition_and_not_in_a_bot(outer_doc, qapp, library):
+    from bartlebot.content.subgraphs.subgraphs import compose_bot  # noqa: PLC0415
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
-    from bartlebot.subgraphs import compose_bot  # noqa: PLC0415
 
     form = _nested_page(outer_doc).form(None)
     assert form.link_button("hub") is not None and form.link_chip("hub") is None
@@ -981,7 +981,7 @@ def test_a_saved_nested_link_reaches_a_bot_through_the_outer_node(outer_doc, lib
 
     outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
     assert outer_doc.validation_errors() == []
-    from bartlebot.subgraphs import config_to_definition  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import config_to_definition  # noqa: PLC0415
 
     library.save(config_to_definition(outer_doc.config, version=2))
     assert _zones(_bot_of(library.get("outer"), library, zone="Deep/Z")) == {"tp_b": "Deep/Z", "hub": "Deep/Z"}
@@ -1316,7 +1316,7 @@ def test_ports_reorder_from_their_menu(doc):
 
 
 def test_the_description_folds_once_written(doc):
-    from bartlebot import param_cards  # noqa: PLC0415
+    from bartlebot.options import param_cards  # noqa: PLC0415
 
     assert doc.config.description, "the fixture has one"
     page = _page(doc)

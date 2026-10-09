@@ -19,13 +19,13 @@ bot's fights, each with its own wiki import.
 card, and the steps. A step is a card in an ordered list, so it is the same card every
 other ordered list here uses -- ``CardFrame`` with a grip in the gutter, a cross on its
 face, and a dashed Add card ending the list. Every target of a step is a fill-in
-(:mod:`bartlebot.setup_steps`), so *Add target…* is how a param becomes one; a node's own
+(:mod:`bartlebot.content.templates.setup_steps`), so *Add target…* is how a param becomes one; a node's own
 page offers the same from each param row.
 
 **A bot behind its template** also sees the review: what the releases since its base
 changed, one card per change under each release's note, with *Apply* on a change the bot
 never touched and *Use template's* / *Keep mine* on one it changed too
-(:mod:`bartlebot.template_diff`). A card says what would change and edits nothing by
+(:mod:`bartlebot.content.templates.template_diff`). A card says what would change and edits nothing by
 itself: anything the user then adjusts is adjusted on the node. *Finish review* advances
 the bot's base, which is what remembers a skipped change, and *Later* puts the review
 away until the bot is next opened.
@@ -51,8 +51,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import setup_steps, template_diff
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SetupStep, SetupTarget
+from bartlebot.content.subgraphs.subgraphs import exposed_key, node_panels
+from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import popup_menu
@@ -69,7 +70,6 @@ from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-from bartlebot.subgraphs import exposed_key, node_panels
 
 #: The tick's size.
 _TICK_PX = 14

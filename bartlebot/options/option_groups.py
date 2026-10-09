@@ -213,8 +213,8 @@ def group_summary(
 def _team_summary(value: Callable[[str], Any]) -> list[SummaryPart]:
     # Imported here: the node modules pull in the whole node package, and this module
     # has to stay importable from a pure test.
-    from bartlebot import player_realms  # noqa: PLC0415
     from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_MINIMUM_TEAM_SIZE, OPTION_TEAM_UP  # noqa: PLC0415
+    from bartlebot.options import player_realms  # noqa: PLC0415
 
     parts: list[SummaryPart] = []
     realms = value(player_realms.OPTION)

@@ -20,7 +20,7 @@ A client loads only the players in its own zone, realm and instance, and only ne
   client is Unknown even when seen, since a leaver stays in the others' lists for about a second
   into its loading screen.
 
-A check costs ~5 ms a client. `bartlebot/sightings.py` holds the rules, pure;
+A check costs ~5 ms a client. `bartlebot/clients/sightings.py` holds the rules, pure;
 `node_helpers.read_sightings(clients, machine)` takes the readings and never raises.
 
 Sharing a zone, realm and instance is transitive, so a check yields **groups**: if A sees B and B
@@ -46,7 +46,7 @@ recall to a mark are assumed to keep realms too; neither is verified.
 
 **A node param says where the players go; this option says how they are arranged.** No node param
 decides the arrangement, so the two cannot contradict each other. Two values
-(`bartlebot/player_realms.py`):
+(`bartlebot/options/player_realms.py`):
 
 - **Together** (the default): every player on one realm and in one area.
 - **Separate**: never move a player onto another player's realm. An existing split is left as it

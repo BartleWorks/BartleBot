@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import pytest
 
-from bartlebot import param_cards
 from bartlebot.bot.schema import SubgraphPanel
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.subgraphs.subgraphs import compose_bot
 from bartlebot.gui.widgets.record_button import RecordButton
-from bartlebot.option_groups import summary_text
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import compose_bot
+from bartlebot.options import param_cards
+from bartlebot.options.option_groups import summary_text
 from bartlebot.ui_state import UiState
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, sync_players_definition
 

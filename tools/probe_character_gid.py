@@ -81,7 +81,7 @@ HOW TO RUN
     3. Follow the prompts. The probe reads only, until it asks permission to write.
 
 NO REAL PLAYER DATA: a character id identifies an account's character, so ids are masked
-in console output the way bartlebot.account_identity masks a user id. --with-ids prints
+in console output the way bartlebot.clients.account_identity masks a user id. --with-ids prints
 them in full and --report writes an unmasked report to probe_character_gid.local.txt,
 which is gitignored (*.local.*). Check what you are pasting. See the "No real player
 data" section of CLAUDE.md.
@@ -101,7 +101,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from wizwalker.memory.memory_object import Primitive
 from wizwalker.utils import get_all_wizard_handles, get_window_title
 
-from bartlebot.account_identity import mask
+from bartlebot.clients.account_identity import mask
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import CHAR_SELECT_PLAY_PATH
 

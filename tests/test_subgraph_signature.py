@@ -11,8 +11,8 @@ import pytest
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.bot.schema import SubgraphDefinition, SubgraphInput, SubgraphInputBinding, SubgraphPanel
-from bartlebot.subgraph_signature import signature_changes, warning_text
-from bartlebot.subgraph_store import SubgraphLibrary, bots_linking
+from bartlebot.content.subgraphs.subgraph_signature import signature_changes, warning_text
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, bots_linking
 from tests.test_subgraph_definition_document import _canvas, _show_subgraphs, _subgraph_cards
 from tests.test_subgraph_integration import ControllerHarness
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, sync_players_definition

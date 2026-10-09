@@ -61,7 +61,7 @@ mouse.
 A TREE IN ONE COLUMN
 
 Two hooks let a host draw something more structured than a flat list, and are what the
-signature page's inputs tree is built on (``bartlebot/signature_tree.py``):
+signature page's inputs tree is built on (``bartlebot/content/subgraphs/signature_tree.py``):
 
 - **carry** -- a card that picks up the cards after it, as a group heading takes its
   members. The run travels as one block, behind one placeholder its own height.

@@ -11,7 +11,7 @@ import logging
 
 import pytest
 
-from bartlebot import variables
+from bartlebot.bot import variables
 from bartlebot.bot.machine import BotMachine, VariableWriteRefused
 from bartlebot.bot.schema import (
     BotConfig,
@@ -22,9 +22,9 @@ from bartlebot.bot.schema import (
     TransitionModel,
     VariableModel,
 )
+from bartlebot.bot.variables import VariableError
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.utility import branch, set_variables
-from bartlebot.variables import VariableError
 
 DECLS = [
     VariableModel(name="swords", type="int", initial=1),

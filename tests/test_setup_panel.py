@@ -15,7 +15,6 @@ from PyQt6.QtCore import QEvent, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot import setup_steps, template_diff
 from bartlebot.bot.schema import (
     BotConfig,
     SetupStep,
@@ -25,6 +24,9 @@ from bartlebot.bot.schema import (
     TemplateRef,
     TransitionModel,
 )
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.content.templates import setup_steps, template_diff
+from bartlebot.content.templates.template_store import release, save_draft
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.gui.sidebar.setup_panel import (
@@ -47,8 +49,6 @@ from bartlebot.gui.sidebar.setup_panel import (
     target_choices,
 )
 from bartlebot.gui.widgets.card_frame import CardMode
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.template_store import release, save_draft
 from tests.drag_helpers import menu_move
 from tests.test_subgraph_integration import ControllerHarness
 
@@ -1320,7 +1320,7 @@ def test_a_fight_in_two_profiles_names_both(canvas, monkeypatch):
 
 def test_a_visit_to_a_subgraph_definition_does_not_bring_back_a_review_put_away(window):
     """The definition is another config with another id, so coming back looked like a bot just opened."""
-    from bartlebot.subgraphs import definition_to_config  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import definition_to_config  # noqa: PLC0415
 
     canvas, sidebar = window.bot_canvas, window.right_sidebar
     bot = _done_bot()
@@ -1340,7 +1340,7 @@ def test_a_visit_to_a_subgraph_definition_does_not_bring_back_a_review_put_away(
 
 
 def test_coming_back_from_a_definition_does_not_pull_the_sidebar_to_setup(window):
-    from bartlebot.subgraphs import definition_to_config  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraphs import definition_to_config  # noqa: PLC0415
 
     canvas, sidebar = window.bot_canvas, window.right_sidebar
     bot = _bot()

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from bartlebot import signature_tree as st
 from bartlebot.bot.schema import SubgraphInput, SubgraphPanel
-from bartlebot.signature_tree import GROUP, INPUT, NODE, TreeRow
+from bartlebot.content.subgraphs import signature_tree as st
+from bartlebot.content.subgraphs.signature_tree import GROUP, INPUT, NODE, TreeRow
 
 
 class _Meta:

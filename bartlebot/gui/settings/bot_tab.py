@@ -2,7 +2,7 @@
 
 Split out of ``GeneralTab``, which had grown a twelve-row Bot section under five
 unrelated ones. The split is not only length: every row here is the **app
-setting** level of the four-level resolution in :mod:`bartlebot.bot_options`, so
+setting** level of the four-level resolution in :mod:`bartlebot.options.bot_options`, so
 a value set for one bot in its Options tab wins over anything on this tab, and so
 does an author who declared an answer their dungeon needs. That is one idea, and
 it now has one page to say it on -- the note at the top of the tab, rather than
@@ -19,11 +19,11 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 
-from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.gui.settings.rows import SettingGroup, SettingRow, SettingsForm
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.realm_combo import RealmCombo
 from bartlebot.nodes.utility import quicksell
+from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for
 
 _INTRO = (

@@ -3,7 +3,7 @@
 The badge page groups every badge under a category -- a world, a school, or an activity
 such as Crafting or Four Dungeons -- and draws an icon beside each. The bot library's
 folders are those same categories, so a player can find a bot where the game has already
-taught them to look (see :mod:`bartlebot.bot_folders`).
+taught them to look (see :mod:`bartlebot.content.bot_folders`).
 
 WHERE IT COMES FROM
     ``BadgeFilterDescriptions.xml`` and ``BadgeFilterNames.lang`` in ``Root.wad``, dumped

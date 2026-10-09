@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from bartlebot.bot.schema import VariableModel
-from bartlebot.variable_watch import LiveVariables
+from bartlebot.bot.variable_watch import LiveVariables
 
 DECLS = [
     VariableModel(name="swords", type="int"),

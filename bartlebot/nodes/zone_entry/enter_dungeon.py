@@ -5,7 +5,6 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import player_realms
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -18,7 +17,8 @@ from bartlebot.nodes.paths import (
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
 )
-from bartlebot.option_groups import GROUP_DUNGEON, GROUP_TEAM
+from bartlebot.options import player_realms
+from bartlebot.options.option_groups import GROUP_DUNGEON, GROUP_TEAM
 
 #: Option names, so the safety dialog and the tests name them from one place.
 OPTION_TEAM_UP = "Team-Up"
@@ -31,7 +31,7 @@ PARAM_OFFERS_TEAM_UP = "offers_team_up"
 #: The param that says this sigil offers Challenge Mode at all.
 PARAM_OFFERS_CHALLENGE_MODE = "offers_challenge_mode"
 
-#: The param holding the entrance prompt's title. Editor-only: see bartlebot/bot_summary.py.
+#: The param holding the entrance prompt's title. Editor-only: see bartlebot/content/bot_summary.py.
 PARAM_DUNGEON_NAME = "dungeon_name"
 
 PARAM_SCHEMA: list[ParamField] = [

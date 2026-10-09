@@ -13,7 +13,6 @@ from dataclasses import dataclass
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import player_realms
 from bartlebot.game import scales, zone_names
 from bartlebot.nodes import node_helpers, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
@@ -21,7 +20,8 @@ from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, Nod
 from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.zone_entry import enter_dungeon, enter_zone
-from bartlebot.option_groups import GROUP_TEAM
+from bartlebot.options import player_realms
+from bartlebot.options.option_groups import GROUP_TEAM
 
 PARAM_SCALES = "scales"
 

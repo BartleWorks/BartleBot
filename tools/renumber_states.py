@@ -19,7 +19,7 @@ Members of a linked subgraph instance keep their local ids -- they are derived
 from the region id and the definition's local ids, which the definition owns.
 
 ``--prefix t_`` numbers in the template scheme instead (see
-``bartlebot/template_store.py``): nodes become ``t_1..N``, and each subgraph
+``bartlebot/content/templates/template_store.py``): nodes become ``t_1..N``, and each subgraph
 instance's region id gains the prefix too (``sync_players_1`` becomes
 ``t_sync_players_1``), carrying its members' ids with it. Only for a draft that
 has never been released: a released id is never renamed or reused.
@@ -44,8 +44,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from bartlebot.bot.schema import BotConfig, StateModel  # noqa: E402
 from bartlebot.combat.strategy_store import rekey_bot_strategy_states  # noqa: E402
+from bartlebot.content.subgraphs.subgraphs import (  # noqa: E402
+    is_nested_in,
+    local_id,
+    member_id,
+    outermost_linked_regions,
+    rename_states,
+)
 from bartlebot.shared.vendor import product_dir  # noqa: E402
-from bartlebot.subgraphs import is_nested_in, local_id, member_id, outermost_linked_regions, rename_states  # noqa: E402
 
 #: The prefix a bot's nodes are numbered with; see ``--prefix``.
 DEFAULT_PREFIX = "state_"

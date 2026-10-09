@@ -1,7 +1,7 @@
 """Unit tests for the group formation engine.
 
 Group membership is read from the UI (the Leave Group button on the social window), not
-from memory — see the module docstring in bartlebot/group_manager.py for why. These tests
+from memory — see the module docstring in bartlebot/clients/group_manager.py for why. These tests
 therefore drive everything through a fake that models that UI.
 """
 
@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from wizwalker import Keycode
 
-import bartlebot.group_manager as gm
+import bartlebot.clients.group_manager as gm
 import bartlebot.nodes.node_helpers as nh
 from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,

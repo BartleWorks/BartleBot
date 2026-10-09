@@ -16,8 +16,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot.client_manager import ClientManager
-from bartlebot.launch_tracker import LaunchTracker
+from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.launch_tracker import LaunchTracker
 
 # ---------------------------------------------------------------------------
 # Test harness
@@ -134,8 +134,8 @@ class TestAccountMapTitleCache:
         client = MagicMock(window_handle=100)
         settings = MagicMock(accounts=accounts)
         with (
-            patch("bartlebot.client_manager.SettingsManager") as sm,
-            patch("bartlebot.client_manager.get_window_title", return_value=title),
+            patch("bartlebot.clients.client_manager.SettingsManager") as sm,
+            patch("bartlebot.clients.client_manager.get_window_title", return_value=title),
         ):
             sm.instance.return_value = settings
             ClientManager._refresh_account_map(harness, [client])
@@ -153,8 +153,8 @@ class TestAccountMapTitleCache:
     def test_unreadable_title_records_nothing(self, harness: RecoveryHarness) -> None:
         client = MagicMock(window_handle=100)
         with (
-            patch("bartlebot.client_manager.SettingsManager") as sm,
-            patch("bartlebot.client_manager.get_window_title", side_effect=OSError("gone")),
+            patch("bartlebot.clients.client_manager.SettingsManager") as sm,
+            patch("bartlebot.clients.client_manager.get_window_title", side_effect=OSError("gone")),
         ):
             sm.instance.return_value = MagicMock(accounts=[])
             ClientManager._refresh_account_map(harness, [client])
@@ -179,7 +179,7 @@ class TestOnClientsRemoved:
         harness._hwnd_titles = {999: "Wizard101"}
         harness._machine = _make_machine(stopped=False)
 
-        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+        with caplog.at_level("WARNING", logger="bartlebot.clients.client_manager"):
             harness._on_clients_removed({999})
 
         assert len(caplog.records) == 1, "exactly one warning per unmapped client"
@@ -193,7 +193,7 @@ class TestOnClientsRemoved:
         harness._hwnd_titles = {999: "Wizard101"}
         harness._machine = None
 
-        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+        with caplog.at_level("WARNING", logger="bartlebot.clients.client_manager"):
             harness._on_clients_removed({999})
 
         assert caplog.records == []
@@ -202,7 +202,7 @@ class TestOnClientsRemoved:
         """A window gone before its title was ever read is the case that most needs saying."""
         harness._machine = _make_machine(stopped=False)
 
-        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+        with caplog.at_level("WARNING", logger="bartlebot.clients.client_manager"):
             harness._on_clients_removed({999})
 
         assert len(caplog.records) == 1
@@ -214,7 +214,7 @@ class TestOnClientsRemoved:
         harness._client_order = ["user2"]
         harness._machine = _make_machine(stopped=False)
 
-        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+        with caplog.at_level("WARNING", logger="bartlebot.clients.client_manager"):
             harness._on_clients_removed({100})
 
         assert len(caplog.records) == 1
@@ -228,7 +228,7 @@ class TestOnClientsRemoved:
         harness._machine = _make_machine(stopped=False)
 
         with (
-            caplog.at_level("WARNING", logger="bartlebot.client_manager"),
+            caplog.at_level("WARNING", logger="bartlebot.clients.client_manager"),
             patch("asyncio.create_task", _mock_create_task),
         ):
             harness._on_clients_removed({100})
@@ -494,8 +494,8 @@ def _base_reconnect_patches(display_name: str = "j***n"):
     mock_windll.user32.FindWindowW.return_value = 0  # no crashed window by default
 
     return (
-        patch("bartlebot.client_manager.CredentialStore"),
-        patch("bartlebot.client_manager.SettingsManager"),
+        patch("bartlebot.clients.client_manager.CredentialStore"),
+        patch("bartlebot.clients.client_manager.SettingsManager"),
         patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
         patch("ctypes.windll", mock_windll),
         patch("asyncio.sleep", new_callable=AsyncMock),
@@ -514,7 +514,7 @@ class TestReconnectClients:
         machine = _make_machine()
         harness._machine = machine
 
-        with patch("bartlebot.client_manager.CredentialStore") as mock_creds:
+        with patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds:
             mock_creds.retrieve.return_value = None
             mock_creds.display_name.return_value = "u***1"
             await harness._reconnect_clients({0: "user1"})
@@ -536,8 +536,8 @@ class TestReconnectClients:
         mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         with (
-            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+            patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch(
                 "bartlebot.launcher.launch_profile.launch_accounts",
                 new_callable=AsyncMock,
@@ -567,11 +567,11 @@ class TestReconnectClients:
         mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         with (
-            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+            patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
             patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
@@ -610,8 +610,8 @@ class TestReconnectClients:
         loop.time = _fake_time
         try:
             with (
-                patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-                patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+                patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+                patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
                 patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
                 patch("ctypes.windll", MagicMock()),
                 patch("asyncio.sleep", new_callable=AsyncMock),
@@ -643,11 +643,11 @@ class TestReconnectClients:
         mock_launch = _fake_launch_accounts()
 
         with (
-            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+            patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_accounts", mock_launch),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
             patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
@@ -679,11 +679,11 @@ class TestReconnectClients:
         mock_launch = _fake_launch_accounts()
 
         with (
-            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+            patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_accounts", mock_launch),
             patch("ctypes.windll", mock_windll),
-            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
             patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
@@ -723,11 +723,11 @@ class TestReconnectClients:
         mock_click = AsyncMock()
 
         with (
-            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+            patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", crowns_check),
             patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=True),
@@ -783,10 +783,10 @@ class TestBatchRecovery:
         """Run a reconnect with every external dependency stubbed."""
         no_password = no_password or set()
         with (
-            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
-            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
+            patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_accounts", launch),
-            patch("bartlebot.client_manager.get_window_title", side_effect=harness._titles.get),
+            patch("bartlebot.clients.client_manager.get_window_title", side_effect=harness._titles.get),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
             patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
@@ -894,7 +894,7 @@ class TestSettleRecoveryBatch:
     async def test_a_crash_is_not_waited_on(self, harness: RecoveryHarness) -> None:
         """Nothing more is coming after a crash, so recovery starts immediately."""
         harness._relog_in_progress = False
-        with patch("bartlebot.client_manager.asyncio.sleep", new_callable=AsyncMock) as slept:
+        with patch("bartlebot.clients.client_manager.asyncio.sleep", new_callable=AsyncMock) as slept:
             await harness._settle_recovery_batch()
         slept.assert_not_awaited()
 
@@ -902,8 +902,8 @@ class TestSettleRecoveryBatch:
         harness._relog_in_progress = True
 
         with (
-            patch("bartlebot.client_manager.CLIENT_DETECT_INTERVAL", 0.01),
-            patch("bartlebot.client_manager.RECOVERY_BATCH_SETTLE", 5.0),
+            patch("bartlebot.clients.client_manager.CLIENT_DETECT_INTERVAL", 0.01),
+            patch("bartlebot.clients.client_manager.RECOVERY_BATCH_SETTLE", 5.0),
         ):
             task = asyncio.create_task(harness._settle_recovery_batch())
             await asyncio.sleep(0.05)
@@ -917,8 +917,8 @@ class TestSettleRecoveryBatch:
         harness._relog_in_progress = True
 
         with (
-            patch("bartlebot.client_manager.CLIENT_DETECT_INTERVAL", 0.01),
-            patch("bartlebot.client_manager.RECOVERY_BATCH_SETTLE", 0.02),
+            patch("bartlebot.clients.client_manager.CLIENT_DETECT_INTERVAL", 0.01),
+            patch("bartlebot.clients.client_manager.RECOVERY_BATCH_SETTLE", 0.02),
         ):
             await harness._settle_recovery_batch()
 
