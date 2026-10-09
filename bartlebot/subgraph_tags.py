@@ -40,14 +40,11 @@ SUBGRAPH_CATEGORIES: tuple[str, ...] = (
     "Zone Entry",  # into a dungeon, a gauntlet or a zone, by its door or an object
     "Teleportation",  # across a world: coordinates, a marked location, a friend, a hub
     "Team",  # bringing several players to one zone, realm and area
-    "Combat and Recovery",  # a fight and recovering after it: potions, health and mana, wisps
+    "Combat and Healing",  # a fight and recovering after it: potions, health and mana, wisps
     "Interaction",  # talking to an NPC, clicking through a menu, collecting reagents
     "Control Flow",  # choosing the next step: checks on health, zone or scaling, variables, branches
     "Utility",  # anything else: applying level scaling, selling, relogging, changing realm, waiting
 )
-
-#: Words a definition file may still carry from before a category was renamed.
-_RENAMED_CATEGORIES: dict[str, str] = {"Combat": "Combat and Recovery"}
 
 #: The Source values, in the order a picker offers them.
 SOURCE_TAGS: tuple[str, ...] = tuple(SOURCE_LABELS[o] for o in LISTED_ORIGINS)
@@ -80,7 +77,6 @@ def normalize_subgraph_tags(raw: object) -> list[str]:
     for entry in raw:
         if not isinstance(entry, str):
             continue
-        entry = _RENAMED_CATEGORIES.get(entry, entry)
         if entry not in _CATEGORY_ORDER:
             logger.warning("ignoring unknown subgraph category %r (not in SUBGRAPH_CATEGORIES)", entry)
             continue

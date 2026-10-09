@@ -325,7 +325,7 @@ holds the vocabulary and the rule.
 | Zone Entry | gets into a dungeon, a gauntlet or a zone, by its door or an object |
 | Teleportation | moves across a world: to coordinates, a marked location, a friend, a hub |
 | Team | brings several players to one zone, realm and area |
-| Combat and Recovery | runs a fight and recovers after it: potions, waiting for health and mana, wisps |
+| Combat and Healing | runs a fight and recovers after it: potions, waiting for health and mana, wisps |
 | Interaction | talks to an NPC, clicks through a menu, collects reagents |
 | Control Flow | chooses the next step: checks on health, zone or scaling, variables, branches |
 | Utility | does anything else: applying level scaling, selling, relogging, changing realm, waiting |

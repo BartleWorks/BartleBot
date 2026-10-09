@@ -156,7 +156,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         ],
     ),
     (
-        "Combat and Recovery",
+        "Combat and Healing",
         [
             "collect_wisps",
             "handle_combat",

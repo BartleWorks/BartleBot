@@ -72,20 +72,16 @@ def test_normalizing_orders_dedupes_and_drops_unknown_words(caplog):
     assert normalize_subgraph_tags(None) == []
 
 
-def test_a_definition_saved_under_the_old_combat_word_loads_under_the_new_one():
-    assert normalize_subgraph_tags(["Combat", "Team"]) == ["Team", "Combat and Recovery"]
-
-
 def test_the_groups_are_category_and_source():
-    assert subgraph_tag_group("Combat and Recovery") == "Category"
+    assert subgraph_tag_group("Combat and Healing") == "Category"
     assert subgraph_tag_group("Custom") == "Source"
     assert subgraph_tag_group("Boss") == ""
 
 
 def test_matching_ors_within_a_group_and_ands_across_groups():
     assert subgraph_matches(["Team"], "Official", [])
-    assert subgraph_matches(["Team"], "Official", ["Team", "Combat and Recovery"])
-    assert not subgraph_matches(["Team"], "Official", ["Combat and Recovery"])
+    assert subgraph_matches(["Team"], "Official", ["Team", "Combat and Healing"])
+    assert not subgraph_matches(["Team"], "Official", ["Combat and Healing"])
     assert subgraph_matches(["Team"], "Official", ["Team", "Official", "Custom"])
     assert not subgraph_matches(["Team"], "Official", ["Team", "Custom"])
     assert not subgraph_matches([], "Custom", ["Team"]), "an uncategorized subgraph matches no category"
@@ -102,9 +98,9 @@ def test_a_definition_stores_its_categories_and_leaves_an_empty_list_out(tmp_pat
     _defn().save(path)
     assert "tags" not in json.loads(path.read_text(encoding="utf-8")), "a definition never given one is unchanged"
 
-    _defn(tags=["Team", "Combat and Recovery"]).save(path)
-    assert json.loads(path.read_text(encoding="utf-8"))["tags"] == ["Team", "Combat and Recovery"]
-    assert SubgraphDefinition.load(path).tags == ["Team", "Combat and Recovery"]
+    _defn(tags=["Team", "Combat and Healing"]).save(path)
+    assert json.loads(path.read_text(encoding="utf-8"))["tags"] == ["Team", "Combat and Healing"]
+    assert SubgraphDefinition.load(path).tags == ["Team", "Combat and Healing"]
 
 
 def test_a_hand_edited_file_loads_with_its_unknown_categories_dropped(tmp_path):
@@ -171,10 +167,10 @@ def test_picking_a_category_writes_the_definition_and_reports_the_edit(header):
     edits = []
     header.metadata_changed.connect(lambda: edits.append(1))
 
-    header.tags_field._pickers["Category"].set_selection(["Combat and Recovery", "Team"])
+    header.tags_field._pickers["Category"].set_selection(["Combat and Healing", "Team"])
     header.tags_field._on_picker_changed([])
 
-    assert config.definition.tags == ["Team", "Combat and Recovery"]
+    assert config.definition.tags == ["Team", "Combat and Healing"]
     assert config.tags == []
     assert edits == [1]
 
@@ -200,15 +196,15 @@ def _meta(name: str, source: Origin, tags: list[str]) -> _BotMeta:
 
 def test_filtering_metas_by_category_uses_the_category_groups():
     sync = _meta("Sync", Origin.SHIPPED, ["Team"])
-    fight = _meta("Fight", Origin.USER, ["Combat and Recovery"])
-    both = _meta("Both", Origin.USER, ["Team", "Combat and Recovery"])
+    fight = _meta("Fight", Origin.USER, ["Combat and Healing"])
+    both = _meta("Both", Origin.USER, ["Team", "Combat and Healing"])
     metas = [sync, fight, both]
 
     def run(tags, sources=frozenset()):
         return filter_bot_metas(metas, "", set(tags), sources, subgraph_tag_group)[0]
 
     assert run(["Team"]) == [sync, both]
-    assert run(["Team", "Combat and Recovery"]) == metas, "OR within Category"
+    assert run(["Team", "Combat and Healing"]) == metas, "OR within Category"
     assert run(["Team"], {"Custom"}) == [both], "AND with Source"
     assert filter_bot_metas(metas, "comb", set(), group_of=subgraph_tag_group)[0] == [fight, both], "search finds one"
 
@@ -217,7 +213,7 @@ def test_filtering_metas_by_category_uses_the_category_groups():
 def panel(qapp, tmp_path) -> _BotLibraryPanel:
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     SubgraphLibrary(shipped).save(_defn(tags=["Team"]))
-    SubgraphLibrary(user).save(_defn("fight", "Fight loop", tags=["Combat and Recovery"]))
+    SubgraphLibrary(user).save(_defn("fight", "Fight loop", tags=["Combat and Healing"]))
     SubgraphLibrary(user).save(_defn("plain", "Plain"))
     p = _BotLibraryPanel()
     p.set_subgraph_library(SubgraphLibrary(shipped, user))
@@ -251,11 +247,11 @@ def test_the_subgraphs_folder_filters_by_category_and_source(panel):
 
     panel.set_category_filter(["Team"])
     assert _names(panel) == ["Sync players"]
-    panel.set_category_filter(["Team", "Combat and Recovery"])
+    panel.set_category_filter(["Team", "Combat and Healing"])
     assert _names(panel) == ["Fight loop", "Sync players"]
     panel.set_source_filter(["Custom"])
     assert _names(panel) == ["Fight loop"]
-    assert panel.chip_texts() == ["Team", "Combat and Recovery", "Custom"], "in vocabulary order"
+    assert panel.chip_texts() == ["Team", "Combat and Healing", "Custom"], "in vocabulary order"
 
     panel._clear_filters()
     assert _names(panel) == ["Fight loop", "Plain", "Sync players"]
@@ -274,7 +270,7 @@ def test_a_bot_tag_left_selected_does_not_empty_the_subgraphs_folder(panel):
 def test_a_subgraph_card_wears_its_categories(panel):
     _select(panel, "Subgraphs")
     pills = [p for p in panel._cards_container.findChildren(TagPill) if p.isVisibleTo(panel._cards_container)]
-    assert [p.tag for p in pills] == ["Combat and Recovery", "Team"]
+    assert [p.tag for p in pills] == ["Combat and Healing", "Team"]
     assert all(p._vocabulary == SUBGRAPH_VOCABULARY for p in pills)
 
 
@@ -293,7 +289,7 @@ def test_the_category_picker_counts_the_subgraphs(panel):
 def browser(qapp, tmp_path) -> NodeBrowserDialog:
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     SubgraphLibrary(shipped).save(_defn(tags=["Team"]))
-    SubgraphLibrary(user).save(_defn("fight", "Fight loop", tags=["Combat and Recovery"]))
+    SubgraphLibrary(user).save(_defn("fight", "Fight loop", tags=["Combat and Healing"]))
     SubgraphLibrary(user).save(_defn("mine", "My sync", tags=["Team"]))
     return NodeBrowserDialog(mode="add", subgraph_library=SubgraphLibrary(shipped, user))
 
@@ -314,7 +310,7 @@ def test_the_subgraphs_tab_filters_by_category_and_source(browser):
     assert set(browser.offered_node_types) == {subgraph_key(SYNC_ID), subgraph_key("mine")}
     browser.set_source_filter(["Custom"])
     assert browser.offered_node_types == [subgraph_key("mine")]
-    browser.set_category_filter(["Team", "Combat and Recovery"])
+    browser.set_category_filter(["Team", "Combat and Healing"])
     assert set(browser.offered_node_types) == {subgraph_key("mine"), subgraph_key("fight")}
 
 
@@ -327,9 +323,9 @@ def test_search_finds_a_subgraph_by_category_and_keeps_the_filter(browser):
 
 def test_the_detail_panel_shows_the_categories(browser):
     _subgraph_tab(browser)
-    browser.set_category_filter(["Combat and Recovery"])
+    browser.set_category_filter(["Combat and Healing"])
     browser._list.setCurrentRow(0)
-    assert [p.tag for p in browser._detail.widget().findChildren(TagPill)] == ["Combat and Recovery"]
+    assert [p.tag for p in browser._detail.widget().findChildren(TagPill)] == ["Combat and Healing"]
 
 
 def test_a_definitions_categories_stay_on_one_line_in_edit_mode(header):
@@ -339,7 +335,7 @@ def test_a_definitions_categories_stay_on_one_line_in_edit_mode(header):
     """
     from PyQt6.QtCore import Qt  # noqa: PLC0415
 
-    header.set_config(definition_to_config(_defn(tags=["Team", "Combat and Recovery", "Utility"])))
+    header.set_config(definition_to_config(_defn(tags=["Team", "Combat and Healing", "Utility"])))
     header.set_definition_info("Official (modified)", 12)
     header.set_editable(True)
     header.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
