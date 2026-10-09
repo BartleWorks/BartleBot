@@ -23,7 +23,6 @@ RATIO_FIELDS = [
     ("collect_wisps", "fail_if_mana_below"),
     ("handle_potions", "if_health_below"),
     ("handle_potions", "if_mana_below"),
-    ("wait_for_health", "threshold"),
 ]
 
 

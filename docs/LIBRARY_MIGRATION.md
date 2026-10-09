@@ -371,7 +371,7 @@ other 6 bots only if players can mark inside their farm dungeon.
 `spiral_cup_gauntlet` waits for health after porting to its friend, before entering. Gauntlet
 Farmer does that job differently: Check health and mana sends players back to Sync players in
 The Commons, where `handle_potions` can refill. Rebuilt on the template, the bot no longer needs
-the wait, and nothing else uses the node, so it goes when that bot is rebuilt. Boss rematches
+the wait, and nothing else uses the node, so it was removed (the bot file had already lost it). Boss rematches
 get their own answer after 1.0.0.
 
 ## What needs the game

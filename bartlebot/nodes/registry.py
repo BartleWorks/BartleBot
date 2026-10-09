@@ -6,8 +6,6 @@ from bartlebot.nodes.combat.handle_combat import NODE_SPEC as _handle_combat_spe
 from bartlebot.nodes.combat.handle_combat import run as handle_combat_run
 from bartlebot.nodes.combat.handle_potions import NODE_SPEC as _handle_potions_spec
 from bartlebot.nodes.combat.handle_potions import run as handle_potions_run
-from bartlebot.nodes.combat.wait_for_health import NODE_SPEC as _wait_for_health_spec
-from bartlebot.nodes.combat.wait_for_health import run as wait_for_health_run
 from bartlebot.nodes.interaction.click_path import NODE_SPEC as _click_path_spec
 from bartlebot.nodes.interaction.click_path import run as click_path_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
@@ -81,7 +79,6 @@ NODE_REGISTRY: dict = {
     "teleport_to_friend": teleport_to_friend_run,
     "sleep": sleep_run,
     "wait_for_dialogue": wait_for_dialogue_run,
-    "wait_for_health": wait_for_health_run,
     "check_level_scaling": check_level_scaling_run,
     "check_zone": check_zone_run,
     "handle_level_scaling": handle_level_scaling_run,
@@ -113,7 +110,6 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "teleport_to_friend": _teleport_to_friend_spec,
     "sleep": _sleep_spec,
     "wait_for_dialogue": _wait_for_dialogue_spec,
-    "wait_for_health": _wait_for_health_spec,
     "check_level_scaling": _check_level_scaling_spec,
     "check_zone": _check_zone_spec,
     "handle_level_scaling": _handle_level_scaling_spec,
@@ -165,7 +161,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "collect_wisps",
             "handle_combat",
             "handle_potions",
-            "wait_for_health",
         ],
     ),
     (
