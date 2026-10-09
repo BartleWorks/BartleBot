@@ -31,8 +31,6 @@ from bartlebot.nodes.teleportation.teleport_to_marked_location import NODE_SPEC 
 from bartlebot.nodes.teleportation.teleport_to_marked_location import run as teleport_to_marked_location_run
 from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _teleport_to_world_hub_spec
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
-from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
-from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
 from bartlebot.nodes.utility.branch import NODE_SPEC as _branch_spec
 from bartlebot.nodes.utility.branch import run as branch_run
 from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
@@ -61,7 +59,6 @@ from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
 
 NODE_REGISTRY: dict = {
-    "apply_level_scaling": apply_level_scaling_run,
     "change_realm": change_realm_run,
     "click_path": click_path_run,
     "enter_zone": enter_zone_run,
@@ -94,7 +91,6 @@ NODE_REGISTRY: dict = {
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
-    "apply_level_scaling": _apply_level_scaling_spec,
     "change_realm": _change_realm_spec,
     "click_path": _click_path_spec,
     "enter_zone": _enter_zone_spec,
@@ -186,7 +182,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
     (
         "Utility",
         [
-            "apply_level_scaling",
             "branch",
             "change_realm",
             "check_level_scaling",

@@ -17,9 +17,10 @@ decisions came from #141.
 ## One node
 
 `handle_level_scaling` has one param: which Scales to use, and it is usually left unset
-(see "The default" below). Who gets scaled is the `Level Scaling Players` bot option. `check_level_scaling` and `apply_level_scaling` still
-exist until the library moves off them (#59). The elixir code they share, `apply_elixir`, already
-lives in `handle_level_scaling`, so removing them removes nothing it needs.
+(see "The default" below). Who gets scaled is the `Level Scaling Players` bot option. `check_level_scaling` still
+exists as a condition node. `apply_level_scaling` is gone: the library moved off it (#59) and it was
+deleted outright, so no bot file can name it. Its elixir code, `apply_elixir`, lives in
+`handle_level_scaling`.
 
 | step | what happens | fails when |
 |---|---|---|
@@ -166,7 +167,7 @@ recorded in the app, checks it, and writes the whole file back in one fixed form
    - an `enter_zone` for each zone change between the sigil and the Scales, or between a
      zone the zone picker offers and the sigil, when there are any;
    - an `interact` on the Scales: the point where its prompt shows, and a reset point where it
-     does not. It records the same three fields `apply_level_scaling` did, and outlives it.
+     does not. It records the same three fields the removed `apply_level_scaling` did.
 
    The nodes need no edges and no order. Save the bot anywhere.
 2. Look at what the tool makes of it, then write it:

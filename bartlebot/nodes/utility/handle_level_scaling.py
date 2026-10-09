@@ -2,7 +2,7 @@
 
 One node for the whole job (#141): it checks who needs the elixir, marks where the players
 are, takes everyone to the chosen Scales, applies the elixir and recalls. It replaces
-check_level_scaling, apply_level_scaling and the detour a bot built by hand around them.
+check_level_scaling, the old apply_level_scaling node and the detour a bot built by hand around them.
 ``docs/LEVEL_SCALING.md`` has the decisions behind it.
 """
 
@@ -26,7 +26,7 @@ PARAM_SCALES = "scales"
 
 #: Every node type that reads the elixir indicator. A bot holding one gets the pre-run
 #: warning when a level scaling player starts the run with an elixir already active.
-LEVEL_SCALING_NODE_TYPES = frozenset({"handle_level_scaling", "check_level_scaling", "apply_level_scaling"})
+LEVEL_SCALING_NODE_TYPES = frozenset({"handle_level_scaling", "check_level_scaling"})
 
 #: Where this node keeps its marks in ``machine.node_scratch``.
 SCRATCH_KEY = "handle_level_scaling"
@@ -399,8 +399,7 @@ async def apply_elixir(
     """Give the elixir to each ``(player number, client)`` at the Scales, with the retry rounds.
 
     Every client must already be in the Scales' zone. Returns False having logged who still
-    lacks the elixir. run() calls this with only the players that lack one; the old
-    apply_level_scaling node calls it with every Level Scaling Player.
+    lacks the elixir. run() calls this with only the players that lack one.
     """
     # Clear any pre-existing interact prompt on the scaled clients.
     if not await node_helpers.clear_stale_prompt(

@@ -202,7 +202,7 @@ def entry_from_bot(
     """The table entry for the Scales a bot's ``interact`` node was recorded on.
 
     An ``interact`` because it records exactly the station's three fields and is staying in the
-    library; ``apply_level_scaling``, which records the same three, goes once no bot uses it.
+    library; the ``apply_level_scaling`` that also recorded the same three has been removed.
     """
     nav = zone_nav.load() if nav is None else nav
     states = bot.get("states") or []
