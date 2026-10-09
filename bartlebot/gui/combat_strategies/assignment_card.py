@@ -371,7 +371,7 @@ class AssignmentCard(CardFrame):
             self.changed.emit()
 
     def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
-        """Color the pills by the account in each slot — see gui/widgets/player_pills.py."""
+        """Color the pills by the account in each slot — see gui/widgets/pills/player_pills.py."""
         self._pills.set_color_keys(keys)
         self._pills.set_account_labels(labels or [])
 

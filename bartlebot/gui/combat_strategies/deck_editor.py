@@ -94,7 +94,7 @@ class DeckPresetEditor(QWidget):
         client_row.addStretch()
         layout.addLayout(client_row)
         # The same rows the sidebar's deck card unfolds into, art and all — see
-        # ``widgets/deck_card_list.py``. Treasure cards are omitted there, and
+        # ``widgets/cards/deck_card_list.py``. Treasure cards are omitted there, and
         # deliberately: never captured and never applied, so listing them would
         # misrepresent what the preset restores.
         self._cards = DeckCardList(empty_text=EMPTY_DECK, parent=self)

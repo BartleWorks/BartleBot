@@ -275,7 +275,7 @@ where it stopped. A list step matches the destination's name in every locale fro
 world's name the same way from `world_names.json`.
 
 The Sync In Zone node (`nodes/teleportation/sync_in_zone.py`) is `navigate()` with the zone as its one
-param, chosen in a picker grouped by world (`gui/widgets/zone_picker.py`). Only the zone path is
+param, chosen in a picker grouped by world (`gui/widgets/pickers/zone_picker.py`). Only the zone path is
 stored: the map already says which world it is in. It replaced the `go_to_world` node, which went
 home and through the World Tree's gate every time; a Sync In Zone to the zone a world's gate lands
 in does the same with a route the planner picks.

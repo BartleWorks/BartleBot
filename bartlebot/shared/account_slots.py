@@ -8,7 +8,7 @@ shared by living in one place rather than by two widgets agreeing.
 Shared here rather than in ``gui/`` because a slot is a fact about the account list and
 nothing else: it is an integer, computed from usernames and stored pins, that a second
 product coloring the same accounts must resolve identically. Turning a slot into a
-color reads the live theme and stays in ``gui/account_accent``, which is the half that
+color reads the live theme and stays in ``gui/theming/account_accent``, which is the half that
 cannot leave. See ``bartlebot.shared`` for that seam.
 
 WHERE A SLOT COMES FROM

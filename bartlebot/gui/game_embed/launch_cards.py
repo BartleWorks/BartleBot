@@ -12,7 +12,7 @@ pills beside it and quieter secondary lines below.
 
 WHAT IS HERE, AND WHAT IS IN ``CardFrame``
 
-The card *frame* is gui/widgets/card_frame.py: the gutter-and-frame split, the drag
+The card *frame* is gui/widgets/cards/card_frame.py: the gutter-and-frame split, the drag
 handle, the hover state, the picked-up state, the theme pass, ``CardMode``, and the
 verbs-as-data machinery with the right-click menu built from it. Read that module for the
 click model and the reasoning behind the gutter -- it is shared with a second family of

@@ -1346,7 +1346,7 @@ class CombatStrategyDialog(QDialog):
         # caller rather than read here: this dialog knows nothing about clients, and the
         # Combat tab that opens it already has the ``ClientManager`` in reach. Empty is
         # the normal case — a duel is usually authored with nothing running — and the
-        # pills simply go uncolored. See gui/widgets/player_pills.py.
+        # pills simply go uncolored. See gui/widgets/pills/player_pills.py.
         if StrategyKind.DUEL in self._pages:
             self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
 

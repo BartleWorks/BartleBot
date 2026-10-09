@@ -130,7 +130,7 @@ Export sends what is saved. File › Export… offers to save first; the strateg
 menu turns Export off, with the reason, on an entry with unsaved edits; the Combat tab
 writes every change as it is made, and its export rereads the file.
 
-**The summary** (`gui/export_dialog.py`) lists every item in three groups: *Sent in the
+**The summary** (`gui/dialogs/export_dialog.py`) lists every item in three groups: *Sent in the
 file*, *Official, so not sent*, and *Not in your library, so not sent*. Each line shows
 the item's name and description, since those are the user's own text going to someone
 else. A bot's export has two checkboxes, both on: its Bot Combat Strategy, and that

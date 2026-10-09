@@ -1169,7 +1169,7 @@ class CombatTab(QWidget):
 
         ``None`` (the default) means nobody has installed one, which is the normal state
         in tests and in a session with nothing running: the dialog's player pills simply
-        go uncolored. See gui/widgets/player_pills.py for why that degrades cleanly
+        go uncolored. See gui/widgets/pills/player_pills.py for why that degrades cleanly
         rather than falling back to a color.
 
         The tab's own player pills and deck stripes ask the same source, on a timer while
@@ -1203,7 +1203,7 @@ class CombatTab(QWidget):
 
         Resolved through ``account_stripe_keys`` over the *whole* account list rather than
         per username, because a color is only distinct with respect to the others — see
-        gui/account_accent.py. An unidentified client gets no slot and no name, which is
+        gui/theming/account_accent.py. An unidentified client gets no slot and no name, which is
         the truth about it.
         """
         if self._player_account_source is None:

@@ -14,7 +14,7 @@ of the template be offered to the bot.
 Only released versions are starting points. A template with a draft and nothing released
 is not offered: the draft is its maintainer's working copy (see :mod:`bartlebot.content.templates.template_store`).
 
-No Qt and no settings here: the dialog (``gui/new_bot_dialog.py``) is a form over these
+No Qt and no settings here: the dialog (``gui/dialogs/new_bot_dialog.py``) is a form over these
 functions, and a test calls them on a ``tmp_path``.
 """
 

@@ -74,7 +74,7 @@ dependency on the game being installed at a guessable path. Extract what you nee
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 `bartlebot/game/data/name_tables.json`, and regenerate it when the game adds entries.
 
-The snapshots and their tools:
+The snapshots, all in `bartlebot/game/data/`, and their tools:
 
 | snapshot | tool | regenerate when |
 |---|---|---|

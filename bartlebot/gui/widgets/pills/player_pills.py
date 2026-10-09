@@ -24,7 +24,7 @@ stored data does not make, and the same card would read differently depending on
 anything was hooked when it was opened.
 
 So the slot is the label, always, and the account is the *color* — which is exactly the
-job color is doing everywhere else in this app (see gui/account_accent.py): a match
+job color is doing everywhere else in this app (see gui/theming/account_accent.py): a match
 target, not an identifier. Hook four clients and the pills pick up the same four hues as
 the player cards and the launch profile; hook nothing and they are simply uncolored.
 The account's name is in the tooltip, which is where a claim that can go stale belongs.
