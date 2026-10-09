@@ -38,6 +38,7 @@ from bartlebot.bot_options import (
     system_option_names,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY
+from bartlebot.paths import project_root
 from bartlebot.template_store import list_templates
 from tests.conftest import FakeClient
 
@@ -45,7 +46,7 @@ from tests.conftest import FakeClient
 # Paths
 # ---------------------------------------------------------------------------
 
-_BOTS_DIR = Path(__file__).parent.parent / "bots"
+_BOTS_DIR = project_root() / "bots"
 
 # ---------------------------------------------------------------------------
 # Part 1: Config Pipeline

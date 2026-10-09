@@ -2,11 +2,12 @@
 
 import json
 import sys
-from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from bartlebot.paths import project_root
+
+sys.path.insert(0, str(project_root()))
 
 from bartlebot import scales, zone_nav  # noqa: E402
 from tools import scales_table  # noqa: E402

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import ast
 import json
-from pathlib import Path
 
 import pytest
 
@@ -30,6 +29,7 @@ from bartlebot.bot.schema import (
     TransitionModel,
 )
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
+from bartlebot.paths import project_root
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
@@ -61,7 +61,7 @@ from bartlebot.subgraphs import (
     taken_ids,
 )
 
-_REPO = Path(__file__).parent.parent
+_REPO = project_root()
 
 SYNC_ID = "sync-players"
 REGION = "9f59026b"

@@ -29,9 +29,10 @@ from bartlebot.gui.canvas.bot_canvas import (
 )
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
+from bartlebot.paths import project_root
 from tools.extract_card_art import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
 
-BOTS = Path(__file__).resolve().parent.parent / "bots"
+BOTS = project_root() / "bots"
 
 
 def _folders() -> list[Path]:

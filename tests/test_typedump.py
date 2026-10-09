@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "tools"))
+from bartlebot.paths import project_root
+
+sys.path.insert(0, str(project_root() / "tools"))
 
 from typedump import Prop, TypeDump, _sizeof, main  # noqa: E402
 

@@ -7,7 +7,6 @@ of this needs a ``QApplication``.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from types import SimpleNamespace
 
 from bartlebot import option_groups as og
@@ -18,8 +17,9 @@ from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_MINIMUM_TEAM_SIZE, OPTION_TEAM_UP
+from bartlebot.paths import project_root
 
-_ROOT = Path(__file__).resolve().parent.parent
+_ROOT = project_root()
 
 
 def _opt(name: str, type_: str = "bool"):

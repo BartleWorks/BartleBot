@@ -20,7 +20,9 @@ from pathlib import Path
 
 import pytest
 
-_ROOT = Path(__file__).resolve().parent.parent
+from bartlebot.paths import project_root
+
+_ROOT = project_root()
 _PACKAGE = _ROOT / "bartlebot"
 
 #: The one module allowed to spell a size out: it defines the tokens.

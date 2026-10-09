@@ -14,7 +14,9 @@ from pathlib import Path
 
 import pytest
 
-PROJECT_ROOT = Path(__file__).parent.parent
+from bartlebot.paths import project_root
+
+PROJECT_ROOT = project_root()
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from bartlebot.wiki_drops import (  # noqa: E402

@@ -10,11 +10,12 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from bartlebot.paths import project_root
+
+sys.path.insert(0, str(project_root()))
 
 from bartlebot import setup_steps  # noqa: E402
 from bartlebot.bot.schema import BotConfig  # noqa: E402
-from bartlebot.store_roots import project_root  # noqa: E402
 from bartlebot.subgraph_store import SubgraphLibrary  # noqa: E402
 from tools import rebuild_from_template as rft  # noqa: E402
 

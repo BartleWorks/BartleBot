@@ -1,14 +1,14 @@
 """Tests for the shared search field, and the convention that every search uses it."""
 
 import re
-from pathlib import Path
 
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QLineEdit
 
 from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.paths import project_root
 
-GUI_DIR = Path(__file__).parent.parent / "bartlebot" / "gui"
+GUI_DIR = project_root() / "bartlebot" / "gui"
 
 
 def test_the_placeholder_is_set(qapp):
