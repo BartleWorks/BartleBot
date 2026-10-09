@@ -24,6 +24,7 @@ from bartlebot.gui.canvas.drop_keep_list import (
     lit_by,
     match_span,
     row_visible,
+    typed_keywords,
 )
 from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, widget_value
 
@@ -646,6 +647,42 @@ def test_lit_by_tests_the_in_game_and_the_displayed_name():
     pin = DropModel(name="Pin (140, Fire)", match_name="Ruby Pin (140)")
     assert lit_by(pin, ["ruby"]) and lit_by(pin, ["fire"])
     assert not lit_by(pin, ["onyx"]) and not lit_by(pin, ["", "  "])
+
+
+def test_typing_a_keyword_lights_what_it_would_keep_and_stores_nothing(qapp):
+    w = _make(qapp)
+    w._edit.setText("amber")
+    assert w.lit_rows() == ["Amber", "Amber Ring"]
+    assert w.get_value() == []
+
+
+def test_typing_a_keyword_counts_only_what_it_would_add(qapp):
+    """Amber is ticked already, so "amber" saves one more drop, not two."""
+    w = _make(qapp, keep_list=["=Amber"])
+    w._edit.setText("amber")
+    assert "adding this keeps 1 more" in _plain(w._summary.text())
+
+
+def test_committing_the_keyword_ends_the_preview(qapp):
+    w = _make(qapp)
+    w._edit.setText("amber")
+    w._commit_typed()
+    assert w.lit_rows() == []
+    assert "adding this" not in _plain(w._summary.text())
+
+
+def test_a_hovered_chip_outranks_the_preview_and_gives_it_back(qapp):
+    w = _make(qapp, keep_list=["boots"])
+    w._edit.setText("amber")
+    chip = _keyword_chip(w, "boots")
+    chip.hovered.emit("boots", True)
+    assert w.lit_rows() == ["Boots of Dawn"]
+    chip.hovered.emit("boots", False)
+    assert w.lit_rows() == ["Amber", "Amber Ring"]
+
+
+def test_typed_keywords_split_a_paste_and_drop_the_item_prefix():
+    assert typed_keywords(" =Amber, giver ,, ") == ["Amber", "giver"]
 
 
 def test_the_default_category_entry_counts_what_it_shows(qapp):

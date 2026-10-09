@@ -156,6 +156,15 @@ def lit_by(entry: DropModel, keywords: list[str]) -> bool:
     return any(quicksell.matching_keyword(name, normalized) is not None for name in (entry.match_key, entry.name))
 
 
+def typed_keywords(text: str) -> list[str]:
+    """The keywords the add-field holds: a pasted list split, a typed "=" dropped.
+
+    An item is ticked, never typed, so the field only ever makes keywords.
+    """
+    words = (w.lstrip(quicksell.ITEM_PREFIX).strip() for w in parse_list_text(text))
+    return [w for w in words if w]
+
+
 def bulk_needs_confirmation(count: int) -> bool:
     """Whether changing *count* rows at once is big enough to ask about first."""
     return count > DROP_BULK_CONFIRM_THRESHOLD
@@ -302,6 +311,8 @@ class DropKeepListWidget(QWidget):
         # a settings-file write per keystroke.
         self._edit.returnPressed.connect(self._commit_typed)
         self._edit.editingFinished.connect(self._commit_typed)
+        # A preview, not a value: nothing is stored until the keyword is committed.
+        self._edit.textChanged.connect(self._on_typing)
         outer.addWidget(self._edit)
 
         self._keywords = QWidget()
@@ -309,6 +320,8 @@ class DropKeepListWidget(QWidget):
         self._chips: dict[str, KeywordChip] = {}
         # The chip under the pointer, whose rows are lit.
         self._hovered_keyword: str | None = None
+        # The keywords in the add-field, not yet committed.
+        self._preview_keywords: list[str] = []
         self._lit_keywords: list[str] = []
         self._keywords.setVisible(False)
         outer.addWidget(self._keywords)
@@ -650,7 +663,44 @@ class DropKeepListWidget(QWidget):
         shown = sum(1 for row in self._rows if not row.isHidden())
         if shown != sellable:
             text += f" · {self._emphasis(shown)} shown"
+        if self._preview_keywords:
+            text += f" · adding this keeps {self._emphasis(self._preview_gain())} more"
         self._summary.setText(text)
+
+    def _preview_gain(self) -> int:
+        """How many drops sold now the keyword being typed would keep.
+
+        Counted over rows that are unticked and tickable: sold, and not a pet the keep
+        list cannot reach. Matched by in-game name only, as the node matches, so the
+        number is what adding the keyword would really save.
+        """
+        keywords = [k.lower() for k in self._preview_keywords]
+        gain = 0
+        for row in self._rows:
+            if row.checkState(_COL_KEEP) == Qt.CheckState.Checked or not row.flags() & Qt.ItemFlag.ItemIsEnabled:
+                continue
+            entry = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
+            gain += quicksell.matching_keyword(entry.match_key, keywords) is not None
+        return gain
+
+    def _on_typing(self, text: str) -> None:
+        """Preview a keyword as it is typed: light what it would keep, and count the gain.
+
+        Outlook tests a rule against the mailbox before it is saved, for the same reason:
+        a keyword is broader than it looks, and "Couch Potatoes" lighting three rows says
+        so before anything is stored.
+        """
+        self._preview_keywords = typed_keywords(text)
+        self._sync_lit()
+        if self._rows:
+            self._render_summary()
+
+    def _sync_lit(self) -> None:
+        """Light the hovered chip's rows, or else the rows the typed keyword would keep."""
+        if self._hovered_keyword:
+            self._set_lit_keywords([self._hovered_keyword])
+        else:
+            self._set_lit_keywords(self._preview_keywords)
 
     # ------------------------------------------------------------------
     # Filtering
@@ -770,13 +820,7 @@ class DropKeepListWidget(QWidget):
         """
         if self._suppress:
             return
-        # Whatever is typed here is a keyword, never an item: an item is ticked in the
-        # table, so a typed "=" prefix is dropped rather than silently made exact.
-        typed = [
-            word
-            for word in (w.lstrip(quicksell.ITEM_PREFIX).strip() for w in parse_list_text(self._edit.text()))
-            if word
-        ]
+        typed = typed_keywords(self._edit.text())
         self._edit.clear()
         existing = {v.strip().casefold() for v in self._value if not quicksell.is_item_entry(v)}
         added = [word for word in dict.fromkeys(typed) if word.casefold() not in existing]
@@ -804,7 +848,7 @@ class DropKeepListWidget(QWidget):
             self._hovered_keyword = word
         elif self._hovered_keyword == word:
             self._hovered_keyword = None
-        self._set_lit_keywords([self._hovered_keyword] if self._hovered_keyword else [])
+        self._sync_lit()
 
     def _set_lit_keywords(self, keywords: list[str]) -> None:
         if keywords == self._lit_keywords:
@@ -861,7 +905,7 @@ class DropKeepListWidget(QWidget):
         self._chips = {}
         # A chip removed under the pointer never sends its leave, so its light goes here.
         self._hovered_keyword = None
-        self._lit_keywords = []
+        self._sync_lit()
         for word in dict.fromkeys(self._typed_keywords()):
             chip = KeywordChip(word)
             chip.removed.connect(self._remove_keyword)
