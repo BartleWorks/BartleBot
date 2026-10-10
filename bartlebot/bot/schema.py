@@ -56,7 +56,7 @@ class DropModel(BaseModel):
 
 
 #: The node type that writes variables. Named here, where the registry-free rules for a
-#: subgraph definition need it; the node is ``bartlebot/nodes/utility/set_variables.py``.
+#: subgraph definition need it; the node is ``bartlebot/nodes/control_flow/set_variables.py``.
 SET_VARIABLES_NODE = "set_variables"
 
 

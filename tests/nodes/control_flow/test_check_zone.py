@@ -1,6 +1,6 @@
 """Unit tests for the check_zone condition node."""
 
-import bartlebot.nodes.utility.check_zone as cz
+import bartlebot.nodes.control_flow.check_zone as cz
 from tests.conftest import FakeClient, FakeMachine
 
 # ---------------------------------------------------------------------------

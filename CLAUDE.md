@@ -48,7 +48,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 ## Architecture
 
 - **FSM engine** (`bartlebot/bot/machine.py`): `transitions.AsyncMachine` drives a node-based state machine
-- **Nodes** (`bartlebot/nodes/`): async coroutines, grouped by kind (`combat/`, `interaction/`, `teleportation/`, `utility/`, `zone_entry/`)
+- **Nodes** (`bartlebot/nodes/`): async coroutines, grouped by node-browser category (`combat_and_healing/`, `control_flow/`, `interaction/`, `teleportation/`, `utility/`, `zone_entry/`)
 - **GUI** (`bartlebot/gui/`): PyQt6 with qasync bridging async and Qt event loops
 - **Bot files**: JSON in `bots/`, validated by Pydantic models in `bartlebot/bot/schema.py`
 

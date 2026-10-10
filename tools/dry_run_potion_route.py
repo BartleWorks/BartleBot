@@ -43,7 +43,7 @@ import time
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.nodes import wizard_city
-from bartlebot.nodes.combat import handle_potions
+from bartlebot.nodes.combat_and_healing import handle_potions
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 
 # Matches the node's own default. The route waits on server responses in several places, so

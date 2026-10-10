@@ -333,7 +333,7 @@ def test_heretical_academys_puzzle_can_be_built_without_touching_the_file(qapp, 
     """
     from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _FlagConditionsWidget  # noqa: PLC0415
     from bartlebot.gui.sidebar.sections.variables_section import VariableDialog, VariablesSection  # noqa: PLC0415
-    from bartlebot.nodes.utility.set_variables import PARAM_SCHEMA  # noqa: PLC0415
+    from bartlebot.nodes.control_flow.set_variables import PARAM_SCHEMA  # noqa: PLC0415
 
     def state(sid, node_type="sleep", **params):
         return StateModel(id=sid, node_type=node_type, label=sid.replace("_", " ").title(), params=params)

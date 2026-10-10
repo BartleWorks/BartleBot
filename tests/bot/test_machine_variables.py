@@ -23,8 +23,8 @@ from bartlebot.bot.schema import (
     VariableModel,
 )
 from bartlebot.bot.variables import VariableError
+from bartlebot.nodes.control_flow import branch, set_variables
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
-from bartlebot.nodes.utility import branch, set_variables
 
 DECLS = [
     VariableModel(name="swords", type="int", initial=1),

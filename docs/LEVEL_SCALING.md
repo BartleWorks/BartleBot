@@ -100,7 +100,7 @@ leaving a level 40 dungeon at full health reads about 20% outside. Entering clam
 health to the scaled max rather than scaling it, so the share that matters before the
 next entry is the share of the *scaled* max. With the Challenge Mode option on,
 `handle_potions` and `collect_wisps` read their ratios that way
-(`nodes/combat/scaled_ratios.py`), and the same thresholds serve both modes. Before this a
+(`nodes/combat_and_healing/scaled_ratios.py`), and the same thresholds serve both modes. Before this a
 Challenge Mode bot branched to a second `handle_potions` with lower thresholds, guessed by
 hand.
 

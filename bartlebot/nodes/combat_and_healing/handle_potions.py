@@ -6,7 +6,7 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.combat import scaled_ratios
+from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     POTION_BUY_PATH,
