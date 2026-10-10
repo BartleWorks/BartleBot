@@ -12,7 +12,7 @@ Why BartleBot cares: a player leaves a Challenge Mode dungeon with the health an
 had inside, under its own caps again, so the same health reads as a small share of a much
 larger max. On entering, current health is clamped to the scaled max, not scaled, so what
 the next entry gives is the share of the *scaled* max, capped at one. :func:`factors` is
-that scale; ``nodes/combat/scaled_ratios.py`` reads a client's ratios through it.
+that scale; ``nodes/combat_and_healing/scaled_ratios.py`` reads a client's ratios through it.
 
 Which level a dungeon scales to (:func:`dungeon_level`) is the level of the Scales of
 Knowledge inside that dungeon, or else of its world's Scales; two worlds with Challenge

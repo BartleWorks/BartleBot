@@ -21,7 +21,7 @@ from wizwalker import XYZ
 from bartlebot.bot import ambient_combat
 from bartlebot.bot.machine import BotMachine
 from bartlebot.nodes import combat_runner, node_helpers
-from bartlebot.nodes.combat import collect_wisps
+from bartlebot.nodes.combat_and_healing import collect_wisps
 from tests.conftest import FakeClient, FakeEntity, see_each_other
 
 HOME = "WizardCity/WC_Streets/Unicorn_Way"

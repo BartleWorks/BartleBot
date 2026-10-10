@@ -17,7 +17,7 @@ from bartlebot.bot.schema import FlagCondition, FlagGroup, VariableModel
 from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _FlagConditionsWidget, _held_text, _HeldParam
 from bartlebot.gui.canvas.variable_rows import AssignmentsField
 from bartlebot.gui.widgets.inputs.variable_widgets import NOT_A_VALUE, OPTION, VARIABLE, VariableValueField
-from bartlebot.nodes.utility.set_variables import PARAM_SCHEMA
+from bartlebot.nodes.control_flow.set_variables import PARAM_SCHEMA
 
 SWORDS = VariableModel(name="swords", type="int")
 FOUND = VariableModel(name="found", type="bool")

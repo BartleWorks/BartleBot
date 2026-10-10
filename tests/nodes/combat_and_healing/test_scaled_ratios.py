@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from bartlebot.nodes.combat import scaled_ratios
+from bartlebot.nodes.combat_and_healing import scaled_ratios
 from tests.conftest import FakeClient, FakeMachine
 
 THRONE_ROOM = "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB"

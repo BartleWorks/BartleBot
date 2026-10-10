@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ, Keycode
 
-import bartlebot.nodes.combat.handle_potions as hp
+import bartlebot.nodes.combat_and_healing.handle_potions as hp
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.wizard_city as wc
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
@@ -47,11 +47,11 @@ _HOME_OK = patch(
     new=AsyncMock(return_value=True),
 )
 _SHOP_FN_OK = patch(
-    "bartlebot.nodes.combat.handle_potions._open_potion_shop",
+    "bartlebot.nodes.combat_and_healing.handle_potions._open_potion_shop",
     new=AsyncMock(return_value=True),
 )
 _BUY_OK = patch(
-    "bartlebot.nodes.combat.handle_potions._buy_potions_for_client",
+    "bartlebot.nodes.combat_and_healing.handle_potions._buy_potions_for_client",
     new=AsyncMock(),
 )
 
@@ -247,7 +247,7 @@ async def test_buying_client_in_commons_shop_failure_returns_failure():
     """Buying clients in Commons but potion shop fails to open → FAILURE."""
     client = _depleted_client(zone=COMMONS)
     shop_fail = patch(
-        "bartlebot.nodes.combat.handle_potions._open_potion_shop",
+        "bartlebot.nodes.combat_and_healing.handle_potions._open_potion_shop",
         new=AsyncMock(return_value=False),
     )
 
@@ -304,7 +304,7 @@ async def test_ravenwood_to_commons_failure_returns_failure():
 async def test_open_potion_shop_failure_returns_failure():
     client = _depleted_client()
     shop_fail = patch(
-        "bartlebot.nodes.combat.handle_potions._open_potion_shop",
+        "bartlebot.nodes.combat_and_healing.handle_potions._open_potion_shop",
         new=AsyncMock(return_value=False),
     )
 
@@ -345,7 +345,7 @@ async def test_only_depleted_clients_enter_refill():
     c_depleted = _depleted_client()
     buy_mock = AsyncMock()
     buy_patch = patch(
-        "bartlebot.nodes.combat.handle_potions._buy_potions_for_client",
+        "bartlebot.nodes.combat_and_healing.handle_potions._buy_potions_for_client",
         new=buy_mock,
     )
 

@@ -12,7 +12,7 @@ import pytest
 
 from bartlebot.game.wiki_pages import WIKI_HOST, WIKI_PAGE_PARAM, resolve_wiki_page
 from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _WikiPageLineEdit
-from bartlebot.nodes.combat.handle_combat import PARAM_SCHEMA
+from bartlebot.nodes.combat_and_healing.handle_combat import PARAM_SCHEMA
 
 
 def _form(params=None):
@@ -41,7 +41,7 @@ def test_the_node_does_not_read_it_at_run_time():
     # Editor-only. If this ever changes, the param stops being safe to leave blank.
     import inspect
 
-    from bartlebot.nodes.combat import handle_combat
+    from bartlebot.nodes.combat_and_healing import handle_combat
 
     assert WIKI_PAGE_PARAM not in inspect.getsource(handle_combat.run)
 

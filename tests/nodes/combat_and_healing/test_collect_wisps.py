@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from wizwalker import XYZ
 
-import bartlebot.nodes.combat.collect_wisps as cw
+import bartlebot.nodes.combat_and_healing.collect_wisps as cw
 from bartlebot.nodes import node_helpers
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 

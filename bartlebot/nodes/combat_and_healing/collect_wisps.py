@@ -5,7 +5,7 @@ import logging
 
 from wizwalker import XYZ
 
-from bartlebot.nodes.combat import scaled_ratios
+from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter

@@ -1,4 +1,4 @@
-import bartlebot.nodes.combat.check_health_and_mana as chm
+import bartlebot.nodes.control_flow.check_health_and_mana as chm
 from tests.conftest import FakeClient, FakeMachine
 
 

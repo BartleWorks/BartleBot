@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, call, patch
 import pytest
 from wizwalker import XYZ
 
-import bartlebot.nodes.combat.handle_combat as hc
+import bartlebot.nodes.combat_and_healing.handle_combat as hc
 from bartlebot.nodes import combat_runner
 from tests.conftest import FakeClient, FakeEntity, FakeMachine, see_each_other
 
@@ -38,7 +38,7 @@ def _patch_resolve_combat(combat_order: list[int]):
     from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG  # noqa: PLC0415
 
     return patch(
-        "bartlebot.nodes.combat.handle_combat.resolve_combat",
+        "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
         return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG, BARTLEBOT_DEFAULT_COMBAT_CONFIG], combat_order, "test"),
     )
 
@@ -239,7 +239,7 @@ async def test_combat_order_invalid_client_number_skipped():
     with (
         _patch_run_combat(),
         patch(
-            "bartlebot.nodes.combat.handle_combat.resolve_combat",
+            "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
             return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG], [5], "test"),
         ),
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),

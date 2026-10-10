@@ -41,7 +41,7 @@ from dataclasses import dataclass, field
 
 from bartlebot.clients import port_map
 from bartlebot.nodes import combat_runner, node_helpers
-from bartlebot.nodes.combat import collect_wisps
+from bartlebot.nodes.combat_and_healing import collect_wisps
 from bartlebot.nodes.timing import (
     AMBIENT_COMBAT_MAX_DURATION,
     AMBIENT_HELP_HOLD,
