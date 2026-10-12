@@ -104,7 +104,27 @@ class PreferenceStore:
             record = json.loads(self._path.read_text(encoding="utf-8"))
         except FileNotFoundError:
             return {}
-        except (OSError, ValueError):
-            logger.exception("The shared preferences at %s are not readable", self._path)
+        except (OSError, ValueError) as exc:
+            _report_unreadable(self._path, exc)
             return {}
         return record if isinstance(record, dict) else {}
+
+
+#: Each unreadable file already reported, with the state it was in. Module-level because a
+#: fight's resolution builds a store of its own, and a damaged file read on every fight
+#: would otherwise log on every fight.
+_reported: dict[Path, tuple[int, int] | None] = {}
+
+
+def _report_unreadable(path: Path, exc: Exception) -> None:
+    """Warn that *path* can't be read, once for each state of the file."""
+    try:
+        stat = path.stat()
+        state = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        state = None
+    if path in _reported and _reported[path] == state:
+        logger.debug("The shared preferences at %s are still not readable: %s", path, exc)
+        return
+    _reported[path] = state
+    logger.warning("The shared preferences at %s are not readable, so the defaults apply: %s", path, exc)

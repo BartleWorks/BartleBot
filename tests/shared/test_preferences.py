@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 
 import pytest
@@ -101,6 +102,36 @@ def test_the_version_key_is_not_a_preference(directory):
     with pytest.raises(ValueError):
         store.set("version", 3)
     assert store.get("version", "d") == "d"
+
+
+def _unreadable_warnings(caplog) -> list[logging.LogRecord]:
+    return [r for r in caplog.records if r.levelno >= logging.WARNING and "not readable" in r.getMessage()]
+
+
+def test_a_damaged_file_is_reported_once_however_often_it_is_read(directory, caplog):
+    """Each fight's resolution reads it through a store of its own; one warning is enough."""
+    directory.mkdir()
+    (directory / FILENAME).write_text("{not json", encoding="utf-8")
+
+    with caplog.at_level(logging.DEBUG, logger="bartlebot.shared.preferences"):
+        for _ in range(3):
+            assert PreferenceStore(directory).get("combat.default_duel.team") is None
+
+    assert len(_unreadable_warnings(caplog)) == 1
+
+
+def test_a_damaged_file_damaged_again_differently_is_reported_again(directory, caplog):
+    directory.mkdir()
+    path = directory / FILENAME
+    path.write_text("{not json", encoding="utf-8")
+    PreferenceStore(directory).get("a")
+    path.write_text("{still not json at all", encoding="utf-8")
+    caplog.clear()
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.shared.preferences"):
+        PreferenceStore(directory).get("a")
+
+    assert len(_unreadable_warnings(caplog)) == 1
 
 
 def test_the_default_directory_is_the_vendor_root():
