@@ -227,7 +227,10 @@ and `resolve_combat()` in `bartlebot/nodes/combat_runner.py` wraps it, returning
   kept for the log. At level 1 it is used anyway: the user chose it, the pre-run check
   is what tells them it doesn't fit, and Run anyway means running what they chose.
 - **A Bot Combat Strategy covers a fight with its assignment, else its own
-  `default_strategy_id`.** Only one with neither falls through for that fight. An
+  `default_strategy_id`.** Only one with neither falls through for that fight, and the
+  user's falls to level 3, past the Official one: a run never fills the user's gaps
+  from the author's, so each run has one owner to explain it. Level 2 answers only when
+  the user has no Bot Combat Strategy for the bot, or its file is missing. An
   unlinked assignment counts as none. The assignment is found by `fight_keys.bind`,
   below, and the duel and its player strategies by `StrategyLookup`, the bot's own first.
 - **Level 2 reads the shipped files as they ship** (`strategy_store.list_shipped`). A
