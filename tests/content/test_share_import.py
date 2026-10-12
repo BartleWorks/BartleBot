@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
     list_all_bot_strategies,
     load_bot_strategy,

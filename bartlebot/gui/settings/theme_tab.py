@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.theming.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
+from bartlebot.gui.theming.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme, saved_color
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager, default_for
@@ -44,7 +44,7 @@ _SECTIONS: list[tuple[str, list[str]]] = [
     ("Edges & Ports", ["edge_color", "edge_hover", "edge_selected", "port_color"]),
     (
         "Status & Pills",
-        ["status_paused", "pill_warning_hover", "pill_neutral_bg", "pill_activity_bg", "pill_profile_bg", "pill_text"],
+        ["status_paused", "pill_warning_hover", "pill_neutral_bg", "pill_activity_bg", "pill_this_bot_bg", "pill_text"],
     ),
     ("Search", ["search_match_current", "search_match_other"]),
     ("Minimap", ["minimap_viewport"]),
@@ -95,7 +95,7 @@ _LABELS: dict[str, str] = {
     "pill_warning_hover": "Warning pill (hover)",
     "pill_neutral_bg": "Neutral pill",
     "pill_activity_bg": "Activities tag pill",
-    "pill_profile_bg": "Combat profile pill",
+    "pill_this_bot_bg": "This bot pill",
     "pill_text": "Pill text",
     "search_match_current": "Current match",
     "search_match_other": "Other matches",
@@ -279,7 +279,7 @@ class ThemeTab(QWidget):
                 if token not in _COLOR_TOKENS:
                     continue
 
-                hex_val = saved_overrides.get(token, getattr(base, token))
+                hex_val = saved_color(saved_overrides, token, getattr(base, token))
                 self._colors[token] = hex_val
 
                 lbl = QLabel("  " + _LABELS.get(token, token) + ":")

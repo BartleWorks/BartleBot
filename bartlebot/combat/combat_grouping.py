@@ -18,7 +18,7 @@ matching :mod:`bartlebot.combat.combat_warnings` next door.
 Grouping key
 ------------
 Linked bindings group by ``duel_combat_strategy_id``; unlinked ones never group
-with anything, each being one fight on the profile's default.
+with anything, each being one fight on the Bot Combat Strategy's default.
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from bartlebot.combat.bot_strategy_models import FightRef, StateAssignment
 from bartlebot.combat.fight_keys import settle
-from bartlebot.combat.profile_models import FightRef, StateAssignment
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
@@ -124,9 +124,9 @@ def build_bindings(assignments: list[StateAssignment], config: BotConfig | None 
     Given the bot's *config*, the stored fights are first placed on its current
     states — by enemy, then by state id, see :mod:`bartlebot.combat.fight_keys` — and each
     assignment's fights are rewritten in memory to the states they landed on, the
-    orphaned ones dropped. That is what a freshly loaded profile needs. Without one,
+    orphaned ones dropped. That is what a freshly loaded Bot Combat Strategy needs. Without one,
     the fights are taken at the state ids they hold, which is right for assignments
-    already placed and since edited by state id, and for a profile with no bot open.
+    already placed and since edited by state id, and for one read with no bot open.
     A state id held by more than one assignment (only reachable from a hand-edited
     file) resolves to the first, as ``fight_keys.bind`` does.
 

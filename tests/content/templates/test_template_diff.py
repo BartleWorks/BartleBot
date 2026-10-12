@@ -22,7 +22,7 @@ from bartlebot.bot.schema import (
     TemplateRef,
     TransitionModel,
 )
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.content.new_bot import BotDetails, StartingPoint, create_bot
 from bartlebot.content.subgraphs.subgraphs import drop_states, member_id, nested_regions
 from bartlebot.content.templates import template_diff
@@ -632,7 +632,7 @@ def test_a_library_row_knows_a_bot_is_behind_from_its_file(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def _profile(state_id: str = "t_2", enemy: str | None = "Lamia") -> BotCombatStrategy:
+def _bcs(state_id: str = "t_2", enemy: str | None = "Lamia") -> BotCombatStrategy:
     return BotCombatStrategy(
         name="BCS",
         bot_id="bot-1",
@@ -650,7 +650,7 @@ def test_removing_a_fight_with_a_strategy_is_named():
     mine = _bot(_v1())
     after = apply(mine, _by_title(diff(_update(None, theirs), mine), "Remove 'Fight'"))
 
-    assert template_diff.strategies_lost(_profile(), mine, after) == ["Fight"]
+    assert template_diff.strategies_lost(_bcs(), mine, after) == ["Fight"]
 
 
 def test_a_fight_replaced_against_the_same_enemy_keeps_its_strategy():
@@ -660,8 +660,8 @@ def test_a_fight_replaced_against_the_same_enemy_keeps_its_strategy():
     for t in after.transitions:
         t.source, t.dest = t.source.replace("t_2", "t_9"), t.dest.replace("t_2", "t_9")
 
-    assert template_diff.strategies_lost(_profile(), mine, after) == []
-    assert template_diff.strategies_lost(_profile(enemy=None), mine, after) == ["Fight"]
+    assert template_diff.strategies_lost(_bcs(), mine, after) == []
+    assert template_diff.strategies_lost(_bcs(enemy=None), mine, after) == ["Fight"]
 
 
 def test_missing_reads_as_missing():

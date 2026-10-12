@@ -211,7 +211,7 @@ rewritten to the copy before it is matched:
 | `bot_id` | Bot Combat Strategies |
 
 A Bot Combat Strategy that comes in as a copy also gives its own strategies new ids, as
-`combat_profile.duplicate_profile` does. The receiver's own items are never rewritten, so
+`bot_combat_strategy.duplicate_bot_strategy` does. The receiver's own items are never rewritten, so
 their bots stay on their original. Keep mine leaves the file's links on the receiver's
 item of that id.
 

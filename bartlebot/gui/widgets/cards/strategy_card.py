@@ -18,7 +18,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.combat.strategy_summary import HealthStatus, StrategySummary
-from bartlebot.combat.strategy_tags import PROFILE_SOURCE
+from bartlebot.combat.strategy_tags import THIS_BOT_SOURCE
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
@@ -28,7 +28,7 @@ from bartlebot.gui.widgets.layout.flow_layout import flow_container
 from bartlebot.gui.widgets.pickers.school_picker import school_icon
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.pills.source_pill import source_pill
-from bartlebot.gui.widgets.pills.tag_pill import ProfilePill, TagPill
+from bartlebot.gui.widgets.pills.tag_pill import TagPill, ThisBotPill
 
 #: Side of a school's medallion beside its name on a deck card, a size up from the caption.
 SCHOOL_ICON_PX = 16
@@ -37,21 +37,21 @@ ADD_FAVORITE_TIP = "Add to favorites"
 REMOVE_FAVORITE_TIP = "Remove from favorites"
 
 
-def profile_pill(profile_name: str) -> QLabel:
-    """The pill on an entry that belongs to one combat profile: "Profile" (#118).
+def this_bot_pill(bot_strategy_name: str) -> QLabel:
+    """The pill on an entry that belongs to one Bot Combat Strategy: "This bot" (#118).
 
-    Separate from :func:`source_pill`, whose ``Origin`` describes the two storage roots; a
-    profile entry lives in neither, but inside the profile's own file.
+    Separate from :func:`source_pill`, whose ``Origin`` describes the two storage roots; an
+    entry of the bot's own lives in neither, but inside its Bot Combat Strategy's file.
 
-    The word, not the profile's name. The name is already the heading of the section the
-    card sits in, and a pill carrying it both repeated that and was the one pill whose
-    width came from user text -- a long profile name squeezed the card's own name to a
-    word a line and widened the whole list past its column. "Profile" is also what the
-    Source filter calls these entries, so the pill reads as the chip it matches. The name
-    is still in the tooltip.
+    The word, not the Bot Combat Strategy's name. The name is already the heading of the
+    section the card sits in, and a pill carrying it both repeated that and was the one
+    pill whose width came from user text -- a long name squeezed the card's own name to a
+    word a line and widened the whole list past its column. "This bot" is also what the
+    Source filter calls these entries, from the same constant, so the pill reads as the
+    chip it matches. The name is still in the tooltip.
     """
-    pill = ProfilePill(PROFILE_SOURCE)
-    pill.setToolTip(f"Belongs to the combat profile '{profile_name}' only")
+    pill = ThisBotPill(THIS_BOT_SOURCE)
+    pill.setToolTip(f"Belongs to the Bot Combat Strategy '{bot_strategy_name}' only")
     return pill
 
 
@@ -104,15 +104,15 @@ class StrategyCard(QWidget):
         self._name_lbl = name_row
         self._source_pill: QLabel | None = None
         self._star: IconButton | None = None
-        if summary.source is None and summary.profile_name is None and favorite is None:
+        if summary.source is None and summary.bot_strategy_name is None and favorite is None:
             header.addWidget(name_row)
         else:
             row = QHBoxLayout()
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(6)
             row.addWidget(name_row, 1)
-            if summary.profile_name is not None:
-                pill = profile_pill(summary.profile_name)
+            if summary.bot_strategy_name is not None:
+                pill = this_bot_pill(summary.bot_strategy_name)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
                 self._source_pill = pill
             elif summary.source is not None:

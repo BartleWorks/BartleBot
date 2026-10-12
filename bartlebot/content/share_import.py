@@ -65,8 +65,8 @@ from pydantic import BaseModel, ValidationError
 
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
 from bartlebot.combat import strategy_store
-from bartlebot.combat.combat_profile import duplicate_profile, read_bot_names
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_combat_strategy import duplicate_bot_strategy, read_bot_names
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import StrategyKind, unique_name
 from bartlebot.content import bot_roots
 from bartlebot.content.new_bot import file_stem, library_folders, unique_file_name
@@ -418,7 +418,7 @@ def _names_in_use(sources: Sources, kind: str) -> set[str]:
     return {e.item.name for e in strategy_library.entries(shipped, user, _LIBRARY_KINDS[kind]).values()}  # type: ignore[attr-defined]
 
 
-def _profile_links(bcs: BotCombatStrategy) -> set[str]:
+def _bot_strategy_links(bcs: BotCombatStrategy) -> set[str]:
     linked = {a.duel_combat_strategy_id for a in bcs.state_assignments if a.duel_combat_strategy_id}
     if bcs.default_strategy_id:
         linked.add(bcs.default_strategy_id)
@@ -438,19 +438,19 @@ def bots_affected(sources: Sources, kind: str, item_id: str) -> list[str]:
 
         return bots_linking(item_id, *dirs)
     names = read_bot_names(*dirs)
-    profiles = strategy_store.list_all_bot_strategies(sources.strategy_root, sources.strategy_user_root)
+    bot_strategies = strategy_store.list_all_bot_strategies(sources.strategy_root, sources.strategy_user_root)
     if kind == BOT_COMBAT_STRATEGY:
-        bot_ids = {b.bot_id for b in profiles if b.id == item_id}
+        bot_ids = {b.bot_id for b in bot_strategies if b.id == item_id}
     elif kind == DUEL_STRATEGY:
-        bot_ids = {b.bot_id for b in profiles if item_id in _profile_links(b)}
+        bot_ids = {b.bot_id for b in bot_strategies if item_id in _bot_strategy_links(b)}
     else:
         shipped, user = _shared_roots(sources)
         duels = strategy_library.entries(shipped, user, LibraryKind.DUEL).values()
         linking = {e.item.id for e in duels if item_id in e.item.linked_pcs_ids()}  # type: ignore[attr-defined]
         bot_ids = {
             b.bot_id
-            for b in profiles
-            if _profile_links(b) & linking or any(item_id in d.linked_pcs_ids() for d in b.duel_strategies)
+            for b in bot_strategies
+            if _bot_strategy_links(b) & linking or any(item_id in d.linked_pcs_ids() for d in b.duel_strategies)
         }
     return sorted({names[b] for b in bot_ids if b in names}, key=str.casefold)
 
@@ -579,8 +579,8 @@ def _as_copy(kind: str, item: Any, new_id: str, names: set[str]) -> Any:
     """``item`` as a copy under ``new_id``: named apart from the receiver's, with no history of its own."""
     name = unique_name(item.name, names)
     if kind == BOT_COMBAT_STRATEGY:
-        # Its own strategies get new ids too, as Duplicate gives them (combat_profile).
-        copy = duplicate_profile(item, name)
+        # Its own strategies get new ids too, as Duplicate gives them (bot_combat_strategy).
+        copy = duplicate_bot_strategy(item, name)
         copy.id = new_id
         return copy
     copy = item.model_copy(deep=True, update={"id": new_id, "name": name, "history": []})
@@ -597,7 +597,7 @@ def _over_copy(kind: str, item: Any, copy: Any) -> Any:
     """
     history = next_history(copy.history, content_sha256(copy), content_sha256(item))
     if kind == BOT_COMBAT_STRATEGY:
-        updated = duplicate_profile(item, copy.name)
+        updated = duplicate_bot_strategy(item, copy.name)
         updated.id = copy.id
     else:
         updated = item.model_copy(deep=True, update={"id": copy.id, "name": copy.name})

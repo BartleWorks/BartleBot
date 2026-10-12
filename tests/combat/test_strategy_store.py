@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,

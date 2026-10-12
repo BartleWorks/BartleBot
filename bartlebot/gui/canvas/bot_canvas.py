@@ -781,7 +781,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # Listed on first show, not here. This is BotCanvas's placeholder, so a canvas
         # that opens a bot straight away hides it before it is ever painted -- and
         # listing costs a read of every file in bots/ plus a card widget for each one
-        # that survives the filter, which is the whole library on a fresh profile.
+        # that survives the filter, which is the whole library on a fresh install.
         self._listed = False
         self._build_ui()
 
@@ -4110,16 +4110,16 @@ class BotCanvas(QWidget):
         except Exception:
             logger.exception("Template change %s could not be applied", change_id)
             return False
-        lost, profiles = self._strategies_lost_by(applied)
+        lost, owners = self._strategies_lost_by(applied)
         if lost:
             names = ", ".join(f"'{name}'" for name in lost)
-            where = ", ".join(f"'{name}'" for name in profiles)
+            where = ", ".join(f"'{name}'" for name in owners)
             answer = QMessageBox.question(
                 self,
                 "Apply template change",
                 f"This change removes {names}, which {'has' if len(lost) == 1 else 'have'} a duel strategy "
-                f"in the combat {'profile' if len(profiles) == 1 else 'profiles'} {where}. The strategy stays "
-                "in the profile, but nothing will use it.\n\n"
+                f"in the Bot Combat {'Strategy' if len(owners) == 1 else 'Strategies'} {where}. The strategy "
+                "stays there, but nothing will use it.\n\n"
                 "Apply the change anyway?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
@@ -4130,25 +4130,25 @@ class BotCanvas(QWidget):
         return True
 
     def _strategies_lost_by(self, applied: BotConfig) -> tuple[list[str], list[str]]:
-        """The fights whose duel strategy would be lost in ``applied``, by label, and the profiles losing one.
+        """The fights whose duel strategy would be lost in ``applied``, by label, and the Bot Combat Strategies losing one.
 
-        Every combat profile of the bot is asked, not only the active one: the others
+        Every Bot Combat Strategy of the bot is asked, not only the active one: the others
         lose the fight just the same, and nothing would say so when one is next made active.
         """
         config = self._config
         if config is None:
             return [], []
         try:
-            profiles = list_bot_strategies(config.id)
+            bot_strategies = list_bot_strategies(config.id)
         except Exception:
-            logger.exception("Could not read the combat profiles of %s", config.name)
+            logger.exception("Could not read the Bot Combat Strategies of %s", config.name)
             return [], []
         lost: list[str] = []
         names: list[str] = []
-        for profile in profiles:
-            found = template_diff.strategies_lost(profile, config, applied)
+        for bcs in bot_strategies:
+            found = template_diff.strategies_lost(bcs, config, applied)
             if found:
-                names.append(profile.name)
+                names.append(bcs.name)
                 lost.extend(label for label in found if label not in lost)
         return lost, names
 

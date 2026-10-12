@@ -1,4 +1,4 @@
-"""Tests for bartlebot.combat.fight_keys: placing a profile's stored fights on a bot's states.
+"""Tests for bartlebot.combat.fight_keys: placing a Bot Combat Strategy's stored fights on a bot's states.
 
 Pure functions over the strategy models and a BotConfig, so no QApplication. The
 Combat tab's half -- seeding from ``bind`` and healing the keys on save -- is in
@@ -10,8 +10,8 @@ from __future__ import annotations
 import json
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.fight_keys import bind, enemy_keys, heal, place, settle
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 
 _DCS_A = "dcs-aaaa"
 _DCS_B = "dcs-bbbb"
@@ -178,7 +178,7 @@ def test_one_assignment_can_hold_placed_and_orphaned_fights():
     assert [fight.state for _, fight in placement.orphans] == ["state_404"]
 
 
-def test_binding_changes_nothing_in_the_profile():
+def test_binding_changes_nothing_in_the_bot_strategy():
     assignment = _assignment(_DCS_A, ("state_14", "Lamia"), ("state_404", None))
     bcs = _bcs(assignment)
     before = bcs.model_dump()
@@ -244,7 +244,7 @@ def test_a_file_carrying_both_shapes_keeps_its_fights():
     assert assignment.fights == [FightRef(state="state_2", enemy="Lamia")]
 
 
-def test_a_profile_is_written_as_state_and_enemy_pairs(tmp_path):
+def test_a_bot_strategy_is_written_as_state_and_enemy_pairs(tmp_path):
     bcs = _bcs(_assignment(_DCS_A, ("state_14", "Lamia"), ("state_15", None)))
     path = tmp_path / "bcs.json"
 
@@ -270,7 +270,7 @@ def test_loading_an_old_file_and_saving_it_writes_the_new_shape(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# settle: what a loaded profile becomes in memory
+# settle: what a loaded Bot Combat Strategy becomes in memory
 # ---------------------------------------------------------------------------
 
 
@@ -331,7 +331,7 @@ def test_healing_drops_a_fight_that_is_gone_and_keeps_the_rest_of_its_assignment
     assert assignment.state_ids == ["state_1"]
 
 
-def test_a_healed_profile_binds_to_the_same_fights():
+def test_a_healed_bot_strategy_binds_to_the_same_fights():
     assignment = _assignment(_DCS_A, ("state_1", None), ("state_2", None))
     config = _bot(_fight("state_1", "Lamia"), _fight("state_2"))
     bcs = _bcs(assignment)

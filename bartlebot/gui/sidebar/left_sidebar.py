@@ -163,7 +163,7 @@ class LeftSidebar(QTabWidget):
         self.options.options_changed.connect(self.declarations_changed)
         self.option_values.app_settings_requested.connect(self.app_settings_requested)
 
-        # Refresh the Combat tab's fight profile list whenever it becomes visible,
+        # Refresh the Combat tab's duel strategy list whenever it becomes visible,
         # so that handle_combat nodes edited in the Properties tab are reflected.
         self.currentChanged.connect(self._on_tab_changed)
 
@@ -256,7 +256,7 @@ class LeftSidebar(QTabWidget):
 
     def _on_tab_changed(self, index: int) -> None:
         if self.widget(index) is self.combat_tab:
-            self.combat_tab.refresh_duel_profiles()
+            self.combat_tab.refresh_duel_strategies()
 
     def refresh_option_values(self) -> None:
         """Re-resolve the Option Values rows after an edit to the level beneath them.
@@ -381,7 +381,7 @@ class LeftSidebar(QTabWidget):
             return
         self._editable = editable
         self._apply_tab_set()
-        # Combat is not gated by edit mode — profiles are user config, not bot
+        # Combat is not gated by edit mode — Bot Combat Strategies are user config, not bot
         # structure — it simply is not one of the tabs Edit mode offers.
 
     def set_bot_running(self, running: bool) -> None:

@@ -1,4 +1,4 @@
-"""Tests for bartlebot.combat.combat_profile: the lookup order, and what a profile owns (#118).
+"""Tests for bartlebot.combat.bot_combat_strategy: the lookup order, and what a Bot Combat Strategy owns (#118).
 
 Pure functions over the models and a tmp_path store — no QApplication.
 """
@@ -8,14 +8,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bartlebot.combat.combat_profile import (
+from bartlebot.combat.bot_combat_strategy import (
     StrategyLookup,
-    duplicate_profile,
-    library_links_to_profile,
-    profile_players_of,
+    duplicate_bot_strategy,
+    library_links_to_own,
+    own_players_of,
     read_bot_names,
 )
-from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.strategy_store import (
     load_bot_strategy,
     save_bot_strategy,
@@ -39,7 +39,7 @@ def _duel(name: str, *pcs: PlayerCombatStrategy) -> DuelCombatStrategy:
 # ---------------------------------------------------------------------------
 
 
-def test_a_profile_entry_wins_over_a_library_entry_with_the_same_id():
+def test_an_own_entry_wins_over_a_library_entry_with_the_same_id():
     library = DuelCombatStrategy(name="Library")
     own = library.model_copy(update={"name": "Own"})
     lookup = StrategyLookup(BotCombatStrategy(name="P", bot_id="b", duel_strategies=[own]), [library], [])
@@ -47,7 +47,7 @@ def test_a_profile_entry_wins_over_a_library_entry_with_the_same_id():
     assert lookup.duel(library.id).name == "Own"
 
 
-def test_the_library_answers_what_the_profile_does_not_have():
+def test_the_library_answers_what_the_bot_strategy_does_not_have():
     library = PlayerCombatStrategy(name="Library")
     lookup = StrategyLookup(BotCombatStrategy(name="P", bot_id="b"), [], [library])
 
@@ -62,7 +62,7 @@ def test_an_unknown_id_is_none():
     assert lookup.duel(None) is None
 
 
-def test_with_no_profile_only_the_library_is_searched():
+def test_with_no_bot_strategy_only_the_library_is_searched():
     library = DuelCombatStrategy(name="Library")
 
     assert StrategyLookup(None, [library], []).duel(library.id) is library
@@ -80,7 +80,7 @@ def test_the_library_is_read_from_the_store_when_no_list_is_given(tmp_path: Path
     assert lookup.duel("nowhere") is None
 
 
-def test_the_merged_lists_put_the_profile_first_and_drop_what_it_shadows():
+def test_the_merged_lists_put_the_bot_strategy_first_and_drop_what_it_shadows():
     shadowed = DuelCombatStrategy(name="Shadowed")
     other = DuelCombatStrategy(name="Other")
     own = shadowed.model_copy(update={"name": "Own"})
@@ -89,11 +89,11 @@ def test_the_merged_lists_put_the_profile_first_and_drop_what_it_shadows():
     assert [d.name for d in lookup.duels] == ["Own", "Other"]
 
 
-def test_profile_only_lookups_ignore_the_library():
+def test_bot_strategy_only_lookups_ignore_the_library():
     library = DuelCombatStrategy(name="Library")
     lookup = StrategyLookup(BotCombatStrategy(name="P", bot_id="b"), [library], [])
 
-    assert lookup.profile_duel(library.id) is None
+    assert lookup.own_duel(library.id) is None
 
 
 # ---------------------------------------------------------------------------
@@ -101,37 +101,37 @@ def test_profile_only_lookups_ignore_the_library():
 # ---------------------------------------------------------------------------
 
 
-def test_profile_players_of_lists_only_the_profiles_own_each_once():
+def test_own_players_of_lists_only_the_bots_own_each_once():
     own = PlayerCombatStrategy(name="Own")
     library = PlayerCombatStrategy(name="Library")
     duel = _duel("D", own, library, own)
-    profile = BotCombatStrategy(name="P", bot_id="b", player_strategies=[own])
+    bcs = BotCombatStrategy(name="P", bot_id="b", player_strategies=[own])
 
-    assert profile_players_of(duel, profile) == [own]
+    assert own_players_of(duel, bcs) == [own]
 
 
-def test_a_library_duel_linking_profile_content_is_a_violation():
+def test_a_library_duel_linking_own_content_is_a_violation():
     own = PlayerCombatStrategy(name="Own")
     library_duel = _duel("Shared", own)
-    profile = BotCombatStrategy(name="P", bot_id="b", player_strategies=[own])
+    bcs = BotCombatStrategy(name="P", bot_id="b", player_strategies=[own])
 
-    assert library_links_to_profile(profile, [library_duel]) == [(library_duel, own)]
+    assert library_links_to_own(bcs, [library_duel]) == [(library_duel, own)]
 
 
-def test_a_profile_duel_linking_profile_content_is_not():
+def test_an_own_duel_linking_own_content_is_not():
     own = PlayerCombatStrategy(name="Own")
     own_duel = _duel("Own duel", own)
-    profile = BotCombatStrategy(name="P", bot_id="b", player_strategies=[own], duel_strategies=[own_duel])
+    bcs = BotCombatStrategy(name="P", bot_id="b", player_strategies=[own], duel_strategies=[own_duel])
 
-    assert library_links_to_profile(profile, [own_duel]) == []
+    assert library_links_to_own(bcs, [own_duel]) == []
 
 
 # ---------------------------------------------------------------------------
-# duplicate_profile
+# duplicate_bot_strategy
 # ---------------------------------------------------------------------------
 
 
-def _profile_with_everything() -> BotCombatStrategy:
+def _bot_strategy_with_everything() -> BotCombatStrategy:
     own_pcs = PlayerCombatStrategy(name="Own P")
     library_pcs_id = "library-pcs"
     own_duel = DuelCombatStrategy(
@@ -154,10 +154,10 @@ def _profile_with_everything() -> BotCombatStrategy:
     )
 
 
-def test_duplicating_a_profile_gives_every_owned_strategy_a_new_id():
-    source = _profile_with_everything()
+def test_duplicating_a_bot_strategy_gives_every_owned_strategy_a_new_id():
+    source = _bot_strategy_with_everything()
 
-    copy = duplicate_profile(source, "Solo copy")
+    copy = duplicate_bot_strategy(source, "Solo copy")
 
     assert copy.id != source.id
     assert copy.name == "Solo copy"
@@ -165,10 +165,10 @@ def test_duplicating_a_profile_gives_every_owned_strategy_a_new_id():
     assert copy.player_strategies[0].id != source.player_strategies[0].id
 
 
-def test_duplicating_a_profile_rewrites_every_link_inside_the_copy():
-    source = _profile_with_everything()
+def test_duplicating_a_bot_strategy_rewrites_every_link_inside_the_copy():
+    source = _bot_strategy_with_everything()
 
-    copy = duplicate_profile(source, "Solo copy")
+    copy = duplicate_bot_strategy(source, "Solo copy")
 
     new_duel, new_pcs = copy.duel_strategies[0], copy.player_strategies[0]
     assert copy.default_strategy_id == new_duel.id
@@ -176,18 +176,18 @@ def test_duplicating_a_profile_rewrites_every_link_inside_the_copy():
     assert new_duel.player_assignments[0].player_combat_strategy_id == new_pcs.id
 
 
-def test_duplicating_a_profile_leaves_library_links_alone():
-    copy = duplicate_profile(_profile_with_everything(), "Solo copy")
+def test_duplicating_a_bot_strategy_leaves_library_links_alone():
+    copy = duplicate_bot_strategy(_bot_strategy_with_everything(), "Solo copy")
 
     assert copy.state_assignments[1].duel_combat_strategy_id == "library-duel"
     assert copy.duel_strategies[0].player_assignments[1].player_combat_strategy_id == "library-pcs"
 
 
-def test_duplicating_a_profile_does_not_touch_the_source():
-    source = _profile_with_everything()
+def test_duplicating_a_bot_strategy_does_not_touch_the_source():
+    source = _bot_strategy_with_everything()
     before = source.model_dump()
 
-    duplicate_profile(source, "Solo copy")
+    duplicate_bot_strategy(source, "Solo copy")
 
     assert source.model_dump() == before
 
@@ -197,8 +197,8 @@ def test_duplicating_a_profile_does_not_touch_the_source():
 # ---------------------------------------------------------------------------
 
 
-def test_a_profiles_own_strategies_survive_a_save_and_load(tmp_path: Path):
-    source = _profile_with_everything()
+def test_a_bots_own_strategies_survive_a_save_and_load(tmp_path: Path):
+    source = _bot_strategy_with_everything()
     save_bot_strategy(source, tmp_path)
 
     loaded = load_bot_strategy(source.id, tmp_path)

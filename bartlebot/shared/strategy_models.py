@@ -10,7 +10,7 @@ DeckPreset            — named, reusable deck configuration in the library
 Every product by this vendor reads and writes these (``docs/SHARED_CONTENT.md``), so
 they live in :mod:`bartlebot.shared` and import nothing product-specific, and every
 surface imports them from here. BartleBot's Bot Combat Strategy, which embeds them, is
-BartleBot's own and lives in :mod:`bartlebot.combat.profile_models`.
+BartleBot's own and lives in :mod:`bartlebot.combat.bot_strategy_models`.
 
 Each top-level model is stored as an individual JSON file identified by UUID, keeps a
 ``history`` of content hashes and, as an override of an Official one, the hash of what it
@@ -240,7 +240,7 @@ class DuelConfig(BaseModel):
 
     :class:`DuelCombatStrategy` is this plus an id and a name, and it is the only
     thing that carries one: a fight always names a duel strategy by id, whether that
-    strategy lives in the library or inside one combat profile (#118).
+    strategy lives in the library or inside one Bot Combat Strategy (#118).
     """
 
     min_players: int = 1

@@ -62,7 +62,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `bot/` | the FSM: the machine, the bot file schema, ambient combat, the health monitor, variables |
 | `nodes/` | the node library, grouped by kind |
 | `game/` | read-only facts about the game: zones, worlds, realms, spells, names, scales, stat caps, sizing, keybindings, wiki lookups. `game/data/` holds the extracted snapshots, and every reader of them lives here |
-| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, combat profiles, fight keys, the built-in default combat config |
+| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, Bot Combat Strategies, fight keys, the built-in default combat config |
 | `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
 | `clients/` | game clients at run time: the client and group managers, accounts, credentials, launch tracking, relog, porting, sightings, tile slots, process and window helpers |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
@@ -94,11 +94,12 @@ read on purpose.
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
 | `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and when its warning is shown |
-| `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, a combat profile's own strategies and the profile-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
+| `docs/COMBAT_CONFIG.md` | the five strategy levels and how to name them, the two storage roots, a Bot Combat Strategy's own strategies and the own-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — complete and no longer maintained, but still the record of the design; it supersedes several of `SUBGRAPHS.md`'s sections |
 | `docs/SHARED_CONTENT.md` | a pointer to the plan for epic #173 (user templates, Official content, and sharing bots, strategies, decks and subgraphs as files), which lives on a claude.ai page — complete and no longer maintained, but still the record of the design; the stage-to-issue table and the rules every stage keeps |
 | `docs/RUNTIME_CONTROL_FLOW.md` | a pointer to the plan for epic #16 (bot variables), which lives on a claude.ai page — complete and no longer maintained, but still the record of the design; the stage-to-issue table, the later stages, and the rules every stage keeps |
+| `docs/COMBAT_DEFAULTS.md` | a pointer to the plan for epic #201 (team-aware default duel strategies, a run interrupted only by a broken choice, one combat vocabulary), which lives on a claude.ai page kept current while its stages land; the stage-to-issue table and the rules every stage keeps |
 | `docs/SHARING.md` | share files: the format, the extension and what rides inside for each kind, what never travels (settings, anything that executes), Export: where it is on each item's menu, and the summary, and Import: its ways in, what is refused, matching by id, what Import as copy rewrites, and where things go |
 | `docs/TEMPLATES.md` | the template store, template-owned ids and a fork's prefixes, release, user templates and File › Templates…, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/LIBRARY_MIGRATION.md` | the Stage 9 worksheet: where all 85 bots stand against the six released templates, per-bot tier and divergence, what the rewrite keeps and changes, and what to fix or decide before it starts |

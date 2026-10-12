@@ -9,7 +9,7 @@ assignment and a linked preset.
 
 from __future__ import annotations
 
-from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.strategy_summary import (
     Health,
     HealthStatus,
@@ -237,7 +237,7 @@ def test_health_is_ok_true_only_when_not_invalid():
 def test_find_references_counts_a_bot_default():
     dcs = DuelCombatStrategy(name="Boss")
     bcs = BotCombatStrategy(name="Farm", bot_id="b", default_strategy_id=dcs.id)
-    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1, names=("profile 'Farm'",))
+    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1, bot_names=("'Farm'",))
 
 
 def test_find_references_counts_a_state_override():
@@ -277,9 +277,9 @@ def test_find_references_of_something_unused():
 
 def test_usage_phrase_reads_as_a_sentence():
     assert UsageCount().phrase() == "Not used yet"
-    assert UsageCount(bots=1).phrase() == "Used by 1 bot strategy"
+    assert UsageCount(bots=1).phrase() == "Used by 1 Bot Combat Strategy"
     assert UsageCount(duels=2).phrase() == "Used by 2 duel strategies"
-    assert UsageCount(bots=3, duels=1).phrase() == "Used by 3 bot strategies and 1 duel strategy"
+    assert UsageCount(bots=3, duels=1).phrase() == "Used by 3 Bot Combat Strategies and 1 duel strategy"
 
 
 def test_an_assignment_line_carries_its_slots_as_numbers():
@@ -306,8 +306,8 @@ def test_a_simultaneous_duel_has_no_combat_order():
     assert summarize_duel(DuelConfig(), []).combat_order == ()
 
 
-def test_find_references_counts_a_link_from_a_profiles_own_duel():
-    """#118: a library player strategy used only by a profile duel is not unused."""
+def test_find_references_counts_a_link_from_a_bots_own_duel():
+    """#118: a library player strategy used only by one bot's own duel is not unused."""
     pcs = PlayerCombatStrategy(name="Blade")
     own = DuelCombatStrategy(
         name="Own", player_assignments=[PlayerAssignment(players=[2, 3], player_combat_strategy_id=pcs.id)]
@@ -323,6 +323,15 @@ def test_find_references_counts_a_link_from_a_profiles_own_duel():
 def test_the_usage_phrase_names_the_duels():
     usage = UsageCount(duels=2, names=("'Boss — P2'", "'Trash — P1'"))
     assert usage.phrase() == "Used by 'Boss — P2' and 'Trash — P1'"
+
+
+def test_the_usage_phrase_names_the_bot_level_once_before_its_names():
+    """The writing rule (#204): the full name once, then the names, never once per name."""
+    one = UsageCount(bots=1, duels=1, bot_names=("'Solo'",), names=("'Boss — P2'",))
+    assert one.phrase() == "Used by the Bot Combat Strategy 'Solo' and 'Boss — P2'"
+    two = UsageCount(bots=2, duels=1, bot_names=("'Solo'", "'Team'"), names=("'Boss — P2'",))
+    assert two.phrase() == "Used by the Bot Combat Strategies 'Solo' and 'Team', and 'Boss — P2'"
+    assert UsageCount(bots=1, bot_names=("'Solo'",)).phrase() == "Used by the Bot Combat Strategy 'Solo'"
 
 
 def test_the_usage_phrase_counts_past_three_names():

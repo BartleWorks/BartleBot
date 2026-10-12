@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_summary import StrategySummary, summarize_bot
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard

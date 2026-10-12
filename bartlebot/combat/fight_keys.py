@@ -1,6 +1,6 @@
 """Which stored fight belongs to which combat state: one resolver, used by every reader.
 
-A combat profile's ``StateAssignment`` lists the fights it covers, each as a
+A Bot Combat Strategy's ``StateAssignment`` lists the fights it covers, each as a
 ``FightRef``: the state it was on, and the enemy it named. A state id alone is lost
 whenever a node is replaced, a bot is re-authored, or a fight is deleted and made
 again; the enemy is what carries the strategy across that.
@@ -19,7 +19,7 @@ names it, so it can never point at two fights.
 Enemy matches win, so a renamed enemy and a replaced node both keep their strategy,
 and only changing both at once loses it. Nothing here writes: the keys heal when the
 Combat tab saves (:func:`settle`), never on load and never when a node is edited,
-because the profile saves at once while the bot waits for Save.
+because a Bot Combat Strategy saves at once while the bot waits for Save.
 
 Qt-free, like ``combat_grouping`` and ``combat_warnings`` beside it.
 """
@@ -29,11 +29,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from bartlebot.combat.profile_models import FightRef
+from bartlebot.combat.bot_strategy_models import FightRef
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
-    from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
+    from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 
 
 def exposed_combat_states(config: BotConfig) -> list[StateModel]:
@@ -121,7 +121,7 @@ def place(assignments: list[StateAssignment], config: BotConfig) -> Placement:
 def bind(bcs: BotCombatStrategy, config: BotConfig | None) -> dict[str, StateAssignment]:
     """Map each of *config*'s fight states to the assignment whose stored fight it is.
 
-    With no config (a profile read with no bot open) there is nothing to place the
+    With no config (a Bot Combat Strategy read with no bot open) there is nothing to place the
     fights on, so this falls back to the raw state ids they were stored with.
     """
     if config is None:

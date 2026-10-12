@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.conftest import FakeMachine
@@ -381,11 +381,11 @@ def test_a_fight_stored_under_another_state_id_is_found_by_its_enemy(tmp_path: P
 
 
 # ---------------------------------------------------------------------------
-# Profile strategies (#118): the active profile first, then the library
+# The bot's own strategies (#118): the active Bot Combat Strategy's first, then the library
 # ---------------------------------------------------------------------------
 
 
-def test_a_profile_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path):
+def test_an_own_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path):
     library = DuelCombatStrategy(name="Library", player_assignments=[PlayerAssignment(players=[1], dsl="lib")])
     own = library.model_copy(update={"name": "Own", "player_assignments": [PlayerAssignment(players=[1], dsl="own")]})
     bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id=library.id, duel_strategies=[own])
@@ -403,7 +403,7 @@ def test_a_profile_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path
     load_dcs.assert_not_called()
 
 
-def test_a_profile_duel_links_a_profile_player_strategy(tmp_path: Path):
+def test_an_own_duel_links_an_own_player_strategy(tmp_path: Path):
     pcs = PlayerCombatStrategy(name="Frost Heal", dsl="heal")
     own = DuelCombatStrategy(
         name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
@@ -415,7 +415,7 @@ def test_a_profile_duel_links_a_profile_player_strategy(tmp_path: Path):
         duel_strategies=[own],
         player_strategies=[pcs],
     )
-    load_pcs = Mock(side_effect=AssertionError("a profile player strategy must not be loaded from the library"))
+    load_pcs = Mock(side_effect=AssertionError("an own player strategy must not be loaded from the library"))
 
     with (
         _patch_active_strategy("bot-1", bcs.id),
@@ -427,7 +427,7 @@ def test_a_profile_duel_links_a_profile_player_strategy(tmp_path: Path):
     assert dsls == ["heal"]
 
 
-def test_an_id_in_neither_the_profile_nor_the_library_falls_back_to_the_builtin(tmp_path: Path):
+def test_an_id_in_neither_the_bots_own_nor_the_library_falls_back_to_the_builtin(tmp_path: Path):
     bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id="nowhere")
 
     with (

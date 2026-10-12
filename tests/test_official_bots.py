@@ -15,7 +15,7 @@ import pytest
 from PyQt6.QtWidgets import QDialog, QLabel
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import DEV_ENV_VAR, SOURCE_LABELS, Origin

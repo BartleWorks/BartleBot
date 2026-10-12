@@ -8,13 +8,13 @@ from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_summary import summarize_deck
 from bartlebot.combat.strategy_tags import (
     KIND_GROUPS,
-    PROFILE_SOURCE,
     ROLE,
     SCHOOL_KINDS,
     SOURCE,
     SOURCE_TAGS,
     STORED_TAGS,
     TEAM_SIZE_KINDS,
+    THIS_BOT_SOURCE,
     StrategyFacets,
     StrategyFilter,
     count_facets,
@@ -40,14 +40,18 @@ def _f(*sets: set[str]) -> tuple[frozenset[str], ...]:
 
 
 def test_the_source_values_are_the_pill_labels():
-    """A Source chip must say what the pill on the card it matches says — except Profile,
-    whose pill carries the profile's own name, which a fixed vocabulary cannot (#118)."""
+    """A Source chip must say what the pill on the card it matches says, This bot included (#118)."""
     assert SOURCE_TAGS == (
-        PROFILE_SOURCE,
+        THIS_BOT_SOURCE,
         SOURCE_LABELS[Origin.SHIPPED],
         SOURCE_LABELS[Origin.SHIPPED_OVERRIDE],
         SOURCE_LABELS[Origin.USER],
     )
+
+
+def test_a_bots_own_entries_are_this_bot():
+    """#204: the pill and the filter chip both say it, from this one constant."""
+    assert THIS_BOT_SOURCE == "This bot"
 
 
 def test_source_is_never_stored():

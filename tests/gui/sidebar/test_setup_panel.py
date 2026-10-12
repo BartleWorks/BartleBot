@@ -1076,7 +1076,7 @@ def test_finishing_advances_the_base_as_one_undo_step_and_says_the_template_move
 
 
 def test_removing_a_fight_with_a_strategy_asks_first(canvas, monkeypatch):
-    from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
+    from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
     from bartlebot.gui.canvas import bot_canvas as canvas_module  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
@@ -1085,13 +1085,13 @@ def test_removing_a_fight_with_a_strategy_asks_first(canvas, monkeypatch):
     theirs.transitions = [TransitionModel(trigger="advance", source="t_1", dest="t_1", when="SUCCESS")]
     bot = _bot()
     _state(bot, "t_2").params.update(enemy="Troll", use_default_strategy=False)
-    profile = BotCombatStrategy(
+    bcs = BotCombatStrategy(
         name="Solo",
         bot_id=bot.id,
         state_assignments=[StateAssignment(fights=[FightRef(state="t_2")], duel_combat_strategy_id="dcs-1")],
     )
-    # Not the active profile, and asked about all the same: it loses the fight too.
-    monkeypatch.setattr(canvas_module, "list_bot_strategies", lambda bot_id: [profile] if bot_id == bot.id else [])
+    # Not the active Bot Combat Strategy, and asked about all the same: it loses the fight too.
+    monkeypatch.setattr(canvas_module, "list_bot_strategies", lambda bot_id: [bcs] if bot_id == bot.id else [])
     assert SettingsManager.instance().get_active_strategy(bot.id) is None
     _open_bot(canvas, bot)
     canvas.set_template_update(_update(theirs))
@@ -1108,7 +1108,7 @@ def test_removing_a_fight_with_a_strategy_asks_first(canvas, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", answer(QMessageBox.StandardButton.No))
     assert not canvas.apply_template_change(removal.id)
     assert any(s.id == "t_2" for s in canvas.config.states)
-    assert "'Defeat mobs'" in asked[0] and "combat profile 'Solo'" in asked[0]
+    assert "'Defeat mobs'" in asked[0] and "Bot Combat Strategy 'Solo'" in asked[0]
 
     monkeypatch.setattr(QMessageBox, "question", answer(QMessageBox.StandardButton.Yes))
     assert canvas.apply_template_change(removal.id)
@@ -1287,8 +1287,8 @@ def _change_text(review: template_diff.Review, text: str) -> template_diff.Chang
     return next(c for c in review.changes if text in c.title)
 
 
-def test_a_fight_in_two_profiles_names_both(canvas, monkeypatch):
-    from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
+def test_a_fight_in_two_bot_strategies_names_both(canvas, monkeypatch):
+    from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
     from bartlebot.gui.canvas import bot_canvas as canvas_module  # noqa: PLC0415
 
     theirs = _draft([_ZONE, _DROPS])
@@ -1297,14 +1297,14 @@ def test_a_fight_in_two_profiles_names_both(canvas, monkeypatch):
     bot = _bot()
     _state(bot, "t_2").params.update(enemy="Troll", use_default_strategy=False)
 
-    def profile(name: str, linked: bool = True) -> BotCombatStrategy:
+    def bcs(name: str, linked: bool = True) -> BotCombatStrategy:
         assignment = StateAssignment(
             fights=[FightRef(state="t_2")], duel_combat_strategy_id="dcs-1" if linked else None
         )
         return BotCombatStrategy(name=name, bot_id=bot.id, state_assignments=[assignment])
 
-    profiles = [profile("Solo"), profile("Nothing linked", linked=False), profile("Team")]
-    monkeypatch.setattr(canvas_module, "list_bot_strategies", lambda _bot_id: profiles)
+    bot_strategies = [bcs("Solo"), bcs("Nothing linked", linked=False), bcs("Team")]
+    monkeypatch.setattr(canvas_module, "list_bot_strategies", lambda _bot_id: bot_strategies)
     _open_bot(canvas, bot)
     canvas.set_template_update(_update(theirs))
     removal = next(c for c in canvas.template_review.changes if c.removed)
@@ -1315,7 +1315,7 @@ def test_a_fight_in_two_profiles_names_both(canvas, monkeypatch):
 
     assert not canvas.apply_template_change(removal.id)
 
-    assert "combat profiles 'Solo', 'Team'" in asked[0] and "Nothing linked" not in asked[0]
+    assert "Bot Combat Strategies 'Solo', 'Team'" in asked[0] and "Nothing linked" not in asked[0]
 
 
 def test_a_visit_to_a_subgraph_definition_does_not_bring_back_a_review_put_away(window):

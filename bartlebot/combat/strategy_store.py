@@ -41,7 +41,7 @@ import re
 from enum import Enum
 from pathlib import Path
 
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.content.store_roots import (
     Origin,
     delete_by_id,

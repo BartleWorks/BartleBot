@@ -12,7 +12,7 @@ import pytest
 from PyQt6.QtWidgets import QDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
     StrategyKind,
     save_bot_strategy,

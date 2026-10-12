@@ -7,9 +7,9 @@ exception — the bot can always run on built-in defaults.
 
 Checks performed:
   - an active Bot Combat Strategy is set, and its file loads
-  - every referenced Duel Combat Strategy resolves, in the profile or the library
+  - every referenced Duel Combat Strategy resolves, among the bot's own or in the library
   - every linked Player Combat Strategy resolves the same way
-  - no library duel links a strategy that belongs to the profile (#118)
+  - no library duel links a strategy that belongs to the bot's own (#118)
   - enough clients are connected for each strategy's ``min_players``
   - every combat state that asked for its own strategy actually has one
   - every DSL that could actually run parses
@@ -22,9 +22,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from bartlebot.combat.combat_profile import StrategyLookup, profile_players_of
+from bartlebot.combat.bot_combat_strategy import StrategyLookup, own_players_of
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.fight_keys import bind, exposed_combat_states
-from bartlebot.combat.profile_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.strategy_store import load_bot_strategy
 from bartlebot.combat.strategy_summary import format_players as _format_players
 from bartlebot.nodes.combat_runner import validate_dsl
@@ -68,7 +68,7 @@ def collect_combat_warnings(
     # DSL string → the labels that use it, so a shared preset is parsed once and
     # reported once no matter how many strategies link it.
     dsl_sources: dict[str, list[str]] = {}
-    # The profile's own strategies first, then the library's -- see combat_profile.
+    # The bot's own strategies first, then the library's -- see bot_combat_strategy.
     lookup = StrategyLookup(bcs, root=root)
 
     for context_label, dcs_id in _duel_sources(bcs, config):
@@ -76,13 +76,13 @@ def collect_combat_warnings(
         if duel_config is None:
             warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
             continue
-        if lookup.profile_duel(dcs_id) is None:
-            # Only a hand-edited file gets here: the dialog never offers a profile
-            # strategy to a library duel, which every other profile shares.
-            for pcs in profile_players_of(duel_config, bcs):
+        if lookup.own_duel(dcs_id) is None:
+            # Only a hand-edited file gets here: the dialog never offers a bot's own
+            # strategy to a library duel, which every other bot shares.
+            for pcs in own_players_of(duel_config, bcs):
                 warnings.append(
                     f"Library duel strategy '{duel_config.name}' uses '{pcs.name}', which belongs to "
-                    f"this combat profile only — other profiles using '{duel_config.name}' won't have it."
+                    f"this bot only — other bots using '{duel_config.name}' won't have it."
                 )
         config_label = f"strategy '{duel_config.name}'"
         dsl_label = f"'{duel_config.name}'"  # the strategy's own name — a shared preset always reads the same

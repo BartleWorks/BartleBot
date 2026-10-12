@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, SubgraphSource, TemplateRef
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
     save_bot_strategy,
     save_deck_preset,
@@ -247,7 +247,7 @@ def test_an_official_bot_is_named_and_sends_only_what_rides_with_it(roots):
 
 
 def _combat_setup(roots: Roots) -> BotCombatStrategy:
-    """A profile linking a Custom library duel, an Official one, and one of its own."""
+    """A Bot Combat Strategy linking a Custom library duel, an Official one, and one of its own."""
     roots.ship("player", PlayerCombatStrategy(id="p-official", name="Default Hitter", dsl="any<damage>"))
     roots.ship(
         "duel",
@@ -385,7 +385,7 @@ def test_a_duel_packs_its_custom_player_strategies(roots):
 def test_a_combat_strategys_own_duel_exports_with_its_own_player_strategies_packed(roots):
     bcs = _combat_setup(roots)
 
-    plan = share_export.export_duel(bcs.duel_strategies[0], roots.sources(), profile=bcs)
+    plan = share_export.export_duel(bcs.duel_strategies[0], roots.sources(), bot_strategy=bcs)
 
     assert [(i.kind, i.id) for i in plan.share.items] == [
         (DUEL_STRATEGY, "d-own"),

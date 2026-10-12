@@ -8,6 +8,7 @@ sidebar draws and what "Applies to…" does, expressed without any widgets.
 from __future__ import annotations
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.combat.bot_strategy_models import FightRef, StateAssignment
 from bartlebot.combat.combat_grouping import (
     apply_membership,
     build_bindings,
@@ -17,7 +18,6 @@ from bartlebot.combat.combat_grouping import (
     split_unconfigured,
     state_label,
 )
-from bartlebot.combat.profile_models import FightRef, StateAssignment
 
 _DCS_A = "dcs-aaaa"
 _DCS_B = "dcs-bbbb"

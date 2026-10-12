@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
     StrategyKind,
     fingerprint,
@@ -451,7 +451,7 @@ def test_a_duplicated_strategy_starts_fresh(tmp_path):
 
 
 def test_a_duplicated_bot_combat_strategy_starts_fresh():
-    from bartlebot.combat.combat_profile import duplicate_profile  # noqa: PLC0415
+    from bartlebot.combat.bot_combat_strategy import duplicate_bot_strategy  # noqa: PLC0415
 
     bcs = BotCombatStrategy(id="b1", name="Mine", bot_id="bot-1", history=["x"])
-    assert duplicate_profile(bcs, "Copy").history == []
+    assert duplicate_bot_strategy(bcs, "Copy").history == []
