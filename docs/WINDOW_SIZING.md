@@ -244,7 +244,7 @@ sets a *maximum* game size, and only resolutions at or below it may be launched:
 
 ```
 width  = screen_avail_w - left_sidebar_width - right_sidebar_width - 2*SPLITTER_HANDLE_PX
-height = screen_avail_h - bottom_section_height - MENU_AND_STATUS_PX
+height = screen_avail_h - bottom_section_height - WINDOW_CHROME_ESTIMATE_PX
 ```
 
 Per tile: `w + 2*FOCUS_BORDER` wide, `h + LABEL_RESERVE + 2*FOCUS_BORDER` tall. A tier
@@ -269,7 +269,7 @@ So `screen_fit.budget_for` takes the **larger of each axis** of two terms:
 | term | is | why it is in the max |
 |---|---|---|
 | screen | `layout_budget(available screen)` | the floor of what is always achievable — embedding raises the game view's minimum and Qt grows the window to satisfy it, so a launch bigger than the current window corrects itself provided it fits the screen |
-| live | `GameView.game_area_size` | the only thing that sees a splitter drag, and exact where the screen term estimates: sidebars, canvas, menu, status bar and the panel's own header are already subtracted, because they are simply not in it |
+| live | `GameView.game_area_size` | the only thing that sees a splitter drag, and exact where the screen term estimates: sidebars, canvas, title bar and the panel's own header are already subtracted, because they are simply not in it |
 
 Taking the max rather than the live term alone is what stops a merely *small* window
 refusing a resolution the screen could carry — including at construction, before the
@@ -342,7 +342,7 @@ So every term in it has to be a size the corresponding pane will really go down 
 
 ```
 width  = left_sidebar_floor() + right_sidebar_floor() + game_w + 2*SPLITTER_HANDLE_PX
-height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX
+height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + TITLE_BAR_PX
          + SPLITTER_HANDLE_PX
 ```
 
@@ -449,6 +449,12 @@ the identical failure to the one above, found by the identical style sweep.
 of height. It is why the worked example above offers 1280x720 to a 1080p screen that can
 only just carry it. Tightening it would re-tier the offered ladder, so it is left as the
 known estimate `budget_for` already describes it as.
+
+`WINDOW_CHROME_ESTIMATE_PX` is 60 for the same reason. It was `MENU_AND_STATUS_PX`, the
+menu bar and a status bar under Windows' caption. The title bar (`gui/title_bar`) replaced
+all three with one `TITLE_BAR_PX` row, but the 60 stays, since lowering it re-tiers the
+ladder the other way. The window floor counts `TITLE_BAR_PX` exactly, and the live term
+picks up the room the title bar freed without any constant changing.
 
 ## Prevent, do not warn; disable, do not hide
 

@@ -490,3 +490,54 @@ def _banner_texts(view):
     from bartlebot.gui.game_embed.card_columns import _FitBanner
 
     return [banner.text for banner in view.findChildren(_FitBanner) if banner.text]
+
+
+# ---------------------------------------------------------------------------
+# The sidebar floors are measured once per font, style and stylesheet
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def counted_measures(qapp, monkeypatch):
+    """How many probe rows each floor builds, from a cold cache."""
+    from bartlebot.gui.sidebar import log_panel  # noqa: PLC0415
+
+    monkeypatch.setattr(screen_fit, "_FLOORS", {})
+    built = {"left": 0, "right": 0}
+    measure_left, header_row_floor = screen_fit._measure_left_sidebar_floor, log_panel.header_row_floor
+
+    def left(app):
+        built["left"] += 1
+        return measure_left(app)
+
+    def right(font):
+        built["right"] += 1
+        return header_row_floor(font)
+
+    monkeypatch.setattr(screen_fit, "_measure_left_sidebar_floor", left)
+    monkeypatch.setattr(log_panel, "header_row_floor", right)
+    return built
+
+
+def test_a_floor_asked_for_again_is_not_measured_again(counted_measures):
+    """A resize asks once per launch card: 14 probe rows made a drag from maximized freeze."""
+    first = (screen_fit.left_sidebar_floor(), screen_fit.right_sidebar_floor())
+    for _ in range(14):
+        assert (screen_fit.left_sidebar_floor(), screen_fit.right_sidebar_floor()) == first
+
+    assert counted_measures == {"left": 1, "right": 1}
+
+
+def test_a_new_stylesheet_measures_the_floors_again(qapp, counted_measures):
+    """A theme switch is a new app stylesheet, and a stylesheet can widen the probe rows."""
+    sheet = qapp.styleSheet()
+    screen_fit.left_sidebar_floor()
+    screen_fit.right_sidebar_floor()
+    try:
+        qapp.setStyleSheet(sheet + "\nQComboBox { padding: 0 30px; }")
+        screen_fit.left_sidebar_floor()
+        screen_fit.right_sidebar_floor()
+    finally:
+        qapp.setStyleSheet(sheet)
+
+    assert counted_measures == {"left": 2, "right": 2}

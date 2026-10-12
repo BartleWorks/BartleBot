@@ -6,7 +6,7 @@ license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
-    "PyQt6>=6.7",
+    "PyQt6>=6.9",
     "qasync>=0.27",
     "pyperclip>=1.8",
     "transitions>=0.9",

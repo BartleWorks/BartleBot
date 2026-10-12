@@ -4,7 +4,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
@@ -15,6 +15,8 @@ from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
+from bartlebot.gui.title_bar.native_frame import NativeFrame
+from bartlebot.gui.title_bar.title_bar import TitleBar
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 
@@ -68,8 +70,8 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _build_menu(self) -> None:
-        menu_bar = QMenuBar(self)
-        self.setMenuBar(menu_bar)
+        # Not setMenuBar: the menu bar goes in the title bar, built at the end of this.
+        menu_bar = QMenuBar()
 
         file_menu = menu_bar.addMenu("File")
 
@@ -160,24 +162,25 @@ class MainWindow(QMainWindow):
         self.action_redo.setEnabled(False)
         edit_menu.addAction(self.action_redo)
 
-        # View menu
+        # View menu. The four panes are checkable, so the menu says what is showing; the
+        # title bar's toggles are bound to these same actions (see _build_title_bar).
         view_menu = menu_bar.addMenu("View")
-        self.action_toggle_game_view = QAction("Toggle Game View", self)
+        self.action_toggle_left_sidebar = QAction("Left Sidebar", self)
+        self.action_toggle_game_view = QAction("Game View", self)
         self.action_toggle_game_view.setShortcut(QKeySequence("Ctrl+G"))
-        view_menu.addAction(self.action_toggle_game_view)
+        self.action_toggle_right_sidebar = QAction("Right Sidebar", self)
+        self.action_toggle_bot_canvas = QAction("Bot Canvas", self)
+        for action in self._pane_actions():
+            action.setCheckable(True)
+            action.setChecked(True)
+            view_menu.addAction(action)
+
+        view_menu.addSeparator()
 
         self.action_maximize_game_view = QAction("Maximize Game View", self)
         self.action_maximize_game_view.setShortcut(QKeySequence("Ctrl+Alt+G"))
         self.action_maximize_game_view.setCheckable(True)
         view_menu.addAction(self.action_maximize_game_view)
-
-        view_menu.addSeparator()
-
-        self.action_toggle_left_sidebar = QAction("Toggle Left Sidebar", self)
-        view_menu.addAction(self.action_toggle_left_sidebar)
-
-        self.action_toggle_right_sidebar = QAction("Toggle Right Sidebar", self)
-        view_menu.addAction(self.action_toggle_right_sidebar)
 
         # Run menu
         run_menu = menu_bar.addMenu("Run")
@@ -208,6 +211,46 @@ class MainWindow(QMainWindow):
         # the screen the window is on, both of which move while the menu is closed.
         self._launch_menu.aboutToShow.connect(self._rebuild_launch_menu)
 
+        self._build_title_bar(menu_bar)
+
+    def _pane_actions(self) -> tuple[QAction, QAction, QAction, QAction]:
+        """The View menu's pane toggles, in the order the title bar draws them."""
+        return (
+            self.action_toggle_left_sidebar,
+            self.action_toggle_game_view,
+            self.action_toggle_right_sidebar,
+            self.action_toggle_bot_canvas,
+        )
+
+    def _build_title_bar(self, menu_bar: QMenuBar) -> None:
+        """The one row above the panes: logo, menus, title, pane toggles, window buttons.
+
+        ``NativeFrame`` is what makes it a title bar rather than a strip under one, and it
+        has to exist before the window is first shown, since it sets the window flags.
+        """
+        self._title_bar = TitleBar(menu_bar, self)
+        self.setMenuWidget(self._title_bar)
+        icons = ("panel_left", "panel_top", "panel_right", "panel_bottom")
+        for action, icon in zip(self._pane_actions(), icons):
+            self._title_bar.add_toggle(action, shown_icon=f"{icon}_shown", hidden_icon=f"{icon}_hidden")
+        self._title_bar.minimize_requested.connect(self.showMinimized)
+        self._title_bar.maximize_requested.connect(self._toggle_maximized)
+        self._title_bar.close_requested.connect(self.close)
+        self._title_bar.set_title(self.windowTitle())
+        self.windowTitleChanged.connect(self._title_bar.set_title)
+        self._frame = NativeFrame(self, self._title_bar)
+
+    @property
+    def title_bar(self) -> TitleBar:
+        """The row above the panes, which holds the menu bar."""
+        return self._title_bar
+
+    def _toggle_maximized(self) -> None:
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+
     def _build_central(self) -> None:
         # BotCanvas must be created first — it owns param_panel
         self.bot_canvas = BotCanvas()
@@ -226,15 +269,13 @@ class MainWindow(QMainWindow):
         # The authoring utilities in Bar A (#81); AppController drives them.
         self.authoring_bar = self._game_view_panel.authoring_bar
 
-        # Wire View menu
-        self.action_toggle_game_view.triggered.connect(lambda: self.show_game_view(not self._game_view_visible))
+        # Wire View menu. ``triggered`` carries the action's new checked state, which is
+        # the visibility asked for.
+        self.action_toggle_game_view.triggered.connect(self.show_game_view)
         self.action_maximize_game_view.triggered.connect(self._toggle_maximize_game_view)
-        self.action_toggle_left_sidebar.triggered.connect(
-            lambda: self.left_sidebar.setVisible(not self.left_sidebar.isVisible())
-        )
-        self.action_toggle_right_sidebar.triggered.connect(
-            lambda: self.right_sidebar.setVisible(not self.right_sidebar.isVisible())
-        )
+        self.action_toggle_left_sidebar.triggered.connect(self.left_sidebar.setVisible)
+        self.action_toggle_right_sidebar.triggered.connect(self.right_sidebar.setVisible)
+        self.action_toggle_bot_canvas.triggered.connect(self.show_bot_canvas)
 
         # Wire wiki import from handle_combat node panel → possible drops list
         self.bot_canvas.param_panel.wiki_import_completed.connect(self.right_sidebar.possible_drops.add_drops)
@@ -413,9 +454,20 @@ class MainWindow(QMainWindow):
         made since, and nothing persists those.
         """
         super().showEvent(event)
+        self._frame.on_shown()
         if self._startup_sizes_pending:
             self._startup_sizes_pending = False
             self._apply_configured_splitter_sizes()
+
+    def changeEvent(self, event) -> None:  # noqa: N802
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange:
+            self._title_bar.set_maximized(self.isMaximized())
+
+    def nativeEvent(self, event_type, message):  # noqa: N802
+        # Hit testing and the caption's system menu: see gui/title_bar/native_frame.py.
+        # Never super().nativeEvent -- calling the base from a Python override crashes PyQt6.
+        return self._frame.native_event(message)
 
     def _apply_startup_layout(self) -> None:
         sm = SettingsManager.instance()
@@ -505,6 +557,7 @@ class MainWindow(QMainWindow):
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""
+        self.action_toggle_game_view.setChecked(visible)
         if visible == self._game_view_visible:
             return
         self._game_view_visible = visible
@@ -514,6 +567,22 @@ class MainWindow(QMainWindow):
             self._outer_splitter.setSizes([600, bot_h])
         else:
             self._outer_splitter.setSizes([0, bot_h])
+
+    def show_bot_canvas(self, visible: bool) -> None:
+        """Show or hide the bot canvas. When hidden, the game view and sidebars fill the window."""
+        self.bot_canvas.setVisible(visible)
+        self.action_toggle_bot_canvas.setChecked(visible)
+
+    def _sync_pane_actions(self) -> None:
+        """Check each pane toggle by whether its pane is showing.
+
+        ``isHidden`` rather than ``isVisible``: a pane is showing when nothing hid it,
+        whether or not the window itself is on screen yet.
+        """
+        self.action_toggle_left_sidebar.setChecked(not self.left_sidebar.isHidden())
+        self.action_toggle_game_view.setChecked(self._game_view_visible)
+        self.action_toggle_right_sidebar.setChecked(not self.right_sidebar.isHidden())
+        self.action_toggle_bot_canvas.setChecked(not self.bot_canvas.isHidden())
 
     def refresh_minimum_size(self) -> None:
         """Re-apply minimum size after a settings change."""
@@ -526,8 +595,9 @@ class MainWindow(QMainWindow):
                 "top": self._top_splitter.sizes(),
                 "outer": self._outer_splitter.sizes(),
                 "game_visible": self._game_view_visible,
-                "left_visible": self.left_sidebar.isVisible(),
-                "right_visible": self.right_sidebar.isVisible(),
+                "left_visible": not self.left_sidebar.isHidden(),
+                "right_visible": not self.right_sidebar.isHidden(),
+                "canvas_visible": not self.bot_canvas.isHidden(),
             }
             self._game_view_maximized = True
             self.action_maximize_game_view.setChecked(True)
@@ -544,12 +614,13 @@ class MainWindow(QMainWindow):
             # Restore pre-maximize state
             self.left_sidebar.setVisible(self._pre_maximize_sizes.get("left_visible", True))
             self.right_sidebar.setVisible(self._pre_maximize_sizes.get("right_visible", True))
-            self.bot_canvas.setVisible(True)
+            self.bot_canvas.setVisible(self._pre_maximize_sizes.get("canvas_visible", True))
             if not self._pre_maximize_sizes.get("game_visible", True):
                 self._game_view_visible = False
                 self._game_view_panel.setVisible(False)
             self._top_splitter.setSizes(self._pre_maximize_sizes.get("top", [300, 800, 300]))
             self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, 220]))
+        self._sync_pane_actions()
 
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
         # The dot, the status word and the clock live in Bar B now; the only part of

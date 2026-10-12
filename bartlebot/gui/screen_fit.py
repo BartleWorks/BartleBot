@@ -30,6 +30,8 @@ showing one at a time takes the whole sentence.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QWidget
 
 from bartlebot.game import game_sizing
@@ -58,6 +60,31 @@ def screen_metrics(widget: QWidget | None = None) -> tuple[tuple[int, int], floa
         return _UNMEASURABLE, 1.0
     available = screen.availableGeometry()
     return (available.width(), available.height()), screen.devicePixelRatio() or 1.0
+
+
+#: The sidebar floors measured so far, by which side and what they were measured under.
+_FLOORS: dict[tuple, int] = {}
+#: More keys than a session ever produces -- one per style and theme it has run under. A
+#: test suite sweeping styles can produce more, so past this the cache starts over.
+_FLOORS_KEPT = 32
+
+
+def _measured_floor(side: str, app: QApplication, measure: Callable[[], int]) -> int:
+    """*measure*'s answer for *side*, measured once per font, style and stylesheet.
+
+    A floor is a probe row of real widgets built and sized from scratch, and it only
+    changes when one of those three does: they are what the row's width comes from. But it
+    is asked for on every resize, once per launch card -- 14 times when a maximized window
+    was dragged back to its normal size, which spent 70 of that resize's ~110ms building
+    probe rows, and froze the window under the cursor while it did.
+    """
+    key = (side, app.font().key(), app.style().name(), app.styleSheet())
+    floor = _FLOORS.get(key)
+    if floor is None:
+        if len(_FLOORS) >= _FLOORS_KEPT:
+            _FLOORS.clear()
+        floor = _FLOORS[key] = measure()
+    return floor
 
 
 def right_sidebar_floor() -> int:
@@ -93,7 +120,7 @@ def right_sidebar_floor() -> int:
         return game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
     from bartlebot.gui.sidebar.log_panel import header_row_floor  # noqa: PLC0415 - import cycle at module scope
 
-    return game_sizing.right_sidebar_floor(header_row_floor(app.font()))
+    return _measured_floor("right", app, lambda: game_sizing.right_sidebar_floor(header_row_floor(app.font())))
 
 
 #: Spacing between the three widgets of the filter row, from ``_build_filter_row``.
@@ -128,7 +155,11 @@ def left_sidebar_floor() -> int:
     app = QApplication.instance()
     if app is None:
         return game_sizing.LEFT_SIDEBAR_MIN_WIDTH
-    # Parentless and never shown -- see the identical note on the probe above.
+    return _measured_floor("left", app, lambda: _measure_left_sidebar_floor(app))
+
+
+def _measure_left_sidebar_floor(app: QApplication) -> int:
+    # Parentless and never shown -- see the identical note on right_sidebar_floor's probe.
     font = app.font()
     search, combo, check = SearchLineEdit("Search drops…"), QComboBox(), QCheckBox("Kept only")
     search.setClearButtonEnabled(True)
@@ -187,8 +218,8 @@ def budget_for(
       for, and only a live measurement sees that.
 
     The live term is also better arithmetic where it applies: it has the sidebars, the bot
-    canvas, the menu and status bars and the game panel's own header subtracted out
-    exactly, where the screen term subtracts ``MENU_AND_STATUS_PX``, an estimate.
+    canvas, the title bar and the game panel's own header subtracted out
+    exactly, where the screen term subtracts ``WINDOW_CHROME_ESTIMATE_PX``, an estimate.
 
     Taking the max rather than the live term alone is what stops a merely *small* window
     refusing a resolution the screen could carry — including at construction, before the

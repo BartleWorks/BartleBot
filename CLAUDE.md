@@ -68,7 +68,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
 | `launcher/` | auto-select, launch profiles, Remember Realm |
 | `shared/` | what every Bartleby product shares; imports nothing from the rest of `bartlebot` |
-| `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`) |
+| `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`, `title_bar/`) |
 
 Logic a widget needs but that needs no Qt goes outside `gui/`, in the package its
 subject belongs to. A module keeps its file name when it moves; a new package gets an
