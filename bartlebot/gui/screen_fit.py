@@ -187,8 +187,8 @@ def budget_for(
       for, and only a live measurement sees that.
 
     The live term is also better arithmetic where it applies: it has the sidebars, the bot
-    canvas, the menu and status bars and the game panel's own header subtracted out
-    exactly, where the screen term subtracts ``MENU_AND_STATUS_PX``, an estimate.
+    canvas, the title bar and the game panel's own header subtracted out
+    exactly, where the screen term subtracts ``WINDOW_CHROME_ESTIMATE_PX``, an estimate.
 
     Taking the max rather than the live term alone is what stops a merely *small* window
     refusing a resolution the screen could carry — including at construction, before the

@@ -65,9 +65,16 @@ LABEL_GAP = 3  # logical pixels between the bottom of the pill and the top of th
 LABEL_PILL_H = 26  # conservative upper bound on pill height (max(text_h, ICON_SIZE) + 6)
 LABEL_RESERVE = FOCUS_BORDER + LABEL_GAP + LABEL_PILL_H + 4  # = 39; keeps the pill clear of the border
 
-# Menu bar plus status bar: the two strips of the main window that are neither the game
-# area nor the bot canvas.
-MENU_AND_STATUS_PX = 60
+# The title bar: the window's one strip above the panes, holding the logo, the menus, the
+# layout toggles and the window buttons. The client area reaches the top of the window
+# (gui/title_bar), so there is no native caption above it to count -- this is all of it.
+TITLE_BAR_PX = 35
+
+# What screen_budget takes off the screen's height for everything that is neither the game
+# area nor the bot canvas. An estimate rather than a sum: it was the menu bar plus a status
+# bar once, and the title bar that replaced both is smaller, but moving it re-tiers the
+# offered ladder. The live game area is exact, and picks up the room the title bar freed.
+WINDOW_CHROME_ESTIMATE_PX = 60
 
 # The game panel's own header strip, above the view the tiles sit in.
 GAME_PANEL_CHROME_PX = 32
@@ -485,7 +492,7 @@ def required_window_size(
     right = right_sidebar if right_sidebar is not None else RIGHT_SIDEBAR_MIN_WIDTH
     left = left_sidebar if left_sidebar is not None else LEFT_SIDEBAR_MIN_WIDTH
     width = left + right + game_w + 2 * SPLITTER_HANDLE_PX
-    height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX + SPLITTER_HANDLE_PX
+    height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + TITLE_BAR_PX + SPLITTER_HANDLE_PX
     return width, height
 
 
@@ -506,7 +513,7 @@ def screen_budget(
     """
     screen_w, screen_h = screen_size
     width = screen_w - left_sidebar - right_sidebar - 2 * splitter_handle
-    height = screen_h - bottom_section - MENU_AND_STATUS_PX
+    height = screen_h - bottom_section - WINDOW_CHROME_ESTIMATE_PX
     return max(0, width), max(0, height)
 
 

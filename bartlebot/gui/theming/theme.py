@@ -535,15 +535,23 @@ class _Theme:
                 color: {self.text};
             }}
 
-            /* ── Menu bar ── */
+            /* ── Menu bar ──
+               It sits in the title bar (gui/title_bar), which draws the fill and the
+               rule beneath, so the bar itself is transparent. An open menu's title
+               takes the same soft hover as the rows of the menu it opens. */
             QMenuBar {{
-                background: {self.surface};
+                background: transparent;
                 color: {self.text};
-                border-bottom: 1px solid {self.border};
+                border: none;
+            }}
+            QMenuBar::item {{
+                background: transparent;
+                padding: 4px 9px;
+                border-radius: 4px;
             }}
             QMenuBar::item:selected {{
-                background: {self.accent};
-                color: #ffffff;
+                background: {self.node_fill_hover};
+                color: {self.text};
             }}
             /* ── Popup menus ──
                Drawn as PickerPopup is — the page's own fill, an inset list, and the
