@@ -216,7 +216,9 @@ go under `%APPDATA%/Bartleby`. A new store takes its default path from `store_ro
 the accounts, launch profiles and stored passwords belong to the user rather than to any
 one of them. So `%APPDATA%/Bartleby/` is the vendor root, per-product data sits beneath it,
 and what every product shares lives at the root itself: the account records in
-`accounts.json`, and the library of duel strategies, player strategies and decks in
+`accounts.json`, the user's preferences in `preferences.json` (both written through
+`shared/json_update.py`, which changes one key and never rewrites the file from memory,
+since two products may be open at once), and the library of duel strategies, player strategies and decks in
 `strategies/` (`docs/COMBAT_CONFIG.md`). Their code is in `bartlebot/shared/`, which imports
 nothing from `bartlebot` outside itself, so it can become a library of its own. The prefix is defined
 once, in `bartlebot/shared/vendor.py`, and imported — never spelled out again, on disk or

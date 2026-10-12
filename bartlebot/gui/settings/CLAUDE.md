@@ -14,6 +14,23 @@ seam, and the only reason to reach it is a change to *both* lists that must be o
 The vendor prefix, on disk and in Credential Manager, is `shared/vendor.py` and is defined
 exactly once.
 
+**Where a value lives, of the three files:**
+
+| file | holds |
+|---|---|
+| `%APPDATA%/Bartleby/preferences.json` | a preference about the *user* that every product reads, such as the combat defaults. Flat, dotted keys (`combat.default_duel.solo`), `"version": 1`. `bartlebot/shared/preferences.py`, `PreferenceStore` |
+| `%APPDATA%/Bartleby/accounts.json` | accounts and launch profiles |
+| `%APPDATA%/Bartleby/BartleBot/settings.json` | what only this app has: layout, sidebars, Safety Delay, bot options |
+
+**The write rule for the two shared files:** two products can be open at once, so a
+shared file is never written from memory. Every write is
+`bartlebot/shared/json_update.update_json(path, mutate)`: read the file as it is, change
+only the key you own, check nobody wrote in between (retrying up to `UPDATE_RETRIES`),
+and rename a temporary over it. Keys you do not know are kept; the last writer of a key
+wins, which is right for a preference and why the strategy library, with authored content
+to lose, refuses and asks instead. A new shared record goes through `update_json` too,
+and `PreferenceStore` has no cache, so a read sees the other product's last write.
+
 Two rules about the settings dialog itself:
 
 - **Every key in `_DEFAULTS[section]` must also be a field on that section's

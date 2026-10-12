@@ -25,6 +25,7 @@ from bartlebot.gui.ui_state import UiState
 from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.preferences import PreferenceStore
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
 from bartlebot.shared.vendor import vendor_dir
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
@@ -42,6 +43,7 @@ def _default_write_paths() -> dict[str, Path]:
         "ui state": UiState().path,
         "card art": card_art.art_dir(),
         "accounts": vendor_dir(),
+        "shared preferences": PreferenceStore().path,
         "session logs": session_log_dir(),
     }
 
