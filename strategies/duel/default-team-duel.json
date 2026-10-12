@@ -1,0 +1,29 @@
+{
+  "min_players": 2,
+  "max_players": 4,
+  "combat_order": [
+    4,
+    3,
+    2,
+    1
+  ],
+  "player_assignments": [
+    {
+      "players": [
+        1
+      ],
+      "player_combat_strategy_id": "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
+    },
+    {
+      "players": [
+        2,
+        3,
+        4
+      ],
+      "player_combat_strategy_id": "d2496f8b-85c5-44f5-98da-13fb0c7ddea5"
+    }
+  ],
+  "description": "Default duel strategy for a team of 2-4. P1 hits and the others support while a boss is up, and hit otherwise.",
+  "id": "9594ae6a-2cdc-4990-9ee7-3c43bb715121",
+  "name": "Default Team Duel"
+}

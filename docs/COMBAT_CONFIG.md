@@ -174,6 +174,41 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 
 **A school is a set.** `PlayerCombatStrategy.schools` and `PlayerAssignment.schools` are lists, and empty means any school. A file with the old single `school` loads as a one-item list and is rewritten on its next save. An assignment's own non-empty set wins over its linked preset's. Deck Presets carry one too (#174), authored the same way and never inferred from the cards, since most spells can be trained on any wizard; it is the school the deck is built for, not the archmastery school it captured, and the Deck tab's "works with school" filter reads it.
 
+## The shipped defaults (#206)
+
+Four Official items are what a fight with nothing tailored runs. They are ordinary files
+under `strategies/`, found by id, and their ids are named in
+`bartlebot/shared/combat_defaults.py`, which imports nothing from the rest of `bartlebot`.
+
+| item | kind | what it does |
+|---|---|---|
+| Default | player | the built-in DSL, so solo play is unchanged; its DSL is `LAST_RESORT_DSL` |
+| Default Support | player | feints, blades and traps while a boss is up, and the two damage lines of Default otherwise |
+| Default Solo Duel (`SHIPPED_SOLO_DUEL_ID`) | duel | one player: P1 runs Default |
+| Default Team Duel (`SHIPPED_TEAM_DUEL_ID`) | duel | two to four players: P1 runs Default, P2 to P4 run Default Support, combat order 4, 3, 2, 1 |
+| Default Team Duel (Everyone Attacks) (`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`) | duel | two to four players: P1 to P4 run Default |
+
+`LAST_RESORT_DSL` is also what a fight runs when no file can be read at all.
+`combat_config.BARTLEBOT_DEFAULT_COMBAT_CONFIG` re-exports it until the four-level
+resolution (Stage 4 of #201) retires the name.
+
+**Why support is gated on a boss.** A support wizard without support cards in hand
+casts nothing, and a mob fight has nothing to feint or trap for. So the three support
+lines that don't aim `@ boss` start with `?(any(enemies).is_boss == 1)`: `any(enemies)`
+counts every living enemy whether targetable or not, so the condition asks "is this a
+boss fight?". The lines aimed `@ boss` already skip when there is no boss. Write the
+condition this way and no other:
+
+- **Never `?(boss.health > 0)`.** It goes through resolving `boss`, which may come up
+  empty while the boss can't be targeted.
+- **Never `boss.hp`.** A misspelled attribute parses and is silently false on every turn.
+
+Default Team Boss Duel is only assigned to boss fights, where the condition always
+holds, so Default Support's only change there is the attack fallback.
+
+**`SHARED_SET_VERSION` rises whenever a shared Official item changes**, so a product
+shipping an older set never mixes items with this one's.
+
 ## Resolution at run time
 
 `resolve_combat()` in `bartlebot/nodes/combat_runner.py` returns `(per_client_dsl, combat_order, source_label)` and falls back to `BARTLEBOT_DEFAULT_COMBAT_CONFIG` at **every** level:
