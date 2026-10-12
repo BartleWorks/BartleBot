@@ -284,3 +284,96 @@ def test_a_store_sees_the_other_writers_list_after_its_own_write(tmp_path):
     first.set_accounts(_accounts(ONE))
 
     assert first.launch_profiles == [{"name": "Duo", "accounts": []}]
+
+
+THREE = "three@example.com"
+
+
+def _two_stores_on(tmp_path, accounts: list[dict]):
+    """Two stores that both loaded *accounts*, as two products started on one file."""
+    directory = tmp_path / "vendor"
+    AccountStore(directory).set_accounts(accounts)
+    return directory, AccountStore(directory), AccountStore(directory)
+
+
+def _usernames(directory) -> list[str]:
+    return [a["username"] for a in AccountStore(directory).accounts]
+
+
+def test_an_edit_from_a_stale_copy_keeps_the_account_the_other_product_added(tmp_path):
+    """The client loop learning a fingerprint writes every account it holds, from a copy
+    loaded at start. That must not delete one the other product added since."""
+    directory, first, second = _two_stores_on(tmp_path, _accounts(ONE))
+    second.set_accounts([*second.accounts, {"username": TWO, "alias": ""}])
+
+    stale = first.accounts
+    stale[0] = {**stale[0], "fingerprint": "abc"}
+    first.set_accounts(stale)
+
+    on_disk = AccountStore(directory).accounts
+    assert [a["username"] for a in on_disk] == [ONE, TWO]
+    assert on_disk[0]["fingerprint"] == "abc"
+
+
+def test_an_edit_from_a_stale_copy_does_not_bring_back_a_deleted_account(tmp_path):
+    directory, first, second = _two_stores_on(tmp_path, _accounts(ONE, TWO))
+    second.set_accounts(_accounts(ONE))
+
+    first.set_accounts([{**a, "alias": "x"} if a["username"] == ONE else a for a in first.accounts])
+
+    assert _usernames(directory) == [ONE]
+
+
+def test_a_delete_from_a_stale_copy_keeps_the_others_edit_to_another_account(tmp_path):
+    directory, first, second = _two_stores_on(tmp_path, _accounts(ONE, TWO, THREE))
+    second.set_accounts([{**a, "alias": "edited"} if a["username"] == TWO else a for a in second.accounts])
+
+    first.set_accounts([a for a in first.accounts if a["username"] != THREE])
+
+    on_disk = AccountStore(directory).accounts
+    assert [a["username"] for a in on_disk] == [ONE, TWO]
+    assert on_disk[1]["alias"] == "edited"
+
+
+def test_an_account_both_products_edited_is_the_later_writers(tmp_path):
+    directory, first, second = _two_stores_on(tmp_path, _accounts(ONE))
+    second.set_accounts([{"username": ONE, "alias": "second"}])
+
+    first.set_accounts([{"username": ONE, "alias": "first"}])
+
+    assert AccountStore(directory).accounts == [{"username": ONE, "alias": "first"}]
+
+
+def test_a_reorder_from_a_stale_copy_keeps_the_others_new_account(tmp_path):
+    directory, first, second = _two_stores_on(tmp_path, _accounts(ONE, TWO))
+    second.set_accounts([*second.accounts, {"username": THREE, "alias": ""}])
+
+    first.set_accounts(list(reversed(first.accounts)))
+
+    assert _usernames(directory) == [TWO, ONE, THREE]
+
+
+def test_an_in_place_edit_to_a_profiles_account_list_is_still_a_change(tmp_path):
+    """The lists handed out are shallow copies, so the base must not share the inner list."""
+    directory = tmp_path / "vendor"
+    store = AccountStore(directory)
+    store.set_launch_profiles([{"name": "Duo", "accounts": [ONE]}])
+    AccountStore(directory).set_launch_profiles([{"name": "Duo", "accounts": [ONE]}, {"name": "Solo", "accounts": []}])
+
+    profiles = store.launch_profiles
+    profiles[0]["accounts"].append(TWO)
+    store.set_launch_profiles(profiles)
+
+    assert AccountStore(directory).launch_profiles == [
+        {"name": "Duo", "accounts": [ONE, TWO]},
+        {"name": "Solo", "accounts": []},
+    ]
+
+
+def test_a_list_that_cannot_be_keyed_is_written_whole(tmp_path):
+    directory, first, second = _two_stores_on(tmp_path, _accounts(ONE))
+    second.set_accounts([*second.accounts, {"username": TWO}])
+
+    first.set_accounts([{"alias": "no username"}])
+
+    assert AccountStore(directory).accounts == [{"alias": "no username"}]

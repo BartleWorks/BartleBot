@@ -30,6 +30,10 @@ and rename a temporary over it. Keys you do not know are kept; the last writer o
 wins, which is right for a preference and why the strategy library, with authored content
 to lose, refuses and asks instead. A new shared record goes through `update_json` too,
 and `PreferenceStore` has no cache, so a read sees the other product's last write.
+`AccountStore` does cache, and its callers write whole lists from that copy, so within a
+key it merges per entry (an account by `username`, a profile by `name`) against what it
+last read: only the entries it changed are applied, and the other product's adds, edits
+and removes stand. A list is one value only for a preference.
 
 Two rules about the settings dialog itself:
 

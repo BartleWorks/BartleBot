@@ -40,10 +40,26 @@ account change from one product and a launch-profile change from another both su
 so does any key a newer version added. What the store holds in memory is a copy of the file
 as of the last read or write, refreshed by every write; it is not the authority.
 
-The same two methods are why a caller never pulls a list, mutates a dict inside it and
-assigns it back: that is a write from memory, and it is the one shape this cannot repair.
-Two products editing the *same* account at once still means the later write wins that
-account's whole record.
+Within a key the write is per entry, not per list. Callers hand back a whole list built from
+the copy in memory, which may be hours old: the client loop learning a fingerprint writes
+every account it holds, including one the other product deleted since, and none it added.
+So :meth:`AccountStore.save` merges three ways, by an account's ``username`` and a launch
+profile's ``name``: what this store last read or wrote (the base), what it holds now, and
+what is on disk now. Only the entries this store changed against its base are applied:
+
+* an entry it added or edited is written as it holds it;
+* an entry it removed is removed;
+* every other entry is the file's, so the other product's adds, edits and removes stand;
+* the order is this store's when it reordered the entries, and the file's otherwise.
+
+An entry both products edited is this store's, the later write. One the other product
+removed stays removed, even if this store edited it: a delete is the more deliberate act,
+and a fingerprint learned for an account the user just deleted must not bring it back. A
+list whose entries are not all keyed and distinct can't be merged, and is written whole,
+as it was before.
+
+The same two methods are why a caller never mutates a dict inside the list it read and
+leaves it there: the store would have no way to know it changed.
 
 A write is atomic in the crash sense too: an interrupted save leaves the previous file
 whole rather than a half-written one that reads as "no accounts".
@@ -51,6 +67,7 @@ whole rather than a half-written one that reads as "no accounts".
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 from pathlib import Path
@@ -71,6 +88,9 @@ FILENAME = "accounts.json"
 _ACCOUNTS = "accounts"
 _LAUNCH_PROFILES = "launch_profiles"
 
+#: What names an entry across two writers, for each list.
+_ENTRY_KEYS = {_ACCOUNTS: "username", _LAUNCH_PROFILES: "name"}
+
 
 class AccountStore:
     """The vendor-level accounts file: read at start, written a key at a time.
@@ -86,6 +106,8 @@ class AccountStore:
         self._launch_profiles: list[dict] = []
         #: Keys changed in memory and not yet written; what :meth:`save` writes.
         self._dirty: set[str] = set()
+        #: Each list as this store last read or wrote it: what a change is measured against.
+        self._base: dict[str, list[dict]] = {_ACCOUNTS: [], _LAUNCH_PROFILES: []}
         self._load()
 
     @property
@@ -146,19 +168,22 @@ class AccountStore:
             self.save()
 
     def save(self) -> None:
-        """Write the keys changed since the last write, atomically. Never raises: a failure is logged.
+        """Write the entries changed since the last write, atomically. Never raises: a failure is logged.
 
-        Only those keys: the rest of the file is whatever is on disk now, which may be
-        another product's newer write. Called from GUI slots and from the client loop,
-        where an exception escaping looks like the launch screen breaking. The data is
-        still in memory either way, and its key stays pending, so the next successful
-        save writes it.
+        Only those: the rest of the file is whatever is on disk now, which may be another
+        product's newer write (see the module docstring for the merge). Called from GUI
+        slots and from the client loop, where an exception escaping looks like the launch
+        screen breaking. The data is still in memory either way, and its key stays
+        pending, so the next successful save writes it.
         """
         pending = {key: (self._accounts if key == _ACCOUNTS else self._launch_profiles) for key in sorted(self._dirty)}
+        base = {key: self._base[key] for key in pending}
 
         def mutate(record: dict[str, Any]) -> None:
             record["version"] = SCHEMA_VERSION
-            record.update({key: list(value) for key, value in pending.items()})
+            for key, mine in pending.items():
+                theirs = _as_dict_list(record.get(key))
+                record[key] = _merge_entries(base[key], mine, theirs, _ENTRY_KEYS[key])
             record.setdefault(_ACCOUNTS, [])
             record.setdefault(_LAUNCH_PROFILES, [])
 
@@ -168,8 +193,7 @@ class AccountStore:
             logger.exception("Could not write the shared accounts file at %s", self._path)
             return
         self._dirty.clear()
-        self._accounts = _as_dict_list(written.get(_ACCOUNTS))
-        self._launch_profiles = _as_dict_list(written.get(_LAUNCH_PROFILES))
+        self._take(written)
 
     # ------------------------------------------------------------------
     # Load and migration
@@ -193,8 +217,16 @@ class AccountStore:
         if not isinstance(record, dict):
             logger.warning("The shared accounts file at %s is not a record; ignoring it", self._path)
             return
+        self._take(record)
+
+    def _take(self, record: dict[str, Any]) -> None:
+        """Hold both lists as *record* has them, and measure the next change against that."""
         self._accounts = _as_dict_list(record.get(_ACCOUNTS))
         self._launch_profiles = _as_dict_list(record.get(_LAUNCH_PROFILES))
+        # Deep, because the lists handed out are shallow copies: a caller that edits a
+        # profile's account list in place would otherwise edit the base with it, and the
+        # change would read as no change.
+        self._base = {_ACCOUNTS: copy.deepcopy(self._accounts), _LAUNCH_PROFILES: copy.deepcopy(self._launch_profiles)}
 
     def adopt(self, accounts: Any, launch_profiles: Any) -> bool:
         """Take over accounts still held in a product's own settings file. Whether it wrote.
@@ -224,6 +256,44 @@ class AccountStore:
             self._path,
         )
         return True
+
+
+def _keyed(entries: list[dict], key: str) -> dict[str, dict] | None:
+    """*entries* by their *key* field, in order, or None when one lacks it or two share it."""
+    keyed: dict[str, dict] = {}
+    for entry in entries:
+        name = entry.get(key)
+        if not isinstance(name, str) or name in keyed:
+            return None
+        keyed[name] = entry
+    return keyed
+
+
+def _merge_entries(base: list[dict], mine: list[dict], theirs: list[dict], key: str) -> list[dict]:
+    """*theirs* with the entries *mine* changed against *base* applied. See the module docstring.
+
+    Falls back to *mine* whole when any of the three can't be keyed, which is what every
+    write did before the merge.
+    """
+    b, m, t = _keyed(base, key), _keyed(mine, key), _keyed(theirs, key)
+    if b is None or m is None or t is None:
+        return list(mine)
+    merged: dict[str, dict] = {}
+    for name, entry in t.items():
+        if name in b and name not in m:
+            continue  # removed here
+        merged[name] = m[name] if name in m and m[name] != b.get(name) else entry
+    for name, entry in m.items():
+        if name not in b and name not in t:
+            merged[name] = entry  # added here
+    # Shared entries keep this store's order if it reordered them, else the file's.
+    shared = [name for name in m if name in b]
+    reordered = shared != [name for name in b if name in m]
+    lead = list(m) if reordered else list(t)
+    order = [name for name in lead if name in merged]
+    order += [name for name in m if name in merged and name not in order]
+    order += [name for name in merged if name not in order]
+    return [merged[name] for name in order]
 
 
 def _as_dict_list(value: Any) -> list[dict]:
