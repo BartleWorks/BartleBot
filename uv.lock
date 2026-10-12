@@ -71,7 +71,7 @@ requires-dist = [
     { name = "keyring", specifier = ">=25.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pyperclip", specifier = ">=1.8" },
-    { name = "pyqt6", specifier = ">=6.7" },
+    { name = "pyqt6", specifier = ">=6.9" },
     { name = "qasync", specifier = ">=0.27" },
     { name = "transitions", specifier = ">=0.9" },
     { name = "wakepy", specifier = ">=1.0" },
