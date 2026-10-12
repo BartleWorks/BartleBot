@@ -139,6 +139,31 @@ on `aboutToHide`. The swap cannot happen at construction: a menu built in a widg
 
 A menu with no parent, or one parented directly to a window or dialog, is already fine.
 
+## The title bar is ours, not Windows'
+
+The main window has no native caption. `TitleBar` (`title_bar/title_bar.py`) is the one row
+above the panes, holding the logo, the menu bar, the title, the pane toggles and the
+window buttons, and `NativeFrame` (`title_bar/native_frame.py`) is what makes it a title bar:
+Qt's `ExpandedClientAreaHint` for the frame, plus the four things Qt leaves undone. Its
+docstring has each one and the spike that found it. The rules:
+
+- **A control in the bar is a `QAbstractButton` or the `QMenuBar`.** `is_control_at`
+  decides by class, and everything else in the bar is caption: it drags the window, and a
+  click on it never reaches the widget. A new kind of control needs adding there.
+- **Never `menuBar()` or `setMenuBar()` on `MainWindow`.** The menu bar is the title bar's
+  child, installed with `setMenuWidget`. `QMainWindow.menuBar()` would quietly create a
+  second, empty one.
+- **Every `WM_NCHITTEST` is answered by `NativeFrame`, never by Qt.** Qt's answer for the
+  expanded area fakes a mouse press from inside the hit test; with a menu bar in the strip,
+  File never opened. Outside the bar the answer is Windows' `DefWindowProc`.
+- **A pane shown or hidden in code goes through its View action**, or the title bar's
+  toggle and the menu's check mark go stale: `show_game_view`, `show_bot_canvas`, or
+  `_sync_pane_actions` after changing several at once, as Maximize Game View does.
+- **Probing it from another process needs per-monitor DPI awareness.** A DPI-unaware sender
+  has the coordinates it sends scaled by the display scale, so at 125% every answer lands
+  1.25x inside where it should, and a posted click misses the window. Call
+  `SetProcessDpiAwarenessContext(-4)` first.
+
 ## Buttons: `ActionButton` and its four weights
 
 Use `ActionButton` (`widgets/buttons/action_button.py`), not a bare `QPushButton`. Fusion's
