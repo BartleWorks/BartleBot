@@ -32,27 +32,31 @@ tool with no bot canvas. Moving them alongside the record is the obvious wrong t
 TWO PROCESSES AT ONCE
 
 Not an edge case, it is the premise: farming on two accounts while playing live on a
-third means both apps are running. This store does not yet solve concurrent writers --
-it loads once and replaces the whole file, so a second writer's updates are lost -- but
-it is shaped so that it *can be* solved here and nowhere else. Every write goes through
-:meth:`AccountStore.set_accounts` or :meth:`AccountStore.set_launch_profiles`, never
-through a caller pulling a list, mutating a dict inside it and assigning it back. With
-the writes funnelled into two methods, atomic replace and reload-before-write are a
-later change in one file rather than an audit of every call site.
+third means both apps are running. Every write goes through :meth:`AccountStore.set_accounts`
+or :meth:`AccountStore.set_launch_profiles`, and each reaches disk through
+:func:`~bartlebot.shared.json_update.update_json`: the file is read as it is *now*, only
+the key that call changed is replaced, and the result is renamed over the file. So an
+account change from one product and a launch-profile change from another both survive, and
+so does any key a newer version added. What the store holds in memory is a copy of the file
+as of the last read or write, refreshed by every write; it is not the authority.
 
-The writes are already atomic in the crash sense: the file is written to a temporary
-beside it and renamed over, so an interrupted save leaves the previous file whole rather
-than a half-written one that reads as "no accounts".
+The same two methods are why a caller never pulls a list, mutates a dict inside it and
+assigns it back: that is a write from memory, and it is the one shape this cannot repair.
+Two products editing the *same* account at once still means the later write wins that
+account's whole record.
+
+A write is atomic in the crash sense too: an interrupted save leaves the previous file
+whole rather than a half-written one that reads as "no accounts".
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
+from bartlebot.shared.json_update import update_json
 from bartlebot.shared.vendor import vendor_dir
 
 logger = logging.getLogger(__name__)
@@ -64,9 +68,12 @@ SCHEMA_VERSION = 1
 #: The filename beneath the vendor directory. Not a product name: this is the shared one.
 FILENAME = "accounts.json"
 
+_ACCOUNTS = "accounts"
+_LAUNCH_PROFILES = "launch_profiles"
+
 
 class AccountStore:
-    """The vendor-level accounts file, loaded once and written whole.
+    """The vendor-level accounts file: read at start, written a key at a time.
 
     Constructed with its directory rather than finding one, so a test -- or a second
     product with its own layout -- can point it anywhere without patching a module
@@ -77,6 +84,8 @@ class AccountStore:
         self._path = (directory or vendor_dir()) / FILENAME
         self._accounts: list[dict] = []
         self._launch_profiles: list[dict] = []
+        #: Keys changed in memory and not yet written; what :meth:`save` writes.
+        self._dirty: set[str] = set()
         self._load()
 
     @property
@@ -125,35 +134,42 @@ class AccountStore:
         the same operation has already removed.
         """
         self._accounts = list(accounts)
+        self._dirty.add(_ACCOUNTS)
         if save:
             self.save()
 
     def set_launch_profiles(self, profiles: list[dict], save: bool = True) -> None:
         """Replace the launch profiles, writing them out unless *save* is False."""
         self._launch_profiles = list(profiles)
+        self._dirty.add(_LAUNCH_PROFILES)
         if save:
             self.save()
 
     def save(self) -> None:
-        """Write the record, atomically. Never raises: a failed write is logged.
+        """Write the keys changed since the last write, atomically. Never raises: a failure is logged.
 
-        Called from GUI slots and from the client loop, where an exception escaping
-        looks like the launch screen breaking. The data is still in memory either way,
-        so the next successful save writes it.
+        Only those keys: the rest of the file is whatever is on disk now, which may be
+        another product's newer write. Called from GUI slots and from the client loop,
+        where an exception escaping looks like the launch screen breaking. The data is
+        still in memory either way, and its key stays pending, so the next successful
+        save writes it.
         """
-        record = {
-            "version": SCHEMA_VERSION,
-            "accounts": self._accounts,
-            "launch_profiles": self._launch_profiles,
-        }
-        tmp = self._path.with_suffix(".json.tmp")
+        pending = {key: (self._accounts if key == _ACCOUNTS else self._launch_profiles) for key in sorted(self._dirty)}
+
+        def mutate(record: dict[str, Any]) -> None:
+            record["version"] = SCHEMA_VERSION
+            record.update({key: list(value) for key, value in pending.items()})
+            record.setdefault(_ACCOUNTS, [])
+            record.setdefault(_LAUNCH_PROFILES, [])
+
         try:
-            self._path.parent.mkdir(parents=True, exist_ok=True)
-            with open(tmp, "w", encoding="utf-8") as fh:
-                json.dump(record, fh, indent=2)
-            os.replace(tmp, self._path)
+            written = update_json(self._path, mutate)
         except OSError:
             logger.exception("Could not write the shared accounts file at %s", self._path)
+            return
+        self._dirty.clear()
+        self._accounts = _as_dict_list(written.get(_ACCOUNTS))
+        self._launch_profiles = _as_dict_list(written.get(_LAUNCH_PROFILES))
 
     # ------------------------------------------------------------------
     # Load and migration
@@ -177,8 +193,8 @@ class AccountStore:
         if not isinstance(record, dict):
             logger.warning("The shared accounts file at %s is not a record; ignoring it", self._path)
             return
-        self._accounts = _as_dict_list(record.get("accounts"))
-        self._launch_profiles = _as_dict_list(record.get("launch_profiles"))
+        self._accounts = _as_dict_list(record.get(_ACCOUNTS))
+        self._launch_profiles = _as_dict_list(record.get(_LAUNCH_PROFILES))
 
     def adopt(self, accounts: Any, launch_profiles: Any) -> bool:
         """Take over accounts still held in a product's own settings file. Whether it wrote.
@@ -199,6 +215,7 @@ class AccountStore:
             return False
         self._accounts = accounts
         self._launch_profiles = launch_profiles
+        self._dirty.update((_ACCOUNTS, _LAUNCH_PROFILES))
         self.save()
         logger.info(
             "Moved %d account(s) and %d launch profile(s) into the shared store at %s",

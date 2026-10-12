@@ -244,3 +244,43 @@ def test_the_accounts_list_is_a_copy(settings_dir):
     borrowed.append({"username": TWO})
 
     assert [a["username"] for a in manager.accounts] == [ONE]
+
+
+# ---------------------------------------------------------------------------
+# Two products at once (#205)
+# ---------------------------------------------------------------------------
+
+
+def test_an_account_change_and_a_launch_profile_change_from_two_stores_both_survive(tmp_path):
+    directory = tmp_path / "vendor"
+    first, second = AccountStore(directory), AccountStore(directory)
+
+    first.set_accounts(_accounts(ONE))
+    second.set_launch_profiles([{"name": "Duo", "accounts": [ONE]}])
+
+    reopened = AccountStore(directory)
+    assert [a["username"] for a in reopened.accounts] == [ONE]
+    assert reopened.launch_profiles == [{"name": "Duo", "accounts": [ONE]}]
+
+
+def test_a_write_keeps_a_key_it_does_not_know(tmp_path):
+    directory = tmp_path / "vendor"
+    directory.mkdir()
+    (directory / "accounts.json").write_text(
+        json.dumps({"version": 1, "accounts": [], "launch_profiles": [], "from_later": [1]}), encoding="utf-8"
+    )
+
+    AccountStore(directory).set_accounts(_accounts(ONE))
+
+    record = json.loads((directory / "accounts.json").read_text(encoding="utf-8"))
+    assert record["from_later"] == [1]
+
+
+def test_a_store_sees_the_other_writers_list_after_its_own_write(tmp_path):
+    directory = tmp_path / "vendor"
+    first, second = AccountStore(directory), AccountStore(directory)
+
+    second.set_launch_profiles([{"name": "Duo", "accounts": []}])
+    first.set_accounts(_accounts(ONE))
+
+    assert first.launch_profiles == [{"name": "Duo", "accounts": []}]
