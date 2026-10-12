@@ -180,7 +180,9 @@ class AccountStore:
         base = {key: self._base[key] for key in pending}
 
         def mutate(record: dict[str, Any]) -> None:
-            record["version"] = SCHEMA_VERSION
+            # Never lowered: a newer product's version stays, or it would read its own
+            # record as one still to migrate. PreferenceStore does the same.
+            record.setdefault("version", SCHEMA_VERSION)
             for key, mine in pending.items():
                 theirs = _as_dict_list(record.get(key))
                 record[key] = _merge_entries(base[key], mine, theirs, _ENTRY_KEYS[key])

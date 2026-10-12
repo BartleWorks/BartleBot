@@ -276,6 +276,20 @@ def test_a_write_keeps_a_key_it_does_not_know(tmp_path):
     assert record["from_later"] == [1]
 
 
+def test_a_write_keeps_a_newer_versions_number(tmp_path):
+    """Writing version 1 over a newer product's record would make it migrate its own file again."""
+    directory = tmp_path / "vendor"
+    directory.mkdir()
+    (directory / "accounts.json").write_text(
+        json.dumps({"version": SCHEMA_VERSION + 1, "accounts": [], "launch_profiles": []}), encoding="utf-8"
+    )
+
+    AccountStore(directory).set_accounts(_accounts(ONE))
+
+    record = json.loads((directory / "accounts.json").read_text(encoding="utf-8"))
+    assert record["version"] == SCHEMA_VERSION + 1
+
+
 def test_a_store_sees_the_other_writers_list_after_its_own_write(tmp_path):
     directory = tmp_path / "vendor"
     first, second = AccountStore(directory), AccountStore(directory)
