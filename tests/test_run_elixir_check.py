@@ -1,7 +1,7 @@
-"""The run request's elixir read (#141): a level scaling player who starts a run with an elixir already active.
+"""The run request's reads: an elixir already active (#141), and a player in a fight (#203).
 
-The read is async and the warning is a blocking dialog, so the run sequence is split around
-it: the read runs as a task and the dialogs run from its done callback, outside any task.
+The reads are async and what they feed is a blocking dialog, so the run sequence is split
+around them: the reads run as a task and the dialogs run from its done callback, outside any task.
 """
 
 import asyncio
@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.dialogs import safety_warning_dialog
 from bartlebot.nodes.utility import handle_level_scaling
@@ -31,17 +32,17 @@ def _config(node_type: str) -> BotConfig:
 
 
 class _Controller:
-    """Hosts the three AppController methods under test, with every other pre-run check passing."""
+    """Hosts the AppController methods under test, with every other pre-run check passing."""
 
     def __init__(self, node_type: str) -> None:
         from bartlebot.app_controller import AppController  # noqa: PLC0415
 
-        for name in ("_on_run_requested", "_on_elixir_probe_done", "_finish_run_request"):
+        for name in ("_on_run_requested", "_on_run_probe_done", "_refuse_while_fighting", "_finish_run_request"):
             setattr(self, name, getattr(AppController, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[FakeClient(), FakeClient()])
         self._loaded_config = _config(node_type)
         self._window = None
-        self._elixir_probe = None
+        self._run_probe = None
         self._bot_task = None
         self._recompose_before_run = lambda: True
         self._check_restricted_zones = lambda: True
@@ -56,8 +57,8 @@ class _Controller:
 
     async def settle(self) -> None:
         """Let the read, its done callback and the run task all finish."""
-        if self._elixir_probe is not None:
-            await asyncio.wait([self._elixir_probe])
+        if self._run_probe is not None:
+            await asyncio.wait([self._run_probe])
             await asyncio.sleep(0)
         if self._bot_task is not None:
             await self._bot_task
@@ -139,7 +140,6 @@ async def test_a_bot_that_never_level_scales_reads_no_elixir(dialogs, monkeypatc
     await controller.settle()
 
     read.assert_not_awaited()
-    assert controller._elixir_probe is None
     assert controller.started == 1
 
 
@@ -163,4 +163,55 @@ async def test_a_second_press_during_the_read_does_not_start_two_runs(dialogs, m
     controller._on_run_requested()
     await controller.settle()
 
+    assert controller.started == 1
+
+
+@pytest.fixture
+def refusals(monkeypatch):
+    """Every refusal shown: its text, and whether a task was running when it blocked."""
+    shown = SimpleNamespace(texts=[], in_task=[])
+
+    class FakeBox:
+        @staticmethod
+        def warning(_parent, _title, text):
+            shown.texts.append(text)
+            shown.in_task.append(asyncio.current_task() is not None)
+
+    monkeypatch.setattr(app_controller, "QMessageBox", FakeBox)
+    return shown
+
+
+async def test_a_player_in_a_fight_refuses_the_run(dialogs, refusals, monkeypatch):
+    read = _elixirs(monkeypatch, [1])
+    controller = _Controller("handle_level_scaling")
+    controller._client_manager.clients[1].in_battle.return_value = True
+
+    controller._on_run_requested()
+    await controller.settle()
+
+    assert controller.started == 0
+    assert refusals.in_task == [False]
+    assert refusals.texts[0].startswith("P2 is in a fight.")
+    assert dialogs.warnings == []  # refused before any question is asked
+    read.assert_not_awaited()
+
+
+async def test_nobody_in_a_fight_shows_no_refusal(dialogs, refusals, monkeypatch):
+    controller = _Controller("sleep")
+
+    controller._on_run_requested()
+    await controller.settle()
+
+    assert refusals.texts == []
+    assert controller.started == 1
+
+
+async def test_a_fight_that_cannot_be_read_does_not_refuse_the_run(dialogs, refusals, monkeypatch):
+    controller = _Controller("sleep")
+    controller._client_manager.clients[0].in_battle.side_effect = RuntimeError("memory read failed")
+
+    controller._on_run_requested()
+    await controller.settle()
+
+    assert refusals.texts == []
     assert controller.started == 1
