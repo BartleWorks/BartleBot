@@ -176,6 +176,11 @@ def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tupl
 
     Deduplicated by id across the default *and* every state: the same strategy
     assigned to five states should not produce five identical warnings.
+
+    With the bot at hand, only assignments placed on one of its fights count. One left
+    over from a fight the bot no longer has (a template update removed it) can't run, so
+    it is no fault of this run: a dialog whose default is Go back must not stop a run
+    over a line the run can never reach.
     """
     sources: list[tuple[str, str]] = []
     seen: set[str] = set()
@@ -185,7 +190,10 @@ def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tupl
         seen.add(bcs.default_strategy_id)
 
     bound = bind(bcs, config)
+    placed = {id(assignment) for assignment in bound.values()}
     for assignment in bcs.state_assignments:
+        if config is not None and id(assignment) not in placed:
+            continue
         dcs_id = assignment.duel_combat_strategy_id
         if dcs_id is not None and dcs_id not in seen:
             seen.add(dcs_id)

@@ -279,6 +279,10 @@ The faults:
 - **The user's own pick needing more players than are connected** (`min_players`).
 - **A library duel linking a strategy that belongs to one Bot Combat Strategy.**
 
+Every fault in the pick is checked over its default and the assignments `fight_keys.bind`
+places on a fight the bot has. One left over from a fight the bot no longer has, after a
+template update, can't run, so it never stops this run.
+
 The notices, grouped so that a setup says each thing once rather than once per fight:
 
 - exposed fights with no assignment, which the pick's own default covers;

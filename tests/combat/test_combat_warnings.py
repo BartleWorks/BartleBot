@@ -760,3 +760,40 @@ def test_a_warning_names_the_fight_the_assignment_is_bound_to_now(tmp_path: Path
     warnings = _faults(bcs.id, 1, _lamia_bot(), root=tmp_path)
 
     assert "'Defeat Lamia' Duel Strategy file is missing" in warnings[0]
+
+
+# ---------------------------------------------------------------------------
+# An assignment the run can't reach
+# ---------------------------------------------------------------------------
+
+
+def _left_over(tmp_path: Path, duel_id: str) -> BotCombatStrategy:
+    """A pick whose one assignment names a fight the bot no longer has."""
+    dcs = _dcs(tmp_path, "General", player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    stored = StateAssignment(fights=[FightRef(state="state_99", enemy="Gone")], duel_combat_strategy_id=duel_id)
+    return _bcs(tmp_path, default_strategy_id=dcs.id, state_assignments=[stored])
+
+
+def test_a_left_over_assignment_linking_a_missing_duel_is_no_fault(tmp_path: Path):
+    bcs = _left_over(tmp_path, "abcdef00-0000-0000-0000-000000000000")
+
+    assert _faults(bcs.id, 1, _lamia_bot(), root=tmp_path) == []
+
+
+def test_a_left_over_assignment_needing_more_players_is_no_fault(tmp_path: Path):
+    four = _dcs(tmp_path, "Four Box", min_players=4, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+
+    assert _faults(_left_over(tmp_path, four.id).id, 2, _lamia_bot(), root=tmp_path) == []
+
+
+def test_a_left_over_assignments_broken_dsl_is_no_fault(tmp_path: Path):
+    broken = _dcs(tmp_path, "Broken", player_assignments=[PlayerAssignment(players=[1], dsl=_BROKEN_DSL)])
+
+    assert _faults(_left_over(tmp_path, broken.id).id, 1, _lamia_bot(), root=tmp_path) == []
+
+
+def test_without_the_bot_every_assignment_is_still_checked(tmp_path: Path):
+    """No config, no way to tell which fights exist, so none is skipped."""
+    bcs = _left_over(tmp_path, "abcdef00-0000-0000-0000-000000000000")
+
+    assert "Duel Strategy file is missing" in _joined(_faults(bcs.id, 1, root=tmp_path))
