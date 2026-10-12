@@ -121,8 +121,8 @@ everyone including CI. Tag it *before* bumping the pin:
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
 ```
 
-Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `26affba`
-(`bartlebot-pin-20260915`) and wizsprinter `0a5099b`
+Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `a8811d0`
+(`bartlebot-pin-20261012`) and wizsprinter `0a5099b`
 (`bartlebot-pin-20261008`). Never
 delete a tag that an older commit of this repo still pins, or you break the build at
 that revision.

@@ -39,7 +39,8 @@ if TYPE_CHECKING:
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 
 # Node types the ambient combat watcher never cancels. handle_combat is already fighting
-# (the watcher leaves its fights alone entirely); relog is itself the recovery.
+# (the watcher leaves its fights alone entirely); relog is itself the recovery, and waits out a
+# fight before logging anyone out (#203).
 NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
 
 
@@ -116,6 +117,8 @@ class BotMachine:
         self._parked = asyncio.Event()
         self._ambient_combat_lock = asyncio.Lock()
         self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
+        # The ambient combat session in progress, so the idle watcher can tell it of a flee.
+        self._ambient_session = None
         # Set when the ambient combat watcher cancels the running node to take over a fight.
         # The run loop then runs that state again rather than counting a result. See
         # _preempt_node.
@@ -694,6 +697,7 @@ class BotMachine:
         self._variable_only_streak.clear()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
+        idle_watcher = asyncio.create_task(self._combat_idle_watcher())
         health_task = asyncio.create_task(self._health_monitor.run())
         try:
             while not self._stop_flag.is_set():
@@ -874,12 +878,13 @@ class BotMachine:
             self._log_run_summary(time.monotonic() - _run_start)
             watcher.cancel()
             combat_watcher.cancel()
+            idle_watcher.cancel()
             health_task.cancel()
             # With the watcher gone nothing can say when a sighting goes stale.
             self._together = sightings.TogetherRecord(retain=False)
             if self._drop_poll is not None:
                 self._drop_poll.cancel()
-            for t in (watcher, combat_watcher, health_task):
+            for t in (watcher, combat_watcher, idle_watcher, health_task):
                 try:
                     await t
                 except asyncio.CancelledError:
@@ -924,7 +929,6 @@ class BotMachine:
         goes to its recovery state if anyone was left out of place. Guarded against
         re-entry and against conflicting with intentional combat nodes.
         """
-        from bartlebot.bot import ambient_combat
         from bartlebot.nodes import node_helpers
         from bartlebot.nodes.combat_runner import slots_in_battle
 
@@ -978,24 +982,11 @@ class BotMachine:
                         self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
                         may_move = await self._preempt_node()
 
-                    self._log_machine(
-                        f"Ambient combat detected on client(s) {battling_slots} — handling",
-                        logging.WARNING,
-                    )
-                    session = ambient_combat.AmbientSession(
-                        self, clients, [clients[i] for i in battling_slots], may_move=may_move
-                    )
-                    try:
-                        end = await session.run()
-                    except Exception:
-                        logger.exception("Ambient combat session raised")
+                    end = await self._run_ambient_session(clients, battling_slots, may_move)
+                    if end is None:
                         if may_move:
                             self._recover_after_ambient()
                         continue
-
-                    for _ in range(end.fled):
-                        if self.note_flee():
-                            break
                     if may_move and end.recover and not self._stop_flag.is_set():
                         self._recover_after_ambient()
             finally:
@@ -1004,23 +995,168 @@ class BotMachine:
                     self.resume()
                     self._log_machine("Ambient combat: FSM resumed", logging.INFO)
 
+    async def _run_ambient_session(self, clients: list, battling_slots: list[int], may_move: bool):
+        """Fight out the fights *battling_slots* are in, and count their flees. Hold the lock.
+
+        Returns the session's SessionEnd, or None when the session raised.
+        """
+        from bartlebot.bot import ambient_combat
+
+        self._log_machine(f"Ambient combat detected on client(s) {battling_slots} — handling", logging.WARNING)
+        session = ambient_combat.AmbientSession(self, clients, [clients[i] for i in battling_slots], may_move=may_move)
+        self._ambient_session = session
+        try:
+            end = await session.run()
+        except Exception:
+            logger.exception("Ambient combat session raised")
+            return None
+        finally:
+            self._ambient_session = None
+        for _ in range(end.fled):
+            if self.note_flee():
+                break
+        return end
+
+    async def settle_fights(self) -> None:
+        """End every fight our players are in, for a caller holding the FSM paused (#203).
+
+        Crash recovery is the caller. It keeps the FSM paused while it relaunches a client,
+        which keeps both combat watchers off, so a fight under way when the client crashed, or
+        one the relaunched client logs back into, goes unanswered for the whole recovery. Its
+        players sit out round after round, and the group survey that follows opens the social
+        window over their cards. So before regrouping it calls this, which answers "You Are
+        Idle" by fleeing, as the idle watcher would, and then fights whatever is left the way
+        the ambient combat watcher does.
+
+        No node is running, so the session may move players. Where they end up does not matter:
+        the caller sends the bot to its recovery state either way. Never raises.
+        """
+        from bartlebot.nodes.combat_runner import slots_in_battle
+
+        if self._stop_flag.is_set():
+            return
+        async with self._ambient_combat_lock:
+            clients = list(self.clients)
+            if not clients:
+                return
+            try:
+                fled = await self._flee_idle_popups(clients)
+                if fled and self.note_flee():
+                    return
+                flags = await asyncio.gather(*[c.in_battle() for c in clients], return_exceptions=True)
+                battling_slots = slots_in_battle(flags)
+                if battling_slots and not self._stop_flag.is_set():
+                    await self._run_ambient_session(clients, battling_slots, may_move=True)
+            except Exception:
+                logger.exception("Settling fights after recovery raised")
+
     def _recover_after_ambient(self) -> None:
         """Send the FSM to its recovery state: the players are not where the interrupted state left them."""
+        self._recover("Ambient combat: the players are not where the interrupted state left them")
+
+    def _recover(self, why: str) -> None:
+        """Send the parked FSM to its recovery state, *why* opening the log line.
+
+        A bot with no recovery state runs the interrupted state again instead, with a WARNING.
+        """
         dest = self._recovery_state
         if dest is None or dest not in self._state_map:
             self._log_machine(
-                "Ambient combat: the players are not where the interrupted state left them, and this bot"
-                " has no recovery state; running the interrupted state again",
+                f"{why}, and this bot has no recovery state; running the interrupted state again",
                 logging.WARNING,
             )
             return
-        self.force_state(
-            dest,
-            reason=(
-                "Ambient combat: the players are not where the interrupted state left them"
-                f" — recovering to {self._fmt_state(dest)}"
-            ),
+        self.force_state(dest, reason=f"{why} — recovering to {self._fmt_state(dest)}")
+
+    async def _combat_idle_watcher(self) -> None:
+        """Background task: answer the game's "You Are Idle" popup by fleeing, then recover (#203).
+
+        The game raises the popup once a player has let two planning phases in a row run out
+        without choosing a card or passing, and passes that player's turn for as long as it is
+        up. So it means nothing of ours is fighting for that player: typically a fight that
+        started while the bot was busy with something it would not put down. What the players
+        were doing is unknown by then, so they flee, which leaves them in their world's hub, and
+        the bot starts again from its recovery state.
+
+        Acts while the bot runs, and while the ambient combat watcher holds it paused. A pause
+        the user asked for, or one held for client recovery, is left alone.
+        """
+        from bartlebot.nodes.timing import COMBAT_AFK_POLL_INTERVAL
+
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(COMBAT_AFK_POLL_INTERVAL)
+            if self._stop_flag.is_set():
+                return  # stop() sets the resume event too, to free a parked loop
+            if not self._resume_event.is_set() and not self._combat_auto_paused:
+                continue
+            clients = list(self.clients)
+            if not clients:
+                continue
+            fled = await self._flee_idle_popups(clients)
+            if not fled:
+                continue
+
+            session = self._ambient_session
+            if session is not None:
+                # The session fighting this one ends once its players are out of battle, and
+                # counts and recovers from a fled fight itself.
+                for client in fled:
+                    session.note_fled(client)
+                continue
+            if self.note_flee():
+                return
+            await self._recover_from_idle(", ".join(f"P{clients.index(c) + 1}" for c in fled))
+
+    async def _flee_idle_popups(self, clients: list) -> list:
+        """Click Flee on every one of *clients* showing "You Are Idle". Returns those it fled."""
+        from bartlebot.nodes import node_helpers
+        from bartlebot.nodes.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
+
+        shown = await asyncio.gather(
+            *[node_helpers.is_visible_by_path(c, COMBAT_AFK_WINDOW_PATH) for c in clients],
+            return_exceptions=True,
         )
+        fled = []
+        for slot, (client, up) in enumerate(zip(clients, shown)):
+            if up is not True:
+                continue
+            try:
+                clicked = await node_helpers.click_by_path(client, COMBAT_AFK_FLEE_PATH)
+            except Exception as exc:
+                self._log_machine(f"Idle popup: Flee could not be clicked on P{slot + 1} ({exc!r})", logging.DEBUG)
+                continue
+            if clicked:
+                fled.append(client)
+                self._log_machine(
+                    f"Idle popup: P{slot + 1} sat out two rounds of a fight and the game asked whether"
+                    " it would return; fleeing",
+                    logging.WARNING,
+                )
+        return fled
+
+    async def _recover_from_idle(self, players: str) -> None:
+        """Stop the running node and send the bot to its recovery state after an idle-popup flee.
+
+        Holds the ambient combat lock, so no session starts while the node is being cancelled.
+        A relog in progress is left to finish: it is the recovery already. handle_combat is
+        cancelled, unlike under the ambient watcher: the fight it was running has just been
+        fled, and left alone it would report that fight as won.
+        """
+        async with self._ambient_combat_lock:
+            if self._stop_flag.is_set():
+                return
+            if self._state_map.get(self.state, {}).get("node_type") == "relog":
+                self._log_machine(f"Idle popup: {players} fled; the relog under way is the recovery", logging.INFO)
+                return
+            was_running = self._resume_event.is_set()
+            if was_running:
+                self.pause()
+            try:
+                if await self._preempt_node(spare=frozenset({"relog"})):
+                    self._recover(f"Idle popup: {players} fled a fight nothing was fighting")
+            finally:
+                if was_running:
+                    self.resume()
 
     def note_flee(self) -> bool:
         """Count one fled fight toward the flee limit. True when this one stopped the bot.
@@ -1052,7 +1188,7 @@ class BotMachine:
             except Exception:
                 logger.exception("on_stopped callback raised")
 
-    async def _preempt_node(self) -> bool:
+    async def _preempt_node(self, spare: frozenset[str] = NEVER_PREEMPTED) -> bool:
         """Cancel the running node so the ambient watcher has the clients to itself.
 
         True once no node is running, so the watcher may move players; False when the node
@@ -1064,9 +1200,9 @@ class BotMachine:
         the loop to park, so nothing the node started is still running and a node helper the
         watcher reuses logs as the machine rather than as the cancelled node.
 
-        Never cancels a node in NEVER_PREEMPTED: relog is itself the recovery, and a logout
-        ends the fight anyway. Cancellation is not new to nodes: stop() already does it after
-        its grace period.
+        Never cancels a node whose type is in *spare*, by default NEVER_PREEMPTED: relog is
+        itself the recovery, and handle_combat is already fighting. The idle watcher spares only
+        relog. Cancellation is not new to nodes: stop() already does it after its grace period.
         """
         from bartlebot.nodes.timing import PREEMPT_PARK_TIMEOUT
 
@@ -1074,7 +1210,7 @@ class BotMachine:
             return True  # no loop, so no node to get out of the way
         task = self._current_node_task
         if task is not None and not task.done():
-            if self._state_map.get(self.state, {}).get("node_type") in NEVER_PREEMPTED:
+            if self._state_map.get(self.state, {}).get("node_type") in spare:
                 return False
             self._preempted = True
             task.cancel()

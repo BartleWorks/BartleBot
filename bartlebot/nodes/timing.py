@@ -636,6 +636,16 @@ PREEMPT_PARK_TIMEOUT = 5.0
 # loop to park. A cancel lands at the node's next await, so this is normally a moment; past
 # it the fight is fought anyway, since a fighter left alone is worse than a node still running.
 
+COMBAT_AFK_POLL_INTERVAL = 2.0
+# How often the idle-popup watcher looks for "You Are Idle" on every client (#203). The popup
+# stays up until answered and takes two whole planning phases to appear, so a coarse poll loses
+# nothing, and each look is a window-tree walk per client.
+
+RELOG_FIGHT_TIMEOUT = AMBIENT_COMBAT_MAX_DURATION + FLEE_TIMEOUT
+# How long the relog node waits for a fight to end before logging out, and again before
+# re-forming the group (#203). The ambient combat watcher fights it meanwhile, and flees it at
+# AMBIENT_COMBAT_MAX_DURATION, so a fight still going past this is one nothing will end.
+
 POSITION_STABILIZE_TIMEOUT = 5.0
 # Seconds to wait for the server-reported position to match a teleport target. The client
 # moves first and the server confirms after, so this covers the gap.

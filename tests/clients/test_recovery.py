@@ -99,6 +99,7 @@ class RecoveryHarness:
 def _make_machine(*, stopped: bool = False) -> MagicMock:
     m = MagicMock()
     m.is_stopped = stopped
+    m.settle_fights = AsyncMock()
     return m
 
 

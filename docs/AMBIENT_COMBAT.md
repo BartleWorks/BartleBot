@@ -34,6 +34,14 @@ design around a guess: ask.
 - **A player defeated in a fight the group wins** comes back with 1 health and otherwise behaves as
   if it had won.
 - **The world hub is always safe.**
+- **Two idle rounds raise "You Are Idle"** (`WorldView/CombatAFKWindow`, lang keys
+  `GUI:CombatAFKTitle` and `GUI:CombatAFKMessage`). A player that has not chosen a card or passed
+  by the end of two planning phases in a row gets it, and its turn is passed for as long as it is
+  up. Flee (the center button) flees with no confirmation; Return (the right one) puts the player
+  back to choosing cards.
+- **Logging out in battle** works through Esc → Quit, but not while "You Are Idle" is up, and
+  not through the spellbook, which will not open in battle (the relog node's route). A player
+  that logs back in beside a mob is pulled into a fight on arrival.
 
 ## Getting the node out of the way
 
@@ -52,7 +60,8 @@ is already fighting, and re-checks that once it holds its lock, since the FSM ca
   `machine.log()` files under the machine rather than the cancelled node, so the node helpers the
   session reuses log correctly without being told how.
 - **Never cancelled:** `handle_combat` and `relog` (`machine.NEVER_PREEMPTED`). Relog is itself the
-  recovery, and a logout ends the fight anyway. For those, and for a node that does not park within
+  recovery, and it waits for every player to be out of battle before logging anyone out, and again
+  before re-forming the group, so the session fights alongside it rather than against it. For those, and for a node that does not park within
   `PREEMPT_PARK_TIMEOUT`, the session runs with `may_move=False`: it fights for whoever is in battle
   and moves nobody.
 
@@ -149,6 +158,35 @@ several planning phases in a row, or once the fight runs past its time limit
 user sees (`BotMachine.note_flee`), counting `handle_combat`'s flees and the watcher's alike.
 Without it, fight, flee, recovery, fight never trips the same-state or no-match limits, because the
 states keep changing.
+
+## The idle popup
+
+"You Are Idle" means nothing of ours fought two rounds of a fight. It was first seen after a
+`handle_combat` timeout fell through to a relog with players still fighting, and after players
+logged back in beside a mob and were pulled into a fight while the group survey held the social
+window open over the cards (#203). Relog now waits fights out; the popup's watcher
+(`BotMachine._combat_idle_watcher`) is the net for whatever else leaves a fight unanswered.
+
+It polls every `COMBAT_AFK_POLL_INTERVAL`, while the bot runs and while the ambient watcher holds
+it paused; a pause the user asked for, or one held for client recovery, is left alone. On a
+popup it clicks Flee, and then:
+
+- **During an ambient session**, it tells the session (`AmbientSession.note_fled`). The fight ends
+  as a fled one: wisps in the hub, counted toward the flee limit, then recovery.
+- **During a relog**, it does nothing more. The relog is the recovery already.
+- **Otherwise**, it counts the flee and cancels the running node, **handle_combat included**, then
+  sends the bot to its recovery state. handle_combat is the one the ambient watcher spares, but a
+  fight it was running has just been fled, and left alone it would report that fight as won.
+
+Flee rather than Return, because by the time the popup is up nothing says what the players were
+in the middle of, and the hub is always safe.
+
+**Crash recovery** holds the FSM paused while it relaunches a client, which keeps both watchers
+off: a fight under way at the crash, or one the relaunched client logs back into, goes unanswered
+for the whole recovery. So once every client is back, and before the group is re-formed,
+`ClientManager` calls `BotMachine.settle_fights`. It flees every idle popup, then runs a session
+for anyone still in battle, with `may_move=True` since no node is running. The bot goes to its
+recovery state afterwards either way.
 
 ## Pitfalls
 

@@ -19,7 +19,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from bartlebot.bot import variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
-from bartlebot.clients import group_manager, recovery_readiness
+from bartlebot.clients import group_manager, recovery_readiness, run_probe
 from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.clients.window_kill import force_close_client
@@ -209,7 +209,9 @@ class AppController(QObject):
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
         # The run-start read of who already has an elixir. See _on_run_requested.
-        self._elixir_probe: asyncio.Task | None = None
+        self._run_probe: asyncio.Task | None = None
+        # The pre-run setup of the run in progress, so Stop can cut it short.
+        self._pre_run: asyncio.Task | None = None
 
         # Same reason: in-flight client close sequences, one per crashed client.
         self._close_tasks: set[asyncio.Task] = set()
@@ -2624,30 +2626,41 @@ class AppController(QObject):
 
         clients = self._client_manager.clients
         players = level_scaling_players(self._loaded_config, len(clients))
-        if not players:
-            self._finish_run_request(())
-            return
-        # Whether a level scaling player already has an elixir is a memory read, which is
-        # async, and the warning it feeds is a blocking dialog, which must not open inside a
-        # task (see "qasync + Python 3.13" in bartlebot/gui/CLAUDE.md). So the read runs as
-        # a task and the rest of the sequence runs from its done callback, which the loop
-        # calls outside any task.
-        if self._elixir_probe is not None and not self._elixir_probe.done():
+        # Who is in a fight, and whether a level scaling player already has an elixir, are
+        # memory reads, which are async, and what they feed is a blocking dialog, which must
+        # not open inside a task (see "qasync + Python 3.13" in bartlebot/gui/CLAUDE.md). So
+        # the reads run as a task and the rest of the sequence runs from its done callback,
+        # which the loop calls outside any task.
+        if self._run_probe is not None and not self._run_probe.done():
             return  # a second press while the first is still reading
-        from bartlebot.nodes.utility.handle_level_scaling import players_with_elixir  # noqa: PLC0415
+        self._run_probe = asyncio.create_task(run_probe.probe_before_run(clients, players))
+        self._run_probe.add_done_callback(self._on_run_probe_done)
 
-        self._elixir_probe = asyncio.create_task(players_with_elixir(clients, players))
-        self._elixir_probe.add_done_callback(self._on_elixir_probe_done)
-
-    def _on_elixir_probe_done(self, probe: asyncio.Task) -> None:
-        """Carry on with the run request once the elixir read is in. A failed read warns about nobody."""
+    def _on_run_probe_done(self, probe: asyncio.Task) -> None:
+        """Carry on with the run request once the reads are in. A failed read stops nothing."""
         if probe.cancelled():
             return
         if probe.exception() is not None:
-            logger.warning("Could not read the players' elixirs before the run", exc_info=probe.exception())
+            logger.warning("Could not read the players before the run", exc_info=probe.exception())
             self._finish_run_request(())
             return
-        self._finish_run_request(probe.result())
+        result: run_probe.RunProbe = probe.result()
+        if result.fighting:
+            self._refuse_while_fighting(result.fighting)
+            return
+        self._finish_run_request(result.elixir_players)
+
+    def _refuse_while_fighting(self, fighting: list[int]) -> None:
+        """Refuse to start while a player is in a fight (#203).
+
+        Tells rather than asks. Everything before the first node needs the players out of
+        battle: decks cannot be changed mid-fight, and forming the group opens the social
+        window over the cards, which is how players come to sit out rounds until the game
+        asks "You Are Idle". Ending the fight first costs the user seconds.
+        """
+        players = ", ".join(f"P{n}" for n in fighting)
+        logger.warning("Refusing to run: %s in a fight", players)
+        QMessageBox.warning(self._window, "Players in a Fight", run_probe.refusal_text(fighting))
 
     def _finish_run_request(self, elixir_players) -> None:
         """The rest of the run sequence: the dialogs that ask, then the run itself."""
@@ -2795,6 +2808,7 @@ class AppController(QObject):
             QApplication.restoreOverrideCursor()
 
     async def _start_bot(self) -> None:
+        """Build the machine, run the pre-run setup, then the run. Stop works throughout."""
         if not self._client_manager.clients or self._loaded_config is None:
             return
         machine = BotMachine(
@@ -2831,8 +2845,19 @@ class AppController(QObject):
             await self._authoring.suspend_for_run()
             # Inside the try so the finally still tears down if the user stops during
             # a slow apply, and after add_gui_callback so failures reach this run's
-            # log panel rather than the previous run's.
-            await self._run_pre_run_setup()
+            # log panel rather than the previous run's. Its own task, so Stop can cancel it.
+            self._pre_run = asyncio.ensure_future(self._run_pre_run_setup())
+            try:
+                await self._pre_run
+            except asyncio.CancelledError:
+                if asyncio.current_task().cancelling():
+                    raise  # this task was cancelled, not just the setup
+                logger.info("Stopped before the run began; the rest of the pre-run setup was skipped")
+                return
+            finally:
+                self._pre_run = None
+            if machine.is_stopped:
+                return  # a stop that landed just as the setup finished
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()
@@ -3020,6 +3045,10 @@ class AppController(QObject):
             self._current_machine.resume()
 
     def _stop_bot(self) -> None:
+        # Before the first node, Stop cuts the pre-run setup short rather than waiting out
+        # every deck and the group: a user who stops this early has spotted something to fix.
+        if self._pre_run is not None and not self._pre_run.done():
+            self._pre_run.cancel()
         if self._current_machine:
             self._current_machine.stop()
 

@@ -101,6 +101,22 @@ FLEE_CONFIRM_PATH = [
     "centerButton",
 ]
 
+# The "You Are Idle" popup (GUI:CombatAFKTitle / CombatAFKMessage, #203). The game raises it once
+# a player has let two planning phases in a row run out without choosing a card or passing, and
+# passes that player's turn for as long as it is up. It is its own window, not a
+# MessageBoxModalWindow, so the path alone says which dialog it is. The center button flees
+# with no confirmation; the right one, Return, puts the player back to choosing cards.
+COMBAT_AFK_WINDOW_PATH = ["WorldView", "CombatAFKWindow"]
+COMBAT_AFK_FLEE_PATH = [
+    "WorldView",
+    "CombatAFKWindow",
+    "messageBoxBG",
+    "messageBoxLayout",
+    "AdjustmentWindow",
+    "Layout",
+    "centerButton",
+]
+
 # Team-up paths
 DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH = [
     "WorldView",

@@ -3224,3 +3224,32 @@ async def test_too_few_icons_to_read_the_menu_state_is_declined(school_menu):
 
     assert await set_archmastery_school(FakeClient(), "Storm") is False
     assert school_menu.clicks == []
+
+
+async def test_wizwalkers_clear_deck_lets_a_stop_through(monkeypatch):
+    """Guards the pinned WizWalker, not deck_io: clear_deck caught CancelledError in a bare
+    ``except:`` until a8811d0, so a Stop that landed between its Clear click and the confirm
+    click was lost, and the apply went on clicking cards into the modal left up."""
+    from wizwalker.extensions.scripting import deck_builder
+
+    reached = asyncio.Event()
+
+    async def _the_modal(_parent, _name):
+        if reached.is_set():
+            raise RuntimeError("no modal")  # a swallowed cancel's retry: let it end, not hang
+        reached.set()
+        await asyncio.Event().wait()  # the confirmation is still coming up when Stop lands
+
+    monkeypatch.setattr(deck_builder, "_maybe_get_named_window", _the_modal)
+    db = deck_builder.DeckBuilder(SimpleNamespace(root_window=object()))
+    db.view_deck_cards = AsyncMock()
+    db.get_deck_count = AsyncMock(side_effect=[3, 0])
+    db.clear_deck_manual = AsyncMock()
+
+    task = asyncio.create_task(db.clear_deck())
+    await reached.wait()
+    task.cancel()
+    await asyncio.wait({task}, timeout=1.0)
+
+    assert task.cancelled()
+    db.clear_deck_manual.assert_not_awaited()  # the fallback is for failures, never a Stop

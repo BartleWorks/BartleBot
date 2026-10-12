@@ -10,10 +10,11 @@ The definition is the synthetic seven-node "sync players" chain from
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -49,7 +50,8 @@ class ControllerHarness:
             "_read_only_open",
             "_make_own_copy",
             "_on_run_requested",
-            "_on_elixir_probe_done",
+            "_on_run_probe_done",
+            "_refuse_while_fighting",
             "_finish_run_request",
             "_check_restricted_zones",
             "_check_player_realms",
@@ -97,7 +99,7 @@ class ControllerHarness:
         self._subgraph_library = library
         self._templates_root = None
         self._templates_user_root = None
-        self._elixir_probe = None
+        self._run_probe = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         self._official_open = False
@@ -281,10 +283,12 @@ async def test_run_recompose_swaps_config_before_machine_build(harness, library,
     harness._start_bot = fake_start
     harness._collect_combat_warnings = lambda: []
     harness._confirm_recovery_gaps = lambda: True
-    harness._client_manager.clients = [MagicMock()]
+    harness._client_manager.clients = [MagicMock(in_battle=AsyncMock(return_value=False))]
     monkeypatch.setattr(safety_warning_dialog, "collect_safety_warnings", lambda *a: [])
 
     harness._on_run_requested()
+    await asyncio.wait([harness._run_probe])  # the reads before the run's dialogs
+    await asyncio.sleep(0)
     await harness._bot_task
 
     assert len(seen) == 1
