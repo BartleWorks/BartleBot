@@ -115,7 +115,9 @@ read on purpose.
 | `docs/PROCESS.md` | issues, labels, milestones, the backlog board |
 
 Landing a branch on `master` is the `merge` skill — the gate, the commit message
-template, and the pre-merge read-through.
+template, and the pre-merge read-through. Planning and carrying out a multi-stage epic
+is the `epic-plan` skill — the plan page, an issue and a branch per stage, and the As
+built record.
 
 ## Key Conventions
 
