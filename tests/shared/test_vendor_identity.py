@@ -125,6 +125,7 @@ def test_the_shared_layer_has_no_stray_files():
         "__init__.py",
         "account_slots.py",
         "account_store.py",
+        "combat_defaults.py",
         "content_hash.py",
         "json_update.py",
         "official_set.py",

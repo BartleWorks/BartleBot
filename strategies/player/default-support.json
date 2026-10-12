@@ -1,8 +1,8 @@
 {
   "id": "d2496f8b-85c5-44f5-98da-13fb0c7ddea5",
   "name": "Default Support",
-  "dsl": "\"Feint Mass - Amulet\" | feint[potent]@boss | any<blade>[sharp]@ally(last) | any<trap>[potent]@boss | any<trap>[potent]@enemy",
-  "description": "Default support strategy for general use",
+  "dsl": "?(any(enemies).is_boss == 1) \"Feint Mass - Amulet\" | feint[potent] @ boss | ?(any(enemies).is_boss == 1) any<blade>[sharp] @ ally(last) | any<trap>[potent] @ boss | ?(any(enemies).is_boss == 1) any<trap>[potent] @ enemy | any<damage & aoe>[any<mod_damage>] | any<damage>[any<mod_damage>] @ enemy",
+  "description": "Default support strategy for general use. Supports while a boss is up and attacks otherwise.",
   "tags": [
     "Support"
   ]

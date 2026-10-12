@@ -1,0 +1,15 @@
+{
+  "min_players": 1,
+  "max_players": 1,
+  "player_assignments": [
+    {
+      "players": [
+        1
+      ],
+      "player_combat_strategy_id": "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
+    }
+  ],
+  "description": "Default duel strategy for one player. Runs Default.",
+  "id": "530aa34e-1567-4492-b507-12529a41f0db",
+  "name": "Default Solo Duel"
+}

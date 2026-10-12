@@ -1,0 +1,9 @@
+{
+  "id": "a6ddb3e8-5a97-42de-a8d6-174a8353a589",
+  "name": "Default",
+  "dsl": "any<trap & inc_damage>[potent] @ enemy | any<trap & inc_damage & aoe>[potent] | any<blade & out_damage>[sharp] @ self | any<blade & out_damage & aoe>[sharp] | any<global> | any<aura & out_damage> | any<shadow> | any<damage & aoe>[any<mod_damage>] | any<damage>[any<mod_damage>] @ enemy",
+  "description": "Default strategy for a single wizard, for general use",
+  "tags": [
+    "Hitter"
+  ]
+}
