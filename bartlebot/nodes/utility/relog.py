@@ -27,6 +27,14 @@ loading screen forever. Only a failure while the client is still in the world is
 or a house puts the character back where it stood before entering. Put this node somewhere
 the bot can carry on from — typically just before it travels somewhere — rather than in the
 middle of a dungeon run.
+
+**Never mid-fight (#203).** This node reaches Quit through the spellbook, which will not open in
+battle. (Esc → Quit does log a player out of a fight, but not while "You Are Idle" is up.) Logging
+out of a fight is not wanted anyway: a player that logs back in beside a mob is pulled straight
+into one, and the group survey that follows opens the social window on every player while the
+fight goes on unanswered, until the game asks "You Are Idle". So the node waits for every player
+to be out of battle before it logs anyone out, and again before it re-forms the group. The
+ambient combat watcher fights meanwhile: it never cancels this node, so it moves nobody.
 """
 
 import asyncio
@@ -38,6 +46,7 @@ from bartlebot.clients import group_manager
 from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.launcher import auto_select
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.combat_runner import slots_in_battle
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
@@ -50,6 +59,7 @@ from bartlebot.nodes.timing import (
     LOADING_SCREEN_TIMEOUT,
     POLL_INTERVAL,
     RELOG_CHAR_SELECT_TIMEOUT,
+    RELOG_FIGHT_TIMEOUT,
     RELOG_IN_GAME_TIMEOUT,
     TRIGGER_TIMEOUT,
 )
@@ -95,8 +105,9 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "Every selected player logged out and is back in the world."),
         ReturnSpec(
             "FAILURE",
-            "The spellbook or its settings page did not open, the game refused the logout, or "
-            "Quit did not take effect. In every case the player is still in the world.",
+            "A fight did not end in time, the spellbook or its settings page did not open, the "
+            "game refused the logout, or Quit did not take effect. In every case the player is "
+            "still in the world.",
         ),
     ],
     max_consecutive_retries=2,
@@ -107,6 +118,8 @@ NODE_SPEC = NodeSpec(
         "somewhere.\n\n"
         "The group is lost on logout and re-formed afterwards when 'Automatically group "
         "players' is enabled in Settings.\n\n"
+        "Nobody is logged out while any player is in a fight, and the group is not re-formed "
+        "until a fight the players logged back into is over. The bot fights it in the meantime.\n\n"
         "A player that logs out but cannot get back in (character select never appears, or "
         "it is still loading a minute after leaving character select) is closed and "
         "relaunched as though its game had crashed, and the bot carries on from its recovery "
@@ -250,15 +263,44 @@ async def _relog_one(machine, client) -> str:
     return _abandon(machine, client, f"did not load back in within {RELOG_IN_GAME_TIMEOUT:.0f}s")
 
 
+async def _fights_over(machine, clients: list, before: str) -> bool:
+    """Wait until no player is in battle. True once none is; False after RELOG_FIGHT_TIMEOUT.
+
+    *before* finishes the log line saying what is waiting on the fight. Nothing here fights:
+    the ambient combat watcher does that alongside the node.
+    """
+
+    async def _fighting() -> list[int]:
+        flags = await asyncio.gather(*(c.in_battle() for c in clients), return_exceptions=True)
+        return slots_in_battle(flags)
+
+    fighting = await _fighting()
+    if not fighting:
+        return True
+    machine.log(f"relog: player(s) {[i + 1 for i in fighting]} in a fight — waiting for it to end before {before}")
+
+    async def _none_fighting() -> bool:
+        return not await _fighting()
+
+    return await node_helpers.poll_until(_none_fighting, RELOG_FIGHT_TIMEOUT, POLL_INTERVAL)
+
+
 async def _regroup(machine, clients: list) -> None:
     """Re-form the in-game group the logout dissolved, if the user has that enabled.
 
     Never raises and never fails the node: running ungrouped costs the guaranteed first turn
-    in combat, which is a degraded run rather than a broken one.
+    in combat, which is a degraded run rather than a broken one. Waits out a fight first, since
+    a player can log back in beside a mob, and the survey opens the social window over the cards.
     """
     if not SettingsManager.instance().auto_group_players:
         return
     if len(clients) < 2:
+        return
+    if not await _fights_over(machine, clients, "re-forming the group"):
+        machine.log(
+            f"relog: the fight was still going after {RELOG_FIGHT_TIMEOUT:.0f}s — the bot continues ungrouped",
+            logging.WARNING,
+        )
         return
     try:
         names = await wizard_names.resolve_names(clients)
@@ -281,6 +323,7 @@ async def run(machine, clients: list, params: dict) -> str:
           machine.abandon_client()
 
     Flow (all selected players in parallel):
+      0. Wait until no player, selected or not, is in a fight.
       1. Suspend health monitoring for the players involved. A client at character select
          fails zone_name() and shows loading screens, which is indistinguishable from the
          crash those watchers exist to catch — without this the monitor force-closes a
@@ -290,10 +333,11 @@ async def run(machine, clients: list, params: dict) -> str:
          game raises when logging out of a dungeon or with Dungeon Recall open.
       4. Press Play, and keep pressing while the screen is still up.
       5. Wait for the world to be readable again.
-      6. Put health monitoring back, then re-form the group.
+      6. Put health monitoring back, then re-form the group once no player is in a fight.
 
-    FAILURE: the spellbook or its settings page did not open; the game refused the logout;
-    or Quit did not take effect. The player is still in the world each time.
+    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; the spellbook
+    or its settings page did not open; the game refused the logout; or Quit did not take
+    effect. The player is still in the world each time.
 
     Past Quit, a player that does not make it back (character select never appears, a
     loading screen outlasts LOADING_SCREEN_TIMEOUT, or the overall deadline passes) is
@@ -308,6 +352,10 @@ async def run(machine, clients: list, params: dict) -> str:
     if not targets:
         machine.log("relog: no players selected — nothing to do")
         return "SUCCESS"
+
+    if not await _fights_over(machine, clients, "logging anyone out"):
+        machine.log(f"FAILURE: the fight was still going after {RELOG_FIGHT_TIMEOUT:.0f}s", logging.WARNING)
+        return "FAILURE"
 
     machine.log(f"relog: logging player(s) {[i + 1 for i in indices]} out and back in")
 

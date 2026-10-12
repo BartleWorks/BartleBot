@@ -471,3 +471,87 @@ class TestRegrouping:
 
         monkeypatch.setattr(relog_node.wizard_names, "resolve_names", _boom)
         assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+
+
+class TestFights:
+    """Nobody is logged out mid-fight, and the group is not re-formed during one (#203).
+
+    The node's route to Quit, the spellbook, will not open in battle, and the group survey opens
+    the social window over the cards. The ambient combat watcher fights meanwhile; here a fight is just ``in_battle``.
+    """
+
+    async def test_a_fight_is_waited_out_before_anyone_logs_out(self, machine, games):
+        clients, (game, other) = games({}, {})
+        reads = []
+
+        async def _in_battle():
+            reads.append(list(game.clicks))
+            return len(reads) <= 3
+
+        clients[0].in_battle = _in_battle
+
+        assert await relog_node.run(machine, clients, {"relog_clients": [2]}) == "SUCCESS"
+        assert reads[:3] == [[], [], []]
+        assert other.clicks[0] == SPELLBOOK_BUTTON_PATH
+        assert any("before logging anyone out" in msg for msg, _ in machine.logs)
+
+    async def test_a_fight_that_never_ends_fails_with_nobody_logged_out(self, machine, games, monkeypatch):
+        monkeypatch.setattr(relog_node, "RELOG_FIGHT_TIMEOUT", 0.05)
+        clients, (game,) = games({})
+        clients[0].in_battle.return_value = True
+
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert game.clicks == []
+        assert machine.health_checks_suspended == set()
+
+    async def test_a_fight_found_on_logging_back_in_is_over_before_the_group_is_re_formed(
+        self, machine, games, monkeypatch
+    ):
+        clients, (game, _other) = games({}, {})
+        settings = type("S", (), {"auto_group_players": True})()
+        monkeypatch.setattr(relog_node.SettingsManager, "instance", staticmethod(lambda: settings))
+        fight = {"reads": 0}
+
+        async def _in_battle():
+            # Pulled in beside a mob on arrival: in battle for a few reads once back in the world.
+            if game.plays and game.screen == "world":
+                fight["reads"] += 1
+                return fight["reads"] <= 3
+            return False
+
+        clients[0].in_battle = _in_battle
+        seen = {}
+
+        async def _resolve(cs):
+            return ["A", "B"]
+
+        async def _form(cs, names, **kwargs):
+            seen["reads"] = fight["reads"]
+            return type("R", (), {"success": True, "summary": lambda self: "2 grouped"})()
+
+        monkeypatch.setattr(relog_node.wizard_names, "resolve_names", _resolve)
+        monkeypatch.setattr(relog_node.group_manager, "form_group", _form)
+
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert seen["reads"] > 3
+        assert any("before re-forming the group" in msg for msg, _ in machine.logs)
+
+    async def test_a_fight_after_logging_in_that_never_ends_leaves_the_group_unformed(
+        self, machine, games, monkeypatch
+    ):
+        monkeypatch.setattr(relog_node, "RELOG_FIGHT_TIMEOUT", 0.05)
+        clients, (game, _other) = games({}, {})
+        settings = type("S", (), {"auto_group_players": True})()
+        monkeypatch.setattr(relog_node.SettingsManager, "instance", staticmethod(lambda: settings))
+
+        async def _in_battle():
+            return bool(game.plays) and game.screen == "world"
+
+        async def _boom(*_args, **_kwargs):
+            raise AssertionError("the group survey must not run mid-fight")
+
+        clients[0].in_battle = _in_battle
+        monkeypatch.setattr(relog_node.wizard_names, "resolve_names", _boom)
+
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert any("continues ungrouped" in msg for msg, _ in machine.logs)

@@ -599,6 +599,27 @@ async def test_a_fled_fight_collects_hub_wisps_then_goes_to_recovery(fast, comba
     assert machine.state == "recover"
 
 
+async def test_a_flee_from_the_idle_popup_ends_the_session_as_a_fled_fight(fast, combat):
+    """The machine's idle watcher clicks the popup's Flee and reports it through note_fled (#203)."""
+    fighter = _client()
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter], config=_config(), node_registry={})
+
+    def idle_flee(client, _watch):
+        machine._ambient_session.note_fled(client)
+        client.zone_name.return_value = "WizardCity/WC_Hub"
+        client.calc_mana_ratio.return_value = 0.0
+
+    combat.fights.on_start = idle_flee
+
+    await _session(machine, combat)
+
+    combat.wisps.assert_awaited_once()
+    combat.hub.assert_not_awaited()
+    assert len(machine._flees) == 1
+    assert machine.state == "recover"
+
+
 async def test_an_exception_in_the_session_goes_to_recovery_and_still_resumes(fast, combat):
     """The resume is in a finally. Without it, one unreadable strategy leaves the run paused for good."""
     fighter = _client()
@@ -767,3 +788,74 @@ async def test_a_helper_that_never_got_in_goes_home(fast, combat, monkeypatch):
     assert combat.fights.fought() == [fighter]
     assert _teleports(helper)[0] == (moved_to.x, moved_to.y, moved_to.z)
     assert _teleports(helper)[-1] == (2000.0, 0.0, 0.0)
+
+
+# ---------------------------------------------------------------------------
+# Settling fights for crash recovery (#203)
+# ---------------------------------------------------------------------------
+
+
+async def test_settle_fights_fights_a_player_still_in_battle_and_leaves_the_fsm_paused(fast, combat):
+    """Recovery holds the FSM paused, which keeps the watchers off; settling fights for them."""
+    fighter = _client()
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter], config=_config(), node_registry={})
+    machine.pause()
+
+    await machine.settle_fights()
+
+    assert combat.fights.fought() == [fighter]
+    assert machine.is_paused
+    assert machine.state == "roam"  # recovery forces its own state afterwards
+
+
+async def test_settle_fights_flees_an_idle_popup_and_counts_it(fast, combat, monkeypatch):
+    from bartlebot.nodes.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
+
+    idle = _client()
+    idle.in_battle.return_value = True
+    clicked = []
+
+    async def is_visible(client, path):
+        return list(path) == COMBAT_AFK_WINDOW_PATH and client is idle and not clicked
+
+    async def click(client, path):
+        if list(path) == COMBAT_AFK_FLEE_PATH:
+            clicked.append(client)
+            client.in_battle.return_value = False
+            return True
+        return False
+
+    monkeypatch.setattr(node_helpers, "is_visible_by_path", is_visible)
+    monkeypatch.setattr(node_helpers, "click_by_path", click)
+    machine = BotMachine(clients=[idle], config=_config(), node_registry={})
+    machine.pause()
+
+    await machine.settle_fights()
+
+    assert clicked == [idle]
+    assert len(machine._flees) == 1
+    assert combat.fights.fought() == []
+
+
+async def test_settle_fights_does_nothing_with_no_fight(fast, combat):
+    machine = BotMachine(clients=[_client(), _client(2000.0)], config=_config(), node_registry={})
+    machine.pause()
+
+    await machine.settle_fights()
+
+    combat.resolve.assert_not_called()
+    assert machine._flees == []
+
+
+async def test_settle_fights_never_raises(fast, combat):
+    """A crash recovery that dies here would leave the run paused for good."""
+    fighter = _client()
+    fighter.in_battle.return_value = True
+    combat.resolve.side_effect = RuntimeError("strategy file unreadable")
+    machine = BotMachine(clients=[fighter], config=_config(), node_registry={})
+    machine.pause()
+
+    await machine.settle_fights()
+
+    assert machine.state == "roam"

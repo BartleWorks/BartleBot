@@ -41,6 +41,7 @@ class RegroupHarness:
         self._clients = clients
         self._machine = MagicMock()
         self._machine.is_stopped = False
+        self._machine.settle_fights = AsyncMock()
 
 
 @pytest.fixture
@@ -156,8 +157,9 @@ async def test_regroup_exception_does_not_propagate(settings):
     harness._machine.stop.assert_not_called()
 
 
-async def test_recovery_queue_regroups_before_jumping_to_recovery_state(settings):
-    """Ordering matters: the bot must resume with the group already restored."""
+async def test_recovery_queue_settles_fights_then_regroups_before_jumping_to_recovery_state(settings):
+    """Ordering matters: the bot must resume with the group already restored, and no fight may
+    be going when the survey opens the social window over the cards (#203)."""
     calls: list[str] = []
 
     harness = RegroupHarness(_clients())
@@ -166,12 +168,13 @@ async def test_recovery_queue_regroups_before_jumping_to_recovery_state(settings
     harness._get_recovery_state = lambda: "start"
     harness._machine.force_state = MagicMock(side_effect=lambda s: calls.append("force_state"))
     harness._machine.resume = MagicMock(side_effect=lambda: calls.append("resume"))
+    harness._machine.settle_fights = AsyncMock(side_effect=lambda: calls.append("settle"))
     harness._regroup_after_recovery = AsyncMock(side_effect=lambda: calls.append("regroup"))
     harness._settle_recovery_batch = AsyncMock()
 
     await ClientManager._run_recovery_queue(harness)
 
-    assert calls == ["regroup", "force_state", "resume"]
+    assert calls == ["settle", "regroup", "force_state", "resume"]
 
 
 async def test_a_recovery_regroup_updates_the_group_routes_in_the_runs_port_map(settings):

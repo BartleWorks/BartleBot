@@ -1385,10 +1385,13 @@ class ClientManager(QObject):
                 for orig_pos in batch:
                     self._pending_recovery.pop(orig_pos, None)
 
-            # All pending clients are back in-game — regroup, then jump to recovery state
-            # and resume. Grouping happens while the FSM is still paused so no node is
-            # competing for the mouse, and before the state jump so the bot resumes with
-            # the group already restored.
+            # All pending clients are back in-game — settle any fight, regroup, then jump to
+            # recovery state and resume. Grouping happens while the FSM is still paused so no
+            # node is competing for the mouse, and before the state jump so the bot resumes
+            # with the group already restored. The fight comes first: the pause keeps every
+            # combat watcher off, and the survey would open the social window over the cards.
+            if self._machine is not None:
+                await self._machine.settle_fights()
             await self._regroup_after_recovery()
 
             machine = self._machine

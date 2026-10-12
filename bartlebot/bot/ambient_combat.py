@@ -22,7 +22,8 @@ running node and waits for the loop to park. Everything after that is here:
    Nobody moves before that: the ghost window after a fight lasts 30s only while a player
    keeps completely still.
 5. After a **fled** fight the game has already put the players in their hub with empty mana,
-   so they collect wisps there.
+   so they collect wisps there. A flee from the game's idle popup (#203) counts too: the
+   machine's idle watcher clicks it and reports it here through :meth:`AmbientSession.note_fled`.
 
 The session ends with the FSM told whether everyone is back in the zone it started in. If so
 the interrupted state runs again; if not, the bot goes to its recovery state.
@@ -108,11 +109,17 @@ class AmbientSession:
     participants: list = field(default_factory=list)  # every client that fought, in order seen
     joined_at: dict = field(default_factory=dict)  # helper -> when it read in battle
     force_recovery: bool = False
+    idle_fled: set = field(default_factory=set)  # player numbers fled from the idle popup
     clock: Callable[[], float] = time.monotonic
 
     def __post_init__(self):
         self._slot = {c: i for i, c in enumerate(self.clients)}
         self._detected = self.clock()
+
+    def note_fled(self, client) -> None:
+        """Record a flee made outside the session's combat: the machine's idle watcher answering
+        "You Are Idle" (#203). The fight then ends as a fled one, counted toward the flee limit."""
+        self.idle_fled.add(self._slot[client] + 1)
 
     def _p(self, client) -> str:
         return f"P{self._slot[client] + 1}"
@@ -172,10 +179,10 @@ class AmbientSession:
             combat_runner.start_combat_drop_poll(machine, self.participants, [self._slot[c] for c in self.participants])
 
         if not self.may_move:
-            return SessionEnd(fight, fled=int(fight.end is combat_runner.FightEnd.FLED))
+            return SessionEnd(fight, fled=int(fight.end is combat_runner.FightEnd.FLED or bool(self.idle_fled)))
         if fight.end is combat_runner.FightEnd.STUCK:
             return SessionEnd(fight, recover=True)  # players still in battle: moving them does nothing
-        fled = await self._leave(centers, run.watch.fled)
+        fled = await self._leave(centers, run.watch.fled | self.idle_fled)
         return SessionEnd(fight, fled=fled, recover=self.force_recovery or not await self._all_home())
 
     async def _find_helpers(self) -> list:
