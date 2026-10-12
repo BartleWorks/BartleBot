@@ -11,7 +11,10 @@ file as it is now, change only the part this writer owns, and write that back.
 2. apply ``mutate`` to the parsed dict;
 3. read the file's fingerprint again. If it changed, another writer got in between, so
    start over from step 1 against what they wrote. Up to :data:`UPDATE_RETRIES` times;
-4. write the result to a temporary file beside the target and ``os.replace`` it over.
+4. write the result to a temporary file beside the target and ``os.replace`` it over. On
+   Windows the rename is refused while another process has the file open, as the other
+   product does whenever it reads it; a refused rename waits briefly and starts over from
+   step 1, within the same :data:`UPDATE_RETRIES`.
 
 A crash before the rename leaves the previous file whole. The rename itself is atomic, so
 a reader sees the old file or the new one, never half of either.
@@ -35,14 +38,20 @@ import json
 import logging
 import os
 import tempfile
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
-#: How many times a write that was overtaken is read and applied again before giving up.
+#: How many times a write that was overtaken, or whose rename was refused, is read and
+#: applied again before giving up.
 UPDATE_RETRIES = 5
+
+#: Seconds to wait after Windows refuses the rename, before trying again. A reader holds the
+#: file for well under this, and the writes follow a click, so a short block is no cost.
+REPLACE_RETRY_DELAY = 0.05
 
 
 class UpdateConflict(OSError):
@@ -57,17 +66,30 @@ def update_json(path: Path, mutate: Callable[[dict[str, Any]], None]) -> dict[st
     the keys its caller owns; every other key, including ones this version has never
     heard of, is written back as it was read.
 
-    Raises :class:`OSError` when the file cannot be written, and :class:`UpdateConflict`
-    (an ``OSError``) when it was overtaken on every attempt. Nothing is written then.
+    Raises :class:`OSError` when the file cannot be written (a :class:`PermissionError`
+    when the rename was refused on every attempt), and :class:`UpdateConflict` (an
+    ``OSError``) when it was overtaken on every attempt. Nothing is written then.
     """
+    refused: PermissionError | None = None
     for _ in range(UPDATE_RETRIES):
         before = _read(path)
         record = _parse(before, path)
         mutate(record)
         if _digest(_read(path)) != _digest(before):
+            refused = None
             continue
-        _replace(path, record)
+        try:
+            _replace(path, record)
+        except PermissionError as exc:
+            # Windows refuses to rename over a file another process has open, which the
+            # other product does for the instant it reads it. Wait it out and start over,
+            # from a fresh read, so the check above still covers the rename.
+            refused = exc
+            time.sleep(REPLACE_RETRY_DELAY)
+            continue
         return record
+    if refused is not None:
+        raise refused  # refused every time: a real permission problem, not a reader
     raise UpdateConflict(f"{path} changed under {UPDATE_RETRIES} attempts in a row")
 
 
