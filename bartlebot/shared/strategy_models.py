@@ -263,13 +263,22 @@ class DuelConfig(BaseModel):
 
         Repairs rather than rejects, because raising a ValidationError here would
         make such a file refuse to open at all.  max is the field that moves:
-        min_players is the one with runtime meaning (it gates the connected-client
-        warning), while max_players only bounds the editor, so lifting max preserves
-        whatever the author was asking for.
+        min_players is the one the pre-run check holds a picked duel to, so lifting
+        max preserves whatever the author was asking for.  Both ends decide whether
+        a duel :meth:`accepts` a team.
         """
         if self.max_players < self.min_players:
             self.max_players = self.min_players
         return self
+
+    def accepts(self, players: int) -> bool:
+        """Whether *players* connected clients is a team this duel was written for.
+
+        ``min_players`` and ``max_players`` bound it, both ends included. A duel that does not
+        accept the team is what the run-time resolver passes over, except one the user picked
+        for the bot (``docs/COMBAT_CONFIG.md``, "Resolution at run time").
+        """
+        return self.min_players <= players <= self.max_players
 
     def resolve_dsl_for_player(self, player_num: int, pcs_map: dict[str, str]) -> str | None:
         """Return DSL for a 1-based player number, or None if unassigned/empty.

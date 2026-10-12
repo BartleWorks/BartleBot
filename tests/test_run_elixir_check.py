@@ -48,7 +48,7 @@ class _Controller:
         self._check_restricted_zones = lambda: True
         self._check_player_realms = lambda: True
         self._check_variables = lambda: True
-        self._collect_combat_warnings = lambda: []
+        self._confirm_combat = lambda: True
         self._confirm_recovery_gaps = lambda: True
         self.started = 0
 

@@ -12,16 +12,21 @@ from pathlib import Path
 
 import pytest
 
-from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.shared import combat_defaults
 from bartlebot.shared.combat_defaults import (
     LAST_RESORT_DSL,
+    PREFERENCE_KEYS,
     SHIPPED_DEFAULT_PLAYER_ID,
     SHIPPED_DEFAULT_SUPPORT_ID,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
     SHIPPED_SOLO_DUEL_ID,
     SHIPPED_TEAM_DUEL_ID,
+    DefaultSource,
+    TeamSize,
+    default_duel,
+    players_text,
+    team_size,
 )
 from bartlebot.shared.official_set import SHARED_SET_VERSION
 from bartlebot.shared.store_files import index_dir, slugify
@@ -80,8 +85,7 @@ def test_default_dsl_equals_the_last_resort():
     assert _player(SHIPPED_DEFAULT_PLAYER_ID).name == "Default"
 
 
-def test_the_old_name_is_the_last_resort():
-    assert BARTLEBOT_DEFAULT_COMBAT_CONFIG == LAST_RESORT_DSL
+def test_the_last_resort_parses():
     assert validate_dsl(LAST_RESORT_DSL) is None
 
 
@@ -152,3 +156,73 @@ def test_shared_set_version_rose_with_the_default_duels():
 def test_a_missing_default_does_not_resolve():
     """The failure path: an id no file declares is not found, never invented."""
     assert "00000000-0000-0000-0000-000000000000" not in index_dir(DUELS)
+
+
+# ---------------------------------------------------------------------------
+# Levels 3 and 4: default_duel (Stage 4)
+# ---------------------------------------------------------------------------
+
+
+def _library(*duels: DuelCombatStrategy):
+    by_id = {d.id: d for d in duels}
+    return by_id.get
+
+
+def _prefs(tmp_path: Path):
+    from bartlebot.shared.preferences import PreferenceStore  # noqa: PLC0415
+
+    return PreferenceStore(tmp_path)
+
+
+@pytest.mark.parametrize(("clients", "size"), [(1, TeamSize.SOLO), (2, TeamSize.TEAM), (4, TeamSize.TEAM)])
+def test_team_size_is_solo_for_one_client_only(clients, size):
+    assert team_size(clients) is size
+
+
+@pytest.mark.parametrize(("players", "fits"), [(1, False), (2, True), (3, True), (4, False)])
+def test_a_duel_accepts_a_team_within_its_range(players, fits):
+    assert DuelCombatStrategy(name="D", min_players=2, max_players=3).accepts(players) is fits
+
+
+def test_players_text_reads_as_a_range():
+    assert players_text(DuelCombatStrategy(name="D", min_players=1, max_players=1)) == "1 player"
+    assert players_text(DuelCombatStrategy(name="D", min_players=4, max_players=4)) == "4 players"
+    assert players_text(DuelCombatStrategy(name="D", min_players=2, max_players=4)) == "2 to 4 players"
+
+
+def test_no_key_means_the_shipped_duel(tmp_path):
+    team = _duel(SHIPPED_TEAM_DUEL_ID)
+    answer = default_duel(2, _prefs(tmp_path), _library(team))
+    assert (answer.duel, answer.source, answer.reasons) == (team, DefaultSource.SHIPPED, ())
+
+
+def test_a_stored_id_that_fits_is_yours(tmp_path):
+    mine = DuelCombatStrategy(name="Mine", min_players=2)
+    prefs = _prefs(tmp_path)
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], mine.id)
+
+    answer = default_duel(3, prefs, _library(mine, _duel(SHIPPED_TEAM_DUEL_ID)))
+
+    assert (answer.duel, answer.source) == (mine, DefaultSource.YOURS)
+
+
+def test_a_stored_id_that_does_not_fit_falls_to_the_shipped_duel_and_says_why(tmp_path):
+    mine = DuelCombatStrategy(name="Four Box", min_players=4)
+    prefs = _prefs(tmp_path)
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], mine.id)
+    team = _duel(SHIPPED_TEAM_DUEL_ID)
+
+    answer = default_duel(2, prefs, _library(mine, team))
+
+    assert (answer.duel, answer.source) == (team, DefaultSource.SHIPPED)
+    assert answer.reasons == ("your Team default 'Four Box' takes 4 players, and 2 are connected",)
+
+
+def test_nothing_readable_answers_nothing(tmp_path):
+    answer = default_duel(1, _prefs(tmp_path), _library())
+    assert (answer.duel, answer.source) == (None, None)
+
+
+def test_default_duel_writes_nothing(tmp_path):
+    default_duel(2, _prefs(tmp_path), _library(_duel(SHIPPED_TEAM_DUEL_ID)))
+    assert list(tmp_path.iterdir()) == []

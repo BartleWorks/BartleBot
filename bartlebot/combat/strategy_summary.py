@@ -360,7 +360,7 @@ def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> St
     """Summarize a Bot Combat Strategy: how many fights it overrides.
 
     ``config`` is accepted but not yet consulted — reserved for cross-checking
-    against the bot's exposed combat states, the way ``collect_combat_warnings``
+    against the bot's exposed combat states, the way ``check_combat``
     already does.
     """
     del config

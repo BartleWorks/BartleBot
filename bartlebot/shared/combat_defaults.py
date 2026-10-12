@@ -10,9 +10,22 @@ The three duels are Official items in ``strategies/duel/``, found by id:
 - :data:`SHIPPED_TEAM_DUEL_ID`: P1 runs Default, P2 to P4 run Default Support, which
   supports while a boss is up and hits otherwise.
 - :data:`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`: every player runs Default.
+
+:func:`default_duel` is levels 3 and 4 of a fight's resolution: the user's Solo or Team duel
+when one is set and fits the team, and the shipped one otherwise. BartleBuddy calls the same
+function, so a default set in either product is the default in both.
 """
 
 from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bartlebot.shared.preferences import PreferenceStore
+    from bartlebot.shared.strategy_models import DuelCombatStrategy
 
 _SEPARATOR = " | "
 
@@ -44,3 +57,93 @@ SHIPPED_EVERYONE_ATTACKS_DUEL_ID = "f51b5e89-ba2b-40da-81ef-301e26ca5dd5"
 SHIPPED_DEFAULT_PLAYER_ID = "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
 #: The Default Support player strategy.
 SHIPPED_DEFAULT_SUPPORT_ID = "d2496f8b-85c5-44f5-98da-13fb0c7ddea5"
+
+
+class TeamSize(Enum):
+    """The two sizes a default is chosen for."""
+
+    SOLO = "Solo"
+    TEAM = "Team"
+
+
+class DefaultSource(Enum):
+    """Whose default answered: the user's own, or the one that ships."""
+
+    YOURS = "yours"
+    SHIPPED = "shipped"
+
+
+def team_size(clients: int) -> TeamSize:
+    """Solo for one connected client, Team for two or more."""
+    return TeamSize.SOLO if clients <= 1 else TeamSize.TEAM
+
+
+#: The key in ``preferences.json`` that holds the user's duel id for each size. Absent
+#: means "recommended": the shipped duel, so a later fix to it reaches everyone who kept it.
+PREFERENCE_KEYS = {
+    TeamSize.SOLO: "combat.default_duel.solo",
+    TeamSize.TEAM: "combat.default_duel.team",
+}
+
+SHIPPED_DUEL_IDS = {
+    TeamSize.SOLO: SHIPPED_SOLO_DUEL_ID,
+    TeamSize.TEAM: SHIPPED_TEAM_DUEL_ID,
+}
+
+
+def players_text(duel: DuelCombatStrategy) -> str:
+    """``1 player``, ``4 players`` or ``2 to 4 players``: how many *duel* takes."""
+    low, high = duel.min_players, duel.max_players
+    noun = "player" if high == 1 else "players"
+    return f"{low} {noun}" if low == high else f"{low} to {high} {noun}"
+
+
+def shortfall_text(duel: DuelCombatStrategy, clients: int) -> str:
+    """``'Boss' takes 4 players, and 2 are connected``: why *duel* does not accept the team."""
+    verb = "is" if clients == 1 else "are"
+    return f"'{duel.name}' takes {players_text(duel)}, and {clients} {verb} connected"
+
+
+@dataclass(frozen=True)
+class DefaultDuel:
+    """What :func:`default_duel` found.
+
+    ``duel`` is None only when the shipped default could not be read either, and ``source``
+    is then None too. ``reasons`` say why the user's default was passed over, in the user's
+    words, and are empty when it answered or none was set.
+    """
+
+    size: TeamSize
+    duel: DuelCombatStrategy | None
+    source: DefaultSource | None
+    reasons: tuple[str, ...] = ()
+
+
+def default_duel(
+    clients: int,
+    prefs: PreferenceStore,
+    library: Callable[[str], DuelCombatStrategy | None],
+) -> DefaultDuel:
+    """The default duel strategy for *clients* connected clients.
+
+    The user's duel for the team size when one is stored, readable, and accepts *clients*;
+    otherwise the shipped one. The shipped duel is never checked against *clients*: it was
+    written for its size, and the alternative to it is the last-resort DSL.
+
+    *library* finds a duel by id and returns None for one it cannot. Nothing is written.
+    """
+    size = team_size(clients)
+    reasons: list[str] = []
+    stored = prefs.get(PREFERENCE_KEYS[size])
+    if isinstance(stored, str) and stored:
+        mine = library(stored)
+        if mine is None:
+            reasons.append(f"your {size.value} default is not in the library")
+        elif not mine.accepts(clients):
+            reasons.append(f"your {size.value} default {shortfall_text(mine, clients)}")
+        else:
+            return DefaultDuel(size, mine, DefaultSource.YOURS)
+    shipped = library(SHIPPED_DUEL_IDS[size])
+    if shipped is None:
+        return DefaultDuel(size, None, None, tuple(reasons))
+    return DefaultDuel(size, shipped, DefaultSource.SHIPPED, tuple(reasons))

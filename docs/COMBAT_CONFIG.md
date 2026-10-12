@@ -46,7 +46,7 @@ In code, a `BotCombatStrategy` is a `bot_strategy` (or `bcs`), the strategies in
 
 `DuelCombatStrategy` **is-a** `DuelConfig`: the same shape, plus an id and a name. A `StateAssignment` and the Bot Combat Strategy's `default_strategy_id` only ever *link* one, by id, and an unlinked one falls back a level. There is no inline duel config. `StateAssignment.duel_config` and `BotCombatStrategy.default_duel_config` were removed in #118 rather than migrated, because none existed and the editor for them was already gone. The models do not forbid extra fields, so a stray old file still loads, with those fields ignored.
 
-The link/inline pair exists at the player level only: a `PlayerAssignment` carries either `player_combat_strategy_id` or its own `dsl`, which is the assignment card's `Custom DSL…`. **Linked wins, and an inline DSL is not a fallback for a broken link** — a link that cannot be resolved is a warning, not a silent reversion to whatever was typed before the link was made.
+The link/inline pair exists at the player level only: a `PlayerAssignment` carries either `player_combat_strategy_id` or its own `dsl`, which is the assignment card's `Custom DSL…`. **Linked wins, and an inline DSL is not a fallback for a broken link** — a link that cannot be resolved is a fault before the run, not a silent reversion to whatever was typed before the link was made.
 
 ## A bot's own strategies (#118)
 
@@ -54,7 +54,7 @@ A fight sometimes needs a strategy no other fight needs, and a library-only stor
 
 Its own strategies have ids like any other entry, and are linked with the existing fields: `StateAssignment.duel_combat_strategy_id`, `BotCombatStrategy.default_strategy_id` and `PlayerAssignment.player_combat_strategy_id`. That is what lets one move into the library with nothing rewritten.
 
-- **Lookup order: the active Bot Combat Strategy's own first, then the library.** It is one helper, `StrategyLookup` in `bartlebot/combat/bot_combat_strategy.py`, and `resolve_combat`, `combat_warnings`, `find_references` and the Combat tab's cards and fights popup all go through it. A surface that resolves ids its own way is how two of them come to disagree about what a fight runs.
+- **Lookup order: the active Bot Combat Strategy's own first, then the library.** It is one helper, `StrategyLookup` in `bartlebot/combat/bot_combat_strategy.py`, and `combat_resolution`, `combat_warnings`, `find_references` and the Combat tab's cards and fights popup all go through it. A surface that resolves ids its own way is how two of them come to disagree about what a fight runs.
 - **Library content never links a bot's own.** A library duel is shared, so it may use only library player strategies, or it would depend on one user's setup for one bot. The dialog enforces it: the assignment menu in a library duel offers library player strategies only, and in one of the bot's own duels it offers the bot's own first, then the library's (`StrategyWorkingSet.players_for_duel`). `combat_warnings` flags a violation that got in some other way, such as a hand-edited file.
 - **Only the active Bot Combat Strategy is ever shown or edited.** Others of the same bot never appear in the dialog; showing them read-only next to an editable one was judged more confusing than useful. Duplicating it is how its work is reused. Importing one entry from another is #134.
 - **Add to library moves an entry, keeping its id.** A duel takes the bot's own player strategies it uses along with it, after a confirmation that names them in numerals. It is an edit like any other, so it happens at Save and Cancel undoes it. Save writes the library files *before* rewriting the Bot Combat Strategy without them, and skips it if a library write failed, so an interrupted save leaves two copies, never none. That is `save_by_id`'s rule for a rename.
@@ -188,9 +188,8 @@ under `strategies/`, found by id, and their ids are named in
 | Default Team Duel (`SHIPPED_TEAM_DUEL_ID`) | duel | two to four players: P1 runs Default, P2 to P4 run Default Support, combat order 4, 3, 2, 1 |
 | Default Team Duel (Everyone Attacks) (`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`) | duel | two to four players: P1 to P4 run Default |
 
-`LAST_RESORT_DSL` is also what a fight runs when no file can be read at all.
-`combat_config.BARTLEBOT_DEFAULT_COMBAT_CONFIG` re-exports it until the four-level
-resolution (Stage 4 of #201) retires the name.
+`LAST_RESORT_DSL` is also what a fight runs when no file can be read at all. The two
+duels named Solo and Team are what level 4 of the resolution answers with (below).
 
 **Why support is gated on a boss.** A support wizard without support cards in hand
 casts nothing, and a mob fight has nothing to feint or trap for. So the three support
@@ -209,17 +208,87 @@ holds, so Default Support's only change there is the attack fallback.
 **`SHARED_SET_VERSION` rises whenever a shared Official item changes**, so a product
 shipping an older set never mixes items with this one's.
 
-## Resolution at run time
+## Resolution at run time (#207)
 
-`resolve_combat()` in `bartlebot/nodes/combat_runner.py` returns `(per_client_dsl, combat_order, source_label)` and falls back to `BARTLEBOT_DEFAULT_COMBAT_CONFIG` at **every** level:
+Each fight's duel strategy comes from the most tailored of four levels that has one and
+fits the team, resolved when the fight starts. `combat/combat_resolution.py` holds them,
+and `resolve_combat()` in `bartlebot/nodes/combat_runner.py` wraps it, returning
+`(per_client_dsl, combat_order, source_label)`.
 
-1. `machine.bot_config.id` → `SettingsManager.get_active_strategy(bot_id)` → load the `BotCombatStrategy`.
-2. Either the BCS default (`use_default_strategy`) or the `StateAssignment` whose fight is `machine.state` (`fight_keys.bind`, below), falling back to the default when no assignment covers it. An unlinked assignment counts as no assignment at all.
-3. The `DuelCombatStrategy` that target links — found among the bot's own first, then in the library (`StrategyLookup`) — or the built-in default when it links none. Its player strategies are found the same way.
-4. Per 1-based player slot, the matching `PlayerAssignment`'s inline DSL, or the linked Player Strategy's DSL.
-5. Anything unresolved gets the built-in default.
+| level | `Level` | where it lives | what answers |
+|---|---|---|---|
+| 1 | `PICK` | the user's Bot Combat Strategy for this bot (`SettingsManager.get_active_strategy`) | the fight's assignment, else its own default |
+| 2 | `OFFICIAL` | the bot's shipped Bot Combat Strategies | the one whose duels fit the team for the most of the bot's fights (`official_strategy_for`) |
+| 3 | `YOUR_DEFAULT` | the user's Solo or Team default, in `preferences.json` | the duel stored under `combat.default_duel.solo` or `.team` |
+| 4 | `SHIPPED_DEFAULT` | the shipped defaults | Default Solo Duel for one client, Default Team Duel for two or more |
 
-`source_label` says which level answered, in the user's vocabulary — `duel strategy 'Frenzy AoE' (via state assignment for 'fight_1')`. It is the older precedent for the logging `BotMachine.get_option` does; see `docs/BOT_OPTIONS.md`. **Never log the strategy's contents in place of the label**, and never log a wizard name.
+- **A duel fits *n* clients when `min_players` ≤ *n* ≤ `max_players`** (`DuelConfig.accepts`).
+  At levels 2 to 4 a duel that doesn't fit falls to the next level, and the reason is
+  kept for the log. At level 1 it is used anyway: the user chose it, the pre-run check
+  is what tells them it doesn't fit, and Run anyway means running what they chose.
+- **A Bot Combat Strategy covers a fight with its assignment, else its own
+  `default_strategy_id`.** Only one with neither falls through for that fight. An
+  unlinked assignment counts as none. The assignment is found by `fight_keys.bind`,
+  below, and the duel and its player strategies by `StrategyLookup`, the bot's own first.
+- **Level 2 reads the shipped files as they ship** (`strategy_store.list_shipped`). A
+  user's copy of an Official Bot Combat Strategy is the user's, and only ever their
+  pick. Its score counts the bot's default fight as one fight, and a strategy that
+  fits no fight isn't a candidate. `test_no_two_shipped_bot_combat_strategies_for_one_bot_tie`
+  refuses two that tie at any *n* from 1 to 4, so a run never needs a tie-break. No
+  Official Bot Combat Strategy ships yet, so level 2 is empty until one does.
+- **Levels 3 and 4 are shared** (`shared/combat_defaults.default_duel`), so BartleBuddy
+  resolves a default the same way. "Recommended" is stored as no key at all, so a later
+  fix to the shipped default reaches everyone who kept it. A stored id the library
+  lacks, or a duel that doesn't fit, falls to the shipped one.
+- **Last resort.** When even the shipped defaults can't be read, every slot runs
+  `LAST_RESORT_DSL` and the log says so at ERROR. A slot with no assignment, or whose
+  player strategy can't be read, runs it too, as before.
+- **Nothing writes.** No level is filled in by writing a file, on load or at run time,
+  so every bot and Bot Combat Strategy file round-trips byte-identical and every level
+  stays reachable. `docs/BOT_OPTIONS.md` has the same rule for options, for the same
+  reason.
+
+`source_label` names the duel and the level in the user's words, plus what was passed
+over on the way: `duel strategy 'Default Team Duel' (your Team default; this bot has no
+Bot Combat Strategy)`, or `duel strategy 'Boss' (via state assignment for 'fight_1';
+your Bot Combat Strategy 'Farm')`. `AppController._start_bot` logs one line before the
+first node, naming the run's sources fight by fight with fights that share one grouped
+(`describe_run`). **Never log a strategy's contents in place of the label**, and never
+log a wizard name. The label is the older precedent for the logging `BotMachine.get_option`
+does; see `docs/BOT_OPTIONS.md`.
+
+## Before a run: faults and notices (#207)
+
+`combat_warnings.check_combat` sorts what it finds into two tiers, `CombatCheck(faults,
+notices)`:
+
+| tier | what it is | where it goes |
+|---|---|---|
+| **fault** | a choice the user made that cannot work | the pre-run dialog, "Combat Strategy Problems", with **Go back** as its default and **Run anyway** |
+| **notice** | a fallback in use: a valid setup | the log, once, at INFO; never a dialog |
+
+The faults:
+
+- **A DSL that doesn't parse, anywhere this run could reach**: every duel the pick links,
+  whatever the team size, and every duel a fight falls to.
+- **A link the user made that points at nothing**: the picked Bot Combat Strategy's
+  file, or a duel or player strategy it links.
+- **The user's own pick needing more players than are connected** (`min_players`).
+- **A library duel linking a strategy that belongs to one Bot Combat Strategy.**
+
+The notices, grouped so that a setup says each thing once rather than once per fight:
+
+- exposed fights with no assignment, which the pick's own default covers;
+- fights that fall past level 1, grouped by the duel they run and the level that
+  answered: "Every fight runs duel strategy 'Default Team Duel' (the shipped Team
+  default; this bot has no Bot Combat Strategy)."
+
+So a fresh install starts every shipped bot with no dialog, and a Bot Combat Strategy
+that sets only its default starts Atlantea with no dialog instead of eight lines. The
+dialog is rare, and that is what makes it worth reading: the press a frequent dialog
+trains is the one that keeps a broken setup from running. **Never add "Don't show
+again" to it**, which would hide the faults with the noise, and never send a notice to
+a dialog. The dialog's text and buttons are `gui/dialogs/combat_faults_dialog.py`.
 
 ## Fight keys: which stored fight is which state
 
@@ -244,7 +313,7 @@ with no enemy, and is **never rewritten on load**; the next save writes the new 
   taken by an enemy match; anything left is orphaned. Enemy matches win, so a renamed
   enemy and a replaced node both keep their strategy, and only changing both at once
   loses it. With no config it falls back to the raw state ids.
-- **Every reader goes through it:** `resolve_combat`, `combat_warnings`, and
+- **Every reader goes through it:** `combat_resolution`, `combat_warnings`, and
   `combat_grouping.build_bindings`, which the Combat tab seeds from. A surface that
   looks a fight up by state id on its own will disagree with the run about a fight
   that moved.
@@ -274,6 +343,7 @@ follow it by.
 | `combat/strategy_workset.py` | the Save/Cancel boundary |
 | `combat/strategy_summary.py` | every display string, derived once |
 | `combat/combat_grouping.py`, `combat/combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
+| `combat/combat_resolution.py` | the four levels a fight's duel strategy comes from |
 | `combat/fight_keys.py` | which stored fight belongs to which combat state |
 | `combat/bot_combat_strategy.py` | the own-then-library lookup, what one of a bot's own duels takes with it, and duplicating a Bot Combat Strategy |
 
