@@ -101,7 +101,8 @@ class BotCombatStrategy(BaseModel):
     bot_id: str  # UUID of the BotConfig this strategy belongs to
     # 1-based player number → embedded deck data (not referenced by UUID)
     player_decks: dict[int, DeckData] = Field(default_factory=dict)
-    # The duel strategy for every state no assignment covers; None is the built-in default.
+    # The duel strategy for every state no assignment covers; None lets those fights fall
+    # to the user's or the shipped default (combat_resolution).
     default_strategy_id: str | None = None
     state_assignments: list[StateAssignment] = Field(default_factory=list)
     description: str = ""

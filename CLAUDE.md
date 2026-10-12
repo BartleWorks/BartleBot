@@ -62,7 +62,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `bot/` | the FSM: the machine, the bot file schema, ambient combat, the health monitor, variables |
 | `nodes/` | the node library, grouped by kind |
 | `game/` | read-only facts about the game: zones, worlds, realms, spells, names, scales, stat caps, sizing, keybindings, wiki lookups. `game/data/` holds the extracted snapshots, and every reader of them lives here |
-| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, Bot Combat Strategies, fight keys, the built-in default combat config |
+| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, Bot Combat Strategies, fight keys, which duel strategy a fight runs (`combat_resolution`) and the pre-run check. The shipped default ids and the last-resort DSL are in `shared/combat_defaults.py` |
 | `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
 | `clients/` | game clients at run time: the client and group managers, accounts, credentials, launch tracking, relog, porting, sightings, tile slots, process and window helpers |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |

@@ -106,8 +106,9 @@ async def run(machine, clients: list, params: dict) -> str:
           SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
 
     Flow:
-      1. Resolve combat DSL via the Duel Combat Strategy assigned to this state, or the
-         active Bot Combat Strategy's default, or the BartleBot built-in default.
+      1. Resolve combat DSL through the four levels of combat_resolution: the user's Bot
+         Combat Strategy (this state's assignment, else its default), the bot's Official
+         one, the user's Solo or Team default, the shipped default.
          Return FAILURE if any player has no mana: it could only pass (#111).
       2. Resolve target entity for each client (by enemy name or closest mob), retrying
          TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
@@ -132,8 +133,8 @@ async def run(machine, clients: list, params: dict) -> str:
 
     FAILURE: a player has no mana; target not found after retries; max_duration exceeded;
     clients did not enter combat within ENTER_COMBAT_TIMEOUT; the fight was fled.  DSL
-    resolution itself cannot fail — resolve_combat falls back to the built-in default at
-    every level.
+    resolution itself cannot fail — resolve_combat falls back to LAST_RESORT_DSL when no
+    strategy file can be read.
     """
     max_duration: float = float(params.get("max_duration", 0.0))
     _node_start = time.monotonic()
