@@ -10,7 +10,6 @@ from unittest.mock import patch
 
 import pytest
 
-from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.combat_runner import (
     _lark_parser,
     _str_provider_class,
@@ -19,10 +18,11 @@ from bartlebot.nodes.combat_runner import (
     dsl_warnings,
     validate_dsl,
 )
+from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
 
 # Real DSLs taken from strategies/player/*.json.
 _VALID_DSLS = [
-    BARTLEBOT_DEFAULT_COMBAT_CONFIG,
+    LAST_RESORT_DSL,
     "any<blade>[sharp]@ally(2)",
     "feint mass | any<blade>[sharp]@ally(2)",
     "any<aura & out_damage> | any<aoe>[epic]",
@@ -40,7 +40,7 @@ def test_valid_dsl_returns_none(dsl):
 
 def test_builtin_default_is_valid():
     """The fallback every unassigned player runs must always parse."""
-    assert validate_dsl(BARTLEBOT_DEFAULT_COMBAT_CONFIG) is None
+    assert validate_dsl(LAST_RESORT_DSL) is None
 
 
 @pytest.mark.parametrize("dsl", ["", "   ", "\n\n", "\t \n "])

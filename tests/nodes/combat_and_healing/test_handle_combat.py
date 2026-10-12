@@ -35,11 +35,11 @@ _DEFAULT_PARAMS = {"enemy": "", "use_default_strategy": True}
 def _patch_resolve_combat(combat_order: list[int]):
     from unittest.mock import patch  # noqa: PLC0415
 
-    from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG  # noqa: PLC0415
+    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
 
     return patch(
         "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
-        return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG, BARTLEBOT_DEFAULT_COMBAT_CONFIG], combat_order, "test"),
+        return_value=([LAST_RESORT_DSL, LAST_RESORT_DSL], combat_order, "test"),
     )
 
 
@@ -231,7 +231,7 @@ async def test_combat_order_sequential():
 
 async def test_combat_order_invalid_client_number_skipped():
     """combat_order referencing a client that doesn't exist is silently skipped."""
-    from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
 
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
@@ -240,7 +240,7 @@ async def test_combat_order_invalid_client_number_skipped():
         _patch_run_combat(),
         patch(
             "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
-            return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG], [5], "test"),
+            return_value=([LAST_RESORT_DSL], [5], "test"),
         ),
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),

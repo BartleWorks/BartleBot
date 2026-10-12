@@ -4,9 +4,10 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.combat.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
+from bartlebot.shared.combat_defaults import LAST_RESORT_DSL, SHIPPED_DEFAULT_SUPPORT_ID
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.conftest import FakeMachine
 
@@ -42,17 +43,27 @@ def test_no_bot_config_returns_builtin_default():
     machine = FakeMachine()
     machine.bot_config = None
     dsls, order, source = resolve_combat(machine, True, 2)
-    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG, BARTLEBOT_DEFAULT_COMBAT_CONFIG]
+    assert dsls == [LAST_RESORT_DSL, LAST_RESORT_DSL]
     assert order == []
 
 
-def test_no_active_strategy_returns_builtin_default():
+def test_no_active_strategy_runs_the_shipped_team_default():
     machine = _make_machine()
     with _patch_active_strategy("bot-1", None):
         dsls, order, source = resolve_combat(machine, True, 2)
-    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG, BARTLEBOT_DEFAULT_COMBAT_CONFIG]
-    assert order == []
-    assert "built-in" in source
+    support = strategy_store.load_player_strategy(SHIPPED_DEFAULT_SUPPORT_ID).dsl
+    assert dsls == [LAST_RESORT_DSL, support]
+    assert order == [4, 3, 2, 1]
+    assert source == (
+        "duel strategy 'Default Team Duel' (the shipped Team default; this bot has no Bot Combat Strategy)"
+    )
+
+
+def test_no_active_strategy_runs_the_shipped_solo_default_with_one_client():
+    with _patch_active_strategy("bot-1", None):
+        dsls, _order, source = resolve_combat(_make_machine(), True, 1)
+    assert dsls == [LAST_RESORT_DSL]
+    assert "'Default Solo Duel' (the shipped Solo default" in source
 
 
 def test_missing_bcs_file_returns_builtin_default(tmp_path: Path):
@@ -62,7 +73,7 @@ def test_missing_bcs_file_returns_builtin_default(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", side_effect=FileNotFoundError),
     ):
         dsls, order, source = resolve_combat(machine, True, 1)
-    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG]
+    assert dsls == [LAST_RESORT_DSL]
     assert order == []
 
 
@@ -75,7 +86,7 @@ def test_no_dcs_id_returns_builtin_default(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
-    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG]
+    assert dsls == [LAST_RESORT_DSL]
     assert order == []
 
 
@@ -185,7 +196,7 @@ def test_empty_inline_dsl_falls_back_to_builtin(tmp_path: Path):
     ):
         dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
 
-    assert dsls[0] == BARTLEBOT_DEFAULT_COMBAT_CONFIG
+    assert dsls[0] == LAST_RESORT_DSL
 
 
 def test_state_assignment_used_when_use_default_false(tmp_path: Path):
@@ -245,7 +256,7 @@ def test_unassigned_player_falls_back_to_builtin():
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls[0] == "p1_dsl"  # P1 assigned
-    assert dsls[1] == BARTLEBOT_DEFAULT_COMBAT_CONFIG  # P2 unassigned → fallback
+    assert dsls[1] == LAST_RESORT_DSL  # P2 unassigned → fallback
 
 
 def test_missing_pcs_file_uses_builtin_for_that_player():
@@ -275,7 +286,7 @@ def test_missing_pcs_file_uses_builtin_for_that_player():
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls[0] == "p1_dsl"
-    assert dsls[1] == BARTLEBOT_DEFAULT_COMBAT_CONFIG
+    assert dsls[1] == LAST_RESORT_DSL
 
 
 # ---------------------------------------------------------------------------
@@ -284,7 +295,7 @@ def test_missing_pcs_file_uses_builtin_for_that_player():
 
 
 def test_an_unset_default_falls_back_to_builtin(tmp_path: Path):
-    """No default_strategy_id means no default at all."""
+    """No default_strategy_id means the Bot Combat Strategy has nothing for the fight, so it falls through."""
     bcs = BotCombatStrategy(name="Farm", bot_id="bot-1")
     machine = _make_machine(bot_id="bot-1")
 
@@ -294,9 +305,12 @@ def test_an_unset_default_falls_back_to_builtin(tmp_path: Path):
     ):
         dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
 
-    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG]
+    assert dsls == [LAST_RESORT_DSL]
     assert order == []
-    assert source == _BUILTIN_SOURCE
+    assert source == (
+        "duel strategy 'Default Solo Duel' (the shipped Solo default; 'Farm' has no duel strategy for this fight "
+        "and no default)"
+    )
 
 
 def test_an_unlinked_state_assignment_falls_back_to_bcs_default(tmp_path: Path):
@@ -427,7 +441,7 @@ def test_an_own_duel_links_an_own_player_strategy(tmp_path: Path):
     assert dsls == ["heal"]
 
 
-def test_an_id_in_neither_the_bots_own_nor_the_library_falls_back_to_the_builtin(tmp_path: Path):
+def test_no_duel_readable_anywhere_falls_back_to_the_builtin(tmp_path: Path):
     bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id="nowhere")
 
     with (
@@ -437,6 +451,6 @@ def test_an_id_in_neither_the_bots_own_nor_the_library_falls_back_to_the_builtin
     ):
         dsls, order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=2)
 
-    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * 2
+    assert dsls == [LAST_RESORT_DSL] * 2
     assert order == []
-    assert source == _BUILTIN_SOURCE
+    assert source.startswith(_BUILTIN_SOURCE)

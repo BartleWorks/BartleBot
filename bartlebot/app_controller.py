@@ -24,7 +24,8 @@ from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, Author
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.clients.window_kill import force_close_client
 from bartlebot.combat import strategy_store
-from bartlebot.combat.combat_warnings import collect_combat_warnings
+from bartlebot.combat.combat_resolution import CombatResolver, describe_run
+from bartlebot.combat.combat_warnings import CombatCheck, check_combat
 from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.content import bot_fork, bot_roots, new_bot, share_export, share_import
 from bartlebot.content.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
@@ -2677,19 +2678,8 @@ class AppController(QObject):
             if not dlg.exec():
                 return
 
-        combat_warnings = self._collect_combat_warnings()
-        if combat_warnings:
-            msg = "\n".join(f"• {w}" for w in combat_warnings)
-            result = QMessageBox.warning(
-                self._window,
-                "Combat Configuration Warnings",
-                f"The following issues were found with the combat configuration:\n\n{msg}\n\n"
-                "The bot will run using built-in defaults for any missing strategies. Continue?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes,
-            )
-            if result != QMessageBox.StandardButton.Yes:
-                return
+        if not self._confirm_combat():
+            return
 
         if not self._confirm_recovery_gaps():
             return
@@ -2789,23 +2779,55 @@ class AppController(QObject):
         )
         return result == QMessageBox.StandardButton.Yes
 
-    def _collect_combat_warnings(self) -> list[str]:
-        """Return a list of combat config warning strings. Empty list = no issues.
+    def _confirm_combat(self) -> bool:
+        """Check the combat setup, and return whether to proceed.
 
-        Parsing every distinct DSL takes a noticeable moment on a large library,
-        so this runs under a wait cursor.
+        Only a fault, a choice the user made that cannot work, opens a dialog, and its
+        default is Go back. A notice is a fallback in use: it is logged here once and the
+        run starts (``docs/COMBAT_CONFIG.md``, "Before a run: faults and notices").
+        """
+        from bartlebot.gui.dialogs import combat_faults_dialog  # noqa: PLC0415
+
+        check = self._check_combat()
+        for notice in check.notices:
+            logger.info("Combat: %s", notice)
+        if not check.faults:
+            return True
+        for fault in check.faults:
+            logger.warning("Combat strategy problem: %s", fault)
+        if combat_faults_dialog.confirm_run(self._window, check.faults):
+            logger.info("Running anyway with %d combat strategy problem(s)", len(check.faults))
+            return True
+        return False
+
+    def _check_combat(self) -> CombatCheck:
+        """The combat setup's faults and notices for the bot about to run.
+
+        Parsing every DSL the run could reach takes a noticeable moment on a large
+        library, so this runs under a wait cursor.
         """
         if self._loaded_config is None:
-            return []
+            return CombatCheck()
 
         active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
         num_clients = len(self._client_manager.clients)
 
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
-            return collect_combat_warnings(active_bcs_id, num_clients, self._loaded_config)
+            return check_combat(active_bcs_id, num_clients, self._loaded_config)
         finally:
             QApplication.restoreOverrideCursor()
+
+    def _log_combat_sources(self) -> None:
+        """Log one line naming where the run's fights get their duel strategies, before the first node."""
+        if self._loaded_config is None:
+            return
+        try:
+            pick = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+            resolver = CombatResolver(self._loaded_config, len(self._client_manager.clients), pick)
+            logger.info(describe_run(resolver))
+        except Exception:
+            logger.warning("Could not name the run's combat strategies", exc_info=True)
 
     async def _start_bot(self) -> None:
         """Build the machine, run the pre-run setup, then the run. Stop works throughout."""
@@ -2858,6 +2880,7 @@ class AppController(QObject):
                 self._pre_run = None
             if machine.is_stopped:
                 return  # a stop that landed just as the setup finished
+            self._log_combat_sources()
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()

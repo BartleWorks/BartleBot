@@ -1,31 +1,35 @@
-"""Pre-run validation of a bot's combat configuration.
+"""Pre-run check of a bot's combat setup: faults, which stop the run, and notices, which never do.
 
-Produces the warning list shown before a run starts.  Split out of AppController
-so it can be tested without a QApplication: everything here is plain functions
-over the strategy store, and every path degrades to a warning rather than an
-exception — the bot can always run on built-in defaults.
+Split out of AppController so it can be tested without a QApplication: everything here
+is plain functions over the strategy store, and nothing raises.
 
-Checks performed:
-  - an active Bot Combat Strategy is set, and its file loads
-  - every referenced Duel Combat Strategy resolves, among the bot's own or in the library
-  - every linked Player Combat Strategy resolves the same way
-  - no library duel links a strategy that belongs to the bot's own (#118)
-  - enough clients are connected for each strategy's ``min_players``
-  - every combat state that asked for its own strategy actually has one
-  - every DSL that could actually run parses
+**A fault is a choice the user made that cannot work.** The pre-run dialog shows faults
+only, with Go back as its default:
 
-The DSL check is the reason this runs before the bot starts.  A syntax error
-otherwise surfaces inside SprintyCombat mid-fight, several minutes into a run.
+  - the picked Bot Combat Strategy's file is missing, or a duel or player strategy it
+    links is
+  - a duel it uses needs more players than are connected (``min_players``)
+  - a library duel links a strategy that belongs to the bot's own (#118)
+  - a DSL that doesn't parse, anywhere this run could reach
+
+**A notice is a fallback in use**: a fight on a less tailored level than it could be
+(:mod:`bartlebot.combat.combat_resolution`), or an exposed fight the user's Bot Combat
+Strategy covers with its default. A setup with notices and no faults is valid, so notices
+go to the log and never to a dialog (``docs/COMBAT_CONFIG.md``, "Before a run").
+
+The DSL check is the reason this runs before the bot starts. A syntax error otherwise
+surfaces inside SprintyCombat mid-fight, several minutes into a run.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from bartlebot.combat.bot_combat_strategy import StrategyLookup, own_players_of
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
+from bartlebot.combat.combat_resolution import CombatResolver, FightResolution, Level, fight_label, group_fights
 from bartlebot.combat.fight_keys import bind, exposed_combat_states
-from bartlebot.combat.strategy_store import load_bot_strategy
 from bartlebot.combat.strategy_summary import format_players as _format_players
 from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.shared.strategy_models import DuelConfig
@@ -34,6 +38,9 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from bartlebot.bot.schema import BotConfig
+    from bartlebot.shared.preferences import PreferenceStore
+
+__all__ = ["CombatCheck", "check_combat", "exposed_combat_states"]
 
 # Strategy UUIDs are too long to show in a dialog; enough to grep the filename by.
 _ID_PREVIEW = 8
@@ -43,44 +50,82 @@ def _short(uuid: str) -> str:
     return f"{uuid[:_ID_PREVIEW]}…"
 
 
-def collect_combat_warnings(
+@dataclass
+class CombatCheck:
+    """What :func:`check_combat` found. Both lists empty means nothing to say."""
+
+    faults: list[str] = field(default_factory=list)
+    notices: list[str] = field(default_factory=list)
+
+
+def check_combat(
     active_bcs_id: str | None,
     num_clients: int,
     config: BotConfig | None = None,
     root: str | Path | None = None,
-) -> list[str]:
-    """Return human-readable warnings about the combat config. Empty means no issues.
+    user_root: str | Path | None = None,
+    prefs: PreferenceStore | None = None,
+) -> CombatCheck:
+    """Check the combat setup of the bot about to run with *num_clients* clients.
 
-    ``active_bcs_id`` is the Bot Combat Strategy selected for the bot about to run.
-    ``config`` is the bot itself; when given, its exposed combat states are checked
-    for an assignment.  ``root`` is the project root passed through to the strategy
-    store; None uses its default.
+    ``active_bcs_id`` is the user's Bot Combat Strategy for the bot, or None. ``config``
+    is the bot itself; without it only the default fight is resolved. ``root`` and
+    ``user_root`` go to the strategy store and ``prefs`` to the defaults; None uses each
+    one's own default.
     """
-    if not active_bcs_id:
-        return ["No Bot Combat Strategy is set — will use built-in combat defaults."]
-
-    try:
-        bcs = load_bot_strategy(active_bcs_id, root)
-    except Exception:
-        return [f"Active Bot Combat Strategy file is missing (id: {_short(active_bcs_id)})."]
-
-    warnings: list[str] = []
+    resolver = CombatResolver(config, num_clients, active_bcs_id, prefs=prefs, root=root, user_root=user_root)
+    check = CombatCheck()
     # DSL string → the labels that use it, so a shared preset is parsed once and
     # reported once no matter how many strategies link it.
     dsl_sources: dict[str, list[str]] = {}
-    # The bot's own strategies first, then the library's -- see bot_combat_strategy.
-    lookup = StrategyLookup(bcs, root=root)
 
+    if resolver.pick:
+        bcs = resolver.picked
+        if bcs is None:
+            check.faults.append(
+                f"The Bot Combat Strategy picked for this bot is missing its file (id: {_short(resolver.pick)})."
+            )
+        else:
+            check.faults.extend(_pick_faults(bcs, num_clients, config, root, user_root, dsl_sources))
+
+    # The duels the run falls to are reached too, so their DSLs are checked with the pick's.
+    resolutions = resolver.fights()
+    for res in resolutions.values():
+        if res.level is not Level.PICK and res.duel is not None:
+            pcs_dsl = {}
+            for pcs_id in res.duel.linked_pcs_ids():
+                pcs = res.lookup.player(pcs_id)
+                if pcs is not None:
+                    pcs_dsl[pcs_id] = pcs.dsl
+            _collect_dsls(res.duel, f"'{res.duel.name}'", pcs_dsl, dsl_sources)
+
+    check.faults.extend(_validate_dsls(dsl_sources))
+    check.notices.extend(_notices(config, resolutions))
+    return check
+
+
+def _pick_faults(
+    bcs: BotCombatStrategy,
+    num_clients: int,
+    config: BotConfig | None,
+    root: str | Path | None,
+    user_root: str | Path | None,
+    dsl_sources: dict[str, list[str]],
+) -> list[str]:
+    """Faults in the user's own Bot Combat Strategy, recording the DSLs it could run as it goes."""
+    faults: list[str] = []
+    # The bot's own strategies first, then the library's -- see bot_combat_strategy.
+    lookup = StrategyLookup(bcs, root=root, user_root=user_root)
     for context_label, dcs_id in _duel_sources(bcs, config):
         duel_config = lookup.duel(dcs_id)
         if duel_config is None:
-            warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
+            faults.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
             continue
         if lookup.own_duel(dcs_id) is None:
             # Only a hand-edited file gets here: the dialog never offers a bot's own
             # strategy to a library duel, which every other bot shares.
             for pcs in own_players_of(duel_config, bcs):
-                warnings.append(
+                faults.append(
                     f"Library duel strategy '{duel_config.name}' uses '{pcs.name}', which belongs to "
                     f"this bot only — other bots using '{duel_config.name}' won't have it."
                 )
@@ -88,41 +133,42 @@ def collect_combat_warnings(
         dsl_label = f"'{duel_config.name}'"  # the strategy's own name — a shared preset always reads the same
 
         if num_clients < duel_config.min_players:
-            warnings.append(
+            faults.append(
                 f"{context_label} {config_label} requires ≥{duel_config.min_players} players "
                 f"but only {num_clients} client(s) are connected."
             )
 
-        pcs_dsl = _load_linked_presets(duel_config, context_label, config_label, lookup, warnings)
+        pcs_dsl = _load_linked_presets(duel_config, context_label, config_label, lookup, faults)
         _collect_dsls(duel_config, dsl_label, pcs_dsl, dsl_sources)
-
-    if config is not None:
-        warnings.extend(_unassigned_state_warnings(config, bcs))
-
-    warnings.extend(_validate_dsls(dsl_sources))
-    return warnings
+    return faults
 
 
-def _unassigned_state_warnings(config: BotConfig, bcs: BotCombatStrategy) -> list[str]:
-    """Report combat states that asked for their own strategy but never got one.
+def _notices(config: BotConfig | None, resolutions: dict[str | None, FightResolution]) -> list[str]:
+    """One line per fallback in use: exposed fights on the pick's default, and each level fallen to.
 
-    These are not errors — the state falls back to the bot default, or to the
-    built-in default when there isn't one.  But the bot author marked the fight
-    as needing special handling, so silently running the generic strategy is
-    almost never what the user wants, and nothing else surfaces it.
-
-    An assignment that exists but links nothing counts as unassigned too — see
-    ``resolve_combat``, which treats the two identically.
+    Grouped, so a Bot Combat Strategy that sets only its default says so once rather than
+    once per fight.
     """
-    fallback = "will use the bot's default strategy" if bcs.default_strategy_id else "will use built-in combat defaults"
-    warnings = []
-    bound = bind(bcs, config)
-    for state in exposed_combat_states(config):
-        assignment = bound.get(state.id)
-        if assignment is not None and assignment.is_linked:
-            continue
-        warnings.append(f"Combat state '{state.label or state.id}' has no Duel Strategy assigned — {fallback}.")
-    return warnings
+    notices: list[str] = []
+    unassigned = [f for f, res in resolutions.items() if res.level is Level.PICK and res.unassigned]
+    if unassigned:
+        res = resolutions[unassigned[0]]
+        names = ", ".join(fight_label(config, f) for f in unassigned)
+        uses = "it uses" if len(unassigned) == 1 else "they use"
+        notices.append(
+            f"No duel strategy is assigned to {names}, so {uses} '{res.duel.name}', "
+            f"the default of your Bot Combat Strategy '{res.owner.name}'."
+        )
+    fallen = {f: res for f, res in resolutions.items() if res.level is not Level.PICK}
+    for (name, where), fights in group_fights(fallen).items():
+        if len(fights) == len(resolutions):
+            who = "Every fight runs"
+        else:
+            labels = ", ".join(fight_label(config, f) for f in fights)
+            verb = "runs" if len(fights) == 1 and fights[0] is not None else "run"
+            who = f"{labels[0].upper()}{labels[1:]} {verb}"
+        notices.append(f"{who} {name} ({where}).")
+    return notices
 
 
 def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tuple[str, str]]:
@@ -155,7 +201,7 @@ def _state_context_label(
 
     Names the fights *bound* places on it, which follow an enemy to a new node. Falls
     back to the raw state ids it was stored with when none is placed, and to the id
-    when no BotConfig was given to resolve labels from — collect_combat_warnings'
+    when no BotConfig was given to resolve labels from — check_combat's
     ``config`` parameter is optional.
     """
     labels_by_id = {s.id: (s.label or s.id) for s in config.states} if config is not None else {}

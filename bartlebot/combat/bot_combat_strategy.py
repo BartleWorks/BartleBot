@@ -11,7 +11,7 @@ LOOKUP ORDER
 **The active Bot Combat Strategy's own first, then the library.** Every surface that
 turns a strategy id into a strategy goes through :class:`StrategyLookup`, because a
 surface that resolves ids its own way is how two surfaces come to disagree about which
-strategy a fight uses. That covers ``resolve_combat``, the pre-run warnings, the usage
+strategy a fight uses. That covers ``combat_resolution``, the pre-run check, the usage
 counts and the Combat tab.
 
 Its own strategies have ids like any other entry and are linked with the existing fields
@@ -57,7 +57,7 @@ class StrategyLookup:
 
     *duels* and *players* are the library, as lists. Leave either as None to load entries
     from the strategy store on demand instead, under *root* / *user_root* -- which is what
-    the run-time resolver and the pre-run warnings want, since they touch a handful of ids
+    the run-time resolver and the pre-run check want, since they touch a handful of ids
     and the library holds far more.
     """
 

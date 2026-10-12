@@ -281,7 +281,7 @@ async def test_run_recompose_swaps_config_before_machine_build(harness, library,
         seen.append(harness._loaded_config)
 
     harness._start_bot = fake_start
-    harness._collect_combat_warnings = lambda: []
+    harness._confirm_combat = lambda: True
     harness._confirm_recovery_gaps = lambda: True
     harness._client_manager.clients = [MagicMock(in_battle=AsyncMock(return_value=False))]
     monkeypatch.setattr(safety_warning_dialog, "collect_safety_warnings", lambda *a: [])
