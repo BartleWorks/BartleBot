@@ -12,12 +12,12 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.combat_warnings import (
     _format_players,
     collect_combat_warnings,
     exposed_combat_states,
 )
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
     save_bot_strategy,
     save_duel_strategy,
@@ -625,11 +625,11 @@ def test_a_file_from_before_118_is_not_warned_about_its_inline_config(tmp_path: 
 
 
 # ---------------------------------------------------------------------------
-# Profile strategies (#118)
+# The bot's own strategies (#118)
 # ---------------------------------------------------------------------------
 
 
-def test_a_profile_duel_is_found_without_a_library_file(tmp_path: Path):
+def test_an_own_duel_is_found_without_a_library_file(tmp_path: Path):
     pcs = PlayerCombatStrategy(name="Own P1", dsl=_VALID_DSL)
     own = DuelCombatStrategy(
         name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
@@ -639,7 +639,7 @@ def test_a_profile_duel_is_found_without_a_library_file(tmp_path: Path):
     assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
 
 
-def test_a_profile_player_strategys_dsl_is_checked(tmp_path: Path):
+def test_an_own_player_strategys_dsl_is_checked(tmp_path: Path):
     pcs = PlayerCombatStrategy(name="Own P1", dsl=_BROKEN_DSL)
     own = DuelCombatStrategy(
         name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
@@ -652,7 +652,7 @@ def test_a_profile_player_strategys_dsl_is_checked(tmp_path: Path):
     assert "does not parse" in warnings[0]
 
 
-def test_a_library_duel_linking_a_profile_player_strategy_is_flagged(tmp_path: Path):
+def test_a_library_duel_linking_an_own_player_strategy_is_flagged(tmp_path: Path):
     """Only a hand-edited file gets one in; the dialog never offers it."""
     pcs = PlayerCombatStrategy(name="Frost Heal", dsl=_VALID_DSL)
     library = _dcs(
@@ -666,7 +666,7 @@ def test_a_library_duel_linking_a_profile_player_strategy_is_flagged(tmp_path: P
     assert "Library duel strategy 'Boss Burn' uses 'Frost Heal'" in warnings[0]
 
 
-def test_a_profile_duel_linking_a_profile_player_strategy_is_not_flagged(tmp_path: Path):
+def test_an_own_duel_linking_an_own_player_strategy_is_not_flagged(tmp_path: Path):
     pcs = PlayerCombatStrategy(name="Frost Heal", dsl=_VALID_DSL)
     own = DuelCombatStrategy(
         name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]

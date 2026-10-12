@@ -16,11 +16,11 @@ vocabularies (a "Strategy Library" and a "Strategy Picker"). This is both, in
 three modes, one per way in (#118, #123):
 
 ``LIBRARY``  ``[Cancel] [Save]`` — **File → Combat Strategies**. The Duel, Player
-             and Deck tabs, library entries only. No profile section, even with a
+             and Deck tabs, library entries only. No This bot section, even with a
              bot loaded.
-``PROFILE``  ``[Cancel] [Save]`` — the ✏ on a Combat tab card. The Duel and Player
-             tabs, with the active combat profile's own strategies in a section at
-             the top. New and Duplicate create *in the profile*; library entries stay
+``BOT_STRATEGY``  ``[Cancel] [Save]`` — the ✏ on a Combat tab card. The Duel and
+             Player tabs, with the active Bot Combat Strategy's own strategies in a
+             section at the top. New and Duplicate create *in it*; library entries stay
              editable too, and the Save confirmation says where else an edit reaches.
 ``PICK``     ``[Use built-in default] [Cancel] [Use this]`` — 🔍 on a card, a fight's
              pill, the add-card's "Select existing duel strategy…", and a deck slot's
@@ -54,12 +54,12 @@ than reported.
 TWO PLACES A STRATEGY CAN LIVE (#118)
 -------------------------------------
 
-A strategy belongs to the library, which every bot and profile sees, or to one
-combat profile. Users who don't realise there are two places struggle, so the
-difference is drawn everywhere it can be: the profile's section is headed with its
-full name, each of its cards wears a pill with that name in its own color (not the
-error red), an empty section says what it is for, and the About pane says "In
-profile 'Solo' only" beside **Add to library**. Creating locally and publishing
+A strategy belongs to the library, which every bot sees, or to one Bot Combat
+Strategy. Users who don't realize there are two places struggle, so the difference is
+drawn everywhere it can be: the bot's own section is headed with the Bot Combat
+Strategy's name, each of its cards wears a **This bot** pill in its own color (not the
+error red), an empty section says what it is for, and the About pane says "In 'Solo'
+only" beside **Add to library**. Creating locally and publishing
 separately is the shape design tools settled on — Figma's components, Illustrator's
 swatches — and it keeps the one-off from ever cluttering the shared list.
 
@@ -75,7 +75,7 @@ star is saved to the user's settings on the click, because it is a preference ab
 the library rather than a change to it. A favorite moves its card into a "★
 Favorites" section. Each entry is in exactly one section, never two: selection is
 restored by id, so an entry drawn twice would make it ambiguous which row is
-selected. Favorites are library-only, so a profile entry has no star. The headers
+selected. Favorites are library-only, so an entry of the bot's own has no star. The headers
 only appear once there is more than one section, and a section that the filter
 empties hides its header.
 """
@@ -107,7 +107,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.combat_profile import profile_players_of
+from bartlebot.combat.bot_combat_strategy import own_players_of
 from bartlebot.combat.strategy_store import Origin, StrategyKind
 from bartlebot.combat.strategy_summary import (
     StrategySummary,
@@ -118,13 +118,13 @@ from bartlebot.combat.strategy_summary import (
 )
 from bartlebot.combat.strategy_tags import (
     KIND_GROUPS,
-    PROFILE_SOURCE,
     STORED_GROUPS,
+    THIS_BOT_SOURCE,
     StrategyFacets,
     facets_match,
     normalize_strategy_tags,
 )
-from bartlebot.combat.strategy_workset import PROFILE_KINDS, Conflict, SharedUse, StrategyWorkingSet
+from bartlebot.combat.strategy_workset import OWN_KINDS, Conflict, SharedUse, StrategyWorkingSet
 from bartlebot.content.share_export import ExportPlan, Sources, export_deck, export_duel, export_player
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
@@ -151,7 +151,7 @@ class DialogMode(Enum):
     """Which way in the dialog was opened by — see the module docstring for each."""
 
     LIBRARY = "library"
-    PROFILE = "profile"
+    BOT_STRATEGY = "bot_strategy"
     PICK = "pick"
 
 
@@ -167,13 +167,13 @@ KIND_LABELS = {
 def tabs_for(mode: DialogMode, kind: StrategyKind) -> tuple[StrategyKind, ...]:
     """The tabs a way in shows, in order — and no tab its row in the table doesn't list.
 
-    The library view has all three. The profile editor has Duel and Player, the two
-    kinds a profile can hold. Pick has only the kind it was asked for: a Player Strategy
+    The library view has all three. The Bot Combat Strategy editor has Duel and Player,
+    the two kinds one can hold. Pick has only the kind it was asked for: a Player Strategy
     tab while picking a duel is a place to edit things, and Pick edits nothing.
     """
     if mode is DialogMode.PICK:
         return (kind,)
-    if mode is DialogMode.PROFILE:
+    if mode is DialogMode.BOT_STRATEGY:
         return (StrategyKind.DUEL, StrategyKind.PLAYER)
     return tuple(KIND_LABELS)
 
@@ -196,16 +196,19 @@ _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 _HEADING_ROLE = Qt.ItemDataRole.UserRole + 2
 
 #: The section headers. Favorites and the library's are shown only once there is more
-#: than one section; the profile's is its full name.
+#: than one section; the This bot section's is the Bot Combat Strategy's name.
 FAVORITES_HEADING = "★ Favorites"
 LIBRARY_HEADING = "Library"
 
-#: The one muted line an empty profile section shows (#118).
-PROFILE_EMPTY_NOTE = "Strategies made here belong to this profile. Use Add to library to share one."
-#: What the profile section says for a loaded bot that has no combat profile yet.
-NO_PROFILE_NOTE = "This bot has no combat profile yet."
-CREATE_PROFILE_TEXT = "Create one"
-#: The About pane's verb for a profile entry.
+#: The one muted line an empty This bot section shows (#118).
+BOT_STRATEGY_EMPTY_NOTE = "Strategies made here belong to this Bot Combat Strategy. Use Add to library to share one."
+#: What the This bot section says for a loaded bot that has no Bot Combat Strategy yet.
+NO_BOT_STRATEGY_NOTE = "This bot has no Bot Combat Strategy yet."
+CREATE_BOT_STRATEGY_TEXT = "Create one"
+#: The section key and heading fallback of the bot's own entries.
+THIS_BOT_SECTION = "this_bot"
+_THIS_BOT_HEADING = "Bot Combat Strategy"
+#: The About pane's verb for an entry of the bot's own.
 ADD_TO_LIBRARY_TEXT = "Add to library"
 
 #: Origin.SHIPPED_OVERRIDE means the shipped file reappears underneath, so the
@@ -224,8 +227,8 @@ OFFICIAL_UPDATED_NOTE = (
     "The Official version has changed since you made your copy. "
     "Revert to default to use the new one; your changes are discarded."
 )
-#: Why New and Duplicate are grayed out in the profile editor before a profile exists.
-_NO_PROFILE_TIP = "Create a combat profile for this bot first"
+#: Why New and Duplicate are grayed out in the Bot Combat Strategy editor before one exists.
+_NO_BOT_STRATEGY_TIP = "Create a Bot Combat Strategy for this bot first"
 #: What an entry from a file in a newer format says, and why it can't be edited or deleted.
 NEWER_FORMAT_NOTE = "Saved by a newer version of BartleBot or BartleBuddy. Update BartleBot to edit it."
 
@@ -254,8 +257,8 @@ def summary_haystack(summary: StrategySummary) -> str:
     is only cheap relative to the summary it comes from — producing that summary
     parses every DSL the entry references.
     """
-    if summary.profile_name is not None:
-        source = f"{PROFILE_SOURCE} {summary.profile_name}"
+    if summary.bot_strategy_name is not None:
+        source = f"{THIS_BOT_SOURCE} {summary.bot_strategy_name}"
     else:
         source = SOURCE_LABELS[summary.source] if summary.source is not None else ""
     tags = " ".join(summary.tags)
@@ -265,8 +268,8 @@ def summary_haystack(summary: StrategySummary) -> str:
 def summary_facets(summary: StrategySummary) -> StrategyFacets:
     """What the facet filter asks of an entry: its stored tags plus its derived source."""
     tags = set(summary.tags)
-    if summary.profile_name is not None:
-        tags.add(PROFILE_SOURCE)
+    if summary.bot_strategy_name is not None:
+        tags.add(THIS_BOT_SOURCE)
     elif summary.source is not None:
         tags.add(SOURCE_LABELS[summary.source])
     return StrategyFacets(tags=frozenset(tags), slot_schools=summary.slot_schools, player_range=summary.player_range)
@@ -298,14 +301,12 @@ def move_confirmation(entry_name: str, moving: list[str]) -> str:
     """What Add to library says before moving a duel that takes player strategies with it.
 
     Numerals throughout, never "2" beside "three" (#118): *moving* are the names of the
-    profile's player strategies the duel uses.
+    bot's own player strategies the duel uses.
     """
     count = len(moving)
     noun = "player strategy" if count == 1 else "player strategies"
     names = name_list([f"'{n}'" for n in moving], limit=len(moving))
-    return (
-        f"'{entry_name}' uses {count} {noun} from this profile: {names}. All {count + 1} will be moved to the library."
-    )
+    return f"'{entry_name}' uses {count} {noun} from this bot: {names}. All {count + 1} will be moved to the library."
 
 
 def shared_edit_message(uses: list[SharedUse], *, other: bool) -> str:
@@ -329,7 +330,7 @@ class AboutSection(QWidget):
     The two muted lines under the fields are things the card list has no room for and the
     old Strategy Library never said at all: what breaks if this goes, and where the entry
     lives — whether "delete" here means delete or means revert, or that it belongs to one
-    combat profile, with **Add to library** beside that line (#118).
+    Bot Combat Strategy, with **Add to library** beside that line (#118).
 
     *tag_groups* are the stored tag groups this kind is tagged with — Role, on Player
     Strategies and Deck Presets — one picker row each (#125). Duels pass none.
@@ -390,10 +391,10 @@ class AboutSection(QWidget):
         self._origin_lbl.setWordWrap(True)
         apply_muted_color(self._origin_lbl)
         origin_row.addWidget(self._origin_lbl, 1)
-        # Beside the line that says the entry lives in one profile, because that is the
-        # sentence it answers.
+        # Beside the line that says the entry belongs to one Bot Combat Strategy, because
+        # that is the sentence it answers.
         self._add_btn = ActionButton("upload", ADD_TO_LIBRARY_TEXT, style=ActionStyle.SECONDARY, fill=False)
-        self._add_btn.setToolTip("Move this into the library, where every bot and profile can use it")
+        self._add_btn.setToolTip("Move this into the library, where every bot can use it")
         self._add_btn.clicked.connect(self.add_to_library_requested)
         self._add_btn.setVisible(False)
         origin_row.addWidget(self._add_btn, 0, Qt.AlignmentFlag.AlignTop)
@@ -481,8 +482,8 @@ class _KindPage(QWidget):
     detail pane and how an entry is summarized, and both are parameters.
 
     *editable* is False in Pick: the button row is gone and the detail pane is
-    read-only (#123). *show_profile* draws the active profile's own entries in a
-    section at the top, and makes New and Duplicate create there (#118).
+    read-only (#123). *show_own* draws the active Bot Combat Strategy's own entries in
+    a section at the top, and makes New and Duplicate create there (#118).
     """
 
     #: The list's structure changed (created, duplicated, removed, moved) — as opposed
@@ -491,8 +492,8 @@ class _KindPage(QWidget):
     promote_requested = pyqtSignal(object)
     #: The Duel tab's pencil asked to edit a Player Strategy, by id.
     open_pcs_requested = pyqtSignal(str)
-    #: The profile section's "Create one", on a bot with no combat profile yet.
-    create_profile_requested = pyqtSignal()
+    #: The This bot section's "Create one", on a bot with no Bot Combat Strategy yet.
+    create_bot_strategy_requested = pyqtSignal()
 
     def __init__(
         self,
@@ -501,13 +502,13 @@ class _KindPage(QWidget):
         parent=None,
         *,
         editable: bool = True,
-        show_profile: bool = False,
+        show_own: bool = False,
     ):
         super().__init__(parent)
         self._kind = kind
         self._ws = ws
         self._editable = editable
-        self._show_profile = show_profile and kind in PROFILE_KINDS
+        self._show_own = show_own and kind in OWN_KINDS
         self._selected_id: str | None = None
         self._card_map: list[tuple[QListWidgetItem, StrategyCard]] = []
         #: Per entry id: what the facet filter asks of it, and which section it is in.
@@ -516,7 +517,7 @@ class _KindPage(QWidget):
         self._favorite_ids: set[str] = set()
         #: Section header rows, top to bottom, each with the section it heads.
         self._headers: list[tuple[QListWidgetItem, str]] = []
-        #: The profile section's note row — empty section, or no profile yet — if drawn.
+        #: The This bot section's note row — empty section, or none yet — if drawn.
         self._note_item: QListWidgetItem | None = None
         self._note_widget: QWidget | None = None
 
@@ -530,7 +531,7 @@ class _KindPage(QWidget):
 
         # Across the whole tab, not over the card list alone: four pickers and a search
         # box need more width than the list has, and the chips need a row of their own.
-        self._filter_bar = StrategyFilterBar(kind, self, profile=self._show_profile)
+        self._filter_bar = StrategyFilterBar(kind, self, this_bot=self._show_own)
         # Filtering hides rows; it never rebuilds them. See _apply_filter.
         self._filter_bar.changed.connect(self._apply_filter)
         layout.addWidget(self._filter_bar)
@@ -570,7 +571,7 @@ class _KindPage(QWidget):
         self._list.viewport().installEventFilter(self)
         box.addWidget(self._list, 1)
 
-        # The same three buttons in the library view and the profile editor; what differs
+        # The same three buttons in the library view and the Bot Combat Strategy editor; what differs
         # is where New and Duplicate put their entry. None at all in Pick (#123).
         self._button_row = QWidget(panel)
         buttons = QHBoxLayout(self._button_row)
@@ -650,9 +651,9 @@ class _KindPage(QWidget):
         return self._editable
 
     @property
-    def creates_in_profile(self) -> bool:
-        """Whether New and Duplicate put their entry in the profile rather than the library."""
-        return self._show_profile
+    def creates_in_bot_strategy(self) -> bool:
+        """Whether New and Duplicate put their entry in the Bot Combat Strategy rather than the library."""
+        return self._show_own
 
     @property
     def new_button(self) -> ActionButton:
@@ -678,16 +679,16 @@ class _KindPage(QWidget):
 
     def summarize(self, item) -> StrategySummary:
         if self._kind is StrategyKind.DUEL:
-            # Resolved the way a run resolves them, profile first — so a profile duel
-            # names its own player strategies, and a library duel a profile one only when
+            # Resolved the way a run resolves them, the bot's own first — so one of its
+            # duels names its own player strategies, and a library duel one only when
             # a hand-edited file broke the rule, which it then shows rather than hides.
             summary = summarize_duel(item, self._ws.lookup().players, name=item.name)
         elif self._kind is StrategyKind.PLAYER:
             summary = summarize_player(item)
         else:
             summary = summarize_deck(item)
-        if self._ws.is_profile_entry(self._kind, item.id):
-            return replace(summary, profile_name=self._ws.profile.name)
+        if self._ws.is_own_entry(self._kind, item.id):
+            return replace(summary, bot_strategy_name=self._ws.bot_strategy.name)
         return replace(
             summary,
             source=self._ws.status(self._kind, item.id),
@@ -708,7 +709,7 @@ class _KindPage(QWidget):
         return [i.data(Qt.ItemDataRole.UserRole) for i, _c in self._card_map if not i.isHidden()]
 
     def ids_in_section(self, section: str) -> list[str]:
-        """The ids drawn in *section* ("profile", "favorites" or "library"), top to bottom."""
+        """The ids drawn in *section* (``THIS_BOT_SECTION``, "favorites" or "library"), top to bottom."""
         return [
             i.data(Qt.ItemDataRole.UserRole)
             for i, _c in self._card_map
@@ -716,7 +717,7 @@ class _KindPage(QWidget):
         ]
 
     def note_text(self) -> str:
-        """What the profile section's note row says, or empty when it has none."""
+        """What the This bot section's note row says, or empty when it has none."""
         if self._note_widget is None or self._note_item is None or self._note_item.isHidden():
             return ""
         label = self._note_widget.findChild(QLabel)
@@ -734,15 +735,15 @@ class _KindPage(QWidget):
     def _sections(self) -> list[tuple[str, str, list]]:
         """``(key, heading, entries)`` per section, top to bottom; a heading may be empty.
 
-        The profile first, then ★ Favorites, then the library (#118). Favorites are
-        library-only, and a library entry the profile shadows is not drawn twice: the
-        profile's copy is the one every lookup finds.
+        This bot first, then ★ Favorites, then the library (#118). Favorites are
+        library-only, and a library entry the bot's own shadows is not drawn twice: its
+        own copy is the one every lookup finds.
         """
         sections: list[tuple[str, str, list]] = []
-        own = self._ws.profile_items(self._kind) if self._show_profile else []
-        if self._show_profile:
-            heading = self._ws.profile.name if self._ws.profile is not None else "Combat profile"
-            sections.append(("profile", heading, own))
+        own = self._ws.own_items(self._kind) if self._show_own else []
+        if self._show_own:
+            heading = self._ws.bot_strategy.name if self._ws.bot_strategy is not None else _THIS_BOT_HEADING
+            sections.append((THIS_BOT_SECTION, heading, own))
         shadowed = {e.id for e in own}
         library = [e for e in self._ws.items(self._kind) if e.id not in shadowed]
         saved = set(SettingsManager.instance().favorite_strategies(self._kind.value))
@@ -753,7 +754,7 @@ class _KindPage(QWidget):
             sections.append(("favorites", FAVORITES_HEADING, favorites))
             sections.append(("library", others_heading(self._kind), others))
         else:
-            sections.append(("library", LIBRARY_HEADING if self._show_profile else "", others))
+            sections.append(("library", LIBRARY_HEADING if self._show_own else "", others))
         return sections
 
     def rebuild_list(self) -> None:
@@ -779,11 +780,11 @@ class _KindPage(QWidget):
             for key, heading, section in self._sections():
                 if heading:
                     self._add_header(heading, key)
-                if key == "profile" and not section:
-                    self._add_profile_note()
+                if key == THIS_BOT_SECTION and not section:
+                    self._add_bot_strategy_note()
                 for entry in section:
                     summary = self.summarize(entry)
-                    card = self._make_card(entry.id, summary, favorable=key != "profile")
+                    card = self._make_card(entry.id, summary, favorable=key != THIS_BOT_SECTION)
                     item = QListWidgetItem()
                     item.setData(Qt.ItemDataRole.UserRole, entry.id)
                     item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
@@ -838,8 +839,8 @@ class _KindPage(QWidget):
             for header, key in self._headers:
                 # A section the filter has emptied loses its header too, or it would sit
                 # over nothing — or, worse, appear to head the section below it. The
-                # profile's stays when it is empty to begin with: its note row is under it.
-                keep_header = key in shown_sections or (key == "profile" and self._note_item is not None)
+                # This bot's stays when it is empty to begin with: its note row is under it.
+                keep_header = key in shown_sections or (key == THIS_BOT_SECTION and self._note_item is not None)
                 header.setHidden(not keep_header)
             current = self._current_item()
             if current is not None and self._list.currentItem() is not current:
@@ -871,25 +872,25 @@ class _KindPage(QWidget):
         self._list.setItemWidget(item, heading)
         self._headers.append((item, key))
 
-    def _add_profile_note(self) -> None:
-        """The profile section's one row when it holds nothing: what it is for, or an offer.
+    def _add_bot_strategy_note(self) -> None:
+        """The This bot section's one row when it holds nothing: what it is for, or an offer.
 
-        With a profile, one muted line saying what the section is for. With none yet, the
-        same place says so, and — in the profile editor — offers to make one. Pick shows
+        With a Bot Combat Strategy, one muted line saying what the section is for. With
+        none yet, the same place says so, and — in its editor — offers to make one. Pick shows
         the sentence without the button: it edits nothing.
         """
         row = QWidget()
         box = QHBoxLayout(row)
         box.setContentsMargins(4, 2, 4, 2)
         box.setSpacing(6)
-        no_profile = self._ws.profile is None
-        label = QLabel(NO_PROFILE_NOTE if no_profile else PROFILE_EMPTY_NOTE, row)
+        no_bot_strategy = self._ws.bot_strategy is None
+        label = QLabel(NO_BOT_STRATEGY_NOTE if no_bot_strategy else BOT_STRATEGY_EMPTY_NOTE, row)
         label.setWordWrap(True)
         apply_muted_color(label)
         box.addWidget(label, 1)
-        if no_profile and self._editable:
-            button = ActionButton("plus", CREATE_PROFILE_TEXT, style=ActionStyle.SECONDARY, fill=False)
-            button.clicked.connect(self.create_profile_requested)
+        if no_bot_strategy and self._editable:
+            button = ActionButton("plus", CREATE_BOT_STRATEGY_TEXT, style=ActionStyle.SECONDARY, fill=False)
+            button.clicked.connect(self.create_bot_strategy_requested)
             box.addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
         item = QListWidgetItem()
         item.setFlags(Qt.ItemFlag.NoItemFlags)
@@ -912,13 +913,13 @@ class _KindPage(QWidget):
         anyway, and asking for more is what gives the list a horizontal scrollbar.
 
         And never more than the column, even when the minimum is wider. A list's rows
-        are all as wide as its widest, so one card that could not fit -- a long profile
-        name in its pill did it -- widened every row past the edge and clipped the stars
+        are all as wide as its widest, so one card that could not fit -- a long Bot Combat
+        Strategy name in its pill did it -- widened every row past the edge and clipped the stars
         off cards that fit perfectly well. Capped, a card that still cannot fit is
         clipped on its own. The card elides its text so that should not happen; this is
         what keeps it one card's problem if it does.
 
-        The profile section's note row is fitted the same way: its sentence wraps too,
+        The This bot section's note row is fitted the same way: its sentence wraps too,
         and a row left at the height it had when the column was wider cuts it off.
         """
         width = self._list.viewport().width() - 2 * (self._list.spacing() + _ROW_PAD)
@@ -945,7 +946,7 @@ class _KindPage(QWidget):
         return super().eventFilter(obj, event)
 
     def _make_card(self, uuid: str, summary: StrategySummary, *, favorable: bool = True) -> StrategyCard:
-        # No star on a profile entry: favorites are a preference about the library.
+        # No star on an entry of the bot's own: favorites are a preference about the library.
         card = StrategyCard(summary, favorite=(uuid in self._favorite_ids) if favorable else None)
         card.favorite_toggled.connect(lambda wanted, uuid=uuid: self.set_favorite(uuid, wanted))
         return card
@@ -1008,7 +1009,7 @@ class _KindPage(QWidget):
             if item.data(Qt.ItemDataRole.UserRole) != self._selected_id:
                 continue
             summary = self.summarize(entry)
-            card = self._make_card(entry.id, summary, favorable=self._section_of.get(entry.id) != "profile")
+            card = self._make_card(entry.id, summary, favorable=self._section_of.get(entry.id) != THIS_BOT_SECTION)
             card.set_selected(True)
             self._fit_row(item, card)
             item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
@@ -1036,7 +1037,7 @@ class _KindPage(QWidget):
             self._about.load(entry)
             if self._kind is StrategyKind.DUEL:
                 # What an assignment may link depends on where the duel lives: a library
-                # duel may not use a profile's own player strategies (#118).
+                # duel may not use a bot's own player strategies (#118).
                 self._editor.load(entry, self._ws.players_for_duel(entry.id))
             else:
                 self._editor.load(entry)
@@ -1054,12 +1055,12 @@ class _KindPage(QWidget):
 
     def _update_create_buttons(self) -> None:
         """New needs somewhere to put its entry; Duplicate also needs something to copy."""
-        room = not self._show_profile or self._ws.profile is not None
+        room = not self._show_own or self._ws.bot_strategy is not None
         self._new_btn.setEnabled(room)
         # Not one saved by a newer version: the copy would be in that format too, and refused at Save.
         copyable = self._ws.get(self._kind, self._selected_id) is not None
         self._dup_btn.setEnabled(room and copyable and not self._ws.is_read_only(self._kind, self._selected_id))
-        tip = "" if room else _NO_PROFILE_TIP
+        tip = "" if room else _NO_BOT_STRATEGY_TIP
         self._new_btn.setToolTip(tip)
         self._dup_btn.setToolTip(tip)
 
@@ -1068,12 +1069,11 @@ class _KindPage(QWidget):
         if entry is None:
             return
         usage = self._ws.usage(entry.id).phrase()
-        if self._ws.is_profile_entry(self._kind, entry.id):
-            # Never built-in and never reverted: a profile entry's Delete is a plain one.
+        if self._ws.is_own_entry(self._kind, entry.id):
+            # Never built-in and never reverted: an own entry's Delete is a plain one. The
+            # section heading names the Bot Combat Strategy, so the name alone is enough.
             self._set_delete_button(revert=False, built_in=False)
-            self._about.set_notes(
-                usage, f"In profile '{self._ws.profile.name}' only", can_add_to_library=self._editable
-            )
+            self._about.set_notes(usage, f"In '{self._ws.bot_strategy.name}' only", can_add_to_library=self._editable)
             return
         # The working set's status, not the file's origin: an edit made a moment ago
         # already makes a built-in revertible, before anything is written (#124).
@@ -1112,7 +1112,7 @@ class _KindPage(QWidget):
     # -- create / duplicate / remove / move -----------------------------
 
     def _on_new(self) -> None:
-        made = self._ws.create(self._kind, NEW_NAMES[self._kind], in_profile=self.creates_in_profile)
+        made = self._ws.create(self._kind, NEW_NAMES[self._kind], in_bot_strategy=self.creates_in_bot_strategy)
         self._selected_id = made.id
         self.rebuild_list()
         self.select(made.id)
@@ -1148,9 +1148,9 @@ class _KindPage(QWidget):
         root, user_root = self._ws.roots
         sources = Sources(strategy_root=root, strategy_user_root=user_root)
         if self._kind is StrategyKind.DUEL:
-            # One of the profile's own finds its links there first, as a run does.
-            profile = self._ws.profile if self._ws.is_profile_entry(self._kind, uuid) else None
-            return export_duel(entry, sources, profile=profile)
+            # One of the bot's own finds its links there first, as a run does.
+            owner = self._ws.bot_strategy if self._ws.is_own_entry(self._kind, uuid) else None
+            return export_duel(entry, sources, bot_strategy=owner)
         if self._kind is StrategyKind.PLAYER:
             return export_player(entry, sources)
         return export_deck(entry, sources)
@@ -1164,9 +1164,9 @@ class _KindPage(QWidget):
     def _on_duplicate(self) -> None:
         if self._selected_id is None:
             return
-        # In the profile editor a copy always lands in the profile, a library entry's
+        # In the Bot Combat Strategy editor a copy always lands in it, a library entry's
         # included: that is how one fight gets something slightly different (#118).
-        copy = self._ws.duplicate(self._kind, self._selected_id, in_profile=self.creates_in_profile)
+        copy = self._ws.duplicate(self._kind, self._selected_id, in_bot_strategy=self.creates_in_bot_strategy)
         if copy is None:
             return
         self._selected_id = copy.id
@@ -1214,16 +1214,16 @@ class _KindPage(QWidget):
         self.structure_changed.emit()
 
     def _on_add_to_library(self) -> None:
-        """Move the selected profile entry into the library, keeping its id (#118).
+        """Move the selected entry of the bot's own into the library, keeping its id (#118).
 
-        A duel takes the profile's own player strategies it uses with it — a library duel
-        may not link profile content — and says so first, naming them. It is an edit like
+        A duel takes the bot's own player strategies it uses with it — a library duel
+        may not link a bot's own content — and says so first, naming them. It is an edit like
         any other: it reaches disk at Save, and Cancel undoes it.
         """
         entry = self._ws.get(self._kind, self._selected_id)
-        if entry is None or not self._ws.is_profile_entry(self._kind, entry.id):
+        if entry is None or not self._ws.is_own_entry(self._kind, entry.id):
             return
-        moving = profile_players_of(entry, self._ws.profile) if self._kind is StrategyKind.DUEL else []
+        moving = own_players_of(entry, self._ws.bot_strategy) if self._kind is StrategyKind.DUEL else []
         if moving:
             answer = QMessageBox.question(
                 self,
@@ -1280,8 +1280,8 @@ class _KindPage(QWidget):
 class CombatStrategyDialog(QDialog):
     """The combat edit surface. See the module docstring for the three modes.
 
-    *bot_name* turns a bot id into its name for the Save confirmation, so another
-    profile reads as ``'Solo' (Atlantea)``; without it the profile's name stands alone.
+    *bot_name* turns a bot id into its name for the Save confirmation, so another Bot
+    Combat Strategy reads as ``'Solo' (Atlantea)``; without it its name stands alone.
     """
 
     def __init__(
@@ -1321,17 +1321,17 @@ class CombatStrategyDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
 
-        # The profile section is for the ways in from the Combat tab, and only when a bot
+        # The This bot section is for the ways in from the Combat tab, and only when a bot
         # is loaded. The library view never shows it (#118).
-        show_profile = mode is not DialogMode.LIBRARY and ws.bot_id is not None
+        show_own = mode is not DialogMode.LIBRARY and ws.bot_id is not None
         self._tabs = QTabWidget()
         self._pages: dict[StrategyKind, _KindPage] = {}
         for k in tabs_for(mode, kind):
-            page = _KindPage(k, ws, editable=mode is not DialogMode.PICK, show_profile=show_profile)
+            page = _KindPage(k, ws, editable=mode is not DialogMode.PICK, show_own=show_own)
             page.structure_changed.connect(self._on_structure_changed)
             page.promote_requested.connect(self._on_promote_requested)
             page.open_pcs_requested.connect(self._on_open_pcs_requested)
-            page.create_profile_requested.connect(self._on_create_profile)
+            page.create_bot_strategy_requested.connect(self._on_create_bot_strategy)
             self._pages[k] = page
             self._tabs.addTab(page, KIND_LABELS[k])
         # The Duel tab's pencil opens a Player Strategy on the Player tab; without one
@@ -1416,7 +1416,7 @@ class CombatStrategyDialog(QDialog):
                     f"Choose a strategy on the {KIND_LABELS[self._pick_kind]} tab, or cancel.",
                 )
                 return
-        elif self._mode is DialogMode.PROFILE and self._pick_kind in self._pages:
+        elif self._mode is DialogMode.BOT_STRATEGY and self._pick_kind in self._pages:
             # The kind the caller asked about, whichever tab is showing: the Combat tab
             # links the card that opened this to the duel selected here, if it is new.
             self._selected_id = self._pages[self._pick_kind].selected_id()
@@ -1508,7 +1508,7 @@ class CombatStrategyDialog(QDialog):
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Question)
         box.setWindowTitle("Save changes to shared strategies?")
-        other = self._mode is not DialogMode.LIBRARY and self._ws.profile is not None
+        other = self._mode is not DialogMode.LIBRARY and self._ws.bot_strategy is not None
         box.setText(shared_edit_message(uses, other=other))
         save = box.addButton("Save anyway", QMessageBox.ButtonRole.AcceptRole)
         back = box.addButton("Go back", QMessageBox.ButtonRole.RejectRole)
@@ -1524,7 +1524,7 @@ class CombatStrategyDialog(QDialog):
 
     def selected_was_created(self) -> bool:
         """Whether the returned selection was made on this visit — by New, Duplicate or a
-        promotion. What lets the Combat tab link the card that opened the profile editor to
+        promotion. What lets the Combat tab link the card that opened the Bot Combat Strategy editor to
         a strategy made for it, and leave the card alone otherwise (#118)."""
         return self._selected_was_created
 
@@ -1540,10 +1540,10 @@ class CombatStrategyDialog(QDialog):
 
     def _on_structure_changed(self) -> None:
         # Another tab's list can change too: moving a duel into the library takes its
-        # player strategies with it, and a new profile gives every tab a section to fill.
+        # player strategies with it, and a new Bot Combat Strategy gives every tab a section to fill.
         sender = self.sender()
         for page in self._pages.values():
-            if page is not sender and page.kind() in PROFILE_KINDS:
+            if page is not sender and page.kind() in OWN_KINDS:
                 page.rebuild_list()
         if StrategyKind.DUEL in self._pages:
             self._pages[StrategyKind.DUEL].refresh_pcs_list()
@@ -1559,7 +1559,7 @@ class CombatStrategyDialog(QDialog):
     def _on_promote_requested(self, row) -> None:
         """Turn one assignment row's custom DSL into a named Player Strategy.
 
-        It lands where the duel lives: in the profile for a profile duel, in the library
+        It lands where the duel lives: among the bot's own for one of its own, in the library
         for a library duel, which may only link library entries (#118).
         """
         assignment = row.assignment()
@@ -1567,12 +1567,12 @@ class CombatStrategyDialog(QDialog):
         if not dsl:
             return
         duel = self._pages.get(StrategyKind.DUEL)
-        in_profile = duel is not None and self._ws.is_profile_entry(StrategyKind.DUEL, duel.selected_id())
+        in_bot_strategy = duel is not None and self._ws.is_own_entry(StrategyKind.DUEL, duel.selected_id())
         suggested = self._ws.unique_name(StrategyKind.PLAYER, "New Player Strategy")
         name, ok = QInputDialog.getText(self, "Save as Player Strategy", "Name:", text=suggested)
         if not ok or not name.strip():
             return
-        pcs = self._ws.create(StrategyKind.PLAYER, name.strip(), in_profile=in_profile)
+        pcs = self._ws.create(StrategyKind.PLAYER, name.strip(), in_bot_strategy=in_bot_strategy)
         pcs.dsl = assignment.dsl
         pcs.schools = list(assignment.schools)
         if StrategyKind.PLAYER in self._pages:
@@ -1601,15 +1601,15 @@ class CombatStrategyDialog(QDialog):
         page.select(pcs_id)
         page.focus_editor()
 
-    def _on_create_profile(self) -> None:
-        """Make a combat profile for a bot that has none — inside the working set, so
+    def _on_create_bot_strategy(self) -> None:
+        """Make a Bot Combat Strategy for a bot that has none — inside the working set, so
         Cancel discards it like any other edit."""
-        if self._ws.bot_id is None or self._ws.profile is not None:
+        if self._ws.bot_id is None or self._ws.bot_strategy is not None:
             return
-        name, ok = QInputDialog.getText(self, "New combat profile", "Name:", text="Default")
+        name, ok = QInputDialog.getText(self, "New Bot Combat Strategy", "Name:", text="Default")
         if not ok or not name.strip():
             return
-        self._ws.create_profile(name.strip())
+        self._ws.create_bot_strategy(name.strip())
         for page in self._pages.values():
             page.rebuild_list()
 
@@ -1623,7 +1623,7 @@ class CombatStrategyDialog(QDialog):
         user cannot see from the cards.
         """
         if self._ws.is_dirty:
-            # A profile made here with nothing in it yet is still one change to lose.
+            # A Bot Combat Strategy made here with nothing in it yet is still one change to lose.
             total = self._ws.changes().total or 1
             answer = QMessageBox.question(
                 self,

@@ -1,16 +1,16 @@
-"""Pydantic models for a combat profile: BartleBot's own level of the combat strategy system.
+"""Pydantic models for a Bot Combat Strategy: BartleBot's own level of the combat strategy system.
 
-BotCombatStrategy  — one user's combat profile for a bot: FSM states to strategies,
+BotCombatStrategy  — one user's combat setup for a bot: FSM states to strategies,
                      deck data, and duel/player strategies of its own
 StateAssignment    — a group of fights and the duel strategy they fight with
 FightRef           — one fight an assignment covers
 
-The player strategies, duel strategies and decks a profile embeds belong to the library
+The player strategies, duel strategies and decks one embeds belong to the library
 shared with every product by this vendor, so they live in
 :mod:`bartlebot.shared.strategy_models`; import them from there. Only the Bot Combat
 Strategy is BartleBot's own, since only BartleBot has bots.
 
-Each profile is stored as an individual JSON file identified by UUID.
+Each is stored as an individual JSON file identified by UUID.
 """
 
 from __future__ import annotations
@@ -65,14 +65,14 @@ def _fights_from_legacy(data: object) -> object:
 class StateAssignment(BaseModel):
     """A group of fights and the DuelCombatStrategy they fight with.
 
-    Unlinked means the fights fall back to the profile's default. There is no inline
-    config: a one-off strategy lives in the profile's own ``duel_strategies`` and is
+    Unlinked means the fights fall back to the Bot Combat Strategy's default. There is no
+    inline config: a one-off strategy lives in its own ``duel_strategies`` and is
     linked by id like any other (#118). A file from before that still loads, because
     the models do not forbid extra fields, and its stray ``duel_config`` is ignored.
     """
 
     fights: list[FightRef] = Field(default_factory=list)
-    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy, in the profile or the library
+    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy, its own or the library's
 
     _legacy_state_ids = model_validator(mode="before")(_fights_from_legacy)
 
@@ -105,8 +105,9 @@ class BotCombatStrategy(BaseModel):
     default_strategy_id: str | None = None
     state_assignments: list[StateAssignment] = Field(default_factory=list)
     description: str = ""
-    # Strategies that belong to this profile alone, rather than to the library (#118).
-    # Linked by id like any library entry, and found first — see bartlebot.combat.combat_profile.
+    # Strategies that belong to this Bot Combat Strategy alone, rather than to the library
+    # (#118). Linked by id like any library entry, and found first — see
+    # bartlebot.combat.bot_combat_strategy.
     duel_strategies: list[DuelCombatStrategy] = Field(default_factory=list)
     player_strategies: list[PlayerCombatStrategy] = Field(default_factory=list)
     # Content hashes of what earlier saves replaced, newest first (#169). None ship, so

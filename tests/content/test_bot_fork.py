@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, ForkedFrom, StateModel, TemplateRef
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import list_bot_strategies, load_bot_strategy, save_bot_strategy
 from bartlebot.content import bot_fork
 from bartlebot.options import option_values
@@ -99,7 +99,7 @@ def test_a_second_copy_does_not_overwrite_the_first(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def _profile(name: str = "Solo") -> BotCombatStrategy:
+def _bcs(name: str = "Solo") -> BotCombatStrategy:
     player = PlayerCombatStrategy(name="Hitter")
     duel = DuelCombatStrategy(name="Boss fight")
     return BotCombatStrategy(
@@ -129,7 +129,7 @@ def test_the_copy_takes_every_option_value_and_quicksell_consent():
 
 def test_the_copy_takes_every_bot_combat_strategy_and_the_active_pick():
     settings = SettingsManager.instance()
-    active, other = _profile("Solo"), _profile("Duo")
+    active, other = _bcs("Solo"), _bcs("Duo")
     for bcs in (active, other):
         save_bot_strategy(bcs)
     settings.set_active_strategy("official", active.id)
@@ -142,7 +142,7 @@ def test_the_copy_takes_every_bot_combat_strategy_and_the_active_pick():
     assert settings.get_active_strategy("fork") == copies["Solo"].id
     solo = copies["Solo"]
     assert solo.id != active.id and solo.duel_strategies[0].id != active.duel_strategies[0].id, (
-        "fresh ids for the copy's own strategies, as duplicate_profile gives them"
+        "fresh ids for the copy's own strategies, as duplicate_bot_strategy gives them"
     )
     assert solo.state_assignments[0].duel_combat_strategy_id == solo.duel_strategies[0].id
     assert solo.default_strategy_id == solo.duel_strategies[0].id
@@ -165,7 +165,7 @@ def test_a_fork_runs_with_the_same_option_values_and_combat_as_the_bot_it_came_f
     settings = SettingsManager.instance()
     official = _official(options=[BotOptionModel(name="laps", type="int", default=1)])
     settings.set_option_override(official.id, "laps", 7)
-    bcs = _profile()
+    bcs = _bcs()
     save_bot_strategy(bcs)
     settings.set_active_strategy(official.id, bcs.id)
 

@@ -10,7 +10,7 @@ from bartlebot.paths import project_root
 sys.path.insert(0, str(project_root()))
 
 from bartlebot.bot.schema import BotConfig  # noqa: E402
-from bartlebot.combat.profile_models import BotCombatStrategy  # noqa: E402
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy  # noqa: E402
 from tools import renumber_states  # noqa: E402
 from tools.renumber_states import renumber, renumber_map  # noqa: E402
 

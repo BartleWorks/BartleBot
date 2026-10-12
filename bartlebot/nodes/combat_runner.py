@@ -55,11 +55,11 @@ def resolve_combat(
     Resolution path:
       1. Get bot_id from machine.bot_config.id.
       2. Look up active BotCombatStrategy UUID in SettingsManager.
-      3. Load BotCombatStrategy (the active combat profile); if use_default_strategy=True use the BCS default,
+      3. Load the active BotCombatStrategy; if use_default_strategy=True use the BCS default,
          otherwise find the StateAssignment whose fight is machine.state -- by the
          enemy the node names first, then by state id, see ``bartlebot.combat.fight_keys`` --
          falling back to the BCS default when no assignment covers the state.
-      4. Find the DuelCombatStrategy that one links -- in the profile first, then
+      4. Find the DuelCombatStrategy that one links -- among its own first, then
          the library; an unset one means the built-in default.
       5. For each 1-based player slot (1..num_clients) find the PlayerAssignment
          → its inline DSL, or the linked PlayerCombatStrategy preset's DSL if
@@ -71,7 +71,7 @@ def resolve_combat(
     missing, no duel strategy is assigned, or an error occurs.
     """
     # Lazy imports to avoid circular imports and keep startup fast.
-    from bartlebot.combat.combat_profile import StrategyLookup  # noqa: PLC0415
+    from bartlebot.combat.bot_combat_strategy import StrategyLookup  # noqa: PLC0415
     from bartlebot.combat.fight_keys import bind  # noqa: PLC0415
     from bartlebot.combat.strategy_store import load_bot_strategy  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
@@ -114,7 +114,7 @@ def resolve_combat(
     if not dcs_id:
         logger.debug("resolve_combat: no duel strategy assigned (%s) — using built-in default", assignment_source)
         return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
-    # The profile's own strategies first, then the library's -- see combat_profile.
+    # The bot's own strategies first, then the library's -- see bot_combat_strategy.
     lookup = StrategyLookup(bcs)
     dcs = lookup.duel(dcs_id)
     if dcs is None:

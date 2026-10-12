@@ -42,7 +42,7 @@ from pathlib import Path
 
 from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
 from bartlebot.combat import strategy_store
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import declared_id
@@ -291,7 +291,7 @@ def _collect_bot_strategy(
             collector.note_missing(DUEL_STRATEGY, duel_id)
             continue
         collect_duel(collector, *found, _library_player(sources), inside=own_players)
-    # The profile's own duels ride inside it, but the library player strategies they link do not.
+    # The Bot Combat Strategy's own duels ride inside it, but the library player strategies they link do not.
     for duel in bcs.duel_strategies:
         for pcs_id in dict.fromkeys(duel.linked_pcs_ids()):
             if pcs_id in own_players:
@@ -352,13 +352,15 @@ def export_subgraph(defn: SubgraphDefinition, sources: Sources) -> ExportPlan:
     return _plan(collector, SUBGRAPH, defn.name)
 
 
-def export_duel(duel: DuelCombatStrategy, sources: Sources, *, profile: BotCombatStrategy | None = None) -> ExportPlan:
+def export_duel(
+    duel: DuelCombatStrategy, sources: Sources, *, bot_strategy: BotCombatStrategy | None = None
+) -> ExportPlan:
     """A duel strategy file: ``duel`` and the player strategies it links.
 
-    ``profile`` is the Bot Combat Strategy ``duel`` belongs to when it is one of its own:
+    ``bot_strategy`` is the Bot Combat Strategy ``duel`` belongs to when it is one of its own:
     its links are found there first, as a run finds them, and packed as Custom items.
     """
-    own = {p.id: p for p in profile.player_strategies} if profile is not None else {}
+    own = {p.id: p for p in bot_strategy.player_strategies} if bot_strategy is not None else {}
 
     def find_player(pcs_id: str):
         if pcs_id in own:

@@ -125,7 +125,7 @@ STRATEGY_VOCABULARY = TagVocabulary(
 
 #: The Source filter on the lists of bots and subgraphs (#149): Official, Official
 #: (modified), Custom. The strategy dialog's Source group with the same words and color,
-#: minus its Profile entry, which only a strategy can have. The noun is the list's.
+#: minus its This bot entry, which only a strategy can have. The noun is the list's.
 SOURCE_VOCABULARY = TagVocabulary(
     {SOURCE: tuple(SOURCE_LABELS[o] for o in LISTED_ORIGINS)},
     {SOURCE: "pill_neutral_bg"},

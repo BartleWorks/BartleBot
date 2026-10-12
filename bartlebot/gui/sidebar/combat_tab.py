@@ -8,8 +8,8 @@ active, which fights it covers, per-client deck state -- and it no longer holds 
 editor. There is no disclosure arrow into a DSL box on any card here: combat editing is
 a user-owned edit that wants an explicit Save/Cancel boundary, and it lives in
 ``CombatStrategyDialog``. ``Change…`` (🔍) on a card opens that dialog in Pick mode,
-which selects and edits nothing (#123); ``Edit…`` (✏) opens it as the active combat
-profile's editor, on every card, the built-in default's included. A strategy made there
+which selects and edits nothing (#123); ``Edit…`` (✏) opens it as the active Bot
+Combat Strategy's editor, on every card, the built-in default's included. A strategy made there
 on that visit is linked to the card that opened it on Save (#118).
 
 A BANNER, THEN THE SECTIONS
@@ -65,7 +65,7 @@ strategy, applied to the one they share by default.
 
 The section ends with the same dashed ``AddCard`` the launch columns end with, and it is
 the second way in. It opens a menu of two -- choose an existing strategy, or create one
-for this profile -- and either way the flow is two chained dialogs, the strategy and
+for this bot -- and either way the flow is two chained dialogs, the strategy and
 then its fights, because a card holding a strategy and no fights forms no group, draws nothing
 on the next rebuild and is pruned by ``_prune_orphans`` on the next save; it cannot be
 left on screen to be filled in later. A single fight is still quicker through its own
@@ -98,17 +98,17 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.clients.credentials import CredentialStore
+from bartlebot.combat.bot_combat_strategy import StrategyLookup, duplicate_bot_strategy, read_bot_names
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.combat_grouping import (
     apply_membership,
     build_bindings,
     group_bindings,
     state_label,
 )
-from bartlebot.combat.combat_profile import StrategyLookup, duplicate_profile, read_bot_names
 from bartlebot.combat.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.combat.deck_io import resolve_apply_archmastery
 from bartlebot.combat.fight_keys import exposed_combat_states, heal, place
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import (
     StrategyKind,
     delete_bot_strategy,
@@ -179,7 +179,7 @@ _STRATEGIES_SECTION = "Duel Combat Strategies"
 
 #: The section's terminator, in the AddCard the launch columns end with.
 _ADD_STRATEGY = "Add another duel strategy"
-#: The add-card menu's two items. The second does not name the profile it saves into:
+#: The add-card menu's two items. The second does not name the Bot Combat Strategy it saves into:
 #: the Bot Combat Strategy banner already does, two cards up.
 _ADD_EXISTING = "Select existing duel strategy…"
 _ADD_CREATED = "Create new duel strategy…"
@@ -1097,7 +1097,7 @@ class CombatTab(QWidget):
             self._bcs.player_decks.update(decks)
         self._refresh_deck_summaries()
 
-    def refresh_duel_profiles(self) -> None:
+    def refresh_duel_strategies(self) -> None:
         """Compatibility alias — refreshes state assignments when combat tab becomes visible."""
         self._rebuild_state_assignments()
 
@@ -1119,10 +1119,10 @@ class CombatTab(QWidget):
             panel.set_libraries(lookup.duels, lookup.players)
 
     def _lookup(self) -> StrategyLookup:
-        """Every strategy in reach: the active profile's own first, then the library's.
+        """Every strategy in reach: the active Bot Combat Strategy's own first, then the library's.
 
         The one rule for resolving an id, shared with ``resolve_combat`` -- see
-        ``bartlebot.combat.combat_profile``. The cards and the fights popup both read from it,
+        ``bartlebot.combat.bot_combat_strategy``. The cards and the fights popup both read from it,
         so they cannot name a different strategy than the one the fight will run.
         """
         return StrategyLookup(self._bcs, self._all_dcs, self._all_pcs)
@@ -1346,22 +1346,22 @@ class CombatTab(QWidget):
         non-modal window editing them alongside the tab is how the two used to
         disagree about what was on disk.
 
-        The working set holds this tab's active profile, editable, so the dialog can
-        write the profile file (#118). That makes this tab's own ``self._bcs`` stale
+        The working set holds this tab's active Bot Combat Strategy, editable, so the dialog
+        can write its file (#118). That makes this tab's own ``self._bcs`` stale
         the moment an accepted dialog closes, and every caller goes on to change a
         binding and save — which would write the stale copy over the dialog's work,
         dropping a strategy made there and leaving the fight linked to nothing. So an
-        accepted dialog is followed by a reload of the profile from disk and a re-bind
+        accepted dialog is followed by a reload of the Bot Combat Strategy from disk and a re-bind
         of every fight, *before* the caller acts on the result: a caller holding a
         binding from before the dialog must look it up again. Cancel writes nothing,
         so it only re-reads the library.
 
-        The library view — **File → Combat Strategies**, the default *mode* — gets no
-        profile at all, even with a bot loaded: it shows and edits the library alone.
+        The library view — **File → Combat Strategies**, the default *mode* — gets no Bot
+        Combat Strategy at all, even with a bot loaded: it shows and edits the library alone.
         """
         library_only = mode is DialogMode.LIBRARY or self._config is None
         ws = StrategyWorkingSet.from_store(
-            profile_id=None if library_only or self._bcs is None else self._bcs.id,
+            bot_strategy_id=None if library_only or self._bcs is None else self._bcs.id,
             bot_id=None if library_only else self._config.id,
         )
         color_keys, account_labels = self._player_color_keys()
@@ -1382,12 +1382,12 @@ class CombatTab(QWidget):
         if not accepted:
             self.refresh_strategy_data()
             return None
-        made = ws.profile
+        made = ws.bot_strategy
         if self._config is not None and made is not None and (self._bcs is None or made.id != self._bcs.id):
-            # A bot with no profile had one made in the dialog: it becomes the active one.
+            # A bot with no Bot Combat Strategy had one made in the dialog: it becomes the active one.
             SettingsManager.instance().set_active_strategy(self._config.id, made.id)
             self._rebind()
-        elif self._profile_changed_on_disk():
+        elif self._bot_strategy_changed_on_disk():
             self._rebind()
         else:
             # Nothing the tab holds is stale, so the cards stay: a rebuild would destroy
@@ -1400,7 +1400,7 @@ class CombatTab(QWidget):
         """Bot id to bot name, for the Save confirmation's "'Solo' (Atlantea)".
 
         Lazy, and read once per dialog: the bot library is only scanned if a Save
-        actually has another profile to name.
+        actually has another Bot Combat Strategy to name.
         """
         names: dict[str, str] = {}
         config = self._config
@@ -1414,8 +1414,8 @@ class CombatTab(QWidget):
 
         return lookup
 
-    def _profile_changed_on_disk(self) -> bool:
-        """Whether the active profile's file no longer matches ``self._bcs``."""
+    def _bot_strategy_changed_on_disk(self) -> bool:
+        """Whether the active Bot Combat Strategy's file no longer matches ``self._bcs``."""
         if self._bcs is None:
             return False
         try:
@@ -1666,7 +1666,7 @@ class CombatTab(QWidget):
 
         A menu of two, because the strategy can already exist or be made for these fights
         (#118): **Select existing duel strategy…** opens the picker, and **Create new duel
-        strategy…** opens the profile editor with nothing selected, so New and
+        strategy…** opens the Bot Combat Strategy editor with nothing selected, so New and
         Duplicate are both there. GitHub's sub-issues are the shape, "Create sub-issue"
         beside "Add existing issue"; so is the assignment card's own menu, which mixes
         picking a Player Strategy with "Custom DSL…".
@@ -1678,7 +1678,7 @@ class CombatTab(QWidget):
         lying about for the user to fill in later, because nothing would bring it back. So
         the strategy comes first, the card is made, its own membership popup opens on it
         immediately, and the card is dropped again if that popup closes with nothing
-        chosen. A strategy made for it is kept regardless: it is in the profile, and Save
+        chosen. A strategy made for it is kept regardless: it is in the Bot Combat Strategy, and Save
         put it there.
 
         The pill route on the default card is the other way in, and stays the shorter one
@@ -1703,14 +1703,14 @@ class CombatTab(QWidget):
             self._start_pending_card(dlg.selected_id())
 
     def _on_add_created(self) -> None:
-        """The add-card's second item: make a strategy for these fights, in the profile.
+        """The add-card's second item: make a strategy for these fights, in the Bot Combat Strategy.
 
-        The profile editor opens with nothing selected. On Save, the new card takes
+        Its editor opens with nothing selected. On Save, the new card takes
         whatever is selected — made there, or not — and goes on to its fights.
         """
         if self._config is None or self._bcs is None or not self._editable:
             return
-        dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PROFILE)
+        dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.BOT_STRATEGY)
         if dlg is not None and dlg.selected_id():
             self._start_pending_card(dlg.selected_id())
 
@@ -1769,7 +1769,7 @@ class CombatTab(QWidget):
         level, not of which widget the click landed on.
 
         Returns the choice rather than applying it: an accepted dialog reloads the
-        profile (see ``open_combat_dialog``), so the binding the click came from is gone,
+        Bot Combat Strategy (see ``open_combat_dialog``), so the binding the click came from is gone,
         and the caller finds its successor with ``_link``.
         """
         dlg = self.open_combat_dialog(
@@ -1865,7 +1865,7 @@ class CombatTab(QWidget):
         return STATE_INHERIT_LABEL
 
     def _on_edit_strategy(self, panel: StrategyPanel) -> None:
-        """The pencil: open the profile editor on this card's strategy (#118).
+        """The pencil: open the Bot Combat Strategy editor on this card's strategy (#118).
 
         On every card, the built-in default's included. If the strategy selected at Save
         was made on this visit — New or Duplicate — the card now points at it; otherwise
@@ -1877,7 +1877,7 @@ class CombatTab(QWidget):
             return
         key = self._binding_key(binding)
         dlg = self.open_combat_dialog(
-            kind=StrategyKind.DUEL, mode=DialogMode.PROFILE, current_id=binding.duel_combat_strategy_id
+            kind=StrategyKind.DUEL, mode=DialogMode.BOT_STRATEGY, current_id=binding.duel_combat_strategy_id
         )
         if dlg is not None and dlg.selected_id() and dlg.selected_was_created():
             self._link(key, dlg.selected_id())
@@ -1940,9 +1940,9 @@ class CombatTab(QWidget):
         if not ok or not name.strip():
             return
         # Fresh ids for the copy's own strategies, and every link inside it rewritten to
-        # follow: sharing them, one profile's copy would hide the library's the day the
-        # other moved its copy there, lookup checking the profile first (#118).
-        new_bcs = duplicate_profile(self._bcs, name.strip())
+        # follow: sharing them, one Bot Combat Strategy's copy would hide the library's the
+        # day the other moved its copy there, lookup checking the bot's own first (#118).
+        new_bcs = duplicate_bot_strategy(self._bcs, name.strip())
         save_bot_strategy(new_bcs)
         self._all_bcs.append(new_bcs)
         self._bcs = new_bcs

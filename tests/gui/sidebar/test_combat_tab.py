@@ -22,8 +22,8 @@ from PyQt6.QtWidgets import QInputDialog, QScrollArea
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store as store_mod
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.combat_warnings import exposed_combat_states
-from bartlebot.combat.profile_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.sidebar.combat_tab import (
@@ -228,7 +228,7 @@ def test_change_is_the_body_verb(qapp):
 
 
 def test_the_pencil_is_on_every_card_including_the_built_in_default(qapp):
-    """#118: the profile editor is where a card gets a strategy made for it."""
+    """#118: the Bot Combat Strategy editor is where a card gets a strategy made for it."""
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     panel = StrategyPanel()
     button = panel.action_button(EDIT_STRATEGY)
@@ -2273,11 +2273,11 @@ def test_a_locked_deck_does_not_move(qapp, store):
 
 
 # ---------------------------------------------------------------------------
-# Profile strategies (#118) — the tab resolves ids the way resolve_combat does
+# The bot's own strategies (#118) — the tab resolves ids the way resolve_combat does
 # ---------------------------------------------------------------------------
 
 
-def test_a_card_naming_a_profile_duel_shows_it(qapp, store):
+def test_a_card_naming_an_own_duel_shows_it(qapp, store):
     own = DuelCombatStrategy(name="Just This Fight")
     bcs = BotCombatStrategy(
         name="BCS",
@@ -2293,41 +2293,41 @@ def test_a_card_naming_a_profile_duel_shows_it(qapp, store):
     assert tab._describe_state_binding("state_1") == "Just This Fight"
 
 
-def test_a_profile_duel_shadows_a_library_duel_on_the_card(qapp, store):
+def test_an_own_duel_shadows_a_library_duel_on_the_card(qapp, store):
     library = _saved_dcs("Library Version")
-    own = library.model_copy(update={"name": "Profile Version"})
+    own = library.model_copy(update={"name": "Own Version"})
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1", default_strategy_id=library.id, duel_strategies=[own])
     tab = _tab_for(bcs, _config())
 
-    assert tab._default_panel._name.full_text() == "Profile Version"
+    assert tab._default_panel._name.full_text() == "Own Version"
 
 
 # ---------------------------------------------------------------------------
-# The dialog writes the profile too (#118) — the tab must not save a stale copy over it
+# The dialog writes the Bot Combat Strategy too (#118) — the tab must not save a stale copy over it
 # ---------------------------------------------------------------------------
 
 
-def _dialog_that_makes_a_profile_duel(bcs_id: str, name: str = "Made Here"):
+def _dialog_that_makes_an_own_duel(bcs_id: str, name: str = "Made Here"):
     """A stand-in dialog whose Use this does what the real one's commit does: it writes the
-    profile file with a new strategy in it, and returns that strategy as the pick."""
+    Bot Combat Strategy's file with a new strategy in it, and returns that strategy as the pick."""
     made = DuelCombatStrategy(name=name)
 
     def _exec():
-        profile = store_mod.load_bot_strategy(bcs_id)
-        profile.duel_strategies.append(made)
-        store_mod.save_bot_strategy(profile)
+        bcs = store_mod.load_bot_strategy(bcs_id)
+        bcs.duel_strategies.append(made)
+        store_mod.save_bot_strategy(bcs)
         return True
 
     return made, _exec
 
 
 def test_a_strategy_made_in_the_dialog_survives_the_pick_that_links_it(qapp, store):
-    """The exact sequence: the dialog writes the profile with a new entry, the tab links
+    """The exact sequence: the dialog writes the Bot Combat Strategy with a new entry, the tab links
     the fight to it, then saves. Saving the tab's old copy lost the entry and left the
     fight linked to nothing, falling back to the built-in default without a word."""
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _config())
-    made, run = _dialog_that_makes_a_profile_duel(bcs.id)
+    made, run = _dialog_that_makes_an_own_duel(bcs.id)
 
     with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.side_effect = run
@@ -2343,7 +2343,7 @@ def test_a_strategy_made_in_the_dialog_survives_the_pick_that_links_it(qapp, sto
 def test_a_strategy_made_in_the_dialog_survives_a_pick_on_the_default_card(qapp, store):
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _config())
-    made, run = _dialog_that_makes_a_profile_duel(bcs.id)
+    made, run = _dialog_that_makes_an_own_duel(bcs.id)
 
     with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.side_effect = run
@@ -2360,7 +2360,7 @@ def test_a_strategy_made_in_the_dialog_survives_the_add_card(qapp, store):
     """The add flow reloads before it makes the pending card, not after."""
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _multi_config("A", "B"))
-    made, run = _dialog_that_makes_a_profile_duel(bcs.id)
+    made, run = _dialog_that_makes_an_own_duel(bcs.id)
 
     with (
         patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
@@ -2403,7 +2403,7 @@ def test_the_add_card_offers_choosing_or_creating(qapp, store):
     ]
 
 
-def test_creating_from_the_add_card_opens_the_profile_editor_with_nothing_selected(qapp, store):
+def test_creating_from_the_add_card_opens_the_bot_strategy_editor_with_nothing_selected(qapp, store):
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _multi_config("A", "B"))
 
@@ -2412,18 +2412,18 @@ def test_creating_from_the_add_card_opens_the_profile_editor_with_nothing_select
         tab._on_add_created()
 
     kwargs = MockDlg.call_args.kwargs
-    assert kwargs["mode"] is DialogMode.PROFILE
+    assert kwargs["mode"] is DialogMode.BOT_STRATEGY
     assert kwargs["current_id"] is None
 
 
 def _made_in_the_editor(bcs_id: str, name: str = "Made Here"):
-    """What the profile editor's Save does after New: the profile file gains the entry."""
+    """What the Bot Combat Strategy editor's Save does after New: its file gains the entry."""
     made = DuelCombatStrategy(name=name)
 
     def _exec():
-        profile = store_mod.load_bot_strategy(bcs_id)
-        profile.duel_strategies.append(made)
-        store_mod.save_bot_strategy(profile)
+        bcs = store_mod.load_bot_strategy(bcs_id)
+        bcs.duel_strategies.append(made)
+        store_mod.save_bot_strategy(bcs)
         return True
 
     return made, _exec
@@ -2481,7 +2481,7 @@ def test_the_pencil_on_the_built_in_default_links_a_strategy_made_for_it(qapp, s
         MockDlg.return_value.selected_was_created.return_value = True
         tab._default_panel.action_button(EDIT_STRATEGY).click()
 
-    assert MockDlg.call_args.kwargs["mode"] is DialogMode.PROFILE
+    assert MockDlg.call_args.kwargs["mode"] is DialogMode.BOT_STRATEGY
     assert store_mod.load_bot_strategy(bcs.id).default_strategy_id == made.id
     assert tab._default_panel._name.full_text() == "Made Here"
 
@@ -2521,7 +2521,7 @@ def test_the_pencil_leaves_the_card_alone_when_nothing_was_made(qapp, store):
     assert store_mod.load_bot_strategy(bcs.id).state_assignments[0].duel_combat_strategy_id == dcs.id
 
 
-def test_file_combat_strategies_opens_the_library_without_the_profile(qapp, store):
+def test_file_combat_strategies_opens_the_library_without_the_bot_strategy(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
 
     with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
@@ -2530,15 +2530,15 @@ def test_file_combat_strategies_opens_the_library_without_the_profile(qapp, stor
 
     ws = MockDlg.call_args.args[0]
     assert MockDlg.call_args.kwargs["mode"] is DialogMode.LIBRARY
-    assert ws.profile is None and ws.bot_id is None
+    assert ws.bot_strategy is None and ws.bot_id is None
 
 
 # ---------------------------------------------------------------------------
-# Duplicating a profile (#118)
+# Duplicating a Bot Combat Strategy (#118)
 # ---------------------------------------------------------------------------
 
 
-def test_duplicating_a_profile_gives_its_own_strategies_fresh_ids(qapp, store):
+def test_duplicating_a_bot_strategy_gives_its_own_strategies_fresh_ids(qapp, store):
     pcs = PlayerCombatStrategy(name="Own P")
     own = DuelCombatStrategy(
         name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
@@ -2563,7 +2563,7 @@ def test_duplicating_a_profile_gives_its_own_strategies_fresh_ids(qapp, store):
     assert copy.default_strategy_id == new_duel.id
     assert copy.state_assignments[0].duel_combat_strategy_id == new_duel.id
     assert new_duel.player_assignments[0].player_combat_strategy_id == new_pcs.id
-    # The source profile is untouched on disk.
+    # The source is untouched on disk.
     assert store_mod.load_bot_strategy(bcs.id).duel_strategies[0].id == own.id
 
 
@@ -2653,7 +2653,7 @@ def test_a_fight_recreated_against_the_same_enemy_keeps_its_card(qapp, store):
     assert _default_fights(tab) == []
 
 
-def test_opening_a_bot_writes_nothing_to_its_profile(qapp, store):
+def test_opening_a_bot_writes_nothing_to_its_bot_strategy(qapp, store):
     """Neither the old shape nor a stale state id is rewritten on load."""
     dcs = _saved_dcs()
     bcs = BotCombatStrategy.model_validate(

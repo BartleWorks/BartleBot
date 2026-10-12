@@ -14,7 +14,7 @@ import pytest
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import save_bot_strategy, save_player_strategy
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import is_inside, resolve_bot_strategy_roots, resolve_roots, resolve_shared_roots

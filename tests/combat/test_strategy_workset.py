@@ -6,7 +6,7 @@ and none of that reasoning needs a QApplication to check.
 
 from pathlib import Path
 
-from bartlebot.combat.profile_models import BotCombatStrategy
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,

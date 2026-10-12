@@ -25,11 +25,11 @@ from bartlebot.combat.deck_io import PIP_SCHOOLS
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_tags import (
     KIND_GROUPS,
-    PROFILE_SOURCE,
     SCHOOL_KINDS,
     SOURCE,
     TEAM_SIZE_KINDS,
     TEAM_SIZES,
+    THIS_BOT_SOURCE,
     StrategyFacets,
     StrategyFilter,
     count_facets,
@@ -71,15 +71,15 @@ class StrategyFilterBar(QWidget):
     #: The selection or the query changed.
     changed = pyqtSignal()
 
-    def __init__(self, kind: StrategyKind, parent: QWidget | None = None, *, profile: bool = False) -> None:
-        """*profile* offers the Source value for the active combat profile's own entries,
+    def __init__(self, kind: StrategyKind, parent: QWidget | None = None, *, this_bot: bool = False) -> None:
+        """*this_bot* offers the Source value for the active Bot Combat Strategy's own entries,
         on a tab that shows them (#118); elsewhere there would never be one to find."""
         super().__init__(parent)
         self._kind = kind
         self._noun = KIND_NOUNS[kind]
         groups = dict(STRATEGY_VOCABULARY.groups)
-        if not profile:
-            groups[SOURCE] = tuple(t for t in groups[SOURCE] if t != PROFILE_SOURCE)
+        if not this_bot:
+            groups[SOURCE] = tuple(t for t in groups[SOURCE] if t != THIS_BOT_SOURCE)
         self._vocabulary: TagVocabulary = replace(STRATEGY_VOCABULARY, groups=groups, noun=self._noun)
 
         root = QVBoxLayout(self)

@@ -606,11 +606,11 @@ class NeutralPill(QLabel):
             self._restyle()
 
 
-class ProfilePill(NeutralPill):
-    """:class:`NeutralPill` in ``pill_profile_bg``: this strategy belongs to one combat profile.
+class ThisBotPill(NeutralPill):
+    """:class:`NeutralPill` in ``pill_this_bot_bg``: this strategy belongs to one Bot Combat Strategy.
 
-    Says "Profile" -- the section heading above the card names which one (#118). Its own
-    hue, not the error red — see ``pill_profile_bg``.
+    Says "This bot" -- the section heading above the card names which one (#118). Its own
+    hue, not the error red — see ``pill_this_bot_bg``.
     """
 
     def _restyle(self) -> None:
@@ -618,7 +618,7 @@ class ProfilePill(NeutralPill):
             return
         self._applying_style = True
         try:
-            set_style_sheet(self, pill_style(THEME.pill_profile_bg, THEME.pill_text))
+            set_style_sheet(self, pill_style(THEME.pill_this_bot_bg, THEME.pill_text))
         finally:
             self._applying_style = False
 
@@ -686,7 +686,7 @@ class AccountPill(QLabel):
     Outlined rather than filled, and with ordinary text rather than colored text.
     Both follow from where it is used: a launch profile shows one of these per
     account, so four of them sit in a row, and four saturated fills make the row
-    the loudest thing on a screen whose point is the profile's *name*. The color
+    the loudest thing on a screen whose point is the launch profile's *name*. The color
     is a match target — you find the account card carrying the same hue — and an
     outline plus a low-alpha tint is enough to match on while leaving the name at
     full contrast, which colored text at 9px is not.

@@ -22,7 +22,7 @@ from bartlebot.nodes.combat_runner import validate_dsl
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
-    from bartlebot.combat.profile_models import BotCombatStrategy
+    from bartlebot.combat.bot_strategy_models import BotCombatStrategy
     from bartlebot.shared.strategy_models import DeckPreset, DuelConfig, PlayerCombatStrategy
 
 # Truncation length for an inline DSL preview — the picker's own figure, now
@@ -98,37 +98,52 @@ def name_list(names: list[str] | tuple[str, ...], limit: int = _NAMED_USES) -> s
 class UsageCount:
     """Where a strategy is already referenced — a delete confirmation or detail pane.
 
-    ``names`` says *what* uses it, one entry per use, already quoted: a combat profile
-    as ``profile 'Solo'`` and a duel as ``'Boss — P2'``, the duel's name and the slots
-    that run this strategy in it. A count alone made a user go looking (#118).
+    ``bot_names`` and ``names`` say *what* uses it, one entry per use, already quoted: a
+    Bot Combat Strategy as ``'Solo'`` and a duel as ``'Boss — P2'``, the duel's name and
+    the slots that run this strategy in it. A count alone made a user go looking (#118).
+    The two are kept apart so the phrase can name the level once, before its names,
+    rather than once per name.
     """
 
     bots: int = 0
     duels: int = 0
     names: tuple[str, ...] = ()
+    bot_names: tuple[str, ...] = ()
 
     @property
     def total(self) -> int:
         return self.bots + self.duels
 
     def phrase(self) -> str:
-        """ "Used by 'Boss — P2' and 'Trash — P1'" — one sentence, or "Not used yet".
+        """ "Used by the Bot Combat Strategy 'Solo' and 'Boss — P2'" — one sentence, or "Not used yet".
 
         Lives here rather than in the dialog because a delete confirmation and a
         detail pane both say it, and two surfaces counting the same references
         differently is the drift :class:`StrategySummary` exists to prevent. A count
         with no names behind it is said as counts.
         """
-        if self.names:
-            return "Used by " + name_list(self.names)
+        if self.names or self.bot_names:
+            parts = []
+            if self.bot_names:
+                noun = _bot_strategies_noun(len(self.bot_names))
+                parts.append(f"the {noun} {name_list(self.bot_names)}")
+            if self.names:
+                parts.append(name_list(self.names))
+            # A comma once either side is itself a list, so the "and" inside it is not misread.
+            joiner = " and " if len(self.bot_names) <= 1 and len(self.names) <= 1 else ", and "
+            return "Used by " + joiner.join(parts)
         parts = []
         if self.bots:
-            parts.append(f"{self.bots} bot strateg{'ies' if self.bots != 1 else 'y'}")
+            parts.append(f"{self.bots} {_bot_strategies_noun(self.bots)}")
         if self.duels:
             parts.append(f"{self.duels} duel strateg{'ies' if self.duels != 1 else 'y'}")
         if not parts:
             return "Not used yet"
         return "Used by " + " and ".join(parts)
+
+
+def _bot_strategies_noun(count: int) -> str:
+    return "Bot Combat Strategy" if count == 1 else "Bot Combat Strategies"
 
 
 def _duel_use(duel, uuid: str) -> str | None:
@@ -152,27 +167,28 @@ def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCo
     - a ``BotCombatStrategy`` referencing a DuelCombatStrategy, as its default
       or through any state assignment
     - a ``DuelCombatStrategy`` referencing a PlayerCombatStrategy through an
-      assignment — a library duel, or one of a bot strategy's own (#118). Missing
-      the second kind would call a library player strategy that only a profile's
-      duel uses "Not used yet", and delete it without a warning.
+      assignment — a library duel, or one of a Bot Combat Strategy's own (#118).
+      Missing the second kind would call a library player strategy that only one
+      bot's own duel uses "Not used yet", and delete it without a warning.
 
-    A bot strategy naming the same id twice — its default plus a state override
+    A Bot Combat Strategy naming the same id twice — its default plus a state override
     — counts once. What the user is being told is how many *things* change, not
     how many fields do.
     """
     bots = 0
     duels = 0
     names: list[str] = []
+    bot_names: list[str] = []
     for bcs in bot_strategies:
         if bcs.default_strategy_id == uuid or any(a.duel_combat_strategy_id == uuid for a in bcs.state_assignments):
             bots += 1
-            names.append(f"profile '{bcs.name}'")
+            bot_names.append(f"'{bcs.name}'")
     for duel in [*(d for bcs in bot_strategies for d in bcs.duel_strategies), *duel_strategies]:
         use = _duel_use(duel, uuid)
         if use is not None:
             duels += 1
             names.append(use)
-    return UsageCount(bots=bots, duels=duels, names=tuple(names))
+    return UsageCount(bots=bots, duels=duels, names=tuple(names), bot_names=tuple(bot_names))
 
 
 @dataclass(frozen=True)
@@ -197,9 +213,9 @@ class StrategySummary:
     #: Whether the entry overrides an Official one that has changed since (#169): its
     #: pill then adds "Official updated". Supplied with ``source``, by the same caller.
     official_updated: bool = False
-    #: The combat profile's name when the entry belongs to that profile rather than the
-    #: library (#118); None for a library entry. A card shows it in place of ``source``.
-    profile_name: str | None = None
+    #: The Bot Combat Strategy's name when the entry is one of its own rather than the
+    #: library's (#118); None for a library entry. A card shows it in place of ``source``.
+    bot_strategy_name: str | None = None
     #: Stored tags (the Role group of :mod:`bartlebot.combat.strategy_tags`), in vocabulary order.
     tags: tuple[str, ...] = ()
     #: The schools a deck is built for, in the order it lists them, for a card that draws

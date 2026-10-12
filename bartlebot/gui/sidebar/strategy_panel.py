@@ -28,7 +28,7 @@ No disclosure arrow, no inline ``DuelConfigEditor``. Editing combat is a user-ow
 edit with an explicit Save/Cancel boundary, and it is moving into a dialog of its own;
 a Run-mode surface that autosaved a DSL edit on every keystroke was the one place in
 the app that wrote a strategy file while the user was still typing into it. The pencil
-opens that dialog, ``CombatStrategyDialog``, as the combat profile's editor.
+opens that dialog, ``CombatStrategyDialog``, as the Bot Combat Strategy's editor.
 
 No ``_GroupRail`` either. The rail was a vertical rule bracketing a panel whose fights
 share one strategy, invented because several fight names stacked in a header read as a
@@ -113,7 +113,7 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
   card is how you replace it, so the whole frame is the pick affordance rather than a
   chip inside it that had to be found first.
 - **Edit…** (the pencil) is on every card, the built-in default's included. It opens
-  the profile editor on this card's strategy, and a strategy made there with New or
+  the Bot Combat Strategy editor on this card's strategy, and a strategy made there with New or
   Duplicate is linked to this card on Save -- so pencil, New, Save is the whole of
   giving a card a strategy of its own (#118).
 - **Applies to…** is in the menu, and opens the same popup the pill row's own button
@@ -255,7 +255,7 @@ class StrategyPanel(CardFrame):
     FRAME_NAME = "StrategyPanel"
 
     pick_requested = pyqtSignal()
-    #: The pencil: open this card's strategy in the profile editor, or — on a card with
+    #: The pencil: open this card's strategy in the Bot Combat Strategy editor, or — on a card with
     #: none, the built-in default included — open the editor to make one for it (#118).
     edit_requested = pyqtSignal()
     #: The complete desired membership, once the popup has closed -- not per toggle.
@@ -620,7 +620,7 @@ class StrategyPanel(CardFrame):
         else:
             self._render_bare(self._empty_label, self._empty_meta)
 
-        # Always shown, even on a card running the built-in default: the profile editor
+        # Always shown, even on a card running the built-in default: the Bot Combat Strategy editor
         # is where a card gets a strategy made for it, and New there, then Save, is the
         # whole of that (#118). What the tooltip promises is what differs.
         edit_btn = self.action_button(EDIT_STRATEGY)
@@ -712,8 +712,8 @@ class StrategyPanel(CardFrame):
 
     def _edit_tooltip(self) -> str:
         if self.linked_id is not None:
-            return "Edit this strategy, or make one of this profile's own for these fights"
-        return "Make a strategy of this profile's own for these fights"
+            return "Edit this strategy, or make one of this bot's own for these fights"
+        return "Make a strategy of this bot's own for these fights"
 
     def _verbs(self) -> list[CardVerb]:
         """Everything this card can do *right now* -- what the right-click menu offers.

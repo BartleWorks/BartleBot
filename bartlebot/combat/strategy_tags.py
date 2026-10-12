@@ -11,9 +11,10 @@ Two kinds of group, and the difference is where the value comes from:
   stored. Stored, it would go stale on the first edit of an Official one, and a user copy
   would claim to be one. Its words are :data:`bartlebot.content.store_roots.SOURCE_LABELS`, so
   a filter chip always says what the pill on the card it matches says. The one
-  exception is :data:`PROFILE_SOURCE`, for an entry that belongs to the active combat
-  profile (#118): its pill carries the profile's own name, which a fixed vocabulary
-  cannot, so the filter says what kind of place that is instead.
+  exception is :data:`THIS_BOT_SOURCE`, for an entry that belongs to the active Bot
+  Combat Strategy rather than the library (#118). Its pill and its filter chip both
+  say **This bot**, from this one constant: the section heading above the cards
+  already names which Bot Combat Strategy it is.
 - **Role** (Hitter, Support, Healer, Solo) is *stored*, in the file's ``tags``, on Player
   Strategies and Deck Presets only. A duel strategy is a whole team, so it has no
   single role, and carries no role group.
@@ -47,13 +48,14 @@ logger = logging.getLogger(__name__)
 SOURCE = "Source"
 ROLE = "Role"
 
-#: The Source value of an entry that belongs to the active combat profile, not the library.
-PROFILE_SOURCE = "Profile"
+#: The Source value of an entry that belongs to the active Bot Combat Strategy, not the
+#: library: the word on its pill and on its filter chip alike.
+THIS_BOT_SOURCE = "This bot"
 
 #: The Source values, in the order a picker offers them. Missing is not one: a missing
 #: entry is never listed.
 SOURCE_TAGS: tuple[str, ...] = (
-    PROFILE_SOURCE,
+    THIS_BOT_SOURCE,
     *(SOURCE_LABELS[o] for o in LISTED_ORIGINS),
 )
 

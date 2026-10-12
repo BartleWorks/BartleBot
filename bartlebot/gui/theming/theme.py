@@ -127,11 +127,11 @@ class _Theme:
     # Activities tags. Purple rather than ``warning``: a tag pill is led by a gold-ringed
     # medallion, and the ring vanished against the gold. 7.4:1 against ``pill_text``.
     pill_activity_bg: str = "#6a3fa0"
-    # A strategy that belongs to one combat profile rather than the library (#118). Its
+    # A strategy that belongs to one Bot Combat Strategy rather than the library (#118). Its
     # own hue on purpose: not the accent, which the Official source pills wear; not the
     # error red, which marks a DSL that does not parse; not the Role tags' purple. 5.3:1
     # against ``pill_text``.
-    pill_profile_bg: str = "#00796b"
+    pill_this_bot_bg: str = "#00796b"
     # error bg → ``error``, warning bg → ``warning``
 
     # ------------------------------------------------------------------
@@ -808,6 +808,21 @@ _COLOR_TOKENS: list[str] = [
 ]
 
 
+#: Tokens renamed since a custom theme could have saved them, new name to old. A saved
+#: theme is read under either name, so a rename never loses a user's color; the next save
+#: writes the new name. ``pill_profile_bg`` went when "profile" came to mean a launch
+#: profile only (#204).
+RENAMED_TOKENS: dict[str, str] = {"pill_this_bot_bg": "pill_profile_bg"}
+
+
+def saved_color(overrides: dict, token: str, default: str) -> str:
+    """*token*'s color in a saved custom theme, under its old name if it was renamed, else *default*."""
+    if token in overrides:
+        return overrides[token]
+    old = RENAMED_TOKENS.get(token)
+    return overrides.get(old, default) if old is not None else default
+
+
 def build_custom_theme(overrides: dict, base: _Theme | None = None) -> _Theme:
     """Build a ``_Theme`` from a flat ``{token_name: hex_color}`` dict.
 
@@ -818,7 +833,7 @@ def build_custom_theme(overrides: dict, base: _Theme | None = None) -> _Theme:
     """
     if base is None:
         base = DARK if _detect_system_dark_mode() else LIGHT
-    kwargs = {token: overrides.get(token, getattr(base, token)) for token in _COLOR_TOKENS}
+    kwargs = {token: saved_color(overrides, token, getattr(base, token)) for token in _COLOR_TOKENS}
     # Keep the rgba tokens at their base-theme defaults (not user-editable)
     kwargs["minimap_bg"] = base.minimap_bg
     kwargs["minimap_border"] = base.minimap_border
