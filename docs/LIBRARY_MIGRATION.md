@@ -142,7 +142,7 @@ A rewritten bot is a new bot from the template's latest version, with these carr
 the old file. Everything here is from the plan's Stage 9 card and its deviations; it is
 collected so it can be checked per bot.
 
-**Kept from the old file:** `id` (or the bot loses its combat profile and option overrides),
+**Kept from the old file:** `id` (or the bot loses its Bot Combat Strategy and option overrides),
 `name`, `description`, `tags`, `authors` (nothing comes from the template), `drops`, the bot's
 own option declarations, and its path under `bots/`. `template` is set to the version the bot
 was built from, exactly as `create_bot` sets it, and never written any other way. The bot
@@ -426,7 +426,7 @@ two more params on the common node for one bot is the wrong trade, so
   Challenge Mode is off in all three.
 - **`change_realm`**: the realm range is the constants 3–5, and every realm state in the library
   is `change_realm`. Landed.
-- **`handle_combat`**: strategies live in the combat profile, keyed by fight (state and enemy
+- **`handle_combat`**: strategies live in the Bot Combat Strategy, keyed by fight (state and enemy
   since Stage 10.5), not in the template.
 
 ### Every failure edge relogs

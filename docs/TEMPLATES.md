@@ -273,8 +273,8 @@ does not have, compared the way slots are, ports and all.
 - **A change is found again by its id**, which spells out its unit's whole key, flag guard
   included: two guarded edges from one node on one outcome are two changes.
 - **In the editor, each Apply is one undo step** (`BotCanvas.apply_template_change`). A
-  change that takes a fight's duel strategy with it asks first, naming every combat
-  profile of the bot that loses one, not only the active one; the check goes through
+  change that takes a fight's duel strategy with it asks first, naming every Bot Combat
+  Strategy of the bot that loses one, not only the active one; the check goes through
   `fight_keys`, so a fight replaced against the same enemy is not asked about.
 - **Finish review advances the base** to the latest version (`finish_template_review`,
   through `template_diff.finish`), also one undo step. That is what remembers a skip: against the new base the template has
@@ -292,14 +292,14 @@ available", read from the bot file and the store's index without opening the bot
 
 ## Fight keys
 
-A combat profile finds a fight by its enemy as well as by its state id, so a strategy
+A Bot Combat Strategy finds a fight by its enemy as well as by its state id, so a strategy
 follows a fight a template update replaced. `docs/COMBAT_CONFIG.md` has it, under "Fight
 keys".
 
 ## What must stay true
 
 - Every bot file round-trips byte-identical, with `template` or without.
-- Nothing writes `template`, rewrites a profile, or changes a bot file on load.
+- Nothing writes `template`, rewrites a Bot Combat Strategy, or changes a bot file on load.
 - A released version file never changes after release.
 - A bot never mints a template-owned id, and a draft mints only under its own prefix.
 - A fork never adds an id under a prefix it inherited.

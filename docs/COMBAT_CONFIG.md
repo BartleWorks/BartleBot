@@ -21,34 +21,45 @@ That is also what the assignment card's fold is for. The school, the note and th
 ## Five levels, and what each one is a fact about
 
 ```
-BotCombatStrategy      per bot, per user      the combat profile: which fights use which duel strategy,
+BotCombatStrategy      per bot, per user      which fights use which duel strategy,
                                               the per-player decks, and strategies of its own
   StateAssignment      one entry              these fights use this duel strategy
     FightRef           one fight              the state it was on, and the enemy it named
-DuelCombatStrategy     library or profile     one fight: combat order, and who does what
+DuelCombatStrategy     library or this bot    one fight: combat order, and who does what
   PlayerAssignment     one row                these player slots run this strategy
-PlayerCombatStrategy   library or profile     one wizard's job, as DSL
+PlayerCombatStrategy   library or this bot    one wizard's job, as DSL
 DeckPreset             library, personal      a deck to build before the fight
 ```
 
-The code says `BotCombatStrategy` and the UI still says "Bot Combat Strategy"; this document says **combat profile**, or **profile**, for the same thing. Renaming it in the UI was not decided with #118.
+### Naming (#204)
 
-`DuelCombatStrategy` **is-a** `DuelConfig`: the same shape, plus an id and a name. A `StateAssignment` and the profile's `default_strategy_id` only ever *link* one, by id, and an unlinked one falls back a level. There is no inline duel config. `StateAssignment.duel_config` and `BotCombatStrategy.default_duel_config` were removed in #118 rather than migrated, because none existed and the editor for them was already gone. The models do not forbid extra fields, so a stray old file still loads, with those fields ignored.
+The three levels a user sees are **Bot Combat Strategy**, **Duel Combat Strategy** and **Player Combat Strategy**, and "profile" means a launch profile, and only that. Calling a Bot Combat Strategy a "profile" gave one noun two meanings and left the code speaking a second vocabulary to the UI's; both are gone, and `tests/test_vocabulary.py` keeps the word out of the combat modules and docs.
+
+The writing rule, for every surface:
+
+- **The full name appears once per surface**: in a banner, a menu item or a section heading.
+- **After that, a surface uses the level's word alone** (Duel, Player) or the item's name. "In 'Solo' only", under a heading that already says which Bot Combat Strategy, not "In the Bot Combat Strategy 'Solo' only".
+- **Two full names never share a sentence**, and there is no third form, such as "bot strategy".
+- **Strategies owned by one Bot Combat Strategy are This bot's.** Their pill and their Source filter value both say **This bot**, from one constant, `strategy_tags.THIS_BOT_SOURCE`.
+
+In code, a `BotCombatStrategy` is a `bot_strategy` (or `bcs`), the strategies inside it are its *own* (`own_duel`, `own_items`, `is_own_entry`, `OWN_KINDS`), and the modules are `combat/bot_strategy_models.py` and `combat/bot_combat_strategy.py`. No file format changed: no field of any combat model carries the word.
+
+`DuelCombatStrategy` **is-a** `DuelConfig`: the same shape, plus an id and a name. A `StateAssignment` and the Bot Combat Strategy's `default_strategy_id` only ever *link* one, by id, and an unlinked one falls back a level. There is no inline duel config. `StateAssignment.duel_config` and `BotCombatStrategy.default_duel_config` were removed in #118 rather than migrated, because none existed and the editor for them was already gone. The models do not forbid extra fields, so a stray old file still loads, with those fields ignored.
 
 The link/inline pair exists at the player level only: a `PlayerAssignment` carries either `player_combat_strategy_id` or its own `dsl`, which is the assignment card's `Custom DSL…`. **Linked wins, and an inline DSL is not a fallback for a broken link** — a link that cannot be resolved is a warning, not a silent reversion to whatever was typed before the link was made.
 
-## A profile's own strategies (#118)
+## A bot's own strategies (#118)
 
-A fight sometimes needs a strategy no other fight needs, and a library-only store made every one-off clutter the list every bot and profile sees. So a profile holds duel and player strategies of its own, in `BotCombatStrategy.duel_strategies` and `player_strategies`, inside the profile file. Deck presets stay library-only; a profile's own decks are already its `player_decks`, one per slot.
+A fight sometimes needs a strategy no other fight needs, and a library-only store made every one-off clutter the list every bot sees. So a Bot Combat Strategy holds duel and player strategies of its own, in `BotCombatStrategy.duel_strategies` and `player_strategies`, inside its file. Deck presets stay library-only; its own decks are already its `player_decks`, one per slot.
 
-Profile strategies have ids like any other entry, and are linked with the existing fields: `StateAssignment.duel_combat_strategy_id`, `BotCombatStrategy.default_strategy_id` and `PlayerAssignment.player_combat_strategy_id`. That is what lets one move into the library with nothing rewritten.
+Its own strategies have ids like any other entry, and are linked with the existing fields: `StateAssignment.duel_combat_strategy_id`, `BotCombatStrategy.default_strategy_id` and `PlayerAssignment.player_combat_strategy_id`. That is what lets one move into the library with nothing rewritten.
 
-- **Lookup order: the active profile first, then the library.** It is one helper, `StrategyLookup` in `bartlebot/combat/combat_profile.py`, and `resolve_combat`, `combat_warnings`, `find_references` and the Combat tab's cards and fights popup all go through it. A surface that resolves ids its own way is how two of them come to disagree about what a fight runs.
-- **Library content never links profile content.** A library duel is shared, so it may use only library player strategies, or it would depend on one user's profile. The dialog enforces it: the assignment menu in a library duel offers library player strategies only, and in a profile duel it offers the profile's first, then the library's (`StrategyWorkingSet.players_for_duel`). `combat_warnings` flags a violation that got in some other way, such as a hand-edited file.
-- **Only the active profile is ever shown or edited.** Other profiles of the same bot never appear in the dialog; showing them read-only next to an editable one was judged more confusing than useful. Duplicating the profile is how its work is reused. Importing one entry from another profile is #134.
-- **Add to library moves an entry, keeping its id.** A duel takes the profile's own player strategies it uses along with it, after a confirmation that names them in numerals. It is an edit like any other, so it happens at Save and Cancel undoes it. Save writes the library files *before* rewriting the profile without them, and skips the profile if a library write failed, so an interrupted save leaves two copies, never none. That is `save_by_id`'s rule for a rename.
-- **Duplicating a profile gives everything it owns a fresh id** and rewrites every link inside the copy (`combat_profile.duplicate_profile`). Otherwise the two profiles share ids, and once one copy moved into the library, the other profile's copy would silently hide it.
-- **`find_references` counts links from a profile's own duels.** Without that, a library player strategy used only by a profile duel read as unused, and deleting it gave no warning. The usage line names what uses an entry — "Used by 'Boss — P2' and 'Trash — P1'" — rather than only counting.
+- **Lookup order: the active Bot Combat Strategy's own first, then the library.** It is one helper, `StrategyLookup` in `bartlebot/combat/bot_combat_strategy.py`, and `resolve_combat`, `combat_warnings`, `find_references` and the Combat tab's cards and fights popup all go through it. A surface that resolves ids its own way is how two of them come to disagree about what a fight runs.
+- **Library content never links a bot's own.** A library duel is shared, so it may use only library player strategies, or it would depend on one user's setup for one bot. The dialog enforces it: the assignment menu in a library duel offers library player strategies only, and in one of the bot's own duels it offers the bot's own first, then the library's (`StrategyWorkingSet.players_for_duel`). `combat_warnings` flags a violation that got in some other way, such as a hand-edited file.
+- **Only the active Bot Combat Strategy is ever shown or edited.** Others of the same bot never appear in the dialog; showing them read-only next to an editable one was judged more confusing than useful. Duplicating it is how its work is reused. Importing one entry from another is #134.
+- **Add to library moves an entry, keeping its id.** A duel takes the bot's own player strategies it uses along with it, after a confirmation that names them in numerals. It is an edit like any other, so it happens at Save and Cancel undoes it. Save writes the library files *before* rewriting the Bot Combat Strategy without them, and skips it if a library write failed, so an interrupted save leaves two copies, never none. That is `save_by_id`'s rule for a rename.
+- **Duplicating a Bot Combat Strategy gives everything it owns a fresh id** and rewrites every link inside the copy (`bot_combat_strategy.duplicate_bot_strategy`). Otherwise the two share ids, and once one copy moved into the library, the other's copy would silently hide it.
+- **`find_references` counts links from a bot's own duels.** Without that, a library player strategy used only by one of them read as unused, and deleting it gave no warning. The usage line names what uses an entry — "Used by the Bot Combat Strategy 'Solo' and 'Boss — P2'" — rather than only counting, and names the level once, before its names.
 
 `DeckData.tc` is legacy and is never read or applied. Treasure cards are deliberately absent from the deck editor; do not add them back without deciding what applying them would mean.
 
@@ -108,16 +119,16 @@ What that costs, and where each cost is paid:
 
 ## The Save/Cancel boundary
 
-`StrategyWorkingSet` holds deep copies of the library, and of the active combat profile when the dialog was opened from the Combat tab. Every editor mutates a copy; nothing reaches disk until `commit()`, which writes the library, then the profile, then the library deletes. `CombatStrategyDialog` is a view of one working set, and **nothing below the dialog decides when a file is written**.
+`StrategyWorkingSet` holds deep copies of the library, and of the active Bot Combat Strategy when the dialog was opened from the Combat tab. Every editor mutates a copy; nothing reaches disk until `commit()`, which writes the library, then the Bot Combat Strategy, then the library deletes. `CombatStrategyDialog` is a view of one working set, and **nothing below the dialog decides when a file is written**.
 
 Three rules hold this together:
 
 - **Dirtiness is derived, never reported.** An entry is modified when its fields differ from the snapshot taken at load. Nothing calls a `mark_dirty()`, because there isn't one. That means an editor that mutates its model directly participates with no changes at all, and an edit typed and then typed back out leaves the dialog correctly clean — which a flag set from a `changed` signal cannot say. The snapshot uses a full `model_dump`, not the `exclude_defaults=True` form `save()` writes: a field set back to its default is not a change to the *file*, but it is a change the *user* made, and losing it on Cancel without warning would be a lie.
 - **One rule at the edge, in every mode.** Cancel discards every edit; Save and Use both commit every edit, and Use additionally returns the selection. Pick edits nothing (#123), so there Use only ever returns the selection.
 - **A write that fails keeps the dialog open.** `commit()` logs and skips a strategy it could not write; closing anyway would discard the user's work while showing them a successful Save.
-- **An edit that reaches further than the dialog shows asks first, at Save.** If a changed library entry is used by another profile of any bot, or a changed player strategy by a library duel, Save asks once and lists those uses — "'Boss Burn' is also used by 2 other profiles: 'Solo' (Atlantea) and 'Team' (Darkmoor)." — with **Save anyway** and **Go back** (`StrategyWorkingSet.shared_uses`). Uses inside the active profile don't count. The library view asks too, and there every profile counts. At Save rather than on the first keystroke, because typing is not yet a decision. It is what makes leaving library entries editable in the profile editor safe; locking them would make the library harder to use.
+- **An edit that reaches further than the dialog shows asks first, at Save.** If a changed library entry is used by another Bot Combat Strategy of any bot, or a changed player strategy by a library duel, Save asks once and lists those uses — "'Boss Burn' is also used by 2 other Bot Combat Strategies: 'Solo' (Atlantea) and 'Team' (Darkmoor)." — with **Save anyway** and **Go back** (`StrategyWorkingSet.shared_uses`). Uses inside the active one don't count. The library view asks too, and there every one counts. At Save rather than on the first keystroke, because typing is not yet a decision. It is what makes leaving library entries editable in the Bot Combat Strategy editor safe; locking them would make the library harder to use.
 
-The Combat tab keeps its own copy of the active profile and writes it on almost every action, so an accepted dialog is followed by a reload of the profile from disk and a re-bind of every fight **before** the tab acts on the result (`CombatTab.open_combat_dialog`). Without it, a strategy made in the dialog and then picked was lost when the tab saved its stale copy over the file, and the fight fell back to the built-in default without a word. A caller that held a binding from before the dialog looks it up again by key (`_link`).
+The Combat tab keeps its own copy of the active Bot Combat Strategy and writes it on almost every action, so an accepted dialog is followed by a reload of it from disk and a re-bind of every fight **before** the tab acts on the result (`CombatTab.open_combat_dialog`). Without it, a strategy made in the dialog and then picked was lost when the tab saved its stale copy over the file, and the fight fell back to the built-in default without a word. A caller that held a binding from before the dialog looks it up again by key (`_link`).
 
 This is what retired the old 500 ms debounce, which made three things impossible at once: Cancel meant nothing, a half-typed DSL was persisted, and a partial flush could commit some fields of an edit and drop others. It also retired `AppController._flush_pending_edits`, which existed only because a quit could beat the debounce. **Do not reintroduce a write on a timer at any level below the dialog** — a better debounce is not the fix; the boundary is.
 
@@ -127,18 +138,18 @@ This is what retired the old 500 ms debounce, which made three things impossible
 
 `StrategyLibraryWindow` and `StrategyPickerDialog` used to do largely the same job with different vocabularies. There is now one window, in one mode per way in, and each shows only the tabs its row lists (`dialog.tabs_for`):
 
-| way in | mode | tabs | profile section | can edit |
+| way in | mode | tabs | This bot section | can edit |
 |---|---|---|---|---|
 | **File → Combat Strategies** | `LIBRARY` (`Cancel` / `Save`) | Duel, Player, Decks | no | library entries |
-| **✏** on a fight card or the default card | `PROFILE` (`Cancel` / `Save`) | Duel, Player | yes | profile and library entries |
+| **✏** on a fight card or the default card | `BOT_STRATEGY` (`Cancel` / `Save`) | Duel, Player | yes | the bot's own and library entries |
 | **🔍** on a card, a fight's pill, the add-card's "Select existing duel strategy…" | `PICK` (`Use built-in default` / `Cancel` / `Use this`) | Duel | yes | nothing |
 | **Load from library** on a deck slot | `PICK` | Decks | no | nothing |
 
 - **Pick is select-only (#123)**: no New, Duplicate or Delete, and the detail pane is read-only. Before, Pick edited everything, which made 🔍 and ✏ the same button with different wording.
-- **In the profile editor, New and Duplicate create in the profile**, a library entry's duplicate included — that is how "this fight needs something slightly different" is done. Creating in the library happens in the library view, or by creating in the profile and then using **Add to library**. The extra step is deliberate: it makes users face the difference between the two places.
-- **The profile section** comes first, headed with the profile's full name, then ★ Favorites, then the library. Its cards wear a **Profile** pill in `pill_profile_bg`, a teal of its own, never the error red that marks a DSL that does not parse. They carry no star, because favorites are library-only. An empty section says "Strategies made here belong to this profile. Use Add to library to share one." A loaded bot with no profile yet is offered one there, and Cancel discards it. The About pane says "In profile 'Solo' only", with **Add to library** beside it. The library view never shows a profile section, even with a bot loaded.
-- **From the Combat tab**, ✏ is on every card, the built-in default's included, and a strategy made on that visit is linked to the card that opened the editor on Save (`selected_was_created`). The add-card ("Add another duel strategy") is a menu of two: "Select existing duel strategy…" opens Pick, and "Create new duel strategy…" opens the profile editor with nothing selected. Either way the flow continues into choosing the card's fights, and if that popup closes empty the card is dropped but a strategy made for it stays in the profile.
-- **Save as Player Strategy…** on an assignment card saves where its duel lives: in the profile for a profile duel, in the library for a library duel.
+- **In the Bot Combat Strategy editor, New and Duplicate create in it**, a library entry's duplicate included — that is how "this fight needs something slightly different" is done. Creating in the library happens in the library view, or by creating here and then using **Add to library**. The extra step is deliberate: it makes users face the difference between the two places.
+- **The This bot section** comes first, headed with the Bot Combat Strategy's name, then ★ Favorites, then the library. Its cards wear a **This bot** pill in `pill_this_bot_bg`, a teal of its own, never the error red that marks a DSL that does not parse; the pill's tooltip names the Bot Combat Strategy. They carry no star, because favorites are library-only. An empty section says "Strategies made here belong to this Bot Combat Strategy. Use Add to library to share one." A loaded bot with none yet is offered one there ("This bot has no Bot Combat Strategy yet."), and Cancel discards it. The About pane says "In 'Solo' only", with **Add to library** beside it. The library view never shows a This bot section, even with a bot loaded.
+- **From the Combat tab**, ✏ is on every card, the built-in default's included, and a strategy made on that visit is linked to the card that opened the editor on Save (`selected_was_created`). The add-card ("Add another duel strategy") is a menu of two: "Select existing duel strategy…" opens Pick, and "Create new duel strategy…" opens the Bot Combat Strategy editor with nothing selected. Either way the flow continues into choosing the card's fights, and if that popup closes empty the card is dropped but a strategy made for it stays in the Bot Combat Strategy.
+- **Save as Player Strategy…** on an assignment card saves where its duel lives: among the bot's own for one of its own, in the library for a library duel.
 
 It is **master-detail, not a popup, and not both**. `PickerPopup` is 400×420 and right for a one-line payload — a tag, a fight name. A duel strategy's payload is seven to nine mostly-long lines: a description, a combat order, and one row per assignment. Eliding those to fit a popup hides exactly what the user opened it to compare. So the left is the compact `StrategyCard` list with a filter, the right is the full entry unelided, plus what uses it and whether removing it deletes or reverts it. `_AddOptionDialog` is the precedent.
 
@@ -149,16 +160,16 @@ Two things fall out of the tabs being pages of one working set:
 
 **Name, description, usage and origin belong to the page, not to the editor under it.** All three tabs draw them in one shared `AboutSection`. They were drawn three different ways before — label-above on the Player tab, label-beside on the Deck tab, and split across two widgets on the Duel tab, where the name belonged to a wrapper pane and the description to the `DuelConfig` beneath it. They identify the *library entry*, which is a thing all three kinds have; what varies between tabs is what sits below.
 
-`BotStrategyPicker` is the one picker left, and it picks the one kind the library does not own: a `BotCombatStrategy` is bot-scoped and edited on the Combat tab itself. `StrategyWorkingSet` holds every profile but the active one **read-only**, only to answer *who references what* for a usage count, a delete confirmation and the Save confirmation. The active one it holds editable, for its own strategies.
+`BotStrategyPicker` is the one picker left, and it picks the one kind the library does not own: a `BotCombatStrategy` is bot-scoped and edited on the Combat tab itself. `StrategyWorkingSet` holds every Bot Combat Strategy but the active one **read-only**, only to answer *who references what* for a usage count, a delete confirmation and the Save confirmation. The active one it holds editable, for its own strategies.
 
 Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `currentItemChanged`, and repopulating emits it again — one keystroke in a filter box used to reload the editor and send the DSL caret back to 0. Reselect *inside* the blocked-signals region, and detach the editor only when the entry is actually gone from the working set, never when it is merely filtered out of view.
 
 **Tags, filters and favorites (#125).** A bar across the top of each tab carries facet pickers, the search box and, below them, the selected values as removable chips — the bot library's shape. The vocabulary is `bartlebot/combat/strategy_tags.py`, laid out like `bot_tags.py`: tags OR within a group and AND across groups.
 
-- **Source** (Built-in / Built-in (modified) / Custom) is derived from `StrategyWorkingSet.status`, never stored, and its words are the source pills'. A tab with a profile section adds **Profile**, for the profile's own entries, the same word their pill says. Which profile is the section heading's job, not the pill's: a pill of the profile's name repeated the heading and was the one pill wide enough to push a card past its column. **Role** (Hitter, Support, Healer, Solo) is stored, in `tags`, on Player Strategies and Deck Presets only. A duel is a whole team, so it has no role.
+- **Source** (Built-in / Built-in (modified) / Custom) is derived from `StrategyWorkingSet.status`, never stored, and its words are the source pills'. A tab with a This bot section adds **This bot**, for the bot's own entries, the same word their pill says, from the same constant. Which Bot Combat Strategy is the section heading's job, not the pill's: a pill of its name repeated the heading and was the one pill wide enough to push a card past its column. **Role** (Hitter, Support, Healer, Solo) is stored, in `tags`, on Player Strategies and Deck Presets only. A duel is a whole team, so it has no role.
 - **Works with school X** (Duel and Player tabs): a Player Strategy whose `schools` is empty or contains X, or a duel with a player slot that accepts X. A slot no assignment covers falls back to the built-in default, so it accepts every school. Several schools OR.
 - **Team size N** (Duel tab): duels whose `min_players`–`max_players` includes N. It also limits the school check to slots 1..N.
-- **Favorites** are per user, in `settings.json` under `favorite_strategies`, and saved on the click. They sit outside the Save/Cancel boundary, because a favorite is a preference about the library, not a change to it, and a profile entry has none. A favorite moves its card under a "★ Favorites" heading. Every entry is in exactly one section, because selection is restored by id. The headings appear only once there is more than one section, and a heading whose section the filter empties hides. The star on a favorite always shows; on any other card it shows only on hover or selection.
+- **Favorites** are per user, in `settings.json` under `favorite_strategies`, and saved on the click. They sit outside the Save/Cancel boundary, because a favorite is a preference about the library, not a change to it, and an entry of the bot's own has none. A favorite moves its card under a "★ Favorites" heading. Every entry is in exactly one section, because selection is restored by id. The headings appear only once there is more than one section, and a heading whose section the filter empties hides. The star on a favorite always shows; on any other card it shows only on hover or selection.
 - Nothing about the filter persists. Every opening starts unfiltered, since a remembered filter hiding entries is a "where did my strategy go" that a Pick-mode visitor cannot diagnose.
 
 **A school is a set.** `PlayerCombatStrategy.schools` and `PlayerAssignment.schools` are lists, and empty means any school. A file with the old single `school` loads as a one-item list and is rewritten on its next save. An assignment's own non-empty set wins over its linked preset's. Deck Presets carry one too (#174), authored the same way and never inferred from the cards, since most spells can be trained on any wizard; it is the school the deck is built for, not the archmastery school it captured, and the Deck tab's "works with school" filter reads it.
@@ -169,7 +180,7 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 
 1. `machine.bot_config.id` → `SettingsManager.get_active_strategy(bot_id)` → load the `BotCombatStrategy`.
 2. Either the BCS default (`use_default_strategy`) or the `StateAssignment` whose fight is `machine.state` (`fight_keys.bind`, below), falling back to the default when no assignment covers it. An unlinked assignment counts as no assignment at all.
-3. The `DuelCombatStrategy` that target links — found in the profile first, then the library (`StrategyLookup`) — or the built-in default when it links none. Its player strategies are found the same way.
+3. The `DuelCombatStrategy` that target links — found among the bot's own first, then in the library (`StrategyLookup`) — or the built-in default when it links none. Its player strategies are found the same way.
 4. Per 1-based player slot, the matching `PlayerAssignment`'s inline DSL, or the linked Player Strategy's DSL.
 5. Anything unresolved gets the built-in default.
 
@@ -205,8 +216,8 @@ with no enemy, and is **never rewritten on load**; the next save writes the new 
 - **The keys heal on save, and only there.** When the Combat tab saves, it writes each
   fight as its current state, plus its enemy if that enemy is a key right now
   (`fight_keys.heal`), and drops a fight whose state is no longer an exposed fight,
-  along with any assignment left with none. Nothing writes to the profile when a node
-  is edited: the profile saves at once, while the bot waits for Save.
+  along with any assignment left with none. Nothing writes to the Bot Combat Strategy
+  when a node is edited: it saves at once, while the bot waits for Save.
 - **In the tab, the state is the truth.** Loading places the fights and rewrites each
   assignment's fights in memory to the states they landed on (`fight_keys.settle`).
   From then on the tab edits membership by state id, so its save heals by state and
@@ -223,13 +234,13 @@ follow it by.
 | module | holds |
 |---|---|
 | `shared/strategy_models.py` | player strategies, duel strategies and decks, as Pydantic models |
-| `combat/profile_models.py` | the combat profile (`BotCombatStrategy`) and its fight assignments |
+| `combat/bot_strategy_models.py` | the Bot Combat Strategy (`BotCombatStrategy`) and its fight assignments |
 | `combat/strategy_store.py` | the two roots, load/save/delete per kind, `Origin`, `unique_name` |
 | `combat/strategy_workset.py` | the Save/Cancel boundary |
 | `combat/strategy_summary.py` | every display string, derived once |
 | `combat/combat_grouping.py`, `combat/combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
 | `combat/fight_keys.py` | which stored fight belongs to which combat state |
-| `combat/combat_profile.py` | the profile-then-library lookup, what a profile duel takes with it, and duplicating a profile |
+| `combat/bot_combat_strategy.py` | the own-then-library lookup, what one of a bot's own duels takes with it, and duplicating a Bot Combat Strategy |
 
 All of these are Qt-free and need no `QApplication`. That is deliberate and worth keeping: the boundary, the precedence, the filter rule and the warnings are all testable without a widget, which is why the Qt tests over them are small enough to stay fast.
 
