@@ -516,6 +516,7 @@ class ActionPill(QPushButton):
         super().__init__(text, parent)
         self._key = key
         self._applying_style = False
+        self._flagged = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFixedHeight(pill_height())
         # Sized from the text rather than from the style. A ``QPushButton``'s own size
@@ -542,6 +543,21 @@ class ActionPill(QPushButton):
         self.setText(text)
         self.updateGeometry()
 
+    @property
+    def flagged(self) -> bool:
+        return self._flagged
+
+    def set_flagged(self, flagged: bool) -> None:
+        """Fill the pill with ``warning`` rather than gray: what it names wants a look.
+
+        The Combat tab's case is a fight fled on the default this session (epic #201,
+        Stage 7). The fill is the canvas's validation pill's, so the same color means
+        the same thing; the click stays what it was.
+        """
+        if flagged != self._flagged:
+            self._flagged = flagged
+            self._restyle()
+
     def sizeHint(self) -> QSize:
         return QSize(QFontMetrics(self.font()).horizontalAdvance(self.text()) + 2 * _PILL_PAD_X, pill_height())
 
@@ -550,13 +566,16 @@ class ActionPill(QPushButton):
             return
         self._applying_style = True
         try:
-            base = pill_style(
-                THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_micro_px, pad=f"0px {_PILL_PAD_X}px"
+            bg, hover = (
+                (THEME.warning, THEME.pill_warning_hover)
+                if self._flagged
+                else (THEME.pill_neutral_bg, THEME.edge_selected)
             )
+            base = pill_style(bg, THEME.pill_text, font_size=THEME.font_micro_px, pad=f"0px {_PILL_PAD_X}px")
             set_style_sheet(
                 self,
                 f"QPushButton {{ border: none; {base} }}"
-                f"QPushButton:hover:enabled {{ background: {THEME.edge_selected}; }}"
+                f"QPushButton:hover:enabled {{ background: {hover}; }}"
                 f"QPushButton:disabled {{ color: {THEME.text_subtle}; }}",
             )
         finally:
@@ -619,6 +638,24 @@ class ThisBotPill(NeutralPill):
         self._applying_style = True
         try:
             set_style_sheet(self, pill_style(THEME.pill_this_bot_bg, THEME.pill_text))
+        finally:
+            self._applying_style = False
+
+
+class WarningPill(NeutralPill):
+    """:class:`NeutralPill` filled with ``warning``: something here wants a look, and nothing is broken.
+
+    The Combat tab's banner and default card wear one for fights fled on the default this
+    session (epic #201, Stage 7). ``warning`` with ``pill_text`` is the canvas's validation
+    pill, at 4.5:1 or better in both themes; ``error`` stays for what does not work.
+    """
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            set_style_sheet(self, pill_style(THEME.warning, THEME.pill_text))
         finally:
             self._applying_style = False
 

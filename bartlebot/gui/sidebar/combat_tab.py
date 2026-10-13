@@ -116,6 +116,7 @@ from bartlebot.combat.combat_resolution import (
 from bartlebot.combat.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.combat.deck_io import resolve_apply_archmastery
 from bartlebot.combat.fight_keys import exposed_combat_states, heal, place
+from bartlebot.combat.flee_marks import FledFight, FleeMarks, fled_on_default, fled_text, fled_tooltip
 from bartlebot.combat.strategy_store import (
     Origin,
     StrategyKind,
@@ -164,7 +165,7 @@ from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadge
-from bartlebot.gui.widgets.pills.tag_pill import AccentPill
+from bartlebot.gui.widgets.pills.tag_pill import AccentPill, WarningPill
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
@@ -207,6 +208,8 @@ _EXPORT_BCS = "Export…"
 #: one, or change the defaults its fights are using instead, in Settings › Combat.
 _CREATE_BCS = "Create Bot Combat Strategy"
 _CHANGE_DEFAULTS = "Change defaults…"
+#: What the banner's flee mark says to do about the fights it names (Stage 7 of epic #201).
+_FLED_BANNER_FIX = "Create Bot Combat Strategy to give these fights a strategy of their own."
 
 
 # ---------------------------------------------------------------------------
@@ -860,6 +863,34 @@ class _BotStrategyBanner(CardFrame):
         layout.addWidget(self._meta)
         self._meta.setVisible(False)
 
+        # Fights fled on the default this session, with no Bot Combat Strategy to put them
+        # on (Stage 7 of epic #201). Its own row under the line, rather than beside the name
+        # with the Official pill: the name elides first at a sidebar's width, and this is
+        # the line that should not.
+        self._fled_pill = WarningPill("", parent=self.frame)
+        fled_row = QHBoxLayout()
+        fled_row.setContentsMargins(0, 2, 0, 0)
+        fled_row.addWidget(self._fled_pill)
+        fled_row.addStretch(1)
+        layout.addLayout(fled_row)
+        self._fled_pill.setVisible(False)
+
+    def set_fled(self, fights: list[FledFight]) -> None:
+        """Mark fights fled on the default this session, while the bot has no Bot Combat Strategy.
+
+        Create Bot Combat Strategy, first on the face and in the menu already, is the fix.
+        Empty hides the mark; with a Bot Combat Strategy the default card carries it instead.
+        """
+        self._fled_pill.setVisible(bool(fights))
+        if fights:
+            self._fled_pill.setText(fled_text(sum(fight.count for fight in fights)))
+            self._fled_pill.setToolTip(fled_tooltip(fights, _FLED_BANNER_FIX))
+
+    @property
+    def fled_text(self) -> str:
+        """The banner's flee mark, or empty while it is hidden. Public for the tests."""
+        return "" if self._fled_pill.isHidden() else self._fled_pill.text()
+
     def set_strategy(self, bcs: BotCombatStrategy | None) -> None:
         self._bcs = bcs
         self._redraw()
@@ -1072,6 +1103,9 @@ class CombatTab(QWidget):
         # How many game clients are connected: which default, Solo or Team, a fight with
         # nothing tailored would run. Pushed by the controller (``set_client_count``).
         self._clients = 0
+        # The session's fights fled on a default, every bot's. Installed by the controller,
+        # which records into it; None draws no marks (``set_flee_marks``).
+        self._flee_marks: FleeMarks | None = None
         # Answers "which account is behind each player slot"; installed by AppController,
         # which is what holds the ClientManager. See ``set_player_account_source``.
         self._player_account_source: Callable[[], list[str | None]] | None = None
@@ -1234,6 +1268,34 @@ class CombatTab(QWidget):
         self._bcs_banner.set_has_choices(self._bcs is None and bool(self._all_bcs))
         self._bcs_banner.set_source(source)
         self._default_panel.set_fallback(fallback)
+        self._refresh_fled()
+
+    def set_flee_marks(self, marks: FleeMarks | None) -> None:
+        """Install the session's record of fights fled on a default, and draw this bot's marks.
+
+        Installed once by ``AppController``, which records each flee into it and then calls
+        ``refresh_source``. The record outlives every bot switch, so a bot's marks are
+        there again when it is loaded again, until the app closes.
+        """
+        self._flee_marks = marks
+        self._refresh_fled()
+
+    def _refresh_fled(self) -> None:
+        """Mark this bot's fights fled on a default where each is drawn (Stage 7 of epic #201).
+
+        Only fights that would still run a default are marked, so a fight given a strategy
+        loses its mark. With a Bot Combat Strategy picked, the default card carries them,
+        on a fight's pill where it has one; with none, the banner does, being all there is.
+        """
+        fled: list[FledFight] = []
+        if self._flee_marks is not None and self._config is not None:
+            pick = self._bcs.id if self._bcs is not None else None
+            try:
+                fled = fled_on_default(self._flee_marks, self._config, self._clients, pick)
+            except Exception:
+                logger.exception("Could not work out which fled fights still run a default")
+        self._default_panel.set_fled(fled if self._bcs is not None else [])
+        self._bcs_banner.set_fled(fled if self._bcs is None else [])
 
     @property
     def banner(self) -> _BotStrategyBanner:
@@ -1467,6 +1529,9 @@ class CombatTab(QWidget):
             save_bot_strategy(self._bcs)
         except Exception:
             logger.exception("Failed to save BotCombatStrategy %s", self._bcs.id)
+        # After the save, since the marks are resolved from the file as a run would: a fight
+        # that just left the default card for one of its own no longer runs a default.
+        self._refresh_fled()
         self.combat_config_changed.emit()
 
     def _prune_orphans(self, assignments: list[StateAssignment]) -> list[StateAssignment]:
