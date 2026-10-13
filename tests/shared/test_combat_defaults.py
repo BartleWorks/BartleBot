@@ -218,6 +218,30 @@ def test_a_stored_id_that_does_not_fit_falls_to_the_shipped_duel_and_says_why(tm
     assert answer.reasons == ("your Team default 'Four Box' takes 4 players, and 2 are connected",)
 
 
+def test_an_ambient_team_fight_falls_to_everyone_attacks(tmp_path):
+    """Nothing orders who joins a fight no node started, so no seat is the hitter's."""
+    everyone = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    answer = default_duel(3, _prefs(tmp_path), _library(_duel(SHIPPED_TEAM_DUEL_ID), everyone), ambient=True)
+    assert (answer.duel, answer.source) == (everyone, DefaultSource.SHIPPED)
+
+
+def test_an_ambient_solo_fight_keeps_the_solo_duel(tmp_path):
+    solo = _duel(SHIPPED_SOLO_DUEL_ID)
+    answer = default_duel(1, _prefs(tmp_path), _library(solo), ambient=True)
+    assert answer.duel == solo
+
+
+def test_your_team_default_still_answers_an_ambient_fight(tmp_path):
+    """Only the shipped default changes: a duel the user chose is theirs to run."""
+    mine = DuelCombatStrategy(name="Mine", min_players=2)
+    prefs = _prefs(tmp_path)
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], mine.id)
+
+    answer = default_duel(2, prefs, _library(mine, _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)), ambient=True)
+
+    assert (answer.duel, answer.source) == (mine, DefaultSource.YOURS)
+
+
 def test_nothing_readable_answers_nothing(tmp_path):
     answer = default_duel(1, _prefs(tmp_path), _library())
     assert (answer.duel, answer.source) == (None, None)

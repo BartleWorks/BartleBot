@@ -95,9 +95,12 @@ Players are named by number in every log line (P1, P2), never by name.
    phase cannot be read, the anchor is the detection. With no helpers the fight starts at once.
 6. **Fight everyone in battle.** Until no client is in battle and every combat task is done, any
    client seen in battle gets its combat run with **its own slot's** strategy
-   (`resolve_combat(..., num_clients=len(clients))` gives one per slot): a helper, a client that
-   walked into the fight, a bystander pulled into a second one. Drops are polled for every
-   participant.
+   (`resolve_combat(..., num_clients=len(clients), ambient=True)` gives one per slot): a helper,
+   a client that walked into the fight, a bystander pulled into a second one. Drops are polled
+   for every participant. Nothing here orders who joins, so no seat is known to be P1's, and a
+   bot running on the shipped defaults has everyone attack (Default Team Duel (Everyone
+   Attacks)) rather than support a last seat that may not be the hitter's. A duel the user
+   chose still runs; `docs/COMBAT_CONFIG.md` has why.
 7. **Afterwards**, per fight: a won one as below, a fled one by collecting wisps in the hub where
    the flee left its players.
 

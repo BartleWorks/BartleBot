@@ -105,6 +105,26 @@ def test_no_key_stored_means_the_shipped_default(roots, prefs, clients, duel_id,
     assert res.source_label.endswith(f"(the shipped {size} default; this bot has no Bot Combat Strategy)")
 
 
+def test_an_ambient_fight_says_which_shipped_default_it_fell_to(roots, prefs):
+    res = CombatResolver(_bot(), 2, None, prefs=prefs, root=roots[0], user_root=roots[1], ambient=True).fight(None)
+
+    assert res.level is Level.SHIPPED_DEFAULT
+    assert res.duel.id == SHIPPED_EVERYONE_ATTACKS_DUEL_ID
+    assert res.source_label == (
+        "duel strategy 'Default Team Duel (Everyone Attacks)'"
+        " (the shipped Team default for an ambient fight; this bot has no Bot Combat Strategy)"
+    )
+
+
+def test_a_pick_still_answers_an_ambient_fight(roots, prefs):
+    duel = _duel(roots, "Mine")
+    bcs = _bcs(roots, default_strategy_id=duel.id)
+
+    res = CombatResolver(_bot(), 2, bcs.id, prefs=prefs, root=roots[0], user_root=roots[1], ambient=True).fight(None)
+
+    assert (res.level, res.duel.id) == (Level.PICK, duel.id)
+
+
 def test_a_stored_id_means_that_duel(roots, prefs):
     prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
 

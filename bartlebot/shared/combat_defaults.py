@@ -14,6 +14,10 @@ The three duels are Official items in ``strategies/duel/``, found by id:
 :func:`default_duel` is levels 3 and 4 of a fight's resolution: the user's Solo or Team duel
 when one is set and fits the team, and the shipped one otherwise. BartleBuddy calls the same
 function, so a default set in either product is the default in both.
+
+An ambient fight, one no node started, gets Everyone Attacks as its shipped Team default
+instead. Its players take their seats in whatever order they arrive, so Default Support's
+blade on ``ally(last)`` would land on whoever happened to join last, not on P1.
 """
 
 from __future__ import annotations
@@ -90,6 +94,13 @@ SHIPPED_DUEL_IDS = {
     TeamSize.TEAM: SHIPPED_TEAM_DUEL_ID,
 }
 
+#: The shipped default for an ambient fight. Nothing orders who joins it, so no seat is
+#: known to be the hitter's, and every player hits.
+SHIPPED_AMBIENT_DUEL_IDS = {
+    TeamSize.SOLO: SHIPPED_SOLO_DUEL_ID,
+    TeamSize.TEAM: SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+}
+
 
 def players_text(duel: DuelCombatStrategy) -> str:
     """``1 player``, ``4 players`` or ``2 to 4 players``: how many *duel* takes."""
@@ -123,12 +134,16 @@ def default_duel(
     clients: int,
     prefs: PreferenceStore,
     library: Callable[[str], DuelCombatStrategy | None],
+    *,
+    ambient: bool = False,
 ) -> DefaultDuel:
     """The default duel strategy for *clients* connected clients.
 
     The user's duel for the team size when one is stored, readable, and accepts *clients*;
-    otherwise the shipped one. The shipped duel is never checked against *clients*: it was
-    written for its size, and the alternative to it is the last-resort DSL.
+    otherwise the shipped one, from :data:`SHIPPED_AMBIENT_DUEL_IDS` for an *ambient* fight.
+    The user's default answers an ambient fight too: they chose it. The shipped duel is never
+    checked against *clients*: it was written for its size, and the alternative to it is the
+    last-resort DSL.
 
     *library* finds a duel by id and returns None for one it cannot. Nothing is written.
     """
@@ -143,7 +158,7 @@ def default_duel(
             reasons.append(f"your {size.value} default {shortfall_text(mine, clients)}")
         else:
             return DefaultDuel(size, mine, DefaultSource.YOURS)
-    shipped = library(SHIPPED_DUEL_IDS[size])
+    shipped = library((SHIPPED_AMBIENT_DUEL_IDS if ambient else SHIPPED_DUEL_IDS)[size])
     if shipped is None:
         return DefaultDuel(size, None, None, tuple(reasons))
     return DefaultDuel(size, shipped, DefaultSource.SHIPPED, tuple(reasons))

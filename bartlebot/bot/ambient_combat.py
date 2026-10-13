@@ -140,7 +140,7 @@ class AmbientSession:
     async def run(self) -> SessionEnd:
         machine, clients = self.machine, self.clients
         dsls, _order, source = combat_runner.resolve_combat(
-            machine, use_default_strategy=True, num_clients=len(clients)
+            machine, use_default_strategy=True, num_clients=len(clients), ambient=True
         )
         self._log(f"DSL source={source!r}", logging.DEBUG)
 

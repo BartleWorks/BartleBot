@@ -6,7 +6,8 @@ For each fight, with ``n`` clients connected:
 2. **The bot's Official** Bot Combat Strategy: the shipped one whose duels fit ``n`` for
    the most of the bot's fights.
 3. **The user's default**: their Solo or Team Duel Strategy, in ``preferences.json``.
-4. **The shipped default**: Default Solo Duel or Default Team Duel.
+4. **The shipped default**: Default Solo Duel or Default Team Duel, and for an ambient
+   fight, one no node started, Default Team Duel (Everyone Attacks) in place of the latter.
 
 A Bot Combat Strategy covers a fight with the duel assigned to it, or with its own default
 duel when the fight has no assignment; only one with neither falls through. The user's
@@ -86,7 +87,7 @@ class FightResolution:
     answered, at levels 1 and 2. ``via`` names the assignment that chose the duel there, and
     ``unassigned`` says the fight had none of its own, so its owner's default covered it.
     ``reasons`` are what was passed over on the way, in the user's words, so the log can say
-    why a fight is not on a more tailored level.
+    why a fight is not on a more tailored level. ``ambient`` is a fight no node started.
     """
 
     level: Level
@@ -97,6 +98,7 @@ class FightResolution:
     via: str = ""
     unassigned: bool = False
     reasons: tuple[str, ...] = ()
+    ambient: bool = False
 
     @property
     def where(self) -> str:
@@ -109,6 +111,8 @@ class FightResolution:
             head = f"your {self.size.value} default"
         elif self.level is Level.SHIPPED_DEFAULT:
             head = f"the shipped {self.size.value} default"
+            if self.ambient:
+                head += " for an ambient fight"
         else:
             head = "no strategy file could be read"
         return "; ".join([head, *self.reasons])
@@ -204,6 +208,7 @@ class CombatResolver:
 
     *pick* is the id of the user's Bot Combat Strategy for the bot, or None. *prefs* is
     where the user's defaults are read; None reads the vendor-wide ``preferences.json``.
+    *ambient* resolves fights no node started, which changes only the shipped Team default.
     """
 
     def __init__(
@@ -215,11 +220,13 @@ class CombatResolver:
         prefs: PreferenceStore | None = None,
         root: str | Path | None = None,
         user_root: str | Path | None = None,
+        ambient: bool = False,
     ) -> None:
         self._bot_config = bot_config
         self._clients = clients
         self._pick = pick or None
         self._prefs = prefs
+        self._ambient = ambient
         self._root = root
         self._user_root = user_root
         self._library = StrategyLookup(None, root=root, user_root=user_root)
@@ -304,7 +311,9 @@ class CombatResolver:
         if answer.duel is None:
             return FightResolution(Level.LAST_RESORT, None, None, None, size, reasons=tuple(reasons))
         level = Level.YOUR_DEFAULT if answer.source is DefaultSource.YOURS else Level.SHIPPED_DEFAULT
-        return FightResolution(level, answer.duel, self._library, None, size, reasons=tuple(reasons))
+        return FightResolution(
+            level, answer.duel, self._library, None, size, reasons=tuple(reasons), ambient=self._ambient
+        )
 
     def fights(self) -> dict[str | None, FightResolution]:
         """Every fight a run could reach, resolved: the default, then each exposed fight."""
@@ -324,7 +333,7 @@ class CombatResolver:
     def _defaults(self) -> DefaultDuel:
         if self._default is None:
             prefs = self._prefs if self._prefs is not None else PreferenceStore()
-            self._default = default_duel(self._clients, prefs, self._library.duel)
+            self._default = default_duel(self._clients, prefs, self._library.duel, ambient=self._ambient)
         return self._default
 
 
@@ -337,12 +346,14 @@ def resolve_fight(
     prefs: PreferenceStore | None = None,
     root: str | Path | None = None,
     user_root: str | Path | None = None,
+    ambient: bool = False,
 ) -> FightResolution:
     """Resolve one fight: *state_id* is its state, or None for the bot's default.
 
     :class:`CombatResolver` resolves several, reading each file once.
     """
-    return CombatResolver(bot_config, clients, pick, prefs=prefs, root=root, user_root=user_root).fight(state_id)
+    resolver = CombatResolver(bot_config, clients, pick, prefs=prefs, root=root, user_root=user_root, ambient=ambient)
+    return resolver.fight(state_id)
 
 
 def fight_label(bot_config: BotConfig | None, state_id: str | None) -> str:
