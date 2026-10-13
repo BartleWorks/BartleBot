@@ -1461,16 +1461,22 @@ class CombatTab(QWidget):
         active_id = SettingsManager.instance().get_active_strategy(self._config.id)
         if active_id:
             self._bcs = next((b for b in self._all_bcs if b.id == active_id), None)
-        own = [b for b in self._all_bcs if origin_of(StrategyKind.BOT, b.id) is not Origin.SHIPPED]
+        own = self._own_bcs()
         if self._bcs is None and own:
-            # Fall back to the first of the user's own. Never to an Official one: that is
-            # level 2 of the resolution and answers without being picked, and picking it
-            # here would make it level 1, the user's, without the user doing anything.
             self._bcs = own[0]
             if active_id != self._bcs.id:
                 SettingsManager.instance().set_active_strategy(self._config.id, self._bcs.id)
         if self._bcs is not None:
             self._set_bindings(self._bcs.state_assignments)
+
+    def _own_bcs(self) -> list[BotCombatStrategy]:
+        """The user's own Bot Combat Strategies for this bot, the only ones the tab picks unasked.
+
+        Never an Official one: that is level 2 of the resolution and answers without being
+        picked, and picking it on the user's behalf would make it level 1, the user's,
+        without the user doing anything.
+        """
+        return [b for b in self._all_bcs if origin_of(StrategyKind.BOT, b.id) is not Origin.SHIPPED]
 
     def _set_bindings(self, assignments: list[StateAssignment]) -> None:
         """Bind every fight from a strategy file's *assignments*, whose order is the cards'.
@@ -2207,7 +2213,8 @@ class CombatTab(QWidget):
         to_delete = self._bcs
         self._all_bcs = [b for b in self._all_bcs if b.id != to_delete.id]
         delete_bot_strategy(to_delete.id)
-        self._bcs = self._all_bcs[0] if self._all_bcs else None
+        own = self._own_bcs()
+        self._bcs = own[0] if own else None
         self._set_bindings(self._bcs.state_assignments if self._bcs else [])
         new_active = self._bcs.id if self._bcs else None
         SettingsManager.instance().set_active_strategy(self._config.id, new_active)

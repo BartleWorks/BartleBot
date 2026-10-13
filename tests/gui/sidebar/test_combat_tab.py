@@ -19,7 +19,7 @@ import shutil
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QInputDialog, QScrollArea
+from PyQt6.QtWidgets import QInputDialog, QMessageBox, QScrollArea
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store as store_mod
@@ -2884,6 +2884,39 @@ def test_an_official_one_is_named_and_never_made_the_users_pick(qapp, defaults):
     assert SettingsManager.instance().get_active_strategy("test-bot") is None
     assert (tab.banner.name_text, tab.banner.shows_official_pill) == ("Author Set", True)
     assert not tab.banner.action_button(_CHANGE_BCS).isHidden()
+
+
+def test_deleting_the_users_last_one_never_makes_an_official_one_the_pick(qapp, defaults):
+    """The delete path's fall-back obeys the same rule as loading (epic #201 review, R1)."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    official = BotCombatStrategy(name="Author Set", bot_id="test-bot", default_strategy_id=SHIPPED_TEAM_DUEL_ID)
+    store_mod.save_bot_strategy(official, defaults, defaults)
+    tab = _tab_with_clients(_config(), 2, BotCombatStrategy(name="Mine", bot_id="test-bot"))
+    assert tab._bcs.name == "Mine"
+
+    with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+        tab._on_delete_bcs()
+
+    assert tab._bcs is None
+    assert SettingsManager.instance().get_active_strategy("test-bot") is None
+    assert (tab.banner.name_text, tab.banner.shows_official_pill) == ("Author Set", True)
+
+
+def test_deleting_one_of_the_users_picks_the_next_of_their_own(qapp, defaults):
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    official = BotCombatStrategy(name="Author Set", bot_id="test-bot", default_strategy_id=SHIPPED_TEAM_DUEL_ID)
+    store_mod.save_bot_strategy(official, defaults, defaults)
+    other = BotCombatStrategy(name="Other", bot_id="test-bot")
+    store_mod.save_bot_strategy(other)
+    tab = _tab_with_clients(_config(), 2, BotCombatStrategy(name="Mine", bot_id="test-bot"))
+
+    with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+        tab._on_delete_bcs()
+
+    assert tab._bcs.id == other.id
+    assert SettingsManager.instance().get_active_strategy("test-bot") == other.id
 
 
 # ---------------------------------------------------------------------------
