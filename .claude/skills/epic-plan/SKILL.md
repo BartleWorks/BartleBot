@@ -78,7 +78,8 @@ body templates and the `gh` commands.
 ## Phase 3: Execute a stage
 
 **One stage per request.** The user asking for a stage is the request to commit on its
-branch and merge it. It never extends to the next stage, and it never covers a push.
+branch and merge it, so the stage's changes are committed to its branch as they are made
+(step 3). It never extends to the next stage, and it never covers a push.
 
 1. **Start clean.** Branch from an up-to-date `master` with a clean tree. Set the stage
    issue to `In progress` on the board by hand, because nothing sets it automatically.
@@ -87,7 +88,10 @@ branch and merge it. It never extends to the next stage, and it never covers a p
    stage's work.
 3. **Build in small commits on the branch.** Each item in Done when is a contract and
    gets a test. The docs named on the card's Docs line are written in this stage, not
-   later.
+   later. Commit as you go: every change made as part of the stage (code, tests, docs,
+   the pointer doc, a fix the gate or a review turned up) can and should be committed to
+   the stage branch as it applies, without waiting to be asked again. Keep each commit to
+   one coherent change, and never commit to `master` directly.
 4. **The gate is green at every merge.** Run `uv run pytest -n auto` and
    `uv run ruff check` on the final tree. Never merge while either is red. A failure
    this stage caused is fixed, never skipped or marked `xfail`. A flake gets rerun
