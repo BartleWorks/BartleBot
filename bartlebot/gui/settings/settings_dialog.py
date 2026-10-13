@@ -1,4 +1,4 @@
-"""SettingsDialog: modal dialog with General, Bot, Canvas, Authoring, Theme, and Game tabs."""
+"""SettingsDialog: modal dialog with General, Bot, Combat, Canvas, Authoring, Theme, and Game tabs."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
+from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab, SettingsForm
 from bartlebot.gui.settings.theme_tab import ThemeTab
@@ -66,6 +67,10 @@ class SettingsDialog(QDialog):
         # Bot tab (how a run behaves, and the app-setting level of every bot option)
         self._bot_tab = ScrollableTab(BotTab())
         self._tabs.addTab(self._bot_tab, "Bot")
+
+        # Combat tab (the Solo and Team Default Duel Strategies, shared with BartleBuddy)
+        self._combat_tab = ScrollableTab(CombatDefaultsTab())
+        self._tabs.addTab(self._combat_tab, "Combat")
 
         # Canvas tab
         self._canvas_tab = ScrollableTab(CanvasTab())
@@ -162,10 +167,11 @@ class SettingsDialog(QDialog):
             self._tabs.widget(i).apply()
 
     def open_tab(self, tab_name: str) -> None:
-        """Switch to the named tab. Valid names: general, bot, canvas, authoring, theme, game."""
+        """Switch to the named tab. Valid names: general, bot, combat, canvas, authoring, theme, game."""
         widgets = {
             "general": self._general_tab,
             "bot": self._bot_tab,
+            "combat": self._combat_tab,
             "canvas": self._canvas_tab,
             "authoring": self._authoring_tab,
             "theme": self._theme_tab,

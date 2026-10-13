@@ -15,6 +15,7 @@ entirely in the Qt wiring.
 
 from __future__ import annotations
 
+import shutil
 from unittest.mock import patch
 
 import pytest
@@ -23,13 +24,23 @@ from PyQt6.QtWidgets import QInputDialog, QScrollArea
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store as store_mod
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.combat.combat_resolution import (
+    BOT_STRATEGY_CAPTION,
+    DEFAULTS_NAME,
+    NO_BOT_STRATEGY_CAPTION,
+    OFFICIAL_PILL,
+    YOUR_DEFAULT_PILL,
+)
 from bartlebot.combat.combat_warnings import exposed_combat_states
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.sidebar.combat_tab import (
     _APPLY_DECK,
     _CHANGE_BCS,
+    _CHANGE_DEFAULTS,
     _CLEAR_DECK,
+    _CREATE_BCS,
+    _DEFAULT_BINDING,
     _DELETE_BCS,
     _DUPLICATE_BCS,
     _EXPORT_BCS,
@@ -46,20 +57,28 @@ from bartlebot.gui.sidebar.combat_tab import (
 )
 from bartlebot.gui.sidebar.strategy_panel import (
     APPLIES_TO,
-    BUILT_IN_LABEL,
     CHANGE,
     DEFAULT_PILL,
     DEFAULT_SCOPE_META,
+    DEFAULTS_LABEL,
+    DEFAULTS_META,
     EDIT_STRATEGY,
     LOCKED,
     MISSING_LABEL,
-    NOT_CONFIGURED_LABEL,
     STATE_INHERIT_LABEL,
     STATE_INHERIT_META,
     StrategyPanel,
 )
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow
 from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, NeutralPill
+from bartlebot.paths import project_root
+from bartlebot.shared.combat_defaults import (
+    PREFERENCE_KEYS,
+    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+    SHIPPED_TEAM_DUEL_ID,
+    TeamSize,
+)
+from bartlebot.shared.preferences import PreferenceStore
 from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.drag_helpers import drag_card, menu_move, press_and_move, release, show
 
@@ -90,6 +109,10 @@ def _config(*, label: str = "Boss", use_default: bool = False) -> BotConfig:
         ],
         transitions=[],
     )
+
+
+#: Every face button the banner builds, in header order.
+_FACE_LABELS = [_CHANGE_BCS, _RENAME_BCS, _NEW_BCS, _CREATE_BCS, _CHANGE_DEFAULTS]
 
 
 def _verb_labels(card) -> list[str]:
@@ -148,8 +171,8 @@ def test_panel_shows_not_configured_when_unlinked_and_empty(qapp):
     panel = StrategyPanel()
     panel.load(binding, [], [])
 
-    assert panel._name.full_text() == BUILT_IN_LABEL
-    assert panel._meta.full_text() == NOT_CONFIGURED_LABEL
+    assert panel._name.full_text() == DEFAULTS_LABEL
+    assert panel._meta.full_text() == DEFAULTS_META
 
 
 def test_every_assignment_gets_its_own_line(qapp):
@@ -407,14 +430,48 @@ def test_bot_card_with_no_strategy_says_so_and_refuses_its_body(qapp):
     assert card._refuses_activation()
 
 
-def test_new_stays_live_with_no_strategy_loaded(qapp):
-    """That is exactly the state a user gets out of by making one."""
+def test_with_no_strategy_the_face_offers_create_and_change_defaults(qapp):
+    """The two ways out of running on the defaults (epic #201, Stage 5): make a Bot Combat
+    Strategy, or change the defaults themselves. Create stays live, because that is
+    exactly the state a user gets out of by making one."""
     card = _BotStrategyBanner()
     card.set_strategy(None)
 
-    assert card.action_button(_NEW_BCS).isEnabled()
-    assert not card.action_button(_RENAME_BCS).isEnabled()
-    assert not card.action_button(_CHANGE_BCS).isEnabled()
+    shown = [label for label in _FACE_LABELS if not card.action_button(label).isHidden()]
+    assert shown == [_CREATE_BCS, _CHANGE_DEFAULTS]
+    assert card.action_button(_CREATE_BCS).isEnabled()
+    assert _verb_labels(card) == [_CREATE_BCS, _CHANGE_DEFAULTS]
+
+
+def test_with_a_strategy_the_face_offers_change_rename_and_new(qapp):
+    card = _BotStrategyBanner()
+    card.set_strategy(BotCombatStrategy(name="B", bot_id="bot-1"))
+
+    shown = [label for label in _FACE_LABELS if not card.action_button(label).isHidden()]
+    assert shown == [_CHANGE_BCS, _RENAME_BCS, _NEW_BCS]
+    # Still in the menu: its unassigned fights use the defaults.
+    assert _CHANGE_DEFAULTS in _verb_labels(card)
+
+
+def test_change_is_offered_with_none_picked_when_there_is_an_official_one(qapp):
+    """An Official Bot Combat Strategy answers without being picked; Change… is how to pick it."""
+    card = _BotStrategyBanner()
+    card.set_strategy(None)
+    card.set_has_choices(True)
+
+    assert not card.action_button(_CHANGE_BCS).isHidden()
+    assert not card._refuses_activation()
+
+
+def test_change_defaults_asks_for_settings_combat(qapp, store):
+    tab = CombatTab()
+    tab.set_config(_config())
+    asked = []
+    tab.combat_defaults_requested.connect(lambda: asked.append(True))
+
+    tab.banner.action_button(_CHANGE_DEFAULTS).click()
+
+    assert asked == [True]
 
 
 def test_destructive_bot_verbs_stay_off_the_face(qapp):
@@ -640,7 +697,7 @@ def test_an_unconfigured_fight_is_a_pill_on_the_default_card(qapp, store):
 
     assert _default_fights(tab) == ["Howling Chaney"]
     assert not card.isHidden()
-    assert card._name.full_text() == BUILT_IN_LABEL
+    assert card._name.full_text() == DEFAULTS_LABEL
 
 
 def test_the_default_card_is_badged_rather_than_titled(qapp, store):
@@ -716,8 +773,8 @@ def test_the_two_levels_fall_through_to_different_things(qapp, store):
     tab = _tab_for(bcs, _config())
 
     assert tab._state_panels["state_9"].empty_label == STATE_INHERIT_LABEL
-    assert tab._default_panel.empty_label == BUILT_IN_LABEL
-    assert tab._default_panel._name.full_text() == BUILT_IN_LABEL
+    assert tab._default_panel.empty_label == DEFAULTS_LABEL
+    assert tab._default_panel._name.full_text() == DEFAULTS_LABEL
 
 
 def test_a_fight_leaves_the_pills_for_a_card_of_its_own(qapp, store):
@@ -858,7 +915,7 @@ def test_pick_none_unlinks(qapp, store):
         tab._on_pick_duel(tab._default_panel)
 
     assert tab._bcs.default_strategy_id is None
-    assert tab._default_panel._name.full_text() == BUILT_IN_LABEL
+    assert tab._default_panel._name.full_text() == DEFAULTS_LABEL
 
 
 def test_the_picker_none_row_is_labeled_with_what_the_card_falls_through_to(qapp, store):
@@ -873,7 +930,7 @@ def test_the_picker_none_row_is_labeled_with_what_the_card_falls_through_to(qapp
         tab._on_pick_for_fight("state_9")
         state_label = MockDlg.call_args.kwargs["none_label"]
 
-    assert default_label == BUILT_IN_LABEL
+    assert default_label == DEFAULTS_LABEL
     assert state_label == STATE_INHERIT_LABEL
 
 
@@ -904,7 +961,8 @@ def test_rebind_identity_drops_the_originals_strategy(qapp, store):
 
     assert tab._bcs is None
     assert tab._all_bcs == []
-    assert tab._bcs_banner._name.full_text() == _NO_STRATEGY_LABEL
+    assert tab.banner.caption_text == NO_BOT_STRATEGY_CAPTION
+    assert tab.banner.name_text == DEFAULTS_NAME
 
 
 def test_rebind_identity_does_not_bind_the_fork_to_the_originals_strategy(qapp, store):
@@ -2721,3 +2779,108 @@ def test_a_fight_given_a_strategy_from_its_pill_is_saved_with_its_enemy(qapp, st
     tab._link("state_1", dcs.id)
 
     assert _saved_fights(tab._bcs) == [[FightRef(state="state_1", enemy="Lamia")]]
+
+
+# ---------------------------------------------------------------------------
+# Showing the source: the banner and the default card's pill (epic #201, Stage 5)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def defaults(store):
+    """The store, with the repo's shipped strategies in it, so the defaults are there to answer."""
+    shutil.copytree(project_root() / "strategies", store / "strategies", dirs_exist_ok=True)
+    return store
+
+
+def _tab_with_clients(config: BotConfig, clients: int, bcs: BotCombatStrategy | None = None) -> CombatTab:
+    if bcs is not None:
+        config.id = bcs.bot_id
+        store_mod.save_bot_strategy(bcs)
+        _active(config.id, bcs)
+    tab = CombatTab()
+    tab.set_client_count(clients)
+    tab.set_config(config)
+    return tab
+
+
+def test_with_no_bot_combat_strategy_the_banner_names_the_default_in_use(qapp, defaults):
+    tab = _tab_with_clients(_config(), 2)
+
+    assert (tab.banner.caption_text, tab.banner.name_text) == (NO_BOT_STRATEGY_CAPTION, DEFAULTS_NAME)
+    assert tab.banner.meta_text == "Team: Default Team Duel (recommended)"
+    assert not tab.banner.shows_official_pill
+
+    tab.set_client_count(1)
+
+    assert tab.banner.meta_text == "Solo: Default Solo Duel (recommended)"
+
+
+def test_the_banner_names_the_users_own_default_as_theirs(qapp, defaults):
+    PreferenceStore().set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+
+    tab = _tab_with_clients(_config(), 3)
+
+    assert tab.banner.meta_text == "Team: Default Team Duel (Everyone Attacks) (yours)"
+
+
+def test_the_banner_names_the_users_pick(qapp, defaults):
+    dcs = _saved_dcs("Mine")
+    tab = _tab_with_clients(
+        _config(), 2, BotCombatStrategy(name="Four wizards", bot_id="bot-1", default_strategy_id=dcs.id)
+    )
+
+    assert (tab.banner.caption_text, tab.banner.name_text) == (BOT_STRATEGY_CAPTION, "Four wizards")
+    assert "Fights with no duel strategy" not in tab.banner.meta_tooltip
+    assert tab.default_panel.source_pill_text == ""
+
+
+def test_the_default_card_shows_the_default_that_answers_with_its_pill(qapp, defaults):
+    tab = _tab_with_clients(_config(), 2, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    assert tab.default_panel._name.full_text() == "Default Team Duel"
+    assert tab.default_panel.source_pill_text == OFFICIAL_PILL
+    assert tab.banner.meta_tooltip.startswith("Fights with no duel strategy: Team: Default Team Duel (recommended)")
+
+    PreferenceStore().set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    tab.refresh_source()
+
+    assert tab.default_panel._name.full_text() == "Default Team Duel (Everyone Attacks)"
+    assert tab.default_panel.source_pill_text == YOUR_DEFAULT_PILL
+
+
+def test_with_nobody_connected_the_default_card_names_both_defaults(qapp, defaults):
+    tab = _tab_with_clients(_config(), 0, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    assert tab.default_panel._name.full_text() == DEFAULTS_LABEL
+    assert tab.default_panel._meta.full_text() == (
+        "Solo: Default Solo Duel (recommended) · Team: Default Team Duel (recommended)"
+    )
+    assert tab.default_panel.source_pill_text == OFFICIAL_PILL
+
+
+def test_picking_a_default_for_the_card_takes_its_pill_away(qapp, defaults):
+    dcs = _saved_dcs("Mine")
+    tab = _tab_with_clients(_config(), 2, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    tab._link(_DEFAULT_BINDING, dcs.id)
+
+    assert tab.default_panel._name.full_text() == "Mine"
+    assert tab.default_panel.source_pill_text == ""
+    assert "Fights with no duel strategy" not in tab.banner.meta_tooltip
+
+
+def test_an_official_one_is_named_and_never_made_the_users_pick(qapp, defaults):
+    """Level 2 answers without being picked; the tab's fall-back to the first strategy must
+    not pick it, which would make it level 1 without the user doing anything."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    official = BotCombatStrategy(name="Author Set", bot_id="test-bot", default_strategy_id=SHIPPED_TEAM_DUEL_ID)
+    store_mod.save_bot_strategy(official, defaults, defaults)
+
+    tab = _tab_with_clients(_config(), 2)
+
+    assert tab._bcs is None
+    assert SettingsManager.instance().get_active_strategy("test-bot") is None
+    assert (tab.banner.name_text, tab.banner.shows_official_pill) == ("Author Set", True)
+    assert not tab.banner.action_button(_CHANGE_BCS).isHidden()

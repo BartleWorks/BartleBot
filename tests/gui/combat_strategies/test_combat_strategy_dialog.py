@@ -201,6 +201,32 @@ def test_a_pick_shows_only_the_kind_that_was_asked_for(qapp, roots):
     assert dlg.selected_id() == dcs.id
 
 
+def test_a_team_size_opens_on_the_duels_that_size_can_run_until_the_filter_changes(qapp, roots):
+    """Settings › Combat's Team card asks for two (epic #201, Stage 5): a duel for one
+    player, or one that needs four, is not offered until the chip is taken off."""
+    solo = DuelCombatStrategy(name="Solo", min_players=1, max_players=1)
+    pair = DuelCombatStrategy(name="Pair", min_players=2, max_players=4)
+    four = DuelCombatStrategy(name="Four", min_players=4, max_players=4)
+    for duel in (solo, pair, four):
+        save_duel_strategy(duel, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, allow_none=False, team_size=2)
+    page = dlg.page(StrategyKind.DUEL)
+
+    assert page.visible_ids() == [pair.id]
+    assert page.filter_bar.chip_texts() == ["Team of 2"]
+
+    page.filter_bar.clear_facets()
+
+    assert sorted(page.visible_ids()) == sorted([solo.id, pair.id, four.id])
+
+
+def test_the_use_button_says_what_the_caller_falls_to(qapp, roots):
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, none_label="(bot default)", none_tooltip="Tip")
+
+    assert dlg._none_btn.text() == "Use (bot default)"
+    assert dlg._none_btn.toolTip() == "Tip"
+
+
 def test_a_pick_that_may_not_be_empty_refuses_to_close_with_nothing(qapp, roots):
     save_duel_strategy(DuelCombatStrategy(name="Frenzy AoE"), roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, allow_none=False)

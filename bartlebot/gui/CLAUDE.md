@@ -949,6 +949,28 @@ marking what just changed. It is fed by the machine's callbacks through `AppCont
 never by reading the machine, and never logs a write -- the machine's own line is already
 in the in-app log.
 
+**The Combat tab's banner names where the fights' strategies come from** (epic #201, Stage
+5), because a fallback is shown, never asked about, and this is where it is shown. Its
+words are `combat_resolution.describe_source`'s, which resolves as a run would and writes
+nothing, so the banner cannot name a source the run would not use. Four states:
+
+| state | caption · name | line under it | face verbs |
+|---|---|---|---|
+| the user's pick | Bot Combat Strategy · its name | its summary; with its default unset, *Fights with no duel strategy: Team: …* is the tooltip, since beside the summary it elides and the default card shows it | Change…, Rename…, New… |
+| an Official one, nothing picked | Bot Combat Strategy · its name, with the **Official** pill | which default its uncovered fights use, if any | Create Bot Combat Strategy, Change defaults…, Change… |
+| the defaults | No Bot Combat Strategy · Default Duel Strategies | *Team: Default Team Duel (recommended)*, or *(yours)* | Create Bot Combat Strategy, Change defaults… |
+| no file readable | No Bot Combat Strategy · Default Duel Strategies | *Team: the built-in DSL, …* | the same |
+
+The team size is the clients connected (`set_client_count`); with none, both Solo and
+Team are named. What was passed over on the way is the line's tooltip, in the log's words.
+Change defaults… asks the main window for Settings › Combat, which re-reads the banner
+on OK (`refresh_source`). The default card, while its Bot Combat Strategy has no default,
+draws the default that answers instead of a bare label, with an **Official** or **Your
+default** pill beside its Default badge (`StrategyPanel.set_fallback`); with nobody
+connected and the two from different sources, it has no pill, since one would be wrong.
+The tab never falls back to an Official Bot Combat Strategy as the pick: that is level 2,
+which answers without being picked, and picking it for the user would make it level 1.
+
 ## Source: Official, Official (modified), Custom
 
 Every list of bots, templates, subgraphs or strategies says where each item comes from,

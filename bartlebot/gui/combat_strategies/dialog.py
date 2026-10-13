@@ -22,11 +22,13 @@ three modes, one per way in (#118, #123):
              Player tabs, with the active Bot Combat Strategy's own strategies in a
              section at the top. New and Duplicate create *in it*; library entries stay
              editable too, and the Save confirmation says where else an edit reaches.
-``PICK``     ``[Use built-in default] [Cancel] [Use this]`` — 🔍 on a card, a fight's
-             pill, the add-card's "Select existing duel strategy…", and a deck slot's
-             "Load from library". Only the tab asked for, and **select-only**: no New,
-             Duplicate or Delete, and the detail pane is read-only. Before #123 Pick
-             edited everything, which made 🔍 and ✏ the same button.
+``PICK``     ``[Use Default Duel Strategies] [Cancel] [Use this]`` — 🔍 on a card, a
+             fight's pill, the add-card's "Select existing duel strategy…", a deck slot's
+             "Load from library", and Settings › Combat's Change…. Only the tab asked
+             for, and **select-only**: no New, Duplicate or Delete, and the detail pane
+             is read-only. Before #123 Pick edited everything, which made 🔍 and ✏ the
+             same button. The first button names the level below the caller's, and is
+             not offered where there is none to fall to.
 
 One rule covers the edge: **Cancel discards every edit; Save and Use both commit
 every edit**, and Use additionally returns the selection. In Pick there is nothing
@@ -185,7 +187,12 @@ NEW_NAMES = {
     StrategyKind.DECK: "New Deck Preset",
 }
 
-NONE_LABEL = "(built-in default)"
+#: Pick mode's way to choose no strategy, and what it says it does. Callers name the level
+#: below their own; these are for one that doesn't.
+NONE_LABEL = "no strategy here"
+NONE_TOOLTIP = "Choose no duel strategy here, so these fights use the next level's"
+#: What Delete says becomes of the links to an entry that is used elsewhere.
+DELETE_USED_NOTE = "those links will point at nothing until they are changed"
 
 #: Where a row keeps the text its filter query is matched against, so filtering
 #: never has to re-summarize the entry behind it.
@@ -1190,7 +1197,7 @@ class _KindPage(QWidget):
             detail = f"“{entry.name}” will be removed when you save."
             usage = self._ws.usage(entry.id)
             if usage.total:
-                detail += f"\n\n{usage.phrase()} — those will fall back to the built-in default."
+                detail += f"\n\n{usage.phrase()} — {DELETE_USED_NOTE}."
         answer = QMessageBox.question(
             self,
             f"{verb} strategy?",
@@ -1297,17 +1304,23 @@ class CombatStrategyDialog(QDialog):
         bot_name: Callable[[str], str | None] | None = None,
         deck_link: DeckClientLink | None = None,
         parent=None,
+        *,
+        none_tooltip: str = NONE_TOOLTIP,
+        team_size: int | None = None,
     ):
+        """*team_size* opens the Duel tab filtered to the duels a team of that size can run,
+        as a chip the user can remove (Settings › Combat's Solo and Team cards)."""
         super().__init__(parent)
         self._ws = ws
         self._mode = mode
         self._pick_kind = kind
         self._bot_name = bot_name
-        # What falling through to nothing means is a property of the binding's
-        # level, not of this dialog — "(built-in default)" at the top, "(inherit
-        # from default)" at a fight — so the caller names it.
+        # What falling through to nothing means is a property of the binding's level,
+        # not of this dialog — the Default Duel Strategies on the default card, the
+        # bot's default on a fight — so the caller names it, and says it.
         self._allow_none = allow_none
         self._none_label = none_label
+        self._none_tooltip = none_tooltip
         self._selected_id: str | None = current_id
         self._selected_was_created = False
         self._used_none = False
@@ -1357,6 +1370,8 @@ class CombatStrategyDialog(QDialog):
 
         start = self._pages.get(kind) or next(iter(self._pages.values()))
         self._tabs.setCurrentWidget(start)
+        if team_size is not None and StrategyKind.DUEL in self._pages:
+            self._pages[StrategyKind.DUEL].filter_bar.set_team_size(team_size)
         start.select(current_id)
 
         layout.addLayout(self._build_buttons())
@@ -1381,12 +1396,12 @@ class CombatStrategyDialog(QDialog):
         # This footer was the worked example the shared helper was drawn from, and it is
         # built through it now so there is exactly one implementation. The weights are
         # unchanged: the commit is what this dialog exists to reach, so it is the one
-        # PRIMARY on the screen; falling back to the built-in default is a real
-        # alternative to it and takes the outline; Cancel is neither. See issues #47/#89.
+        # PRIMARY on the screen; choosing no strategy, so the level below answers, is a
+        # real alternative to it and takes the outline; Cancel is neither. See #47/#89.
         extras: list[ActionButton] = []
         if self._mode is DialogMode.PICK and self._allow_none:
             self._none_btn = ActionButton("revert", f"Use {self._none_label}", style=ActionStyle.SECONDARY, fill=False)
-            self._none_btn.setToolTip("Fight with BartleBot's built-in DSL instead of a saved strategy")
+            self._none_btn.setToolTip(self._none_tooltip)
             self._none_btn.clicked.connect(self._on_use_none)
             extras.append(self._none_btn)
         # Both spellings of the same act: commit the working set. Use also
@@ -1519,7 +1534,7 @@ class CombatStrategyDialog(QDialog):
     # -- results --------------------------------------------------------
 
     def selected_id(self) -> str | None:
-        """The picked id. ``None`` means the built-in default."""
+        """The picked id. ``None`` means no strategy here, so the level below answers."""
         return self._selected_id
 
     def selected_was_created(self) -> bool:
@@ -1529,7 +1544,7 @@ class CombatStrategyDialog(QDialog):
         return self._selected_was_created
 
     def used_built_in_default(self) -> bool:
-        """Whether the user chose the built-in default rather than a strategy.
+        """Whether the user chose no strategy, so the level below answers.
 
         Distinguishes "no strategy, deliberately" from ``selected_id() is None``
         after a Cancel, which the caller must not act on at all.

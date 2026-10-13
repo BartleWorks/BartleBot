@@ -24,8 +24,10 @@ from bartlebot.shared.combat_defaults import (
     SHIPPED_TEAM_DUEL_ID,
     DefaultSource,
     TeamSize,
+    chosen_default,
     default_duel,
     players_text,
+    set_default_choice,
     team_size,
 )
 from bartlebot.shared.official_set import SHARED_SET_VERSION
@@ -250,3 +252,26 @@ def test_nothing_readable_answers_nothing(tmp_path):
 def test_default_duel_writes_nothing(tmp_path):
     default_duel(2, _prefs(tmp_path), _library(_duel(SHIPPED_TEAM_DUEL_ID)))
     assert list(tmp_path.iterdir()) == []
+
+
+def test_a_choice_is_stored_and_read_back(tmp_path):
+    prefs = _prefs(tmp_path)
+
+    assert set_default_choice(prefs, TeamSize.TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+
+    assert chosen_default(_prefs(tmp_path), TeamSize.TEAM) == SHIPPED_EVERYONE_ATTACKS_DUEL_ID
+    assert chosen_default(prefs, TeamSize.SOLO) is None
+
+
+@pytest.mark.parametrize("recommended", [None, SHIPPED_TEAM_DUEL_ID])
+def test_the_recommended_choice_is_stored_as_no_key(tmp_path, recommended):
+    """So a later fix to the shipped duel reaches everyone who kept it (epic #201)."""
+    prefs = _prefs(tmp_path)
+    prefs.set(PREFERENCE_KEYS[TeamSize.SOLO], "kept")
+    set_default_choice(prefs, TeamSize.TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+
+    assert set_default_choice(prefs, TeamSize.TEAM, recommended)
+
+    record = json.loads((tmp_path / "preferences.json").read_text(encoding="utf-8"))
+    assert PREFERENCE_KEYS[TeamSize.TEAM] not in record
+    assert record[PREFERENCE_KEYS[TeamSize.SOLO]] == "kept"

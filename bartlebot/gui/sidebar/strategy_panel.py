@@ -112,7 +112,7 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
 - **Change…** is also the *body* verb. The card is the active configuration and the
   card is how you replace it, so the whole frame is the pick affordance rather than a
   chip inside it that had to be found first.
-- **Edit…** (the pencil) is on every card, the built-in default's included. It opens
+- **Edit…** (the pencil) is on every card, one running a default included. It opens
   the Bot Combat Strategy editor on this card's strategy, and a strategy made there with New or
   Duplicate is linked to this card on Save -- so pencil, New, Save is the whole of
   giving a card a strategy of its own (#118).
@@ -130,8 +130,15 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from bartlebot.combat.combat_resolution import (
+    DEFAULTS_NAME,
+    OFFICIAL_PILL,
+    YOUR_DEFAULT_PILL,
+    default_pill,
+    defaults_text,
+)
 from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
@@ -143,21 +150,26 @@ from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, Neutral
 
 if TYPE_CHECKING:
     from bartlebot.combat.strategy_summary import StrategySummary
+    from bartlebot.shared.combat_defaults import DefaultDuel
     from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
-#: What the *default* binding falls through to when it is unset.
-BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
-NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
+#: What the *default* binding falls through to when it is unset: the user's Solo or Team
+#: default, or the recommended one (epic #201). The card shows the duel that answers, with
+#: a pill saying whose it is (``set_fallback``); these are its words when it cannot.
+DEFAULTS_LABEL = DEFAULTS_NAME
+DEFAULTS_META = "Nothing picked here, so each fight uses the Solo or Team default"
 
 # What an unset *state override* falls through to, which is not the same thing and the
-# distinction is not cosmetic: an empty state override does not reach the built-in
-# default, it reaches this bot strategy's own Default Combat Strategy -- see
-# resolve_combat(), which consults ``bcs.default_strategy_id`` first. Labeling both
-# levels "BartleBot Default Combat
-# Strategy" told the user the bot default would be skipped, and contradicted the
-# pre-run warning text.
+# distinction is not cosmetic: an empty state override does not reach the defaults, it
+# reaches this Bot Combat Strategy's own default -- see ``combat_resolution``, which
+# consults ``bcs.default_strategy_id`` first. Labeling both levels alike told the user
+# the bot default would be skipped, and contradicted the pre-run notices.
 STATE_INHERIT_LABEL = "(bot default)"
 STATE_INHERIT_META = "No override — uses the default strategy above"
+
+#: What Pick's "Use …" button does at each of the two levels: the tooltip under its label.
+DEFAULTS_NONE_TIP = "Pick nothing here, so these fights use your Solo or Team default"
+STATE_INHERIT_TIP = "Pick nothing here, so this fight uses the default strategy above"
 
 #: The badge on the default card's pill row, and the sentence under it.
 #:
@@ -256,7 +268,7 @@ class StrategyPanel(CardFrame):
 
     pick_requested = pyqtSignal()
     #: The pencil: open this card's strategy in the Bot Combat Strategy editor, or — on a card with
-    #: none, the built-in default included — open the editor to make one for it (#118).
+    #: none, one running a default included — open the editor to make one for it (#118).
     edit_requested = pyqtSignal()
     #: The complete desired membership, once the popup has closed -- not per toggle.
     #: Acting on each toggle would rebuild this card's own section while its popup is
@@ -268,8 +280,8 @@ class StrategyPanel(CardFrame):
 
     def __init__(
         self,
-        empty_label: str = BUILT_IN_LABEL,
-        empty_meta: str = NOT_CONFIGURED_LABEL,
+        empty_label: str = DEFAULTS_LABEL,
+        empty_meta: str = DEFAULTS_META,
         parent: QWidget | None = None,
         role: PanelRole = PanelRole.SPECIALIZED,
     ) -> None:
@@ -293,6 +305,9 @@ class StrategyPanel(CardFrame):
         # re-derived because the theme pass needs it and does not have the summary.
         self._invalid = False
         self._fights: list[tuple[str, str]] = []
+        # What answers in place of an unset binding, on the default card: the Solo or
+        # Team default, one per size named. Empty means it is not known here.
+        self._fallback: list[DefaultDuel] = []
 
         self._build()
         self.activated.connect(self.pick_requested)
@@ -339,6 +354,8 @@ class StrategyPanel(CardFrame):
         self._pill_layout = FlowLayout(self._pill_row, spacing=4)
         self._pills: list[NeutralPill | ActionPill] = []
         self._default_pill: AccentPill | None = None
+        # Whose default answers when nothing is picked here: one of the two, or neither.
+        self._source_pills: dict[str, QLabel] = {}
         self._fights_btn: _FightsButton | None = None
 
         if self._role is PanelRole.DEFAULT:
@@ -348,6 +365,22 @@ class StrategyPanel(CardFrame):
             self._default_pill = AccentPill(DEFAULT_PILL, parent=self._pill_row)
             self._default_pill.setToolTip(DEFAULT_SCOPE_META)
             self._pill_layout.addWidget(self._default_pill)
+            # Beside the badge, before the fights: it qualifies the card, as the badge
+            # does. Weighted as the strategy cards' source pill is, Official filled with
+            # the accent and the user's own gray, so the same word looks the same.
+            self._source_pills = {
+                OFFICIAL_PILL: AccentPill(OFFICIAL_PILL, parent=self._pill_row, filled=True),
+                YOUR_DEFAULT_PILL: NeutralPill(YOUR_DEFAULT_PILL, parent=self._pill_row),
+            }
+            self._source_pills[OFFICIAL_PILL].setToolTip(
+                "Nothing is picked here, so these fights use the recommended default that ships with BartleBot"
+            )
+            self._source_pills[YOUR_DEFAULT_PILL].setToolTip(
+                "Nothing is picked here, so these fights use the default you chose in Settings › Combat"
+            )
+            for pill in self._source_pills.values():
+                self._pill_layout.addWidget(pill)
+                pill.setVisible(False)
         else:
             # Inert pills, not chips with a ✕. ``TagChip`` wears one because removing a
             # *filter* is the whole point of it being on screen; here membership is decided
@@ -465,6 +498,25 @@ class StrategyPanel(CardFrame):
         self._all_pcs = all_pcs
         self.refresh()
 
+    def set_fallback(self, answers: list[DefaultDuel]) -> None:
+        """What answers while nothing is picked here: the Solo or Team default, per size named.
+
+        The default card only. One answer is drawn as that duel, like a picked one; with
+        nobody connected there are two, Solo and Team, and the card names both in a line.
+        The pill beside the badge says whose they are (``combat_resolution.default_pill``).
+        Empty, or a binding that is linked, draws what it always did.
+        """
+        self._fallback = list(answers)
+        self.refresh()
+
+    @property
+    def source_pill_text(self) -> str:
+        """The source pill showing beside the badge, or empty. Public for the tab's tests."""
+        for text, pill in self._source_pills.items():
+            if not pill.isHidden():
+                return text
+        return ""
+
     def set_fights(self, fights: list[tuple[str, str]]) -> None:
         """Name every fight this card governs, as a pill each, ``(state_id, label)``.
 
@@ -504,8 +556,8 @@ class StrategyPanel(CardFrame):
     def _add_pill(self) -> NeutralPill | ActionPill:
         """One more pill, of whichever kind this card's role calls for.
 
-        Inserted after the badge and before the "Fights…" button -- neither of which any
-        card has both of. The button stays last so it does not move as pills come and go:
+        Inserted after the badge and the source pills and before the "Fights…" button --
+        no card has both. The button stays last so it does not move as pills come and go:
         a control that walks along the row is one you have to find again after every
         change. The badge stays first for the same reason.
         """
@@ -514,7 +566,8 @@ class StrategyPanel(CardFrame):
             pill.activated.connect(self.fight_pick_requested)
         else:
             pill = NeutralPill("")
-        self._pill_layout.insertWidget(len(self._pills) + (1 if self._default_pill is not None else 0), pill)
+        lead = (1 if self._default_pill is not None else 0) + len(self._source_pills)
+        self._pill_layout.insertWidget(lead + len(self._pills), pill)
         return pill
 
     def fights(self) -> list[tuple[str, str]]:
@@ -608,19 +661,29 @@ class StrategyPanel(CardFrame):
             return
         self.setVisible(True)
 
+        pill = ""
         if self._binding.is_linked:
             dcs = next((d for d in self._all_dcs if d.id == self.linked_id), None)
             if dcs is None:
                 # A reference to a file that is gone. Named rather than blanked: the
-                # binding still resolves to nothing at run time and the pre-run warning
+                # binding still resolves to nothing at run time and the pre-run check
                 # will say so, but the card is where a user can act on it.
                 self._render_bare(MISSING_LABEL, "This strategy is no longer in the library", invalid=True)
             else:
                 self._render_summary(dcs.name, summarize_duel(dcs, self._all_pcs))
+        elif self._fallback and all(a.duel is not None for a in self._fallback):
+            pill = default_pill(self._fallback)
+            if len(self._fallback) == 1:
+                duel = self._fallback[0].duel
+                self._render_summary(duel.name, summarize_duel(duel, self._all_pcs))
+            else:
+                self._render_bare(self._empty_label, defaults_text(self._fallback))
         else:
             self._render_bare(self._empty_label, self._empty_meta)
+        for text, source_pill in self._source_pills.items():
+            source_pill.setVisible(text == pill)
 
-        # Always shown, even on a card running the built-in default: the Bot Combat Strategy editor
+        # Always shown, even on a card running a default: the Bot Combat Strategy editor
         # is where a card gets a strategy made for it, and New there, then Save, is the
         # whole of that (#118). What the tooltip promises is what differs.
         edit_btn = self.action_button(EDIT_STRATEGY)

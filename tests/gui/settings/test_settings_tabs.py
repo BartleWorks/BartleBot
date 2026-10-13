@@ -40,7 +40,7 @@ def test_the_bot_settings_have_a_tab_of_their_own(qapp):
     """``open_tab`` is the only route in, so a tab it cannot name is unreachable."""
     dlg = SettingsDialog()
     titles = [dlg.tabs.tabText(i) for i in range(dlg.tabs.count())]
-    assert titles == ["General", "Bot", "Canvas", "Authoring", "Theme", "Game"]
+    assert titles == ["General", "Bot", "Combat", "Canvas", "Authoring", "Theme", "Game"]
 
     dlg.open_tab("bot")
     assert dlg.tabs.tabText(dlg.tabs.currentIndex()) == "Bot"
@@ -338,6 +338,7 @@ def test_the_form_tabs_scroll_rather_than_setting_the_dialogs_height(qapp, scree
     assert wrapped == {
         "General": True,
         "Bot": True,
+        "Combat": True,
         "Canvas": True,
         "Authoring": True,
         "Theme": False,

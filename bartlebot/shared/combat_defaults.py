@@ -130,6 +130,24 @@ class DefaultDuel:
     reasons: tuple[str, ...] = ()
 
 
+def chosen_default(prefs: PreferenceStore, size: TeamSize) -> str | None:
+    """The duel id the user chose for *size*, or None for the recommended one."""
+    stored = prefs.get(PREFERENCE_KEYS[size])
+    return stored if isinstance(stored, str) and stored else None
+
+
+def set_default_choice(prefs: PreferenceStore, size: TeamSize, duel_id: str | None) -> bool:
+    """Store the user's *size* default, and return whether the write reached disk.
+
+    None, or the shipped duel itself, is the recommended one and is stored as no key, so a
+    later fix to the shipped duel reaches everyone who kept it. Writes one key, as every
+    write to ``preferences.json`` does.
+    """
+    if duel_id is None or duel_id == SHIPPED_DUEL_IDS[size]:
+        return prefs.clear(PREFERENCE_KEYS[size])
+    return prefs.set(PREFERENCE_KEYS[size], duel_id)
+
+
 def default_duel(
     clients: int,
     prefs: PreferenceStore,
@@ -149,8 +167,8 @@ def default_duel(
     """
     size = team_size(clients)
     reasons: list[str] = []
-    stored = prefs.get(PREFERENCE_KEYS[size])
-    if isinstance(stored, str) and stored:
+    stored = chosen_default(prefs, size)
+    if stored:
         mine = library(stored)
         if mine is None:
             reasons.append(f"your {size.value} default is not in the library")

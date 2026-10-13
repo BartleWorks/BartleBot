@@ -128,7 +128,7 @@ Three rules hold this together:
 - **A write that fails keeps the dialog open.** `commit()` logs and skips a strategy it could not write; closing anyway would discard the user's work while showing them a successful Save.
 - **An edit that reaches further than the dialog shows asks first, at Save.** If a changed library entry is used by another Bot Combat Strategy of any bot, or a changed player strategy by a library duel, Save asks once and lists those uses — "'Boss Burn' is also used by 2 other Bot Combat Strategies: 'Solo' (Atlantea) and 'Team' (Darkmoor)." — with **Save anyway** and **Go back** (`StrategyWorkingSet.shared_uses`). Uses inside the active one don't count. The library view asks too, and there every one counts. At Save rather than on the first keystroke, because typing is not yet a decision. It is what makes leaving library entries editable in the Bot Combat Strategy editor safe; locking them would make the library harder to use.
 
-The Combat tab keeps its own copy of the active Bot Combat Strategy and writes it on almost every action, so an accepted dialog is followed by a reload of it from disk and a re-bind of every fight **before** the tab acts on the result (`CombatTab.open_combat_dialog`). Without it, a strategy made in the dialog and then picked was lost when the tab saved its stale copy over the file, and the fight fell back to the built-in default without a word. A caller that held a binding from before the dialog looks it up again by key (`_link`).
+The Combat tab keeps its own copy of the active Bot Combat Strategy and writes it on almost every action, so an accepted dialog is followed by a reload of it from disk and a re-bind of every fight **before** the tab acts on the result (`CombatTab.open_combat_dialog`). Without it, a strategy made in the dialog and then picked was lost when the tab saved its stale copy over the file, and the fight was left linked to nothing without a word. A caller that held a binding from before the dialog looks it up again by key (`_link`).
 
 This is what retired the old 500 ms debounce, which made three things impossible at once: Cancel meant nothing, a half-typed DSL was persisted, and a partial flush could commit some fields of an edit and drop others. It also retired `AppController._flush_pending_edits`, which existed only because a quit could beat the debounce. **Do not reintroduce a write on a timer at any level below the dialog** — a better debounce is not the fix; the boundary is.
 
@@ -142,13 +142,15 @@ This is what retired the old 500 ms debounce, which made three things impossible
 |---|---|---|---|---|
 | **File → Combat Strategies** | `LIBRARY` (`Cancel` / `Save`) | Duel, Player, Decks | no | library entries |
 | **✏** on a fight card or the default card | `BOT_STRATEGY` (`Cancel` / `Save`) | Duel, Player | yes | the bot's own and library entries |
-| **🔍** on a card, a fight's pill, the add-card's "Select existing duel strategy…" | `PICK` (`Use built-in default` / `Cancel` / `Use this`) | Duel | yes | nothing |
+| **🔍** on a card, a fight's pill, the add-card's "Select existing duel strategy…" | `PICK` (`Use Default Duel Strategies` or `Use (bot default)` / `Cancel` / `Use this`) | Duel | yes | nothing |
 | **Load from library** on a deck slot | `PICK` | Decks | no | nothing |
+| **Change…** on a Settings › Combat card | `PICK` (`Cancel` / `Use this`), filtered to a team of one or two | Duel | no | nothing |
 
 - **Pick is select-only (#123)**: no New, Duplicate or Delete, and the detail pane is read-only. Before, Pick edited everything, which made 🔍 and ✏ the same button with different wording.
 - **In the Bot Combat Strategy editor, New and Duplicate create in it**, a library entry's duplicate included — that is how "this fight needs something slightly different" is done. Creating in the library happens in the library view, or by creating here and then using **Add to library**. The extra step is deliberate: it makes users face the difference between the two places.
 - **The This bot section** comes first, headed with the Bot Combat Strategy's name, then ★ Favorites, then the library. Its cards wear a **This bot** pill in `pill_this_bot_bg`, a teal of its own, never the error red that marks a DSL that does not parse; the pill's tooltip names the Bot Combat Strategy. They carry no star, because favorites are library-only. An empty section says "Strategies made here belong to this Bot Combat Strategy. Use Add to library to share one." A loaded bot with none yet is offered one there ("This bot has no Bot Combat Strategy yet."), and Cancel discards it. The About pane says "In 'Solo' only", with **Add to library** beside it. The library view never shows a This bot section, even with a bot loaded.
-- **From the Combat tab**, ✏ is on every card, the built-in default's included, and a strategy made on that visit is linked to the card that opened the editor on Save (`selected_was_created`). The add-card ("Add another duel strategy") is a menu of two: "Select existing duel strategy…" opens Pick, and "Create new duel strategy…" opens the Bot Combat Strategy editor with nothing selected. Either way the flow continues into choosing the card's fights, and if that popup closes empty the card is dropped but a strategy made for it stays in the Bot Combat Strategy.
+- **Pick's first button names the level below the caller's**: `Use Default Duel Strategies` on the default card, `Use (bot default)` on a fight, with a tooltip saying what that means (`none_label`, `none_tooltip`). A way in with no level below, such as Settings › Combat, has no such button.
+- **From the Combat tab**, ✏ is on every card, one running a default included, and a strategy made on that visit is linked to the card that opened the editor on Save (`selected_was_created`). The add-card ("Add another duel strategy") is a menu of two: "Select existing duel strategy…" opens Pick, and "Create new duel strategy…" opens the Bot Combat Strategy editor with nothing selected. Either way the flow continues into choosing the card's fights, and if that popup closes empty the card is dropped but a strategy made for it stays in the Bot Combat Strategy.
 - **Save as Player Strategy…** on an assignment card saves where its duel lives: among the bot's own for one of its own, in the library for a library duel.
 
 It is **master-detail, not a popup, and not both**. `PickerPopup` is 400×420 and right for a one-line payload — a tag, a fight name. A duel strategy's payload is seven to nine mostly-long lines: a description, a combat order, and one row per assignment. Eliding those to fit a popup hides exactly what the user opened it to compare. So the left is the compact `StrategyCard` list with a filter, the right is the full entry unelided, plus what uses it and whether removing it deletes or reverts it. `_AddOptionDialog` is the precedent.
@@ -278,7 +280,7 @@ notices)`:
 | tier | what it is | where it goes |
 |---|---|---|
 | **fault** | a choice the user made that cannot work | the pre-run dialog, "Combat Strategy Problems", with **Go back** as its default and **Run anyway** |
-| **notice** | a fallback in use: a valid setup | the log, once, at INFO; never a dialog |
+| **notice** | a fallback in use: a valid setup | the log, once, at INFO, and the Combat tab, which names the source all the time; never a dialog |
 
 The faults:
 
@@ -306,6 +308,24 @@ dialog is rare, and that is what makes it worth reading: the press a frequent di
 trains is the one that keeps a broken setup from running. **Never add "Don't show
 again" to it**, which would hide the faults with the noise, and never send a notice to
 a dialog. The dialog's text and buttons are `gui/dialogs/combat_faults_dialog.py`.
+
+## Showing the source, and choosing the defaults (#208)
+
+Lasting state belongs in a status indicator, not a notification, so where a bot's fights
+get their strategies is said on screen all the time, not at run start:
+
+- **The Combat tab's banner** names the source: the user's Bot Combat Strategy, an
+  Official one with its pill, or the Default Duel Strategies with the Solo or Team duel
+  in use, by the clients connected. Its words come from the Qt-free
+  `combat_resolution.describe_source`, which resolves as a run would. With nothing
+  picked, its verbs are **Create Bot Combat Strategy** and **Change defaults…**.
+  `bartlebot/gui/CLAUDE.md` has the four states.
+- **The default card**, while its Bot Combat Strategy has no default, shows the default
+  that answers with an **Official** or **Your default** pill.
+- **Settings › Combat** is where the Solo and Team defaults are chosen: two cards, each
+  the duel in use, with **Change…** (Pick, filtered to a team of one or two) and **Use
+  recommended**. It writes `preferences.json` on OK, one key each, and "recommended" is
+  no key. `bartlebot/gui/settings/CLAUDE.md` has the card and the apply rule.
 
 ## Fight keys: which stored fight is which state
 
