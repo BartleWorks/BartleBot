@@ -139,6 +139,7 @@ from bartlebot.combat.combat_resolution import (
     default_pill,
     defaults_text,
 )
+from bartlebot.combat.flee_marks import FledFight, fled_fight_tooltip, fled_pill_text, fled_text, fled_tooltip
 from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
@@ -146,7 +147,7 @@ from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
 from bartlebot.gui.widgets.layout.flow_layout import FlowLayout
 from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, Section
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow
-from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, NeutralPill
+from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, NeutralPill, WarningPill
 
 if TYPE_CHECKING:
     from bartlebot.combat.strategy_summary import StrategySummary
@@ -186,6 +187,9 @@ STATE_INHERIT_TIP = "Pick nothing here, so this fight uses the default strategy 
 #: card's pills are exhaustive, and one line is cheaper than teaching the difference.
 DEFAULT_PILL = "Default"
 DEFAULT_SCOPE_META = "Runs in every fight that has no strategy of its own"
+
+#: What the default card's flee mark says to do about the fights it names, beside which.
+FLED_CARD_FIX = "Change… picks a duel strategy for every fight on this card."
 
 MISSING_LABEL = "(missing strategy)"
 
@@ -308,6 +312,9 @@ class StrategyPanel(CardFrame):
         # What answers in place of an unset binding, on the default card: the Solo or
         # Team default, one per size named. Empty means it is not known here.
         self._fallback: list[DefaultDuel] = []
+        # This card's fights fled on the default this session, by state id: a fight with a
+        # pill here is marked on it, and the rest on the card (``set_fled``).
+        self._fled: dict[str, FledFight] = {}
 
         self._build()
         self.activated.connect(self.pick_requested)
@@ -356,6 +363,8 @@ class StrategyPanel(CardFrame):
         self._default_pill: AccentPill | None = None
         # Whose default answers when nothing is picked here: one of the two, or neither.
         self._source_pills: dict[str, QLabel] = {}
+        # The flee mark for this card's fights that have no pill of their own (Stage 7 of epic #201).
+        self._fled_pill: WarningPill | None = None
         self._fights_btn: _FightsButton | None = None
 
         if self._role is PanelRole.DEFAULT:
@@ -381,6 +390,11 @@ class StrategyPanel(CardFrame):
             for pill in self._source_pills.values():
                 self._pill_layout.addWidget(pill)
                 pill.setVisible(False)
+            # After them, before the fights: like them it is about the card, here about
+            # the fights it runs that the sidebar does not list.
+            self._fled_pill = WarningPill("", parent=self._pill_row)
+            self._pill_layout.addWidget(self._fled_pill)
+            self._fled_pill.setVisible(False)
         else:
             # Inert pills, not chips with a ✕. ``TagChip`` wears one because removing a
             # *filter* is the whole point of it being on screen; here membership is decided
@@ -542,21 +556,66 @@ class StrategyPanel(CardFrame):
             self._pills.append(self._add_pill())
         for pill, (state_id, label) in zip(self._pills, self._fights):
             if isinstance(pill, ActionPill):
-                pill.set_pill(label, state_id)
-                pill.setToolTip(f"{label} — {DEFAULT_SCOPE_META.lower()}. Click to give it one of its own.")
+                fled = self._fled.get(state_id)
+                if fled is None:
+                    pill.set_pill(label, state_id)
+                    pill.setToolTip(f"{label} — {DEFAULT_SCOPE_META.lower()}. Click to give it one of its own.")
+                else:
+                    pill.set_pill(fled_pill_text(label, fled.count), state_id)
+                    pill.setToolTip(fled_fight_tooltip(label, fled.count))
+                pill.set_flagged(fled is not None)
                 pill.setEnabled(self._editable)
             else:
                 pill.setText(label)
             pill.show()
         for pill in self._pills[len(self._fights) :]:
             pill.hide()
+        self._sync_fled_pill()
         self._sync_pill_row()
         self.refresh_theme_styles()
+
+    def set_fled(self, fights: list[FledFight]) -> None:
+        """Mark this card's fights fled on the default this session (Stage 7 of epic #201).
+
+        The default card only. A fight with a pill here is marked on its pill, whose click
+        is already the fix: it picks a strategy for that fight alone. The rest, the fights
+        the sidebar does not list, share one mark on the card, which Change… fixes. Pass
+        only fights that would still run a default (``flee_marks.fled_on_default``).
+        """
+        if self._role is not PanelRole.DEFAULT:
+            return
+        self._fled = {fight.state_id: fight for fight in fights}
+        self.set_fights(self._fights)
+
+    def _sync_fled_pill(self) -> None:
+        """Show the card's own flee mark for the fled fights that have no pill on it."""
+        if self._fled_pill is None:
+            return
+        on_pills = {state_id for state_id, _label in self._fights}
+        rest = [fight for fight in self._fled.values() if fight.state_id not in on_pills]
+        self._fled_pill.setVisible(bool(rest))
+        if rest:
+            self._fled_pill.setText(fled_text(sum(fight.count for fight in rest)))
+            self._fled_pill.setToolTip(fled_tooltip(rest, FLED_CARD_FIX))
+
+    @property
+    def fled_text(self) -> str:
+        """The card's own flee mark, or empty while it is hidden. Public for the tab's tests."""
+        if self._fled_pill is None or self._fled_pill.isHidden():
+            return ""
+        return self._fled_pill.text()
+
+    def fight_pill(self, state_id: str) -> ActionPill | None:
+        """The pill naming the fight on *state_id*, on the default card. Public for the tab's tests."""
+        for pill, (fight_id, _label) in zip(self._pills, self._fights):
+            if fight_id == state_id and isinstance(pill, ActionPill):
+                return pill
+        return None
 
     def _add_pill(self) -> NeutralPill | ActionPill:
         """One more pill, of whichever kind this card's role calls for.
 
-        Inserted after the badge and the source pills and before the "Fights…" button --
+        Inserted after the badge, the source pills and the flee mark, and before the "Fights…" button --
         no card has both. The button stays last so it does not move as pills come and go:
         a control that walks along the row is one you have to find again after every
         change. The badge stays first for the same reason.
@@ -566,7 +625,11 @@ class StrategyPanel(CardFrame):
             pill.activated.connect(self.fight_pick_requested)
         else:
             pill = NeutralPill("")
-        lead = (1 if self._default_pill is not None else 0) + len(self._source_pills)
+        lead = (
+            (1 if self._default_pill is not None else 0)
+            + len(self._source_pills)
+            + (1 if self._fled_pill is not None else 0)
+        )
         self._pill_layout.insertWidget(lead + len(self._pills), pill)
         return pill
 

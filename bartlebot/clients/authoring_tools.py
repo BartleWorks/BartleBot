@@ -339,7 +339,7 @@ class AuthoringTools:
     def _dsl_for(self, index: int, count: int) -> str:
         """Player *index*'s DSL from the open bot's default Duel Strategy, resolved as a run would."""
         stand_in = SimpleNamespace(bot_config=self._bot_config(), state="")
-        dsls, _order, source = resolve_combat(stand_in, True, count)
+        dsls, _order, source, _level = resolve_combat(stand_in, True, count)
         logger.debug("Auto-combat: P%d fights with %s", index + 1, source)
         return dsls[index]
 

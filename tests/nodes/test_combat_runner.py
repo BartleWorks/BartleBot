@@ -42,7 +42,7 @@ def _patch_active_strategy(bot_id: str, bcs_id: str | None):
 def test_no_bot_config_returns_builtin_default():
     machine = FakeMachine()
     machine.bot_config = None
-    dsls, order, source = resolve_combat(machine, True, 2)
+    dsls, order, source, _level = resolve_combat(machine, True, 2)
     assert dsls == [LAST_RESORT_DSL, LAST_RESORT_DSL]
     assert order == []
 
@@ -50,7 +50,7 @@ def test_no_bot_config_returns_builtin_default():
 def test_no_active_strategy_runs_the_shipped_team_default():
     machine = _make_machine()
     with _patch_active_strategy("bot-1", None):
-        dsls, order, source = resolve_combat(machine, True, 2)
+        dsls, order, source, _level = resolve_combat(machine, True, 2)
     support = strategy_store.load_player_strategy(SHIPPED_DEFAULT_SUPPORT_ID).dsl
     assert dsls == [LAST_RESORT_DSL, support]
     assert order == [4, 3, 2, 1]
@@ -61,7 +61,7 @@ def test_no_active_strategy_runs_the_shipped_team_default():
 
 def test_an_ambient_fight_with_no_active_strategy_has_everyone_attack():
     with _patch_active_strategy("bot-1", None):
-        dsls, order, source = resolve_combat(_make_machine(), True, 3, ambient=True)
+        dsls, order, source, _level = resolve_combat(_make_machine(), True, 3, ambient=True)
     assert dsls == [LAST_RESORT_DSL] * 3
     assert order == []
     assert "'Default Team Duel (Everyone Attacks)' (the shipped Team default for an ambient fight" in source
@@ -69,7 +69,7 @@ def test_an_ambient_fight_with_no_active_strategy_has_everyone_attack():
 
 def test_no_active_strategy_runs_the_shipped_solo_default_with_one_client():
     with _patch_active_strategy("bot-1", None):
-        dsls, _order, source = resolve_combat(_make_machine(), True, 1)
+        dsls, _order, source, _level = resolve_combat(_make_machine(), True, 1)
     assert dsls == [LAST_RESORT_DSL]
     assert "'Default Solo Duel' (the shipped Solo default" in source
 
@@ -80,7 +80,7 @@ def test_missing_bcs_file_returns_builtin_default(tmp_path: Path):
         _patch_active_strategy("bot-1", "nonexistent-uuid"),
         patch("bartlebot.combat.strategy_store.load_bot_strategy", side_effect=FileNotFoundError),
     ):
-        dsls, order, source = resolve_combat(machine, True, 1)
+        dsls, order, source, _level = resolve_combat(machine, True, 1)
     assert dsls == [LAST_RESORT_DSL]
     assert order == []
 
@@ -93,7 +93,7 @@ def test_no_dcs_id_returns_builtin_default(tmp_path: Path):
         _patch_active_strategy("bot-1", bcs.id),
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=1)
     assert dsls == [LAST_RESORT_DSL]
     assert order == []
 
@@ -129,7 +129,7 @@ def test_full_resolution(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", side_effect=[pcs1, pcs2]),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls[0] == "blade @ self"
     assert dsls[1] == "trap @ enemy"
@@ -157,7 +157,7 @@ def test_full_resolution_inline_dsl_skips_store(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", load_pcs),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls == ["blade @ self", "trap @ enemy"]
     assert order == [1, 2]
@@ -184,7 +184,7 @@ def test_mixed_inline_and_linked_assignments(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", load_pcs),
     ):
-        dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+        dsls, _order, _source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls == ["inline_dsl", "shared_dsl"]
     load_pcs.assert_called_once()
@@ -202,7 +202,7 @@ def test_empty_inline_dsl_falls_back_to_builtin(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
     ):
-        dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
+        dsls, _order, _source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=1)
 
     assert dsls[0] == LAST_RESORT_DSL
 
@@ -240,7 +240,7 @@ def test_state_assignment_used_when_use_default_false(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_duel_strategy", side_effect=_load_dcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", side_effect=_load_pcs),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
     assert dsls[0] == "state_dsl"
 
@@ -261,7 +261,7 @@ def test_unassigned_player_falls_back_to_builtin():
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", return_value=pcs),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls[0] == "p1_dsl"  # P1 assigned
     assert dsls[1] == LAST_RESORT_DSL  # P2 unassigned → fallback
@@ -291,7 +291,7 @@ def test_missing_pcs_file_uses_builtin_for_that_player():
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", side_effect=_load_pcs),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls[0] == "p1_dsl"
     assert dsls[1] == LAST_RESORT_DSL
@@ -311,7 +311,7 @@ def test_an_unset_default_falls_back_to_builtin(tmp_path: Path):
         _patch_active_strategy("bot-1", bcs.id),
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
     ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
+        dsls, order, source, _level = resolve_combat(machine, use_default_strategy=True, num_clients=1)
 
     assert dsls == [LAST_RESORT_DSL]
     assert order == []
@@ -341,7 +341,7 @@ def test_an_unlinked_state_assignment_falls_back_to_bcs_default(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs_default),
     ):
-        dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
+        dsls, _order, source, _level = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
     assert dsls[0] == "default_dsl"
     assert "default strategy" in source
@@ -373,7 +373,7 @@ def test_a_file_from_before_118_loads_with_its_inline_config_ignored(tmp_path: P
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
     ):
-        dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
+        dsls, _order, source, _level = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
     assert dsls[0] == "linked_dsl"
     assert "Linked" in source
@@ -396,7 +396,7 @@ def test_a_fight_stored_under_another_state_id_is_found_by_its_enemy(tmp_path: P
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_duel_strategy", return_value=dcs),
     ):
-        dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
+        dsls, _order, source, _level = resolve_combat(machine, use_default_strategy=False, num_clients=1)
 
     assert dsls == ["lamia_dsl"]
     assert "state assignment for 'state_20'" in source
@@ -418,7 +418,7 @@ def test_an_own_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_duel_strategy", load_dcs),
     ):
-        dsls, _order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=1)
+        dsls, _order, source, _level = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=1)
 
     assert dsls == ["own"]
     assert "'Own'" in source
@@ -444,7 +444,9 @@ def test_an_own_duel_links_an_own_player_strategy(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_player_strategy", load_pcs),
     ):
-        dsls, _order, _source = resolve_combat(_make_machine(state="boss"), use_default_strategy=False, num_clients=1)
+        dsls, _order, _source, _level = resolve_combat(
+            _make_machine(state="boss"), use_default_strategy=False, num_clients=1
+        )
 
     assert dsls == ["heal"]
 
@@ -457,8 +459,44 @@ def test_no_duel_readable_anywhere_falls_back_to_the_builtin(tmp_path: Path):
         patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
         patch("bartlebot.combat.strategy_store.load_duel_strategy", side_effect=FileNotFoundError),
     ):
-        dsls, order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=2)
+        dsls, order, source, _level = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=2)
 
     assert dsls == [LAST_RESORT_DSL] * 2
     assert order == []
     assert source.startswith(_BUILTIN_SOURCE)
+
+
+# ---------------------------------------------------------------------------
+# The level that answered (Stage 7 of epic #201): handle_combat keeps it for a flee
+# ---------------------------------------------------------------------------
+
+
+def test_the_level_that_answered_comes_back_with_the_dsls():
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    with _patch_active_strategy("bot-1", None):
+        assert resolve_combat(_make_machine(), True, 2).level is Level.SHIPPED_DEFAULT
+
+
+def test_a_pick_comes_back_as_the_pick():
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    dcs = DuelCombatStrategy(name="Mine", player_assignments=[PlayerAssignment(players=[1], dsl=LAST_RESORT_DSL)])
+    bcs = BotCombatStrategy(name="X", bot_id="bot-1", default_strategy_id=dcs.id, duel_strategies=[dcs])
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.combat.strategy_store.load_bot_strategy", return_value=bcs),
+    ):
+        resolved = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=1)
+    assert resolved.level is Level.PICK
+    assert resolved.source.startswith("duel strategy 'Mine'")
+
+
+def test_nothing_to_resolve_comes_back_as_the_last_resort():
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    machine = FakeMachine()
+    machine.bot_config = None
+    assert resolve_combat(machine, True, 1).level is Level.LAST_RESORT
+    with patch("bartlebot.combat.combat_resolution.resolve_fight", side_effect=RuntimeError("unreadable")):
+        assert resolve_combat(_make_machine(), True, 1).level is Level.LAST_RESORT

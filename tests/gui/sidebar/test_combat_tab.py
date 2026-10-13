@@ -2884,3 +2884,126 @@ def test_an_official_one_is_named_and_never_made_the_users_pick(qapp, defaults):
     assert SettingsManager.instance().get_active_strategy("test-bot") is None
     assert (tab.banner.name_text, tab.banner.shows_official_pill) == ("Author Set", True)
     assert not tab.banner.action_button(_CHANGE_BCS).isHidden()
+
+
+# ---------------------------------------------------------------------------
+# After a lost fight: the marks on a fight fled on the default (epic #201, Stage 7)
+# ---------------------------------------------------------------------------
+
+
+def _marked_tab(config: BotConfig, flees: int, bcs: BotCombatStrategy | None = None, level=None):
+    """A tab with the session's record installed, after *flees* flees of ``state_9`` on *level*."""
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+    from bartlebot.combat.flee_marks import FleeMarks  # noqa: PLC0415
+
+    tab = _tab_with_clients(config, 2, bcs)
+    marks = FleeMarks()
+    tab.set_flee_marks(marks)
+    for _ in range(flees):
+        marks.record(config.id, "state_9", level or Level.SHIPPED_DEFAULT)
+        tab.refresh_source()  # what AppController does after each one it counts
+    return tab, marks
+
+
+def test_with_no_bot_combat_strategy_the_banner_carries_the_mark(qapp, defaults):
+    tab, _marks = _marked_tab(_config(), 2)
+
+    assert tab.banner.fled_text == "Fled 2× on the default"
+    assert tab.banner._fled_pill.toolTip() == (
+        "Fled this session on the default duel strategy: Boss 2×.\n"
+        "Create Bot Combat Strategy to give these fights a strategy of their own."
+    )
+    assert tab.default_panel.fled_text == ""
+
+
+def test_the_banners_menu_leads_with_assigning_a_strategy(qapp, defaults):
+    tab, _marks = _marked_tab(_config(), 1)
+
+    assert _verb_labels(tab.banner)[0] == _CREATE_BCS
+
+
+def test_an_exposed_fight_is_marked_on_its_own_pill(qapp, defaults):
+    tab, _marks = _marked_tab(_config(label="Lost Soul"), 2, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    pill = tab.default_panel.fight_pill("state_9")
+    assert pill.text() == "Lost Soul · fled 2×"
+    assert pill.flagged
+    assert pill.toolTip().endswith("Click to give it a strategy of its own.")
+    # On the pill and nowhere else: its click is already the fix.
+    assert tab.default_panel.fled_text == ""
+    assert tab.banner.fled_text == ""
+
+
+def test_a_fight_the_sidebar_does_not_list_is_marked_on_the_default_card(qapp, defaults):
+    tab, _marks = _marked_tab(_config(use_default=True), 1, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    assert tab.default_panel.fled_text == "Fled 1× on the default"
+    assert tab.default_panel._fled_pill.toolTip().endswith(
+        "Change… picks a duel strategy for every fight on this card."
+    )
+    assert _verb_labels(tab.default_panel)[0] == CHANGE
+    assert tab.banner.fled_text == ""
+
+
+def test_the_count_on_the_mark_matches_the_flees_this_session(qapp, defaults):
+    tab, marks = _marked_tab(_config(), 3)
+
+    assert tab.banner.fled_text == "Fled 3× on the default"
+    # The record outlives the tab's bot: loaded again, the bot has its marks again.
+    other = CombatTab()
+    other.set_flee_marks(marks)
+    other.set_config(_config())
+    assert other.banner.fled_text == "Fled 3× on the default"
+
+
+def test_a_flee_on_an_assigned_strategy_marks_nothing(qapp, defaults):
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    tab, _marks = _marked_tab(_config(), 2, level=Level.PICK)
+
+    assert tab.banner.fled_text == ""
+
+
+def test_a_card_with_its_own_default_carries_no_mark(qapp, defaults):
+    dcs = _saved_dcs("Mine")
+    bcs = BotCombatStrategy(name="Four wizards", bot_id="bot-1", default_strategy_id=dcs.id)
+    tab, _marks = _marked_tab(_config(use_default=True), 2, bcs)
+
+    assert tab.default_panel.fled_text == ""
+    assert tab.banner.fled_text == ""
+
+
+def test_giving_the_fight_a_strategy_takes_its_mark_away(qapp, defaults):
+    dcs = _saved_dcs("Mine")
+    tab, _marks = _marked_tab(_config(), 2, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    tab._link("state_9", dcs.id)
+
+    assert tab.default_panel.fight_pill("state_9") is None
+    assert tab.default_panel.fled_text == ""
+
+
+def test_an_unmarked_pill_is_plain(qapp, defaults):
+    tab, _marks = _marked_tab(_config(label="Lost Soul"), 0, BotCombatStrategy(name="BCS", bot_id="bot-1"))
+
+    pill = tab.default_panel.fight_pill("state_9")
+    assert pill.text() == "Lost Soul"
+    assert not pill.flagged
+
+
+def test_no_record_installed_draws_no_marks(qapp, defaults):
+    tab = _tab_with_clients(_config(), 2)
+
+    assert tab.banner.fled_text == ""
+
+
+def test_a_flagged_pill_keeps_its_click(qapp):
+    pill = ActionPill("Boss", "state_9")
+    seen: list[str] = []
+    pill.activated.connect(seen.append)
+
+    pill.set_flagged(True)
+    pill.click()
+
+    assert pill.flagged
+    assert seen == ["state_9"]

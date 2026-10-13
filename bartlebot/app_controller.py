@@ -4,6 +4,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -24,9 +25,10 @@ from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, Author
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.clients.window_kill import force_close_client
 from bartlebot.combat import strategy_store
-from bartlebot.combat.combat_resolution import CombatResolver, describe_run
+from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_run
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
 from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
+from bartlebot.combat.flee_marks import FleeMarks
 from bartlebot.content import bot_fork, bot_roots, new_bot, share_export, share_import
 from bartlebot.content.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.content.store_roots import DEV_ENV_VAR, Origin, dev_mode, pill_text
@@ -189,6 +191,9 @@ class AppController(QObject):
         self._apply_theme()
         self._handler = WizSprinter()
         self._current_machine: BotMachine | None = None
+        # Every bot's fights fled on a default, for as long as the app is open: the Combat
+        # tab marks them (Stage 7 of epic #201). See _on_machine_fight_fled.
+        self._flee_marks = FleeMarks()
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         # Whether the open bot is an Official one, opened from the install directory: it
@@ -415,6 +420,7 @@ class AppController(QObject):
         w.left_sidebar.combat_tab.import_all_decks_requested.connect(self._on_import_all_decks_requested)
         w.left_sidebar.combat_tab.apply_all_decks_requested.connect(self._on_apply_all_decks_requested)
         w.left_sidebar.combat_tab.export_bot_strategy_requested.connect(lambda bcs: self._export_bot_strategy(bcs))
+        w.left_sidebar.combat_tab.set_flee_marks(self._flee_marks)
 
         # Which account is behind each player slot, for the combat dialog's slot pills.
         # A callable rather than a pushed value: an account identity is learned some time
@@ -2877,6 +2883,7 @@ class AppController(QObject):
             on_stopped=self._on_machine_stopped,
             recovery_gap=self._client_manager.recovery_gap_for,
             on_variable_change=self._on_machine_variable_change,
+            on_fight_fled=partial(self._on_machine_fight_fled, self._loaded_config.id),
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -3123,6 +3130,15 @@ class AppController(QObject):
 
     def _on_machine_drop(self, item: str, qty: int, client_idx: int) -> None:
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)
+
+    def _on_machine_fight_fled(self, bot_id: str, state_id: str | None, level: Level) -> None:
+        """Count a fight fled on a default, and have the Combat tab mark it (Stage 7 of epic #201).
+
+        *bot_id* is the running bot's, bound when the machine is built, so a mark lands on
+        the bot that fled even if another is open by the time the tab draws it.
+        """
+        if self._flee_marks.record(bot_id, state_id, level):
+            self._window.left_sidebar.combat_tab.refresh_source()
 
     def _on_machine_client_disconnected(self, hwnd: int) -> None:
         """Called by the health monitor when a client becomes unresponsive.

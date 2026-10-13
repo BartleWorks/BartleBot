@@ -971,6 +971,24 @@ connected and the two from different sources, it has no pill, since one would be
 The tab never falls back to an Official Bot Combat Strategy as the pick: that is level 2,
 which answers without being picked, and picking it for the user would make it level 1.
 
+**A fight fled on the default is marked where the fight is drawn** (epic #201, Stage 7;
+`docs/COMBAT_CONFIG.md` has what counts). `CombatTab._refresh_fled` asks
+`flee_marks.fled_on_default` which of the session's marks still apply, and puts each in
+one of three places:
+
+| the fight | its mark | the fix, already first |
+|---|---|---|
+| exposed, on the default card | its own `ActionPill`, `set_flagged`: *Lost Soul · fled 2×* | the pill's click |
+| not listed in the sidebar, with a Bot Combat Strategy | a `WarningPill` on the default card's pill row, after the source pills: *Fled 1× on the default* | Change… |
+| any, with no Bot Combat Strategy | a `WarningPill` on its own row under the banner's line | Create Bot Combat Strategy |
+
+The fill is `warning` with `pill_text`, the canvas's validation pill, so the color means
+the same thing in both places; `error` stays for what does not work. The banner's mark
+has its own row because the name beside the Official pill elides first. The marks are
+redrawn by `refresh_source` and after each `_save_bcs`, never during the rebuild before
+it: the pick is resolved from its file, so a fight just given a strategy would still read
+as on the default.
+
 **First run is a list of pages, and each page writes a choice** (epic #201, Stage 6,
 `gui/dialogs/first_run_dialog.py`). A page that only explains gets skipped, so a page
 asks something whose answer is stored and can be changed again in Settings. Today there

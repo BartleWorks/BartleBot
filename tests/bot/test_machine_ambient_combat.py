@@ -86,7 +86,7 @@ def fast(monkeypatch):
 def combat(monkeypatch):
     """Everything outside the session's own logic, patched where the session looks it up."""
     mocks = SimpleNamespace(
-        resolve=MagicMock(return_value=(["dsl-0", "dsl-1", "dsl-2"], [], "test strategy")),
+        resolve=MagicMock(return_value=(["dsl-0", "dsl-1", "dsl-2"], [], "test strategy", None)),
         seed=AsyncMock(),
         fights=_Fights(),
         poll_drops=AsyncMock(return_value=["Wand"]),

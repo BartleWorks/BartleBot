@@ -146,8 +146,8 @@ async def run(machine, clients: list, params: dict) -> str:
     enemy_name: str = params.get("enemy", "")
     use_default_strategy: bool = params.get("use_default_strategy", True)
 
-    # Resolve per-client DSL list, combat order, and source label.
-    per_client_dsl, combat_order, dsl_source = resolve_combat(machine, use_default_strategy, len(clients))
+    # Resolve per-client DSL list, combat order, source label, and the level that answered.
+    per_client_dsl, combat_order, dsl_source, level = resolve_combat(machine, use_default_strategy, len(clients))
 
     enemy_display = repr(enemy_name) if enemy_name else "(closest)"
     machine.log(f"handle_combat: enemy={enemy_display}, DSL source={dsl_source!r}")
@@ -288,6 +288,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
     if fought.end is FightEnd.FLED:
         machine.log("FAILURE: fled the fight", logging.WARNING)
+        _report_flee(machine, level, dsl_source)
         machine.note_flee()  # the third in AMBIENT_FLEE_WINDOW stops the bot
         return "FAILURE"
     if fought.errors:
@@ -315,6 +316,26 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _report_flee(machine, level, source: str) -> None:
+    """Tell the machine this fight was fled, and on a default say where it can be tailored (Stage 7 of epic #201).
+
+    Before ``note_flee``, which may stop the bot: the Combat tab's mark is most use after
+    the flee that ended the run. A fight fled on anything the user or an author chose is
+    reported too, and marks nothing; only a default gets the hint, since tailoring is
+    what a default lacks.
+    """
+    from bartlebot.combat.combat_resolution import fight_label  # noqa: PLC0415
+
+    state_id = getattr(machine, "state", None)
+    if level.is_default:
+        machine.log(
+            f"Fled {fight_label(machine.bot_config, state_id)} on a default: {source}."
+            " The Combat tab marks it, with a way to give it a strategy of its own.",
+            logging.WARNING,
+        )
+    machine.note_fight_fled(state_id, level)
 
 
 async def _players_without_mana(clients: list) -> list[int]:
