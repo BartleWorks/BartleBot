@@ -91,7 +91,7 @@ class DefaultDuelCard(SettingCard):
     def __init__(self, size: TeamSize, chosen: str | None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._size = size
-        self._chosen = chosen
+        self._chosen = None if chosen == SHIPPED_DUEL_IDS[size] else chosen
         self._strategy_card: StrategyCard | None = None
 
         body = QWidget(self)
