@@ -208,6 +208,8 @@ _EXPORT_BCS = "Export…"
 #: one, or change the defaults its fights are using instead, in Settings › Combat.
 _CREATE_BCS = "Create Bot Combat Strategy"
 _CHANGE_DEFAULTS = "Change defaults…"
+#: Forget a pick whose file is gone, the fault that otherwise stops every run (epic #201 review, R3).
+_CLEAR_PICK = "Clear pick"
 #: What the banner's flee mark says to do about the fights it names (Stage 7 of epic #201).
 _FLED_BANNER_FIX = "Create Bot Combat Strategy to give these fights a strategy of their own."
 
@@ -810,6 +812,8 @@ class _BotStrategyBanner(CardFrame):
     export_requested = pyqtSignal()
     #: Change defaults…: open Settings › Combat, where the Solo and Team defaults are chosen.
     defaults_requested = pyqtSignal()
+    #: Clear pick: forget a pick whose file is gone.
+    clear_pick_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, mode=CardMode.MANAGE)
@@ -969,6 +973,11 @@ class _BotStrategyBanner(CardFrame):
     def shows_official_pill(self) -> bool:
         return not self._official_pill.isHidden()
 
+    @property
+    def missing_pick(self) -> bool:
+        """Whether the banner shows the fault of a pick whose file is gone."""
+        return self._bcs is None and self._source is not None and self._source.missing_pick
+
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
         self._reapply_verb_states()
@@ -980,17 +989,21 @@ class _BotStrategyBanner(CardFrame):
 
         With a Bot Combat Strategy: Change…, Rename… and New…. With none: Create Bot
         Combat Strategy and Change defaults…, the two ways out of running on the defaults,
-        and Change… too when there is an Official one to pick. The Create verb stays live,
-        because that is exactly the state a user gets out of by making one -- a card
-        whose every affordance is dead is a dead end.
+        and Change… too when there is an Official one to pick. With a pick whose file is
+        gone, Clear pick takes Change defaults…' place, since until it is cleared the
+        defaults are not what a run asks about. The Create verb stays live, because that is
+        exactly the state a user gets out of by making one -- a card whose every
+        affordance is dead is a dead end.
         """
         has = self._bcs is not None
+        missing = self.missing_pick
         shown = {
+            _CLEAR_PICK: missing,
             _CHANGE_BCS: has or self._has_choices,
             _RENAME_BCS: has,
             _NEW_BCS: has,
             _CREATE_BCS: not has,
-            _CHANGE_DEFAULTS: not has,
+            _CHANGE_DEFAULTS: not has and not missing,
         }
         for label, visible in shown.items():
             button = self.action_button(label)
@@ -999,8 +1012,15 @@ class _BotStrategyBanner(CardFrame):
                 button.setEnabled(self._editable)
 
     def _face_verbs(self) -> list[CardVerb]:
-        """Every verb that can reach the face, in header order: both states' sets."""
+        """Every verb that can reach the face, in header order: every state's set."""
         return [
+            CardVerb(
+                _CLEAR_PICK,
+                "dismiss",
+                "Forget the missing Bot Combat Strategy, so runs stop asking about it",
+                self.clear_pick_requested.emit,
+                True,
+            ),
             CardVerb(_CHANGE_BCS, "search", "Pick a different Bot Combat Strategy", self.change_requested.emit, True),
             CardVerb(_RENAME_BCS, "pencil", "Rename this Bot Combat Strategy", self.rename_requested.emit, True),
             CardVerb(_NEW_BCS, "plus", "Create a new Bot Combat Strategy for this bot", self.new_requested.emit, True),
@@ -1019,6 +1039,8 @@ class _BotStrategyBanner(CardFrame):
         face = {verb.label: verb for verb in self._face_verbs()}
         if self._bcs is None:
             labels = [_CREATE_BCS, _CHANGE_DEFAULTS] + ([_CHANGE_BCS] if self._has_choices else [])
+            if self.missing_pick:
+                labels.insert(0, _CLEAR_PICK)
             return [face[label] for label in labels]
         return [
             face[_CHANGE_BCS],
@@ -1056,7 +1078,8 @@ class _BotStrategyBanner(CardFrame):
         return True
 
     def _restyle_content(self) -> None:
-        self._name.set_text_color(THEME.text)
+        # ``error``, as for anything else that does not work: the pick is a fault.
+        self._name.set_text_color(THEME.error if self.missing_pick else THEME.text)
         self._meta.set_text_color(THEME.text_muted)
 
 
@@ -1150,6 +1173,7 @@ class CombatTab(QWidget):
             lambda: self._bcs is not None and self.export_bot_strategy_requested.emit(self._bcs)
         )
         self._bcs_banner.defaults_requested.connect(self.combat_defaults_requested)
+        self._bcs_banner.clear_pick_requested.connect(self._on_clear_pick)
 
         # ── Duel Combat Strategies ───────────────────────────────────
         # One section for both levels. The default card is first and always present; the
@@ -2152,6 +2176,17 @@ class CombatTab(QWidget):
                 self._bcs_banner.set_strategy(self._bcs)
                 self._refresh_default_panel()
                 self._refresh_deck_summaries()
+
+    def _on_clear_pick(self) -> None:
+        """Forget a pick whose file is gone, so the run falls to the Official one or the defaults.
+
+        Only the user's press clears it, never loading: clearing on load would write
+        ``settings.json`` for a file that might be back on the next start.
+        """
+        if self._config is None or self._bcs is not None:
+            return
+        SettingsManager.instance().set_active_strategy(self._config.id, None)
+        self.refresh_source()
 
     def _on_new_bcs(self) -> None:
         if self._config is None:

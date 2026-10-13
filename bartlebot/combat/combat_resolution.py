@@ -140,6 +140,11 @@ def _short(uuid: str) -> str:
     return f"{uuid[:_ID_PREVIEW]}…"
 
 
+def missing_pick_text(pick: str) -> str:
+    """The fault for a pick whose file is gone, as the pre-run dialog and the banner say it."""
+    return f"The Bot Combat Strategy picked for this bot is missing its file (id: {_short(pick)})."
+
+
 def duel_choice(
     bcs: BotCombatStrategy, bot_config: BotConfig | None, state_id: str | None
 ) -> tuple[str | None, str, bool]:
@@ -417,6 +422,11 @@ DEFAULTS_NAME = "Default Duel Strategies"
 OFFICIAL_PILL = "Official"
 #: The pill beside the user's own Solo or Team default.
 YOUR_DEFAULT_PILL = "Your default"
+#: The banner's name while the picked Bot Combat Strategy's file is gone: a fault, which
+#: stops every run until the pick is cleared (epic #201 review, R3).
+MISSING_PICK_NAME = "File missing"
+#: The line under it: what the fault costs.
+MISSING_PICK_DETAIL = "Every run stops to ask until the pick is cleared"
 
 #: How a default is qualified in a line that names it: kept, or chosen.
 _RECOMMENDED = "recommended"
@@ -430,7 +440,9 @@ class SourceText:
     ``level`` is the source the banner names: :attr:`Level.PICK` or :attr:`Level.OFFICIAL`
     for a Bot Combat Strategy, otherwise the level the defaults answered at. ``pill`` is
     empty or :data:`OFFICIAL_PILL`. ``reasons`` are what was passed over on the way, for
-    the tooltip: the same words the log uses.
+    the tooltip: the same words the log uses. ``missing_pick`` is set while the user's pick
+    names a file that is gone, which is a fault: ``level`` is then where a run would go
+    instead, if the user ran anyway.
     """
 
     level: Level
@@ -439,6 +451,7 @@ class SourceText:
     detail: str = ""
     pill: str = ""
     reasons: tuple[str, ...] = ()
+    missing_pick: bool = False
 
 
 def team_sizes_for(clients: int) -> tuple[int, ...]:
@@ -557,6 +570,19 @@ def describe_source(
     answers = defaults_in_use(clients, prefs=prefs, root=root, user_root=user_root)
     picked = resolver.picked
     official = resolver.official if picked is None else None
+
+    if pick and picked is None:
+        # Said here and not only in the faults dialog, or the banner would name the
+        # defaults while every run stopped to ask about a pick it never mentioned.
+        after = f"Official Bot Combat Strategy '{official.name}'" if official is not None else defaults_text(answers)
+        return SourceText(
+            fight.level,
+            BOT_STRATEGY_CAPTION,
+            MISSING_PICK_NAME,
+            MISSING_PICK_DETAIL,
+            reasons=(missing_pick_text(pick), f"Clear the pick to use {after} without being asked."),
+            missing_pick=True,
+        )
 
     if picked is not None or official is not None:
         owner = picked if picked is not None else official

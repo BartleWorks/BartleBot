@@ -28,7 +28,14 @@ from typing import TYPE_CHECKING
 
 from bartlebot.combat.bot_combat_strategy import StrategyLookup, own_players_of
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
-from bartlebot.combat.combat_resolution import CombatResolver, FightResolution, Level, fight_label, group_fights
+from bartlebot.combat.combat_resolution import (
+    CombatResolver,
+    FightResolution,
+    Level,
+    fight_label,
+    group_fights,
+    missing_pick_text,
+)
 from bartlebot.combat.fight_keys import bind, exposed_combat_states
 from bartlebot.combat.strategy_summary import format_players as _format_players
 from bartlebot.nodes.combat_runner import validate_dsl
@@ -94,9 +101,7 @@ def check_combat(
     if resolver.pick:
         bcs = resolver.picked
         if bcs is None:
-            check.faults.append(
-                f"The Bot Combat Strategy picked for this bot is missing its file (id: {_short(resolver.pick)})."
-            )
+            check.faults.append(missing_pick_text(resolver.pick))
         else:
             check.faults.extend(_pick_faults(bcs, num_clients, config, root, user_root, dsl_sources))
 

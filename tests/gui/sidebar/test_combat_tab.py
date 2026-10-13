@@ -27,6 +27,8 @@ from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, St
 from bartlebot.combat.combat_resolution import (
     BOT_STRATEGY_CAPTION,
     DEFAULTS_NAME,
+    MISSING_PICK_DETAIL,
+    MISSING_PICK_NAME,
     NO_BOT_STRATEGY_CAPTION,
     OFFICIAL_PILL,
     YOUR_DEFAULT_PILL,
@@ -39,6 +41,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     _CHANGE_BCS,
     _CHANGE_DEFAULTS,
     _CLEAR_DECK,
+    _CLEAR_PICK,
     _CREATE_BCS,
     _DEFAULT_BINDING,
     _DELETE_BCS,
@@ -2901,6 +2904,45 @@ def test_deleting_the_users_last_one_never_makes_an_official_one_the_pick(qapp, 
     assert tab._bcs is None
     assert SettingsManager.instance().get_active_strategy("test-bot") is None
     assert (tab.banner.name_text, tab.banner.shows_official_pill) == ("Author Set", True)
+
+
+_GONE = "deadbeef-0000-0000-0000-000000000000"
+
+
+def test_a_pick_whose_file_is_gone_shows_the_fault_and_the_verb_that_clears_it(qapp, defaults):
+    """Every run stops to ask about it, so the banner must not name the defaults (epic #201 review, R3)."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    SettingsManager.instance().set_active_strategy("test-bot", _GONE)
+
+    tab = _tab_with_clients(_config(), 2)
+
+    assert tab.banner.missing_pick
+    assert (tab.banner.caption_text, tab.banner.name_text) == (BOT_STRATEGY_CAPTION, MISSING_PICK_NAME)
+    assert tab.banner.meta_text == MISSING_PICK_DETAIL
+    assert tab.banner.meta_tooltip.startswith("The Bot Combat Strategy picked for this bot is missing its file")
+    shown = [label for label in [_CLEAR_PICK, *_FACE_LABELS] if not tab.banner.action_button(label).isHidden()]
+    assert shown == [_CLEAR_PICK, _CREATE_BCS]
+    assert _verb_labels(tab.banner) == [_CLEAR_PICK, _CREATE_BCS, _CHANGE_DEFAULTS]
+    # Loading never clears it: the file may be back on the next start.
+    assert SettingsManager.instance().get_active_strategy("test-bot") == _GONE
+
+
+def test_clear_pick_forgets_the_missing_one_and_the_run_stops_asking(qapp, defaults):
+    from bartlebot.combat.combat_warnings import check_combat  # noqa: PLC0415
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    SettingsManager.instance().set_active_strategy("test-bot", _GONE)
+    tab = _tab_with_clients(_config(), 2)
+
+    tab.banner.action_button(_CLEAR_PICK).click()
+
+    pick = SettingsManager.instance().get_active_strategy("test-bot")
+    assert pick is None
+    assert check_combat(pick, 2, _config()).faults == []
+    assert not tab.banner.missing_pick
+    assert (tab.banner.caption_text, tab.banner.name_text) == (NO_BOT_STRATEGY_CAPTION, DEFAULTS_NAME)
+    assert tab.banner.action_button(_CLEAR_PICK).isHidden()
 
 
 def test_deleting_one_of_the_users_picks_the_next_of_their_own(qapp, defaults):

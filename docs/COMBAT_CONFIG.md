@@ -323,8 +323,9 @@ get their strategies is said on screen all the time, not at run start:
   Official one with its pill, or the Default Duel Strategies with the Solo or Team duel
   in use, by the clients connected. Its words come from the Qt-free
   `combat_resolution.describe_source`, which resolves as a run would. With nothing
-  picked, its verbs are **Create Bot Combat Strategy** and **Change defaults…**.
-  `bartlebot/gui/CLAUDE.md` has the four states.
+  picked, its verbs are **Create Bot Combat Strategy** and **Change defaults…**. A pick
+  whose file is gone is a fault, and the banner says so, *File missing*, with **Clear
+  pick**, which forgets it. `bartlebot/gui/CLAUDE.md` has the five states.
 - **The default card**, while its Bot Combat Strategy has no default, shows the default
   that answers with an **Official** or **Your default** pill.
 - **Settings › Combat** is where the Solo and Team defaults are chosen: two cards, each
