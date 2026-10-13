@@ -971,6 +971,30 @@ connected and the two from different sources, it has no pill, since one would be
 The tab never falls back to an Official Bot Combat Strategy as the pick: that is level 2,
 which answers without being picked, and picking it for the user would make it level 1.
 
+**First run is a list of pages, and each page writes a choice** (epic #201, Stage 6,
+`gui/dialogs/first_run_dialog.py`). A page that only explains gets skipped, so a page
+asks something whose answer is stored and can be changed again in Settings. Today there
+is one, `CombatQuestionPage`: two `StartCard`s, the recommended answer first and selected,
+and a note naming Settings › Combat and the Combat tab. The rules for a page added later
+(accounts, the game path):
+
+- **It is a `FirstRunPage`**, with a `heading` and `record(prefs, skipped=)`. What it
+  stores lives in a Qt-free module, as `shared/first_run.py` does for the combat page, so
+  the other product asks the same question and writes the same keys.
+- **Skip ends the whole dialog, and every page records itself skipped**, so nothing is
+  asked again. Escape and the close button are Skip. Back and Next walk the pages, and
+  the last one's commit is Continue.
+- **A card that selects itself on focus needs the selected one focused on show**, or the
+  focus chain hands it to the first card and changes the answer. `CombatQuestionPage`
+  does it in `showEvent`. In the constructor it is lost when the page joins the dialog.
+- **It is opened from `AppController._after_window_shown`**, a timer's synchronous slot,
+  before a file named at launch is imported. Each opens a modal, and a second timer
+  would fire inside the first one's `exec()`.
+
+Every test's `%APPDATA%` is a first run, so `tests/conftest.py` makes
+`FirstRunDialog.exec` fail the test that calls it. Drive the dialog by its buttons, as
+its tests do.
+
 ## Source: Official, Official (modified), Custom
 
 Every list of bots, templates, subgraphs or strategies says where each item comes from,
