@@ -364,6 +364,41 @@ Upgrading users see it once too, which is how they learn the defaults changed.
 named at launch is imported, so the two dialogs never stack. `bartlebot/gui/CLAUDE.md`
 has the dialog and its page list.
 
+## After a lost fight: the mark on a fight fled on the default (#210)
+
+Tutorials get skipped and forgotten, but help at the point of need works, and a user is
+most ready to learn about combat strategies right after a fight goes badly. So a fight
+fled while it ran a default is marked on the Combat tab, where it can be tailored. There
+is never a dialog: a dialog at the end of a run is an interruption by another name.
+
+- **What counts.** A flee in `handle_combat` on level 3 or 4 (`Level.is_default`). A
+  flee on the user's pick, an Official Bot Combat Strategy or the last resort counts for
+  nothing, and neither does an ambient fight or an idle-popup flee: an ambient fight is no
+  fight of the bot's, so the tab has nowhere to put the mark, and an idle-popup flee means
+  nothing was fighting.
+- **The path.** `resolve_combat` returns a `ResolvedCombat` with the `Level` that
+  answered. On a flee, `handle_combat` calls `machine.note_fight_fled(state_id, level)`
+  before `note_flee`, which may stop the bot. The machine's `on_fight_fled` callback is
+  guarded, so the tab raising never stops a run. `AppController` counts the flee in its
+  one `FleeMarks` (`bartlebot/combat/flee_marks.py`, Qt-free), by bot and state, and the
+  tab redraws.
+- **The log.** One WARNING per flee on a default, through `machine.log`: *Fled 'Lost
+  Soul' on a default: duel strategy 'Default Team Duel' (the shipped Team default; …).
+  The Combat tab marks it, with a way to give it a strategy of its own.*
+- **Where the mark goes.** Where the fight is drawn. An exposed fight's own pill on the
+  default card, *Lost Soul · fled 2×*. The default card itself for fights the sidebar
+  doesn't list, *Fled 1× on the default*. The banner when the bot has no Bot Combat
+  Strategy, since then it is all the tab shows. The verb that fixes it is already first
+  in each place: the pill's click, **Change…**, **Create Bot Combat Strategy**.
+- **Only while it still applies.** `fled_on_default` resolves each marked fight as a run
+  would, and a mark shows only while its fight would still run a default. A fight given a
+  strategy of its own, or covered by a Bot Combat Strategy's default, loses its mark, and
+  gets it back with its count if that strategy goes.
+- **For the session.** The marks are in memory and last until the app closes. Switching
+  bots keeps them, and nothing is written.
+
+`bartlebot/gui/CLAUDE.md` has the pills.
+
 ## Fight keys: which stored fight is which state
 
 A state id alone loses its strategy whenever the id changes: a node replaced, a bot
@@ -418,6 +453,7 @@ follow it by.
 | `combat/strategy_summary.py` | every display string, derived once |
 | `combat/combat_grouping.py`, `combat/combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
 | `combat/combat_resolution.py` | the four levels a fight's duel strategy comes from |
+| `combat/flee_marks.py` | the session's fights fled on a default, which of them still run one, and the marks' words |
 | `shared/combat_defaults.py`, `shared/first_run.py` | the shipped default ids, levels 3 and 4, and what the first-run question stores |
 | `combat/fight_keys.py` | which stored fight belongs to which combat state |
 | `combat/bot_combat_strategy.py` | the own-then-library lookup, what one of a bot's own duels takes with it, and duplicating a Bot Combat Strategy |

@@ -21,13 +21,13 @@ The stages land in this order, each building only on the ones before:
 | 4 | #207 | levels and tiers: the four-level resolution, faults and notices, the dialog for faults only | landed |
 | 5 | #208 | showing the source: the Combat tab banner, Settings › Combat | landed |
 | 6 | #209 | first run: one question about the team, answered once for both products | landed |
-| 7 | #210 | after a lost fight: a mark on the fight's pill when it was fled on a default | planned |
+| 7 | #210 | after a lost fight: a mark where the fight is drawn when it was fled on a default | landed |
 
 `docs/COMBAT_CONFIG.md` is the feature as built; its "Naming" section is the part of
 Stage 1 that governs code, "The shipped defaults" the part of Stage 3, "Resolution at
 run time" and "Before a run: faults and notices" the part of Stage 4, "Showing the
-source, and choosing the defaults" the part of Stage 5, and "First run: one question
-about the team" the part of Stage 6.
+source, and choosing the defaults" the part of Stage 5, "First run: one question about
+the team" the part of Stage 6, and "After a lost fight" the part of Stage 7.
 
 The rules that hold across every stage:
 
