@@ -58,6 +58,11 @@ class Health:
 _OK = Health(HealthStatus.OK)
 _EMPTY = Health(HealthStatus.EMPTY)
 
+#: A Bot Combat Strategy's facet with no fight overridden: its default covers every fight,
+#: or it has no default either.
+DEFAULT_ONLY = "Default strategy only"
+NOTHING_ASSIGNED = "Nothing assigned"
+
 
 @dataclass(frozen=True)
 class AssignmentLine:
@@ -359,13 +364,19 @@ def summarize_player(pcs: PlayerCombatStrategy) -> StrategySummary:
 def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> StrategySummary:
     """Summarize a Bot Combat Strategy: how many fights it overrides.
 
+    With no override, the facet says whether its default covers every fight or it
+    assigns nothing at all, so every fight falls to the Default Duel Strategies.
+
     ``config`` is accepted but not yet consulted — reserved for cross-checking
     against the bot's exposed combat states, the way ``check_combat``
     already does.
     """
     del config
     n = sum(len(a.fights) for a in bcs.state_assignments)
-    facets = [f"{n} state override{'s' if n != 1 else ''}"] if n else ["Default strategy only"]
+    if n:
+        facets = [f"{n} state override{'s' if n != 1 else ''}"]
+    else:
+        facets = [DEFAULT_ONLY if bcs.default_strategy_id else NOTHING_ASSIGNED]
     health = _OK if (bcs.default_strategy_id or bcs.state_assignments) else _EMPTY
     return StrategySummary(name=bcs.name, description=bcs.description, facets=facets, health=health)
 

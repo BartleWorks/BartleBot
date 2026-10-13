@@ -172,19 +172,22 @@ def test_summarize_player_strategy_flags_broken_dsl():
 # ---------------------------------------------------------------------------
 
 
-def test_summarize_bot_with_no_overrides():
+def test_summarize_bot_with_nothing_assigned_says_so():
     bcs = BotCombatStrategy(name="Test", bot_id="bot-1")
 
     summary = summarize_bot(bcs)
 
-    assert summary.facets == ["Default strategy only"]
+    assert summary.facets == ["Nothing assigned"]
     assert summary.health.status is HealthStatus.EMPTY
 
 
-def test_summarize_bot_with_a_default_is_not_empty():
+def test_summarize_bot_with_only_a_default_is_not_empty():
     bcs = BotCombatStrategy(name="Test", bot_id="bot-1", default_strategy_id="dcs-1")
 
-    assert summarize_bot(bcs).health.status is HealthStatus.OK
+    summary = summarize_bot(bcs)
+
+    assert summary.facets == ["Default strategy only"]
+    assert summary.health.status is HealthStatus.OK
 
 
 def test_summarize_bot_counts_state_overrides():
