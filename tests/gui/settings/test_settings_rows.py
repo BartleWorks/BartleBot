@@ -229,6 +229,10 @@ def test_show_descriptions_opens_every_row_and_is_remembered(qapp):
     assert all(row.details_shown for row in BotTab().rows if row.details is not None)
 
 
+def test_a_form_with_descriptions_offers_the_links(qapp):
+    assert not GeneralTab().switches.isHidden()
+
+
 def test_hide_descriptions_folds_every_row(qapp):
     tab = GeneralTab()
     _click(tab, "Show descriptions")

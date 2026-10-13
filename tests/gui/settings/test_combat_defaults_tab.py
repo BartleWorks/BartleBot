@@ -182,3 +182,9 @@ def test_the_settings_dialog_opens_on_combat(qapp):
     dlg.open_tab("combat")
 
     assert dlg.tabs.tabText(dlg.tabs.currentIndex()) == "Combat"
+
+
+def test_the_tab_offers_no_description_links_with_nothing_to_open(qapp, prefs):
+    tab = CombatDefaultsTab(prefs=prefs)
+
+    assert tab.switches.isHidden()

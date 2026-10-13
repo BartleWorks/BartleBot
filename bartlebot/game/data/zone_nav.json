@@ -232,7 +232,7 @@
           "reset_xyz": {"x": 5976.76, "y": 4733.91, "z": -27.91},
           "verified": true,
           "source": "bot",
-          "note": "test_combat_profile.json"
+          "note": "test_combat_strategy.json"
         },
         {
           "kind": "object",

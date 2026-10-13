@@ -117,13 +117,17 @@ def _put_back_from_the_center(client, *, joins_at=None):
     client.teleport.side_effect = teleport
 
 
-async def test_a_center_that_puts_the_client_back_is_blocked_and_it_joins_by_a_player():
+async def test_a_center_that_puts_the_client_back_is_blocked_and_it_joins_by_a_player(monkeypatch):
+    # Seeing the put-back takes two reads in one attempt: at the center, then on the start.
+    # A window of many polls, so a poll that overruns under load cannot end the attempt
+    # between them; on the next attempt the re-teleport's log line takes the first read.
+    monkeypatch.setattr(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.5)
     machine = FakeMachine()
     fighter, helper = FakeClient(), FakeClient()
     fight = await _fight_with(machine, fighter)
     _put_back_from_the_center(helper, joins_at=_SEAT)
 
-    assert await join_fight(machine, helper, 1, fight, timeout=1.0) is True
+    assert await join_fight(machine, helper, 1, fight, timeout=5.0) is True
     targets = [tuple(c.args[0]) for c in helper.teleport.await_args_list]
     assert targets == [(500.0, 600.0, 0.0), tuple(_SEAT)]
     assert fight.is_center_blocked(helper)

@@ -48,7 +48,8 @@ Two rules about the settings dialog itself:
   setting does, and the control right-aligned in a fixed-width slot. The line is
   always on screen; anything longer, the *why*, goes in `details=` and folds behind
   the row's `?`, and the page's *Show descriptions · Hide descriptions* open or
-  fold every row at once (#148). Before the description-row rework the Log, Layout
+  fold every row at once (#148); a form with no `details=` to open, such as
+  Settings › Combat's two cards, hides them (`SettingsForm.finish`). Before the description-row rework the Log, Layout
   and Auto-save rows had no explanation at all; after it every row carried a
   paragraph, and the Bot tab was 1,392px tall. A tooltip still never carries the
   whole explanation on its own.

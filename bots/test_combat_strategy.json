@@ -1,7 +1,7 @@
 {
   "id": "90c3b071-3d9f-4811-894f-45f86d40b82d",
-  "name": "Combat Profile Tester",
-  "description": "Tests combat profiles",
+  "name": "Combat Strategy Tester",
+  "description": "Tests Bot Combat Strategies",
   "version": "1.0",
   "clients": "all",
   "initial": "sync_players_1_state_2",
