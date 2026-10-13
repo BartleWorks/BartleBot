@@ -45,7 +45,7 @@ CONTINUE = "Continue"
 NEXT = "Next"
 SKIP = "Skip"
 
-COMBAT_HEADING = "When your wizards fight as a team, how should they take on bosses?"
+COMBAT_HEADING = "How should your team take on bosses?"
 #: Each answer's card: its name, and what it does in a fight.
 TACTIC_CARDS: dict[BossTactic, tuple[str, str]] = {
     BossTactic.ONE_HITTER: (
@@ -59,9 +59,11 @@ TACTIC_CARDS: dict[BossTactic, tuple[str, str]] = {
     ),
 }
 RECOMMENDED_DETAIL = "Recommended"
+#: Where the defaults are changed later, held together so a wrap never splits it.
+SETTINGS_COMBAT = "Settings › Combat"
 COMBAT_NOTE = (
     "Fights with one wizard use Default Solo Duel. You can change either default later in "
-    "Settings › Combat, and tailor any bot's combat on its Combat tab."
+    f"{SETTINGS_COMBAT}, and tailor any bot's combat on its Combat tab."
 )
 
 

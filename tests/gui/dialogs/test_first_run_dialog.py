@@ -20,6 +20,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     CONTINUE,
     NEXT,
     RECOMMENDED_DETAIL,
+    SETTINGS_COMBAT,
     SKIP,
     TACTIC_CARDS,
     CombatQuestionPage,
@@ -77,7 +78,8 @@ def test_the_note_names_the_solo_default_settings_and_the_combat_tab(qapp):
     note = CombatQuestionPage().note_text
 
     assert "Default Solo Duel" in note
-    assert "Settings › Combat" in note
+    assert SETTINGS_COMBAT in note
+    assert SETTINGS_COMBAT.replace(" ", " ") == "Settings › Combat"
     assert "Combat tab" in note
 
 
