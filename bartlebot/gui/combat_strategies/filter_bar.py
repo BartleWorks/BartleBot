@@ -187,6 +187,17 @@ class StrategyFilterBar(QWidget):
     def clear_facets(self) -> None:
         self._set_selection(StrategyFilter())
 
+    def set_team_size(self, team_size: int | None) -> None:
+        """Select one Team size, or none, leaving the other facets as they are.
+
+        How a way in that already knows the team opens on the duels it can run: Settings ›
+        Combat's Team card presets two. It is an ordinary selection, shown as its chip, so
+        the user can take it off like any other.
+        """
+        if self._team_picker is None:
+            return
+        self._set_selection(replace(self.selection(), team_size=team_size))
+
     def _set_selection(self, flt: StrategyFilter) -> None:
         """Change the selection without the pickers emitting, then say so once."""
         for group, picker in self._tag_pickers.items():

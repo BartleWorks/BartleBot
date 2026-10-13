@@ -17,9 +17,19 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.combat_resolution import (
+    BOT_STRATEGY_CAPTION,
+    DEFAULTS_NAME,
+    NO_BOT_STRATEGY_CAPTION,
+    OFFICIAL_PILL,
+    YOUR_DEFAULT_PILL,
     CombatResolver,
     Level,
+    SourceText,
+    default_choice_notes,
+    default_pill,
+    defaults_in_use,
     describe_run,
+    describe_source,
     official_strategy_for,
     ranked_officials,
     resolve_fight,
@@ -429,9 +439,12 @@ def test_resolution_writes_no_file(roots, prefs, tmp_path):
     before = _snapshot(tmp_path)
 
     for pick in (None, mine.id, "deadbeef-0000-0000-0000-000000000000"):
-        for clients in (1, 2, 4):
-            _resolver(roots, prefs, clients, pick, _bot("s1")).fights()
-            check_combat(pick, clients, _bot("s1"), root=roots[0], user_root=roots[1], prefs=prefs)
+        for clients in (0, 1, 2, 4):
+            _resolver(roots, prefs, max(clients, 1), pick, _bot("s1")).fights()
+            check_combat(pick, max(clients, 1), _bot("s1"), root=roots[0], user_root=roots[1], prefs=prefs)
+            _describe(roots, prefs, clients, pick)
+            for size in TeamSize:
+                default_choice_notes(size, mine.default_strategy_id, root=roots[0], user_root=roots[1])
 
     assert _snapshot(tmp_path) == before
 
@@ -439,3 +452,179 @@ def test_resolution_writes_no_file(roots, prefs, tmp_path):
 def test_resolve_fight_is_one_fight_of_a_resolver(roots, prefs):
     res = resolve_fight(_bot(), None, 2, None, prefs=prefs, root=roots[0], user_root=roots[1])
     assert res.level is Level.SHIPPED_DEFAULT
+
+
+# ---------------------------------------------------------------------------
+# describe_source: what the Combat tab's banner says (Stage 5)
+# ---------------------------------------------------------------------------
+
+
+def _describe(roots, prefs, clients: int, pick: str | None = None, bot: BotConfig | None = None) -> SourceText:
+    return describe_source(bot or _bot(), clients, pick, prefs=prefs, root=roots[0], user_root=roots[1])
+
+
+def test_the_shipped_defaults_are_named_with_the_duel_in_use(roots, prefs):
+    text = _describe(roots, prefs, 2)
+
+    assert text == SourceText(
+        Level.SHIPPED_DEFAULT,
+        NO_BOT_STRATEGY_CAPTION,
+        DEFAULTS_NAME,
+        "Team: Default Team Duel (recommended)",
+        reasons=("this bot has no Bot Combat Strategy",),
+    )
+
+
+def test_with_nobody_connected_both_defaults_are_named(roots, prefs):
+    text = _describe(roots, prefs, 0)
+
+    assert text.detail == "Solo: Default Solo Duel (recommended) · Team: Default Team Duel (recommended)"
+
+
+def test_your_default_is_named_as_yours(roots, prefs):
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+
+    text = _describe(roots, prefs, 3)
+
+    assert (text.level, text.caption, text.name) == (Level.YOUR_DEFAULT, NO_BOT_STRATEGY_CAPTION, DEFAULTS_NAME)
+    assert text.detail == "Team: Default Team Duel (Everyone Attacks) (yours)"
+
+
+def test_your_default_that_does_not_fit_is_named_as_the_recommended_one_and_says_why(roots, prefs):
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], _duel(roots, "Four Box", min_players=4).id)
+
+    text = _describe(roots, prefs, 2)
+
+    assert text.level is Level.SHIPPED_DEFAULT
+    assert text.detail == "Team: Default Team Duel (recommended)"
+    assert "your Team default 'Four Box' takes 4 players, and 2 are connected" in text.reasons
+
+
+def test_the_pick_is_named_and_says_nothing_more_when_it_covers_its_fights(roots, prefs):
+    bcs = _bcs(roots, default_strategy_id=_duel(roots).id)
+
+    text = _describe(roots, prefs, 2, bcs.id)
+
+    assert text == SourceText(Level.PICK, BOT_STRATEGY_CAPTION, "Mine")
+
+
+@pytest.mark.parametrize(
+    ("stored", "expected"),
+    [
+        (None, "Fights with no duel strategy: Team: Default Team Duel (recommended)"),
+        (
+            SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+            "Fights with no duel strategy: Team: Default Team Duel (Everyone Attacks) (yours)",
+        ),
+    ],
+)
+def test_a_pick_with_no_default_says_which_default_its_fights_use(roots, prefs, stored, expected):
+    if stored:
+        prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], stored)
+    bcs = _bcs(roots)
+
+    text = _describe(roots, prefs, 2, bcs.id)
+
+    assert (text.level, text.name, text.pill) == (Level.PICK, "Mine", "")
+    assert text.detail == expected
+
+
+def test_the_official_one_is_named_with_its_pill_when_nothing_is_picked(roots, prefs):
+    _bcs(roots, "Author Set", shipped=True, default_strategy_id=_duel(roots, "Official Duel", shipped=True).id)
+
+    text = _describe(roots, prefs, 2)
+
+    assert text == SourceText(
+        Level.OFFICIAL,
+        BOT_STRATEGY_CAPTION,
+        "Author Set",
+        pill=OFFICIAL_PILL,
+        reasons=("this bot has no Bot Combat Strategy",),
+    )
+
+
+def test_a_pick_whose_file_is_gone_is_named_by_the_level_that_answers_and_the_reason(roots, prefs):
+    _bcs(roots, "Author Set", shipped=True, default_strategy_id=_duel(roots, "Official Duel", shipped=True).id)
+
+    text = _describe(roots, prefs, 2, "deadbeef-0000-0000-0000-000000000000")
+
+    assert (text.level, text.name, text.pill) == (Level.OFFICIAL, "Author Set", OFFICIAL_PILL)
+    assert text.reasons == ("your Bot Combat Strategy's file is missing (id: deadbeef…)",)
+
+
+def test_a_pick_whose_file_is_gone_with_no_official_falls_to_the_defaults(roots, prefs):
+    text = _describe(roots, prefs, 1, "deadbeef-0000-0000-0000-000000000000")
+
+    assert (text.level, text.name, text.detail) == (
+        Level.SHIPPED_DEFAULT,
+        DEFAULTS_NAME,
+        "Solo: Default Solo Duel (recommended)",
+    )
+    assert "your Bot Combat Strategy's file is missing (id: deadbeef…)" in text.reasons
+
+
+def test_with_no_file_readable_the_last_resort_is_named(tmp_path, prefs):
+    empty = (tmp_path / "empty-shipped", tmp_path / "empty-user")
+    for root in empty:
+        root.mkdir()
+
+    text = _describe(empty, prefs, 2)
+
+    assert text.level is Level.LAST_RESORT
+    assert text.detail == "Team: the built-in DSL, no strategy file could be read"
+
+
+# ---------------------------------------------------------------------------
+# The default card's pill, and Settings › Combat's notes (Stage 5)
+# ---------------------------------------------------------------------------
+
+
+def test_the_pill_says_whose_default_answers(roots, prefs):
+    assert default_pill(defaults_in_use(2, prefs=prefs, root=roots[0], user_root=roots[1])) == OFFICIAL_PILL
+
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+
+    assert default_pill(defaults_in_use(2, prefs=prefs, root=roots[0], user_root=roots[1])) == YOUR_DEFAULT_PILL
+    # Nobody connected: Solo is the shipped one and Team the user's, so no one pill is right.
+    assert default_pill(defaults_in_use(0, prefs=prefs, root=roots[0], user_root=roots[1])) == ""
+
+
+def _notes(roots, size: TeamSize, duel_id: str | None) -> list[str]:
+    return default_choice_notes(size, duel_id, root=roots[0], user_root=roots[1])
+
+
+def test_the_recommended_choice_has_no_notes(roots):
+    assert _notes(roots, TeamSize.TEAM, None) == []
+    assert _notes(roots, TeamSize.TEAM, SHIPPED_TEAM_DUEL_ID) == []
+
+
+def test_a_choice_gone_from_the_library_says_the_recommended_one_is_used(roots):
+    assert _notes(roots, TeamSize.SOLO, "deadbeef-0000-0000-0000-000000000000") == [
+        "It is no longer in the library, so the recommended one is used."
+    ]
+
+
+@pytest.mark.parametrize(
+    ("size", "low", "high", "expected"),
+    [
+        (TeamSize.TEAM, 4, 4, "It takes 4 players, so with 2 or 3 clients connected the recommended one is used."),
+        (TeamSize.TEAM, 2, 3, "It takes 2 to 3 players, so with 4 clients connected the recommended one is used."),
+        (TeamSize.SOLO, 2, 4, "It takes 2 to 4 players, so with 1 client connected the recommended one is used."),
+    ],
+)
+def test_a_choice_that_does_not_fit_every_size_says_when_the_recommended_one_is_used(roots, size, low, high, expected):
+    duel = _duel(roots, min_players=low, max_players=high)
+
+    assert _notes(roots, size, duel.id) == [expected]
+
+
+def test_a_choice_linking_a_missing_player_strategy_says_so(roots):
+    duel = DuelCombatStrategy(
+        name="Linked",
+        player_assignments=[PlayerAssignment(players=[1, 2], player_combat_strategy_id="gone-0000")],
+    )
+    strategy_store.save_duel_strategy(duel, roots[1])
+
+    assert _notes(roots, TeamSize.TEAM, duel.id) == [
+        "It links a player strategy that is missing, so those players fight with the built-in DSL."
+    ]

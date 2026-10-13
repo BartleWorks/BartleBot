@@ -40,6 +40,7 @@ from bartlebot.shared.combat_defaults import (
     DefaultSource,
     TeamSize,
     default_duel,
+    players_text,
     shortfall_text,
     team_size,
 )
@@ -391,3 +392,182 @@ def describe_run(resolver: CombatResolver) -> str:
         for (name, where), fights in groups.items()
     ]
     return "Combat: " + "; ".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Saying it on screen: the Combat tab's banner and default card (Stage 5 of epic #201)
+# ---------------------------------------------------------------------------
+
+#: The banner's caption over a Bot Combat Strategy, the user's or an Official one.
+BOT_STRATEGY_CAPTION = "Bot Combat Strategy"
+#: The banner's caption when the bot has none, so the line under it is not read as one's name.
+NO_BOT_STRATEGY_CAPTION = "No Bot Combat Strategy"
+#: What the banner names when the defaults answer every fight.
+DEFAULTS_NAME = "Default Duel Strategies"
+#: The pill beside a shipped strategy's name: the banner's Official one, a shipped default.
+OFFICIAL_PILL = "Official"
+#: The pill beside the user's own Solo or Team default.
+YOUR_DEFAULT_PILL = "Your default"
+
+#: How a default is qualified in a line that names it: kept, or chosen.
+_RECOMMENDED = "recommended"
+_YOURS = "yours"
+
+
+@dataclass(frozen=True)
+class SourceText:
+    """What the Combat tab's banner says about where a bot's fights get their duel strategies.
+
+    ``level`` is the source the banner names: :attr:`Level.PICK` or :attr:`Level.OFFICIAL`
+    for a Bot Combat Strategy, otherwise the level the defaults answered at. ``pill`` is
+    empty or :data:`OFFICIAL_PILL`. ``reasons`` are what was passed over on the way, for
+    the tooltip: the same words the log uses.
+    """
+
+    level: Level
+    caption: str
+    name: str
+    detail: str = ""
+    pill: str = ""
+    reasons: tuple[str, ...] = ()
+
+
+def team_sizes_for(clients: int) -> tuple[int, ...]:
+    """The team sizes to describe: the one connected, or one and two when nobody is.
+
+    With no client connected nothing says which default a run will use, so both are named.
+    """
+    return (clients,) if clients > 0 else (1, 2)
+
+
+def defaults_in_use(
+    clients: int,
+    *,
+    prefs: PreferenceStore | None = None,
+    root: str | Path | None = None,
+    user_root: str | Path | None = None,
+) -> list[DefaultDuel]:
+    """Levels 3 and 4 for the team on the field, or for Solo and Team with nobody connected."""
+    prefs = prefs if prefs is not None else PreferenceStore()
+    library = StrategyLookup(None, root=root, user_root=user_root)
+    return [default_duel(n, prefs, library.duel) for n in team_sizes_for(clients)]
+
+
+def default_pill(answers: Iterable[DefaultDuel]) -> str:
+    """:data:`OFFICIAL_PILL` or :data:`YOUR_DEFAULT_PILL` when every answer is one or the other, else empty.
+
+    With nobody connected, a Solo default of the user's and the recommended Team one share
+    a card; one pill would be wrong about one of them, and the line under it names both.
+    """
+    sources = {a.source for a in answers if a.duel is not None}
+    if sources == {DefaultSource.SHIPPED}:
+        return OFFICIAL_PILL
+    if sources == {DefaultSource.YOURS}:
+        return YOUR_DEFAULT_PILL
+    return ""
+
+
+def defaults_text(answers: Iterable[DefaultDuel]) -> str:
+    """``Team: Default Team Duel (recommended)``, one part per size, joined with a dot."""
+    parts = []
+    for answer in answers:
+        if answer.duel is None:
+            parts.append(f"{answer.size.value}: the built-in DSL, no strategy file could be read")
+        else:
+            whose = _YOURS if answer.source is DefaultSource.YOURS else _RECOMMENDED
+            parts.append(f"{answer.size.value}: {answer.duel.name} ({whose})")
+    return " · ".join(parts)
+
+
+#: The team sizes each default answers for.
+SIZE_RANGE = {TeamSize.SOLO: (1,), TeamSize.TEAM: (2, 3, 4)}
+
+
+def _counts_text(counts: list[int]) -> str:
+    """``2``, ``2 or 3``, ``2, 3 or 4``."""
+    words = [str(n) for n in counts]
+    return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} or {words[-1]}"
+
+
+def default_choice_notes(
+    size: TeamSize,
+    duel_id: str | None,
+    *,
+    root: str | Path | None = None,
+    user_root: str | Path | None = None,
+) -> list[str]:
+    """What is wrong with choosing *duel_id* as the *size* default, in the user's words; empty when nothing is.
+
+    None is the recommended one, which is never checked: it was written for its size. A
+    choice that is gone, or does not fit some of the sizes it answers for, leaves those to
+    the recommended one at run time, as :func:`~bartlebot.shared.combat_defaults.default_duel`
+    does. A player strategy it links that is gone runs the built-in DSL in that slot.
+    """
+    if not duel_id:
+        return []
+    lookup = StrategyLookup(None, root=root, user_root=user_root)
+    duel = lookup.duel(duel_id)
+    if duel is None:
+        return ["It is no longer in the library, so the recommended one is used."]
+    notes = []
+    unfit = [n for n in SIZE_RANGE[size] if not duel.accepts(n)]
+    if unfit:
+        noun = "client" if unfit == [1] else "clients"
+        notes.append(
+            f"It takes {players_text(duel)}, so with {_counts_text(unfit)} {noun} connected the recommended one is used."
+        )
+    missing = [
+        a.player_combat_strategy_id
+        for a in duel.player_assignments
+        if a.player_combat_strategy_id and lookup.player(a.player_combat_strategy_id) is None
+    ]
+    if missing:
+        notes.append("It links a player strategy that is missing, so those players fight with the built-in DSL.")
+    return notes
+
+
+def describe_source(
+    bot_config: BotConfig | None,
+    clients: int,
+    pick: str | None,
+    *,
+    prefs: PreferenceStore | None = None,
+    root: str | Path | None = None,
+    user_root: str | Path | None = None,
+) -> SourceText:
+    """Where the bot's fights get their duel strategies, in the banner's words.
+
+    The user's Bot Combat Strategy by name, then the bot's Official one, then the Default
+    Duel Strategies with the Solo or Team duel in use. A Bot Combat Strategy that leaves
+    its default fight uncovered says which default those fights fall to. Resolved as a run
+    would resolve it (:class:`CombatResolver`), and nothing is written.
+    """
+    prefs = prefs if prefs is not None else PreferenceStore()
+    resolver = CombatResolver(bot_config, max(clients, 1), pick, prefs=prefs, root=root, user_root=user_root)
+    fight = resolver.fight(DEFAULT_FIGHT)
+    answers = defaults_in_use(clients, prefs=prefs, root=root, user_root=user_root)
+    picked = resolver.picked
+    official = resolver.official if picked is None else None
+
+    if picked is not None or official is not None:
+        owner = picked if picked is not None else official
+        level = Level.PICK if picked is not None else Level.OFFICIAL
+        covered = fight.level is level
+        detail = "" if covered else f"Fights with no duel strategy: {defaults_text(answers)}"
+        return SourceText(
+            level,
+            BOT_STRATEGY_CAPTION,
+            owner.name,
+            detail,
+            OFFICIAL_PILL if level is Level.OFFICIAL else "",
+            fight.reasons,
+        )
+
+    if all(a.duel is None for a in answers):
+        level = Level.LAST_RESORT
+    elif any(a.source is DefaultSource.YOURS for a in answers):
+        level = Level.YOUR_DEFAULT
+    else:
+        level = Level.SHIPPED_DEFAULT
+    reasons = tuple(dict.fromkeys([*fight.reasons, *(r for a in answers for r in a.reasons)]))
+    return SourceText(level, NO_BOT_STRATEGY_CAPTION, DEFAULTS_NAME, defaults_text(answers), reasons=reasons)

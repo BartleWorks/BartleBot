@@ -86,7 +86,7 @@ Two rules about the settings dialog itself:
 - **The dialog fits the screen; the tabs do not have to.** A visible hint under
   every row once grew the dialog taller than a 1080p screen and put OK and Cancel
   under the taskbar. A tab with every description and group open is still taller
-  than the dialog, so the four form tabs are wrapped in `rows.ScrollableTab`,
+  than the dialog, so the five form tabs are wrapped in `rows.ScrollableTab`,
   which caps the column at `PAGE_MAX_WIDTH_PX`, centers it, and reserves the scroll
   bar's space so a fold does not jolt the column sideways (#112). Wrap a new
   form tab too. Do **not** wrap a tab that carries the layout's stretch, as the Game tab's two card columns do:
@@ -170,3 +170,30 @@ and every NodeSpec that declares the option against it.
 Anything naming a settings row in user-facing text has to name its tab too: the
 `relog` node's help, the "waiting at character select" recovery message and
 `teleport_to_friend`'s error all said *Settings → General* and all had to move.
+
+## The Combat tab
+
+The Solo and Team **Default Duel Strategies** (epic #201, `docs/COMBAT_CONFIG.md`): what a
+fight with nothing tailored to it runs, with one client connected or with two to four.
+`combat_defaults_tab.py`. They are levels 3 and 4 of a fight's resolution, the way the
+Bot tab's rows are the app-setting level of an option, but they live in the vendor-wide
+`preferences.json`, not `settings.json`, because BartleBuddy fights with the same two.
+
+- **Two cards, not rows.** Each is a `DefaultDuelCard` in a `SettingCard`: Solo or Team,
+  one line saying when it answers, the duel in use drawn as the combat dialog's
+  `StrategyCard` (with its source pill), and a note under it. A duel's summary is what
+  the user is choosing between, and a 210px control slot cannot hold one.
+  `SettingsForm.add_card` places a card that is not built from rows.
+- **Change…** opens `CombatStrategyDialog` in Pick mode on the library alone, with the
+  Team size filter preset to one or two (`team_size=`) as a chip the user can remove.
+  **Use recommended** goes back to the shipped duel.
+- **The apply rule holds:** a choice is pending until OK, and Cancel drops it. `apply`
+  writes only a card whose choice changed since the tab opened, so a key the other
+  product wrote meanwhile stands, through `combat_defaults.set_default_choice`. That
+  stores the recommended duel as **no key** (picking the shipped duel by name is the
+  same), so a later fix to it reaches everyone who kept it. A write that fails is a
+  WARNING, and the choice stays for the next OK.
+- **The note says what a run will do with an odd choice** (`default_choice_notes`): one
+  gone from the library, one that does not fit every size it answers for (a Team default
+  for four, run with two), or one linking a player strategy that is gone. Each falls back
+  at run time exactly as the note says, with nothing written.

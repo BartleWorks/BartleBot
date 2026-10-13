@@ -630,6 +630,11 @@ class SettingsForm(QWidget):
         self._rows.append(row)
         return row
 
+    def add_card(self, card: SettingCard) -> SettingCard:
+        """A card that is not built from rows -- Settings › Combat's defaults -- in the column's spacing."""
+        self._add_card(card)
+        return card
+
     def add_group(self, group: SettingGroup) -> SettingGroup:
         self._add_card(group)
         self._groups.append(group)

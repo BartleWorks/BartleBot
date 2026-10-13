@@ -341,6 +341,10 @@ class MainWindow(QMainWindow):
         self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
         # ...and back: those rows resolve through the values that dialog just wrote.
         self.settings_applied.connect(self.left_sidebar.refresh_option_values)
+        # The Combat tab's banner names the Solo or Team default a bot falls to; Change
+        # defaults… is the way to Settings › Combat, and the banner re-reads on the way back.
+        self.left_sidebar.combat_tab.combat_defaults_requested.connect(lambda: self._open_settings(tab_name="combat"))
+        self.settings_applied.connect(self.left_sidebar.combat_tab.refresh_source)
         # Straight to the one editor the gear asks for. It used to go through
         # _open_settings, which built the whole Settings dialog to reach it and left it
         # standing behind — see _edit_launch_profile.

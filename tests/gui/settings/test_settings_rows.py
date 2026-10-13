@@ -247,7 +247,7 @@ def test_the_dialogs_descriptions_are_apart_from_the_sidebars(qapp):
 def test_one_tabs_links_reach_every_form_in_the_dialog(qapp):
     """Including the forms inside Theme and Game, which are not form tabs themselves."""
     dlg = SettingsDialog()
-    assert len(dlg.forms) == 6
+    assert len(dlg.forms) == 7
 
     dlg.forms[1].descriptions_toggled.emit(True)
 

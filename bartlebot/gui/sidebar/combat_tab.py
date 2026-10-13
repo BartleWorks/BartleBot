@@ -9,7 +9,7 @@ editor. There is no disclosure arrow into a DSL box on any card here: combat edi
 a user-owned edit that wants an explicit Save/Cancel boundary, and it lives in
 ``CombatStrategyDialog``. ``Change…`` (🔍) on a card opens that dialog in Pick mode,
 which selects and edits nothing (#123); ``Edit…`` (✏) opens it as the active Bot
-Combat Strategy's editor, on every card, the built-in default's included. A strategy made there
+Combat Strategy's editor, on every card, one running a default included. A strategy made there
 on that visit is linked to the card that opened it on Save (#118).
 
 A BANNER, THEN THE SECTIONS
@@ -106,16 +106,25 @@ from bartlebot.combat.combat_grouping import (
     group_bindings,
     state_label,
 )
+from bartlebot.combat.combat_resolution import (
+    BOT_STRATEGY_CAPTION,
+    OFFICIAL_PILL,
+    SourceText,
+    defaults_in_use,
+    describe_source,
+)
 from bartlebot.combat.deck_content import APPLY_DECK, ARCHMASTERY_MODES, IMPORT_DECK, archmastery_note, deck_groups
 from bartlebot.combat.deck_io import resolve_apply_archmastery
 from bartlebot.combat.fight_keys import exposed_combat_states, heal, place
 from bartlebot.combat.strategy_store import (
+    Origin,
     StrategyKind,
     delete_bot_strategy,
     list_bot_strategies,
     list_duel_strategies,
     list_player_strategies,
     load_bot_strategy,
+    origin_of,
     save_bot_strategy,
 )
 from bartlebot.combat.strategy_summary import summarize_bot
@@ -123,18 +132,20 @@ from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
-from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
+from bartlebot.gui.combat_strategies.dialog import NONE_LABEL, NONE_TOOLTIP, CombatStrategyDialog, DialogMode
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
 )
 from bartlebot.gui.sidebar.strategy_panel import (
-    BUILT_IN_LABEL,
+    DEFAULTS_LABEL,
+    DEFAULTS_META,
+    DEFAULTS_NONE_TIP,
     LOCKED,
     MISSING_LABEL,
-    NOT_CONFIGURED_LABEL,
     STATE_INHERIT_LABEL,
     STATE_INHERIT_META,
+    STATE_INHERIT_TIP,
     PanelRole,
     StrategyPanel,
 )
@@ -153,6 +164,7 @@ from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadge
+from bartlebot.gui.widgets.pills.tag_pill import AccentPill
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
@@ -169,7 +181,7 @@ _NO_STRATEGY_LABEL = "(no strategy set)"
 _ICON_BTN_SIZE = 16
 
 #: The banner's caption. Nothing heads the banner, so it names itself.
-_BCS_CAPTION = "Bot Combat Strategy"
+_BCS_CAPTION = BOT_STRATEGY_CAPTION
 
 #: Section heading. One, where there were three plus a bare caption: the levels below
 #: the Bot Combat Strategy are all Duel Combat Strategies, and which one is the default
@@ -191,6 +203,10 @@ _NEW_BCS = "New…"
 _DUPLICATE_BCS = "Duplicate…"
 _DELETE_BCS = "Delete…"
 _EXPORT_BCS = "Export…"
+#: The banner's two verbs while the bot has no Bot Combat Strategy (epic #201, Stage 5): make
+#: one, or change the defaults its fights are using instead, in Settings › Combat.
+_CREATE_BCS = "Create Bot Combat Strategy"
+_CHANGE_DEFAULTS = "Change defaults…"
 
 
 # ---------------------------------------------------------------------------
@@ -789,11 +805,16 @@ class _BotStrategyBanner(CardFrame):
     duplicate_requested = pyqtSignal()
     delete_requested = pyqtSignal()
     export_requested = pyqtSignal()
+    #: Change defaults…: open Settings › Combat, where the Solo and Team defaults are chosen.
+    defaults_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, mode=CardMode.MANAGE)
         self._bcs: BotCombatStrategy | None = None
         self._editable = True
+        # Whether there is a Bot Combat Strategy to pick with none picked: an Official one.
+        self._has_choices = False
+        self._source: SourceText | None = None
         self._build()
         self.activated.connect(self.change_requested)
         self.refresh_theme_styles()
@@ -817,7 +838,21 @@ class _BotStrategyBanner(CardFrame):
         font.setBold(True)
         self._name.setFont(font)
         header.addWidget(self._name, 1)
-        self._add_face_verbs(header)
+        # Beside the name, as the strategy cards' source pill is: filled with the accent,
+        # because "Official" is the same word with the same weight wherever it appears.
+        self._official_pill = AccentPill(OFFICIAL_PILL, parent=self.frame, filled=True)
+        self._official_pill.setToolTip("Shipped with this bot. Create a Bot Combat Strategy of your own to change it.")
+        header.addWidget(self._official_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._official_pill.setVisible(False)
+        # Every face button the banner can show, built once; which are up is the state's
+        # (``_reapply_verb_states``). They give up their space when hidden, unlike a hover
+        # button's: two sets trade places here, and a gap where the other set was is a
+        # gap that never fills.
+        self._add_face_verbs(header, self._face_verbs())
+        for button in self.action_buttons:
+            policy = button.sizePolicy()
+            policy.setRetainSizeWhenHidden(False)
+            button.setSizePolicy(policy)
         header.addWidget(self._make_kebab_button("More Bot Combat Strategy actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
@@ -827,16 +862,53 @@ class _BotStrategyBanner(CardFrame):
 
     def set_strategy(self, bcs: BotCombatStrategy | None) -> None:
         self._bcs = bcs
-        if bcs is None:
-            self._name.setText(_NO_STRATEGY_LABEL)
-            self._name.setToolTip("No Bot Combat Strategy for this bot yet — right-click to make one")
-            self._meta.setVisible(False)
-        else:
+        self._redraw()
+
+    def set_source(self, source: SourceText | None) -> None:
+        """Say where the fights' strategies come from (``combat_resolution.describe_source``).
+
+        With a Bot Combat Strategy picked, it adds which default its unassigned fights use,
+        if any do. With none, it is the whole banner: the Official one by name, or the
+        Default Duel Strategies with the duel in use.
+        """
+        self._source = source
+        self._redraw()
+
+    def set_has_choices(self, has_choices: bool) -> None:
+        """Whether Change… has something to offer while none is picked: an Official one."""
+        self._has_choices = has_choices
+        self._reapply_verb_states()
+
+    def _redraw(self) -> None:
+        bcs, source = self._bcs, self._source
+        reasons = "\n".join(source.reasons) if source is not None and source.reasons else ""
+        if bcs is not None:
+            self._caption.setText(_BCS_CAPTION)
             self._name.setText(bcs.name)
             summary = summarize_bot(bcs)
             self._name.setToolTip(summary.description or bcs.name)
             self._meta.setText(summary.subtitle_line())
+            # Which default its unassigned fights fall to is the tooltip's, not the line's:
+            # beside the summary it elides at a sidebar's width, and the default card just
+            # below already shows that default, with a pill saying whose it is.
+            detail = source.detail if source is not None else ""
+            self._meta.setToolTip("\n".join(part for part in (detail, reasons) if part))
             self._meta.setVisible(True)
+            self._official_pill.setVisible(False)
+        elif source is not None:
+            self._caption.setText(source.caption)
+            self._name.setText(source.name)
+            self._name.setToolTip(source.name)
+            self._meta.setText(source.detail)
+            self._meta.setToolTip(reasons)
+            self._meta.setVisible(bool(source.detail))
+            self._official_pill.setVisible(source.pill == OFFICIAL_PILL)
+        else:
+            self._caption.setText(_BCS_CAPTION)
+            self._name.setText(_NO_STRATEGY_LABEL)
+            self._name.setToolTip("No Bot Combat Strategy for this bot yet")
+            self._meta.setVisible(False)
+            self._official_pill.setVisible(False)
         self._reapply_verb_states()
         self.refresh_theme_styles()
 
@@ -845,6 +917,27 @@ class _BotStrategyBanner(CardFrame):
         """The strategy this card names, or None. Public so the tab need not re-derive it."""
         return self._bcs
 
+    @property
+    def caption_text(self) -> str:
+        return self._caption.text()
+
+    @property
+    def name_text(self) -> str:
+        return self._name.full_text()
+
+    @property
+    def meta_text(self) -> str:
+        """The line under the name, or empty when it is hidden."""
+        return self._meta.full_text() if not self._meta.isHidden() else ""
+
+    @property
+    def meta_tooltip(self) -> str:
+        return self._meta.toolTip()
+
+    @property
+    def shows_official_pill(self) -> bool:
+        return not self._official_pill.isHidden()
+
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
         self._reapply_verb_states()
@@ -852,41 +945,68 @@ class _BotStrategyBanner(CardFrame):
         self.setToolTip("" if editable else LOCKED)
 
     def _reapply_verb_states(self) -> None:
-        """Rename needs something to rename; New does not.
+        """Show the face buttons for the state, and enable them while the bot is stopped.
 
-        New stays live with no strategy loaded, because that is exactly the state a user
-        gets out of by making one -- a card whose every affordance is dead is a dead end.
+        With a Bot Combat Strategy: Change…, Rename… and New…. With none: Create Bot
+        Combat Strategy and Change defaults…, the two ways out of running on the defaults,
+        and Change… too when there is an Official one to pick. The Create verb stays live,
+        because that is exactly the state a user gets out of by making one -- a card
+        whose every affordance is dead is a dead end.
         """
-        for label in (_RENAME_BCS,):
+        has = self._bcs is not None
+        shown = {
+            _CHANGE_BCS: has or self._has_choices,
+            _RENAME_BCS: has,
+            _NEW_BCS: has,
+            _CREATE_BCS: not has,
+            _CHANGE_DEFAULTS: not has,
+        }
+        for label, visible in shown.items():
             button = self.action_button(label)
             if button is not None:
-                button.setEnabled(self._editable and self._bcs is not None)
-        button = self.action_button(_NEW_BCS)
-        if button is not None:
-            button.setEnabled(self._editable)
-        button = self.action_button(_CHANGE_BCS)
-        if button is not None:
-            button.setEnabled(self._editable and self._bcs is not None)
+                button.setVisible(visible)
+                button.setEnabled(self._editable)
 
-    def _verbs(self) -> list[CardVerb]:
-        verbs = [
+    def _face_verbs(self) -> list[CardVerb]:
+        """Every verb that can reach the face, in header order: both states' sets."""
+        return [
             CardVerb(_CHANGE_BCS, "search", "Pick a different Bot Combat Strategy", self.change_requested.emit, True),
             CardVerb(_RENAME_BCS, "pencil", "Rename this Bot Combat Strategy", self.rename_requested.emit, True),
             CardVerb(_NEW_BCS, "plus", "Create a new Bot Combat Strategy for this bot", self.new_requested.emit, True),
+            CardVerb(_CREATE_BCS, "plus", "Create a Bot Combat Strategy for this bot", self.new_requested.emit, True),
+            CardVerb(
+                _CHANGE_DEFAULTS,
+                "gear",
+                "Choose the Solo and Team defaults, in Settings › Combat",
+                self.defaults_requested.emit,
+                True,
+            ),
         ]
-        if self._bcs is not None:
-            verbs.append(
-                CardVerb(_DUPLICATE_BCS, "copy", "Copy this strategy under a new name", self.duplicate_requested.emit)
-            )
-            verbs.append(CardVerb(_DELETE_BCS, "trash", "Delete this Bot Combat Strategy", self.delete_requested.emit))
-            verbs.append(
-                CardVerb(_EXPORT_BCS, "upload", "Save this strategy as a file to share", self.export_requested.emit)
-            )
-        return verbs
+
+    def _verbs(self) -> list[CardVerb]:
+        """What the right-click menu offers now: the face verbs this state shows, then the rest."""
+        face = {verb.label: verb for verb in self._face_verbs()}
+        if self._bcs is None:
+            labels = [_CREATE_BCS, _CHANGE_DEFAULTS] + ([_CHANGE_BCS] if self._has_choices else [])
+            return [face[label] for label in labels]
+        return [
+            face[_CHANGE_BCS],
+            face[_RENAME_BCS],
+            face[_NEW_BCS],
+            CardVerb(_DUPLICATE_BCS, "copy", "Copy this strategy under a new name", self.duplicate_requested.emit),
+            CardVerb(_DELETE_BCS, "trash", "Delete this Bot Combat Strategy", self.delete_requested.emit),
+            CardVerb(_EXPORT_BCS, "upload", "Save this strategy as a file to share", self.export_requested.emit),
+            CardVerb(
+                _CHANGE_DEFAULTS,
+                "gear",
+                "Choose the Solo and Team defaults its unassigned fights use",
+                self.defaults_requested.emit,
+            ),
+        ]
 
     def _refuses_activation(self) -> bool:
         """A body click picks, and there is nothing to pick between until one exists."""
-        return not self._editable or self._bcs is None
+        return not self._editable or (self._bcs is None and not self._has_choices)
 
     def _apply_state_palette(self) -> bool:
         """The banner's palette, in place of the card's: the card fill and a rule, not a box.
@@ -924,6 +1044,9 @@ class CombatTab(QWidget):
     apply_all_decks_requested = pyqtSignal()
     #: The banner's Export… (#170), with the Bot Combat Strategy it names. The controller writes the file.
     export_bot_strategy_requested = pyqtSignal(object)
+    #: The banner's Change defaults…: open Settings › Combat. The main window opens it,
+    #: from a synchronous slot, as every Settings route does.
+    combat_defaults_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -946,6 +1069,9 @@ class CombatTab(QWidget):
         self._card_order: list[StateAssignment] = []
         self._suppress = False
         self._editable = True
+        # How many game clients are connected: which default, Solo or Team, a fight with
+        # nothing tailored would run. Pushed by the controller (``set_client_count``).
+        self._clients = 0
         # Answers "which account is behind each player slot"; installed by AppController,
         # which is what holds the ClientManager. See ``set_player_account_source``.
         self._player_account_source: Callable[[], list[str | None]] | None = None
@@ -989,6 +1115,7 @@ class CombatTab(QWidget):
         self._bcs_banner.export_requested.connect(
             lambda: self._bcs is not None and self.export_bot_strategy_requested.emit(self._bcs)
         )
+        self._bcs_banner.defaults_requested.connect(self.combat_defaults_requested)
 
         # ── Duel Combat Strategies ───────────────────────────────────
         # One section for both levels. The default card is first and always present; the
@@ -1000,11 +1127,11 @@ class CombatTab(QWidget):
         self._strategies_layout = QVBoxLayout()
         self._strategies_layout.setSpacing(6)
 
-        # The bot default is the last stop before the built-in strategy, so its empty
-        # label names the built-in one. The specialized cards below say something
-        # different — see STATE_INHERIT_LABEL.
+        # The bot default is the last stop before the Solo and Team defaults, so with nothing
+        # picked it shows the one that answers, with a pill saying whose it is. The
+        # specialized cards below say something different — see STATE_INHERIT_LABEL.
         self._default_panel = StrategyPanel(
-            BUILT_IN_LABEL, NOT_CONFIGURED_LABEL, parent=self._strategies_section, role=PanelRole.DEFAULT
+            DEFAULTS_LABEL, DEFAULTS_META, parent=self._strategies_section, role=PanelRole.DEFAULT
         )
         self._default_panel.pick_requested.connect(partial(self._on_pick_duel, self._default_panel))
         self._default_panel.edit_requested.connect(partial(self._on_edit_strategy, self._default_panel))
@@ -1084,6 +1211,40 @@ class CombatTab(QWidget):
         self._refresh_default_panel()
         self._suppress = False
 
+    def refresh_source(self) -> None:
+        """Re-say where the fights' strategies come from: the banner, and the default card's fallback.
+
+        Public because more than this tab moves the answer: the Solo and Team defaults
+        change in Settings › Combat, which the main window reports, and the team size
+        changes with the clients connected. Read through ``describe_source``, which
+        resolves as a run would and writes nothing.
+        """
+        pick = self._bcs.id if self._bcs is not None else None
+        if pick is None and self._config is not None:
+            # A pick whose file is gone still names the reason the banner gives.
+            pick = SettingsManager.instance().get_active_strategy(self._config.id)
+        try:
+            source = describe_source(self._config, self._clients, pick)
+            fallback = (
+                defaults_in_use(self._clients) if self._bcs is not None and not self._bcs.default_strategy_id else []
+            )
+        except Exception:
+            logger.exception("Could not work out where this bot's fights get their duel strategies")
+            source, fallback = None, []
+        self._bcs_banner.set_has_choices(self._bcs is None and bool(self._all_bcs))
+        self._bcs_banner.set_source(source)
+        self._default_panel.set_fallback(fallback)
+
+    @property
+    def banner(self) -> _BotStrategyBanner:
+        """The Bot Combat Strategy banner. Public for the tests that read what it says."""
+        return self._bcs_banner
+
+    @property
+    def default_panel(self) -> StrategyPanel:
+        """The default card. Public for the tests that read its fallback."""
+        return self._default_panel
+
     def refresh_deck_summaries(self) -> None:
         self._refresh_deck_summaries()
 
@@ -1117,6 +1278,7 @@ class CombatTab(QWidget):
         self._default_panel.set_libraries(lookup.duels, lookup.players)
         for panel in self._group_panels():
             panel.set_libraries(lookup.duels, lookup.players)
+        self.refresh_source()
 
     def _lookup(self) -> StrategyLookup:
         """Every strategy in reach: the active Bot Combat Strategy's own first, then the library's.
@@ -1144,6 +1306,9 @@ class CombatTab(QWidget):
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
         self.refresh_player_colors()
+        if count != self._clients:
+            self._clients = count
+            self.refresh_source()
 
     def set_deck_client_link(self, link: DeckClientLink | None) -> None:
         """Install the way the combat dialog's Deck tab reaches the game clients.
@@ -1234,9 +1399,12 @@ class CombatTab(QWidget):
         active_id = SettingsManager.instance().get_active_strategy(self._config.id)
         if active_id:
             self._bcs = next((b for b in self._all_bcs if b.id == active_id), None)
-        if self._bcs is None and self._all_bcs:
-            # Fall back to first available BCS
-            self._bcs = self._all_bcs[0]
+        own = [b for b in self._all_bcs if origin_of(StrategyKind.BOT, b.id) is not Origin.SHIPPED]
+        if self._bcs is None and own:
+            # Fall back to the first of the user's own. Never to an Official one: that is
+            # level 2 of the resolution and answers without being picked, and picking it
+            # here would make it level 1, the user's, without the user doing anything.
+            self._bcs = own[0]
             if active_id != self._bcs.id:
                 SettingsManager.instance().set_active_strategy(self._config.id, self._bcs.id)
         if self._bcs is not None:
@@ -1337,7 +1505,8 @@ class CombatTab(QWidget):
         mode: DialogMode = DialogMode.LIBRARY,
         current_id: str | None = None,
         allow_none: bool = True,
-        none_label: str = "(built-in default)",
+        none_label: str = NONE_LABEL,
+        none_tooltip: str = NONE_TOOLTIP,
     ) -> CombatStrategyDialog | None:
         """Run the combat strategy dialog. Returns it if accepted, else None.
 
@@ -1372,6 +1541,7 @@ class CombatTab(QWidget):
             current_id=current_id,
             allow_none=allow_none,
             none_label=none_label,
+            none_tooltip=none_tooltip,
             player_color_keys=color_keys,
             player_account_labels=account_labels,
             bot_name=self._bot_name_lookup(),
@@ -1429,12 +1599,14 @@ class CombatTab(QWidget):
     # ------------------------------------------------------------------
 
     def _refresh_default_panel(self) -> None:
+        """Redraw the default card, and with it what the banner says: both follow the pick."""
         if self._bcs is None:
             self._default_panel.setVisible(False)
-            return
-        lookup = self._lookup()
-        self._default_panel.load(_DefaultBinding(self._bcs), lookup.duels, lookup.players)
-        self._default_panel.set_editable(self._editable)
+        else:
+            lookup = self._lookup()
+            self._default_panel.load(_DefaultBinding(self._bcs), lookup.duels, lookup.players)
+            self._default_panel.set_editable(self._editable)
+        self.refresh_source()
 
     def _refresh_deck_summaries(self) -> None:
         decks = self._bcs.player_decks if self._bcs else {}
@@ -1778,6 +1950,7 @@ class CombatTab(QWidget):
             current_id=current_id,
             allow_none=True,
             none_label=none_label,
+            none_tooltip=STATE_INHERIT_TIP if none_label == STATE_INHERIT_LABEL else DEFAULTS_NONE_TIP,
         )
         if dlg is None:
             return False, None
@@ -1809,6 +1982,9 @@ class CombatTab(QWidget):
             self._regroup_bindings()
             self._rebuild_state_assignments()
         self._save_bcs()
+        if key == _DEFAULT_BINDING:
+            # After the save: the banner is read the way a run reads it, from the file.
+            self.refresh_source()
 
     def _regroup_bindings(self) -> None:
         """Re-merge bindings that now share a Duel Strategy.
@@ -1867,7 +2043,7 @@ class CombatTab(QWidget):
     def _on_edit_strategy(self, panel: StrategyPanel) -> None:
         """The pencil: open the Bot Combat Strategy editor on this card's strategy (#118).
 
-        On every card, the built-in default's included. If the strategy selected at Save
+        On every card, one running a default included. If the strategy selected at Save
         was made on this visit — New or Duplicate — the card now points at it; otherwise
         the card's link is left as it was. So pencil, New, Save is the whole flow for
         giving a card a strategy of its own.
@@ -1909,7 +2085,7 @@ class CombatTab(QWidget):
     def _on_new_bcs(self) -> None:
         if self._config is None:
             return
-        name, ok = QInputDialog.getText(self, "New Bot Strategy", "Name:")
+        name, ok = QInputDialog.getText(self, "New Bot Combat Strategy", "Name:")
         if not ok or not name.strip():
             return
         bcs = BotCombatStrategy(name=name.strip(), bot_id=self._config.id)
@@ -1957,7 +2133,7 @@ class CombatTab(QWidget):
             return
         ans = QMessageBox.question(
             self,
-            "Delete Bot Strategy",
+            "Delete Bot Combat Strategy",
             f"Delete '{self._bcs.name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
