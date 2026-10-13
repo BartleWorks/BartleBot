@@ -59,6 +59,14 @@ def test_no_active_strategy_runs_the_shipped_team_default():
     )
 
 
+def test_an_ambient_fight_with_no_active_strategy_has_everyone_attack():
+    with _patch_active_strategy("bot-1", None):
+        dsls, order, source = resolve_combat(_make_machine(), True, 3, ambient=True)
+    assert dsls == [LAST_RESORT_DSL] * 3
+    assert order == []
+    assert "'Default Team Duel (Everyone Attacks)' (the shipped Team default for an ambient fight" in source
+
+
 def test_no_active_strategy_runs_the_shipped_solo_default_with_one_client():
     with _patch_active_strategy("bot-1", None):
         dsls, _order, source = resolve_combat(_make_machine(), True, 1)

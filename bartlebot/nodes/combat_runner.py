@@ -50,13 +50,16 @@ def resolve_combat(
     machine,
     use_default_strategy: bool,
     num_clients: int,
+    *,
+    ambient: bool = False,
 ) -> tuple[list[str], list[int], str]:
     """Return (per_client_dsl, combat_order, source_label) for the fight *machine* is on.
 
     The duel comes from the four levels in :mod:`bartlebot.combat.combat_resolution`: the
     user's Bot Combat Strategy for the bot, the bot's Official one, the user's Solo or Team
     default, the shipped default. ``use_default_strategy`` is the node's param: True runs the
-    bot's default fight, False the fight on ``machine.state``.
+    bot's default fight, False the fight on ``machine.state``. ``ambient`` is a fight no node
+    started, whose shipped Team default is Everyone Attacks.
 
     Each 1-based player slot gets its assignment's DSL, or the linked player strategy's.
     A slot with none, or whose player strategy cannot be read, gets ``LAST_RESORT_DSL``,
@@ -74,7 +77,7 @@ def resolve_combat(
     state_id = None if use_default_strategy else getattr(machine, "state", "")
     try:
         pick = SettingsManager.instance().get_active_strategy(bot_cfg.id)
-        res = resolve_fight(bot_cfg, state_id, num_clients, pick)
+        res = resolve_fight(bot_cfg, state_id, num_clients, pick, ambient=ambient)
     except Exception:
         logger.exception("resolve_combat: could not resolve the fight -- using the built-in default")
         return [LAST_RESORT_DSL] * num_clients, [], _BUILTIN_SOURCE

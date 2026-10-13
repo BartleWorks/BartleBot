@@ -30,14 +30,15 @@ from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
-NONE_LABEL = "(built-in default)"
+NONE_LABEL = "(no Bot Combat Strategy)"
 
 
 class BotStrategyPicker(QDialog):
     """Searchable card picker over BotCombatStrategies.
 
-    Returns the selected UUID via :meth:`selected_id`. ``None`` means the
-    built-in default, and is only offered when ``allow_none``.
+    Returns the selected UUID via :meth:`selected_id`. ``None`` means no Bot Combat
+    Strategy, so each fight falls to the defaults (``combat_resolution``), and is only
+    offered when ``allow_none``.
     """
 
     def __init__(
@@ -56,7 +57,9 @@ class BotStrategyPicker(QDialog):
         self._card_map: list[tuple[QListWidgetItem, StrategyCard]] = []
         self._items: list[tuple[str | None, StrategySummary]] = []
         if allow_none:
-            self._items.append((None, StrategySummary(name=NONE_LABEL, description="Uses BartleBot's built-in DSL")))
+            self._items.append(
+                (None, StrategySummary(name=NONE_LABEL, description="Each fight uses the default duel strategy"))
+            )
         self._items.extend((s.id, summarize_bot(s)) for s in strategies)
 
         layout = QVBoxLayout(self)

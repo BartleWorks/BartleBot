@@ -82,6 +82,49 @@ def test_a_failure_before_the_rename_leaves_the_previous_file_whole_and_no_tempo
     assert [p.name for p in tmp_path.iterdir()] == ["f.json"]
 
 
+def test_a_rename_refused_while_another_process_reads_is_tried_again(tmp_path, monkeypatch):
+    """Windows refuses to rename over a file the other product has open to read."""
+    path = tmp_path / "f.json"
+    path.write_text(json.dumps({"a": 1}), encoding="utf-8")
+    real_replace = os.replace
+    refusals = []
+
+    def busy_once(src, dst):
+        if not refusals:
+            refusals.append(1)
+            raise PermissionError(13, "The process cannot access the file")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", busy_once)
+    monkeypatch.setattr(json_update, "REPLACE_RETRY_DELAY", 0)
+
+    update_json(path, lambda r: r.update(a=2))
+
+    assert refusals == [1]
+    assert _read(path) == {"a": 2}
+    assert [p.name for p in tmp_path.iterdir()] == ["f.json"]
+
+
+def test_a_rename_refused_every_time_raises_the_refusal_and_writes_nothing(tmp_path, monkeypatch):
+    path = tmp_path / "f.json"
+    path.write_text(json.dumps({"a": 1}), encoding="utf-8")
+    attempts = []
+
+    def refuse(src, dst):
+        attempts.append(1)
+        raise PermissionError(13, "Access is denied")
+
+    monkeypatch.setattr(os, "replace", refuse)
+    monkeypatch.setattr(json_update, "REPLACE_RETRY_DELAY", 0)
+
+    with pytest.raises(PermissionError):
+        update_json(path, lambda r: r.update(a=2))
+
+    assert len(attempts) == UPDATE_RETRIES
+    assert _read(path) == {"a": 1}
+    assert [p.name for p in tmp_path.iterdir()] == ["f.json"]
+
+
 def test_a_file_that_is_not_an_object_is_replaced(tmp_path):
     path = tmp_path / "f.json"
     path.write_text("[1, 2", encoding="utf-8")

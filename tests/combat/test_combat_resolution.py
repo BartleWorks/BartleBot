@@ -105,6 +105,26 @@ def test_no_key_stored_means_the_shipped_default(roots, prefs, clients, duel_id,
     assert res.source_label.endswith(f"(the shipped {size} default; this bot has no Bot Combat Strategy)")
 
 
+def test_an_ambient_fight_says_which_shipped_default_it_fell_to(roots, prefs):
+    res = CombatResolver(_bot(), 2, None, prefs=prefs, root=roots[0], user_root=roots[1], ambient=True).fight(None)
+
+    assert res.level is Level.SHIPPED_DEFAULT
+    assert res.duel.id == SHIPPED_EVERYONE_ATTACKS_DUEL_ID
+    assert res.source_label == (
+        "duel strategy 'Default Team Duel (Everyone Attacks)'"
+        " (the shipped Team default for an ambient fight; this bot has no Bot Combat Strategy)"
+    )
+
+
+def test_a_pick_still_answers_an_ambient_fight(roots, prefs):
+    duel = _duel(roots, "Mine")
+    bcs = _bcs(roots, default_strategy_id=duel.id)
+
+    res = CombatResolver(_bot(), 2, bcs.id, prefs=prefs, root=roots[0], user_root=roots[1], ambient=True).fight(None)
+
+    assert (res.level, res.duel.id) == (Level.PICK, duel.id)
+
+
 def test_a_stored_id_means_that_duel(roots, prefs):
     prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
 
@@ -247,6 +267,37 @@ def test_the_pick_comes_before_the_official(roots, prefs):
     mine = _bcs(roots, default_strategy_id=_duel(roots, "Mine Duel").id)
 
     assert _resolver(roots, prefs, 2, mine.id).fight(None).level is Level.PICK
+
+
+def test_a_pick_with_no_default_falls_past_the_official_to_level_three(roots, prefs):
+    """Its gaps are not filled from the author's strategy: one owner per run."""
+    _bcs(roots, "Author Set", shipped=True, default_strategy_id=_duel(roots, "Official Duel", shipped=True).id)
+    boss = _duel(roots, "Boss")
+    mine = _bcs(roots, state_assignments=[StateAssignment(duel_combat_strategy_id=boss.id, state_ids=["s1"])])
+    team = _duel(roots, "My Team")
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], team.id)
+
+    fights = _resolver(roots, prefs, 2, mine.id, _bot("s1", "s2")).fights()
+
+    assert fights["s1"].level is Level.PICK
+    assert fights["s2"].level is Level.YOUR_DEFAULT
+    assert fights[None].level is Level.YOUR_DEFAULT
+
+
+def test_a_pick_linking_a_missing_duel_falls_past_the_official(roots, prefs):
+    _bcs(roots, "Author Set", shipped=True, default_strategy_id=_duel(roots, "Official Duel", shipped=True).id)
+    mine = _bcs(roots, default_strategy_id="abcdef00-0000-0000-0000-000000000000")
+
+    assert _resolver(roots, prefs, 2, mine.id).fight(None).level is Level.SHIPPED_DEFAULT
+
+
+def test_a_pick_whose_file_is_missing_falls_to_the_official(roots, prefs):
+    """No Bot Combat Strategy loaded, so there is nothing of the user's to mix with."""
+    _bcs(roots, "Author Set", shipped=True, default_strategy_id=_duel(roots, "Official Duel", shipped=True).id)
+
+    res = _resolver(roots, prefs, 2, "deadbeef-0000-0000-0000-000000000000").fight(None)
+
+    assert res.level is Level.OFFICIAL
 
 
 def test_an_official_duel_needing_four_run_with_two_falls_to_level_three_and_says_why(roots, prefs):
