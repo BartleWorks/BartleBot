@@ -111,7 +111,7 @@ from bartlebot.gui.debug.press_trace import PressTracer
 from bartlebot.gui.debug.repaint_trace import RepaintTracer
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.buttons.icon_button import IconButton
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
@@ -687,9 +687,9 @@ class _BotCard(ThemedMixin, QWidget):
         lit = self._hovered or self._selected
         bg = THEME.node_fill if lit else THEME.surface
         border = THEME.accent if lit else THEME.border
-        self.setStyleSheet(f"#BotCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
+        set_style_sheet(self, f"#BotCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
 
-        self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
+        set_style_sheet(self._name_lbl, f"color: {THEME.text}; background: transparent;")
         for lbl, color in (
             (self._desc_lbl, THEME.text_muted),
             (self._meta_lbl, THEME.text_subtle),
@@ -699,8 +699,8 @@ class _BotCard(ThemedMixin, QWidget):
         ):
             if lbl is not None:
                 italic = " font-style: italic;" if lbl is self._desc_lbl and not self._meta.description else ""
-                lbl.setStyleSheet(
-                    f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;{italic}"
+                set_style_sheet(
+                    lbl, f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;{italic}"
                 )
 
     def enterEvent(self, event) -> None:
@@ -928,24 +928,27 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         to keep the old palette until the app was restarted.
         """
         panel = f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};"
-        self._top_bar.setStyleSheet(panel)
-        self._chip_bar.setStyleSheet(panel)
-        self._sep.setStyleSheet(f"color: {THEME.border};")
+        set_style_sheet(self._top_bar, panel)
+        set_style_sheet(self._chip_bar, panel)
+        set_style_sheet(self._sep, f"color: {THEME.border};")
 
-        self._cat_list.setStyleSheet(
+        set_style_sheet(
+            self._cat_list,
             # outline: none drops the focus rectangle Qt draws around the clicked
             # row's text; the selection fill already marks it.
             f"QListWidget {{ background: {THEME.surface}; border: none; outline: none;"
             f"  border-right: 1px solid {THEME.border}; font-size: {THEME.font_small_px}px; }}"
             f"QListWidget::item {{ padding: {CATEGORY_PAD_Y}px {CATEGORY_PAD_X}px; color: {THEME.text_muted};"
             f"  border-bottom: 1px solid {THEME.border}; }}"
-            f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
+            f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}",
         )
-        self._cards_area.setStyleSheet(f"background: {THEME.bg};")
-        self._cards_container.setStyleSheet(f"background: {THEME.bg};")
+        # Compared first: an unchanged rule assigned here still broadcasts a StyleChange
+        # to every card, and _rebuild_chips refreshes this on each filter change.
+        set_style_sheet(self._cards_area, f"background: {THEME.bg};")
+        set_style_sheet(self._cards_container, f"background: {THEME.bg};")
 
         if self._empty_hint is not None:
-            self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
+            set_style_sheet(self._empty_hint, f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
     # ------------------------------------------------------------------
     # Public API
