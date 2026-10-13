@@ -48,6 +48,7 @@ from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
+from bartlebot.gui.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog
 from bartlebot.gui.dialogs.import_dialog import TITLE as IMPORT_TITLE
 from bartlebot.gui.dialogs.import_dialog import ask_for_file, confirm_import
 from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
@@ -66,6 +67,8 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.options import option_values, player_realms
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared import first_run
+from bartlebot.shared.preferences import PreferenceStore
 from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 if TYPE_CHECKING:
@@ -284,7 +287,7 @@ class AppController(QObject):
         self._share_drops = ShareFileDrops(self)
         self._share_drops.files_dropped.connect(self._import_dropped)
         self._app.installEventFilter(self._share_drops)
-        QTimer.singleShot(0, self._import_from_arguments)
+        QTimer.singleShot(0, self._after_window_shown)
 
     def _restore_game_display_settings(self) -> None:
         """Give the game back the display settings a previous session overwrote.
@@ -1198,6 +1201,33 @@ class AppController(QObject):
     # ------------------------------------------------------------------
     # Import (#171)
     # ------------------------------------------------------------------
+
+    def _after_window_shown(self) -> None:
+        """What waits for the window: the first-run questions, then a file named at launch.
+
+        One callback rather than two timers, because each opens a modal dialog and a timer
+        still pending fires inside the first one's ``exec()``, opening the second on top of it.
+        A timer's callback is a synchronous slot, so ``exec()`` is safe here
+        (``bartlebot/gui/CLAUDE.md``, qasync).
+        """
+        self._offer_first_run()
+        self._import_from_arguments()
+
+    def _offer_first_run(self) -> None:
+        """Ask the first-run questions, once across every product (epic #201, Stage 6).
+
+        Asked when ``preferences.json`` says the combat question has not been answered here
+        or in BartleBuddy. Continue stores the answers and Skip records that they were asked,
+        so either way it is not asked again; a write that fails leaves it to ask next time.
+        """
+        prefs = PreferenceStore()
+        if first_run.combat_question_answered(prefs):
+            return
+        dialog = FirstRunDialog([CombatQuestionPage(first_run.current_tactic(prefs))], parent=self._window)
+        dialog.exec()
+        if not dialog.record(prefs):
+            logger.warning("Could not save the first-run answers, so they will be asked again next time")
+        self._window.left_sidebar.combat_tab.refresh_source()
 
     def _import_from_arguments(self) -> None:
         """Import each share file named on the command line: how a double-clicked file arrives (#27)."""
