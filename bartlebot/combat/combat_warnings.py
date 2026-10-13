@@ -52,10 +52,22 @@ def _short(uuid: str) -> str:
 
 @dataclass
 class CombatCheck:
-    """What :func:`check_combat` found. Both lists empty means nothing to say."""
+    """What :func:`check_combat` found. No faults and no notices means nothing to say.
+
+    The notices come in two kinds. ``unassigned`` names the exposed fights the pick's own
+    default covers; ``fallbacks`` names the fights that fall past level 1, grouped by duel
+    and level. The run-start line (``combat_resolution.describe_run``) says the same as
+    ``fallbacks``, so only ``unassigned`` is logged before a run.
+    """
 
     faults: list[str] = field(default_factory=list)
-    notices: list[str] = field(default_factory=list)
+    unassigned: list[str] = field(default_factory=list)
+    fallbacks: list[str] = field(default_factory=list)
+
+    @property
+    def notices(self) -> list[str]:
+        """Both kinds of notice, the unassigned fights first."""
+        return [*self.unassigned, *self.fallbacks]
 
 
 def check_combat(
@@ -100,7 +112,8 @@ def check_combat(
             _collect_dsls(res.duel, f"'{res.duel.name}'", pcs_dsl, dsl_sources)
 
     check.faults.extend(_validate_dsls(dsl_sources))
-    check.notices.extend(_notices(config, resolutions))
+    check.unassigned.extend(_unassigned_notices(config, resolutions))
+    check.fallbacks.extend(_fallback_notices(config, resolutions))
     return check
 
 
@@ -143,22 +156,27 @@ def _pick_faults(
     return faults
 
 
-def _notices(config: BotConfig | None, resolutions: dict[str | None, FightResolution]) -> list[str]:
-    """One line per fallback in use: exposed fights on the pick's default, and each level fallen to.
+def _unassigned_notices(config: BotConfig | None, resolutions: dict[str | None, FightResolution]) -> list[str]:
+    """One line naming every exposed fight the pick's own default covers, or none.
 
-    Grouped, so a Bot Combat Strategy that sets only its default says so once rather than
+    One line, so a Bot Combat Strategy that sets only its default says so once rather than
     once per fight.
     """
-    notices: list[str] = []
     unassigned = [f for f, res in resolutions.items() if res.level is Level.PICK and res.unassigned]
-    if unassigned:
-        res = resolutions[unassigned[0]]
-        names = ", ".join(fight_label(config, f) for f in unassigned)
-        uses = "it uses" if len(unassigned) == 1 else "they use"
-        notices.append(
-            f"No duel strategy is assigned to {names}, so {uses} '{res.duel.name}', "
-            f"the default of your Bot Combat Strategy '{res.owner.name}'."
-        )
+    if not unassigned:
+        return []
+    res = resolutions[unassigned[0]]
+    names = ", ".join(fight_label(config, f) for f in unassigned)
+    uses = "it uses" if len(unassigned) == 1 else "they use"
+    return [
+        f"No duel strategy is assigned to {names}, so {uses} '{res.duel.name}', "
+        f"the default of your Bot Combat Strategy '{res.owner.name}'."
+    ]
+
+
+def _fallback_notices(config: BotConfig | None, resolutions: dict[str | None, FightResolution]) -> list[str]:
+    """One line per duel and level that fights fall past level 1 to, grouped as ``describe_run`` groups them."""
+    notices: list[str] = []
     fallen = {f: res for f, res in resolutions.items() if res.level is not Level.PICK}
     for (name, where), fights in group_fights(fallen).items():
         if len(fights) == len(resolutions):

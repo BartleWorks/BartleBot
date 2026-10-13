@@ -275,7 +275,7 @@ does; see `docs/BOT_OPTIONS.md`.
 ## Before a run: faults and notices (#207)
 
 `combat_warnings.check_combat` sorts what it finds into two tiers, `CombatCheck(faults,
-notices)`:
+unassigned, fallbacks)`, the last two being its `notices`:
 
 | tier | what it is | where it goes |
 |---|---|---|
@@ -297,10 +297,15 @@ template update, can't run, so it never stops this run.
 
 The notices, grouped so that a setup says each thing once rather than once per fight:
 
-- exposed fights with no assignment, which the pick's own default covers;
-- fights that fall past level 1, grouped by the duel they run and the level that
-  answered: "Every fight runs duel strategy 'Default Team Duel' (the shipped Team
+- `unassigned`: exposed fights with no assignment, which the pick's own default covers;
+- `fallbacks`: fights that fall past level 1, grouped by the duel they run and the level
+  that answered: "Every fight runs duel strategy 'Default Team Duel' (the shipped Team
   default; this bot has no Bot Combat Strategy)."
+
+Each is logged once. `AppController._confirm_combat` logs `unassigned` only: the
+fallbacks are in the line `_log_combat_sources` writes before the first node
+(`describe_run`), which names every fight's source, the pick's included, and logging
+both would say each fallback twice.
 
 So a fresh install starts every shipped bot with no dialog, and a Bot Combat Strategy
 that sets only its default starts Atlantea with no dialog instead of eight lines. The
