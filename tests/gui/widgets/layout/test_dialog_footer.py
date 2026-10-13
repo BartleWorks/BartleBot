@@ -249,6 +249,12 @@ def _new_bot_dialog():
     return NewBotDialog([], "no-such-library")
 
 
+def _first_run_dialog():
+    from bartlebot.gui.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog
+
+    return FirstRunDialog([CombatQuestionPage()])
+
+
 def _variable_dialog():
     from bartlebot.bot.schema import BotConfig, VariableModel
     from bartlebot.gui.sidebar.sections.variables_section import VariableDialog
@@ -280,6 +286,7 @@ CONVERTED = [
     ("rewards_tag", _rewards_tag_dialog, "Save"),
     ("new_bot", _new_bot_dialog, "Next"),
     ("variable", _variable_dialog, "Save"),
+    ("first_run", _first_run_dialog, "Continue"),
 ]
 
 

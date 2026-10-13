@@ -584,7 +584,9 @@ def qapp_cls():
     kind "One QApplication per worker" in tests/CLAUDE.md is about.
 
     The app's Qt attributes are set here too, before the app exists, as ``bartlebot.py``
-    sets them: which widgets turn native depends on them (#126).
+    sets them: which widgets turn native depends on them (#126). So is the guard that
+    keeps the first-run dialog from opening, for the same reason: it must hold from the
+    first GUI test.
     """
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
 
@@ -592,6 +594,7 @@ def qapp_cls():
     from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415
 
     keep_siblings_alien()
+    _refuse_first_run_dialog()
 
     class _AppFontApplication(QApplication):
         def __init__(self, argv):
@@ -599,6 +602,26 @@ def qapp_cls():
             self.setFont(THEME.ui_font())
 
     return _AppFontApplication
+
+
+#: What a test that opens the first-run dialog fails with.
+FIRST_RUN_REFUSED = "A test opened the first-run dialog modally"
+
+
+def _refuse_first_run_dialog() -> None:
+    """Fail any test that opens the first-run dialog with ``exec()`` (epic #201, Stage 6).
+
+    Every test has a ``%APPDATA%`` of its own with no ``preferences.json``, so to the app
+    every test is a first run. No test builds an ``AppController`` today, which is what
+    opens it; this stops one that does from blocking the suite on a modal nobody answers.
+    The dialog's own tests drive it without ``exec()``.
+    """
+    from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog  # noqa: PLC0415
+
+    def refuse(self) -> int:
+        raise AssertionError(f"{FIRST_RUN_REFUSED}; stub AppController._offer_first_run or FirstRunDialog instead")
+
+    FirstRunDialog.exec = refuse
 
 
 @pytest.fixture(autouse=True)

@@ -20,13 +20,14 @@ The stages land in this order, each building only on the ones before:
 | 3 | #206 | default duels: Default Support's fallback, a Default player strategy, three shipped duels | landed, not yet played in game |
 | 4 | #207 | levels and tiers: the four-level resolution, faults and notices, the dialog for faults only | landed |
 | 5 | #208 | showing the source: the Combat tab banner, Settings › Combat | landed |
-| 6 | #209 | first run: one question about the team, answered once for both products | planned |
+| 6 | #209 | first run: one question about the team, answered once for both products | landed |
 | 7 | #210 | after a lost fight: a mark on the fight's pill when it was fled on a default | planned |
 
 `docs/COMBAT_CONFIG.md` is the feature as built; its "Naming" section is the part of
 Stage 1 that governs code, "The shipped defaults" the part of Stage 3, "Resolution at
-run time" and "Before a run: faults and notices" the part of Stage 4, and "Showing the
-source, and choosing the defaults" the part of Stage 5.
+run time" and "Before a run: faults and notices" the part of Stage 4, "Showing the
+source, and choosing the defaults" the part of Stage 5, and "First run: one question
+about the team" the part of Stage 6.
 
 The rules that hold across every stage:
 
