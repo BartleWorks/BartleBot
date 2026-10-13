@@ -1,6 +1,7 @@
 """Unit tests for the handle_combat node."""
 
 import asyncio
+import logging
 from unittest.mock import AsyncMock, call, patch
 
 import pytest
@@ -39,7 +40,7 @@ def _patch_resolve_combat(combat_order: list[int]):
 
     return patch(
         "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
-        return_value=([LAST_RESORT_DSL, LAST_RESORT_DSL], combat_order, "test"),
+        return_value=([LAST_RESORT_DSL, LAST_RESORT_DSL], combat_order, "test", None),
     )
 
 
@@ -240,7 +241,7 @@ async def test_combat_order_invalid_client_number_skipped():
         _patch_run_combat(),
         patch(
             "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
-            return_value=([LAST_RESORT_DSL], [5], "test"),
+            return_value=([LAST_RESORT_DSL], [5], "test", None),
         ),
         patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "POLL_INTERVAL", 0),
@@ -724,3 +725,87 @@ async def test_a_fled_fight_counts_toward_the_flee_limit():
         await hc.run(machine, [client], _DEFAULT_PARAMS)
 
     assert machine.flees == 1
+
+
+# ---------------------------------------------------------------------------
+# A fight fled on a default (Stage 7 of epic #201)
+# ---------------------------------------------------------------------------
+
+
+def _fled_on(level, source: str = "duel strategy 'Default Team Duel' (the shipped Team default)"):
+    """Run a fight that is fled, its duel resolved at *level*. Returns the machine."""
+    from bartlebot.bot.schema import BotConfig, StateModel  # noqa: PLC0415
+    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
+
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    boss = StateModel(id="boss", node_type="handle_combat", label="Lost Soul", params={})
+    machine = FakeMachine(
+        BotConfig(id="bot-f", name="Bot", initial="boss", recovery_state="boss", states=[boss], transitions=[])
+    )
+    machine.state = "boss"
+    fled = combat_runner.FightResult(combat_runner.FightEnd.FLED, [])
+    return machine, client, fled, ([LAST_RESORT_DSL], [], source, level)
+
+
+@pytest.mark.parametrize("level_name", ["YOUR_DEFAULT", "SHIPPED_DEFAULT"])
+async def test_a_fight_fled_on_a_default_logs_the_hint_once_and_tells_the_machine(level_name):
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    level = Level[level_name]
+    machine, client, fled, resolved = _fled_on(level)
+    with (
+        patch.object(hc, "resolve_combat", return_value=resolved),
+        patch.object(hc, "run_fight", AsyncMock(return_value=fled)),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        assert await hc.run(machine, [client], _DEFAULT_PARAMS) == "FAILURE"
+
+    hints = [(msg, lvl) for msg, lvl in machine.logs if "on a default" in msg]
+    assert hints == [
+        (
+            "Fled 'Lost Soul' on a default: duel strategy 'Default Team Duel' (the shipped Team default)."
+            " The Combat tab marks it, with a way to give it a strategy of its own.",
+            logging.WARNING,
+        )
+    ]
+    assert machine.fights_fled == [("boss", level)]
+    assert machine.flees == 1
+
+
+@pytest.mark.parametrize("level_name", ["PICK", "OFFICIAL", "LAST_RESORT"])
+async def test_a_fight_fled_on_anything_but_a_default_gives_no_hint(level_name):
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    level = Level[level_name]
+    machine, client, fled, resolved = _fled_on(level, source="duel strategy 'Mine' (your Bot Combat Strategy 'X')")
+    with (
+        patch.object(hc, "resolve_combat", return_value=resolved),
+        patch.object(hc, "run_fight", AsyncMock(return_value=fled)),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        assert await hc.run(machine, [client], _DEFAULT_PARAMS) == "FAILURE"
+
+    assert not _log_lines(machine, "on a default")
+    # Still reported, with its level: the mark is the callback's to refuse.
+    assert machine.fights_fled == [("boss", level)]
+
+
+async def test_a_won_fight_reports_no_flee():
+    from bartlebot.combat.combat_resolution import Level  # noqa: PLC0415
+
+    machine, client, _fled, resolved = _fled_on(Level.SHIPPED_DEFAULT)
+    won = combat_runner.FightResult(combat_runner.FightEnd.FINISHED, [])
+    with (
+        patch.object(hc, "resolve_combat", return_value=resolved),
+        patch.object(hc, "run_fight", AsyncMock(return_value=won)),
+        patch("bartlebot.game.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        assert await hc.run(machine, [client], _DEFAULT_PARAMS) == "SUCCESS"
+
+    assert getattr(machine, "fights_fled", []) == []
+    assert not _log_lines(machine, "on a default")

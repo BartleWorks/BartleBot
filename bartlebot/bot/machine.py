@@ -74,6 +74,7 @@ class BotMachine:
         on_stopped: Callable[[str], None] | None = None,
         recovery_gap: Callable[[int], str | None] | None = None,
         on_variable_change: Callable[[str, Any, Any], None] | None = None,
+        on_fight_fled: Callable[[str | None, Any], None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -88,6 +89,7 @@ class BotMachine:
         self._on_explicit_stop = on_explicit_stop
         self._on_stopped = on_stopped
         self._on_variable_change = on_variable_change
+        self._on_fight_fled = on_fight_fled
         # Why a client could not be relaunched, or None when it could. See abandon_client.
         self._recovery_gap = recovery_gap
         # When each recent flee happened (monotonic), for the flee limit. See note_flee.
@@ -463,6 +465,20 @@ class BotMachine:
                 self._on_drop(item, quantity, client_index)
             except Exception:
                 logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
+
+    def note_fight_fled(self, state_id: str | None, level) -> None:
+        """A node's fight was fled: tell the callback which state, and the ``combat_resolution.Level`` it ran.
+
+        handle_combat calls it, beside ``note_flee``. The Combat tab marks a fight fled on
+        a default (Stage 7 of epic #201); the level is passed whatever it is, and the
+        callback decides. Never an ambient or an idle-popup flee: neither is a fight of
+        the bot's, so the tab would have nowhere to put the mark.
+        """
+        if self._on_fight_fled:
+            try:
+                self._on_fight_fled(state_id, level)
+            except Exception:
+                logger.exception("on_fight_fled callback raised for state %s", state_id)
 
     def chat_baseline(self, client) -> str | None:
         """The chat-log text *client*'s drops were last read from, or None if unseeded.

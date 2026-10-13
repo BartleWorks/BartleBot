@@ -254,7 +254,7 @@ async def test_auto_combat_fights_with_each_players_resolved_strategy_once_per_b
     monkeypatch.setattr(authoring_tools, "_run_combat", run_combat)
     monkeypatch.setattr(authoring_tools, "restriction_for", AsyncMock(return_value=None))
     config = object()
-    resolve = MagicMock(return_value=(["p1 dsl", "p2 dsl"], [], "test"))
+    resolve = MagicMock(return_value=(["p1 dsl", "p2 dsl"], [], "test", None))
     monkeypatch.setattr(authoring_tools, "resolve_combat", resolve)
     tools = _tools(clients, config=config)
 
@@ -301,7 +301,7 @@ async def test_switching_auto_combat_off_stops_a_fight_in_progress(monkeypatch):
 
     monkeypatch.setattr(authoring_tools, "_run_combat", fight)
     monkeypatch.setattr(authoring_tools, "restriction_for", AsyncMock(return_value=None))
-    monkeypatch.setattr(authoring_tools, "resolve_combat", MagicMock(return_value=(["dsl"], [], "test")))
+    monkeypatch.setattr(authoring_tools, "resolve_combat", MagicMock(return_value=(["dsl"], [], "test", None)))
     tools = _tools([client])
 
     await tools.set_auto_combat(True)

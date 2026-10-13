@@ -251,6 +251,10 @@ class FakeMachine:
         self.flees = getattr(self, "flees", 0) + 1
         return False
 
+    def note_fight_fled(self, state_id, level) -> None:
+        """Mirror BotMachine: a node's fight was fled, on *level*. Recorded as (state_id, level)."""
+        self.fights_fled = [*getattr(self, "fights_fled", []), (state_id, level)]
+
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:
         self.drops.append((item, qty, client_index))
 

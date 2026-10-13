@@ -184,7 +184,7 @@ async def test_an_ambient_fight_cancels_the_node_then_runs_it_again(monkeypatch)
         fights.append((node.runs, machine.is_paused))
         client.in_battle.return_value = False
 
-    monkeypatch.setattr(combat_runner, "resolve_combat", MagicMock(return_value=(["dsl"], [], "test")))
+    monkeypatch.setattr(combat_runner, "resolve_combat", MagicMock(return_value=(["dsl"], [], "test", None)))
     monkeypatch.setattr(combat_runner, "seed_chat_baselines", AsyncMock())
     monkeypatch.setattr(combat_runner, "_run_combat", fight)
     monkeypatch.setattr(combat_runner, "poll_combat_drops", AsyncMock(return_value=[]))

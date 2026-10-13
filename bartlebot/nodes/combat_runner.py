@@ -11,7 +11,7 @@ import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from bartlebot.game import drop_detection
 from bartlebot.nodes.timing import (
@@ -26,10 +26,24 @@ from bartlebot.nodes.timing import (
 )
 from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
 
+if TYPE_CHECKING:
+    from bartlebot.combat.combat_resolution import Level
+
 logger = logging.getLogger(__name__)
 
 #: Spelled as ``combat_resolution.LAST_RESORT_SOURCE``, which this module cannot import at load.
 _BUILTIN_SOURCE = "BartleBot built-in default"
+
+
+class ResolvedCombat(NamedTuple):
+    """What :func:`resolve_combat` hands a fight: a DSL per player slot, the order to enter, and where it came from."""
+
+    dsls: list[str]
+    order: list[int]
+    source: str
+    """The phrase the log names it by (``FightResolution.source_label``)."""
+    level: "Level"
+    """Which of the four levels answered, so a flee can say whether a default was running."""
 
 
 def slots_in_battle(in_battle_flags: list) -> list[int]:
@@ -52,8 +66,8 @@ def resolve_combat(
     num_clients: int,
     *,
     ambient: bool = False,
-) -> tuple[list[str], list[int], str]:
-    """Return (per_client_dsl, combat_order, source_label) for the fight *machine* is on.
+) -> ResolvedCombat:
+    """Return the per-slot DSLs, combat order, source label and level for the fight *machine* is on.
 
     The duel comes from the four levels in :mod:`bartlebot.combat.combat_resolution`: the
     user's Bot Combat Strategy for the bot, the bot's Official one, the user's Solo or Team
@@ -67,12 +81,13 @@ def resolve_combat(
     has something to run, and the label says what.
     """
     # Lazy imports to avoid circular imports and keep startup fast.
-    from bartlebot.combat.combat_resolution import resolve_fight  # noqa: PLC0415
+    from bartlebot.combat.combat_resolution import Level, resolve_fight  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
+    last_resort = ResolvedCombat([LAST_RESORT_DSL] * num_clients, [], _BUILTIN_SOURCE, Level.LAST_RESORT)
     bot_cfg = machine.bot_config
     if bot_cfg is None:
-        return [LAST_RESORT_DSL] * num_clients, [], _BUILTIN_SOURCE
+        return last_resort
 
     state_id = None if use_default_strategy else getattr(machine, "state", "")
     try:
@@ -80,10 +95,10 @@ def resolve_combat(
         res = resolve_fight(bot_cfg, state_id, num_clients, pick, ambient=ambient)
     except Exception:
         logger.exception("resolve_combat: could not resolve the fight -- using the built-in default")
-        return [LAST_RESORT_DSL] * num_clients, [], _BUILTIN_SOURCE
+        return last_resort
     if res.duel is None:
         logger.error("resolve_combat: no strategy file could be read -- using the built-in default")
-        return [LAST_RESORT_DSL] * num_clients, [], res.source_label
+        return last_resort._replace(source=res.source_label)
     logger.debug("resolve_combat: %s", res.source_label)
     dcs = res.duel
 
@@ -110,7 +125,7 @@ def resolve_combat(
 
     combat_order: list[int] = dcs.combat_order if dcs.combat_order is not None else []
 
-    return per_client_dsl, combat_order, res.source_label
+    return ResolvedCombat(per_client_dsl, combat_order, res.source_label, res.level)
 
 
 # ---------------------------------------------------------------------------

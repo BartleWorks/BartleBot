@@ -78,6 +78,15 @@ class Level(Enum):
     #: Not a level of the design: what a fight runs when no file can be read at all.
     LAST_RESORT = "last_resort"
 
+    @property
+    def is_default(self) -> bool:
+        """Levels 3 and 4: a Solo or Team default, the user's or the shipped one, and nothing tailored.
+
+        What a fight fled on is marked for (Stage 7 of epic #201). The last resort is not
+        one: it runs when no file can be read, which tailoring would not fix.
+        """
+        return self in (Level.YOUR_DEFAULT, Level.SHIPPED_DEFAULT)
+
 
 @dataclass(frozen=True)
 class FightResolution:
