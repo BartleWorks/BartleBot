@@ -48,6 +48,11 @@ wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev =
 asyncio_mode = "auto"
 # Stated rather than sniffed, so pytest-qt cannot pick a different binding than the app.
 qt_api = "pyqt6"
+# A passing test's tmp_path is removed in its own teardown, spread across the xdist
+# workers. Kept by default, a full run's ~16k entries were deleted three runs later,
+# single-threaded in the controller after the last test: ~8 s on every run. A failing
+# test's directory is still kept for inspection.
+tmp_path_retention_policy = "failed"
 
 [tool.coverage.run]
 source = ["bartlebot"]
