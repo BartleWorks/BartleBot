@@ -2819,13 +2819,15 @@ class AppController(QObject):
         """Check the combat setup, and return whether to proceed.
 
         Only a fault, a choice the user made that cannot work, opens a dialog, and its
-        default is Go back. A notice is a fallback in use: it is logged here once and the
-        run starts (``docs/COMBAT_CONFIG.md``, "Before a run: faults and notices").
+        default is Go back. A notice is a fallback in use, and the run starts. Only the
+        fights the pick's default covers are logged here: the fallbacks are in the line
+        ``_log_combat_sources`` writes before the first node, and are never logged twice
+        (``docs/COMBAT_CONFIG.md``, "Before a run: faults and notices").
         """
         from bartlebot.gui.dialogs import combat_faults_dialog  # noqa: PLC0415
 
         check = self._check_combat()
-        for notice in check.notices:
+        for notice in check.unassigned:
             logger.info("Combat: %s", notice)
         if not check.faults:
             return True

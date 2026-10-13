@@ -26,7 +26,6 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from bartlebot.shared.combat_defaults import (
-    SHIPPED_DUEL_IDS,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
     TeamSize,
     chosen_default,
@@ -59,14 +58,8 @@ RECOMMENDED = BossTactic.ONE_HITTER
 
 
 def current_tactic(prefs: PreferenceStore) -> BossTactic | None:
-    """The answer the stored Team default already is, or None for a duel neither answer names.
-
-    The shipped Team duel stored by id is the recommended answer, as ``set_default_choice``
-    treats it.
-    """
+    """The answer the stored Team default already is, or None for a duel neither answer names."""
     stored = chosen_default(prefs, TeamSize.TEAM)
-    if stored == SHIPPED_DUEL_IDS[TeamSize.TEAM]:
-        stored = None
     return next((tactic for tactic, duel in TEAM_DUELS.items() if duel == stored), None)
 
 

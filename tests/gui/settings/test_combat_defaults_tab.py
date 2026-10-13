@@ -92,6 +92,17 @@ def test_use_recommended_removes_the_key(qapp, prefs):
     assert PREFERENCE_KEYS[TeamSize.TEAM] not in _record(prefs)
 
 
+def test_the_shipped_duel_stored_by_its_id_shows_as_recommended(qapp, prefs):
+    """As BartleBuddy or a hand edit might store it (epic #201 review, R5)."""
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_TEAM_DUEL_ID)
+
+    card = CombatDefaultsTab(prefs=prefs).card(TeamSize.TEAM)
+
+    assert card.choice is None
+    assert card.note_text == RECOMMENDED_NOTE
+    assert not card.recommended_button.isEnabled()
+
+
 def test_picking_the_recommended_duel_is_the_same_as_use_recommended(qapp, prefs):
     prefs.set(PREFERENCE_KEYS[TeamSize.SOLO], SHIPPED_TEAM_DUEL_ID)
     tab = CombatDefaultsTab(prefs=prefs)

@@ -244,6 +244,25 @@ def test_your_team_default_still_answers_an_ambient_fight(tmp_path):
     assert (answer.duel, answer.source) == (mine, DefaultSource.YOURS)
 
 
+def test_the_shipped_duel_stored_by_its_id_reads_as_recommended(tmp_path):
+    """BartleBuddy or a hand edit can store it; BartleBot's own writes never do."""
+    prefs = _prefs(tmp_path)
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_TEAM_DUEL_ID)
+
+    assert chosen_default(prefs, TeamSize.TEAM) is None
+
+
+def test_the_shipped_duel_stored_by_its_id_is_shipped_in_an_ambient_fight(tmp_path):
+    """Read as the user's, it would answer at level 3 and skip the ambient swap (epic #201 review, R5)."""
+    prefs = _prefs(tmp_path)
+    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_TEAM_DUEL_ID)
+    everyone = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+
+    answer = default_duel(2, prefs, _library(_duel(SHIPPED_TEAM_DUEL_ID), everyone), ambient=True)
+
+    assert (answer.duel, answer.source) == (everyone, DefaultSource.SHIPPED)
+
+
 def test_nothing_readable_answers_nothing(tmp_path):
     answer = default_duel(1, _prefs(tmp_path), _library())
     assert (answer.duel, answer.source) == (None, None)

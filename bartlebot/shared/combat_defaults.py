@@ -131,9 +131,16 @@ class DefaultDuel:
 
 
 def chosen_default(prefs: PreferenceStore, size: TeamSize) -> str | None:
-    """The duel id the user chose for *size*, or None for the recommended one."""
+    """The duel id the user chose for *size*, or None for the recommended one.
+
+    The shipped duel stored by its id is the recommended one too, as ``set_default_choice``
+    treats it: BartleBuddy or a hand edit can store it, and read as the user's it would
+    answer an ambient fight that the shipped default hands to a different duel.
+    """
     stored = prefs.get(PREFERENCE_KEYS[size])
-    return stored if isinstance(stored, str) and stored else None
+    if not isinstance(stored, str) or not stored or stored == SHIPPED_DUEL_IDS[size]:
+        return None
+    return stored
 
 
 def set_default_choice(prefs: PreferenceStore, size: TeamSize, duel_id: str | None) -> bool:

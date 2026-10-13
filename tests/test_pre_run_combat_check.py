@@ -1,7 +1,7 @@
 """The run request's combat check: a dialog only for faults, with Go back as its default (#207).
 
 Each of the four faults opens the dialog; each notice opens none and is logged once at
-INFO. The check itself is real, over a shipped root holding the repo's strategies and an
+INFO, between the check and the run-start line. The check itself is real, over a shipped root holding the repo's strategies and an
 empty user root; only the dialog's answer is faked.
 """
 
@@ -19,6 +19,7 @@ from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
+from bartlebot.combat.combat_resolution import CombatResolver
 from bartlebot.combat.combat_warnings import check_combat
 from bartlebot.gui.dialogs import combat_faults_dialog
 from bartlebot.paths import project_root
@@ -49,7 +50,7 @@ class _Controller:
     def __init__(self, clients: int) -> None:
         from bartlebot.app_controller import AppController  # noqa: PLC0415
 
-        for name in ("_confirm_combat", "_check_combat"):
+        for name in ("_confirm_combat", "_check_combat", "_log_combat_sources"):
             setattr(self, name, getattr(AppController, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[object()] * clients)
         self._loaded_config = _bot()
@@ -66,6 +67,9 @@ def world(tmp_path: Path, monkeypatch, qapp):
 
     monkeypatch.setattr(
         app_controller, "check_combat", functools.partial(check_combat, root=shipped, user_root=user, prefs=prefs)
+    )
+    monkeypatch.setattr(
+        app_controller, "CombatResolver", functools.partial(CombatResolver, root=shipped, user_root=user, prefs=prefs)
     )
     settings = SimpleNamespace(get_active_strategy=lambda _bot_id: state.pick)
     monkeypatch.setattr(app_controller, "SettingsManager", SimpleNamespace(instance=lambda: settings))
@@ -146,7 +150,7 @@ def test_run_anyway_proceeds(world):
 
 
 def _no_pick(world):
-    return "Every fight runs duel strategy 'Default Team Duel' (the shipped Team default"
+    return "duel strategy 'Default Team Duel' (the shipped Team default; this bot has no Bot Combat Strategy)"
 
 
 def _only_a_default(world):
@@ -161,10 +165,13 @@ def _your_default_does_not_fit(world):
 
 @pytest.mark.parametrize("make", [_no_pick, _only_a_default, _your_default_does_not_fit])
 def test_a_notice_opens_no_dialog_and_is_logged_once(world, make, caplog):
+    """Once across the check and the run-start line, which say the same of a fallback (epic #201 review, R4)."""
     expected = make(world)
 
     with caplog.at_level(logging.INFO, logger=app_controller.__name__):
-        assert _Controller(2)._confirm_combat() is True
+        controller = _Controller(2)
+        assert controller._confirm_combat() is True
+        controller._log_combat_sources()
 
     assert world.shown == []
     logged = [r for r in caplog.records if r.levelno == logging.INFO and expected in r.getMessage()]

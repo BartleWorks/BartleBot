@@ -19,6 +19,8 @@ from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignm
 from bartlebot.combat.combat_resolution import (
     BOT_STRATEGY_CAPTION,
     DEFAULTS_NAME,
+    MISSING_PICK_DETAIL,
+    MISSING_PICK_NAME,
     NO_BOT_STRATEGY_CAPTION,
     OFFICIAL_PILL,
     YOUR_DEFAULT_PILL,
@@ -543,24 +545,30 @@ def test_the_official_one_is_named_with_its_pill_when_nothing_is_picked(roots, p
     )
 
 
-def test_a_pick_whose_file_is_gone_is_named_by_the_level_that_answers_and_the_reason(roots, prefs):
+def test_a_pick_whose_file_is_gone_is_named_as_the_fault_it_is(roots, prefs):
+    """Every run stops to ask about it, so the banner says so (epic #201 review, R3)."""
+    text = _describe(roots, prefs, 1, "deadbeef-0000-0000-0000-000000000000")
+
+    assert text == SourceText(
+        Level.SHIPPED_DEFAULT,
+        BOT_STRATEGY_CAPTION,
+        MISSING_PICK_NAME,
+        MISSING_PICK_DETAIL,
+        reasons=(
+            "The Bot Combat Strategy picked for this bot is missing its file (id: deadbeef…).",
+            "Clear the pick to use Solo: Default Solo Duel (recommended) without being asked.",
+        ),
+        missing_pick=True,
+    )
+
+
+def test_a_pick_whose_file_is_gone_names_the_official_one_a_clear_would_use(roots, prefs):
     _bcs(roots, "Author Set", shipped=True, default_strategy_id=_duel(roots, "Official Duel", shipped=True).id)
 
     text = _describe(roots, prefs, 2, "deadbeef-0000-0000-0000-000000000000")
 
-    assert (text.level, text.name, text.pill) == (Level.OFFICIAL, "Author Set", OFFICIAL_PILL)
-    assert text.reasons == ("your Bot Combat Strategy's file is missing (id: deadbeef…)",)
-
-
-def test_a_pick_whose_file_is_gone_with_no_official_falls_to_the_defaults(roots, prefs):
-    text = _describe(roots, prefs, 1, "deadbeef-0000-0000-0000-000000000000")
-
-    assert (text.level, text.name, text.detail) == (
-        Level.SHIPPED_DEFAULT,
-        DEFAULTS_NAME,
-        "Solo: Default Solo Duel (recommended)",
-    )
-    assert "your Bot Combat Strategy's file is missing (id: deadbeef…)" in text.reasons
+    assert (text.level, text.name, text.pill, text.missing_pick) == (Level.OFFICIAL, MISSING_PICK_NAME, "", True)
+    assert text.reasons[1] == "Clear the pick to use Official Bot Combat Strategy 'Author Set' without being asked."
 
 
 def test_with_no_file_readable_the_last_resort_is_named(tmp_path, prefs):
