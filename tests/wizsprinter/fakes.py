@@ -57,7 +57,7 @@ class Hanging:
     """One effect hanging on a combatant: what left it, by spell and enchant template id.
 
     `effect_type` and `disposition` are what a condition such as `?(self.blades > 0)`
-    counts; `stacks` reads only the two ids.
+    counts; `stacks` reads only the two ids, and `stronger` an aura's type and `param`.
     """
 
     def __init__(
@@ -67,10 +67,12 @@ class Hanging:
         *,
         effect_type: SpellEffects = SpellEffects.modify_outgoing_damage,
         disposition: HangingDisposition = HangingDisposition.both,
+        param: int = 0,
         unreadable: bool = False,
     ):
         self._ids = (spell_id, enchant_id)
         self._type = effect_type
+        self._param = param
         self._disposition = disposition
         self._unreadable = unreadable
 
@@ -86,6 +88,11 @@ class Hanging:
 
     async def effect_type(self):
         return self._type
+
+    async def effect_param(self):
+        if self._unreadable:
+            raise ValueError("unreadable")
+        return self._param
 
     async def disposition(self):
         return self._disposition

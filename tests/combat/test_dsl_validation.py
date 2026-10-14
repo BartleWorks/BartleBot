@@ -173,9 +173,17 @@ def test_stacks_is_accepted():
     assert validate_dsl("any<blade & stacks>[sharp] @ ally(last) | any<trap & stacks>[potent] @ boss") is None
 
 
-@pytest.mark.parametrize("dsl", ["any<trap & !gambit(charms)>", "any<damage & !req_met>", "any<blade & !stacks>"])
+def test_harmful_aura_and_stronger_are_accepted():
+    """The negative aura on the boss that the supports cast (#224)."""
+    assert validate_dsl("any<harmful_aura & inc_damage & stronger> @ boss | any<trap & !harmful_aura> @ boss") is None
+
+
+@pytest.mark.parametrize(
+    "dsl",
+    ["any<trap & !gambit(charms)>", "any<damage & !req_met>", "any<blade & !stacks>", "any<aura & !stronger>"],
+)
 def test_only_a_spell_type_can_be_negated(dsl):
-    """A hanging verb, req_met and stacks are checked after selection, so a negation of one
+    """A hanging verb, req_met, stacks and stronger are checked after selection, so a negation of one
     could never exclude a card. The transformer says so, and the message is its own
     rather than Lark's wrapper naming the rule."""
     assert validate_dsl(dsl).startswith("Only a spell type can be negated")
