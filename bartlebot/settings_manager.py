@@ -63,6 +63,7 @@ class _GeneralSettings(BaseModel):
     show_option_descriptions: bool = False
     show_setting_descriptions: bool = False
     streamer_mode: bool = False
+    record_combat_decisions: bool = False
 
 
 class _GameEmbedSettings(BaseModel):
@@ -173,6 +174,9 @@ _DEFAULTS: dict[str, Any] = {
         # The Settings dialog's own Show/Hide descriptions, apart from the sidebar's.
         "show_setting_descriptions": False,
         "streamer_mode": False,
+        # wizsprinter's turn trace in the session file. Developer mode turns it on regardless;
+        # see logging_setup.set_turn_trace.
+        "record_combat_decisions": False,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -633,6 +637,19 @@ class SettingsManager:
     @streamer_mode.setter
     def streamer_mode(self, value: bool) -> None:
         self.set_general("streamer_mode", bool(value))
+
+    @property
+    def record_combat_decisions(self) -> bool:
+        """Whether the session file gets wizsprinter's turn trace: why each turn cast what it did.
+
+        Off by default, since it runs to a few kilobytes a round for each client. Developer
+        mode records it either way. ``logging_setup.set_turn_trace`` is what applies it.
+        """
+        return bool(self.get_general("record_combat_decisions", default=False))
+
+    @record_combat_decisions.setter
+    def record_combat_decisions(self, value: bool) -> None:
+        self.set_general("record_combat_decisions", bool(value))
 
     @property
     def default_friend_name(self) -> str:

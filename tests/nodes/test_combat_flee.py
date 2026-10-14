@@ -303,7 +303,7 @@ async def test_a_fight_that_ends_on_its_own_is_finished(monkeypatch):
 
 
 async def test_the_time_limit_calls_for_a_flee_and_the_fight_ends_fled(monkeypatch):
-    async def fight(client, _dsl, watch):
+    async def fight(client, _dsl, watch, number=None):
         # Stands in for SprintyCombat: flees at the first planning phase that says to.
         while not await watch.should_flee(_combat(client)):
             await asyncio.sleep(0.001)
@@ -322,7 +322,7 @@ async def test_a_fight_that_outlasts_the_flee_is_cancelled_as_stuck(monkeypatch)
     monkeypatch.setattr(combat_runner, "FLEE_TIMEOUT", 0.05)
     cancelled = asyncio.Event()
 
-    async def fight(_client, _dsl, _watch):
+    async def fight(_client, _dsl, _watch, number=None):
         try:
             await asyncio.sleep(10)
         except asyncio.CancelledError:
@@ -336,10 +336,39 @@ async def test_a_fight_that_outlasts_the_flee_is_cancelled_as_stuck(monkeypatch)
     assert cancelled.is_set()
 
 
+async def test_each_player_fights_under_its_own_number(monkeypatch):
+    numbers: dict[str, int] = {}
+
+    async def fight(_client, dsl, _watch, number=None):
+        numbers[dsl] = number
+
+    monkeypatch.setattr(combat_runner, "_run_combat", fight)
+    await run_fight([_client(11), _client(22)], ["a", "b"], [3, 1], time_limit=None, log=_Log())
+
+    assert numbers == {"a": 3, "b": 1}
+
+
+@pytest.mark.parametrize("watched", [False, True])
+async def test_the_player_number_tags_the_turn_trace(watched):
+    from wizwalker.extensions.wizsprinter import SprintyCombat
+
+    tags: list[str] = []
+
+    async def wait_for_combat(self):
+        tags.append(self.log_tag)
+
+    watch = SimpleNamespace() if watched else None
+    with patch.object(SprintyCombat, "wait_for_combat", wait_for_combat):
+        await combat_runner._run_combat(FakeClient(), "pass", watch, number=2)
+        await combat_runner._run_combat(FakeClient(), "pass", watch)
+
+    assert tags == ["[P2]", ""]
+
+
 async def test_one_player_raising_does_not_stop_the_others(monkeypatch):
     finished: list[str] = []
 
-    async def fight(_client, dsl, _watch):
+    async def fight(_client, dsl, _watch, number=None):
         if dsl == "boom":
             raise RuntimeError("lost the duel window")
         await asyncio.sleep(0.01)

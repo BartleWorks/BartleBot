@@ -155,7 +155,7 @@ async def test_timeout_during_sprinty_combat_fails():
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
 
-    async def _hang_combat(_client, _dsl, _watch):
+    async def _hang_combat(_client, _dsl, _watch, number=None):
         await asyncio.sleep(10)
 
     with (

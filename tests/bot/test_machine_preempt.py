@@ -180,7 +180,7 @@ async def test_an_ambient_fight_cancels_the_node_then_runs_it_again(monkeypatch)
     battling = FakeClient()
     machine, transitions = _machine(node, clients=[battling])
 
-    async def fight(client, _dsl, _watch):
+    async def fight(client, _dsl, _watch, number=None):
         fights.append((node.runs, machine.is_paused))
         client.in_battle.return_value = False
 

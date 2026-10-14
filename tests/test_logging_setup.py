@@ -14,11 +14,13 @@ import pytest
 
 from bartlebot.logging_setup import (
     GUI_ONLY,
+    TURN_TRACE_LOGGER,
     GuiOnlyFilter,
     RepeatCollapsingFilter,
     ShortNameFormatter,
     _GuiBridgeHandler,
     prune_session_logs,
+    set_turn_trace,
 )
 
 
@@ -328,3 +330,63 @@ def test_a_removed_callback_stops_receiving():
     bridge.handle(_record(msg="after"))
 
     assert seen == ["before"]
+
+
+# ---------------------------------------------------------------------------
+# The turn trace, and configure_logging
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def trace_level():
+    """Put the turn trace's logger back as it was: its level is process-wide."""
+    logger = logging.getLogger(TURN_TRACE_LOGGER)
+    level = logger.level
+    yield logger
+    logger.setLevel(level)
+
+
+def test_the_turn_trace_is_on_when_the_setting_is(trace_level):
+    assert set_turn_trace(True) is True
+    assert trace_level.level == logging.DEBUG
+
+
+def test_off_the_turn_trace_inherits_wizwalkers_level(trace_level):
+    assert set_turn_trace(False) is False
+    assert trace_level.level == logging.NOTSET
+
+
+def test_developer_mode_records_the_turn_trace_whatever_the_setting(trace_level, monkeypatch):
+    monkeypatch.setenv("BARTLEBOT_DEV", "1")
+
+    assert set_turn_trace(False) is True
+    assert trace_level.level == logging.DEBUG
+
+
+@pytest.mark.parametrize("record", [True, False])
+def test_the_session_file_has_the_turn_trace_only_when_asked(tmp_path, monkeypatch, trace_level, record):
+    """And the rest of wizwalker, which reads memory at DEBUG, stays at INFO either way."""
+    from bartlebot import logging_setup
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().record_combat_decisions = record
+    root = logging.getLogger()
+    wizwalker = logging.getLogger("wizwalker")
+    saved = (list(root.handlers), root.level, wizwalker.level)
+    monkeypatch.setattr(logging_setup, "session_log_dir", lambda: tmp_path)
+    try:
+        logging_setup.configure_logging()
+        logging.getLogger(TURN_TRACE_LOGGER).debug("round 2: the trace")
+        logging.getLogger("wizwalker.memory").debug("a memory read")
+    finally:
+        for added in [h for h in root.handlers if h not in saved[0]]:
+            root.removeHandler(added)
+            added.close()
+        root.setLevel(saved[1])
+        wizwalker.setLevel(saved[2])
+
+    (session,) = tmp_path.glob("bartlebot_*.log")
+    text = session.read_text(encoding="utf-8")
+    assert ("round 2: the trace" in text) is record
+    assert ("Combat decision trace on" in text) is record
+    assert "a memory read" not in text

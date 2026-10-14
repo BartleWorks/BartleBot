@@ -246,7 +246,7 @@ async def test_auto_combat_fights_with_each_players_resolved_strategy_once_per_b
     fight_started = asyncio.Event()
     finish = asyncio.Event()
 
-    async def fight(client, dsl):
+    async def fight(client, dsl, number=None):
         fight_started.set()
         await finish.wait()
 
@@ -262,7 +262,7 @@ async def test_auto_combat_fights_with_each_players_resolved_strategy_once_per_b
     await asyncio.wait_for(fight_started.wait(), 1)
     await asyncio.sleep(0.01)  # several polls while the fight is still going
 
-    run_combat.assert_awaited_once_with(clients[1], "p2 dsl")
+    run_combat.assert_awaited_once_with(clients[1], "p2 dsl", number=2)
     stand_in, use_default, count = resolve.call_args.args
     assert stand_in.bot_config is config and use_default is True and count == 2
     finish.set()
@@ -292,7 +292,7 @@ async def test_switching_auto_combat_off_stops_a_fight_in_progress(monkeypatch):
     client.in_battle = AsyncMock(return_value=True)
     cancelled = asyncio.Event()
 
-    async def fight(client, dsl):
+    async def fight(client, dsl, number=None):
         try:
             await asyncio.sleep(10)
         except asyncio.CancelledError:

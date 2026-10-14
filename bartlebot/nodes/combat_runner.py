@@ -319,19 +319,21 @@ def dsl_warning_text(warnings: tuple[DslWarning, ...]) -> str:
     return "\n".join(dict.fromkeys(warning.message for warning in warnings))
 
 
-async def _run_combat(client, combat_dsl: str, watch: "FightWatch | None" = None) -> None:
+async def _run_combat(client, combat_dsl: str, watch: "FightWatch | None" = None, *, number: int | None = None) -> None:
     """Run SprintyCombat for a single client using an inline DSL string.
 
     With a *watch*, the client asks it at every planning phase whether to flee instead of
     casting. Without one it fights to the end, as the authoring tools' test fight wants.
+    *number*, the client's 1-based player number, tags its lines in the turn trace.
     """
     provider = _str_provider_class()(combat_dsl)
+    log_tag = f"[P{number}]" if number is not None else ""
     if watch is None:
         from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 
-        await SprintyCombat(client, provider).wait_for_combat()
+        await SprintyCombat(client, provider, log_tag=log_tag).wait_for_combat()
     else:
-        await _watched_combat_class()(client, provider, watch).wait_for_combat()
+        await _watched_combat_class()(client, provider, watch, log_tag=log_tag).wait_for_combat()
 
 
 # ---------------------------------------------------------------------------
@@ -573,8 +575,8 @@ def _watched_combat_class():
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 
     class _WatchedCombat(SprintyCombat):
-        def __init__(self, client, provider, watch: FightWatch):
-            super().__init__(client, provider)
+        def __init__(self, client, provider, watch: FightWatch, *, log_tag: str = ""):
+            super().__init__(client, provider, log_tag=log_tag)
             self.watch = watch
 
         async def handle_round(self):
@@ -613,7 +615,7 @@ class CombatRun:
         """Start *client*'s combat unless it is already running. True when it was started."""
         if self.fighting(client):
             return False
-        task = asyncio.create_task(_run_combat(client, dsl, self.watch))
+        task = asyncio.create_task(_run_combat(client, dsl, self.watch, number=self._numbers[client]))
         self._live[client] = task
         self._tasks.append((self._numbers[client], task))
         return True

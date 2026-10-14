@@ -59,7 +59,7 @@ class _Fights:
         self.on_start = None
         self.raises: Exception | None = None
 
-    async def __call__(self, client, dsl, watch):
+    async def __call__(self, client, dsl, watch, number=None):
         self.started.append((client, dsl))
         if self.on_start:
             self.on_start(client, watch)
@@ -736,7 +736,7 @@ async def test_a_fight_is_fled_at_the_ambient_time_limit(fast, combat, monkeypat
     fighter.in_battle.return_value = True
     machine = BotMachine(clients=[fighter], config=_config(), node_registry={})
 
-    async def fight(client, _dsl, watch):
+    async def fight(client, _dsl, watch, number=None):
         # Stands in for SprintyCombat: flees at the first planning phase that says to.
         while not await watch.should_flee(SimpleNamespace(client=client)):
             await asyncio.sleep(0.001)
