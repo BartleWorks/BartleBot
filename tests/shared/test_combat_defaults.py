@@ -203,6 +203,45 @@ def test_shared_set_version_rose_with_the_hitters():
     assert SHARED_SET_VERSION >= 5
 
 
+def test_shared_set_version_rose_when_two_duels_left():
+    """Default Team Boss Duel and Default Turn 1 AoE Mob Duel left the set at version 6
+    (Stage 5 of #218)."""
+    assert SHARED_SET_VERSION >= 6
+
+
+#: Default Team Boss Duel and Default Turn 1 AoE Mob Duel, which left the Official set
+#: in Stage 5 of #218: Default Team Duel covers both fight kinds.
+RETIRED_DUEL_IDS = ("1bd16a10-285b-4a78-b8d2-cd16433df54e", "7cd5d91b-2d67-4599-bc25-a3169446e258")
+
+#: Every shipped tree a link to a duel could sit in: bots, templates, subgraphs, strategies.
+_SHIPPED_TREES = [STRATEGIES.parent / name for name in ("bots", "templates", "subgraphs", "strategies")]
+
+
+@pytest.mark.parametrize("duel_id", RETIRED_DUEL_IDS)
+def test_a_retired_duel_is_no_longer_shipped(duel_id: str):
+    assert duel_id not in index_dir(DUELS)
+
+
+def test_nothing_shipped_links_a_retired_duel():
+    """No shipped bot, template, subgraph, Bot Combat Strategy, duel or player strategy
+    names either id, so nothing Official is left holding a link to nothing."""
+    linking = [
+        str(path.relative_to(STRATEGIES.parent))
+        for tree in _SHIPPED_TREES
+        for path in tree.rglob("*.json")
+        if any(duel_id in path.read_text(encoding="utf-8") for duel_id in RETIRED_DUEL_IDS)
+    ]
+    assert linking == []
+
+
+def test_every_link_in_every_shipped_duel_resolves():
+    """The player strategies the retired duels linked stay, and every duel left links
+    only player strategies the set holds."""
+    known = set(index_dir(PLAYERS))
+    for path in _duel_files():
+        assert set(DuelCombatStrategy.load(path).linked_pcs_ids()) <= known, path.name
+
+
 def test_the_team_hitter_is_default_with_a_round_1_line():
     """Its repeating line is Default's text, word for word, so a fix to one is a fix to
     both; only the round-1 line differs."""

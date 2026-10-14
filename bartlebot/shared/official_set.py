@@ -34,8 +34,10 @@ from bartlebot.shared.vendor import PRODUCT, VENDOR
 logger = logging.getLogger(__name__)
 
 #: The version of the shared Official set this build ships. Raised whenever a shared
-#: Official item is added or changed; it is never lowered, and nothing leaves a set.
-SHARED_SET_VERSION = 5
+#: Official item is added, changed or removed; it is never lowered. Nothing leaves a set
+#: after 1.0.0, since a user's link to it would then point at nothing. Before 1.0.0 there
+#: are no users, and version 6 removed two duels (#223).
+SHARED_SET_VERSION = 6
 
 #: ``HKCU\Software\Bartleby``: one subkey per installed product.
 REGISTRY_KEY = rf"Software\{VENDOR}"

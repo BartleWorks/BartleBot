@@ -797,3 +797,40 @@ def test_without_the_bot_every_assignment_is_still_checked(tmp_path: Path):
     bcs = _left_over(tmp_path, "abcdef00-0000-0000-0000-000000000000")
 
     assert "Duel Strategy file is missing" in _joined(_faults(bcs.id, 1, root=tmp_path))
+
+
+# ---------------------------------------------------------------------------
+# A duel that left the Official set (Stage 5 of #218)
+# ---------------------------------------------------------------------------
+
+#: Default Team Boss Duel and Default Turn 1 AoE Mob Duel, no longer shipped.
+_RETIRED_DUEL_IDS = ("1bd16a10-285b-4a78-b8d2-cd16433df54e", "7cd5d91b-2d67-4599-bc25-a3169446e258")
+
+
+@pytest.mark.parametrize("retired_id", _RETIRED_DUEL_IDS)
+@pytest.mark.parametrize(
+    ("where", "fault"),
+    [
+        ("default", "Default Duel Strategy file is missing"),
+        ("fight", "'Defeat Howling Chaney' Duel Strategy file is missing"),
+    ],
+)
+def test_a_link_to_a_retired_duel_is_a_fault_and_nothing_rewrites_it(
+    tmp_path: Path, retired_id: str, where: str, fault: str
+):
+    """A user's Bot Combat Strategy still linking a duel the set no longer holds, as its
+    default or for a fight, gets the "link that points at nothing" fault, and the check
+    leaves the file byte-identical: nothing relinks it for the user."""
+    if where == "default":
+        bcs = _bcs(tmp_path, default_strategy_id=retired_id)
+    else:
+        bcs = _bcs(tmp_path, state_assignments=[StateAssignment(duel_combat_strategy_id=retired_id, state_ids=["s1"])])
+    files = {path: path.read_bytes() for path in tmp_path.rglob("*.json")}
+    config = _config(("s1", "Defeat Howling Chaney", False))
+
+    faults = _faults(bcs.id, 2, config, root=project_root(), user_root=tmp_path)
+
+    assert len(faults) == 1
+    assert fault in faults[0]
+    assert retired_id[:8] in faults[0]
+    assert {path: path.read_bytes() for path in tmp_path.rglob("*.json")} == files
