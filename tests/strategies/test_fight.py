@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_PLAYER_ID, SHIPPED_DEFAULT_SUPPORT_ID
+from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_PLAYER_ID
 from tests.strategies.fight import (
     EPIC,
     FAIRY,
@@ -220,15 +220,27 @@ async def test_a_blade_on_p1_counts_against_another():
 # ---------------------------------------------------------------------------
 
 
-async def test_default_support_attacks_a_two_player_mob_fight_at_once():
-    """#212's finding, which Stage 3 of #218 fixes: on Default Team Duel, P2 attacks the
-    mobs in round 1 instead of buffing P1, though it holds a blade and a Feint."""
+#: Default Support as #206 shipped it, before Stage 3 of #218 rewrote it to the support
+#: ladder. Kept here so the harness still shows #212's finding.
+_SUPPORT_BEFORE_218 = (
+    "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage>)"
+    " & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap>) & potent @ spell(any<trap>)"
+    ' | ?(any(enemies).is_boss == 1) "Feint Mass - Amulet" | feint[potent] @ boss'
+    " | ?(any(enemies).is_boss == 1) any<blade>[sharp] @ ally(last) | any<trap>[potent] @ boss"
+    " | ?(any(enemies).is_boss == 1) any<trap>[potent] @ enemy | any<damage & aoe>[any<mod_damage>]"
+    " | any<damage>[any<mod_damage>] @ enemy"
+)
+
+
+async def test_default_support_before_218_attacks_a_mob_fight_every_round():
+    """#212's finding, which Stage 3 of #218 fixed: on Default Team Duel, P2 attacked the
+    mobs in every round instead of buffing P1, though it held a blade and a Feint."""
     p2, p1 = team(2)
-    fight = Fight(team=[p2, p1], me="P2", enemies=[MOB, MOB], hand=[STORM_BLADE, FEINT, STORM_SHARK, SIRENS])
+    hand = [STORM_BLADE, FEINT, STORM_SHARK, SIRENS]
 
-    turn = await cast(shipped_dsl(SHIPPED_DEFAULT_SUPPORT_ID), fight)
-
-    assert turn.card == "Sirens"
+    for round_ in (1, 2):
+        fight = Fight(team=[p2, p1], me="P2", enemies=[MOB, MOB], hand=hand, round=round_)
+        assert (await cast(_SUPPORT_BEFORE_218, fight)).card == "Sirens", round_
 
 
 async def test_a_round_costs_under_50_ms():

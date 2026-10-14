@@ -1,8 +1,8 @@
 {
   "id": "f0b1a45f-4b97-4b7e-aae8-e334307185ce",
   "name": "Default No-Feints Support",
-  "dsl": "?(deck.remaining >= 2) sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap & !feint>) & potent @ spell(any<trap & !feint>) | any<blade>[sharp]@ally(last) | any<trap & aoe & !feint>[potent] | any<trap & !feint>[potent]@boss | any<trap & !feint>[potent]@enemy | any<global>",
-  "description": "Default support strategy for duels where Feints are not allowed",
+  "dsl": "?(deck.remaining >= 2) sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap & !feint>) & potent @ spell(any<trap & !feint>) | ?(self.health < 30%) any<heal> @ self | ?(ally(last).health < 30% && ally(last).is_dead == 0) any<heal> @ ally(last) | ?(ally(last).is_dead == 1) any<damage & aoe>[any<mod_damage>] | ?(ally(last).is_dead == 1) any<damage>[any<mod_damage>] @ enemy | any<blade & stacks>[sharp] @ ally(last) | any<trap & aoe & !feint & stacks> | any<trap & !aoe & !feint & stacks>[potent] @ boss | any<blade>[sharp] @ ally(last) | any<trap & aoe & !feint> | any<trap & !aoe & !feint>[potent] @ boss | any<global> | pass",
+  "description": "Support for a boss that cheats when a Feint is cast; it never casts or enchants one. Below 30% health it heals itself, then P1. Otherwise a blade on P1, a mass trap and a trap on the boss, each that stacks before the same ones that don't, then a global, and it passes rather than spend P1's buffs. Once P1 is dead, it attacks.",
   "tags": [
     "Support"
   ]
