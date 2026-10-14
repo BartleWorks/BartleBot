@@ -17,14 +17,15 @@ The stages land in this order, each building only on the ones before:
 | stage | issue | what | status |
 |---|---|---|---|
 | 1 | #219 | stacking check: the `stacks` card-template keyword in wizsprinter, and the pin that brings it | landed |
-| 2 | #220 | fight harness: a test helper that walks a DSL through one round of a described fight | planned |
-| 3 | #221 | supports: Default Support and the two cheat-boss supports rewritten to the support ladder | planned |
+| 2 | #220 | fight harness: a test helper that walks a DSL through one round of a described fight | landed |
+| 3 | #221 | supports: Default Support and the two cheat-boss supports rewritten to the support ladder | landed |
 | 4 | #222 | hitters: Default rewritten to the hitter ladder, and Default Team Hitter for the team duels | planned |
 | 5 | #223 | two duels go: Default Team Boss Duel and Default Turn 1 AoE Mob Duel leave the Official set | planned |
 
-`docs/COMBAT_CONFIG.md` is the feature as built: "The shipped defaults" and the sections
-Stages 3 and 4 add say what each default does. wizsprinter's `CONDITIONS.md` documents
-`stacks`, and `docs/WIZSPRINTER_REFERENCE.md` has a summary.
+`docs/COMBAT_CONFIG.md` is the feature as built: "The shipped defaults", "What a
+support does" (Stage 3) and the section Stage 4 adds say what each default does.
+wizsprinter's `CONDITIONS.md` documents `stacks`, and `docs/WIZSPRINTER_REFERENCE.md`
+has a summary.
 
 The rules that hold across every stage:
 

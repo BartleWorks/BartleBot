@@ -8,7 +8,7 @@ The three duels are Official items in ``strategies/duel/``, found by id:
 
 - :data:`SHIPPED_SOLO_DUEL_ID`: one player, who runs Default.
 - :data:`SHIPPED_TEAM_DUEL_ID`: P1 runs Default, P2 to P4 run Default Support, which
-  supports while a boss is up and hits otherwise.
+  buffs P1 and hits only in round 1 of a mob fight or once P1 is dead.
 - :data:`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`: every player runs Default.
 
 :func:`default_duel` is levels 3 and 4 of a fight's resolution: the user's Solo or Team duel

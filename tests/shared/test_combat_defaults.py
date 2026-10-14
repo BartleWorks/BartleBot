@@ -86,25 +86,6 @@ def _enchant_only(dsl: str) -> list[bool]:
     return [is_enchant_only(p) for p in config.infinite_rounds[0].priorities]
 
 
-def test_default_support_ends_in_two_damage_lines():
-    priorities = _priorities(SHIPPED_DEFAULT_SUPPORT_ID)
-    assert len(priorities) == 8
-    assert all(p.startswith("any<damage") for p in priorities[-2:])
-    assert not any(p.startswith("?(") for p in priorities[-2:])
-
-
-def test_default_support_gates_what_does_not_aim_at_the_boss_on_a_boss_fight():
-    priorities = _priorities(SHIPPED_DEFAULT_SUPPORT_ID)
-    gate = "?(any(enemies).is_boss == 1)"
-    gated = [p for p in priorities if p.startswith(gate)]
-    assert len(gated) == 3
-    # The ungated lines either aim at the boss, which skips when there is none, or are
-    # damage. The enchant-ahead slot casts nothing of its own, so it needs no boss gate.
-    ungated = [p for p in priorities if not p.startswith((gate, ENCHANT_AHEAD_GATE))]
-    assert all("@ boss" in p or p.startswith("any<damage") for p in ungated)
-    assert not any("boss.hp" in p or "boss.health" in p for p in priorities)
-
-
 @pytest.mark.parametrize("path", _player_files(), ids=lambda p: p.name)
 def test_every_shipped_strategy_enchants_ahead_first_unless_it_only_attacks(path: Path):
     """The slot covers only the casts below it, so it leads. A strategy that attacks every
@@ -206,6 +187,12 @@ def test_shared_set_version_rose_with_the_default_duels():
 def test_shared_set_version_rose_with_enchanting_ahead():
     """Every shipped player strategy but one gained its enchant-ahead slot at version 3."""
     assert SHARED_SET_VERSION >= 3
+
+
+def test_shared_set_version_rose_with_the_supports():
+    """Default Support and the two cheat-boss supports took the support ladder at version 4
+    (Stage 3 of #218); what they cast is pinned in ``tests/strategies/test_supports.py``."""
+    assert SHARED_SET_VERSION >= 4
 
 
 def test_a_missing_default_does_not_resolve():
