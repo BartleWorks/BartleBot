@@ -1,10 +1,11 @@
-"""The shipped supports (Stage 3 of #218): Default Support and the two cheat-boss supports,
-walked through described fights.
+"""The shipped buff supports (Stages 3 and 6 of #218): Default Support and the two
+cheat-boss supports, walked through described fights.
 
-A support heals itself or P1 below 30% health, attacks only in round 1 of a mob fight or
-once P1 is dead, and otherwise buffs P1 and traps the boss, a buff that stacks before one
-that doesn't, casts a global last, and passes rather than spend P1's buffs.
-``docs/COMBAT_CONFIG.md``'s "What a support does" is the rule these pin.
+A buff support never heals or shields. It attacks only in round 1 of a mob fight or once P1
+is dead, and otherwise buffs P1 and traps the boss, a buff that stacks before one that
+doesn't, casts a global, then a negative aura on the boss when it beats the one there, and
+passes rather than spend P1's buffs. ``docs/COMBAT_CONFIG.md``'s "What a support does" is
+the rule these pin. Default Guardian Support is ``test_guardian.py``'s.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_SUPPORT_ID
 from tests.strategies.fight import (
     AMPLIFY,
+    ATTENUATE,
     BALANCEBLADE,
     EPIC,
     FAIRY,
@@ -32,6 +34,8 @@ from tests.strategies.fight import (
     STORM_BLADE,
     STORM_SHARK,
     STORM_TRAP,
+    TOWER_SHIELD,
+    TYPHOON_ATTENUATE,
     WYLDFIRE,
     Enemy,
     Fight,
@@ -186,7 +190,7 @@ async def test_holding_only_damage_passes(enemies, round_):
 
 
 # ---------------------------------------------------------------------------
-# P1 dead, and heals
+# P1 dead, and no heals
 # ---------------------------------------------------------------------------
 
 
@@ -205,24 +209,56 @@ async def test_a_support_with_p1_dead_and_no_aoe_hits_one_enemy(support_id: str)
 
 
 @pytest.mark.parametrize("support_id", SUPPORT_IDS)
-async def test_a_support_below_30_percent_heals_itself(support_id: str):
-    fight = as_p2(FAIRY, STORM_TRAP, MASS_HEX, me=Wizard("P2", health=899), p1=Wizard("P1", health=800))
+@pytest.mark.parametrize("health", [100, 899, 1500])
+async def test_a_buff_support_never_heals(support_id: str, health: int):
+    """At any health, itself or P1: healing is Default Guardian Support's job."""
+    fight = as_p2(FAIRY, STORM_TRAP, me=Wizard("P2", health=health), p1=Wizard("P1", health=health))
 
-    assert await cast(shipped_dsl(support_id), fight) == Turn("Fairy", "P2")
-
-
-@pytest.mark.parametrize("support_id", SUPPORT_IDS)
-async def test_a_support_heals_p1_below_30_percent(support_id: str):
-    fight = as_p2(FAIRY, STORM_TRAP, MASS_HEX, p1=Wizard("P1", health=899))
-
-    assert await cast(shipped_dsl(support_id), fight) == Turn("Fairy", "P1")
+    assert await cast(shipped_dsl(support_id), fight) == Turn("Storm Trap", "Boss")
 
 
 @pytest.mark.parametrize("support_id", SUPPORT_IDS)
-async def test_at_30_percent_nobody_is_healed(support_id: str):
-    fight = as_p2(FAIRY, STORM_TRAP, MASS_HEX, me=Wizard("P2", health=900), p1=Wizard("P1", health=900))
+async def test_a_buff_support_never_shields(support_id: str):
+    assert (await cast(shipped_dsl(support_id), as_p2(TOWER_SHIELD, SIRENS))).passed
 
-    assert (await cast(shipped_dsl(support_id), fight)).card != "Fairy"
+
+# ---------------------------------------------------------------------------
+# A negative aura on the boss
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_with_only_attenuate_casts_it_on_the_boss(support_id: str):
+    assert await cast(shipped_dsl(support_id), as_p2(ATTENUATE, SIRENS)) == Turn("Attenuate", "Boss")
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_casts_the_global_before_attenuate(support_id: str):
+    assert await cast(shipped_dsl(support_id), as_p2(ATTENUATE, WYLDFIRE)) == Turn("Wyldfire", None)
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_casts_a_trap_before_attenuate(support_id: str):
+    assert await cast(shipped_dsl(support_id), as_p2(ATTENUATE, STORM_TRAP)) == Turn("Storm Trap", "Boss")
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_passes_when_a_stronger_attenuate_is_up(support_id: str):
+    boss = Enemy("Boss", boss=True, hanging=[TYPHOON_ATTENUATE.hanging()])
+
+    assert (await cast(shipped_dsl(support_id), as_p2(ATTENUATE, SIRENS, enemies=[boss]))).passed
+
+
+async def test_a_support_replaces_attenuate_with_typhoon_attenuate():
+    boss = Enemy("Boss", boss=True, hanging=[ATTENUATE.hanging()])
+    fight = as_p2(ATTENUATE, TYPHOON_ATTENUATE, enemies=[boss])
+
+    assert await cast(support_dsl(), fight) == Turn("Typhoon Attenuate", "Boss")
+
+
+async def test_a_support_casts_no_attenuate_in_a_mob_fight():
+    """It aims at the boss, so a mob fight with no boss passes it by."""
+    assert (await cast(support_dsl(), as_p2(ATTENUATE, enemies=[MOB, MOB]))).passed
 
 
 # ---------------------------------------------------------------------------
@@ -333,6 +369,15 @@ def test_no_support_reads_the_boss_by_its_health(support_id: str):
     dsl = shipped_dsl(support_id)
     assert "boss.health" not in dsl
     assert "boss.hp" not in dsl
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+def test_no_support_reads_is_dead(support_id: str):
+    """`is_dead` reads the game stats' hit points, which wizsprinter's own targeting
+    distrusts; `health` reads the participant's, so P1's death is `ally(last).health == 0`."""
+    dsl = shipped_dsl(support_id)
+    assert "is_dead" not in dsl
+    assert "?(ally(last).health == 0)" in dsl
 
 
 def test_only_default_support_has_a_round_1_line():

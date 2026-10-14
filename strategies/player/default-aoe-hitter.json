@@ -1,8 +1,8 @@
 {
   "id": "615bbd5f-eb76-4f47-b0da-7e16de8a7b33",
   "name": "Default AoE Hitter",
-  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage & aoe>) & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) | ?(self.health < 30%) any<heal> @ self | \"Feint Mass - Amulet\" | any<blade & stacks>[sharp] @ self | ?(self.beneficial_auras == 0) any<aura & out_damage> | any<damage & aoe>[any<mod_damage>] | any<blade>[sharp] @ self | pass",
-  "description": "AoE hitter. Below 30% health it heals itself. Otherwise it buffs while a buff adds to the next hit: Mass Feint, a blade on itself, an aura while none is up. Then it hits with AoE. Short of pips for it, it casts a blade that won't stack, and otherwise passes, keeping its buffs.",
+  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage & aoe>) & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) | ?(self.health < 30%) any<heal> @ self | ?(self.beneficial_wards == 0) any<ward> @ self | \"Feint Mass - Amulet\" | any<blade & stacks>[sharp] @ self | ?(self.beneficial_auras == 0) any<aura & out_damage> | any<damage & aoe>[any<mod_damage>] | any<blade>[sharp] @ self | pass",
+  "description": "AoE hitter. Below 30% health it heals itself, and it shields itself while it has no shield. Otherwise it buffs while a buff adds to the next hit: Mass Feint, a blade on itself, an aura while none is up. Then it hits with AoE. Short of pips for it, it casts a blade that won't stack, and otherwise passes, keeping its buffs.",
   "tags": [
     "Hitter"
   ]

@@ -1,7 +1,8 @@
 """The shipped hitters (Stage 4 of #218): Default, Default Team Hitter, and the AoE and
 single-target hitters, walked through described fights.
 
-A hitter heals itself below 30% health, buffs while a buff adds to its next hit -- Mass
+A hitter heals itself below 30% health, shields itself while it holds no shield (Stage 6),
+buffs while a buff adds to its next hit -- Mass
 Feint, Feint on the boss, a blade on itself, an aura while none is up -- and hits once
 none can cast and the pips allow: AoE, or single-target at the boss. Short of pips it
 casts a filler or a buff that won't stack, or passes, and keeps its buffs. Default Team
@@ -27,6 +28,7 @@ from bartlebot.shared.combat_defaults import (
 )
 from tests.strategies.fight import (
     AMPLIFY,
+    ATTENUATE,
     BALANCEBLADE,
     EPIC,
     FAIRY,
@@ -41,6 +43,7 @@ from tests.strategies.fight import (
     STORM_BLADE,
     STORM_SHARK,
     STORM_TRAP,
+    TOWER_SHIELD,
     WYLDFIRE,
     Enemy,
     Fight,
@@ -265,6 +268,33 @@ async def test_every_hitter_heals_itself_below_30_percent(hitter_id: str):
 
 
 @pytest.mark.parametrize("hitter_id", HITTER_IDS)
+async def test_every_hitter_shields_itself_before_any_buff(hitter_id: str):
+    fight = solo(MASS_FEINT, FEINT, STORM_BLADE, TOWER_SHIELD, SIRENS, KRAKEN, enemies=[BOSS])
+
+    assert await cast(shipped_dsl(hitter_id), fight) == Turn("Tower Shield", "P1")
+
+
+@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+async def test_no_hitter_shields_over_a_shield(hitter_id: str):
+    me = Wizard("P1", hanging=[TOWER_SHIELD.hanging()])
+
+    turn = await cast(shipped_dsl(hitter_id), solo(MASS_FEINT, TOWER_SHIELD, SIRENS, me=me, enemies=[BOSS]))
+
+    assert turn.card == "Feint Mass - Amulet"
+
+
+@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+async def test_every_hitter_heals_before_it_shields(hitter_id: str):
+    fight = solo(TOWER_SHIELD, FAIRY, me=Wizard("P1", health=899), enemies=[BOSS])
+
+    assert await cast(shipped_dsl(hitter_id), fight) == Turn("Fairy", "P1")
+
+
+async def test_the_team_hitter_shields_before_its_round_1_aoe():
+    assert await cast(shipped_dsl(SHIPPED_TEAM_HITTER_ID), as_p1(SIRENS, TOWER_SHIELD)) == Turn("Tower Shield", "P1")
+
+
+@pytest.mark.parametrize("hitter_id", HITTER_IDS)
 async def test_every_hitter_casts_mass_feint_first(hitter_id: str):
     fight = solo(STORM_BLADE, FEINT, MASS_FEINT, SIRENS, KRAKEN, enemies=[BOSS])
 
@@ -314,6 +344,8 @@ _KINDS = {
     "global": (SHIPPED_DEFAULT_PLAYER_ID, solo(WYLDFIRE, SIRENS, me=_BLADED, pips=3), "Wyldfire"),
     "shadow": (SHIPPED_DEFAULT_PLAYER_ID, solo(SHADOW_SHRIKE, SIRENS, me=_BLADED, pips=3), "Shadow Shrike"),
     "heal": (SHIPPED_DEFAULT_PLAYER_ID, solo(FAIRY, SIRENS, me=Wizard("P1", health=500)), "Fairy"),
+    "shield": (SHIPPED_DEFAULT_PLAYER_ID, solo(TOWER_SHIELD, SIRENS), "Tower Shield"),
+    "harmful aura": (SHIPPED_DEFAULT_SUPPORT_ID, Fight(team(2), [BOSS], [ATTENUATE], me="P2", round=2), "Attenuate"),
     "aoe": (SHIPPED_DEFAULT_PLAYER_ID, solo(SIRENS, KRAKEN), "Sirens"),
     "single-target": (SHIPPED_DEFAULT_PLAYER_ID, solo(KRAKEN, enemies=[BOSS]), "Kraken"),
 }
@@ -336,6 +368,8 @@ _KIND_TEXT = {
     "global": "any<global>",
     "shadow": "any<shadow>",
     "heal": "any<heal>",
+    "shield": "any<ward>",
+    "harmful aura": "any<harmful_aura",
     "aoe": "any<damage & aoe>",
     "single-target": "any<damage>[any<mod_damage>] @ boss",
 }

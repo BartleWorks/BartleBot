@@ -48,7 +48,8 @@ from tests.wizsprinter.fakes import Card, Effect, Hanging, Member, fake_combat
 # ---------------------------------------------------------------------------
 
 _OUTGOING = {SpellEffects.modify_outgoing_damage, SpellEffects.modify_outgoing_damage_flat}
-_HANGS = _OUTGOING | {SpellEffects.modify_incoming_damage, SpellEffects.modify_incoming_damage_flat}
+_HEALING = {SpellEffects.modify_outgoing_heal, SpellEffects.modify_outgoing_heal_flat}
+_HANGS = _OUTGOING | _HEALING | {SpellEffects.modify_incoming_damage, SpellEffects.modify_incoming_damage_flat}
 
 
 @dataclass(frozen=True)
@@ -72,7 +73,9 @@ class Spell:
 
     @property
     def is_aura(self) -> bool:
-        return any(e.target is EffectTarget.self and e.rounds > 0 for e in self.effects)
+        """Whether it hangs in its holder's aura slot: an effect that lasts rounds, on the
+        caster (Amplify) or on an enemy (Attenuate)."""
+        return any(e.rounds > 0 for e in self.effects)
 
 
 @dataclass(frozen=True)
@@ -88,12 +91,13 @@ class Hung:
 
     def fake(self) -> Hanging:
         effect = next((e for e in self.spell.effects if e.type in _HANGS), self.spell.effects[0])
-        up = (effect.param > 0) is (effect.type in _OUTGOING)
+        up = (effect.param > 0) is (effect.type in _OUTGOING | _HEALING)
         return Hanging(
             self.spell.template_id,
             self.enchant.template_id if self.enchant else 0,
             effect_type=effect.type,
             disposition=HangingDisposition.beneficial if up else HangingDisposition.harmful,
+            param=effect.param,
         )
 
 
@@ -125,6 +129,20 @@ MASS_FEINT = _spell(
 )
 MASS_HEX = _spell("Mass Hex", 2104, (E.modify_incoming_damage, T.enemy_team, 30), pips=2, item=True)
 AMPLIFY = _spell("Amplify", 2201, (E.modify_outgoing_damage, T.self, 15, 4), pips=1)
+# Auras as Root.wad stores them: an effect that lasts four rounds. Typhoon Attenuate's two
+# are its Death and Storm halves; Frenzy is a boss's own.
+STABILIZE = _spell("Stabilize", 2202, (E.modify_incoming_damage, T.self, -25, 4), pips=1)
+MEND = _spell("Mend", 2203, (E.modify_outgoing_heal, T.self, 20, 4), pips=1)
+FRENZY = _spell("Frenzy", 2204, (E.modify_outgoing_damage, T.self, 40, 4), (E.modify_incoming_damage, T.self, 30, 4))
+ATTENUATE = _spell("Attenuate", 2205, (E.modify_incoming_damage, T.enemy_single, 20, 4), pips=1)
+TYPHOON_ATTENUATE = _spell(
+    "Typhoon Attenuate",
+    2206,
+    (E.modify_incoming_damage, T.enemy_single, 35, 4),
+    (E.modify_incoming_damage, T.enemy_single, 35, 4),
+    pips=2,
+)
+TOWER_SHIELD = _spell("Tower Shield", 2501, (E.modify_incoming_damage, T.friendly_single, -50))
 WYLDFIRE = _spell("Wyldfire", 2301, (E.modify_outgoing_damage, T.target_global, 25), pips=2)
 SHADOW_SHRIKE = _spell("Shadow Shrike", 2401, (E.shadow_self, T.self, 0))
 # Heals and hits

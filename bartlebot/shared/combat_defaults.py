@@ -9,6 +9,8 @@ The three duels are Official items in ``strategies/duel/``, found by id:
 - :data:`SHIPPED_SOLO_DUEL_ID`: one player, who runs Default.
 - :data:`SHIPPED_TEAM_DUEL_ID`: P1 runs Default Team Hitter, P2 to P4 run Default
   Support, which buffs P1 and hits only in round 1 of a mob fight or once P1 is dead.
+  Default Guardian Support, which shields and heals P1 first, ships beside it, linked by
+  no duel.
 - :data:`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`: every player runs Default Team Hitter.
 
 Default Team Hitter is Default plus a round-1 line that opens a mob fight with AoE, which
@@ -52,13 +54,15 @@ _ENCHANT_AHEAD = " & ".join(
 )
 
 #: The hitter's ladder, first line that can cast wins (``docs/COMBAT_CONFIG.md``, "What the
-#: hitter does"): heal below 30%; Mass Feint; Feint on the boss and blades and an aura on
+#: hitter does"): heal below 30%; a shield while none is up, for a deck that carries one;
+#: Mass Feint; Feint on the boss and blades and an aura on
 #: itself while one adds to the next hit; then the hit, AoE or single-target at the boss;
 #: then fillers, the buffs that won't stack, and a pass. Short of pips for a hit, it keeps
 #: its buffs. Generic to any school.
 _PRIORITY = [
     _ENCHANT_AHEAD,
     "?(self.health < 30%) any<heal> @ self",
+    "?(self.beneficial_wards == 0) any<ward> @ self",
     '"Feint Mass - Amulet"',
     "any<trap & !aoe & stacks>[potent] @ boss",
     "any<blade & stacks>[sharp] @ self",
@@ -87,8 +91,11 @@ SHIPPED_EVERYONE_ATTACKS_DUEL_ID = "f51b5e89-ba2b-40da-81ef-301e26ca5dd5"
 SHIPPED_DEFAULT_PLAYER_ID = "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
 #: The Default Team Hitter player strategy, which the two Team duels link.
 SHIPPED_TEAM_HITTER_ID = "dc7b81c3-c4cf-4ef8-8d4c-7a15d7982c47"
-#: The Default Support player strategy.
+#: The Default Support player strategy, which only buffs.
 SHIPPED_DEFAULT_SUPPORT_ID = "d2496f8b-85c5-44f5-98da-13fb0c7ddea5"
+#: The Default Guardian Support player strategy: it protects P1 first, then buffs. No
+#: shipped duel links it; a user picks it for a seat.
+SHIPPED_GUARDIAN_SUPPORT_ID = "fb26e474-00fc-4548-9d79-520acd050844"
 
 
 class TeamSize(Enum):

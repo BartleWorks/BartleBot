@@ -20,6 +20,7 @@ from bartlebot.shared.combat_defaults import (
     SHIPPED_DEFAULT_PLAYER_ID,
     SHIPPED_DEFAULT_SUPPORT_ID,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+    SHIPPED_GUARDIAN_SUPPORT_ID,
     SHIPPED_SOLO_DUEL_ID,
     SHIPPED_TEAM_DUEL_ID,
     SHIPPED_TEAM_HITTER_ID,
@@ -177,7 +178,7 @@ def test_every_shipped_file_is_named_after_its_item_and_declares_a_unique_id(fil
 
 def test_the_ids_are_distinct():
     ids = [v for k, v in vars(combat_defaults).items() if k.startswith("SHIPPED_") and k.endswith("_ID")]
-    assert len(ids) == 6
+    assert len(ids) == 7
     assert len(set(ids)) == len(ids)
 
 
@@ -207,6 +208,20 @@ def test_shared_set_version_rose_when_two_duels_left():
     """Default Team Boss Duel and Default Turn 1 AoE Mob Duel left the set at version 6
     (Stage 5 of #218)."""
     assert SHARED_SET_VERSION >= 6
+
+
+def test_shared_set_version_rose_with_the_guardian():
+    """Default Support stopped healing, every shipped support gained a negative aura on the
+    boss and every hitter a shield, and Default Guardian Support joined the set, at version
+    7 (Stage 6 of #218); what they cast is pinned in ``tests/strategies/``."""
+    assert SHARED_SET_VERSION >= 7
+
+
+def test_no_shipped_duel_links_the_guardian():
+    """A team rarely needs one, so a user picks it for a seat (#224)."""
+    duels = Path(__file__).resolve().parents[2] / "strategies" / "duel"
+    for path in duels.glob("*.json"):
+        assert SHIPPED_GUARDIAN_SUPPORT_ID not in path.read_text(encoding="utf-8"), path.name
 
 
 #: Default Team Boss Duel and Default Turn 1 AoE Mob Duel, which left the Official set
