@@ -90,7 +90,8 @@ INDEXED_TARGETS: tuple[str, ...] = ("enemy", "ally")
 #: the word parses as a spell name, which ``SprintyCombat.try_get_spell`` special-cases.
 MOVE_KEYWORDS: tuple[str, ...] = ("pass", "willcast", "draw", "discard")
 
-CONDITION_SUBJECTS: tuple[str, ...] = ("self", "boss", "enemy", "ally")
+#: ``deck`` is the wizard's own deck, and reads only :data:`DECK_ATTRIBUTES`.
+CONDITION_SUBJECTS: tuple[str, ...] = ("self", "boss", "enemy", "ally", "deck")
 #: ``any(enemies).health < 50%``.
 AGGREGATES: tuple[str, ...] = ("any", "all", "avg")
 AGGREGATE_GROUPS: tuple[str, ...] = ("enemies", "allies")
@@ -107,6 +108,9 @@ MEMBER_ATTRIBUTES: tuple[str, ...] = (
     "level",
 )
 CONDITION_ATTRIBUTES: tuple[str, ...] = MEMBER_ATTRIBUTES + HANGING_KINDS
+#: What ``deck.<attribute>`` can read: cards left in the main pile.
+DECK_ATTRIBUTES: tuple[str, ...] = ("remaining",)
+_AFTER_DECK = re.compile(r"\bdeck\s*\.\s*\Z", re.IGNORECASE)
 
 DSL_HELP = (
     "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
@@ -388,6 +392,9 @@ def complete(before_cursor: str) -> Completion:
         return _NOTHING
 
     offered = _offered(stack, last.lower() if last else None)
+    # The scanner keeps only the last token, so which subject the dot follows is read here.
+    if stack[-1] is Context.CONDITION and last == "." and _AFTER_DECK.search(head):
+        offered = DECK_ATTRIBUTES
     wanted = prefix.lower()
     candidates = tuple(c for c in offered if c.lower().startswith(wanted))
     eager = bool(offered) and stack[-1] not in (Context.MOVE, Context.ENCHANT, Context.SPELL_LIST)

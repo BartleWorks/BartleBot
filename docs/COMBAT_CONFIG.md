@@ -217,6 +217,25 @@ condition this way and no other:
 Default Team Boss Duel is only assigned to boss fights, where the condition always
 holds, so Default Support's only change there is the attack fallback.
 
+**Every shipped player strategy enchants ahead, first.** Its first line fuses enchants
+into the cards they fit (damage enchants into damage, AoEs first; Sharpened Blade into
+blades; Potent Trap into traps) before the round's card is cast. Fusing never ends the
+turn, and each fuse frees a hand slot that the next refill draws into, which is how a big
+deck cycles. wizsprinter holds such a line until it knows the round's card, and drops it
+when that card attacks, leaving the hand alone; wizsprinter's `CONDITIONS.md` has the rule.
+Three rules hold for the line:
+
+- **It is gated `?(deck.remaining >= 2)`.** A deck the hand already holds gains nothing
+  from a freed slot. `deck.remaining` counts treasure cards until the main pile first runs
+  short, so a small deck carrying them enchants ahead for one round it need not.
+- **A strategy enchants only the kinds it casts.** A fused card it never casts holds a
+  slot for the rest of the fight. So the No-Blades support fuses no Sharpened Blade, and
+  the No-Feints support's Potent Traps go only into traps that are not feints: those two
+  exist for bosses that cheat when a blade or a feint is cast.
+- **A strategy that attacks every round has none.** Turn 1 AoE never runs it.
+
+`LAST_RESORT_DSL` carries the line too, since it is Default's text.
+
 **`SHARED_SET_VERSION` rises whenever a shared Official item changes**, so a product
 shipping an older set never mixes items with this one's.
 

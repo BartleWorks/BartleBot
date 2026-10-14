@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 #: The version of the shared Official set this build ships. Raised whenever a shared
 #: Official item is added or changed; it is never lowered, and nothing leaves a set.
-SHARED_SET_VERSION = 2
+SHARED_SET_VERSION = 3
 
 #: ``HKCU\Software\Bartleby``: one subkey per installed product.
 REGISTRY_KEY = rf"Software\{VENDOR}"
