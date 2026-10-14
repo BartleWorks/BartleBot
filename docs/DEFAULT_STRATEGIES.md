@@ -20,7 +20,7 @@ The stages land in this order, each building only on the ones before:
 | 2 | #220 | fight harness: a test helper that walks a DSL through one round of a described fight | landed |
 | 3 | #221 | supports: Default Support and the two cheat-boss supports rewritten to the support ladder | landed |
 | 4 | #222 | hitters: Default rewritten to the hitter ladder, and Default Team Hitter for the team duels | landed |
-| 5 | #223 | two duels go: Default Team Boss Duel and Default Turn 1 AoE Mob Duel leave the Official set | planned |
+| 5 | #223 | two duels go: Default Team Boss Duel and Default Turn 1 AoE Mob Duel leave the Official set | landed |
 
 `docs/COMBAT_CONFIG.md` is the feature as built: "The shipped defaults", "What a
 support does" (Stage 3) and "What the hitter does" (Stage 4) say what each default does.

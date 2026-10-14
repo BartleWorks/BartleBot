@@ -107,7 +107,7 @@ Before this, `project_root()` was the only root, and the Combat tab autosaved in
 
 ## Filenames are names, ids are inside
 
-A file is named after its item — `strategies/duel/default-team-boss-duel.json`, not `{uuid}.json` (#99) — and every lookup by id goes through `store_roots.index_dir`, which reads the id each file declares. Everything that refers to a strategy or a subgraph does so by id, so the filename is for people browsing the directory and for git, and nothing else.
+A file is named after its item — `strategies/duel/default-team-duel.json`, not `{uuid}.json` (#99) — and every lookup by id goes through `store_roots.index_dir`, which reads the id each file declares. Everything that refers to a strategy or a subgraph does so by id, so the filename is for people browsing the directory and for git, and nothing else.
 
 What that costs, and where each cost is paid:
 
@@ -193,6 +193,22 @@ under `strategies/`, found by id, and their ids are named in
 
 `LAST_RESORT_DSL` is also what a fight runs when no file can be read at all. The two
 duels named Solo and Team are what level 4 of the resolution answers with (below).
+
+The Official set ships six duels. Besides the three above, each made to be assigned to
+the fights that need it:
+
+| duel | for |
+|---|---|
+| Default Team Boss Duel (No Blades) | a boss that cheats on a blade: P2 to P4 run Default No-Blades Support |
+| Default Team Boss Duel (No Feints) | a boss that cheats on a Feint: P2 to P4 run Default No-Feints Support |
+| Default Turn 1 Scald-Incindiate | a team of four: P1 and P2 buff, P3 casts Scald and P4 detonates it |
+
+Default Team Boss Duel and Default Turn 1 AoE Mob Duel left the set at version 6 (#218,
+Stage 5): Default Team Duel reads the fight kind in its strategies, and a default can't be
+chosen by fight kind. Nothing leaves the set after 1.0.0 (`official_set.SHARED_SET_VERSION`),
+since a user's link to it would then point at nothing. Before then a Bot Combat Strategy
+still linking one gets that fault before a run, and its card reads "(missing strategy)";
+nothing relinks it for the user.
 
 **An ambient fight's Team default is Everyone Attacks.** In a fight no node started
 (`docs/AMBIENT_COMBAT.md`), players take their seats in whatever order they arrive: the
