@@ -22,9 +22,10 @@ The stages land in this order, each building only on the ones before:
 | 4 | #222 | hitters: Default rewritten to the hitter ladder, and Default Team Hitter for the team duels | planned |
 | 5 | #223 | two duels go: Default Team Boss Duel and Default Turn 1 AoE Mob Duel leave the Official set | planned |
 
-`docs/COMBAT_CONFIG.md` is the feature as built: "The shipped defaults", "What a support does" (Stage 3), and the section
-Stage 4 adds say what each default does. wizsprinter's `CONDITIONS.md` documents
-`stacks`, and `docs/WIZSPRINTER_REFERENCE.md` has a summary.
+`docs/COMBAT_CONFIG.md` is the feature as built: "The shipped defaults", "What a
+support does" (Stage 3) and the section Stage 4 adds say what each default does.
+wizsprinter's `CONDITIONS.md` documents `stacks`, and `docs/WIZSPRINTER_REFERENCE.md`
+has a summary.
 
 The rules that hold across every stage:
 
