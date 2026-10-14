@@ -33,22 +33,22 @@ class Effect:
     """One effect on a card in hand, as `DynamicSpellEffect` reads it."""
 
     def __init__(self, effect_type: SpellEffects, target: EffectTarget, param: int = 0, rounds: int = 0):
-        self._type, self._target, self._param, self._rounds = effect_type, target, param, rounds
+        self.type, self.target, self.param, self.rounds = effect_type, target, param, rounds
 
     async def effect_type(self):
-        return self._type
+        return self.type
 
     async def effect_target(self):
-        return self._target
+        return self.target
 
     async def effect_param(self):
-        return self._param
+        return self.param
 
     async def num_rounds(self):
-        return self._rounds
+        return self.rounds
 
     def __repr__(self):
-        return f"Effect({self._type.name} @ {self._target.name}, {self._param})"
+        return f"Effect({self.type.name} @ {self.target.name}, {self.param})"
 
 
 class Hanging:
@@ -245,7 +245,7 @@ class Card(CombatCard):
 
     A fused card is renamed `"<card> [<enchant>]"`, so the name-diff wizsprinter uses to
     find it after a fuse sees a new card. `fuses=False` makes the game refuse an enchant
-    on it, by doing nothing.
+    on it, by doing nothing. Cards sharing a `log` record every cast there, in order.
     """
 
     def __init__(
@@ -261,6 +261,7 @@ class Card(CombatCard):
         item: bool = False,
         treasure: bool = False,
         fuses: bool = True,
+        log: list | None = None,
     ):
         super().__init__(None, None)
         self.base_name = name
@@ -276,6 +277,7 @@ class Card(CombatCard):
         self.treasure = treasure
         self.fuses = fuses
         self.casts = []
+        self._log = log
         self._hand.append(self)
 
     async def name(self):
@@ -315,6 +317,8 @@ class Card(CombatCard):
 
     async def cast(self, target, *, sleep_time=None, debug_paint=False):
         self.casts.append(target)
+        if self._log is not None:
+            self._log.append((self, target))
         if isinstance(target, Card):
             if target.fuses:
                 self._hand.remove(self)
