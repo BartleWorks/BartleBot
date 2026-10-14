@@ -6,6 +6,7 @@ import time
 
 from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_PLAYER_ID
 from tests.strategies.fight import (
+    BALANCEBLADE,
     EPIC,
     FAIRY,
     FEINT,
@@ -15,6 +16,7 @@ from tests.strategies.fight import (
     STORM_BLADE,
     STORM_LORD,
     STORM_SHARK,
+    STORM_TRAP,
     Enemy,
     Fight,
     Turn,
@@ -110,6 +112,25 @@ async def test_a_held_enchant_needs_its_condition():
     turn = await cast(f"{_AHEAD} | any<blade> @ self", solo(STORM_BLADE, SHARPENED_BLADE, deck=1))
 
     assert turn == Turn("Storm Blade", "P1")
+
+
+async def test_a_slot_written_twice_never_fuses_an_enchanted_card():
+    """Stage 3 of #218 found it: after the first `potent` fuses, the second's vague name
+    also matched `"Feint [Potent Trap]"` and cast it onto the Storm Trap. wizsprinter
+    `e04c2e0` looks up a card aimed at a spell among enchants only."""
+    twice = "?(deck.remaining >= 2) potent @ spell(any<trap>) & potent @ spell(any<trap>) | any<trap> @ boss"
+
+    turn = await cast(twice, solo(FEINT, STORM_TRAP, POTENT_TRAP, enemies=[BOSS]))
+
+    assert turn == Turn("Feint", "Boss", "Potent Trap", fuses=(("Potent Trap", "Feint"),))
+
+
+async def test_a_blade_slot_written_twice_never_fuses_an_enchanted_blade():
+    twice = f"{_AHEAD} & sharp @ spell(any<blade>) | any<blade> @ self"
+
+    turn = await cast(twice, solo(STORM_BLADE, BALANCEBLADE, SHARPENED_BLADE))
+
+    assert turn.fuses == (("Sharpened Blade", "Storm Blade"),)
 
 
 # ---------------------------------------------------------------------------
