@@ -178,17 +178,18 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 
 ## The shipped defaults (#206)
 
-Four Official items are what a fight with nothing tailored runs. They are ordinary files
+Six Official items are what a fight with nothing tailored runs. They are ordinary files
 under `strategies/`, found by id, and their ids are named in
 `bartlebot/shared/combat_defaults.py`, which imports nothing from the rest of `bartlebot`.
 
 | item | kind | what it does |
 |---|---|---|
-| Default | player | the built-in DSL, so solo play is unchanged; its DSL is `LAST_RESORT_DSL` |
+| Default | player | the hitter ladder (below): heals itself below 30% health, buffs while a buff adds to its next hit, then hits; its DSL is `LAST_RESORT_DSL` |
+| Default Team Hitter (`SHIPPED_TEAM_HITTER_ID`) | player | Default's lines, plus a round-1 line that opens a mob fight with AoE |
 | Default Support | player | the support ladder (below): heals itself or P1 below 30% health, attacks in round 1 of a mob fight or once P1 is dead, and otherwise buffs P1 and traps the boss, then passes |
 | Default Solo Duel (`SHIPPED_SOLO_DUEL_ID`) | duel | one player: P1 runs Default |
-| Default Team Duel (`SHIPPED_TEAM_DUEL_ID`) | duel | two to four players: P1 runs Default, P2 to P4 run Default Support, combat order 4, 3, 2, 1 |
-| Default Team Duel (Everyone Attacks) (`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`) | duel | two to four players: P1 to P4 run Default |
+| Default Team Duel (`SHIPPED_TEAM_DUEL_ID`) | duel | two to four players: P1 runs Default Team Hitter, P2 to P4 run Default Support, combat order 4, 3, 2, 1 |
+| Default Team Duel (Everyone Attacks) (`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`) | duel | two to four players: P1 to P4 run Default Team Hitter |
 
 `LAST_RESORT_DSL` is also what a fight runs when no file can be read at all. The two
 duels named Solo and Team are what level 4 of the resolution answers with (below).
@@ -242,6 +243,41 @@ The No-Blades and No-Feints supports take the same ladder minus the card their b
 cheat watches. Their duels assign only boss fights, so they have no round-1 line, but
 they keep the P1-dead line. `tests/strategies/test_supports.py` walks all three through
 the fights above.
+
+**What the hitter does** (#218, Stage 4). The hitter keeps buffing while a buff adds to
+its next hit, and hits once none can cast and the pips allow. Players buff until a hit
+will kill; a buff already up is no reason to stop. Default's lines, first that can cast
+wins:
+
+1. Enchant ahead (below).
+2. `?(self.health < 30%) any<heal> @ self`.
+3. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
+   the support's Feint line; `any<blade & stacks>[sharp] @ self`; and
+   `?(self.beneficial_auras == 0) any<aura & out_damage>`, an aura only while none is up.
+4. The hit: `any<damage & aoe>[any<mod_damage>]`, then `any<damage>[any<mod_damage>] @ boss`.
+5. Fillers: `any<global>`, then `any<shadow>`.
+6. The buffs that don't stack: the Feint line and the blade line without `stacks`.
+7. `pass`.
+
+A hit it can't afford doesn't cast, so with buffs up and too few pips it falls to a
+filler, a buff that won't stack, or a pass, and keeps its buffs. There is no
+single-target line at a mob: short of pips for AoE in a mob fight, the hitter waits
+rather than spend its buffs on one mob. Until smart combat (#30) can tell when a hit
+kills, "no buff left that stacks" stands in for it. No trap aims at a mob, which could be
+a minion, and a mass trap other than Mass Feint is the supports' to cast.
+
+- **Default Team Hitter is Default plus a `{1}` line**, which is the same ladder with
+  `?(all(enemies).is_boss == 0) any<damage & aoe>[any<mod_damage>]` after the heal: in a
+  team mob fight everyone opens with AoE, and the mobs that survive it are the strong
+  ones. A solo wizard usually can't clear mobs in round 1, so Default has no such line
+  and buffs first. Both team duels link it, so an ambient fight's stray mob gets the
+  round-1 AoE too.
+- **Default AoE Hitter and Default Single-target Hitter** take the heal, the Mass Feint
+  line and the stacking buffs (the single-target one the Feint line too), keep their own
+  hit line, then a buff that won't stack, then `pass`.
+
+`tests/strategies/test_hitters.py` walks all four through the fights above, and finds a
+line for every card kind across the shipped player strategies.
 
 **The fight kind is read by one rule.** A boss fight is `?(any(enemies).is_boss == 1)` and
 a mob fight `?(all(enemies).is_boss == 0)`: `any` and `all` count every living enemy,
