@@ -178,15 +178,17 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 
 ## The shipped defaults (#206)
 
-Six Official items are what a fight with nothing tailored runs. They are ordinary files
+Six Official items are what a fight with nothing tailored runs, and a seventh, Default
+Guardian Support, ships beside them for a user to pick. They are ordinary files
 under `strategies/`, found by id, and their ids are named in
 `bartlebot/shared/combat_defaults.py`, which imports nothing from the rest of `bartlebot`.
 
 | item | kind | what it does |
 |---|---|---|
-| Default | player | the hitter ladder (below): heals itself below 30% health, buffs while a buff adds to its next hit, then hits; its DSL is `LAST_RESORT_DSL` |
+| Default | player | the hitter ladder (below): heals itself below 30% health, shields itself while it holds no shield, buffs while a buff adds to its next hit, then hits; its DSL is `LAST_RESORT_DSL` |
 | Default Team Hitter (`SHIPPED_TEAM_HITTER_ID`) | player | Default's lines, plus a round-1 line that opens a mob fight with AoE |
-| Default Support | player | the support ladder (below): heals itself or P1 below 30% health, attacks in round 1 of a mob fight or once P1 is dead, and otherwise buffs P1 and traps the boss, then passes |
+| Default Support | player | the support ladder (below): attacks in round 1 of a mob fight or once P1 is dead, and otherwise buffs P1 and traps the boss, casts a global and then a negative aura on the boss, and passes. It never heals or shields |
+| Default Guardian Support (`SHIPPED_GUARDIAN_SUPPORT_ID`) | player | heals, shields and keeps a survival aura up, P1 first, then plays the support ladder (below). No duel links it |
 | Default Solo Duel (`SHIPPED_SOLO_DUEL_ID`) | duel | one player: P1 runs Default |
 | Default Team Duel (`SHIPPED_TEAM_DUEL_ID`) | duel | two to four players: P1 runs Default Team Hitter, P2 to P4 run Default Support, combat order 4, 3, 2, 1 |
 | Default Team Duel (Everyone Attacks) (`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`) | duel | two to four players: P1 to P4 run Default Team Hitter |
@@ -220,45 +222,82 @@ from `SHIPPED_AMBIENT_DUEL_IDS`, and the label says "the shipped Team default fo
 ambient fight". Levels 1 to 3 are unchanged: a duel the user chose still runs, `ally(last)`
 and all.
 
-**What a support does** (#218, Stage 3). A support never spends a buff meant for the
-hitter. Combat order 4, 3, 2, 1 seats the supports to cast before P1, so a support that
-hits a trapped boss spends the Feint P1 was meant to hit through. Default Support's
-lines, first that can cast wins:
+**What a support does** (#218, Stages 3 and 6). A support never spends a buff meant for
+the hitter, and Default Support does nothing else: it never heals or shields. Combat
+order 4, 3, 2, 1 seats the supports to cast before P1, so a support that hits a trapped
+boss spends the Feint P1 was meant to hit through. Default Support's lines, first that
+can cast wins:
 
 1. Enchant ahead (below).
-2. `?(self.health < 30%) any<heal> @ self`, then the same for P1, aimed `@ ally(last)`
-   and gated on `ally(last).is_dead == 0` too.
-3. Round 1 of a mob fight only: AoE, then single-target damage.
-4. `?(ally(last).is_dead == 1)`: AoE, then single-target damage. `ally(last)` is P1
-   under combat order 4, 3, 2, 1, and the team list keeps the dead, so it stays P1.
-5. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
+2. Round 1 of a mob fight only: AoE, then single-target damage.
+3. `?(ally(last).health == 0)`: AoE, then single-target damage. `ally(last)` is P1
+   under combat order 4, 3, 2, 1, and the team list keeps the dead, so it stays P1. The
+   gate reads `health`, the participant's own, and never `is_dead`, which reads the game
+   stats' hit points: wizsprinter's targeting has found those still reading alive for a
+   killed enemy.
+4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
    which ranking points at Feint; `any<blade & stacks>[sharp] @ ally(last)`; and a mass
    trap, `any<trap & aoe & stacks>`.
-6. The same buffs without `stacks`, in the same order. A buff that won't add to the next
+5. The same buffs without `stacks`, in the same order. A buff that won't add to the next
    hit still stays up for the one after, which a two-hit Challenge Mode fight wants.
-7. `any<global>`, the last buff.
+6. `any<global>`.
+7. `any<harmful_aura & inc_damage & stronger> @ boss`: a negative aura such as Attenuate
+   (+20% incoming damage, four rounds), the last buff before a pass.
 8. `pass`, which banks pips.
 
 So a support attacks only where no buff for P1 can be standing: round 1 of a team mob
-fight, and once P1 is dead. A blade comes before a mass trap other than Mass Feint: a
-mass trap is about 30% from an item card that can't be enchanted, a blade 35%, or 45 to
-55% enchanted. Two supports can pick the same buff in round 1, since each plans from the
-state at the start of the round; the duplicate stays up for the next hit.
+fight, and once P1 is dead. When P1 dies with the boss far from dead, the fight is lost
+and the team should flee, reset and recover; the supports attack at once rather than
+buff themselves into a second hitter. A blade comes before a mass trap other than Mass
+Feint: a mass trap is about 30% from an item card that can't be enchanted, a blade 35%,
+or 45 to 55% enchanted. Two supports can pick the same buff in round 1, since each plans
+from the state at the start of the round; the duplicate stays up for the next hit.
 
 - **The round-1 line carries the whole ladder.** wizsprinter walks only the `{1}` line in
   round 1 and never falls through to the repeating one, so the `{1}` line is the
-  repeating line with the mob-fight AoE added after the heals.
+  repeating line with the mob-fight AoE added after the enchant-ahead slot.
 - **Mass Feint is named, Feint is found by rank.** `"Feint Mass - Amulet"` is the only
   Mass Feint players get, and the quoted name also matches the pet version. An unquoted
   `feint` would match Mass Feint too. `stacks` can't be put on a name, so a held Mass
   Feint is cast even onto one already up.
 - **The Feint line takes the best single trap**, `!aoe` keeping Mass Hex below the blade.
   With no Feint in hand it takes a school trap, ahead of the blade.
+- **A support's own positive aura never helps P1.** Amplify or Frenzy lands on its caster
+  and raises only the caster's hits, so no buff support casts one. A negative aura on the
+  boss does help: unlike a trap, a hit doesn't use it up. A participant holds one aura,
+  and a new one replaces it, so Attenuate replaces a boss's own Frenzy. `stronger` (in
+  wizsprinter's `CONDITIONS.md`) keeps a weaker one from replacing a stronger: Attenuate
+  never goes over Typhoon Attenuate. It ranks by size and doesn't read schools, so
+  Typhoon Attenuate's Death and Storm halves rank first for a Fire hitter too.
 
 The No-Blades and No-Feints supports take the same ladder minus the card their boss's
 cheat watches. Their duels assign only boss fights, so they have no round-1 line, but
 they keep the P1-dead line. `tests/strategies/test_supports.py` walks all three through
 the fights above.
+
+**What the guardian does** (#218, Stage 6). Teams rarely carry shields or need a healer,
+since killing faster wins, so Default Team Duel keeps the buff support. A team whose
+decks do carry them carries them out of necessity, and casts them before any buff.
+Default Guardian Support is for that team: a user picks it for a seat. It protects P1
+first, since losing the hitter loses the fight, then itself. Its lines, first that can
+cast wins:
+
+1. Enchant ahead.
+2. `?(ally(last).health < 50% && ally(last).health > 0) any<heal> @ ally(last)`, then
+   `?(self.health < 30%) any<heal> @ self`. Healing is its job, and a hitter at 50% can
+   die to one boss hit.
+3. `?(ally(last).beneficial_wards == 0 && ally(last).health > 0) any<ward> @ ally(last)`,
+   then the same for itself. One shield at a time, so a second never stacks; Feint's
+   drawback on P1 is a harmful ward and doesn't count.
+4. A survival aura while none is up: `any<aura & inc_damage>` (Stabilize), then
+   `any<aura & out_heal>` (Mend). Its own aura protects it or strengthens its heals, so
+   unlike a damage aura it is worth casting.
+5. Default Support's ladder from its round-1 AoE on: the P1-dead attack, the buffs, the
+   global, the negative aura and `pass`.
+
+Protecting whichever teammate is lowest instead would need a health condition per seat,
+which makes the DSL unreadable. `tests/strategies/test_guardian.py` walks it through its
+fights, and checks that with nothing to protect it casts what Default Support does.
 
 **What the hitter does** (#218, Stage 4). The hitter keeps buffing while a buff adds to
 its next hit, and hits once none can cast and the pips allow. Players buff until a hit
@@ -267,13 +306,16 @@ wins:
 
 1. Enchant ahead (below).
 2. `?(self.health < 30%) any<heal> @ self`.
-3. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
+3. `?(self.beneficial_wards == 0) any<ward> @ self`: a deck that carries a shield carries
+   it out of necessity, so it goes up before any buff, one at a time. A user who wants no
+   shields leaves them out of the deck.
+4. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
    the support's Feint line; `any<blade & stacks>[sharp] @ self`; and
    `?(self.beneficial_auras == 0) any<aura & out_damage>`, an aura only while none is up.
-4. The hit: `any<damage & aoe>[any<mod_damage>]`, then `any<damage>[any<mod_damage>] @ boss`.
-5. Fillers: `any<global>`, then `any<shadow>`.
-6. The buffs that don't stack: the Feint line and the blade line without `stacks`.
-7. `pass`.
+5. The hit: `any<damage & aoe>[any<mod_damage>]`, then `any<damage>[any<mod_damage>] @ boss`.
+6. Fillers: `any<global>`, then `any<shadow>`.
+7. The buffs that don't stack: the Feint line and the blade line without `stacks`.
+8. `pass`.
 
 A hit it can't afford doesn't cast, so with buffs up and too few pips it falls to a
 filler, a buff that won't stack, or a pass, and keeps its buffs. There is no
@@ -283,13 +325,13 @@ kills, "no buff left that stacks" stands in for it. No trap aims at a mob, which
 a minion, and a mass trap other than Mass Feint is the supports' to cast.
 
 - **Default Team Hitter is Default plus a `{1}` line**, which is the same ladder with
-  `?(all(enemies).is_boss == 0) any<damage & aoe>[any<mod_damage>]` after the heal: in a
+  `?(all(enemies).is_boss == 0) any<damage & aoe>[any<mod_damage>]` after the shield: in a
   team mob fight everyone opens with AoE, and the mobs that survive it are the strong
   ones. A solo wizard usually can't clear mobs in round 1, so Default has no such line
   and buffs first. Both team duels link it, so an ambient fight's stray mob gets the
   round-1 AoE too.
-- **Default AoE Hitter and Default Single-target Hitter** take the heal, the Mass Feint
-  line and the stacking buffs (the single-target one the Feint line too), keep their own
+- **Default AoE Hitter and Default Single-target Hitter** take the heal, the shield, the
+  Mass Feint line and the stacking buffs (the single-target one the Feint line too), keep their own
   hit line, then a buff that won't stack, then `pass`.
 
 `tests/strategies/test_hitters.py` walks all four through the fights above, and finds a

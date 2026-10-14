@@ -21,10 +21,12 @@ The stages land in this order, each building only on the ones before:
 | 3 | #221 | supports: Default Support and the two cheat-boss supports rewritten to the support ladder | landed |
 | 4 | #222 | hitters: Default rewritten to the hitter ladder, and Default Team Hitter for the team duels | landed |
 | 5 | #223 | two duels go: Default Team Boss Duel and Default Turn 1 AoE Mob Duel leave the Official set | landed |
+| 6 | #224 | guardian and Attenuate: Default Support only buffs, Default Guardian Support shields and heals P1 first, every support casts a negative aura on the boss through wizsprinter's `harmful_aura` and `stronger`, and every hitter shields first | in progress |
 
 `docs/COMBAT_CONFIG.md` is the feature as built: "The shipped defaults", "What a
-support does" (Stage 3) and "What the hitter does" (Stage 4) say what each default does.
-wizsprinter's `CONDITIONS.md` documents `stacks`, and `docs/WIZSPRINTER_REFERENCE.md`
+support does" (Stages 3 and 6), "What the guardian does" (Stage 6) and "What the hitter
+does" (Stages 4 and 6) say what each default does. wizsprinter's `CONDITIONS.md`
+documents `stacks`, `harmful_aura` and `stronger`, and `docs/WIZSPRINTER_REFERENCE.md`
 has a summary.
 
 The rules that hold across every stage:

@@ -238,7 +238,13 @@ non-damage clause in hand order.
 the same enchant template id don't stack, whoever cast them, and the move's own `[...]`
 enchant counts. A mass card stacks while one living member of its side lacks it.
 wizsprinter's `CONDITIONS.md` has the rules.
-`req_met`, `stacks` and the hanging verbs (`gambit(…)` and its siblings) cannot be
+`aura` is an aura on the caster (Amplify, Stabilize, Mend); `harmful_aura` is one cast at
+an enemy (Attenuate: +20% incoming damage for four rounds). A trap has no rounds, so
+neither matches one. `stronger` keeps an aura card only when it beats, for the caster's
+side, the aura its target already holds: a participant holds one aura and a new one
+replaces it, so `any<harmful_aura & inc_damage & stronger> @ boss` replaces the boss's own
+Frenzy or a weaker Attenuate, and never a stronger one.
+`req_met`, `stacks`, `stronger` and the hanging verbs (`gambit(…)` and its siblings) cannot be
 negated — they are checked after a card is picked, so there is nothing for the negation
 to test.
 
