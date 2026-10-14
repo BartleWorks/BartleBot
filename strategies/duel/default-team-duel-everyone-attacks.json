@@ -9,10 +9,10 @@
         3,
         4
       ],
-      "player_combat_strategy_id": "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
+      "player_combat_strategy_id": "dc7b81c3-c4cf-4ef8-8d4c-7a15d7982c47"
     }
   ],
-  "description": "Default duel strategy for a team of 2-4 in which every player attacks.",
+  "description": "Default duel strategy for a team of 2-4 in which every player attacks. Every player runs Default Team Hitter: AoE in round 1 of a mob fight, otherwise it buffs while a buff adds to the next hit, then hits.",
   "id": "f51b5e89-ba2b-40da-81ef-301e26ca5dd5",
   "name": "Default Team Duel (Everyone Attacks)"
 }

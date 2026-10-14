@@ -7,9 +7,12 @@ nothing product-specific.
 The three duels are Official items in ``strategies/duel/``, found by id:
 
 - :data:`SHIPPED_SOLO_DUEL_ID`: one player, who runs Default.
-- :data:`SHIPPED_TEAM_DUEL_ID`: P1 runs Default, P2 to P4 run Default Support, which
-  buffs P1 and hits only in round 1 of a mob fight or once P1 is dead.
-- :data:`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`: every player runs Default.
+- :data:`SHIPPED_TEAM_DUEL_ID`: P1 runs Default Team Hitter, P2 to P4 run Default
+  Support, which buffs P1 and hits only in round 1 of a mob fight or once P1 is dead.
+- :data:`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`: every player runs Default Team Hitter.
+
+Default Team Hitter is Default plus a round-1 line that opens a mob fight with AoE, which
+belongs to team fights only: a solo wizard buffs first.
 
 :func:`default_duel` is levels 3 and 4 of a fight's resolution: the user's Solo or Team duel
 when one is set and fits the team, and the shipped one otherwise. BartleBuddy calls the same
@@ -48,19 +51,25 @@ _ENCHANT_AHEAD = " & ".join(
     ]
 )
 
-#: Card choice priority, highest first: buffs and debuffs before damage, falling back
-#: gracefully when a preferred card is not in hand. Generic to any school.
+#: The hitter's ladder, first line that can cast wins (``docs/COMBAT_CONFIG.md``, "What the
+#: hitter does"): heal below 30%; Mass Feint; Feint on the boss and blades and an aura on
+#: itself while one adds to the next hit; then the hit, AoE or single-target at the boss;
+#: then fillers, the buffs that won't stack, and a pass. Short of pips for a hit, it keeps
+#: its buffs. Generic to any school.
 _PRIORITY = [
     _ENCHANT_AHEAD,
-    "any<trap & inc_damage>[potent] @ enemy",
-    "any<trap & inc_damage & aoe>[potent]",
-    "any<blade & out_damage>[sharp] @ self",
-    "any<blade & out_damage & aoe>[sharp]",
-    "any<global>",
-    "any<aura & out_damage>",
-    "any<shadow>",
+    "?(self.health < 30%) any<heal> @ self",
+    '"Feint Mass - Amulet"',
+    "any<trap & !aoe & stacks>[potent] @ boss",
+    "any<blade & stacks>[sharp] @ self",
+    "?(self.beneficial_auras == 0) any<aura & out_damage>",
     "any<damage & aoe>[any<mod_damage>]",
-    "any<damage>[any<mod_damage>] @ enemy",
+    "any<damage>[any<mod_damage>] @ boss",
+    "any<global>",
+    "any<shadow>",
+    "any<trap & !aoe>[potent] @ boss",
+    "any<blade>[sharp] @ self",
+    "pass",
 ]
 
 #: The generic single-wizard DSL. The shipped Default player strategy carries the same
@@ -69,12 +78,15 @@ LAST_RESORT_DSL = _SEPARATOR.join(_PRIORITY)
 
 #: Default Solo Duel: one player.
 SHIPPED_SOLO_DUEL_ID = "530aa34e-1567-4492-b507-12529a41f0db"
-#: Default Team Duel: P1 hits, P2 to P4 support while a boss is up and hit otherwise.
+#: Default Team Duel: P1 hits, P2 to P4 support and hit only in round 1 of a mob fight
+#: or once P1 is dead.
 SHIPPED_TEAM_DUEL_ID = "9594ae6a-2cdc-4990-9ee7-3c43bb715121"
-#: Default Team Duel (Everyone Attacks): every player runs Default.
+#: Default Team Duel (Everyone Attacks): every player runs Default Team Hitter.
 SHIPPED_EVERYONE_ATTACKS_DUEL_ID = "f51b5e89-ba2b-40da-81ef-301e26ca5dd5"
-#: The Default player strategy, which the three duels above link.
+#: The Default player strategy, which the Solo duel links; its DSL is LAST_RESORT_DSL.
 SHIPPED_DEFAULT_PLAYER_ID = "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
+#: The Default Team Hitter player strategy, which the two Team duels link.
+SHIPPED_TEAM_HITTER_ID = "dc7b81c3-c4cf-4ef8-8d4c-7a15d7982c47"
 #: The Default Support player strategy.
 SHIPPED_DEFAULT_SUPPORT_ID = "d2496f8b-85c5-44f5-98da-13fb0c7ddea5"
 

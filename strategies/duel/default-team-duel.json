@@ -12,7 +12,7 @@
       "players": [
         1
       ],
-      "player_combat_strategy_id": "a6ddb3e8-5a97-42de-a8d6-174a8353a589"
+      "player_combat_strategy_id": "dc7b81c3-c4cf-4ef8-8d4c-7a15d7982c47"
     },
     {
       "players": [
@@ -23,7 +23,7 @@
       "player_combat_strategy_id": "d2496f8b-85c5-44f5-98da-13fb0c7ddea5"
     }
   ],
-  "description": "Default duel strategy for a team of 2-4. P1 hits. The others attack in round 1 of a mob fight; otherwise they buff P1 and trap the boss, and pass rather than spend P1's buffs. Once P1 is dead, they attack.",
+  "description": "Default duel strategy for a team of 2-4. P1 runs Default Team Hitter: AoE in round 1 of a mob fight, otherwise it buffs while a buff adds to the next hit, then hits. The others attack in round 1 of a mob fight; otherwise they buff P1 and trap the boss, and pass rather than spend P1's buffs. Once P1 is dead, they attack.",
   "id": "9594ae6a-2cdc-4990-9ee7-3c43bb715121",
   "name": "Default Team Duel"
 }

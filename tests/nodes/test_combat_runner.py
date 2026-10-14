@@ -7,7 +7,7 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
-from bartlebot.shared.combat_defaults import LAST_RESORT_DSL, SHIPPED_DEFAULT_SUPPORT_ID
+from bartlebot.shared.combat_defaults import LAST_RESORT_DSL, SHIPPED_DEFAULT_SUPPORT_ID, SHIPPED_TEAM_HITTER_ID
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.conftest import FakeMachine
 
@@ -51,8 +51,9 @@ def test_no_active_strategy_runs_the_shipped_team_default():
     machine = _make_machine()
     with _patch_active_strategy("bot-1", None):
         dsls, order, source, _level = resolve_combat(machine, True, 2)
+    hitter = strategy_store.load_player_strategy(SHIPPED_TEAM_HITTER_ID).dsl
     support = strategy_store.load_player_strategy(SHIPPED_DEFAULT_SUPPORT_ID).dsl
-    assert dsls == [LAST_RESORT_DSL, support]
+    assert dsls == [hitter, support]
     assert order == [4, 3, 2, 1]
     assert source == (
         "duel strategy 'Default Team Duel' (the shipped Team default; this bot has no Bot Combat Strategy)"
@@ -62,7 +63,7 @@ def test_no_active_strategy_runs_the_shipped_team_default():
 def test_an_ambient_fight_with_no_active_strategy_has_everyone_attack():
     with _patch_active_strategy("bot-1", None):
         dsls, order, source, _level = resolve_combat(_make_machine(), True, 3, ambient=True)
-    assert dsls == [LAST_RESORT_DSL] * 3
+    assert dsls == [strategy_store.load_player_strategy(SHIPPED_TEAM_HITTER_ID).dsl] * 3
     assert order == []
     assert "'Default Team Duel (Everyone Attacks)' (the shipped Team default for an ambient fight" in source
 

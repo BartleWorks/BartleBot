@@ -22,6 +22,7 @@ from bartlebot.shared.combat_defaults import (
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
     SHIPPED_SOLO_DUEL_ID,
     SHIPPED_TEAM_DUEL_ID,
+    SHIPPED_TEAM_HITTER_ID,
     DefaultSource,
     TeamSize,
     chosen_default,
@@ -134,14 +135,14 @@ def test_team_duels_accept_two_to_four_players(duel_id: str):
 
 def test_team_duel_has_p1_hit_and_the_rest_support_casting_p1_last():
     duel = _duel(SHIPPED_TEAM_DUEL_ID)
-    pcs = {SHIPPED_DEFAULT_PLAYER_ID: "hit", SHIPPED_DEFAULT_SUPPORT_ID: "support"}
+    pcs = {SHIPPED_TEAM_HITTER_ID: "hit", SHIPPED_DEFAULT_SUPPORT_ID: "support"}
     assert [duel.resolve_dsl_for_player(n, pcs) for n in (1, 2, 3, 4)] == ["hit", "support", "support", "support"]
     assert duel.combat_order == [4, 3, 2, 1]
 
 
-def test_everyone_attacks_runs_default_on_all_four():
+def test_everyone_attacks_runs_the_team_hitter_on_all_four():
     duel = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
-    pcs = {SHIPPED_DEFAULT_PLAYER_ID: "hit"}
+    pcs = {SHIPPED_TEAM_HITTER_ID: "hit"}
     assert [duel.resolve_dsl_for_player(n, pcs) for n in (1, 2, 3, 4)] == ["hit"] * 4
 
 
@@ -176,7 +177,7 @@ def test_every_shipped_file_is_named_after_its_item_and_declares_a_unique_id(fil
 
 def test_the_ids_are_distinct():
     ids = [v for k, v in vars(combat_defaults).items() if k.startswith("SHIPPED_") and k.endswith("_ID")]
-    assert len(ids) == 5
+    assert len(ids) == 6
     assert len(set(ids)) == len(ids)
 
 
@@ -193,6 +194,23 @@ def test_shared_set_version_rose_with_the_supports():
     """Default Support and the two cheat-boss supports took the support ladder at version 4
     (Stage 3 of #218); what they cast is pinned in ``tests/strategies/test_supports.py``."""
     assert SHARED_SET_VERSION >= 4
+
+
+def test_shared_set_version_rose_with_the_hitters():
+    """Default and the other shipped hitters took the hitter ladder, and Default Team
+    Hitter joined the set, at version 5 (Stage 4 of #218); what they cast is pinned in
+    ``tests/strategies/test_hitters.py``."""
+    assert SHARED_SET_VERSION >= 5
+
+
+def test_the_team_hitter_is_default_with_a_round_1_line():
+    """Its repeating line is Default's text, word for word, so a fix to one is a fix to
+    both; only the round-1 line differs."""
+    hitter = _player(SHIPPED_TEAM_HITTER_ID)
+    repeating, round_1 = hitter.dsl.splitlines()
+    assert hitter.name == "Default Team Hitter"
+    assert repeating == LAST_RESORT_DSL
+    assert round_1.startswith("{1} ")
 
 
 def test_a_missing_default_does_not_resolve():
