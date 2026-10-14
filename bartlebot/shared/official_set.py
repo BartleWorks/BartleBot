@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 #: Official item is added, changed or removed; it is never lowered. Nothing leaves a set
 #: after 1.0.0, since a user's link to it would then point at nothing. Before 1.0.0 there
 #: are no users, and version 6 removed two duels (#223).
-SHARED_SET_VERSION = 6
+SHARED_SET_VERSION = 7
 
 #: ``HKCU\Software\Bartleby``: one subkey per installed product.
 REGISTRY_KEY = rf"Software\{VENDOR}"
