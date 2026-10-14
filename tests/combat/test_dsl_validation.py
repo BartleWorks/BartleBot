@@ -168,9 +168,14 @@ def test_a_bang_needs_a_type_or_a_name_after_it_and_an_ampersand_before_it(dsl):
     assert validate_dsl(dsl) is not None
 
 
-@pytest.mark.parametrize("dsl", ["any<trap & !gambit(charms)>", "any<damage & !req_met>"])
+def test_stacks_is_accepted():
+    """The stacking check the shipped defaults order their buffs by (#219)."""
+    assert validate_dsl("any<blade & stacks>[sharp] @ ally(last) | any<trap & stacks>[potent] @ boss") is None
+
+
+@pytest.mark.parametrize("dsl", ["any<trap & !gambit(charms)>", "any<damage & !req_met>", "any<blade & !stacks>"])
 def test_only_a_spell_type_can_be_negated(dsl):
-    """A hanging verb and req_met are checked after selection, so a negation of one
+    """A hanging verb, req_met and stacks are checked after selection, so a negation of one
     could never exclude a card. The transformer says so, and the message is its own
     rather than Lark's wrapper naming the rule."""
     assert validate_dsl(dsl).startswith("Only a spell type can be negated")

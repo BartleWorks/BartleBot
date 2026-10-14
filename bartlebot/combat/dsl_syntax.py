@@ -56,12 +56,13 @@ SPELL_TYPES: tuple[str, ...] = (
     "mod_heal",
     "mod_pierce",
     "req_met",
+    "stacks",
 )
 HEAL_QUALIFIERS: tuple[str, ...] = ("self", "other")
-#: What ``!`` can negate: ``any<trap & !aoe>``. ``req_met`` and the hanging verbs are
-#: checked after a card is picked, so there is nothing for a negation of one to test.
-#: Any other word after ``!`` is a card name to exclude: ``any<trap & !feint>``.
-NEGATABLE_TYPES: tuple[str, ...] = tuple(t for t in SPELL_TYPES if t != "req_met")
+#: What ``!`` can negate: ``any<trap & !aoe>``. ``req_met``, ``stacks`` and the hanging
+#: verbs are checked after a card is picked, so there is nothing for a negation of one to
+#: test. Any other word after ``!`` is a card name to exclude: ``any<trap & !feint>``.
+NEGATABLE_TYPES: tuple[str, ...] = tuple(t for t in SPELL_TYPES if t not in ("req_met", "stacks"))
 #: Spell types that take arguments: ``gambit(harmful_charms, 2)``.
 HANGING_VERBS: tuple[str, ...] = ("gambit", "clear", "echo", "swap")
 
