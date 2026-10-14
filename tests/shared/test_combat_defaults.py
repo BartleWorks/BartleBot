@@ -64,22 +64,70 @@ def test_every_shipped_player_strategy_parses(path: Path):
     assert validate_dsl(strategy.dsl) is None, strategy.name
 
 
+#: The gate on every shipped enchant-ahead slot: a freed hand slot only helps while the
+#: main pile has cards to refill it from, and a deck holding one card back gains little.
+ENCHANT_AHEAD_GATE = "?(deck.remaining >= 2)"
+
+
+def _priorities(player_id: str) -> list[str]:
+    return [p.strip() for p in _player(player_id).dsl.split(" | ")]
+
+
+def _enchant_only(dsl: str) -> list[bool]:
+    """Which priorities of *dsl* wizsprinter holds rather than runs where they stand."""
+    from lark import Lark  # noqa: PLC0415
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
+        TreeToConfig,
+        get_sprinty_grammar,
+    )
+    from wizwalker.extensions.wizsprinter.sprinty_combat import is_enchant_only  # noqa: PLC0415
+
+    config = TreeToConfig().transform(Lark(get_sprinty_grammar()).parse(dsl))
+    return [is_enchant_only(p) for p in config.infinite_rounds[0].priorities]
+
+
 def test_default_support_ends_in_two_damage_lines():
-    priorities = [p.strip() for p in _player(SHIPPED_DEFAULT_SUPPORT_ID).dsl.split(" | ")]
-    assert len(priorities) == 7
+    priorities = _priorities(SHIPPED_DEFAULT_SUPPORT_ID)
+    assert len(priorities) == 8
     assert all(p.startswith("any<damage") for p in priorities[-2:])
     assert not any(p.startswith("?(") for p in priorities[-2:])
 
 
 def test_default_support_gates_what_does_not_aim_at_the_boss_on_a_boss_fight():
-    priorities = [p.strip() for p in _player(SHIPPED_DEFAULT_SUPPORT_ID).dsl.split(" | ")]
+    priorities = _priorities(SHIPPED_DEFAULT_SUPPORT_ID)
     gate = "?(any(enemies).is_boss == 1)"
     gated = [p for p in priorities if p.startswith(gate)]
     assert len(gated) == 3
-    # The ungated lines either aim at the boss, which skips when there is none, or are damage.
-    ungated = [p for p in priorities if not p.startswith(gate)]
+    # The ungated lines either aim at the boss, which skips when there is none, or are
+    # damage. The enchant-ahead slot casts nothing of its own, so it needs no boss gate.
+    ungated = [p for p in priorities if not p.startswith((gate, ENCHANT_AHEAD_GATE))]
     assert all("@ boss" in p or p.startswith("any<damage") for p in ungated)
     assert not any("boss.hp" in p or "boss.health" in p for p in priorities)
+
+
+@pytest.mark.parametrize("path", _player_files(), ids=lambda p: p.name)
+def test_every_shipped_strategy_enchants_ahead_first_unless_it_only_attacks(path: Path):
+    """The slot covers only the casts below it, so it leads. A strategy that attacks every
+    round never runs it, so it has none."""
+    strategy = PlayerCombatStrategy.load(path)
+    held = _enchant_only(strategy.dsl)
+    if not any(p.startswith("any<blade") or "trap" in p for p in strategy.dsl.split(" | ")):
+        assert held == [False] * len(held), strategy.name
+        return
+    assert held[0], strategy.name
+    assert strategy.dsl.startswith(ENCHANT_AHEAD_GATE), strategy.name
+    assert held.count(True) == 1, strategy.name
+
+
+def test_the_cheat_boss_supports_never_enchant_the_card_their_cheat_watches():
+    """The No-Blades and No-Feints supports exist for bosses that cheat when a blade or a
+    feint is cast. Fusing an enchant into one would hold a hand slot they never free."""
+    no_blades = _priorities("0c0f0554-df96-440d-837e-21ca2004198e")[0]
+    no_feints = _priorities("f0b1a45f-4b97-4b7e-aae8-e334307185ce")[0]
+
+    assert "blade" not in no_blades
+    assert "spell(any<trap>)" not in no_feints
+    assert "spell(any<trap & !feint>)" in no_feints
 
 
 def test_default_dsl_equals_the_last_resort():
@@ -153,6 +201,11 @@ def test_the_ids_are_distinct():
 
 def test_shared_set_version_rose_with_the_default_duels():
     assert SHARED_SET_VERSION > VERSION_BEFORE_DEFAULT_DUELS
+
+
+def test_shared_set_version_rose_with_enchanting_ahead():
+    """Every shipped player strategy but one gained its enchant-ahead slot at version 3."""
+    assert SHARED_SET_VERSION >= 3
 
 
 def test_a_missing_default_does_not_resolve():

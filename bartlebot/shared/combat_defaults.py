@@ -33,9 +33,25 @@ if TYPE_CHECKING:
 
 _SEPARATOR = " | "
 
+#: Fuse enchants into the cards they fit ahead of time, freeing hand slots so a big deck
+#: cycles. The slot is held until the round's card is known, and runs only before a card
+#: that does not attack, and only while at least two cards are left to draw: a deck the
+#: hand already holds gains nothing from a freed slot.
+_ENCHANT_AHEAD = " & ".join(
+    [
+        "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>)",
+        "any<mod_damage> @ spell(any<damage>)",
+        "sharp @ spell(any<blade>)",
+        "sharp @ spell(any<blade>)",
+        "potent @ spell(any<trap>)",
+        "potent @ spell(any<trap>)",
+    ]
+)
+
 #: Card choice priority, highest first: buffs and debuffs before damage, falling back
 #: gracefully when a preferred card is not in hand. Generic to any school.
 _PRIORITY = [
+    _ENCHANT_AHEAD,
     "any<trap & inc_damage>[potent] @ enemy",
     "any<trap & inc_damage & aoe>[potent]",
     "any<blade & out_damage>[sharp] @ self",

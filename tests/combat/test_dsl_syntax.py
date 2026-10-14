@@ -298,11 +298,17 @@ def test_the_next_move_after_a_discard_offers_ordinary_targets_again():
 
 
 def test_a_condition_offers_subjects_then_attributes():
-    assert ds.complete("?(").candidates == ("self", "boss", "enemy", "ally", "any(", "all(", "avg(")
+    assert ds.complete("?(").candidates == ("self", "boss", "enemy", "ally", "deck", "any(", "all(", "avg(")
     assert ds.complete("?(self.").candidates == ds.CONDITION_ATTRIBUTES
     assert ds.complete("?(self.he").candidates == ("health",)
     assert ds.complete("?(self.health < 50% && bo").candidates == ("boss",)
     assert ds.complete("?(avg(").candidates == ds.AGGREGATE_GROUPS
+
+
+def test_deck_offers_only_what_a_deck_can_read():
+    assert ds.complete("?(deck.").candidates == ds.DECK_ATTRIBUTES
+    assert ds.complete("?(self.health > 0 && Deck . re").candidates == ("remaining",)
+    assert "remaining" not in ds.complete("?(self.").candidates
 
 
 def test_heal_offers_its_two_qualifiers():

@@ -122,8 +122,8 @@ cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origi
 ```
 
 Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `a8811d0`
-(`bartlebot-pin-20261012`) and wizsprinter `0a5099b`
-(`bartlebot-pin-20261008`). Never
+(`bartlebot-pin-20261012`) and wizsprinter `e0bd4b8`
+(`bartlebot-pin-20261014`, on its `enchant-ahead` branch). Never
 delete a tag that an older commit of this repo still pins, or you break the build at
 that revision.
 
