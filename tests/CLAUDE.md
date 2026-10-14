@@ -15,6 +15,13 @@ What every change ships with, and the ways this suite goes slow or flaky.
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
+- **What a strategy casts** is a `tests/strategies/fight.py` test: describe a `Fight` (the
+  team in seat order and which one is me, the enemies, the round, the hand, the pips, what
+  hangs on whom) and `await cast(dsl, fight)` runs wizsprinter's real `handle_round` over
+  it and returns the `Turn`. `shipped_dsl(id)` reads a shipped player strategy. A round
+  costs about 1 ms, so cover each situation with its own fight rather than one long test.
+  The fakes beneath it, at the memory reads, are `tests/wizsprinter/fakes.py`, which the
+  wizsprinter tests share.
 - A new dialog, card or row builder ships with a test that asks for the `parentless_shows`
   fixture, builds the surface, and asserts the list is empty. It catches a widget shown
   before it has a parent, which flashes a window on screen and leaves nothing in the
