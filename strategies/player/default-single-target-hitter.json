@@ -1,8 +1,8 @@
 {
   "id": "d99506cc-6276-4e7d-8ae0-11a69788fcd6",
   "name": "Default Single-target Hitter",
-  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage>) & any<mod_damage> @ spell(any<damage>) & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap>) & potent @ spell(any<trap>) | feint[potent]@boss | any<trap>[potent]@boss | any<blade>[sharp]@self | any<aura & out_damage> | any<damage>[any<mod_damage>]@boss",
-  "description": "Default single-target hitter strategy for general use",
+  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage>) & any<mod_damage> @ spell(any<damage>) & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap>) & potent @ spell(any<trap>) | ?(self.health < 30%) any<heal> @ self | \"Feint Mass - Amulet\" | any<trap & !aoe & stacks>[potent] @ boss | any<blade & stacks>[sharp] @ self | ?(self.beneficial_auras == 0) any<aura & out_damage> | any<damage>[any<mod_damage>] @ boss | any<trap & !aoe>[potent] @ boss | any<blade>[sharp] @ self | pass",
+  "description": "Single-target hitter for a boss. Below 30% health it heals itself. Otherwise it buffs while a buff adds to the next hit: Mass Feint, Feint on the boss, a blade on itself, an aura while none is up. Then it hits the boss. Short of pips for it, it casts a buff that won't stack, and otherwise passes, keeping its buffs.",
   "tags": [
     "Hitter"
   ]
