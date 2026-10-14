@@ -233,8 +233,14 @@ bare `any<trap>` includes mass traps; write `any<trap & !aoe>` for single-target
 With `aoe` in the template, a card with a single-target damage effect on an enemy is
 rejected (Storm Beetle), and the matches are ranked by AoE damage, which leaves a
 non-damage clause in hand order.
-`req_met` and the hanging verbs (`gambit(…)` and its siblings) cannot be negated — they
-are checked after a card is picked, so there is nothing for the negation to test.
+`stacks` keeps a buff only when it would add to what already hangs where it lands:
+`any<blade & stacks>[sharp] @ ally(last)`. Two effects with the same spell template id and
+the same enchant template id don't stack, whoever cast them, and the move's own `[...]`
+enchant counts. A mass card stacks while one living member of its side lacks it.
+wizsprinter's `CONDITIONS.md` has the rules.
+`req_met`, `stacks` and the hanging verbs (`gambit(…)` and its siblings) cannot be
+negated — they are checked after a card is picked, so there is nothing for the negation
+to test.
 
 ### Target Types
 
