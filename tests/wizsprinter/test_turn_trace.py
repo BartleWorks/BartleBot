@@ -95,10 +95,9 @@ async def test_a_round_is_traced_from_the_hand_to_the_cast(trace):
         "fused after 1 click(s): 2 cards in hand",
         "fused the move's enchant. Hand before: 1: Storm Blade (template 2001) | "
         "2: Sharpened Blade (template 1001) | 3: Storm Shark (template 4001)",
-        "names new to the hand: ['Storm Blade [Sharpened Blade]']",
-        "to cast: Storm Blade [Sharpened Blade] (template 2001, enchant 1001) (slot 1), "
-        "found by the fused card's new name 'Storm Blade [Sharpened Blade]'",
-        "cast Storm Blade [Sharpened Blade] (template 2001, enchant 1001) (slot 1) at team seat 2",
+        "names new to the hand: none",
+        "to cast: Storm Blade (template 2001, enchant 1001) (slot 1), the fused card, found by its template and enchant",
+        "cast Storm Blade (template 2001, enchant 1001) (slot 1) at team seat 2",
         "#1 ended the turn",
     ]
 
@@ -140,7 +139,7 @@ async def test_held_enchants_are_traced_when_they_run(trace):
         "it does not attack: running 1 held enchant slot(s), then walking again",
         "held enchant slot 1 of 1:",
         "enchant Sharpened Blade (template 1001) onto Storm Blade (template 2001)",
-        "held enchants run; walking again. Hand: 1: Storm Blade [Sharpened Blade] (template 2001, enchant 1001)",
+        "held enchants run; walking again. Hand: 1: Storm Blade (template 2001, enchant 1001)",
         "#1: enchant only; already run this round",
     ]
 
@@ -150,33 +149,33 @@ async def test_held_enchants_are_traced_when_they_run(trace):
 # ---------------------------------------------------------------------------
 
 
-class _KeepsItsName(Card):
-    """A card whose name a fuse leaves alone, as a spell's template name may in game."""
+class _Renamed(Card):
+    """A card a fuse renames, as wizsprinter once took every fuse to."""
 
     def fuse(self, enchant: Card) -> None:
         super().fuse(enchant)
-        self._name = self.base_name
+        self._name = f"{self.base_name} [{enchant.base_name}]"
+        self.template_id_ += 1
 
 
-async def test_a_fuse_that_leaves_every_name_alone_casts_the_card_picked_before_it(parse, trace):
-    """With no new name in the hand, a `stacks` move casts the handle it picked before the
-    fuse. In game that handle is a hand slot, which the fuse may have moved another card
-    into, so the trace says which slot it is and what that slot shows now."""
+async def test_a_fused_card_that_is_renamed_is_found_by_its_new_name(parse, trace):
+    """Its template moved with its name, so only the names still find it."""
     from tests.wizsprinter.test_stacking import _BLADE, _ENCHANT, STORMBLADE
     from tests.wizsprinter.test_stacking import SHARPENED_BLADE as SHARP_ID
 
     hand: list = []
-    blade = _KeepsItsName("Storm Blade", _BLADE, hand, template_id=STORMBLADE)
+    blade = _Renamed("Storm Blade", _BLADE, hand, template_id=STORMBLADE)
     Card("Sharpened Blade", _ENCHANT, hand, template_id=SHARP_ID)
     combat = fake_combat(hand, team=[Member("P2"), Member("P1")])
 
     with patch.object(sprinty_combat, "asyncio", _INSTANT):
         assert await combat.try_execute_config(parse(_SUPPORT_BLADE)[0]) is True
 
-    assert blade.casts and not isinstance(blade.casts[-1], Card)
+    assert len(blade.casts) == 1 and not isinstance(blade.casts[0], Card)
     assert _keep(trace(), "names", "to cast") == [
-        "names new to the hand: none",
-        f"to cast: Storm Blade (template {STORMBLADE}, enchant {SHARP_ID}) (slot 1), the card picked before any fuse",
+        "names new to the hand: ['Storm Blade [Sharpened Blade]']",
+        f"to cast: Storm Blade [Sharpened Blade] (template {STORMBLADE + 1}, enchant {SHARP_ID}) (slot 1), "
+        "the fused card, found by its new name 'Storm Blade [Sharpened Blade]'",
     ]
 
 

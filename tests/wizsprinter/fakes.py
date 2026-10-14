@@ -15,6 +15,8 @@ whole round of a described fight.
 
 from __future__ import annotations
 
+import inspect
+import itertools
 from collections.abc import Sequence
 from types import SimpleNamespace
 
@@ -239,13 +241,23 @@ class _GraphicalSpell:
         return _Rank(self._card.pips)
 
 
+class _Window:
+    """A card's window in the hand. Its address is what tells two handles to one slot apart."""
+
+    _addresses = itertools.count(1)
+
+    def __init__(self) -> None:
+        self.base_address = next(self._addresses)
+
+
 class Card(CombatCard):
     """A card in hand, appended to `hand`. Cast at a card, it fuses into it; cast at
     anything else, it is the round's cast. Either way it leaves the hand.
 
-    A fused card is renamed `"<card> [<enchant>]"`, so the name-diff wizsprinter uses to
-    find it after a fuse sees a new card. `fuses=False` makes the game refuse an enchant
-    on it, by doing nothing. Cards sharing a `log` record every cast there, in order.
+    As in game, a fused card keeps its name and template, carries the enchant's template id
+    as its enchantment, and takes a new window: a `Slot` handed out before the fuse is dead
+    after it. `fuses=False` makes the game refuse an enchant on it, by doing nothing. Cards
+    sharing a `log` record every cast there, in order.
     """
 
     def __init__(
@@ -278,6 +290,7 @@ class Card(CombatCard):
         self.fuses = fuses
         self.casts = []
         self._log = log
+        self.window = _Window()
         self._hand.append(self)
 
     async def name(self):
@@ -313,9 +326,11 @@ class Card(CombatCard):
     def fuse(self, enchant: Card) -> None:
         self.enchant_id = enchant.template_id_
         self.enchanted_by = enchant
-        self._name = f"{self.base_name} [{enchant.base_name}]"
+        self.window = _Window()
 
     async def cast(self, target, *, sleep_time=None, debug_paint=False):
+        if isinstance(target, Slot):
+            target = target.card
         self.casts.append(target)
         if self._log is not None:
             self._log.append((self, target))
@@ -328,6 +343,44 @@ class Card(CombatCard):
 
     def __repr__(self):
         return f"Card({self._name})"
+
+
+class Slot(CombatCard):
+    """A handle to a card in hand, as `get_cards()` gives one in game: the card's window.
+
+    Live until a fuse replaces that window. Read after, it raises as wizwalker does for a
+    window whose spell is gone, and a click on it does nothing.
+    """
+
+    def __init__(self, card: Card) -> None:
+        super().__init__(None, card.window)
+        self.card = card
+
+    @property
+    def alive(self) -> bool:
+        return self.card.window is self._spell_window and self.card in self.card._hand
+
+    async def cast(self, target, *, sleep_time=None, debug_paint=False):
+        if self.alive:
+            await self.card.cast(target, sleep_time=sleep_time, debug_paint=debug_paint)
+
+    def __repr__(self):
+        return f"Slot({self.card!r}{'' if self.alive else ', dead'})"
+
+
+def _read_through(name: str):
+    async def read(self, *args, **kwargs):
+        if not self.alive:
+            raise ValueError("Graphical spell not found; probably reading too fast")
+        return await getattr(self.card, name)(*args, **kwargs)
+
+    read.__name__ = name
+    return read
+
+
+# Every read a Card answers, a Slot answers through it while its window lasts.
+for _name in [n for n, v in vars(Card).items() if inspect.iscoroutinefunction(v) and n != "cast"]:
+    setattr(Slot, _name, _read_through(_name))
 
 
 def cast_at_a_combatant(card: Card) -> bool:
@@ -383,8 +436,9 @@ def fake_combat(
     async def get_cards():
         if any(cast_at_a_combatant(card) for card in hand):
             return []
-        # As SprintyCombat.get_cards orders them: enchanted cards first.
-        return [c for c in hand if c.enchant_id] + [c for c in hand if not c.enchant_id]
+        # As SprintyCombat.get_cards orders them: enchanted cards first. Each read hands out
+        # fresh handles, as the game's does.
+        return [Slot(c) for c in hand if c.enchant_id] + [Slot(c) for c in hand if not c.enchant_id]
 
     async def get_members():
         return list(members)
