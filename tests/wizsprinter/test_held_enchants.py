@@ -16,12 +16,10 @@ casting anything, and the turn sat until its timer ran out.
 from __future__ import annotations
 
 import logging
-from types import SimpleNamespace
 
 import pytest
 from lark import Lark
 from wizwalker.extensions.wizsprinter import sprinty_combat
-from wizwalker.extensions.wizsprinter.combat_backends.combat_api import NamedSpell
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (
     TreeToConfig,
     get_sprinty_grammar,
@@ -33,6 +31,8 @@ from wizwalker.extensions.wizsprinter.sprinty_combat import (
     is_enchant_only,
 )
 from wizwalker.memory import EffectTarget, SpellEffects
+
+from tests.wizsprinter.fakes import Card, Effect, fake_combat
 
 _HOLD = "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage>) & sharp @ spell(any<blade>)"
 
@@ -74,88 +74,15 @@ def test_which_slots_are_enchant_only(priorities, dsl, held):
 # ---------------------------------------------------------------------------
 
 
-class _Effect:
-    def __init__(self, effect_type, target):
-        self._type = effect_type
-        self._target = target
-
-    async def effect_type(self):
-        return self._type
-
-    async def effect_target(self):
-        return self._target
-
-
-_ATTACK = [_Effect(SpellEffects.damage, EffectTarget.enemy_single)]
-_BLADE = [_Effect(SpellEffects.modify_outgoing_damage, EffectTarget.self)]
-_ENCHANT = [_Effect(SpellEffects.modify_card_outgoing_damage, EffectTarget.spell)]
-
-
-class _Card:
-    def __init__(self, name: str, effects, hand: list, *, kind: str = "", fuses: bool = True):
-        self._name = name
-        self._effects = effects
-        self._hand = hand
-        self.kind = kind
-        self.fuses = fuses
-        self.casts = []
-        hand.append(self)
-
-    async def name(self):
-        return self._name
-
-    async def get_spell_effects(self):
-        return self._effects
-
-    async def is_enchanted(self):
-        return False
-
-    async def cast(self, target, sleep_time=None):
-        self.casts.append(target)
-        if isinstance(target, _Card):
-            if target.fuses:  # an enchant: the two cards become one
-                self._hand.remove(self)
-        else:
-            self._hand.remove(self)
-
-    def __repr__(self):
-        return f"_Card({self._name})"
-
-
-def _combat(hand: list, held=()):
-    combat = SprintyCombat.__new__(SprintyCombat)
-    combat.config = SimpleNamespace(cast_time=0)
-    combat.held_enchants = list(held)
-    combat.cur_card_count = 0
-    combat.passes = 0
-
-    async def try_get_spell(spell, **_):
-        if isinstance(spell, NamedSpell):
-            if spell.name in ("pass", "none", "willcast", "discard"):
-                return spell.name
-            for card in hand:
-                if spell.name.lower() in (await card.name()).lower():
-                    return card
-            return None
-        matches = [card for card in hand if card.kind == "blade"]
-        return matches or None
-
-    async def get_cards():
-        return list(hand)
-
-    async def pass_button():
-        combat.passes += 1
-
-    combat.try_get_spell = try_get_spell
-    combat.get_cards = get_cards
-    combat.pass_button = pass_button
-    return combat
+_ATTACK = [Effect(SpellEffects.damage, EffectTarget.enemy_single, 500)]
+_BLADE = [Effect(SpellEffects.modify_outgoing_damage, EffectTarget.self, 35)]
+_ENCHANT = [Effect(SpellEffects.modify_card_outgoing_damage, EffectTarget.spell)]
 
 
 async def test_a_non_attack_with_enchants_held_restarts_before_casting(priorities):
     hand = []
-    blade = _Card("Storm Blade", _BLADE, hand)
-    combat = _combat(hand, held=priorities(_HOLD))
+    blade = Card("Storm Blade", _BLADE, hand)
+    combat = fake_combat(hand, held=priorities(_HOLD))
 
     result = await combat.try_execute_config(priorities('"Storm Blade"')[0])
 
@@ -165,8 +92,8 @@ async def test_a_non_attack_with_enchants_held_restarts_before_casting(prioritie
 
 async def test_an_attack_drops_the_held_enchants_and_casts(priorities):
     hand = []
-    shark = _Card("Storm Shark", _ATTACK, hand)
-    combat = _combat(hand, held=priorities(_HOLD))
+    shark = Card("Storm Shark", _ATTACK, hand)
+    combat = fake_combat(hand, held=priorities(_HOLD))
 
     result = await combat.try_execute_config(priorities('"Storm Shark"')[0])
 
@@ -176,14 +103,14 @@ async def test_an_attack_drops_the_held_enchants_and_casts(priorities):
 
 
 async def test_a_pass_with_enchants_held_restarts_first(priorities):
-    combat = _combat([], held=priorities(_HOLD))
+    combat = fake_combat([], held=priorities(_HOLD))
 
     assert await combat.try_execute_config(priorities("pass")[0]) is RESTART
     assert combat.passes == 0
 
 
 async def test_a_pass_with_nothing_held_passes(priorities):
-    combat = _combat([])
+    combat = fake_combat([])
 
     assert await combat.try_execute_config(priorities("pass")[0]) is True
     assert combat.passes == 1
@@ -193,9 +120,9 @@ async def test_an_enchant_aimed_at_a_card_is_not_the_rounds_cast(priorities):
     """The enchant moves of a Deimos-style chain run while slots are held, without
     restarting the walk: casting one onto a card is not what ends the turn."""
     hand = []
-    sharp = _Card("Sharpened Blade", _ENCHANT, hand)
-    blade = _Card("Storm Blade", _BLADE, hand, kind="blade")
-    combat = _combat(hand, held=priorities(_HOLD))
+    sharp = Card("Sharpened Blade", _ENCHANT, hand)
+    blade = Card("Storm Blade", _BLADE, hand)
+    combat = fake_combat(hand, held=priorities(_HOLD))
 
     result = await combat.try_execute_config(priorities("sharp @ spell(any<blade>)")[0])
 
@@ -206,8 +133,8 @@ async def test_an_enchant_aimed_at_a_card_is_not_the_rounds_cast(priorities):
 
 async def test_a_restart_inside_a_chain_stops_the_chain(priorities):
     hand = []
-    _Card("Storm Blade", _BLADE, hand)
-    combat = _combat(hand, held=priorities(_HOLD))
+    Card("Storm Blade", _BLADE, hand)
+    combat = fake_combat(hand, held=priorities(_HOLD))
 
     assert await combat.try_execute_config(priorities('pass & "Storm Blade"')[0]) is RESTART
 
@@ -216,15 +143,15 @@ async def test_a_restart_inside_a_chain_stops_the_chain(priorities):
     "effects, attacks",
     [
         (_ATTACK, True),
-        ([_Effect(SpellEffects.damage_over_time, EffectTarget.enemy_team)], True),
-        ([_Effect(SpellEffects.steal_health, EffectTarget.enemy_single)], True),
+        ([Effect(SpellEffects.damage_over_time, EffectTarget.enemy_team)], True),
+        ([Effect(SpellEffects.steal_health, EffectTarget.enemy_single)], True),
         (_BLADE, False),
-        ([_Effect(SpellEffects.modify_incoming_damage, EffectTarget.enemy_single)], False),  # a trap
-        ([_Effect(SpellEffects.heal, EffectTarget.self)], False),
+        ([Effect(SpellEffects.modify_incoming_damage, EffectTarget.enemy_single)], False),  # a trap
+        ([Effect(SpellEffects.heal, EffectTarget.self)], False),
     ],
 )
 async def test_which_cards_count_as_an_attack(effects, attacks):
-    assert await card_is_attack(_Card("card", effects, [])) is attacks
+    assert await card_is_attack(Card("card", effects, [])) is attacks
 
 
 # ---------------------------------------------------------------------------
@@ -334,10 +261,10 @@ def short_timeout(monkeypatch):
 @pytest.mark.parametrize("recast", [True, False])
 async def test_a_fused_enchant_returns_once_the_hand_shrinks(short_timeout, recast):
     hand = []
-    sharp = _Card("Sharpened Blade", _ENCHANT, hand)
-    blade = _Card("Storm Blade", _BLADE, hand)
+    sharp = Card("Sharpened Blade", _ENCHANT, hand)
+    blade = Card("Storm Blade", _BLADE, hand)
 
-    assert await _combat(hand)._fuse_enchant(sharp, blade, recast=recast) is True
+    assert await fake_combat(hand)._fuse_enchant(sharp, blade, recast=recast) is True
     assert sharp.casts == [blade]
 
 
@@ -346,11 +273,11 @@ async def test_a_refused_enchant_gives_up_instead_of_hanging(short_timeout, capl
     """The game refuses an enchant on a card it does not fit by doing nothing, and the
     waits used to poll for the fuse with no limit."""
     hand = []
-    sharp = _Card("Sharpened Blade", _ENCHANT, hand)
-    blade = _Card("Storm Blade", _BLADE, hand, fuses=False)
+    sharp = Card("Sharpened Blade", _ENCHANT, hand)
+    blade = Card("Storm Blade", _BLADE, hand, fuses=False)
 
     with caplog.at_level(logging.WARNING):
-        assert await _combat(hand)._fuse_enchant(sharp, blade, recast=recast) is False
+        assert await fake_combat(hand)._fuse_enchant(sharp, blade, recast=recast) is False
 
     assert "Sharpened Blade onto Storm Blade did not fuse" in caplog.text
     assert (len(sharp.casts) > 1) is recast
