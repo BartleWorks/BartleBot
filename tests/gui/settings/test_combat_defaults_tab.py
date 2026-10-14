@@ -8,6 +8,7 @@ opens is patched: what is under test is what the card asks it for and does with 
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,6 +22,8 @@ from bartlebot.gui.settings.combat_defaults_tab import (
     CombatDefaultsTab,
 )
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
+from bartlebot.logging_setup import TURN_TRACE_LOGGER
+from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.combat_defaults import (
     PREFERENCE_KEYS,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
@@ -184,7 +187,41 @@ def test_the_settings_dialog_opens_on_combat(qapp):
     assert dlg.tabs.tabText(dlg.tabs.currentIndex()) == "Combat"
 
 
-def test_the_tab_offers_no_description_links_with_nothing_to_open(qapp, prefs):
+def test_the_tab_offers_description_links_for_the_log_row(qapp, prefs):
     tab = CombatDefaultsTab(prefs=prefs)
 
-    assert tab.switches.isHidden()
+    assert not tab.switches.isHidden()
+
+
+# ---------------------------------------------------------------------------
+# Record combat decisions
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def trace_level():
+    """Put the turn trace's logger back as it was: its level is process-wide."""
+    logger = logging.getLogger(TURN_TRACE_LOGGER)
+    level = logger.level
+    yield logger
+    logger.setLevel(level)
+
+
+def test_the_record_row_shows_the_stored_setting(qapp, prefs):
+    SettingsManager.instance().record_combat_decisions = True
+
+    assert CombatDefaultsTab(prefs=prefs).record_check_box.isChecked()
+
+
+@pytest.mark.parametrize("record", [True, False])
+def test_ok_stores_the_record_setting_and_applies_it_at_once(qapp, prefs, trace_level, record):
+    sm = SettingsManager.instance()
+    sm.record_combat_decisions = not record
+    tab = CombatDefaultsTab(prefs=prefs)
+
+    tab.record_check_box.setChecked(record)
+    assert sm.record_combat_decisions is not record  # pending until OK
+    tab.apply()
+
+    assert sm.record_combat_decisions is record
+    assert trace_level.level == (logging.DEBUG if record else logging.NOTSET)

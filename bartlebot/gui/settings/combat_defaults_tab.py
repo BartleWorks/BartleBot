@@ -1,4 +1,5 @@
-"""Settings tab: Combat, the Solo and Team Default Duel Strategies (epic #201, Stage 5).
+"""Settings tab: Combat, the Solo and Team Default Duel Strategies (epic #201, Stage 5), and
+whether the session log records each turn's decisions.
 
 A fight with nothing tailored to it -- no Bot Combat Strategy, or one that leaves the
 fight unassigned and has no default -- runs one of two defaults: Solo with one client
@@ -28,6 +29,14 @@ shipped duel reaches everyone who kept it (``combat_defaults.set_default_choice`
 
 A write that fails is logged, not raised, and the card keeps showing the choice: the
 next OK tries again.
+
+THE LOG ROW
+-----------
+
+*Record combat decisions* lets wizsprinter's turn trace into the session file: the
+hand each round, every line tried and why it was passed over, every fuse, and the cast.
+A ``settings.json`` key rather than a preference, since it is this app's log, and
+applied on OK through ``logging_setup.set_turn_trace``, so it needs no restart.
 """
 
 from __future__ import annotations
@@ -36,18 +45,20 @@ import logging
 from dataclasses import replace
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.combat.combat_resolution import SIZE_RANGE, default_choice_notes
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_summary import summarize_duel
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.settings.rows import SettingCard, SettingsForm
+from bartlebot.gui.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+from bartlebot.logging_setup import set_turn_trace
+from bartlebot.settings_manager import SettingsManager, default_for
 from bartlebot.shared.combat_defaults import (
     SHIPPED_DUEL_IDS,
     TeamSize,
@@ -77,6 +88,16 @@ RECOMMENDED_NOTE = "Recommended: the default that ships with BartleBot."
 CHOSEN_NOTE = "Your choice, for every bot with nothing tailored."
 #: What a card says when not even the shipped duel can be read.
 UNREADABLE = "The shipped duel could not be read, so these fights use the built-in DSL."
+
+LOG_HEADING = "Log"
+RECORD_TITLE = "Record combat decisions"
+RECORD_SUMMARY = "Write why each turn cast what it did to the session log."
+RECORD_DETAILS = (
+    "Every round of every fight: the hand, each line of the strategy and why it was passed over, "
+    "every enchant fused, and the card cast and at whom. Players are written by their seat, never "
+    "their name. It adds a few kilobytes a round for each client, so turn it on to look into a fight "
+    "that misbehaves, and off again after. Developer mode records it either way."
+)
 
 #: The team size Change… filters to: the smallest the card answers for.
 PICK_TEAM_SIZE = {size: sizes[0] for size, sizes in SIZE_RANGE.items()}
@@ -237,13 +258,34 @@ class CombatDefaultsTab(SettingsForm):
             card = DefaultDuelCard(size, stored, parent=self)
             self._cards[size] = card
             self.add_card(card)
+
+        self.add_heading(LOG_HEADING)
+        self._record_cb = QCheckBox()
+        self._record_cb.setChecked(SettingsManager.instance().record_combat_decisions)
+        self.add_row(
+            SettingRow(
+                RECORD_TITLE,
+                RECORD_SUMMARY,
+                self._record_cb,
+                default=default_for("general", "record_combat_decisions"),
+                details=RECORD_DETAILS,
+            )
+        )
         self.finish()
 
     def card(self, size: TeamSize) -> DefaultDuelCard:
         return self._cards[size]
 
+    @property
+    def record_check_box(self) -> QCheckBox:
+        return self._record_cb
+
     def apply(self) -> None:
-        """Write each default whose choice changed here; a failed write is logged."""
+        """Write each default whose choice changed here, logging a failed write, and the
+        trace's setting, which takes effect at once."""
+        sm = SettingsManager.instance()
+        sm.record_combat_decisions = self._record_cb.isChecked()
+        set_turn_trace(sm.record_combat_decisions)
         for size, card in self._cards.items():
             if card.choice == self._stored[size]:
                 continue

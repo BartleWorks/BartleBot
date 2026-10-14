@@ -346,7 +346,7 @@ class AuthoringTools:
     async def _fight(self, client, index: int, dsl: str) -> None:
         logger.info("Auto-combat: P%d is in a fight", index + 1)
         try:
-            await _run_combat(client, dsl)
+            await _run_combat(client, dsl, number=index + 1)
         except asyncio.CancelledError:
             raise
         except Exception:

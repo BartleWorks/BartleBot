@@ -43,6 +43,11 @@ _NOISY_LIBRARIES = (
 #: wizwalker's own DEBUG output is per-memory-read; INFO is the useful level.
 _WIZWALKER_LEVEL = logging.INFO
 
+#: wizsprinter's record of what each turn decided and why: the hand, every priority
+#: walked, every fuse, the card cast and at which seat. It writes at DEBUG, which the
+#: wizwalker level above drops, so ``set_turn_trace`` is what lets it through.
+TURN_TRACE_LOGGER = "wizwalker.extensions.wizsprinter.turns"
+
 _FILE_FORMAT = "[%(asctime)s] [%(levelname)-7s] %(name)s: %(message)s"
 
 
@@ -229,6 +234,26 @@ def configure_logging() -> None:
             logger.info("%s==%s", lib, importlib.metadata.version(lib))
         except Exception:
             pass
+
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 - read once the handlers exist
+
+    if set_turn_trace(SettingsManager.instance().record_combat_decisions):
+        logger.info("Combat decision trace on; each turn's choices are logged at DEBUG")
+
+
+def set_turn_trace(enabled: bool) -> bool:
+    """Let wizsprinter's turn trace into the log when *enabled*, or in developer mode.
+
+    It is the only record of why a turn cast what it did, but it runs to a few kilobytes
+    a round for each client, so a user turns it on from Settings › Combat to look into a
+    fight, and developer mode always has it. Off, the logger inherits wizwalker's level,
+    which drops it. Returns whether it is now on.
+    """
+    from bartlebot.content.store_roots import dev_mode  # noqa: PLC0415 - kept off this module's import path
+
+    on = enabled or dev_mode()
+    logging.getLogger(TURN_TRACE_LOGGER).setLevel(logging.DEBUG if on else logging.NOTSET)
+    return on
 
 
 def add_gui_callback(cb: Callable[[str, int], None]) -> None:

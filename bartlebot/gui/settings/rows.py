@@ -644,8 +644,8 @@ class SettingsForm(QWidget):
     def finish(self, *, stretch: bool = True) -> None:
         """Close the column, and open every description if the reader last chose to.
 
-        A form with no description to open -- Settings › Combat's two cards -- hides the
-        links rather than offering two commands that do nothing.
+        A form with no description to open hides the links rather than offering two
+        commands that do nothing.
         """
         self._switches.setVisible(any(row.details is not None for row in self._rows))
         if stretch:

@@ -48,8 +48,8 @@ Two rules about the settings dialog itself:
   setting does, and the control right-aligned in a fixed-width slot. The line is
   always on screen; anything longer, the *why*, goes in `details=` and folds behind
   the row's `?`, and the page's *Show descriptions · Hide descriptions* open or
-  fold every row at once (#148); a form with no `details=` to open, such as
-  Settings › Combat's two cards, hides them (`SettingsForm.finish`). Before the description-row rework the Log, Layout
+  fold every row at once (#148); a form with no `details=` to open hides them
+  (`SettingsForm.finish`). Before the description-row rework the Log, Layout
   and Auto-save rows had no explanation at all; after it every row carried a
   paragraph, and the Bot tab was 1,392px tall. A tooltip still never carries the
   whole explanation on its own.
@@ -194,6 +194,11 @@ Bot tab's rows are the app-setting level of an option, but they live in the vend
   stores the recommended duel as **no key** (picking the shipped duel by name is the
   same), so a later fix to it reaches everyone who kept it. A write that fails is a
   WARNING, and the choice stays for the next OK.
+- **Record combat decisions**, under *Log*, is the one row: whether the session file gets
+  wizsprinter's turn trace (`logging_setup.set_turn_trace`). It is a `settings.json` key,
+  not a preference, since it is about this app's log. Off by default, as it adds a few
+  kilobytes a round for each client; developer mode records it either way. OK applies it
+  at once, with no restart.
 - **The note says what a run will do with an odd choice** (`default_choice_notes`): one
   gone from the library, one that does not fit every size it answers for (a Team default
   for four, run with two), or one linking a player strategy that is gone. Each falls back
