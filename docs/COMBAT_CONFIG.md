@@ -185,7 +185,7 @@ under `strategies/`, found by id, and their ids are named in
 | item | kind | what it does |
 |---|---|---|
 | Default | player | the built-in DSL, so solo play is unchanged; its DSL is `LAST_RESORT_DSL` |
-| Default Support | player | feints, blades and traps while a boss is up, and the two damage lines of Default otherwise |
+| Default Support | player | the support ladder (below): heals itself or P1 below 30% health, attacks in round 1 of a mob fight or once P1 is dead, and otherwise buffs P1 and traps the boss, then passes |
 | Default Solo Duel (`SHIPPED_SOLO_DUEL_ID`) | duel | one player: P1 runs Default |
 | Default Team Duel (`SHIPPED_TEAM_DUEL_ID`) | duel | two to four players: P1 runs Default, P2 to P4 run Default Support, combat order 4, 3, 2, 1 |
 | Default Team Duel (Everyone Attacks) (`SHIPPED_EVERYONE_ATTACKS_DUEL_ID`) | duel | two to four players: P1 to P4 run Default |
@@ -203,19 +203,54 @@ from `SHIPPED_AMBIENT_DUEL_IDS`, and the label says "the shipped Team default fo
 ambient fight". Levels 1 to 3 are unchanged: a duel the user chose still runs, `ally(last)`
 and all.
 
-**Why support is gated on a boss.** A support wizard without support cards in hand
-casts nothing, and a mob fight has nothing to feint or trap for. So the three support
-lines that don't aim `@ boss` start with `?(any(enemies).is_boss == 1)`: `any(enemies)`
-counts every living enemy whether targetable or not, so the condition asks "is this a
-boss fight?". The lines aimed `@ boss` already skip when there is no boss. Write the
-condition this way and no other:
+**What a support does** (#218, Stage 3). A support never spends a buff meant for the
+hitter. Combat order 4, 3, 2, 1 seats the supports to cast before P1, so a support that
+hits a trapped boss spends the Feint P1 was meant to hit through. Default Support's
+lines, first that can cast wins:
+
+1. Enchant ahead (below).
+2. `?(self.health < 30%) any<heal> @ self`, then the same for P1, aimed `@ ally(last)`
+   and gated on `ally(last).is_dead == 0` too.
+3. Round 1 of a mob fight only: AoE, then single-target damage.
+4. `?(ally(last).is_dead == 1)`: AoE, then single-target damage. `ally(last)` is P1
+   under combat order 4, 3, 2, 1, and the team list keeps the dead, so it stays P1.
+5. The buffs that stack: `"Feint Mass - Amulet"`; `any<trap & !aoe & stacks>[potent] @ boss`,
+   which ranking points at Feint; `any<blade & stacks>[sharp] @ ally(last)`; and a mass
+   trap, `any<trap & aoe & stacks>`.
+6. The same buffs without `stacks`, in the same order. A buff that won't add to the next
+   hit still stays up for the one after, which a two-hit Challenge Mode fight wants.
+7. `any<global>`, the last buff.
+8. `pass`, which banks pips.
+
+So a support attacks only where no buff for P1 can be standing: round 1 of a team mob
+fight, and once P1 is dead. A blade comes before a mass trap other than Mass Feint: a
+mass trap is about 30% from an item card that can't be enchanted, a blade 35%, or 45 to
+55% enchanted. Two supports can pick the same buff in round 1, since each plans from the
+state at the start of the round; the duplicate stays up for the next hit.
+
+- **The round-1 line carries the whole ladder.** wizsprinter walks only the `{1}` line in
+  round 1 and never falls through to the repeating one, so the `{1}` line is the
+  repeating line with the mob-fight AoE added after the heals.
+- **Mass Feint is named, Feint is found by rank.** `"Feint Mass - Amulet"` is the only
+  Mass Feint players get, and the quoted name also matches the pet version. An unquoted
+  `feint` would match Mass Feint too. `stacks` can't be put on a name, so a held Mass
+  Feint is cast even onto one already up.
+- **The Feint line takes the best single trap**, `!aoe` keeping Mass Hex below the blade.
+  With no Feint in hand it takes a school trap, ahead of the blade.
+
+The No-Blades and No-Feints supports take the same ladder minus the card their boss's
+cheat watches. Their duels assign only boss fights, so they have no round-1 line, but
+they keep the P1-dead line. `tests/strategies/test_supports.py` walks all three through
+the fights above.
+
+**The fight kind is read by one rule.** A boss fight is `?(any(enemies).is_boss == 1)` and
+a mob fight `?(all(enemies).is_boss == 0)`: `any` and `all` count every living enemy,
+targetable or not, so they describe the fight. A line aimed `@ boss` needs no condition:
+it skips when there is no boss. Write the condition this way and no other:
 
 - **Never `?(boss.health > 0)`.** It goes through resolving `boss`, which may come up
   empty while the boss can't be targeted.
 - **Never `boss.hp`.** A misspelled attribute parses and is silently false on every turn.
-
-Default Team Boss Duel is only assigned to boss fights, where the condition always
-holds, so Default Support's only change there is the attack fallback.
 
 **Every shipped player strategy enchants ahead, first.** Its first line fuses enchants
 into the cards they fit (damage enchants into damage, AoEs first; Sharpened Blade into
