@@ -201,8 +201,12 @@ The page shows Settings › Bot's quicksell rows, built by the same
 Pets**, **Sell Socket Wrenches**, **Sell Skeleton Keys** and **Always keep**, on the stored
 values, which on a first run are the defaults (sell drops and pets, keep wrenches and
 keys). Turning Enable Quicksell off grays the rest, as on the tab. Each row has its revert
-arrow and its description, and the group never folds on the page (`foldable=False`), so
-every row is shown whatever the user folded in Settings.
+arrow, and every description is shown, with no Show · Hide descriptions and no `?` to fold
+one (`SettingsForm(always_describe=True)`): on a first run each is part of the question.
+The group never folds on the page (`foldable=False`), so every row is shown whatever the
+user folded in Settings. Sell Socket Wrenches and Sell Skeleton Keys say what they do to
+quicksell: when off, it keeps any item with "Socket Wrench", or "Skeleton Key", in its
+name.
 
 Above the rows, a line says what the explanation before each run used to: bots sell what
 dropped except what these settings keep, an item locked in the game is never sold, with
