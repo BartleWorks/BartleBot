@@ -538,6 +538,42 @@ def canvas_height_for(screen_h: int, launches: Iterable[tuple[tuple[int, int], i
     return max(BOTCANVAS_DEFAULT_HEIGHT, screen_h - WINDOW_CHROME_ESTIMATE_PX - tallest)
 
 
+def sidebar_widths_for(
+    screen_w: int,
+    left: int,
+    right: int,
+    launches: Iterable[tuple[tuple[int, int], int]],
+    dpr: float = 1.0,
+    grow_left: bool = True,
+    grow_right: bool = True,
+) -> tuple[int, int]:
+    """The sidebar widths that leave *screen_w* exactly the widest grid of *launches*.
+
+    The width-wise twin of ``canvas_height_for``. *left* and *right* are the widths to
+    start from, and the width the widest grid does not need goes to the sides allowed to
+    grow. With both, it evens them up first, the narrower taking it until they match, and
+    shares what is left equally: two sidebars of one width look finished where a wide and
+    a narrow one look accidental. A screen with nothing to spare, or an empty *launches*,
+    leaves both as they are.
+    """
+    widest = max((required_game_area(resolution, count, dpr)[0] for resolution, count in launches), default=None)
+    if widest is None:
+        return left, right
+    spare = screen_w - left - right - 2 * SPLITTER_HANDLE_PX - widest
+    if spare <= 0:
+        return left, right
+    if grow_left and grow_right:
+        total = left + right + spare
+        if total // 2 >= max(left, right):
+            return total // 2, total - total // 2
+        return (left + spare, right) if left < right else (left, right + spare)
+    if grow_left:
+        return left + spare, right
+    if grow_right:
+        return left, right + spare
+    return left, right
+
+
 def fits(resolution: tuple[int, int], client_count: int, budget: tuple[int, int], dpr: float = 1.0) -> bool:
     """Whether *client_count* clients at *resolution* fit inside *budget*."""
     need_w, need_h = required_game_area(resolution, client_count, dpr)

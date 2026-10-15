@@ -31,6 +31,7 @@ showing one at a time takes the whole sentence.
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import NamedTuple
 
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QWidget
 
@@ -323,13 +324,13 @@ def largest_fitting_resolution(
 
 
 def setup_area(widget: QWidget | None = None) -> tuple[int, int]:
-    """The game area setup judges a new profile's resolution against.
+    """The game area setup judges a resolution against: the panes at their smallest setup size.
 
-    The screen with the configured sidebars and a canvas no taller than
-    ``BOTCANVAS_DEFAULT_HEIGHT``. Not the canvas as configured: setup fits the canvas to
-    the launches it knows (``fitted_canvas_height``), so a canvas already fitted to one
-    account would otherwise leave a four-account profile no resolution at all. Passed to
-    the fit questions as their live area, the larger term ``budget_for`` takes.
+    The sidebars at their floors and the canvas no taller than ``BOTCANVAS_DEFAULT_HEIGHT``.
+    Not the panes as configured: setup fits those to the launches it knows
+    (``fitted_layout``), so panes already fitted to one account would otherwise leave a
+    four-account profile no resolution at all. Passed to the fit questions as their live
+    area, the larger term ``budget_for`` takes.
     """
     screen_size, _ = screen_metrics(widget)
     sm = SettingsManager.instance()
@@ -337,40 +338,103 @@ def setup_area(widget: QWidget | None = None) -> tuple[int, int]:
         int(sm.get_general("bottom_section_height", default=game_sizing.BOTCANVAS_DEFAULT_HEIGHT)),
         game_sizing.BOTCANVAS_DEFAULT_HEIGHT,
     )
-    return sm.layout_budget(
+    return game_sizing.screen_budget(
         screen_size,
-        right_sidebar_floor=right_sidebar_floor(),
-        left_sidebar_floor=left_sidebar_floor(),
-        bottom_section=height,
+        left_sidebar=left_sidebar_floor(),
+        right_sidebar=right_sidebar_floor(),
+        bottom_section=max(height, game_sizing.BOTCANVAS_MIN_HEIGHT),
+        splitter_handle=game_sizing.SPLITTER_HANDLE_PX,
     )
 
 
 def setup_resolution(client_count: int, widget: QWidget | None = None) -> tuple[int, int] | None:
-    """The resolution setup gives a new profile of *client_count* accounts: the largest that fits.
+    """The resolution setup gives a launch of *client_count* accounts: the largest that fits.
 
-    A starting value the user sees and can lower on the page, not a nudge toward the
-    biggest (see ``largest_fitting_resolution``): a profile left on the global resolution
-    is one that two accounts on a 1080p screen cannot launch at all.
+    A starting value the user sees and can change, not a nudge toward the biggest (see
+    ``largest_fitting_resolution``): 800x600 is a profile that two accounts on a 1080p
+    screen cannot launch at all, and a single client a quarter of a 4K screen.
     """
     return largest_fitting_resolution(client_count, widget, setup_area(widget))
 
 
-def fitted_canvas_height(widget: QWidget | None = None) -> int | None:
-    """The canvas height that leaves the game area just the tallest grid the user can launch.
+class FittedLayout(NamedTuple):
+    """What setup fits to the screen: the global resolution, and each pane's size by its settings key."""
 
-    The launches are one client at the global resolution, and each launch profile at its
-    own; any that does not fit ``setup_area`` is left out, since it cannot launch whatever
-    the canvas does. None for a screen that cannot be measured.
+    resolution: tuple[int, int]
+    panes: dict[str, int]
+
+
+def fitted_layout(widget: QWidget | None = None) -> FittedLayout | None:
+    """The global resolution and pane sizes that fit the screen to what the user can launch.
+
+    The game area keeps the tallest and widest grid the user can launch, and the panes
+    setup may still fit take the rest: the canvas the height (``canvas_height_for``), the
+    sidebars the width, evenly (``sidebar_widths_for``). A pane the user sized in Settings
+    keeps its size. A launch that does not fit ``setup_area`` is left out, since it cannot
+    launch whatever the panes do.
+
+    The launch profiles with a resolution of their own decide the layout first, since a
+    user with one runs it more than a single account. The global resolution, while it is
+    still setup's to choose, is then the largest that fits in the game area they leave, for
+    one client and for every profile following it; with no such profile it is simply the
+    largest that fits, and decides the layout itself. Fitted the other way round, the
+    largest single client would be the tallest grid on every screen and squeeze the canvas
+    of every user with a profile. None for a screen that cannot be measured.
     """
     screen_size, dpr = screen_metrics(widget)
     if screen_size == _UNMEASURABLE:
         return None
     sm = SettingsManager.instance()
-    launches = [(sm.game_resolution, 1)]
+    area = setup_area(widget)
+    pinned: list[tuple[tuple[int, int], int]] = []
+    following = {1}
     for profile in sm.account_store.launch_profiles:
         count = len(profile.get("accounts") or [])
-        if count:
-            launches.append((profile_resolution(profile), count))
-    area = setup_area(widget)
-    fitting = [(resolution, count) for resolution, count in launches if game_sizing.fits(resolution, count, area, dpr)]
-    return game_sizing.canvas_height_for(screen_size[1], fitting, dpr)
+        if not count:
+            continue
+        if profile.get("resolution"):
+            resolution = profile_resolution(profile)
+            if game_sizing.fits(resolution, count, area, dpr):
+                pinned.append((resolution, count))
+        else:
+            following.add(count)
+
+    grow_canvas = sm.layout_follows_setup("bottom_section_height")
+    grow_left = sm.layout_follows_setup("left_sidebar_width")
+    grow_right = sm.layout_follows_setup("right_sidebar_width")
+
+    def panes_for(launches: list[tuple[tuple[int, int], int]]) -> dict[str, int]:
+        canvas = int(sm.get_general("bottom_section_height"))
+        if grow_canvas:
+            canvas = game_sizing.canvas_height_for(screen_size[1], launches, dpr)
+        left = left_sidebar_floor() if grow_left else int(sm.get_general("left_sidebar_width"))
+        right = right_sidebar_floor() if grow_right else int(sm.get_general("right_sidebar_width"))
+        left, right = game_sizing.sidebar_widths_for(screen_size[0], left, right, launches, dpr, grow_left, grow_right)
+        return {"bottom_section_height": canvas, "left_sidebar_width": left, "right_sidebar_width": right}
+
+    def largest_for_following(budget: tuple[int, int]) -> tuple[int, int] | None:
+        fitting = [r for r in VALID_RESOLUTIONS if all(game_sizing.fits(r, n, budget, dpr) for n in following)]
+        return max(fitting, key=lambda r: (r[0] * r[1], r), default=None)
+
+    resolution = sm.game_resolution
+    if sm.resolution_follows_setup:
+        chosen = None
+        if pinned:
+            panes = panes_for(pinned)
+            left_by_pinned = game_sizing.screen_budget(
+                screen_size,
+                left_sidebar=panes["left_sidebar_width"],
+                right_sidebar=panes["right_sidebar_width"],
+                bottom_section=panes["bottom_section_height"],
+                splitter_handle=game_sizing.SPLITTER_HANDLE_PX,
+            )
+            chosen = largest_for_following(left_by_pinned)
+        resolution = chosen or largest_for_following(area) or resolution
+    launches = pinned + [(resolution, n) for n in sorted(following) if game_sizing.fits(resolution, n, area, dpr)]
+    panes = panes_for(launches)
+    keys = [
+        ("bottom_section_height", grow_canvas),
+        ("left_sidebar_width", grow_left),
+        ("right_sidebar_width", grow_right),
+    ]
+    return FittedLayout(resolution, {key: panes[key] for key, grows in keys if grows})

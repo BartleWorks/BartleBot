@@ -43,8 +43,10 @@ class _GeneralSettings(BaseModel):
     left_sidebar_width: int = LEFT_SIDEBAR_MIN_WIDTH
     right_sidebar_width: int = RIGHT_SIDEBAR_MIN_WIDTH
     bottom_section_height: int = BOTCANVAS_DEFAULT_HEIGHT
-    # The height setup last fitted the canvas to (``set_fitted_canvas_height``), so a later
-    # setup can tell its own value from one the user chose in Settings › General.
+    # What setup last fitted each pane to (``set_fitted_layout``), so a later setup can
+    # tell its own value from one the user chose in Settings › General.
+    fitted_left_sidebar_width: int | None = None
+    fitted_right_sidebar_width: int | None = None
     fitted_bottom_section_height: int | None = None
     auto_save_enabled: bool = True
     auto_save_interval_seconds: int = 300
@@ -72,6 +74,9 @@ class _GeneralSettings(BaseModel):
 
 class _GameEmbedSettings(BaseModel):
     resolution: list[int] = [800, 600]
+    # The resolution setup last fitted to one client (``set_fitted_resolution``), so a later
+    # setup can tell its own value from one the user chose in Settings › Game.
+    fitted_resolution: list[int] | None = None
     # The game's own display settings as the user had them, so a tiled launch can give
     # them back: UI scale, windowed resolution, and whether it ran fullscreen.
     original_ui_size: int | None = None
@@ -152,6 +157,8 @@ _DEFAULTS: dict[str, Any] = {
         "left_sidebar_width": LEFT_SIDEBAR_MIN_WIDTH,
         "right_sidebar_width": RIGHT_SIDEBAR_MIN_WIDTH,
         "bottom_section_height": BOTCANVAS_DEFAULT_HEIGHT,
+        "fitted_left_sidebar_width": None,
+        "fitted_right_sidebar_width": None,
         "fitted_bottom_section_height": None,
         "auto_save_enabled": True,
         "auto_save_interval_seconds": 300,
@@ -185,6 +192,7 @@ _DEFAULTS: dict[str, Any] = {
     },
     "game_embed": {
         "resolution": [800, 600],
+        "fitted_resolution": None,
         # The user's own <UISize>, <Resolution> and <IsFullscreen>, each captured once
         # before the first launch overwrites it. See SettingsManager.original_ui_size.
         "original_ui_size": None,
@@ -275,6 +283,9 @@ _STOCK_RESOLUTIONS: list[tuple[int, int]] = [
 VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
 
 # The panel floors moved to game_sizing.py, beside the arithmetic they are terms in.
+
+#: The pane sizes setup fits to the screen (``MainWindow.fit_layout_to_launches``).
+FITTED_LAYOUT_KEYS = ("left_sidebar_width", "right_sidebar_width", "bottom_section_height")
 
 
 def default_for(section: str, key: str) -> Any:
@@ -575,19 +586,35 @@ class SettingsManager:
     def set_general(self, key: str, value: Any) -> None:
         self.set("general", key, value=value)
 
-    @property
-    def canvas_height_follows_setup(self) -> bool:
-        """Whether setup may fit the canvas height: it is still the shipped one, or setup's own.
+    def layout_follows_setup(self, key: str) -> bool:
+        """Whether setup may fit the pane size *key*: it is still the shipped one, or setup's own.
 
-        A height the user chose in Settings › General is theirs, and setup leaves it alone.
+        *key* is one of :data:`FITTED_LAYOUT_KEYS`. A size the user chose in Settings ›
+        General is theirs, and setup leaves it alone.
         """
-        height = self.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT)
-        return height in (BOTCANVAS_DEFAULT_HEIGHT, self.get_general("fitted_bottom_section_height"))
+        value = self.get_general(key, default=_DEFAULTS["general"][key])
+        return value in (_DEFAULTS["general"][key], self.get_general(f"fitted_{key}"))
 
-    def set_fitted_canvas_height(self, height: int) -> None:
-        """Store *height* as the canvas height, marked as setup's, and save."""
-        self.set_general("bottom_section_height", height)
-        self.set_general("fitted_bottom_section_height", height)
+    def set_fitted_layout(self, sizes: dict[str, int]) -> None:
+        """Store each of *sizes*, a pane size by its key, marked as setup's, and save."""
+        for key, value in sizes.items():
+            self.set_general(key, value)
+            self.set_general(f"fitted_{key}", value)
+        self.save()
+
+    @property
+    def resolution_follows_setup(self) -> bool:
+        """Whether setup may fit the global resolution: still the shipped 800x600, or setup's own.
+
+        One chosen in Settings › Game is the user's, and setup leaves it alone.
+        """
+        stored = self.get("game_embed", "resolution", default=_DEFAULTS["game_embed"]["resolution"])
+        return stored in (_DEFAULTS["game_embed"]["resolution"], self.get("game_embed", "fitted_resolution"))
+
+    def set_fitted_resolution(self, resolution: tuple[int, int]) -> None:
+        """Store *resolution* as the global one, marked as setup's, and save."""
+        self.game_resolution = resolution
+        self.set("game_embed", "fitted_resolution", value=list(resolution))
         self.save()
 
     @property

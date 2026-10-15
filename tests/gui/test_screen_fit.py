@@ -557,10 +557,24 @@ def test_setup_judges_a_new_profile_at_the_default_canvas(screen):
     assert screen_fit.setup_resolution(4) == (534, 300)
 
 
-def test_the_canvas_is_fitted_to_one_client_at_the_global_resolution(screen):
+def test_one_client_gets_the_largest_resolution_that_fits(screen):
+    """800x600 is a quarter of a 4K screen: setup gives a single account the room there is."""
     screen(_1080P_TASKBAR)
 
-    assert screen_fit.fitted_canvas_height() == 1032 - 60 - (600 + 51)
+    assert screen_fit.fitted_layout().resolution == (960, 540)
+
+
+def test_a_resolution_chosen_in_settings_is_kept(screen):
+    screen(_1080P_TASKBAR)
+    SettingsManager.instance().game_resolution = (854, 480)
+
+    assert screen_fit.fitted_layout().resolution == (854, 480)
+
+
+def test_the_canvas_takes_the_height_one_client_leaves(screen):
+    screen(_1080P_TASKBAR)
+
+    assert screen_fit.fitted_layout().panes["bottom_section_height"] == 1032 - 60 - (540 + 51)
 
 
 def test_the_canvas_leaves_room_for_the_tallest_launch_profile(screen):
@@ -568,19 +582,59 @@ def test_the_canvas_leaves_room_for_the_tallest_launch_profile(screen):
     SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "abcd"]
     SettingsManager.instance().launch_profiles = [_profile("abcd", (534, 300))]
 
-    assert screen_fit.fitted_canvas_height() == 1032 - 60 - 2 * (300 + 51)
+    assert screen_fit.fitted_layout().panes["bottom_section_height"] == 1032 - 60 - 2 * (300 + 51)
 
 
-def test_a_launch_profile_that_cannot_fit_does_not_shrink_the_canvas(screen):
-    """Two at 800x600 can't launch on 1080p whatever the canvas does."""
+def test_a_launch_profile_that_cannot_fit_shapes_no_pane(screen):
+    """Two at 800x600 can't launch on 1080p whatever the panes do."""
+    screen(_1080P_TASKBAR)
+    alone = screen_fit.fitted_layout().panes
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
+    SettingsManager.instance().launch_profiles = [_profile("ab", (800, 600))]
+
+    assert screen_fit.fitted_layout().panes == alone
+
+
+def test_the_sidebars_share_the_width_the_widest_grid_leaves_evenly(screen):
+    screen(_1080P_TASKBAR)
+    panes = screen_fit.fitted_layout().panes
+    left, right = panes["left_sidebar_width"], panes["right_sidebar_width"]
+
+    assert abs(left - right) <= 1
+    assert left + right == 1920 - 2 * game_sizing.SPLITTER_HANDLE_PX - (960 + 12)
+
+
+def test_a_sidebar_sized_in_settings_keeps_its_size(screen):
+    screen(_1080P_TASKBAR)
+    SettingsManager.instance().set_general("left_sidebar_width", 450)
+    panes = screen_fit.fitted_layout().panes
+
+    assert "left_sidebar_width" not in panes
+    assert panes["right_sidebar_width"] == 1920 - 2 * game_sizing.SPLITTER_HANDLE_PX - 972 - 450
+
+
+def test_an_unmeasurable_screen_fits_nothing(screen):
+    screen((screen_fit._UNMEASURABLE, 1.0))
+
+    assert screen_fit.fitted_layout() is None
+
+
+def test_a_launch_profile_decides_the_layout_and_one_client_fits_what_it_leaves(screen):
+    """Two at 560x420 on 1080p keep a 471px-tall game area, and a single client fits in it."""
+    screen(_1080P_TASKBAR)
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
+    SettingsManager.instance().launch_profiles = [_profile("ab", (560, 420))]
+
+    fitted = screen_fit.fitted_layout()
+
+    assert fitted.panes["bottom_section_height"] == 1032 - 60 - (420 + 51)
+    assert fitted.resolution == (746, 420)
+
+
+def test_one_client_is_fitted_to_a_profile_that_follows_it(screen):
+    """A profile with no resolution of its own launches at the global one."""
     screen(_1080P_TASKBAR)
     SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
     SettingsManager.instance().launch_profiles = [_profile("ab")]
 
-    assert screen_fit.fitted_canvas_height() == 1032 - 60 - (600 + 51)
-
-
-def test_an_unmeasurable_screen_fits_no_canvas(screen):
-    screen((screen_fit._UNMEASURABLE, 1.0))
-
-    assert screen_fit.fitted_canvas_height() is None
+    assert screen_fit.fitted_layout().resolution == (560, 420)

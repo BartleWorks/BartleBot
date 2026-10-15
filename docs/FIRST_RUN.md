@@ -52,17 +52,35 @@ the Accounts and Launch profile pages write accounts and profiles without the wi
 seeing it. An account or profile made in setup is on the launch screen and under Launch
 as soon as setup closes.
 
-Then the bot canvas is fitted, before the launch screen is judged against it:
-`MainWindow.fit_canvas_to_launches` gives the game area the tallest grid the user can
-launch (one client at the global resolution, and each launch profile at its own) and the
-canvas the rest, through `screen_fit.fitted_canvas_height`. A fixed 220 px left most of a
-1080p screen empty above one or two accounts, and a taller fixed height would have stopped
-four fitting at all. It is stored in `general.bottom_section_height`, the key Settings ›
-General's row writes, and marked as setup's in `general.fitted_bottom_section_height`; a
-later setup changes it only while it is still the shipped 220 or setup's own, so a height
-the user chose there stays theirs. A launch that cannot fit anyway is left out, and the
-canvas is never below 220. On 1080p less a taskbar that is 321 px for one account at
-800×600, and 270 for a four-account profile at 534×300.
+Then the window is fitted to the screen, before the launch screen is judged against it:
+`MainWindow.fit_layout_to_launches`, through `screen_fit.fitted_layout`. The game area keeps
+the tallest and widest grid the user can launch, the bot canvas takes the height left, and
+the sidebars the width left, evened up: the narrower one grows until the two match, and
+what remains is shared equally. A fixed 220 px canvas left most of a 1080p screen empty
+above one or two accounts, and a taller fixed height would have stopped four fitting at
+all; a 4K screen left both empty around the grid.
+
+The global resolution is fitted with it, since 800×600 is a quarter of a 4K screen for a
+single account. Launch profiles with a resolution of their own decide the layout first,
+since a user with one runs it more than a single account; the global resolution is then
+the largest that fits in the game area they leave, for one client and for every profile
+following it. With no such profile it is simply the largest one client fits, and decides
+the layout itself. The other way round, the largest single client would be the tallest
+grid on every screen and squeeze the canvas of every user with a profile.
+
+| 1080p less a taskbar | profile | one client | canvas | sidebars |
+|---|---|---|---|---|
+| one account | | 960×540 | 381 | 466 / 466 |
+| two accounts | 560×420 | 746×420 | 501 | 404 / 356 |
+| four accounts | 534×300 | 960×540 | 270 | 406 / 406 |
+
+(Sidebars at the reference floors; the measured floors move them by a few pixels.)
+
+Each is stored where its Settings row writes it, `game_embed.resolution` and the three
+pane sizes in `general`, and marked as setup's in a `fitted_` key beside it. A later setup
+changes one only while it is still the shipped value or setup's own, so a value the user
+chose in Settings stays theirs, and the panes still setup's take what it leaves. A launch
+that cannot fit anyway is left out, and the canvas is never below 220.
 
 ## The pages
 
@@ -155,8 +173,9 @@ The profile gets a resolution of its own, from a combo under the list that start
 largest that fits the accounts checked (`screen_fit.setup_resolution`), with every size
 too big for them grayed. Left on the global 800×600, two accounts on a 1080p screen would
 make a profile the launch screen refuses as soon as setup closes; 560×420 is what fits
-them. The fit is judged with the canvas at 220 px whatever it is set to (`setup_area`), so
-a canvas setup already fitted to one account leaves room for four. A smaller size the
+them. The fit is judged with the sidebars at their floors and the canvas at 220 px,
+whatever they are set to (`setup_area`), so panes setup already fitted to one account
+leave room for four. A smaller size the
 user picks is kept while it still fits the accounts checked, and falls back to the largest
 once it doesn't. With none that fits, the line says so and the profile follows the global
 resolution.

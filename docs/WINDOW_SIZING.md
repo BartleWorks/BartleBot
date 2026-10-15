@@ -559,12 +559,13 @@ common choice — small resolutions are a performance lever, not only a screen-s
 workaround — so nothing should push users toward "the biggest that fits".
 `largest_fitting_resolution` exists to *say* what would work.
 
-The exception is setup's Launch profile page (`docs/FIRST_RUN.md`), which has to give the
-profile it makes *some* resolution: the global 800x600 makes a two-account profile on
-1080p that cannot launch. It starts the page's combo on `screen_fit.setup_resolution`, the
-largest that fits, as a value the user sees and can lower before Next. Setup then fits the
-canvas to the launches (`fitted_canvas_height`), the one other place the layout is derived
-rather than configured.
+The exception is setup (`docs/FIRST_RUN.md`), which has to start from *some* resolution,
+and 800x600 is wrong at both ends: a two-account profile on 1080p that cannot launch, and
+a single client a quarter of a 4K screen. The Launch profile page starts its combo on
+`screen_fit.setup_resolution`, the largest that fits, as a value the user sees and can
+lower before Next. When setup closes, `screen_fit.fitted_layout` fits the global
+resolution, while it is still the shipped one or setup's own, and the canvas and sidebars
+to the launches: the one other place the layout is derived rather than configured.
 
 ## Why not Deimos' runtime resize
 

@@ -858,24 +858,27 @@ class MainWindow(QMainWindow):
         """
         self._after_card_action(True)
 
-    def fit_canvas_to_launches(self) -> None:
-        """Give the bot canvas the height the user's launches leave, after setup (epic #215).
+    def fit_layout_to_launches(self) -> None:
+        """Fit the global resolution and the panes to the screen, after setup (epic #215).
 
-        The game area keeps the tallest grid the user can launch, and the canvas the rest
-        (``screen_fit.fitted_canvas_height``). Stored, as the Settings › General row stores
-        it, and applied to the window now. Only while the height is still the shipped one
-        or setup's own: one chosen in Settings is the user's.
+        ``screen_fit.fitted_layout`` has the rule: one client at the largest resolution
+        that fits, a game area just big enough for the tallest and widest grid the user
+        can launch, and the canvas and sidebars taking the rest. Stored, as the Settings
+        rows store them, and applied to the window now. Each only while it is still the
+        shipped value or setup's own: one chosen in Settings is the user's.
         """
         sm = SettingsManager.instance()
-        if not sm.canvas_height_follows_setup:
+        fitted = screen_fit.fitted_layout(self)
+        if fitted is None:
             return
-        height = screen_fit.fitted_canvas_height(self)
-        if height is None or height == sm.get_general("bottom_section_height"):
+        if sm.resolution_follows_setup and fitted.resolution != sm.game_resolution:
+            sm.set_fitted_resolution(fitted.resolution)
+        changed = {key: size for key, size in fitted.panes.items() if size != sm.get_general(key)}
+        if not changed:
             return
-        sm.set_fitted_canvas_height(height)
-        outer_total = sum(self._outer_splitter.sizes())
-        if outer_total > 0 and self._game_view_visible and not self._game_view_maximized:
-            self._outer_splitter.setSizes(_splitter_sizes(outer_total, [height], flexible=0))
+        sm.set_fitted_layout(changed)
+        if not self._game_view_maximized:
+            self._apply_configured_splitter_sizes()
 
     def _edit_launch_profile(self, name: str) -> None:
         """Edit one launch profile, from the pencil on its card or its context menu.

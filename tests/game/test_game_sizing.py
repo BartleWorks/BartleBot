@@ -448,3 +448,22 @@ def test_no_launch_keeps_the_default_canvas():
 def test_the_canvas_is_measured_in_logical_pixels():
     """At 150%, a 1200px-tall client is an 800-point tile."""
     assert gs.canvas_height_for(1400, [((1600, 1200), 1)], dpr=1.5) == 1400 - gs.WINDOW_CHROME_ESTIMATE_PX - 851
+
+
+def test_the_sidebars_take_what_the_widest_grid_leaves_evened_up():
+    """One 960x540 client on 1080p: 1920 - 2 handles - a 972px tile leaves 932 to share."""
+    assert gs.sidebar_widths_for(1920, 404, 300, [((960, 540), 1)]) == (466, 466)
+
+
+def test_too_little_to_even_up_goes_to_the_narrower_sidebar():
+    assert gs.sidebar_widths_for(1920, 404, 300, [((560, 420), 2)]) == (404, 300 + 1920 - 704 - 16 - 1144)
+
+
+def test_a_sidebar_that_cannot_grow_leaves_all_of_it_to_the_other():
+    assert gs.sidebar_widths_for(1920, 404, 300, [((960, 540), 1)], grow_right=False) == (404 + 228, 300)
+    assert gs.sidebar_widths_for(1920, 404, 300, [((960, 540), 1)], grow_left=False) == (404, 300 + 228)
+
+
+def test_no_spare_width_or_no_launch_leaves_the_sidebars_alone():
+    assert gs.sidebar_widths_for(1920, 404, 300, [((800, 600), 2)]) == (404, 300)
+    assert gs.sidebar_widths_for(1920, 404, 300, []) == (404, 300)

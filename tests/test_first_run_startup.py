@@ -35,12 +35,12 @@ _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
 
 
 class _Window(QWidget):
-    """The main window as far as setup reaches: a parent, the Combat tab, the canvas, and the launch screen."""
+    """The main window as far as setup reaches: a parent, the Combat tab, the layout, and the launch screen."""
 
     def __init__(self, events: list[str]) -> None:
         super().__init__()
         self.left_sidebar = SimpleNamespace(combat_tab=SimpleNamespace(refresh_source=lambda: events.append("refresh")))
-        self.fit_canvas_to_launches = lambda: events.append("canvas")
+        self.fit_layout_to_launches = lambda: events.append("layout")
         self.catch_up_with_accounts = lambda: events.append("accounts")
 
 
@@ -164,7 +164,7 @@ def test_it_comes_before_a_file_named_at_launch_and_refreshes_what_it_changed(st
     """Never two modals at once: the import's summary waits for setup to close."""
     startup.ns._after_window_shown()
 
-    assert startup.events == ["first run", "refresh", "canvas", "accounts", "import"]
+    assert startup.events == ["first run", "refresh", "layout", "accounts", "import"]
 
 
 def test_set_up_again_shows_every_page_once_all_are_answered(startup):
@@ -176,7 +176,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
     assert startup.opened[0].rerun
     assert _walked(startup.opened[0]) == [GameFolderPage, AccountsPage, CombatQuestionPage]
     assert _prefs().get(_TEAM) is None
-    assert startup.events == ["first run", "refresh", "canvas", "accounts"]
+    assert startup.events == ["first run", "refresh", "layout", "accounts"]
 
 
 def test_the_file_menu_offers_set_up_after_settings(qapp):
@@ -298,26 +298,35 @@ def _fit_window(qapp, monkeypatch):
     return window
 
 
-def test_setup_fits_the_canvas_to_what_the_launches_leave(qapp, monkeypatch):
-    """One account at 800x600 on 1080p: the game area keeps its 651px tile and the canvas the rest."""
+def test_setup_fits_the_layout_to_what_the_launches_leave(qapp, monkeypatch):
+    """One account on 1080p: 960x540, a game area just that big, and the panes the rest."""
+    from bartlebot.gui import screen_fit  # noqa: PLC0415
+
     window = _fit_window(qapp, monkeypatch)
     try:
-        window.fit_canvas_to_launches()
+        window.fit_layout_to_launches()
 
-        assert SettingsManager.instance().get_general("bottom_section_height") == 321
-        assert window.bot_canvas.height() == 321
+        sm = SettingsManager.instance()
+        assert sm.game_resolution == (960, 540)
+        assert sm.get_general("bottom_section_height") == 1032 - 60 - (540 + 51)
+        assert window.bot_canvas.height() == sm.get_general("bottom_section_height")
+        assert abs(window.left_sidebar.width() - window.right_sidebar.width()) <= 1
+        assert window.right_sidebar.width() > screen_fit.right_sidebar_floor()
     finally:
         window.bot_canvas.prepare_for_shutdown()
         window.hide()
 
 
-def test_setup_leaves_a_canvas_height_chosen_in_settings(qapp, monkeypatch):
-    SettingsManager.instance().set_general("bottom_section_height", 260)
+def test_setup_leaves_a_layout_chosen_in_settings(qapp, monkeypatch):
+    sm = SettingsManager.instance()
+    sm.set_general("bottom_section_height", 260)
+    sm.game_resolution = (854, 480)
     window = _fit_window(qapp, monkeypatch)
     try:
-        window.fit_canvas_to_launches()
+        window.fit_layout_to_launches()
 
-        assert SettingsManager.instance().get_general("bottom_section_height") == 260
+        assert sm.get_general("bottom_section_height") == 260
+        assert sm.game_resolution == (854, 480)
     finally:
         window.bot_canvas.prepare_for_shutdown()
         window.hide()
