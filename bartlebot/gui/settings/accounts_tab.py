@@ -259,7 +259,6 @@ class _AccountDialog(QDialog):
         form = QFormLayout()
         self._username_edit = QLineEdit(username)
         self._alias_edit = QLineEdit(alias)
-        self._alias_edit.setPlaceholderText("Optional — shown instead of username")
         self._password_edit = QLineEdit()
         self._password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         if username:
@@ -269,10 +268,15 @@ class _AccountDialog(QDialog):
 
         self._color_picker = _AccountColorPicker(selected=color, taken=taken)
 
+        # Username and password are adjacent, as on every login form: a user tabs from
+        # one to the other by habit, and a password manager looks for the pair. The
+        # optional fields come after.
         form.addRow("Username:", self._username_edit)
-        form.addRow("Alias:", self._alias_edit)
         form.addRow("Password:", self._password_edit)
+        form.addRow("Alias:", self._alias_edit)
         form.addRow("Color:", self._color_picker)
+        self._username_edit.textChanged.connect(self._update_alias_placeholder)
+        self._update_alias_placeholder()
         color_hint = ThemedTextLabel(
             "Shown on this account's card and on the profile pills that name it. "
             "A dot marks a color another account already uses.",
@@ -286,6 +290,22 @@ class _AccountDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addLayout(footer.layout)
+
+    def _update_alias_placeholder(self) -> None:
+        """Name what an empty alias shows: the censored username, as the cards draw it.
+
+        The fallback is derived at display time, never stored, so the placeholder says
+        what it is rather than the field being filled in with it.
+        """
+        if self.username:
+            shown = CredentialStore.display_name(self.username, None)
+            self._alias_edit.setPlaceholderText(f"Optional — shown as {shown}")
+        else:
+            self._alias_edit.setPlaceholderText("Optional — shown instead of username")
+
+    @property
+    def alias_placeholder(self) -> str:
+        return self._alias_edit.placeholderText()
 
     @property
     def username(self) -> str:
