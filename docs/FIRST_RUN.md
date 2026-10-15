@@ -96,6 +96,7 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | Which accounts should BartleBot log in to? | each account as it is added, edited or removed, to `accounts.json` (and its password to Credential Manager), through `accounts_tab`'s card actions; on Next, `setup.accounts_answered` in `preferences.json`, through `shared/account_setup.record_accounts_answered` | `accounts_answered`: `accounts.json` holds an account, from either product, or the key is set |
 | Which accounts launch together? (two or more accounts) | one launch profile of the accounts checked, to `accounts.json`, through `shared/launch_profiles.add_profile`, the function Settings › Game's Add uses; and `setup.launch_profile_answered` in `preferences.json`, through `record_launch_profile_answered` | `launch_profile_answered`: `accounts.json` holds a launch profile, from either product, or the key is set |
 | How should your team take on bosses? | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
+| What may bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
 
 ### The combat question
 
@@ -192,3 +193,34 @@ resolution.
 - **A failed write** keeps the user on the page, as any page's does.
 
 More profiles, and every edit after, are in Settings › Game, under Launch Profiles.
+
+### Quicksell
+
+The page shows Settings › Bot's quicksell rows, built by the same
+`gui/settings/quicksell_group.QuicksellSettings`: **Enable Quicksell**, heading **Sell
+Pets**, **Sell Socket Wrenches**, **Sell Skeleton Keys** and **Always keep**, on the stored
+values, which on a first run are the defaults (sell drops and pets, keep wrenches and
+keys). Turning Enable Quicksell off grays the rest, as on the tab. Each row has its revert
+arrow, and every description is shown, with no Show · Hide descriptions and no `?` to fold
+one (`SettingsForm(always_describe=True)`): on a first run each is part of the question.
+The group never folds on the page (`foldable=False`), so every row is shown whatever the
+user folded in Settings. Sell Socket Wrenches and Sell Skeleton Keys say what they do to
+quicksell: when off, it keeps any item with "Socket Wrench", or "Skeleton Key", in its
+name.
+
+Above the rows, a line says what the explanation before each run used to: bots sell what
+dropped except what these settings keep, an item locked in the game is never sold, with
+where Backpack Item Lock is turned on, and that these are the Settings › Bot rows a bot's
+Options can change for that bot. The tab's **Show Quicksell explanation before each run**
+row is not on the page, since Next turns it off.
+
+Next writes through `options/quicksell_setup.record_quicksell`: the switches, the keep
+list, `show_quicksell_explanation = False` and `setup.quicksell_answered`, then saves
+`settings.json`. A failed save keeps the user on the page. A sale a bot's own file
+declares beyond these settings is still flagged once per bot by the safety check
+(`docs/BOT_OPTIONS.md`, "Beside the levels").
+
+A user with any quicksell setting already off its default is not asked on a first run:
+they changed it in Settings › Bot, or turned the explanation off under it, so they have
+decided. The page is BartleBot's alone, so its key is in `settings.json`, not in the
+shared `preferences.json`.

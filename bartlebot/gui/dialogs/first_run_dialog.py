@@ -46,7 +46,7 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -69,11 +69,14 @@ from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
+from bartlebot.gui.settings.quicksell_group import QuicksellSettings
+from bartlebot.gui.settings.rows import SettingsForm
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
@@ -636,9 +639,67 @@ class LaunchProfilePage(FirstRunPage):
         return record_launch_profile_answered(self._prefs)
 
 
+# -- quicksell ----------------------------------------------------------------------
+
+QUICKSELL_HEADING = "What may bots sell?"
+#: Above the rows: what the explanation before each run used to say, which this page
+#: turns off, and where the same rows are later.
+QUICKSELL_INTRO = (
+    "When a backpack is full, bots sell what dropped, except what these settings keep. An item you "
+    "lock in the game is never sold: turn on Backpack Item Lock, under Options › Gameplay Options 2, "
+    "to lock one. These are the Quicksell settings in Settings › Bot, and a bot's own Options can "
+    "change them for that bot."
+)
+
+
+class QuicksellPage(FirstRunPage):
+    """What bots may sell: Settings › Bot's quicksell rows, on the stored values.
+
+    The rows are :class:`~bartlebot.gui.settings.quicksell_group.QuicksellSettings`, the
+    builder the Bot tab uses, without its Show Quicksell explanation row: Next writes
+    through :func:`~bartlebot.options.quicksell_setup.record_quicksell`, which turns the
+    explanation off, since this page has given it.
+    """
+
+    heading = QUICKSELL_HEADING
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._settings = SettingsManager.instance()
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(QUICKSELL_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        self._quicksell = QuicksellSettings(self._settings, foldable=False)
+        # Every description shown: on a first run each is part of the question.
+        form = SettingsForm(margin=0, always_describe=True)
+        form.add_group(self._quicksell.group)
+        form.finish(stretch=False)
+        column.addWidget(form)
+        column.addStretch()
+
+    @property
+    def quicksell(self) -> QuicksellSettings:
+        return self._quicksell
+
+    def answered(self) -> bool:
+        return quicksell_answered(self._settings)
+
+    def record(self) -> bool:
+        return record_quicksell(self._settings, self._quicksell.flags(), self._quicksell.keep_list())
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
-    return [GameFolderPage(prefs), AccountsPage(prefs), LaunchProfilePage(prefs), CombatQuestionPage(prefs)]
+    return [
+        GameFolderPage(prefs),
+        AccountsPage(prefs),
+        LaunchProfilePage(prefs),
+        CombatQuestionPage(prefs),
+        QuicksellPage(),
+    ]
 
 
 def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
@@ -760,9 +821,48 @@ class FirstRunDialog(QDialog):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
+        self._fit_height()
         if not self._placed:
             self._placed = True
             self._center_on_window()
+
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        # A page turn, or a page growing as it is used, re-lays the dialog out.
+        if event.type() == QEvent.Type.LayoutRequest and self.isVisible():
+            self._fit_height()
+        return handled
+
+    def _fit_height(self) -> None:
+        """Grow to the height the page shown needs at the dialog's width.
+
+        A window's minimum is taken from its layout's minimum size, which guesses each
+        wrapped label's height at a width of the label's own choosing. Qt never asks a
+        window's layout for its height at the window's real width, so a wrapped line the
+        guess left out was cut off: Always keep's summary on the Quicksell page lost its
+        second. Run on show and on every layout change, so a page turn, or a page growing as
+        it is used, is fitted too. Only ever grows: a dialog the user made taller stays so.
+        It grows about its center, so a dialog centered on show stays centered, kept on
+        its screen.
+        """
+        layout = self.layout()
+        if layout is None or not layout.hasHeightForWidth():
+            return
+        needed = layout.totalHeightForWidth(self.width())
+        if needed <= self.height():
+            return
+        if not self._placed:
+            # Not yet centered: a move now would also tell Qt the dialog was placed by hand.
+            self.resize(self.width(), needed)
+            return
+        top = self.y() - (needed - self.height()) // 2
+        screen = self.screen()
+        if screen is not None:
+            top = max(top, screen.availableGeometry().top())
+        # move() places the frame, as x() and y() read it; setGeometry() would place the
+        # client area, a frame's thickness off.
+        self.resize(self.width(), needed)
+        self.move(self.x(), top)
 
     def _center_on_window(self) -> None:
         """Center on the main window, or on its screen while the window is maximized.

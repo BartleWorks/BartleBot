@@ -21,7 +21,9 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     FirstRunDialog,
     GameFolderPage,
     LaunchProfilePage,
+    QuicksellPage,
 )
+from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import game_install
 from bartlebot.shared.account_setup import ANSWERED_KEY as ACCOUNTS_ANSWERED
@@ -59,13 +61,18 @@ def startup(qapp, monkeypatch, tmp_path):
     """The controller's setup methods, the dialogs they open, and what happened in order.
 
     The game is installed where the KingsIsle launcher puts it, so the game folder page is
-    answered, and the Accounts page was answered with none. ``state.answer`` is the combat answer to finish on; None closes the dialog
+    answered, the Accounts page was answered with none, and the Quicksell page was answered. ``state.answer`` is the combat answer to finish on; None closes the dialog
     on the combat page instead.
     """
     (tmp_path / "Wizard101" / "Bin").mkdir(parents=True)
     (tmp_path / "Wizard101" / "Bin" / "WizardGraphicalClient.exe").write_bytes(b"")
     monkeypatch.setattr(game_install, "_places", _Launcher(tmp_path / "Wizard101"))
     record_accounts_answered(_prefs())
+    settings = SettingsManager.instance()
+    settings.set_general(QUICKSELL_ANSWERED, True)
+    settings.save()
+    # Read again when a test first asks, so accounts it writes first are in it.
+    monkeypatch.setattr(SettingsManager, "_instance", None)
     state = SimpleNamespace(events=[], opened=[], answer=None)
     ns = SimpleNamespace(_window=_Window(state.events))
     for name in ("_after_window_shown", "_offer_first_run", "_rerun_setup", "_open_setup"):
@@ -82,13 +89,14 @@ def startup(qapp, monkeypatch, tmp_path):
             dialog.commit_button.click()  # the accounts as they are
         if isinstance(dialog.current, LaunchProfilePage):
             dialog.commit_button.click()  # every account, checked
-        if not isinstance(dialog.current, CombatQuestionPage):
-            pass  # finished on an earlier page
-        elif state.answer is None:
-            dialog.reject()
-        else:
+        if isinstance(dialog.current, CombatQuestionPage):
+            if state.answer is None:
+                dialog.reject()
+                return dialog.result()
             dialog.current.select(state.answer)
             dialog.commit_button.click()
+        if isinstance(dialog.current, QuicksellPage) and not dialog.result():
+            dialog.commit_button.click()  # the recommended answer
         return dialog.result()
 
     monkeypatch.setattr(FirstRunDialog, "exec", answer)
@@ -174,7 +182,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
     startup.ns._rerun_setup()
 
     assert startup.opened[0].rerun
-    assert _walked(startup.opened[0]) == [GameFolderPage, AccountsPage, CombatQuestionPage]
+    assert _walked(startup.opened[0]) == [GameFolderPage, AccountsPage, CombatQuestionPage, QuicksellPage]
     assert _prefs().get(_TEAM) is None
     assert startup.events == ["first run", "refresh", "layout", "accounts"]
 
@@ -330,3 +338,28 @@ def test_setup_leaves_a_layout_chosen_in_settings(qapp, monkeypatch):
     finally:
         window.bot_canvas.prepare_for_shutdown()
         window.hide()
+
+
+# -- the Quicksell page (Stage 5) ---------------------------------------------------
+
+
+def test_it_asks_what_bots_may_sell_on_a_fresh_install(startup):
+    SettingsManager.instance().set_general(QUICKSELL_ANSWERED, False)
+    record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert _walked(startup.opened[0]) == [QuicksellPage]
+    assert SettingsManager.instance().show_quicksell_explanation is False
+
+
+def test_quicksell_settings_off_their_defaults_keep_it_closed(startup):
+    """Chosen in Settings › Bot before setup existed: the user has already decided."""
+    sm = SettingsManager.instance()
+    sm.set_general(QUICKSELL_ANSWERED, False)
+    sm.set_general("default_quicksell_sell_pets", False)
+    record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert startup.opened == []

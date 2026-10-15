@@ -19,10 +19,9 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 
-from bartlebot.gui.settings.rows import SettingGroup, SettingRow, SettingsForm
-from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
+from bartlebot.gui.settings.quicksell_group import QuicksellSettings
+from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
-from bartlebot.nodes.utility import quicksell
 from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for
 
@@ -166,49 +165,6 @@ class BotTab(SettingsForm):
         # ------------------------------------------------------------------
         self.add_heading("Quicksell")
 
-        self._quicksell_enabled_cb = QCheckBox()
-        self._quicksell_enabled_cb.setChecked(sm.get_general("default_quicksell_enabled", default=True))
-        enable = SettingRow(
-            "Enable Quicksell",
-            "Sell drops so backpacks never fill.",
-            self._quicksell_enabled_cb,
-            default=_default("default_quicksell_enabled"),
-            details=(
-                "Off means backpacks fill, further drops go to your shared bank, and once that is full "
-                "too only Crowns items are kept."
-            ),
-        )
-
-        self._sell_pets_cb = QCheckBox()
-        self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
-        sell_pets = SettingRow(
-            "Sell Pets",
-            "Off is the only way to keep a pet.",
-            self._sell_pets_cb,
-            default=_default("default_quicksell_sell_pets"),
-            details="The quicksell window lists pets by nickname, so no keep-list keyword can match one.",
-        )
-
-        self._sell_socket_wrenches_cb = QCheckBox()
-        self._sell_socket_wrenches_cb.setChecked(
-            sm.get_general("default_quicksell_sell_socket_wrenches", default=False)
-        )
-        sell_wrenches = SettingRow(
-            "Sell Socket Wrenches",
-            "Wrenches unlock jewel sockets on gear, and are not otherwise farmable.",
-            self._sell_socket_wrenches_cb,
-            default=_default("default_quicksell_sell_socket_wrenches"),
-        )
-
-        self._sell_skeleton_keys_cb = QCheckBox()
-        self._sell_skeleton_keys_cb.setChecked(sm.get_general("default_quicksell_sell_skeleton_keys", default=False))
-        sell_keys = SettingRow(
-            "Sell Skeleton Keys",
-            "Keys open the skeleton-key dungeons, and are not otherwise farmable.",
-            self._sell_skeleton_keys_cb,
-            default=_default("default_quicksell_sell_skeleton_keys"),
-        )
-
         self._explain_quicksell_cb = QCheckBox()
         self._explain_quicksell_cb.setChecked(sm.show_quicksell_explanation)
         explain = SettingRow(
@@ -222,24 +178,9 @@ class BotTab(SettingsForm):
                 "once for each bot."
             ),
         )
-
-        # Tall controls go last in their card.
-        self._keep_list_edit = QLineEdit(
-            format_list_text([str(k) for k in sm.get_general(quicksell.USER_KEEP_LIST_KEY, default=[]) or []])
-        )
-        self._keep_list_edit.setPlaceholderText("e.g. Amber, Pearl")
-        keep = SettingRow(
-            "Always keep",
-            "Items every bot keeps, on top of its own keep list.",
-            self._keep_list_edit,
-            default=format_list_text(default_for("general", quicksell.USER_KEEP_LIST_KEY) or []),
-            details=(
-                "Separate them with commas; any item whose name contains one is not sold. Pets are listed "
-                "by nickname, so this cannot keep one."
-            ),
-            wide=True,
-        )
-        self.add_group(SettingGroup("quicksell", enable, [sell_pets, sell_wrenches, sell_keys, explain, keep]))
+        # The same rows setup's Quicksell page shows, written through the same functions.
+        self._quicksell = QuicksellSettings(sm, extra_rows=[explain])
+        self.add_group(self._quicksell.group)
 
         # ------------------------------------------------------------------
         # Decks
@@ -274,10 +215,6 @@ class BotTab(SettingsForm):
             sm.add_recent_friend_name(friend_name)
         sm.favorite_realm = self._favorite_realm_combo.get_value()
         sm.set_general("default_refill_potions", self._refill_potions_cb.isChecked())
-        sm.set_general("default_quicksell_enabled", self._quicksell_enabled_cb.isChecked())
-        sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
-        sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
-        sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())
-        sm.set_general(quicksell.USER_KEEP_LIST_KEY, parse_list_text(self._keep_list_edit.text()))
+        self._quicksell.write(sm)
         sm.show_quicksell_explanation = self._explain_quicksell_cb.isChecked()
         sm.set_general("default_apply_archmastery", self._apply_archmastery_cb.isChecked())

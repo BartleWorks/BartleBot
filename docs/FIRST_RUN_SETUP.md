@@ -18,7 +18,7 @@ The stages land in this order, each building only on the ones before:
 | 2 | #227 | game folder: install detection with Steam, the page, a Settings row | landed |
 | 3 | #228 | accounts: the page, on the existing account editor | landed |
 | 4 | #229 | launch profile: one profile from a checklist | landed |
-| 5 | #230 | quicksell: three answers, the keep list, the per-run explanation off | planned |
+| 5 | #230 | quicksell: Settings › Bot's rows, the keep list, the per-run explanation off | landed |
 | 6 | #231 | realm and Safety Delay: one page | planned |
 | 7 | #232 | card art and Custom: the extractor in the app, the Options page, the art page | planned |
 

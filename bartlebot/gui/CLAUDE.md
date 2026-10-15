@@ -1048,6 +1048,24 @@ that apply. The rules for a page:
   focus chain hands it to the first card and changes the answer. `_CardsPage` does it in
   `showEvent`, and with no card selected focuses the page itself. In the constructor it
   is lost when the page joins the dialog.
+- **A page that sets what a Settings card holds shows that card's rows**, built by the
+  same code, as the Quicksell page shows `gui/settings/quicksell_group.QuicksellSettings`.
+  Answers that bundle several settings into one card are a second way to think about the
+  same switches, and leave combinations no card names. A group shown in setup is built
+  with `foldable=False`, so every row is on the page and the user's fold is left alone.
+- **Setup shows every description, and none can be hidden.** On a first run each is part
+  of the question, so a page's `SettingsForm` is built with `always_describe=True`: no
+  Show · Hide descriptions, no `?` on a row (its slot kept, so rows line up), and the
+  Settings dialog's own preference neither read nor written. A row's text says what the
+  setting does to the app, not what the game item is for.
+- **Wrapped text is fitted by the dialog, not the page.** Qt sizes a window from its
+  layout's minimum, which guesses a wrapped label's height at a width of the label's own
+  choosing, and does not always fit the window to its height at the real width: with the
+  Windows fonts, Always keep's summary lost its second line. `FirstRunDialog._fit_height`
+  grows the dialog to the layout's `totalHeightForWidth` on show and on every
+  `LayoutRequest`, so a page turn, or a page that grows as it is used, is fitted too. It
+  grows about its center, only moves the dialog once the first show has placed it (a
+  `move()` before then stops Qt placing it), and never shrinks it.
 - **It is opened from `AppController._after_window_shown`**, a timer's synchronous slot,
   before a file named at launch is imported. Each opens a modal, and a second timer
   would fire inside the first one's `exec()`. File › Set up BartleBot… opens it with

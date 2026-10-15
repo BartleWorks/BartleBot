@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QDialog, QLabel, QWidget
+from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 from wizwalker import utils as wizwalker_utils
 
 from bartlebot.clients import character_roster
@@ -45,13 +45,17 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     GameFolderPage,
     LaunchProfilePage,
     ModePage,
+    QuicksellPage,
     SetupMode,
     setup_pages,
 )
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.settings.accounts_tab import AccountsTab
+from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
+from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
+from bartlebot.options.quicksell_setup import SellFlags, current_flags, write_sell_flags
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import account_setup, game_install, launch_profiles
 from bartlebot.shared.account_store import AccountStore
@@ -440,6 +444,7 @@ def test_the_pages_are_in_the_plans_order(qapp, prefs):
         AccountsPage,
         LaunchProfilePage,
         CombatQuestionPage,
+        QuicksellPage,
     ]
 
 
@@ -1095,3 +1100,182 @@ def test_the_resolution_is_disabled_when_no_profile_is_made(qapp, prefs):
     page.boxes[1].setChecked(False)
 
     assert not page.resolution_combo.isEnabled()
+
+
+# -- quicksell (Stage 5, #230) -------------------------------------------------------
+
+
+def _row(widget: QWidget, title: str) -> SettingRow:
+    """The row titled *title*, found the way a reader would."""
+    return next(row for row in widget.findChildren(SettingRow) if row.title == title)
+
+
+_SWITCHES = ("Enable Quicksell", "Sell Pets", "Sell Socket Wrenches", "Sell Skeleton Keys")
+
+
+def test_the_quicksell_page_shows_the_bot_tabs_rows_but_the_explanation(qapp):
+    page_titles = [row.title for row in QuicksellPage().findChildren(SettingRow)]
+    tab_group = next(group for group in BotTab().groups if group.group_id == "quicksell")
+    tab_titles = [row.title for row in tab_group.findChildren(SettingRow)]
+
+    assert page_titles == [*_SWITCHES, "Always keep"]
+    assert tab_titles == [*_SWITCHES, "Show Quicksell explanation before each run", "Always keep"]
+
+
+def test_the_quicksell_page_opens_on_the_stored_settings(qapp):
+    write_sell_flags(SettingsManager.instance(), SellFlags(True, False, True, False))
+    page = QuicksellPage()
+
+    assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [True, False, True, False]
+
+
+def test_a_fresh_install_shows_the_defaults(qapp):
+    page = QuicksellPage()
+
+    assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [True, True, False, False]
+
+
+def test_the_quicksell_group_on_the_page_does_not_fold(qapp):
+    """Folded in Settings or not, every row is on the page."""
+    group = QuicksellPage().quicksell.group
+
+    assert group.fold_button is None
+    assert not group.is_collapsed
+
+
+@pytest.mark.parametrize("flags", [SellFlags(True, False, False, False), SellFlags(False, True, True, True)])
+def test_what_the_page_writes_shows_on_settings_bot(qapp, flags):
+    page = QuicksellPage()
+    for title, on in zip(
+        _SWITCHES, (flags.enabled, flags.sell_pets, flags.sell_socket_wrenches, flags.sell_skeleton_keys)
+    ):
+        _row(page, title).control.setChecked(on)
+
+    assert page.record()
+
+    tab = BotTab()
+    assert current_flags(SettingsManager.instance()) == flags
+    assert [_row(tab, title).control.isChecked() for title in _SWITCHES] == [
+        flags.enabled,
+        flags.sell_pets,
+        flags.sell_socket_wrenches,
+        flags.sell_skeleton_keys,
+    ]
+
+
+def test_the_keep_list_round_trips_through_the_page_and_the_bot_tab(qapp):
+    page = QuicksellPage()
+    _row(page, "Always keep").control.setText('Amber, "No Pain, No Gain Onyx"')
+    page.record()
+
+    tab = BotTab()
+    assert _row(tab, "Always keep").control.text() == 'Amber, "No Pain, No Gain Onyx"'
+    _row(tab, "Always keep").control.setText("Pearl")
+    tab.apply()
+
+    assert _row(QuicksellPage(), "Always keep").control.text() == "Pearl"
+
+
+def test_the_quicksell_page_is_asked_on_a_fresh_install(qapp):
+    assert not QuicksellPage().answered()
+
+
+def test_a_user_whose_quicksell_settings_are_off_their_defaults_is_not_shown_the_page(qapp, prefs):
+    SettingsManager.instance().set_general("quicksell_keep_list", ["Amber"])
+    page = QuicksellPage()
+
+    dialog = FirstRunDialog([CombatQuestionPage(prefs), page])
+
+    assert page not in dialog.walk
+
+
+def test_after_the_quicksell_page_it_is_answered_and_the_explanation_is_off(qapp):
+    dialog = FirstRunDialog([QuicksellPage()])
+    _next(dialog, 2)
+
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert QuicksellPage().answered()
+    assert SettingsManager.instance().show_quicksell_explanation is False
+
+
+def test_a_failed_quicksell_write_keeps_the_user_on_the_page(qapp, monkeypatch):
+    page = QuicksellPage()
+    dialog = FirstRunDialog([page])
+    _next(dialog)
+
+    def _fail():
+        raise OSError("disk full")
+
+    monkeypatch.setattr(SettingsManager.instance(), "save", _fail)
+    _next(dialog)
+
+    assert dialog.current is page
+    assert dialog.error_shown
+
+
+def test_the_dialog_grows_to_fit_wrapped_text_on_a_page_turn(qapp):
+    """Qt sizes a window from its layout's guessed label heights, never its height at the
+    window's width; on the Quicksell page that cut Always keep's summary short."""
+    page = QuicksellPage()
+    dialog = FirstRunDialog([page])
+    dialog.show()
+    _next(dialog)
+    # As short as Qt allows: what the guess gives, before the page needs more.
+    dialog.resize(dialog.minimumWidth(), dialog.minimumSizeHint().height())
+    qapp.processEvents()
+
+    dialog.back_button.click()
+    _next(dialog)
+    qapp.processEvents()
+
+    assert dialog.height() >= dialog.layout().totalHeightForWidth(dialog.width())
+    for row in page.findChildren(SettingRow):
+        assert row.summary.height() >= row.summary.heightForWidth(row.summary.width()), row.title
+    dialog.close()
+
+
+def test_the_quicksell_page_shows_every_description_with_no_way_to_hide_one(qapp):
+    page = QuicksellPage()
+    form = page.findChild(SettingsForm)
+
+    assert form.switches.isHidden()
+    for row in page.findChildren(SettingRow):
+        assert row.help_button.isHidden(), row.title
+        if row.details is not None:
+            assert row.details_shown, row.title
+
+
+@pytest.mark.parametrize(
+    ("title", "keyword"), [("Sell Socket Wrenches", "Socket Wrench"), ("Sell Skeleton Keys", "Skeleton Key")]
+)
+def test_the_wrench_and_key_rows_say_what_they_do_to_quicksell(qapp, title, keyword):
+    """On the page and on Settings › Bot alike: the rows come from one builder."""
+    expected = f'When off, quicksell keeps any item with "{keyword}" in its name.'
+
+    assert _row(QuicksellPage(), title).summary.text() == expected
+    assert _row(BotTab(), title).summary.text() == expected
+
+
+def test_the_dialog_grows_when_the_page_shown_grows(qapp):
+    """Showing more on a page after it is shown re-lays the dialog out, and it is fitted again."""
+    page = _Page("Growing?")
+    column = QVBoxLayout(page)
+    dialog = FirstRunDialog([page])
+    dialog.show()
+    _next(dialog)
+    qapp.processEvents()
+    before = dialog.height()
+    center = _center(dialog)
+
+    more = QLabel(" ".join(["Every wizard keeps what the settings keep."] * 30), page)
+    more.setWordWrap(True)
+    column.addWidget(more)
+    # Shown on a later event, as a widget added to a shown parent is, then laid out.
+    for _ in range(3):
+        qapp.processEvents()
+
+    assert dialog.height() > before
+    assert dialog.height() >= dialog.layout().totalHeightForWidth(dialog.width())
+    # About its center, so a dialog centered on show stays so.
+    assert (_center(dialog) - center).manhattanLength() <= 2
+    dialog.close()
