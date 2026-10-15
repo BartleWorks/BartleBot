@@ -16,6 +16,7 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 from wizwalker import utils as wizwalker_utils
 
+from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui import screen_fit
@@ -46,6 +47,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     LaunchProfilePage,
     ModePage,
     QuicksellPage,
+    RealmAndDelayPage,
     SetupMode,
     setup_pages,
 )
@@ -55,8 +57,11 @@ from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
+from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
+from bartlebot.options import bot_options, option_values
 from bartlebot.options.quicksell_setup import SellFlags, current_flags, write_sell_flags
-from bartlebot.settings_manager import SettingsManager
+from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
+from bartlebot.settings_manager import SettingsManager, default_for
 from bartlebot.shared import account_setup, game_install, launch_profiles
 from bartlebot.shared.account_store import AccountStore
 from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
@@ -445,6 +450,7 @@ def test_the_pages_are_in_the_plans_order(qapp, prefs):
         LaunchProfilePage,
         CombatQuestionPage,
         QuicksellPage,
+        RealmAndDelayPage,
     ]
 
 
@@ -1279,3 +1285,146 @@ def test_the_dialog_grows_when_the_page_shown_grows(qapp):
     # About its center, so a dialog centered on show stays so.
     assert (_center(dialog) - center).manhattanLength() <= 2
     dialog.close()
+
+
+# -- realm and Safety Delay (Stage 6, #231) ------------------------------------------
+
+
+def _realm_page_dialog() -> tuple[FirstRunDialog, RealmAndDelayPage]:
+    page = RealmAndDelayPage()
+    dialog = FirstRunDialog([page])
+    _next(dialog)
+    return dialog, page
+
+
+def test_a_first_run_shows_wraith_and_three_seconds_and_next_stores_both(qapp):
+    dialog, page = _realm_page_dialog()
+
+    assert page.realm_combo.get_value() == "Wraith"
+    assert page.delay_box.value() == 3.0
+    _next(dialog)
+
+    sm = SettingsManager.instance()
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert sm.favorite_realm == "Wraith"
+    assert sm.default_safety_delay == 3.0
+    assert sm.get_general(REALM_DELAY_ANSWERED) is True
+
+
+def test_the_answer_reaches_settings_json(qapp):
+    dialog, page = _realm_page_dialog()
+    page.realm_combo.set_value("Balestrom")
+    page.delay_box.setValue(6.5)
+    _next(dialog)
+
+    general = json.loads(SettingsManager.instance().settings_path.read_text(encoding="utf-8"))["general"]
+    assert (general["favorite_realm"], general["default_safety_delay"]) == ("Balestrom", 6.5)
+
+
+def test_a_rerun_shows_the_stored_realm_and_delay(qapp):
+    sm = SettingsManager.instance()
+    sm.favorite_realm = "Balestrom"
+    sm.default_safety_delay = 7.5
+
+    dialog = FirstRunDialog([RealmAndDelayPage()], rerun=True)
+    _next(dialog)
+
+    assert dialog.current.realm_combo.get_value() == "Balestrom"
+    assert dialog.current.delay_box.value() == 7.5
+
+
+def test_a_rerun_after_choosing_no_realm_shows_none(qapp):
+    """Once the page is answered, an empty realm is the user's answer, not a gap to fill with Wraith."""
+    dialog, page = _realm_page_dialog()
+    page.realm_combo.set_value("")
+    _next(dialog)
+
+    assert RealmAndDelayPage().realm_combo.get_value() == ""
+
+
+def test_what_the_page_stores_shows_on_settings_bot(qapp):
+    dialog, page = _realm_page_dialog()
+    page.realm_combo.set_value("Balestrom")
+    page.delay_box.setValue(5.0)
+    _next(dialog)
+
+    tab = BotTab()
+    assert tab.row("Favorite realm").control.get_value() == "Balestrom"
+    assert tab.row("Default Safety Delay").control.value() == 5.0
+
+
+def test_change_realm_uses_the_realm_the_page_stored(qapp):
+    dialog, _page = _realm_page_dialog()
+    _next(dialog)
+    config = BotConfig(
+        id="realm-bot",
+        name="Realm Bot",
+        initial="a",
+        recovery_state="a",
+        states=[StateModel(id="a", node_type="change_realm", params={"use_favorite_realm": True})],
+        transitions=[],
+    )
+
+    resolution = option_values.option_resolution(config, OPTION_FAVORITE_REALM)
+
+    assert resolution.value == "Wraith"
+    assert resolution.source == bot_options.SOURCE_APP_SETTING
+
+
+def test_favorite_realms_own_default_is_still_unset(qapp):
+    """Wraith is only the page's selection: a user who never runs setup has no favorite realm."""
+    assert default_for("general", "favorite_realm") == ""
+    assert SettingsManager.instance().favorite_realm == ""
+
+
+def test_the_page_shows_the_bot_tabs_rows_with_every_description(qapp):
+    page = RealmAndDelayPage()
+    tab = BotTab()
+    rows = page.findChildren(SettingRow)
+
+    assert [row.title for row in rows] == ["Favorite realm", "Default Safety Delay"]
+    for row in rows:
+        assert row.summary.text() == tab.row(row.title).summary.text()
+        assert row.details.text() == tab.row(row.title).details.text()
+        assert row.details_shown, row.title
+        assert row.help_button.isHidden(), row.title
+
+
+def test_the_safety_delay_says_how_long_by_where_the_user_plays(qapp):
+    page = RealmAndDelayPage()
+    details = page.findChildren(SettingRow)[1].details.text()
+
+    assert "3 to 5 seconds in North America" in details
+    assert "5 to 10 elsewhere" in details
+
+
+def test_the_page_is_asked_on_a_fresh_install(qapp):
+    assert not RealmAndDelayPage().answered()
+
+
+def test_a_realm_already_set_answers_the_page(qapp, prefs):
+    SettingsManager.instance().favorite_realm = "Balestrom"
+    page = RealmAndDelayPage()
+
+    assert page.answered()
+    assert page not in FirstRunDialog([CombatQuestionPage(prefs), page]).walk
+
+
+def test_a_safety_delay_changed_alone_leaves_the_page_asked(qapp):
+    """The realm is still unset, so the page has a question left."""
+    SettingsManager.instance().default_safety_delay = 6.0
+
+    assert not RealmAndDelayPage().answered()
+
+
+def test_a_failed_realm_write_keeps_the_user_on_the_page(qapp, monkeypatch):
+    dialog, page = _realm_page_dialog()
+
+    def _fail():
+        raise OSError("disk full")
+
+    monkeypatch.setattr(SettingsManager.instance(), "save", _fail)
+    _next(dialog)
+
+    assert dialog.current is page
+    assert dialog.error_shown

@@ -97,6 +97,7 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | Which accounts launch together? (two or more accounts) | one launch profile of the accounts checked, to `accounts.json`, through `shared/launch_profiles.add_profile`, the function Settings › Game's Add uses; and `setup.launch_profile_answered` in `preferences.json`, through `record_launch_profile_answered` | `launch_profile_answered`: `accounts.json` holds a launch profile, from either product, or the key is set |
 | How should your team take on bosses? | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
 | What may bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
+| Where do you play, and how quick is your connection? | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
 
 ### The combat question
 
@@ -224,3 +225,30 @@ A user with any quicksell setting already off its default is not asked on a firs
 they changed it in Settings › Bot, or turned the explanation off under it, so they have
 decided. The page is BartleBot's alone, so its key is in `settings.json`, not in the
 shared `preferences.json`.
+
+### Realm and Safety Delay
+
+The page shows Settings › Bot's **Favorite realm** and **Default Safety Delay** rows,
+built for both by `gui/settings/realm_delay_rows`, with every description shown. Above
+them, a line says what each is for: Change Realm moves every player to the favorite
+realm, and Safety Delay is how long the game server gets to answer an action, so the
+farther from the servers, the longer it should be. The delay's description, the option's
+own `SAFETY_DELAY_DESCRIPTION`, ends with the guidance: 3 to 5 seconds in North America;
+5 to 10 elsewhere, depending on location and connection quality. The Bot tab and the
+node's Safety Delay option say the same, since it is one text.
+
+On a first run the realm opens on **Wraith** (`realm_delay_setup.SETUP_REALM`) and the
+delay on the stored value, 3.0 seconds on a fresh install. Wraith is only the page's
+selection: `favorite_realm`'s own default stays unset, so a user who never runs setup has
+no favorite realm, and Change Realm in favorite mode tells them to choose one, as before.
+Once the page is answered it opens on the stored values, an empty realm included: "Not
+set" is then the user's answer, and a rerun shows it rather than offering Wraith again.
+
+Next writes through `record_realm_delay`: the realm, the delay, and
+`setup.realm_delay_answered`, then saves `settings.json`. A failed save keeps the user on
+the page. Both values are the app-setting level of the `Favorite Realm` and `Safety Delay`
+bot options, so a bot's own Options still win over them (`docs/BOT_OPTIONS.md`).
+
+A user with a favorite realm already set, in Settings › Bot, is not asked on a first run.
+A Safety Delay changed on its own does not answer the page, since the realm would still
+be unset.

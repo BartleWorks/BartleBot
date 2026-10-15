@@ -52,6 +52,7 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QDoubleSpinBox,
     QFormLayout,
     QGridLayout,
     QLabel,
@@ -70,13 +71,16 @@ from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
+from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
 from bartlebot.gui.settings.rows import SettingsForm
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
+from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
+from bartlebot.options.realm_delay_setup import realm_delay_answered, record_realm_delay, setup_realm
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
@@ -691,6 +695,61 @@ class QuicksellPage(FirstRunPage):
         return record_quicksell(self._settings, self._quicksell.flags(), self._quicksell.keep_list())
 
 
+# -- realm and Safety Delay ---------------------------------------------------------
+
+REALM_DELAY_HEADING = "Where do you play, and how quick is your connection?"
+#: Above the rows: what each is for, said once here so the rows can keep the tab's text.
+REALM_DELAY_INTRO = (
+    "Bots with a Change Realm step move every player to your favorite realm. Safety Delay is how "
+    "long BartleBot gives the game server to answer an action before it counts as failed, so the "
+    "farther you are from the servers, the longer it should be. Both are on Settings › Bot, and a "
+    "bot's own Options can change them for that bot."
+)
+
+
+class RealmAndDelayPage(FirstRunPage):
+    """Favorite Realm and Safety Delay: Settings › Bot's two rows, on the stored values.
+
+    On a first run the realm opens on :data:`~bartlebot.options.realm_delay_setup.SETUP_REALM`
+    (Wraith), and the delay on the stored one, 3.0 seconds on a fresh install. Wraith is
+    only the page's selection: the setting's own default stays unset. Next writes both
+    through :func:`~bartlebot.options.realm_delay_setup.record_realm_delay`.
+    """
+
+    heading = REALM_DELAY_HEADING
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._settings = SettingsManager.instance()
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(REALM_DELAY_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        # Every description shown: on a first run each is part of the question.
+        form = SettingsForm(margin=0, always_describe=True)
+        self._realm = form.add_row(favorite_realm_row(self._settings, setup_realm(self._settings))).control
+        self._delay = form.add_row(safety_delay_row(self._settings)).control
+        form.finish(stretch=False)
+        column.addWidget(form)
+        column.addStretch()
+
+    @property
+    def realm_combo(self) -> RealmCombo:
+        return self._realm
+
+    @property
+    def delay_box(self) -> QDoubleSpinBox:
+        return self._delay
+
+    def answered(self) -> bool:
+        return realm_delay_answered(self._settings)
+
+    def record(self) -> bool:
+        return record_realm_delay(self._settings, self._realm.get_value(), self._delay.value())
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
     return [
@@ -699,6 +758,7 @@ def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
         LaunchProfilePage(prefs),
         CombatQuestionPage(prefs),
         QuicksellPage(),
+        RealmAndDelayPage(),
     ]
 
 

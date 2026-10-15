@@ -22,8 +22,10 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     GameFolderPage,
     LaunchProfilePage,
     QuicksellPage,
+    RealmAndDelayPage,
 )
 from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
+from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import game_install
 from bartlebot.shared.account_setup import ANSWERED_KEY as ACCOUNTS_ANSWERED
@@ -61,8 +63,9 @@ def startup(qapp, monkeypatch, tmp_path):
     """The controller's setup methods, the dialogs they open, and what happened in order.
 
     The game is installed where the KingsIsle launcher puts it, so the game folder page is
-    answered, the Accounts page was answered with none, and the Quicksell page was answered. ``state.answer`` is the combat answer to finish on; None closes the dialog
-    on the combat page instead.
+    answered, the Accounts page was answered with none, and the Quicksell and Realm and Safety
+    Delay pages were answered. ``state.answer`` is the combat answer to finish on; None
+    closes the dialog on the combat page instead.
     """
     (tmp_path / "Wizard101" / "Bin").mkdir(parents=True)
     (tmp_path / "Wizard101" / "Bin" / "WizardGraphicalClient.exe").write_bytes(b"")
@@ -70,6 +73,7 @@ def startup(qapp, monkeypatch, tmp_path):
     record_accounts_answered(_prefs())
     settings = SettingsManager.instance()
     settings.set_general(QUICKSELL_ANSWERED, True)
+    settings.set_general(REALM_DELAY_ANSWERED, True)
     settings.save()
     # Read again when a test first asks, so accounts it writes first are in it.
     monkeypatch.setattr(SettingsManager, "_instance", None)
@@ -97,6 +101,8 @@ def startup(qapp, monkeypatch, tmp_path):
             dialog.commit_button.click()
         if isinstance(dialog.current, QuicksellPage) and not dialog.result():
             dialog.commit_button.click()  # the recommended answer
+        if isinstance(dialog.current, RealmAndDelayPage) and not dialog.result():
+            dialog.commit_button.click()  # Wraith, and the delay stored
         return dialog.result()
 
     monkeypatch.setattr(FirstRunDialog, "exec", answer)
@@ -182,7 +188,13 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
     startup.ns._rerun_setup()
 
     assert startup.opened[0].rerun
-    assert _walked(startup.opened[0]) == [GameFolderPage, AccountsPage, CombatQuestionPage, QuicksellPage]
+    assert _walked(startup.opened[0]) == [
+        GameFolderPage,
+        AccountsPage,
+        CombatQuestionPage,
+        QuicksellPage,
+        RealmAndDelayPage,
+    ]
     assert _prefs().get(_TEAM) is None
     assert startup.events == ["first run", "refresh", "layout", "accounts"]
 
@@ -358,6 +370,31 @@ def test_quicksell_settings_off_their_defaults_keep_it_closed(startup):
     sm = SettingsManager.instance()
     sm.set_general(QUICKSELL_ANSWERED, False)
     sm.set_general("default_quicksell_sell_pets", False)
+    record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert startup.opened == []
+
+
+# -- the Realm and Safety Delay page (Stage 6) ---------------------------------------
+
+
+def test_it_asks_where_the_user_plays_on_a_fresh_install(startup):
+    SettingsManager.instance().set_general(REALM_DELAY_ANSWERED, False)
+    record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert _walked(startup.opened[0]) == [RealmAndDelayPage]
+    assert SettingsManager.instance().favorite_realm == "Wraith"
+
+
+def test_a_favorite_realm_chosen_in_settings_keeps_it_closed(startup):
+    """Chosen in Settings › Bot before setup existed: the user has already decided where to play."""
+    sm = SettingsManager.instance()
+    sm.set_general(REALM_DELAY_ANSWERED, False)
+    sm.favorite_realm = "Balestrom"
     record_answer(_prefs(), None)
 
     startup.ns._offer_first_run()
