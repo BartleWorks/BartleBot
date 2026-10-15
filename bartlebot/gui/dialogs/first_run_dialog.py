@@ -65,6 +65,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.clients.install_location import apply_install
+from bartlebot.game import card_art
 from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.game_embed.card_columns import CardColumn
@@ -848,13 +849,19 @@ CARD_ART_INTRO = (
 
 
 class CardArtPage(FirstRunPage):
-    """The last page whenever card art is on, as it is under Quick: the extraction, with its progress.
+    """The last page whenever card art is on, as it is under Quick, and none is extracted yet.
 
     Entered, it starts :func:`~bartlebot.game.art_extraction.extract_art` off the GUI
     thread, in an :class:`~bartlebot.gui.settings.card_art_row.ArtExtraction`. Finish waits
     for the run to end, worked or not: a failure says why, is logged, and setup ends as
     usual, since art is optional everywhere. Closing setup stops the run, which leaves
     nothing half written, and leaves the page unanswered.
+
+    Art already extracted keeps the page out of the walk, a rerun's too: extracting it
+    again is Settings › General › Card art's job, after a game patch. Whether there was
+    art is read once, when the page is built, so the page's own run finishing never takes
+    it out of the walk while it is shown. A user who turned the art off before has none,
+    so a rerun still offers it to them.
     """
 
     heading = CARD_ART_HEADING
@@ -863,6 +870,7 @@ class CardArtPage(FirstRunPage):
         super().__init__(parent)
         self._settings = SettingsManager.instance()
         self._options = options
+        self._had_art = card_art.is_available()
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(12)
@@ -879,6 +887,8 @@ class CardArtPage(FirstRunPage):
         return self._extraction
 
     def applies(self, mode: SetupMode) -> bool:
+        if self._had_art:
+            return False
         return mode is SetupMode.QUICK or self._options.extract_art
 
     def answered(self) -> bool:

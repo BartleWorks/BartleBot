@@ -356,6 +356,35 @@ async def test_with_no_game_found_the_page_says_so_and_finish_is_ready(qapp, pre
     assert dialog.commit_button.isEnabled()
 
 
+@pytest.mark.parametrize("mode", list(SetupMode))
+def test_a_rerun_with_art_already_extracted_skips_the_page(qapp, prefs, game, mode):
+    """Extracting again is Settings › General › Card art's job, after a game patch."""
+    art_extraction.extract_art(game.game_data)
+
+    dialog, _options, art = _dialog(prefs, mode, rerun=True)
+
+    assert art not in dialog.walk
+
+
+def test_a_rerun_after_turning_the_art_off_offers_it_again(qapp, prefs):
+    """The user may have changed their mind: with no art on disk, Quick ends on the page."""
+    SettingsManager.instance().set_general(EXTRACT_ART_KEY, False)
+
+    dialog, _options, art = _dialog(prefs, rerun=True)
+
+    assert dialog.walk[-1] is art
+
+
+async def test_the_page_stays_in_the_walk_once_its_own_run_has_worked(qapp, prefs, game):
+    dialog, _options, art = _dialog(prefs)
+    _next(dialog, 2)
+    await art.extraction.task
+    assert card_art.is_available()
+
+    assert dialog.walk[-1] is art
+    assert dialog.commit_button.text() == "Finish"
+
+
 def test_a_first_run_with_art_already_extracted_skips_the_page(qapp, prefs, game):
     art_extraction.extract_art(game.game_data)
     options, art = _pages(prefs)
