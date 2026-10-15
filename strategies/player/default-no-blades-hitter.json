@@ -1,0 +1,9 @@
+{
+  "id": "9b646e45-6673-47e2-9d60-23ded9c7ad45",
+  "name": "Default No-Blades Hitter",
+  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage>) & potent @ spell(any<trap>) & potent @ spell(any<trap>) | ?(self.health < 30%) any<heal> @ self | ?(self.beneficial_wards == 0) any<ward> @ self | \"Feint Mass - Amulet\" | any<trap & !aoe & stacks>[potent] @ boss | ?(self.beneficial_auras == 0) any<aura & out_damage> | any<damage & aoe>[any<mod_damage>] | any<damage>[any<mod_damage>] @ boss | any<global> | any<shadow> | any<trap & !aoe>[potent] @ boss | pass",
+  "description": "Hitter for a boss that cheats when a blade is cast; it never casts or enchants one. Otherwise it plays as Default.",
+  "tags": [
+    "Hitter"
+  ]
+}

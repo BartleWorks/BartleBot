@@ -201,8 +201,8 @@ the fights that need it:
 
 | duel | for |
 |---|---|
-| Default Team Boss Duel (No Blades) | a boss that cheats on a blade: P2 to P4 run Default No-Blades Support |
-| Default Team Boss Duel (No Feints) | a boss that cheats on a Feint: P2 to P4 run Default No-Feints Support |
+| Default Team Boss Duel (No Blades) | a boss that cheats on a blade: P1 runs Default No-Blades Hitter, P2 to P4 Default No-Blades Support |
+| Default Team Boss Duel (No Feints) | a boss that cheats on a Feint: P1 runs Default No-Feints Hitter, P2 to P4 Default No-Feints Support |
 | Default Turn 1 Scald-Incindiate | a team of four: P1 and P2 buff, P3 casts Scald and P4 detonates it |
 
 Default Team Boss Duel and Default Turn 1 AoE Mob Duel left the set at version 6 (#218,
@@ -334,10 +334,20 @@ a minion, and a mass trap other than Mass Feint is the supports' to cast.
   round-1 AoE too.
 - **Default AoE Hitter and Default Single-target Hitter** take the heal, the shield, the
   Mass Feint line and the stacking buffs (the single-target one the Feint line too), keep their own
-  hit line, then a buff that won't stack, then `pass`.
+  hit line, then a buff that won't stack, then `pass`. The single-target hitter has no AoE
+  to wait for, so after its hit at the boss it has a second, gated on a mob fight:
+  `?(all(enemies).is_boss == 0) any<damage>[any<mod_damage>] @ enemy`. Without it, a mob
+  fight was buffs and passes to the end (#212).
+- **Default No-Blades Hitter and Default No-Feints Hitter** are P1 of the cheat-boss duels:
+  Default's ladder without the card the boss's cheat watches, as the supports beside them
+  are (#212). The No-Blades one has no blade line and fuses no Sharpened Blade; the
+  No-Feints one has no Mass Feint, and its trap lines and Potent Traps take `!feint`. Their
+  duels assign only boss fights, so neither has a round-1 line. Before them P1 ran Default
+  AoE Hitter, which cast the very blade or Mass Feint the duel existed to avoid.
 
-`tests/strategies/test_hitters.py` walks all four through the fights above, and finds a
-line for every card kind across the shipped player strategies.
+`tests/strategies/test_hitters.py` walks all six through the fights above, sweeps the
+cheat-boss hitters over many hands for the card they must never cast, and finds a line
+for every card kind across the shipped player strategies.
 
 **The fight kind is read by one rule.** A boss fight is `?(any(enemies).is_boss == 1)` and
 a mob fight `?(all(enemies).is_boss == 0)`: `any` and `all` count every living enemy,

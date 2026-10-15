@@ -224,7 +224,9 @@ def test_shared_set_version_rose_with_the_guardian():
 
 def test_shared_set_version_rose_when_turn_1_aoe_left():
     """Default Turn 1 AoE mob fight left the set at version 8 (#212): its duel had gone at
-    version 6, and every shipped team strategy now AoEs in round 1 of a mob fight."""
+    version 6, and every shipped team strategy now AoEs in round 1 of a mob fight. The same
+    version added the No-Blades and No-Feints hitters, and Default Single-target Hitter
+    started hitting a mob in a mob fight."""
     assert SHARED_SET_VERSION >= 8
 
 

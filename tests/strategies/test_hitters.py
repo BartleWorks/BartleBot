@@ -1,5 +1,5 @@
-"""The shipped hitters (Stage 4 of #218): Default, Default Team Hitter, and the AoE and
-single-target hitters, walked through described fights.
+"""The shipped hitters (Stage 4 of #218): Default, Default Team Hitter, the AoE and
+single-target hitters, and the cheat-boss hitters (#212), walked through described fights.
 
 A hitter heals itself below 30% health, shields itself while it holds no shield (Stage 6),
 buffs while a buff adds to its next hit -- Mass
@@ -13,6 +13,7 @@ does" is the rule these pin.
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 
 import pytest
@@ -57,6 +58,10 @@ from tests.strategies.fight import (
 AOE_HITTER_ID = "615bbd5f-eb76-4f47-b0da-7e16de8a7b33"
 SINGLE_TARGET_HITTER_ID = "d99506cc-6276-4e7d-8ae0-11a69788fcd6"
 HITTER_IDS = [SHIPPED_DEFAULT_PLAYER_ID, SHIPPED_TEAM_HITTER_ID, AOE_HITTER_ID, SINGLE_TARGET_HITTER_ID]
+#: P1 of the cheat-boss duels: Default's ladder without the card the boss's cheat watches.
+NO_BLADES_HITTER_ID = "9b646e45-6673-47e2-9d60-23ded9c7ad45"
+NO_FEINTS_HITTER_ID = "1fd335b0-1d99-4f80-a0cc-e33a52804f86"
+CHEAT_HITTER_IDS = [NO_BLADES_HITTER_ID, NO_FEINTS_HITTER_ID]
 
 MOB = Enemy("Mob")
 BOSS = Enemy("Boss", boss=True)
@@ -260,14 +265,14 @@ async def test_the_team_hitter_heals_before_its_round_1_aoe():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+@pytest.mark.parametrize("hitter_id", HITTER_IDS + CHEAT_HITTER_IDS)
 async def test_every_hitter_heals_itself_below_30_percent(hitter_id: str):
     fight = solo(FAIRY, STORM_BLADE, SIRENS, me=Wizard("P1", health=899), enemies=[BOSS])
 
     assert await cast(shipped_dsl(hitter_id), fight) == Turn("Fairy", "P1")
 
 
-@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+@pytest.mark.parametrize("hitter_id", HITTER_IDS + CHEAT_HITTER_IDS)
 async def test_every_hitter_shields_itself_before_any_buff(hitter_id: str):
     fight = solo(MASS_FEINT, FEINT, STORM_BLADE, TOWER_SHIELD, SIRENS, KRAKEN, enemies=[BOSS])
 
@@ -283,7 +288,7 @@ async def test_no_hitter_shields_over_a_shield(hitter_id: str):
     assert turn.card == "Feint Mass - Amulet"
 
 
-@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+@pytest.mark.parametrize("hitter_id", HITTER_IDS + CHEAT_HITTER_IDS)
 async def test_every_hitter_heals_before_it_shields(hitter_id: str):
     fight = solo(TOWER_SHIELD, FAIRY, me=Wizard("P1", health=899), enemies=[BOSS])
 
@@ -324,6 +329,108 @@ async def test_the_single_target_hitter_feints_the_boss_then_hits_it():
 
     assert (await cast(dsl, solo(FEINT, SIRENS, KRAKEN, enemies=[MOB, BOSS]))) == Turn("Feint", "Boss")
     assert (await cast(dsl, solo(FEINT, SIRENS, KRAKEN, enemies=[MOB, feinted]))) == Turn("Kraken", "Boss")
+
+
+async def test_the_single_target_hitter_hits_a_mob_in_a_mob_fight():
+    """It has no AoE to wait for, so with no boss it hits one mob rather than never attack (#212)."""
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    assert await cast(shipped_dsl(SINGLE_TARGET_HITTER_ID), solo(KRAKEN, me=me)) == Turn("Kraken", "Mob")
+
+
+async def test_the_single_target_hitter_hits_the_boss_and_not_its_minion():
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    turn = await cast(shipped_dsl(SINGLE_TARGET_HITTER_ID), solo(KRAKEN, me=me, enemies=[MOB, BOSS]))
+
+    assert turn == Turn("Kraken", "Boss")
+
+
+# ---------------------------------------------------------------------------
+# The cheat-boss hitters (#212)
+# ---------------------------------------------------------------------------
+
+
+async def test_the_no_blades_hitter_feints_the_boss_and_skips_the_blade():
+    turn = await cast(shipped_dsl(NO_BLADES_HITTER_ID), solo(STORM_BLADE, FEINT, KRAKEN, enemies=[BOSS]))
+
+    assert turn.card == "Feint"
+
+
+async def test_the_no_blades_hitter_hits_holding_only_a_blade_and_a_hit():
+    turn = await cast(shipped_dsl(NO_BLADES_HITTER_ID), solo(STORM_BLADE, SHARPENED_BLADE, KRAKEN, enemies=[BOSS]))
+
+    assert turn == Turn("Kraken", "Boss")
+
+
+async def test_the_no_feints_hitter_blades_itself_and_skips_the_feints():
+    turn = await cast(shipped_dsl(NO_FEINTS_HITTER_ID), solo(MASS_FEINT, FEINT, STORM_BLADE, KRAKEN, enemies=[BOSS]))
+
+    assert turn.card == "Storm Blade"
+
+
+async def test_the_no_feints_hitter_traps_the_boss_with_anything_but_a_feint():
+    me = Wizard("P1", hanging=[STORM_BLADE.hanging()])
+
+    turn = await cast(shipped_dsl(NO_FEINTS_HITTER_ID), solo(FEINT, STORM_TRAP, KRAKEN, me=me, enemies=[BOSS]))
+
+    assert turn.card == "Storm Trap"
+
+
+_POOL = [STORM_BLADE, BALANCEBLADE, SHARPENED_BLADE, FEINT, MASS_FEINT, POTENT_TRAP, STORM_TRAP, MASS_HEX]
+_POOL += [AMPLIFY, WYLDFIRE, FAIRY, TOWER_SHIELD, SIRENS, KRAKEN, STORM_SHARK, EPIC]
+
+
+def _sweep() -> list[Fight]:
+    """Every situation a hitter reads, over a fixed sample of hands."""
+    rng = random.Random(212)
+    hands = [rng.sample(_POOL, rng.randint(1, 7)) for _ in range(40)] + [_POOL[:7], _POOL[7:]]
+    hung_boss = Enemy("Boss", boss=True, hanging=[FEINT.hanging(POTENT_TRAP), STORM_TRAP.hanging()])
+    situations = [
+        {"enemies": [BOSS], "round": 1},
+        {"enemies": [MOB, BOSS], "round": 2},
+        {"enemies": [hung_boss], "round": 3, "me": Wizard("P1", hanging=[STORM_BLADE.hanging(SHARPENED_BLADE)])},
+        {"enemies": [MOB, MOB], "round": 1},
+        {"enemies": [BOSS], "round": 2, "me": Wizard("P1", health=500)},
+        {"enemies": [BOSS], "round": 2, "pips": 1},
+    ]
+    return [solo(*hand, **situation) for hand in hands for situation in situations]
+
+
+_BLADES = {STORM_BLADE.name, BALANCEBLADE.name}
+
+
+async def test_the_no_blades_hitter_never_casts_or_fuses_a_blade():
+    for fight in _sweep():
+        turn = await cast(shipped_dsl(NO_BLADES_HITTER_ID), fight)
+
+        assert turn.card not in _BLADES, (turn, fight.hand)
+        assert turn.enchant != SHARPENED_BLADE.name, (turn, fight.hand)
+        assert all(enchant != SHARPENED_BLADE.name and card not in _BLADES for enchant, card in turn.fuses)
+
+
+async def test_the_no_feints_hitter_never_casts_or_fuses_into_a_feint():
+    for fight in _sweep():
+        turn = await cast(shipped_dsl(NO_FEINTS_HITTER_ID), fight)
+
+        assert "Feint" not in (turn.card or ""), (turn, fight.hand)
+        assert all("Feint" not in card for _enchant, card in turn.fuses), (turn, fight.hand)
+
+
+_DUELS = Path(__file__).resolve().parents[2] / "strategies" / "duel"
+
+
+@pytest.mark.parametrize(
+    ("duel", "hitter_id"),
+    [
+        ("default-team-boss-duel-no-blades.json", NO_BLADES_HITTER_ID),
+        ("default-team-boss-duel-no-feints.json", NO_FEINTS_HITTER_ID),
+    ],
+)
+def test_each_cheat_boss_duel_gives_p1_the_hitter_that_avoids_its_cheat(duel: str, hitter_id: str):
+    assignments = json.loads((_DUELS / duel).read_text(encoding="utf-8"))["player_assignments"]
+
+    assert [a["player_combat_strategy_id"] for a in assignments if a["players"] == [1]] == [hitter_id]
 
 
 # ---------------------------------------------------------------------------
@@ -394,7 +501,7 @@ def _round_lines(dsl: str):
     return list(config.specific_rounds.values()) + list(config.infinite_rounds)
 
 
-@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+@pytest.mark.parametrize("hitter_id", HITTER_IDS + CHEAT_HITTER_IDS)
 def test_every_hitter_parses_and_enchants_ahead_first_on_every_line(hitter_id: str):
     dsl = shipped_dsl(hitter_id)
     assert validate_dsl(dsl) is None
@@ -404,7 +511,7 @@ def test_every_hitter_parses_and_enchants_ahead_first_on_every_line(hitter_id: s
         assert held[0] and held.count(True) == 1
 
 
-@pytest.mark.parametrize("hitter_id", HITTER_IDS)
+@pytest.mark.parametrize("hitter_id", HITTER_IDS + CHEAT_HITTER_IDS)
 def test_no_hitter_reads_the_boss_by_its_health(hitter_id: str):
     dsl = shipped_dsl(hitter_id)
     assert "boss.health" not in dsl
@@ -414,7 +521,7 @@ def test_no_hitter_reads_the_boss_by_its_health(hitter_id: str):
 def test_only_the_team_hitter_has_a_round_1_line():
     """The round-1 AoE belongs to team fights; a solo wizard buffs first."""
     assert "{1}" in shipped_dsl(SHIPPED_TEAM_HITTER_ID)
-    for hitter_id in (SHIPPED_DEFAULT_PLAYER_ID, AOE_HITTER_ID, SINGLE_TARGET_HITTER_ID):
+    for hitter_id in (SHIPPED_DEFAULT_PLAYER_ID, AOE_HITTER_ID, SINGLE_TARGET_HITTER_ID, *CHEAT_HITTER_IDS):
         assert "{1}" not in shipped_dsl(hitter_id)
 
 

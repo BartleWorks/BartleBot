@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 #: The version of the shared Official set this build ships. Raised whenever a shared
 #: Official item is added, changed or removed; it is never lowered. Nothing leaves a set
 #: after 1.0.0, since a user's link to it would then point at nothing. Before 1.0.0 there
-#: are no users: version 6 removed two duels (#223), and version 8 a player strategy (#212).
+#: are no users: version 6 removed two duels (#223), and version 8 retired a player strategy (#212).
 SHARED_SET_VERSION = 8
 
 #: ``HKCU\Software\Bartleby``: one subkey per installed product.
