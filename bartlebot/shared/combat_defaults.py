@@ -21,7 +21,7 @@ when one is set and fits the team, and the shipped one otherwise. BartleBuddy ca
 function, so a default set in either product is the default in both.
 
 An ambient fight, one no node started, gets Everyone Attacks as its shipped Team default
-instead. Its players take their seats in whatever order they arrive, so Default Support's
+instead. Its players fill the slots in whatever order they arrive, so Default Support's
 blade on ``ally(last)`` would land on whoever happened to join last, not on P1.
 """
 
@@ -94,7 +94,7 @@ SHIPPED_TEAM_HITTER_ID = "dc7b81c3-c4cf-4ef8-8d4c-7a15d7982c47"
 #: The Default Support player strategy, which only buffs.
 SHIPPED_DEFAULT_SUPPORT_ID = "d2496f8b-85c5-44f5-98da-13fb0c7ddea5"
 #: The Default Guardian Support player strategy: it protects P1 first, then buffs. No
-#: shipped duel links it; a user picks it for a seat.
+#: shipped duel links it; a user picks it for a slot.
 SHIPPED_GUARDIAN_SUPPORT_ID = "fb26e474-00fc-4548-9d79-520acd050844"
 
 
@@ -129,7 +129,7 @@ SHIPPED_DUEL_IDS = {
     TeamSize.TEAM: SHIPPED_TEAM_DUEL_ID,
 }
 
-#: The shipped default for an ambient fight. Nothing orders who joins it, so no seat is
+#: The shipped default for an ambient fight. Nothing orders who joins it, so no slot is
 #: known to be the hitter's, and every player hits.
 SHIPPED_AMBIENT_DUEL_IDS = {
     TeamSize.SOLO: SHIPPED_SOLO_DUEL_ID,

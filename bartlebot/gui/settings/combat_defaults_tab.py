@@ -94,7 +94,7 @@ RECORD_TITLE = "Record combat decisions"
 RECORD_SUMMARY = "Write why each turn cast what it did to the session log."
 RECORD_DETAILS = (
     "Every round of every fight: the hand, each line of the strategy and why it was passed over, "
-    "every enchant fused, and the card cast and at whom. Players are written by their seat, never "
+    "every enchant fused, and the card cast and at whom. Players are written by their slot, never "
     "their name. It adds a few kilobytes a round for each client, so turn it on to look into a fight "
     "that misbehaves, and off again after. Developer mode records it either way."
 )

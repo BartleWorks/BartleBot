@@ -687,7 +687,7 @@ def test_loading_after_an_empty_rebuild_survives_the_deferred_delete(qapp, empty
     assert len(editor.cards) == 1
 
 
-# The seat-order line (#212)
+# The slot-order line (#212)
 
 _SUPPORT = PlayerCombatStrategy(name="Support", dsl="any<blade>[sharp] @ ally(last) | pass")
 
@@ -700,33 +700,33 @@ def _support_duel(**kwargs) -> DuelConfig:
     )
 
 
-def test_a_seat_left_to_chance_is_said_under_the_combat_order(qapp):
+def test_a_slot_left_to_chance_is_said_under_the_combat_order(qapp):
     editor = DuelConfigEditor()
     editor.load(_support_duel(), [_SUPPORT])
 
-    assert editor.seat_warning.startswith("P2–P4 target ally(last)")
+    assert editor.slot_warning.startswith("P2–P4 target ally(last)")
 
 
-def test_an_ordered_duel_says_nothing_about_seats(qapp):
+def test_an_ordered_duel_says_nothing_about_slots(qapp):
     editor = DuelConfigEditor()
     editor.load(_support_duel(combat_order=[4, 3, 2, 1]), [_SUPPORT])
 
-    assert editor.seat_warning == ""
+    assert editor.slot_warning == ""
 
 
-def test_choosing_simultaneous_entry_brings_the_seat_warning(qapp):
+def test_choosing_simultaneous_entry_brings_the_slot_warning(qapp):
     editor = DuelConfigEditor()
     editor.load(_support_duel(combat_order=[4, 3, 2, 1]), [_SUPPORT])
 
     editor._order_widget._checkbox.setChecked(True)
 
-    assert editor.seat_warning
+    assert editor.slot_warning
 
 
-def test_removing_the_support_takes_the_seat_warning_with_it(qapp):
+def test_removing_the_support_takes_the_slot_warning_with_it(qapp):
     editor = DuelConfigEditor()
     editor.load(_support_duel(), [_SUPPORT])
 
     editor._on_remove_card(editor.cards[0])
 
-    assert editor.seat_warning == ""
+    assert editor.slot_warning == ""

@@ -186,7 +186,7 @@ TAG_TEXTURES: dict[str, str] = {
 
 #: Duel slot -> the full game path of the gem the game marks that position with.
 #:
-#: A duel seats four wizards around a circle and turns go clockwise, which puts a team's
+#: A duel puts four wizards around a circle and turns go clockwise, which puts a team's
 #: own players right to left: slot 1 is the rightmost. The game's "Set Sigil Slot
 #: Preference" dialog lists them that way, and marks each with one of these gold diamonds
 #: -- Sun, Eye, Star, Moon, first to last. ``Art_Target_`` because the same four mark a

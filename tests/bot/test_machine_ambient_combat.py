@@ -156,7 +156,7 @@ async def test_a_lone_fighter_fights_at_once_then_goes_to_the_hub_and_recovery(f
 async def test_the_strategy_is_resolved_per_slot_and_drops_are_credited_to_it(fast, combat):
     """Resolving for only the battling clients would hand slot 1 the strategy for slot 0.
 
-    It is resolved as an ambient fight, which nothing seats in combat order."""
+    It is resolved as an ambient fight, which nothing lines up in combat order."""
     elsewhere, fighter = _client(), _client()
     see_each_other(elsewhere)
     see_each_other(fighter)

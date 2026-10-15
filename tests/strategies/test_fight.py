@@ -171,11 +171,11 @@ async def test_repeating_lines_take_turns_after_the_round_1_line():
 
 
 # ---------------------------------------------------------------------------
-# The fight described: seats, enemies, health, what hangs
+# The fight described: slots, enemies, health, what hangs
 # ---------------------------------------------------------------------------
 
 
-async def test_ally_last_is_p1_in_the_shipped_seat_order():
+async def test_ally_last_is_p1_in_the_shipped_slot_order():
     fight = Fight(team=team(4), me="P3", enemies=[BOSS], hand=[STORM_BLADE])
 
     assert (await cast("any<blade> @ ally(last)", fight)).target == "P1"

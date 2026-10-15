@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from bartlebot.combat.seat_order import unfixed_seat_uses
+from bartlebot.combat.slot_order import unfixed_slot_uses
 from bartlebot.content.store_roots import Origin
 from bartlebot.nodes.combat_runner import validate_dsl
 
@@ -36,8 +36,8 @@ class HealthStatus(Enum):
     OK = "ok"
     EMPTY = "empty"
     INVALID_DSL = "invalid_dsl"
-    #: Runs, but a strategy aims at a seat the duel leaves to chance (:mod:`~bartlebot.combat.seat_order`).
-    SEAT_ORDER = "seat_order"
+    #: Runs, but a strategy aims at a slot the duel leaves to chance (:mod:`~bartlebot.combat.slot_order`).
+    SLOT_ORDER = "slot_order"
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,7 @@ class Health:
     It exists as its own status because a picker still wants to say "nothing
     configured yet" rather than "OK", which reads as "checked and fine".
 
-    SEAT_ORDER is not a problem either, in that the strategy runs: it is a warning, which
+    SLOT_ORDER is not a problem either, in that the strategy runs: it is a warning, which
     the user may mean (``is_warning``).
     """
 
@@ -62,7 +62,7 @@ class Health:
 
     @property
     def is_warning(self) -> bool:
-        return self.status is HealthStatus.SEAT_ORDER
+        return self.status is HealthStatus.SLOT_ORDER
 
 
 _OK = Health(HealthStatus.OK)
@@ -286,7 +286,7 @@ def _duel_facets(config: DuelConfig) -> list[str]:
 def format_combat_order(order: list[int] | tuple[int, ...]) -> str:
     """'P3 ← P2 ← P1', or 'Simultaneous' for an empty order -- the combat-order facet.
 
-    Right to left, because that is the order a duel seats a team in: slot 1 is the
+    Right to left, because that is the order a duel lines a team up in: slot 1 is the
     rightmost wizard and turns run clockwise from there. Every surface that shows a combat
     order is mirrored the same way -- the editor, the summary pills, and this text, which
     is what the pills' tooltip says (#29). The arrow keeps meaning "then" and turns with
@@ -298,22 +298,22 @@ def format_combat_order(order: list[int] | tuple[int, ...]) -> str:
     return " ← ".join(f"P{p}" for p in reversed(order)) if order else "Simultaneous"
 
 
-def seat_order_warning(config: DuelConfig, pcs_dsl: dict[str, str]) -> str | None:
-    """Say which players aim at a seat this duel leaves to chance, or None.
+def slot_order_warning(config: DuelConfig, pcs_dsl: dict[str, str]) -> str | None:
+    """Say which players aim at a slot this duel leaves to chance, or None.
 
     ``pcs_dsl`` maps a linked player strategy's id to its DSL.
     """
-    uses = unfixed_seat_uses(config, pcs_dsl)
+    uses = unfixed_slot_uses(config, pcs_dsl)
     if not uses:
         return None
     clauses = [
-        f"{format_players(players)} {'targets' if len(players) == 1 else 'target'} {' and '.join(seats)}"
-        for players, seats in uses
+        f"{format_players(players)} {'targets' if len(players) == 1 else 'target'} {' and '.join(slots)}"
+        for players, slots in uses
     ]
     return (
-        f"{'; '.join(clauses)}, a seat on the team rather than a player. With no combat order, "
-        "players take their seats in the order they arrive, so that seat can be a different "
-        "player each fight. Set a combat order to fix who sits where."
+        f"{'; '.join(clauses)}, a slot on the team rather than a player. With no combat order, "
+        "players fill the slots in the order they arrive, so that slot can be a different "
+        "player each fight. Set a combat order to fix who is in which slot."
     )
 
 
@@ -329,9 +329,9 @@ def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy])
         error = validate_dsl(dsl)
         if error:
             return Health(HealthStatus.INVALID_DSL, error)
-    warning = seat_order_warning(config, {pcs_id: pcs.dsl for pcs_id, pcs in pcs_by_id.items()})
+    warning = slot_order_warning(config, {pcs_id: pcs.dsl for pcs_id, pcs in pcs_by_id.items()})
     if warning:
-        return Health(HealthStatus.SEAT_ORDER, warning)
+        return Health(HealthStatus.SLOT_ORDER, warning)
     return _OK
 
 

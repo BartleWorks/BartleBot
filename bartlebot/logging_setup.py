@@ -44,7 +44,7 @@ _NOISY_LIBRARIES = (
 _WIZWALKER_LEVEL = logging.INFO
 
 #: wizsprinter's record of what each turn decided and why: the hand, every priority
-#: walked, every fuse, the card cast and at which seat. It writes at DEBUG, which the
+#: walked, every fuse, the card cast and at which slot. It writes at DEBUG, which the
 #: wizwalker level above drops, so ``set_turn_trace`` is what lets it through.
 TURN_TRACE_LOGGER = "wizwalker.extensions.wizsprinter.turns"
 

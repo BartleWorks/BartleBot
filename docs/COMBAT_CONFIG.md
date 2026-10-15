@@ -215,9 +215,9 @@ still linking one gets that fault before a run, and its card reads "(missing str
 nothing relinks it for the user.
 
 **An ambient fight's Team default is Everyone Attacks.** In a fight no node started
-(`docs/AMBIENT_COMBAT.md`), players take their seats in whatever order they arrive: the
+(`docs/AMBIENT_COMBAT.md`), players fill the slots in whatever order they arrive: the
 one pulled in first, then helpers as their teleports and ports land. Default Team Duel's
-combat order is what puts P1 in the last seat, so there Default Support's blade on
+combat order is what puts P1 in the last slot, so there Default Support's blade on
 `ally(last)` would land on whoever joined last. Most ambient fights are a stray mob, which
 every player hitting ends quickly. So `default_duel(..., ambient=True)` answers level 4
 from `SHIPPED_AMBIENT_DUEL_IDS`, and the label says "the shipped Team default for an
@@ -226,7 +226,7 @@ and all.
 
 **What a support does** (#218, Stages 3 and 6). A support never spends a buff meant for
 the hitter, and Default Support does nothing else: it never heals or shields. Combat
-order 4, 3, 2, 1 seats the supports to cast before P1, so a support that hits a trapped
+order 4, 3, 2, 1 has the supports cast before P1, so a support that hits a trapped
 boss spends the Feint P1 was meant to hit through. Default Support's lines, first that
 can cast wins:
 
@@ -280,7 +280,7 @@ the fights above.
 **What the guardian does** (#218, Stage 6). Teams rarely carry shields or need a healer,
 since killing faster wins, so Default Team Duel keeps the buff support. A team whose
 decks do carry them carries them out of necessity, and casts them before any buff.
-Default Guardian Support is for that team: a user picks it for a seat. It protects P1
+Default Guardian Support is for that team: a user picks it for a slot. It protects P1
 first, since losing the hitter loses the fight, then itself. Its lines, first that can
 cast wins:
 
@@ -297,7 +297,7 @@ cast wins:
 5. Default Support's ladder from its round-1 AoE on: the P1-dead attack, the buffs, the
    global, the negative aura and `pass`.
 
-Protecting whichever teammate is lowest instead would need a health condition per seat,
+Protecting whichever teammate is lowest instead would need a health condition per slot,
 which makes the DSL unreadable. `tests/strategies/test_guardian.py` walks it through its
 fights, and checks that with nothing to protect it casts what Default Support does.
 
@@ -425,7 +425,7 @@ does; see `docs/BOT_OPTIONS.md`.
 ## Before a run: faults and notices (#207)
 
 `combat_warnings.check_combat` sorts what it finds into two tiers, `CombatCheck(faults,
-unassigned, fallbacks, seating)`, the last three being its `notices`:
+unassigned, fallbacks, slot_order)`, the last three being its `notices`:
 
 | tier | what it is | where it goes |
 |---|---|---|
@@ -460,16 +460,16 @@ The notices, grouped so that a setup says each thing once rather than once per f
 - `fallbacks`: fights that fall past level 1, grouped by the duel they run and the level
   that answered: "Every fight runs duel strategy 'Default Team Duel' (the shipped Team
   default; this bot has no Bot Combat Strategy).";
-- `seating`: each duel a fight reaches with no combat order whose player strategy aims at
-  a seat, `ally(last)` or `ally(0)` (#212). The team lists players in the order they sat
-  down, and with Simultaneous entry that is whatever order they arrived in, so a support's
+- `slot_order`: each duel a fight reaches with no combat order whose player strategy aims at
+  a slot, `ally(last)` or `ally(0)` (#212). The team lists players in the order they
+  joined, and with Simultaneous entry that is whatever order they arrived in, so a support's
   blade on `ally(last)` lands on a different player each fight. It runs, so it is no fault,
-  and it may be meant, but it is logged at WARNING rather than INFO. A duel seating one
-  player, or with any combat order, never gets it. `seat_order` finds the seats, and the
-  same sentence is the duel's health (`HealthStatus.SEAT_ORDER`): a ⚠ in the warning color
+  and it may be meant, but it is logged at WARNING rather than INFO. A duel with room for
+  one player, or with any combat order, never gets it. `slot_order` finds the slots, and the
+  same sentence is the duel's health (`HealthStatus.SLOT_ORDER`): a ⚠ in the warning color
   on its card and the Combat tab, and a line under Combat Order in the duel editor.
 
-Each is logged once. `AppController._confirm_combat` logs `unassigned` and `seating`: the
+Each is logged once. `AppController._confirm_combat` logs `unassigned` and `slot_order`: the
 fallbacks are in the line `_log_combat_sources` writes before the first node
 (`describe_run`), which names every fight's source, the pick's included, and logging
 both would say each fallback twice.

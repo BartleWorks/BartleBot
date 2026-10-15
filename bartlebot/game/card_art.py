@@ -140,7 +140,7 @@ def pin_icon_name(kind: str) -> str:
     return f"pin_{kind}"
 
 
-#: How many players a duel seats, and so how many slot gems there are.
+#: How many players a duel has slots for, and so how many slot gems there are.
 DUEL_SLOTS = 4
 
 #: Duel slot -> the symbol the game marks it with, first position to last.
@@ -154,7 +154,7 @@ DUEL_SLOT_SYMBOLS: dict[int, str] = {1: "Sun", 2: "Eye", 3: "Star", 4: "Moon"}
 
 
 def duel_slot_symbol(slot: int) -> str:
-    """The symbol name for a duel slot ("Sun"), or "" for a slot the game does not seat."""
+    """The symbol name for a duel slot ("Sun"), or "" for a slot the game does not have."""
     return DUEL_SLOT_SYMBOLS.get(slot, "")
 
 

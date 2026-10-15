@@ -1,6 +1,6 @@
 """Walk a strategy's DSL through one round of a described fight, and say what it cast.
 
-A `Fight` describes one planning phase as one client sees it: the team in seat order and
+A `Fight` describes one planning phase as one client sees it: the team in slot order and
 which of them is me, the enemies, the round, my hand and my pips, and what already hangs
 on each combatant by spell and enchant id. `cast(dsl, fight)` runs wizsprinter's real
 `SprintyCombat.handle_round` over it -- which picks the round's line, `{N}` lines
@@ -183,14 +183,14 @@ class Enemy:
 
 
 def team(size: int) -> tuple[Wizard, ...]:
-    """`size` wizards seated under combat order 4, 3, 2, 1, as the shipped team duels seat
-    them: P1 in the last seat, so `ally(last)` is P1."""
+    """`size` wizards lined up under combat order 4, 3, 2, 1, as the shipped team duels line
+    them up: P1 in the last slot, so `ally(last)` is P1."""
     return tuple(Wizard(f"P{n}") for n in range(size, 0, -1))
 
 
 @dataclass(frozen=True)
 class Fight:
-    """One planning phase, as the client `me` sees it. `team` is in seat order."""
+    """One planning phase, as the client `me` sees it. `team` is in slot order."""
 
     team: Sequence[Wizard]
     enemies: Sequence[Enemy]

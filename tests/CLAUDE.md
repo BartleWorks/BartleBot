@@ -16,7 +16,7 @@ What every change ships with, and the ways this suite goes slow or flaky.
 - No Wizard101 process needed — all node tests use `FakeClient`
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
 - **What a strategy casts** is a `tests/strategies/fight.py` test: describe a `Fight` (the
-  team in seat order and which one is me, the enemies, the round, the hand, the pips, what
+  team in slot order and which one is me, the enemies, the round, the hand, the pips, what
   hangs on whom) and `await cast(dsl, fight)` runs wizsprinter's real `handle_round` over
   it and returns the `Turn`. `shipped_dsl(id)` reads a shipped player strategy. A round
   costs about 1 ms, so cover each situation with its own fight rather than one long test.

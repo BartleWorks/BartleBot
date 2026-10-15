@@ -1,6 +1,6 @@
 """Duel slot gems, and the right-to-left combat order they came with (#29).
 
-A duel seats a team right to left -- slot 1 is the rightmost wizard, and the game's own
+A duel lines a team up right to left -- slot 1 is the rightmost wizard, and the game's own
 "Set Sigil Slot Preference" dialog lists 4, 3, 2, 1 in that order, each marked with a gold
 diamond. This app drew the same four positions left to right under ``1st``…``4th``, which
 is the opposite of what the user sees in the fight they are configuring.
@@ -36,10 +36,10 @@ def test_a_slot_key_is_its_number():
     assert duel_slot_icon_name(4) == "duel_slot_4"
 
 
-def test_every_seat_has_a_texture_and_a_symbol():
-    seats = set(range(1, DUEL_SLOTS + 1))
-    assert set(DUEL_SLOT_TEXTURES) == seats
-    assert set(DUEL_SLOT_SYMBOLS) == seats
+def test_every_slot_has_a_texture_and_a_symbol():
+    slots = set(range(1, DUEL_SLOTS + 1))
+    assert set(DUEL_SLOT_TEXTURES) == slots
+    assert set(DUEL_SLOT_SYMBOLS) == slots
 
 
 def test_each_texture_is_the_gem_its_symbol_names():

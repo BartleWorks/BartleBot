@@ -72,7 +72,7 @@ def solo(*hand, enemies=(MOB, MOB), round=2, me: Wizard | None = None, **kwargs)
 
 
 def as_p1(*hand, size=2, enemies=(MOB, MOB), round=1, **kwargs) -> Fight:
-    """P1 of a team duel, in the last seat."""
+    """P1 of a team duel, in the last slot."""
     return Fight(team=team(size), enemies=list(enemies), hand=list(hand), round=round, **kwargs)
 
 

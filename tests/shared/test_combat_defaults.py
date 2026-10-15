@@ -229,18 +229,18 @@ def test_shared_set_version_rose_when_turn_1_aoe_left():
 
 
 @pytest.mark.parametrize("path", _duel_files(), ids=lambda p: p.name)
-def test_no_shipped_duel_leaves_a_seat_to_chance(path: Path):
+def test_no_shipped_duel_leaves_a_slot_to_chance(path: Path):
     """A shipped support aims at ``ally(last)``, which is P1 only under a combat order that
-    seats P1 last (#212)."""
-    from bartlebot.combat.strategy_summary import seat_order_warning  # noqa: PLC0415
+    puts P1 in the last slot (#212)."""
+    from bartlebot.combat.strategy_summary import slot_order_warning  # noqa: PLC0415
 
     pcs_dsl = {pcs.id: pcs.dsl for pcs in map(PlayerCombatStrategy.load, _player_files())}
 
-    assert seat_order_warning(DuelCombatStrategy.load(path), pcs_dsl) is None
+    assert slot_order_warning(DuelCombatStrategy.load(path), pcs_dsl) is None
 
 
 def test_no_shipped_duel_links_the_guardian():
-    """A team rarely needs one, so a user picks it for a seat (#224)."""
+    """A team rarely needs one, so a user picks it for a slot (#224)."""
     duels = Path(__file__).resolve().parents[2] / "strategies" / "duel"
     for path in duels.glob("*.json"):
         assert SHIPPED_GUARDIAN_SUPPORT_ID not in path.read_text(encoding="utf-8"), path.name
@@ -373,7 +373,7 @@ def test_a_stored_id_that_does_not_fit_falls_to_the_shipped_duel_and_says_why(tm
 
 
 def test_an_ambient_team_fight_falls_to_everyone_attacks(tmp_path):
-    """Nothing orders who joins a fight no node started, so no seat is the hitter's."""
+    """Nothing orders who joins a fight no node started, so no slot is the hitter's."""
     everyone = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
     answer = default_duel(3, _prefs(tmp_path), _library(_duel(SHIPPED_TEAM_DUEL_ID), everyone), ambient=True)
     assert (answer.duel, answer.source) == (everyone, DefaultSource.SHIPPED)

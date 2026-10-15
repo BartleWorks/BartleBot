@@ -48,7 +48,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.combat.strategy_summary import seat_order_warning
+from bartlebot.combat.strategy_summary import slot_order_warning
 from bartlebot.gui.combat_strategies.assignment_card import AssignmentCard
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.widgets.cards.add_card import AddCard
@@ -143,12 +143,12 @@ class DuelConfigEditor(QWidget):
             self._order_widget.add_header_widget(spin)
         outer.addWidget(self._order_widget)
 
-        # Under the order it would fix: a strategy below aims at a seat that Simultaneous
+        # Under the order it would fix: a strategy below aims at a slot that Simultaneous
         # entry leaves to chance (#212). Derived, like the requirements line.
-        self._seat_lbl = ThemedTextLabel(color="warning", parent=self)
-        self._seat_lbl.setWordWrap(True)
-        self._seat_lbl.hide()
-        outer.addWidget(self._seat_lbl)
+        self._slot_lbl = ThemedTextLabel(color="warning", parent=self)
+        self._slot_lbl.setWordWrap(True)
+        self._slot_lbl.hide()
+        outer.addWidget(self._slot_lbl)
 
         # ── Player Strategies ───────────────────────────────────────────
         outer.addWidget(RuleHeading(ASSIGNMENTS_HEADING, self))
@@ -195,7 +195,7 @@ class DuelConfigEditor(QWidget):
         self._apply_max_players_constraints(config.max_players)
         self._update_add_card()
         self._update_requirements_label()
-        self._update_seat_warning()
+        self._update_slot_warning()
 
     def clear(self) -> None:
         """Detach from the loaded config. There is no pending state to drop — every edit
@@ -206,14 +206,14 @@ class DuelConfigEditor(QWidget):
         self._rebuild_cards()
         self._suppress = False
         self._update_requirements_label()
-        self._update_seat_warning()
+        self._update_slot_warning()
 
     def set_pcs_list(self, all_pcs: list[PlayerCombatStrategy]) -> None:
         self._all_pcs = all_pcs
         for card in self._cards:
             card.set_pcs_list(all_pcs)
         self._update_requirements_label()
-        self._update_seat_warning()
+        self._update_slot_warning()
 
     def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
         """Color every card's slot pills by the account currently in each slot.
@@ -328,7 +328,7 @@ class DuelConfigEditor(QWidget):
         self._cards[-1].set_max_players(max_p)
         self._update_add_card()
         self._update_requirements_label()
-        self._update_seat_warning()
+        self._update_slot_warning()
         self.changed.emit()
 
     def _on_remove_card(self, card: AssignmentCard) -> None:
@@ -341,7 +341,7 @@ class DuelConfigEditor(QWidget):
         self._drag.set_cards(self._cards)
         self._update_add_card()
         self._update_requirements_label()
-        self._update_seat_warning()
+        self._update_slot_warning()
         self.changed.emit()
 
     def _on_cards_reordered(self, order: list[int]) -> None:
@@ -399,17 +399,17 @@ class DuelConfigEditor(QWidget):
         self._requirements_lbl.show()
 
     @property
-    def seat_warning(self) -> str:
-        """What the seat-order line says, or "" while it is hidden."""
-        return self._seat_lbl.text() if not self._seat_lbl.isHidden() else ""
+    def slot_warning(self) -> str:
+        """What the slot-order line says, or "" while it is hidden."""
+        return self._slot_lbl.text() if not self._slot_lbl.isHidden() else ""
 
-    def _update_seat_warning(self) -> None:
-        """Say when a strategy below aims at a seat this duel leaves to chance."""
+    def _update_slot_warning(self) -> None:
+        """Say when a strategy below aims at a slot this duel leaves to chance."""
         warning = None
         if self._config is not None:
-            warning = seat_order_warning(self._config, {p.id: p.dsl for p in self._all_pcs})
-        self._seat_lbl.setText(warning or "")
-        self._seat_lbl.setVisible(bool(warning))
+            warning = slot_order_warning(self._config, {p.id: p.dsl for p in self._all_pcs})
+        self._slot_lbl.setText(warning or "")
+        self._slot_lbl.setVisible(bool(warning))
 
     def _on_min_players_changed(self, value: int) -> None:
         """Drag Max up when Min passes it, so the range can never invert.
@@ -462,7 +462,7 @@ class DuelConfigEditor(QWidget):
         order = self._order_widget.get_value()
         self._config.combat_order = order if order else None
         self._update_requirements_label()
-        self._update_seat_warning()
+        self._update_slot_warning()
         self.changed.emit()
 
     def changeEvent(self, event: QEvent) -> None:

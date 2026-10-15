@@ -69,7 +69,7 @@ async def _run(combat, move) -> bool:
         return await combat.try_execute_config(move)
 
 
-def _two_seats():
+def _two_slots():
     return [Member("P2"), Member("P1")]
 
 
@@ -107,7 +107,7 @@ async def test_the_card_cast_is_the_one_the_enchant_fused_into(parse, dsl):
     blades = [Card("Storm Blade", _BLADE, hand, template_id=STORMBLADE) for _ in range(3)]
     Card("Sharpened Blade", _ENCHANT, hand, template_id=SHARP_ID)
     hit = Card("Storm Shark", _HIT, hand, template_id=4001)
-    combat = fake_combat(hand, team=_two_seats())
+    combat = fake_combat(hand, team=_two_slots())
 
     assert await _run(combat, parse(dsl)[0]) is True
 
@@ -122,7 +122,7 @@ async def test_a_second_enchant_lands_on_the_fused_card_and_that_card_is_cast(pa
     blade = Card("Storm Blade", _BLADE, hand, template_id=STORMBLADE)
     sharp = Card("Sharpened Blade", _ENCHANT, hand, template_id=SHARP_ID)
     potent = Card("Potent Trap", _ENCHANT, hand, template_id=POTENT_ID)
-    combat = fake_combat(hand, team=_two_seats())
+    combat = fake_combat(hand, team=_two_slots())
 
     assert await _run(combat, parse("any<blade>[sharp][potent] @ ally(last)")[0]) is True
 
@@ -144,7 +144,7 @@ async def test_a_fused_card_that_cannot_be_found_is_not_cast_and_nothing_else_is
     blade = _Vanishes("Storm Blade", _BLADE, hand, template_id=STORMBLADE)
     Card("Sharpened Blade", _ENCHANT, hand, template_id=SHARP_ID)
     hit = Card("Storm Shark", _HIT, hand, template_id=4001)
-    combat = fake_combat(hand, team=_two_seats())
+    combat = fake_combat(hand, team=_two_slots())
 
     assert await _run(combat, parse("any<blade & stacks>[sharp] @ ally(last)")[0]) is False
 
@@ -156,7 +156,7 @@ async def test_a_card_cast_bare_is_the_one_picked(parse):
     """With no enchant in hand nothing fuses, and the handle picked stays good."""
     hand: list = []
     blade = Card("Storm Blade", _BLADE, hand, template_id=STORMBLADE)
-    combat = fake_combat(hand, team=_two_seats())
+    combat = fake_combat(hand, team=_two_slots())
 
     assert await _run(combat, parse("any<blade & stacks>[sharp] @ ally(last)")[0]) is True
 

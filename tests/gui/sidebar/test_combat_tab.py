@@ -1957,7 +1957,7 @@ def test_the_combat_order_is_drawn_as_pills_in_order(qapp):
     panel = StrategyPanel()
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
-    # Drawn right to left, as the duel seats them: P2 enters first and sits on the right.
+    # Drawn right to left, as the duel lines them up: P2 enters first and sits on the right.
     assert panel._order_badges.players == [1, 2]
     assert panel._meta.full_text() == "2 players ·"
     assert "P1 ← P2" in panel._meta.toolTip()

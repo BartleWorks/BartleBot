@@ -421,7 +421,7 @@ def fake_combat(
 ) -> SprintyCombat:
     """A `SprintyCombat` over a hand of `Card`s, with `team[me]` as the client.
 
-    `team` is in seat order, so `ally(last)` is `team[-1]`; with no team the client is a
+    `team` is in slot order, so `ally(last)` is `team[-1]`; with no team the client is a
     lone `P1`. `held` are enchant slots already held this walk. `provider` is the combat
     config backend `handle_round` asks for the round's line. `deck` is the main pile's
     count. A pass is counted in `passes`; once a card is cast at a combatant the hand

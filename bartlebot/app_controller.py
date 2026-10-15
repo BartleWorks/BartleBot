@@ -2820,7 +2820,7 @@ class AppController(QObject):
 
         Only a fault, a choice the user made that cannot work, opens a dialog, and its
         default is Go back. A notice is a fallback in use, and the run starts. Only the
-        fights the pick's default covers, and each duel leaving a seat to chance, are
+        fights the pick's default covers, and each duel leaving a slot to chance, are
         logged here: the fallbacks are in the line ``_log_combat_sources`` writes before
         the first node, and are never logged twice
         (``docs/COMBAT_CONFIG.md``, "Before a run: faults and notices").
@@ -2830,7 +2830,7 @@ class AppController(QObject):
         check = self._check_combat()
         for notice in check.unassigned:
             logger.info("Combat: %s", notice)
-        for notice in check.seating:
+        for notice in check.slot_order:
             logger.warning("Combat: %s", notice)
         if not check.faults:
             return True
