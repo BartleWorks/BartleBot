@@ -66,6 +66,15 @@ def test_every_shipped_player_strategy_parses(path: Path):
     assert validate_dsl(strategy.dsl) is None, strategy.name
 
 
+@pytest.mark.parametrize("path", _duel_files(), ids=lambda p: p.name)
+def test_every_dsl_written_into_a_shipped_duel_parses(path: Path):
+    """A duel can carry a player's DSL inline rather than link a player strategy."""
+    duel = DuelCombatStrategy.load(path)
+    for assignment in duel.player_assignments:
+        if assignment.dsl:
+            assert validate_dsl(assignment.dsl) is None, (duel.name, assignment.players)
+
+
 #: The gate on every shipped enchant-ahead slot: a freed hand slot only helps while the
 #: main pile has cards to refill it from, and a deck holding one card back gains little.
 ENCHANT_AHEAD_GATE = "?(deck.remaining >= 2)"
