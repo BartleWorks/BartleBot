@@ -52,6 +52,7 @@ from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_summary import summarize_duel
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
+from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
@@ -114,6 +115,9 @@ class DefaultDuelCard(SettingCard):
         self._size = size
         self._chosen = None if chosen == SHIPPED_DUEL_IDS[size] else chosen
         self._strategy_card: StrategyCard | None = None
+        # The card's health is drawn from the DSL checks already known, so opening
+        # Settings parses nothing; the rest are checked off the GUI thread.
+        self._checks = DeferredDslChecks(self, lambda _keys: self._redraw())
 
         body = QWidget(self)
         column = QVBoxLayout(body)
@@ -214,6 +218,7 @@ class DefaultDuelCard(SettingCard):
             self.set_choice(dlg.selected_id())
 
     def _redraw(self) -> None:
+        self._checks.reset()
         library = StrategyWorkingSet.from_store()
         duel = library.get(StrategyKind.DUEL, self._chosen) if self._chosen else None
         notes = default_choice_notes(self._size, self._chosen)
@@ -224,7 +229,9 @@ class DefaultDuelCard(SettingCard):
             self._strategy_card.deleteLater()
             self._strategy_card = None
         if shown is not None:
-            summary = summarize_duel(shown, library.lookup().players, name=shown.name)
+            summary = summarize_duel(
+                shown, library.lookup().players, name=shown.name, validate=self._checks.validator()
+            )
             # With its source pill, as the combat dialog draws it: Official for the
             # recommended one, and whatever the user's choice is.
             summary = replace(summary, source=library.status(StrategyKind.DUEL, shown.id))
@@ -239,6 +246,7 @@ class DefaultDuelCard(SettingCard):
             lead = CHOSEN_NOTE
         self._note.setText(" ".join([lead, *notes]))
         self._recommended_btn.setEnabled(self._chosen is not None)
+        self._checks.request_unknown()
 
 
 class CombatDefaultsTab(SettingsForm):

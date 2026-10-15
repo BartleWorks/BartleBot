@@ -13,6 +13,7 @@ test it.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -20,6 +21,10 @@ from typing import TYPE_CHECKING
 from bartlebot.combat.slot_order import unfixed_slot_uses
 from bartlebot.content.store_roots import Origin
 from bartlebot.nodes.combat_runner import validate_dsl
+
+#: Answers a DSL's parse error, or None: :func:`validate_dsl`, or a stand-in that answers
+#: only from checks already known (``gui/combat_strategies/dsl_checks.py``).
+Validate = Callable[[str], str | None]
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -317,7 +322,9 @@ def slot_order_warning(config: DuelConfig, pcs_dsl: dict[str, str]) -> str | Non
     )
 
 
-def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy]) -> Health:
+def _duel_health(
+    config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy], validate: Validate = validate_dsl
+) -> Health:
     if config.is_empty():
         return _EMPTY
     for assignment in config.player_assignments:
@@ -326,7 +333,7 @@ def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy])
             dsl = pcs.dsl if pcs is not None else ""
         else:
             dsl = assignment.dsl
-        error = validate_dsl(dsl)
+        error = validate(dsl)
         if error:
             return Health(HealthStatus.INVALID_DSL, error)
     warning = slot_order_warning(config, {pcs_id: pcs.dsl for pcs_id, pcs in pcs_by_id.items()})
@@ -335,8 +342,13 @@ def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy])
     return _OK
 
 
-def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name: str = "") -> StrategySummary:
-    """Summarize a duel-level config. Pass ``name`` for a named DuelCombatStrategy."""
+def summarize_duel(
+    config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name: str = "", *, validate: Validate = validate_dsl
+) -> StrategySummary:
+    """Summarize a duel-level config. Pass ``name`` for a named DuelCombatStrategy.
+
+    *validate* decides the health; the default parses whatever it has not seen.
+    """
     pcs_by_id = {p.id: p for p in all_pcs}
     lines: list[AssignmentLine] = []
     for assignment in config.player_assignments:
@@ -364,15 +376,15 @@ def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name
         facets=_duel_facets(config),
         schools=config.school_requirements(pcs_by_id),
         lines=lines,
-        health=_duel_health(config, pcs_by_id),
+        health=_duel_health(config, pcs_by_id, validate),
         combat_order=tuple(config.combat_order or ()),
         slot_schools=tuple(config.slot_schools(pcs_by_id)),
         player_range=(config.min_players, config.max_players),
     )
 
 
-def summarize_player(pcs: PlayerCombatStrategy) -> StrategySummary:
-    """Summarize a shared Player Combat Strategy preset."""
+def summarize_player(pcs: PlayerCombatStrategy, *, validate: Validate = validate_dsl) -> StrategySummary:
+    """Summarize a shared Player Combat Strategy preset. *validate* as for :func:`summarize_duel`."""
     dsl = pcs.dsl.strip()
     preview = _truncate(dsl, _DSL_PREVIEW_CHARS) if dsl else "(empty DSL)"
     facets = ["/".join(pcs.schools)] if pcs.schools else []
@@ -380,7 +392,7 @@ def summarize_player(pcs: PlayerCombatStrategy) -> StrategySummary:
     if not dsl:
         health = _EMPTY
     else:
-        error = validate_dsl(dsl)
+        error = validate(dsl)
         health = Health(HealthStatus.INVALID_DSL, error) if error else _OK
     return StrategySummary(
         name=pcs.name,

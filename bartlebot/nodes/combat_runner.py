@@ -140,8 +140,10 @@ def _lark_parser():
     ``CombatConfigProvider.parse_config()`` rebuilds a ``Lark`` instance on every
     call (~77 ms), and ``_run_combat`` constructs a provider per client per fight,
     so that cost lands squarely in the hot path.  Lark parsers are reusable across
-    ``parse()`` calls and this app is single-threaded under qasync, so one shared
-    instance is safe.
+    ``parse()`` calls, and one shared instance is safe across threads too: the GUI's
+    background checks (``gui/combat_strategies/dsl_checks.py``) parse on a worker while
+    the event loop may parse a fight's DSL. lark's Earley parser sets its state when it
+    is built and keeps each parse's in locals.
     """
     from lark import Lark  # noqa: PLC0415
     from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
@@ -302,6 +304,46 @@ def dsl_check(dsl: str) -> DslCheck:
     if cache is not None:
         cache.put(dsl, _encoded(result))
     return result
+
+
+def known_dsl_check(dsl: str) -> DslCheck | None:
+    """The check for ``dsl`` if it is already known, in memory or on disk; never a parse.
+
+    None means checking it would parse it. Every answer :func:`dsl_check` gives is
+    stored in the disk cache's table, which is read once and kept in memory, so this is
+    a hash and a lookup -- what a surface asks while drawing, before deciding whether to
+    check the rest somewhere the user is not waiting on.
+    """
+    if not dsl or not dsl.strip():
+        return _BLANK
+    stored = _disk_cache().get(dsl)
+    if stored is None:
+        return None
+    try:
+        return _decoded(stored)
+    except (TypeError, ValueError, KeyError):
+        return None
+
+
+def store_dsl_check(dsl: str, check: DslCheck) -> None:
+    """Record *check*, worked out elsewhere, as the answer for ``dsl``.
+
+    For a check run in another process (``gui/combat_strategies/dsl_checks.py``): once
+    stored, :func:`known_dsl_check` and :func:`dsl_check` answer it without parsing.
+    """
+    if dsl and dsl.strip():
+        _disk_cache().put(dsl, _encoded(check))
+
+
+def check_dsl_uncached(dsl: str) -> DslCheck:
+    """Check ``dsl`` from scratch: a parse, and no cache read or written.
+
+    What a separate process runs, leaving the caches to the process that asked. Anything
+    else wants :func:`dsl_check`.
+    """
+    if not dsl or not dsl.strip():
+        return _BLANK
+    return _checked(dsl)
 
 
 def _checked(dsl: str) -> DslCheck:

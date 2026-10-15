@@ -141,6 +141,7 @@ from bartlebot.combat.combat_resolution import (
 )
 from bartlebot.combat.flee_marks import FledFight, fled_fight_tooltip, fled_pill_text, fled_text, fled_tooltip
 from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
+from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
@@ -295,6 +296,9 @@ class StrategyPanel(CardFrame):
         # sidebar that exists to be read: hiding the verbs behind hover on a surface whose
         # job is to run them is backwards (see ``pins_chrome``).
         super().__init__(parent, mode=CardMode.MANAGE)
+        # Drawn on every bot load, so its DSL is not parsed here: checked off the GUI
+        # thread, and the card redrawn if it turns out not to parse.
+        self._checks = DeferredDslChecks(self, lambda _keys: self.refresh())
         self._binding = None
         self._all_dcs: list[DuelCombatStrategy] = []
         self._all_pcs: list[PlayerCombatStrategy] = []
@@ -725,6 +729,7 @@ class StrategyPanel(CardFrame):
             self.setVisible(False)
             return
         self.setVisible(True)
+        self._checks.reset()
 
         pill = ""
         if self._binding.is_linked:
@@ -735,12 +740,12 @@ class StrategyPanel(CardFrame):
                 # will say so, but the card is where a user can act on it.
                 self._render_bare(MISSING_LABEL, "This strategy is no longer in the library", invalid=True)
             else:
-                self._render_summary(dcs.name, summarize_duel(dcs, self._all_pcs))
+                self._render_summary(dcs.name, summarize_duel(dcs, self._all_pcs, validate=self._checks.validator()))
         elif self._fallback and all(a.duel is not None for a in self._fallback):
             pill = default_pill(self._fallback)
             if len(self._fallback) == 1:
                 duel = self._fallback[0].duel
-                self._render_summary(duel.name, summarize_duel(duel, self._all_pcs))
+                self._render_summary(duel.name, summarize_duel(duel, self._all_pcs, validate=self._checks.validator()))
             else:
                 self._render_bare(self._empty_label, defaults_text(self._fallback))
         else:
@@ -756,6 +761,7 @@ class StrategyPanel(CardFrame):
             edit_btn.setToolTip(self._edit_tooltip())
         self._sync_pill_row()
         self.refresh_theme_styles()
+        self._checks.request_unknown()
 
     def _render_bare(self, name: str, meta: str, invalid: bool = False) -> None:
         """A card with no configuration behind it: a name, one sentence, no assignments."""

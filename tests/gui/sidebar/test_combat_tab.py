@@ -215,13 +215,14 @@ def test_surplus_assignment_lines_are_hidden_not_destroyed(qapp):
     assert _visible_lines(panel) == []
 
 
-def test_an_unparseable_strategy_is_marked_on_its_name(qapp):
-    """The same ⚠ and the same reason StrategyCard shows in the picker."""
+def test_an_unparseable_strategy_is_marked_on_its_name(qtbot):
+    """The same ⚠ and the same reason StrategyCard shows in the picker -- once the DSL,
+    checked off the GUI thread on a bot load, turns out not to parse."""
     dcs = DuelCombatStrategy(name="Broken", player_assignments=[PlayerAssignment(players=[1], dsl="{{{ nope")])
     panel = StrategyPanel()
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
-    assert "⚠" in panel._name.full_text()
+    qtbot.waitUntil(lambda: "⚠" in panel._name.full_text(), timeout=10_000)
     assert "Does not parse" in panel._name.toolTip()
 
 

@@ -131,6 +131,7 @@ from bartlebot.content.share_export import ExportPlan, Sources, export_deck, exp
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
+from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
@@ -527,6 +528,9 @@ class _KindPage(QWidget):
         #: The This bot section's note row — empty section, or none yet — if drawn.
         self._note_item: QListWidgetItem | None = None
         self._note_widget: QWidget | None = None
+        #: Each card's health is drawn from the DSL checks already known; the rest are
+        #: checked off the GUI thread, and a card that turns out broken is redrawn.
+        self._checks = DeferredDslChecks(self, self._redraw_cards)
 
         layout = QVBoxLayout(self)
         # A real inset on all four sides. The page used to run edge to edge inside the tab
@@ -689,9 +693,11 @@ class _KindPage(QWidget):
             # Resolved the way a run resolves them, the bot's own first — so one of its
             # duels names its own player strategies, and a library duel one only when
             # a hand-edited file broke the rule, which it then shows rather than hides.
-            summary = summarize_duel(item, self._ws.lookup().players, name=item.name)
+            summary = summarize_duel(
+                item, self._ws.lookup().players, name=item.name, validate=self._checks.validator(item.id)
+            )
         elif self._kind is StrategyKind.PLAYER:
-            summary = summarize_player(item)
+            summary = summarize_player(item, validate=self._checks.validator(item.id))
         else:
             summary = summarize_deck(item)
         if self._ws.is_own_entry(self._kind, item.id):
@@ -774,6 +780,7 @@ class _KindPage(QWidget):
         Call it when the list's *contents* change; call ``_apply_filter`` when
         only the query does.
         """
+        self._checks.reset()
         blocked = self._list.blockSignals(True)
         try:
             self._list.clear()
@@ -814,6 +821,7 @@ class _KindPage(QWidget):
         self._filter_bar.set_counts(self._facets.values())
         self._apply_filter()
         self._update_create_buttons()
+        self._checks.request_unknown()
         if keep is None:
             # Actually gone — deleted, or never there. Detach the editor. An entry
             # that is merely filtered out of view stays loaded: typing in the
@@ -994,6 +1002,9 @@ class _KindPage(QWidget):
         self._load_selection()
 
     def _on_item_changed(self, current: QListWidgetItem | None, previous: QListWidgetItem | None) -> None:
+        # Whatever the card being left was last drawn from is checked now: a DSL typed and
+        # left before the box's debounce fired would otherwise wait for the next rebuild.
+        self._checks.request_unknown()
         for item, card in self._card_map:
             if item is previous:
                 card.set_selected(False)
@@ -1008,16 +1019,31 @@ class _KindPage(QWidget):
         A rebuild on every keystroke would be wasteful and would re-sort the list
         under the user mid-word; the alphabetical position catches up the next
         time the list is rebuilt for a reason of its own.
+
+        Runs on every edit, DSL keystrokes included, so the card's health is drawn
+        from the checks already known and the new text is not parsed here: the DSL
+        box's own debounce checks it off the GUI thread, and :meth:`_redraw_cards`
+        follows if it does not parse.
         """
-        entry = self._ws.get(self._kind, self._selected_id)
+        if self._selected_id is not None:
+            self._refresh_card(self._selected_id)
+
+    def _redraw_cards(self, uuids: set) -> None:
+        """Redraw the cards drawn as healthy whose DSL has since turned out not to parse."""
+        for uuid in uuids:
+            self._refresh_card(uuid)
+
+    def _refresh_card(self, uuid: str) -> None:
+        """Redraw the card for *uuid* in place, if it is in the list."""
+        entry = self._ws.get(self._kind, uuid)
         if entry is None:
             return
         for item, _card in list(self._card_map):
-            if item.data(Qt.ItemDataRole.UserRole) != self._selected_id:
+            if item.data(Qt.ItemDataRole.UserRole) != uuid:
                 continue
             summary = self.summarize(entry)
             card = self._make_card(entry.id, summary, favorable=self._section_of.get(entry.id) != THIS_BOT_SECTION)
-            card.set_selected(True)
+            card.set_selected(uuid == self._selected_id)
             self._fit_row(item, card)
             item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
             # The facets follow the edit, and so do the counts; whether the row still
