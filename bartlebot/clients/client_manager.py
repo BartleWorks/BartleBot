@@ -1051,7 +1051,7 @@ class ClientManager(QObject):
             described,
         )
 
-    def begin_launch(self, usernames: list[str]) -> list[str]:
+    def begin_launch(self, usernames: list[str], resolution: tuple[int, int] | None = None) -> list[str]:
         """Claim slots and open a launch for *usernames*, returning the ones accepted.
 
         The single door both launch routes go through. They used to reserve by different
@@ -1073,10 +1073,13 @@ class ClientManager(QObject):
         one account already launching should bring up the other three. Callers pair this
         with ``end_launch`` in a ``finally`` -- an attempt that is never ended leaves the
         account unlaunchable for the rest of the session.
+
+        *resolution* is what the windows will open at, so their pending tiles hold room for
+        that grid rather than for the global resolution, which a profile may not use.
         """
         active = set(self.active_accounts)
         wanted = [u for u in usernames if u not in active]
-        accepted = self._launches.begin(wanted)
+        accepted = self._launches.begin(wanted, resolution)
         if accepted:
             self.reserve_slots(accepted)
             self._sync_tiles()

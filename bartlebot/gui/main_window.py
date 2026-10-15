@@ -9,7 +9,7 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.clients.credentials import CredentialStore
-from bartlebot.game.game_sizing import LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.game.game_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
@@ -374,7 +374,7 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         sm = SettingsManager.instance()
-        bot_h = sm.get_general("bottom_section_height", default=220)
+        bot_h = sm.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT)
         # A seed only. Nothing here sticks: the splitter has no extent yet, so this is a
         # ratio rather than a size, and the real one is applied on the first showEvent.
         self._top_splitter.setSizes([300, 800, 300])
@@ -442,7 +442,7 @@ class MainWindow(QMainWindow):
             int(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
             screen_fit.right_sidebar_floor(),
         )
-        bot_h = int(sm.get_general("bottom_section_height", default=220))
+        bot_h = int(sm.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT))
 
         top_total = sum(self._top_splitter.sizes())
         if top_total > 0:
@@ -626,7 +626,7 @@ class MainWindow(QMainWindow):
                 self._game_view_visible = False
                 self._game_view_panel.setVisible(False)
             self._top_splitter.setSizes(self._pre_maximize_sizes.get("top", [300, 800, 300]))
-            self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, 220]))
+            self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, BOTCANVAS_DEFAULT_HEIGHT]))
         self._sync_pane_actions()
 
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
@@ -858,6 +858,28 @@ class MainWindow(QMainWindow):
         """
         self._after_card_action(True)
 
+    def fit_layout_to_launches(self) -> None:
+        """Fit the global resolution and the panes to the screen, after setup (epic #215).
+
+        ``screen_fit.fitted_layout`` has the rule: one client at the largest resolution
+        that fits, a game area just big enough for the tallest and widest grid the user
+        can launch, and the canvas and sidebars taking the rest. Stored, as the Settings
+        rows store them, and applied to the window now. Each only while it is still the
+        shipped value or setup's own: one chosen in Settings is the user's.
+        """
+        sm = SettingsManager.instance()
+        fitted = screen_fit.fitted_layout(self)
+        if fitted is None:
+            return
+        if sm.resolution_follows_setup and fitted.resolution != sm.game_resolution:
+            sm.set_fitted_resolution(fitted.resolution)
+        changed = {key: size for key, size in fitted.panes.items() if size != sm.get_general(key)}
+        if not changed:
+            return
+        sm.set_fitted_layout(changed)
+        if not self._game_view_maximized:
+            self._apply_configured_splitter_sizes()
+
     def _edit_launch_profile(self, name: str) -> None:
         """Edit one launch profile, from the pencil on its card or its context menu.
 
@@ -991,16 +1013,17 @@ class MainWindow(QMainWindow):
         self._launch_progress = progress
         self._dismiss_launch_fn = dismiss
 
-    def _open_launch(self, usernames: list[str]) -> list[str]:
-        """Claim slots for *usernames*, returning the ones not already launching.
+    def _open_launch(self, usernames: list[str], resolution: tuple[int, int]) -> list[str]:
+        """Claim slots for *usernames*, launching at *resolution*, returning the ones not already launching.
 
         Every account launched from this window passes through here, whichever surface
         asked — a Quick Launch card, the menu, or the floating popup. That is the point:
-        the guard can only reject a duplicate where all of them meet.
+        the guard can only reject a duplicate where all of them meet. *resolution* sizes
+        their pending tiles' grid until the windows are there to measure.
         """
         if self._begin_launch is None:
             return list(usernames)
-        return self._begin_launch(usernames)
+        return self._begin_launch(usernames, resolution)
 
     def _close_launch(self, usernames: list[str]) -> None:
         """Release the launches opened by ``_open_launch``. Always from a ``finally``."""
@@ -1042,7 +1065,7 @@ class MainWindow(QMainWindow):
             # profile that is already coming up is rejected before anything spawns. The
             # accounts already in flight drop out and the rest still launch — a profile of
             # four with one account up should bring up the other three.
-            accepted = self._open_launch(list(profile.get("accounts", [])))
+            accepted = self._open_launch(list(profile.get("accounts", [])), screen_fit.profile_resolution(profile))
             if not accepted:
                 # Said out loud rather than logged, because this is the click that looks
                 # broken: nothing spawns, nothing changes on screen, and the tiles that
@@ -1093,7 +1116,7 @@ class MainWindow(QMainWindow):
             # Claim the slot at the moment of launching, so launching two accounts
             # back-to-back orders them by when they were asked for, not by which one
             # happens to load in first.
-            if not self._open_launch([username]):
+            if not self._open_launch([username], SettingsManager.instance().game_resolution):
                 logger.info("Account '%s' is already running or launching", display_name)
                 QMessageBox.information(
                     self,

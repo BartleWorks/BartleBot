@@ -551,8 +551,9 @@ class PendingTile(_WindowlessTile):
     #: Emitted when the user clicks the dismiss icon on a failed launch.
     dismiss_requested = pyqtSignal()
 
-    def __init__(self, label: str, parent=None) -> None:
+    def __init__(self, label: str, parent=None, resolution: tuple[int, int] | None = None) -> None:
         super().__init__(label, parent)
+        self._resolution = resolution
         self._status: str | None = None
         self._status_since: float | None = None
         self._failed = False
@@ -566,6 +567,11 @@ class PendingTile(_WindowlessTile):
         self._spin_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self._spin_timer.timeout.connect(self._advance)
         self._spin_timer.start()
+
+    @property
+    def resolution(self) -> tuple[int, int] | None:
+        """The resolution the window coming here will open at, or None if the launch did not say."""
+        return self._resolution
 
     @property
     def _pill_icon(self) -> str:

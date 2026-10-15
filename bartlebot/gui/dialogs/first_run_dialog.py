@@ -48,21 +48,33 @@ from pathlib import Path
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtWidgets import QCheckBox, QDialog, QGridLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QGridLayout,
+    QLabel,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.clients.install_location import apply_install
+from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
+from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
-from bartlebot.settings_manager import SettingsManager
+from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
 from bartlebot.shared.game_install import SOURCE_NAMES, find_install, is_install, set_install_dir
@@ -455,13 +467,20 @@ class AccountsPage(FirstRunPage):
 LAUNCH_PROFILE_HEADING = "Which accounts launch together?"
 LAUNCH_PROFILE_INTRO = (
     "BartleBot makes a launch profile of the accounts checked here, to start them all at once from "
-    "the Launch menu or the launch screen. They launch in this order: the first is Player 1. More "
-    "profiles, and a resolution of their own, are made in Settings › Game."
+    "the Launch menu or the launch screen. They launch in this order: the first is Player 1. The "
+    "resolution starts at the largest that fits them all on this screen; pick a smaller one to save "
+    "your computer some work. More profiles are made in Settings › Game."
 )
+RESOLUTION_LABEL = "Resolution:"
 #: Under the checklist: what Next will do with the accounts checked now.
 PROFILE_WILL_MAKE = "Next makes the profile “{name}” with these {n} accounts."
 PROFILE_EXISTS = "These accounts already launch together as “{name}”."
 PROFILE_TOO_FEW = "Check two or more accounts to make a profile. With fewer, none is made."
+#: Under the checklist, after PROFILE_WILL_MAKE, when no resolution fits that many accounts.
+PROFILE_NO_FIT = (
+    "No resolution fits {n} accounts side by side on this screen, so the profile uses the game "
+    "resolution in Settings › Game until you give it one there."
+)
 
 
 class LaunchProfilePage(FirstRunPage):
@@ -471,6 +490,11 @@ class LaunchProfilePage(FirstRunPage):
     checked, through the function Settings › Game's Add uses. Fewer than two checked makes
     none, and still records the page. The list is read each time the page is entered, so
     accounts added on the page before are on it.
+
+    The profile gets a resolution of its own, from a combo that starts on the largest that
+    fits the accounts checked (``screen_fit.setup_resolution``). Left on the global one, two
+    accounts on a 1080p screen would make a profile too wide to launch. A size the user
+    picks is kept while it still fits the accounts checked.
     """
 
     heading = LAUNCH_PROFILE_HEADING
@@ -491,6 +515,16 @@ class LaunchProfilePage(FirstRunPage):
         self._list.setContentsMargins(0, 4, 0, 4)
         self._list.setSpacing(4)
         column.addLayout(self._list)
+        #: The resolution the user picked, kept while it fits; None follows the largest.
+        self._picked: tuple[int, int] | None = None
+        self._res_combo = QComboBox(self)
+        for w, h in VALID_RESOLUTIONS:
+            self._res_combo.addItem(f"{w}×{h}", userData=(w, h))
+        self._res_combo.activated.connect(self._on_resolution_picked)
+        res_form = QFormLayout()
+        res_form.setContentsMargins(0, 0, 0, 0)
+        res_form.addRow(RESOLUTION_LABEL, self._res_combo)
+        column.addLayout(res_form)
         self._status = ThemedTextLabel("", css=f"font-size: {THEME.font_small_px}px;")
         self._status.setWordWrap(True)
         column.addWidget(self._status)
@@ -514,6 +548,25 @@ class LaunchProfilePage(FirstRunPage):
     @property
     def status_text(self) -> str:
         return self._status.text()
+
+    @property
+    def resolution_combo(self) -> QComboBox:
+        return self._res_combo
+
+    @property
+    def resolution(self) -> tuple[int, int] | None:
+        """The resolution Next gives the profile, or None, to follow the global one, when none fits."""
+        resolution = self._res_combo.currentData()
+        if resolution is None or not self._fits(tuple(resolution)):
+            return None
+        return tuple(resolution)
+
+    def _fits(self, resolution: tuple[int, int]) -> bool:
+        return screen_fit.fit_problem(resolution, len(self.checked), self, screen_fit.setup_area(self)) is None
+
+    def _on_resolution_picked(self, index: int) -> None:
+        self._picked = self._res_combo.itemData(index)
+        self._show_status()
 
     def enter(self) -> None:
         for _, box in self._boxes:
@@ -542,13 +595,30 @@ class LaunchProfilePage(FirstRunPage):
     def _show_status(self) -> None:
         checked = self.checked
         existing = matching_profile(self._store(), checked)
+        makes = len(checked) >= 2 and existing is None
+        self._res_combo.setEnabled(makes)
         if len(checked) < 2:
             self._status.setText(PROFILE_TOO_FEW)
         elif existing is not None:
             self._status.setText(PROFILE_EXISTS.format(name=existing))
         else:
             name = free_name(EVERYONE, profile_names(self._store()))
-            self._status.setText(PROFILE_WILL_MAKE.format(name=name, n=len(checked)))
+            text = PROFILE_WILL_MAKE.format(name=name, n=len(checked))
+            if not self._choose_resolution(len(checked)):
+                text = f"{text} {PROFILE_NO_FIT.format(n=len(checked))}"
+            self._status.setText(text)
+
+    def _choose_resolution(self, count: int) -> bool:
+        """Gray what *count* accounts can't fit, and select the pick or the largest. Whether any fits."""
+        mark_unfittable_resolutions(self._res_combo, count, self, screen_fit.setup_area(self))
+        target = self._picked if self._picked is not None and self._fits(self._picked) else None
+        if target is None:
+            target = screen_fit.setup_resolution(count, self)
+        if target is None:
+            return False
+        index = next(i for i in range(self._res_combo.count()) if self._res_combo.itemData(i) == target)
+        self._res_combo.setCurrentIndex(index)
+        return True
 
     def applies(self, mode: SetupMode) -> bool:
         return len(self._store().accounts) >= 2
@@ -560,7 +630,7 @@ class LaunchProfilePage(FirstRunPage):
         checked = self.checked
         store = self._store()
         if len(checked) >= 2 and matching_profile(store, checked) is None:
-            profile = build_profile(free_name(EVERYONE, profile_names(store)), checked)
+            profile = build_profile(free_name(EVERYONE, profile_names(store)), checked, self.resolution)
             if not add_profile(store, profile):
                 return False
         return record_launch_profile_answered(self._prefs)

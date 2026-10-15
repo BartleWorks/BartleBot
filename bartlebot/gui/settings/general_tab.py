@@ -9,7 +9,12 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
-from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.game.game_sizing import (
+    BOTCANVAS_DEFAULT_HEIGHT,
+    BOTCANVAS_MIN_HEIGHT,
+    LEFT_SIDEBAR_MIN_WIDTH,
+    RIGHT_SIDEBAR_MIN_WIDTH,
+)
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.game_folder_row import apply_game_folder, game_folder_row
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
@@ -128,8 +133,10 @@ class GeneralTab(SettingsForm):
             )
         )
 
+        # Each pane's range runs to a 4K screen's size: setup fits the panes to the screen,
+        # and a range below what it wrote would clamp it on the next Save.
         self._left_sb = QSpinBox()
-        self._left_sb.setRange(screen_fit.left_sidebar_floor(), 1200)
+        self._left_sb.setRange(screen_fit.left_sidebar_floor(), 3840)
         self._left_sb.setSuffix(" px")
         self._left_sb.setValue(sm.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH))
         self.add_row(
@@ -142,7 +149,7 @@ class GeneralTab(SettingsForm):
         )
 
         self._right_sb = QSpinBox()
-        self._right_sb.setRange(screen_fit.right_sidebar_floor(), 1200)
+        self._right_sb.setRange(screen_fit.right_sidebar_floor(), 3840)
         self._right_sb.setSuffix(" px")
         self._right_sb.setValue(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH))
         self.add_row(
@@ -155,16 +162,19 @@ class GeneralTab(SettingsForm):
         )
 
         self._bottom_sb = QSpinBox()
-        self._bottom_sb.setRange(BOTCANVAS_MIN_HEIGHT, 800)
+        self._bottom_sb.setRange(BOTCANVAS_MIN_HEIGHT, 2160)
         self._bottom_sb.setSuffix(" px")
-        self._bottom_sb.setValue(sm.get_general("bottom_section_height", default=220))
+        self._bottom_sb.setValue(sm.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT))
         self.add_row(
             SettingRow(
                 "Default bottom section height",
                 "The bot canvas under the game view.",
                 self._bottom_sb,
                 default=_default("bottom_section_height"),
-                details="Both sections are draggable once open.",
+                details=(
+                    "Setup fits it and both sidebars to your screen, leaving the game view room for "
+                    "your launches, until you change them here. Every section is draggable once open."
+                ),
             )
         )
 

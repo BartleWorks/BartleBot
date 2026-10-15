@@ -52,6 +52,41 @@ the Accounts and Launch profile pages write accounts and profiles without the wi
 seeing it. An account or profile made in setup is on the launch screen and under Launch
 as soon as setup closes.
 
+Then the window is fitted to the screen, before the launch screen is judged against it:
+`MainWindow.fit_layout_to_launches`, through `screen_fit.fitted_layout`. The game area keeps
+the tallest and widest grid the user can launch, the bot canvas takes the height left, and
+the sidebars the width left, evened up: the narrower one grows until the two match, and
+what remains is shared equally. A fixed 220 px canvas left most of a 1080p screen empty
+above one or two accounts, and a taller fixed height would have stopped four fitting at
+all; a 4K screen left both empty around the grid.
+
+The global resolution is fitted with it, since 800×600 is a quarter of a 4K screen for a
+single account. Launch profiles with a resolution of their own decide the layout first,
+since a user with one runs it more than a single account; the global resolution is then
+the largest that fits in the game area they leave, for one client and for every profile
+following it. With no such profile it is the largest one client fits that still leaves
+the canvas 23% of the screen's usable height (`game_sizing.SINGLE_CLIENT_CANVAS_SHARE`),
+and decides the layout itself. Without that bar the largest wins however little it leaves:
+1680×1050 left a 1440p screen a 231 px canvas, where 1600×900 leaves 381. It is 23 rather
+than a round 25 because 4K at 150% keeps 2560×1440 with 329 px of its 1400 (23.5%); at 25%
+it fell to 1920×1200, a much smaller game for a canvas it did not need. A taller taskbar
+can still tip it there. The other way round, the largest single client would be the tallest
+grid on every screen and squeeze the canvas of every user with a profile.
+
+| 1080p less a taskbar | profile | one client | canvas | sidebars |
+|---|---|---|---|---|
+| one account | | 960×540 | 381 | 466 / 466 |
+| two accounts | 560×420 | 746×420 | 501 | 404 / 356 |
+| four accounts | 534×300 | 960×540 | 270 | 406 / 406 |
+
+(Sidebars at the reference floors; the measured floors move them by a few pixels.)
+
+Each is stored where its Settings row writes it, `game_embed.resolution` and the three
+pane sizes in `general`, and marked as setup's in a `fitted_` key beside it. A later setup
+changes one only while it is still the shipped value or setup's own, so a value the user
+chose in Settings stays theirs, and the panes still setup's take what it leaves. A launch
+that cannot fit anyway is left out, and the canvas is never below 220.
+
 ## The pages
 
 | page | writes | answered when |
@@ -137,7 +172,18 @@ removed on the page before is there, and one the user unchecked stays unchecked.
 Next makes one profile of the checked accounts, named **Everyone**, or the first of
 "Everyone 2", "Everyone 3"... no profile has (`shared/launch_profiles.free_name`). It is
 built and added by `build_profile` and `add_profile`, which Settings › Game's Add uses
-too, and has no resolution of its own. A line under the list says what Next will do.
+too. A line under the list says what Next will do.
+
+The profile gets a resolution of its own, from a combo under the list that starts on the
+largest that fits the accounts checked (`screen_fit.setup_resolution`), with every size
+too big for them grayed. Left on the global 800×600, two accounts on a 1080p screen would
+make a profile the launch screen refuses as soon as setup closes; 560×420 is what fits
+them. The fit is judged with the sidebars at their floors and the canvas at 220 px,
+whatever they are set to (`setup_area`), so panes setup already fitted to one account
+leave room for four. A smaller size the
+user picks is kept while it still fits the accounts checked, and falls back to the largest
+once it doesn't. With none that fits, the line says so and the profile follows the global
+resolution.
 
 - **Fewer than two checked** makes no profile, and still records the page.
 - **The same accounts in the same order already launching together** make no second
@@ -145,5 +191,4 @@ too, and has no resolution of its own. A line under the list says what Next will
   finds the one already made.
 - **A failed write** keeps the user on the page, as any page's does.
 
-More profiles, a resolution override, and every edit after are in Settings › Game, under
-Launch Profiles.
+More profiles, and every edit after, are in Settings › Game, under Launch Profiles.

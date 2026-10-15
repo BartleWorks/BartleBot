@@ -426,7 +426,7 @@ class GameView(ThemedMixin, QWidget):
     def _create_pending_tile(self, spec: TileSlot) -> None:
         """Put a busy tile in a slot whose account is launching but has no window yet."""
         self._remove_pending_tile(spec.slot)
-        tile = PendingTile(spec.label, parent=self)
+        tile = PendingTile(spec.label, parent=self, resolution=spec.resolution)
         tile.set_status(spec.status, spec.status_since, spec.failed)
         self._pending_tiles[spec.slot] = tile
         self._pending_accounts[spec.slot] = spec.username or ""
@@ -814,10 +814,20 @@ class GameView(ThemedMixin, QWidget):
         if n == 0:
             self.setMinimumSize(0, 0)
             return
-        # Everything detached leaves no window to measure; the setting is what those
-        # windows were launched at, and what a re-attach brings back.
-        largest = self.largest_game_size or SettingsManager.instance().game_resolution
+        # A launching window is measured at the resolution its launch opens it at: a
+        # profile's own, which the global one need not be anywhere near. Everything
+        # detached, or a launch that did not say, leaves no size to read; the setting is
+        # what those windows were launched at, and what a re-attach brings back.
+        sizes = [size for size in (self.largest_game_size, *self._pending_resolutions()) if size is not None]
+        if sizes:
+            largest = max(size[0] for size in sizes), max(size[1] for size in sizes)
+        else:
+            largest = SettingsManager.instance().game_resolution
         self.setMinimumSize(*required_game_area(largest, n, self.devicePixelRatio() or 1.0))
+
+    def _pending_resolutions(self) -> list[tuple[int, int]]:
+        """The resolution each launching window will open at, where its launch said."""
+        return [tile.resolution for tile in self._pending_tiles.values() if tile.resolution is not None]
 
     def _detach_client(self, idx: int) -> None:
         """Save hwnd, create a DetachedTile, and unembed the ClientTile."""

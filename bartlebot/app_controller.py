@@ -1244,8 +1244,10 @@ class AppController(QObject):
         dialog.exec()
         # Whatever was answered is on disk, finished or not: the combat page may have changed
         # the Team default, and the Accounts and Launch profile pages the accounts and
-        # profiles the launch screen and the Launch menu draw.
+        # profiles the launch screen and the Launch menu draw. The layout is fitted first,
+        # since the resolution and the panes are what the launch screen judges them against.
         self._window.left_sidebar.combat_tab.refresh_source()
+        self._window.fit_layout_to_launches()
         self._window.catch_up_with_accounts()
 
     def _import_from_arguments(self) -> None:

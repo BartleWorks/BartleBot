@@ -91,6 +91,12 @@ class TestLaunchTracker:
         tracker.end(["alpha"])
         assert tracker.begin(["alpha"]) == ["alpha"]
 
+    def test_a_launch_carries_the_resolution_its_windows_open_at(self) -> None:
+        """A profile's own, which its pending tiles hold room for until the windows arrive."""
+        tracker = LaunchTracker()
+        tracker.begin(["alpha", "beta"], (560, 420))
+        assert tracker.in_flight()["beta"].resolution == (560, 420)
+
     def test_ending_an_account_that_was_never_launching_is_not_an_error(self) -> None:
         """end runs from a finally, which can be reached without begin having accepted."""
         LaunchTracker().end(["alpha"])
@@ -251,6 +257,12 @@ class TestPendingTiles:
         tiles = _build(["alpha"], {}, [], launching=["alpha"])
         assert [(t.slot, t.hwnd, t.username) for t in tiles] == [(0, None, "alpha")]
         assert tiles[0].is_pending
+
+    def test_a_pending_tile_holds_the_resolution_its_launch_opens_at(self) -> None:
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"], (560, 420))
+        (tile,) = _build(["alpha"], {}, [], launching=tracker.in_flight())
+        assert tile.resolution == (560, 420)
 
     def test_a_pending_tile_is_captioned_by_its_account(self) -> None:
         """It has no player index and cannot have one -- there is no window, let alone a
