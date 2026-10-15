@@ -16,11 +16,12 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and four methods. ``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and five methods. ``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
 belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
 recorded, and Next waits for it. ``record()`` writes its answer and says whether that
-reached disk.
+reached disk. ``enter()``, a no-op by default, runs each time the dialog turns to the page,
+for a page that draws what an earlier page wrote.
 
 The dialog opens on :class:`ModePage`, Quick or Custom, which is not stored: it only
 decides which pages follow. **There is no Skip.** Next records the page shown and moves on
@@ -47,9 +48,10 @@ from pathlib import Path
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtWidgets import QDialog, QGridLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QCheckBox, QDialog, QGridLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
 
 from bartlebot.clients import character_roster
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.clients.install_location import apply_install
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.game_embed.card_columns import CardColumn
@@ -64,6 +66,16 @@ from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
 from bartlebot.shared.game_install import SOURCE_NAMES, find_install, is_install, set_install_dir
+from bartlebot.shared.launch_profiles import (
+    EVERYONE,
+    add_profile,
+    build_profile,
+    free_name,
+    launch_profile_answered,
+    matching_profile,
+    profile_names,
+    record_launch_profile_answered,
+)
 from bartlebot.shared.preferences import PreferenceStore
 
 logger = logging.getLogger(__name__)
@@ -108,6 +120,13 @@ class FirstRunPage(QWidget):
     def ready(self) -> bool:
         """Whether the answer shown can be recorded. Next is disabled while it can't."""
         return True
+
+    def enter(self) -> None:
+        """Called each time the dialog turns to this page, by Next or Back.
+
+        For a page that draws what an earlier page wrote: the Launch profile page lists
+        the accounts the Accounts page added.
+        """
 
     def record(self) -> bool:
         """Store this page's answer. Whether it reached disk."""
@@ -431,9 +450,136 @@ class AccountsPage(FirstRunPage):
         return record_accounts_answered(self._prefs)
 
 
+# -- the launch profile -------------------------------------------------------------
+
+LAUNCH_PROFILE_HEADING = "Which accounts launch together?"
+LAUNCH_PROFILE_INTRO = (
+    "BartleBot makes a launch profile of the accounts checked here, to start them all at once from "
+    "the Launch menu or the launch screen. They launch in this order: the first is Player 1. More "
+    "profiles, and a resolution of their own, are made in Settings › Game."
+)
+#: Under the checklist: what Next will do with the accounts checked now.
+PROFILE_WILL_MAKE = "Next makes the profile “{name}” with these {n} accounts."
+PROFILE_EXISTS = "These accounts already launch together as “{name}”."
+PROFILE_TOO_FEW = "Check two or more accounts to make a profile. With fewer, none is made."
+
+
+class LaunchProfilePage(FirstRunPage):
+    """One launch profile from a checklist: every account, checked, in the order of the Accounts page.
+
+    Next makes a profile named Everyone (or the first free name after it) of the accounts
+    checked, through the function Settings › Game's Add uses. Fewer than two checked makes
+    none, and still records the page. The list is read each time the page is entered, so
+    accounts added on the page before are on it.
+    """
+
+    heading = LAUNCH_PROFILE_HEADING
+
+    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._prefs = prefs
+        #: Accounts the user unchecked, kept unchecked when the list is drawn again.
+        self._left_out: set[str] = set()
+        self._boxes: list[tuple[str, QCheckBox]] = []
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(LAUNCH_PROFILE_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        self._list = QVBoxLayout()
+        self._list.setContentsMargins(0, 4, 0, 4)
+        self._list.setSpacing(4)
+        column.addLayout(self._list)
+        self._status = ThemedTextLabel("", css=f"font-size: {THEME.font_small_px}px;")
+        self._status.setWordWrap(True)
+        column.addWidget(self._status)
+        column.addStretch()
+        self.enter()
+
+    @staticmethod
+    def _store():
+        return SettingsManager.instance().account_store
+
+    @property
+    def boxes(self) -> list[QCheckBox]:
+        """One check box per account, in player order."""
+        return [box for _, box in self._boxes]
+
+    @property
+    def checked(self) -> list[str]:
+        """The usernames checked, in player order: the profile Next makes."""
+        return [username for username, box in self._boxes if box.isChecked()]
+
+    @property
+    def status_text(self) -> str:
+        return self._status.text()
+
+    def enter(self) -> None:
+        for _, box in self._boxes:
+            self._list.removeWidget(box)
+            # Hidden first: out of the layout, it would be drawn at the page's corner
+            # until the deferred delete runs.
+            box.hide()
+            box.deleteLater()
+        self._boxes = []
+        for account in self._store().accounts:
+            username = account.get("username", "")
+            box = QCheckBox(CredentialStore.display_name(username, account.get("alias") or None), self)
+            box.setChecked(username not in self._left_out)
+            box.toggled.connect(lambda on, u=username: self._toggled(u, on))
+            self._list.addWidget(box)
+            self._boxes.append((username, box))
+        self._show_status()
+
+    def _toggled(self, username: str, on: bool) -> None:
+        if on:
+            self._left_out.discard(username)
+        else:
+            self._left_out.add(username)
+        self._show_status()
+
+    def _show_status(self) -> None:
+        checked = self.checked
+        existing = matching_profile(self._store(), checked)
+        if len(checked) < 2:
+            self._status.setText(PROFILE_TOO_FEW)
+        elif existing is not None:
+            self._status.setText(PROFILE_EXISTS.format(name=existing))
+        else:
+            name = free_name(EVERYONE, profile_names(self._store()))
+            self._status.setText(PROFILE_WILL_MAKE.format(name=name, n=len(checked)))
+
+    def applies(self, mode: SetupMode) -> bool:
+        return len(self._store().accounts) >= 2
+
+    def answered(self) -> bool:
+        return launch_profile_answered(self._prefs, self._store())
+
+    def record(self) -> bool:
+        checked = self.checked
+        store = self._store()
+        if len(checked) >= 2 and matching_profile(store, checked) is None:
+            profile = build_profile(free_name(EVERYONE, profile_names(store)), checked)
+            if not add_profile(store, profile):
+                return False
+        return record_launch_profile_answered(self._prefs)
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
-    return [GameFolderPage(prefs), AccountsPage(prefs), CombatQuestionPage(prefs)]
+    return [GameFolderPage(prefs), AccountsPage(prefs), LaunchProfilePage(prefs), CombatQuestionPage(prefs)]
+
+
+def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
+    """Whether a first run has anything to ask: a page unanswered that applies under some mode.
+
+    A page that applies under neither, such as the Launch profile page with fewer than two
+    accounts, opens nothing on its own: the walk would be Quick or Custom and then
+    nothing. It is still in the dialog's walk when another page opens it, so accounts
+    added on the way bring it in.
+    """
+    return any(not page.answered() and any(page.applies(mode) for mode in SetupMode) for page in pages)
 
 
 # -- the dialog ---------------------------------------------------------------------
@@ -575,6 +721,7 @@ class FirstRunDialog(QDialog):
         self.move(frame.topLeft())
 
     def _show(self, page: FirstRunPage) -> None:
+        page.enter()
         self._stack.setCurrentWidget(page)
         self._heading.setText(page.heading)
         self._error.setVisible(False)

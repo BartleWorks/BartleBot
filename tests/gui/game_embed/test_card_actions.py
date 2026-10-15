@@ -251,12 +251,6 @@ def test_duplicating_twice_numbers_the_second_copy(store):
     assert _profile_names() == ["Solo", "Solo (copy 2)", "Solo (copy)", "Duo"]
 
 
-def test_a_free_name_skips_a_number_already_taken():
-    assert accounts_tab._free_profile_name("Solo", set()) == "Solo (copy)"
-    assert accounts_tab._free_profile_name("Solo", {"Solo (copy)"}) == "Solo (copy 2)"
-    assert accounts_tab._free_profile_name("Solo", {"Solo (copy)", "Solo (copy 2)"}) == "Solo (copy 3)"
-
-
 def test_duplicating_an_unknown_profile_writes_nothing(store):
     assert accounts_tab.duplicate_launch_profile("No Such Profile") is False
     assert _profile_names() == ["Solo", "Duo"]

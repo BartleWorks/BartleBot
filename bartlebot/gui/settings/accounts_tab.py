@@ -73,6 +73,7 @@ from bartlebot.gui.theming.themed import ThemedMixin
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager, default_for
+from bartlebot.shared.launch_profiles import add_profile, build_profile, copy_name, profile_names
 
 
 def _slots_in_use(exclude: str = "") -> dict[int, list[str]]:
@@ -474,15 +475,11 @@ def add_launch_profile(
     if not name:
         QMessageBox.warning(parent, "Invalid", "Profile name cannot be empty.")
         return False
-    profiles = SettingsManager.instance().launch_profiles
-    if any(p["name"] == name for p in profiles):
+    store = SettingsManager.instance().account_store
+    if name in profile_names(store):
         QMessageBox.warning(parent, "Duplicate", f"Profile '{name}' already exists.")
         return False
-    profile: dict = {"name": name, "accounts": dlg.selected_usernames}
-    if dlg.resolution is not None:
-        profile["resolution"] = list(dlg.resolution)
-    profiles.append(profile)
-    SettingsManager.instance().launch_profiles = profiles
+    add_profile(store, build_profile(name, dlg.selected_usernames, dlg.resolution))
     return True
 
 
@@ -541,24 +538,6 @@ def edit_launch_profile(
     return True
 
 
-def _free_profile_name(base: str, taken: set[str]) -> str:
-    """The first of "Foo (copy)", "Foo (copy 2)", "Foo (copy 3)"... that *taken* lacks.
-
-    Counting from 2 on the second copy rather than 1 on the first, so duplicating once
-    reads "Farm Team (copy)" and not "Farm Team (copy 1)" -- the numberless form is the
-    common case and should be the one that looks unremarkable.
-
-    Split out and given the taken set rather than reading settings, because what makes a
-    name free is a question with an answer a test can ask directly.
-    """
-    candidate = f"{base} (copy)"
-    n = 2
-    while candidate in taken:
-        candidate = f"{base} (copy {n})"
-        n += 1
-    return candidate
-
-
 def duplicate_launch_profile(name: str) -> bool:
     """Copy the profile *name* under a free name, directly after the original.
 
@@ -582,7 +561,7 @@ def duplicate_launch_profile(name: str) -> bool:
     if index is None:
         return False
     copy = deepcopy(profiles[index])
-    copy["name"] = _free_profile_name(name, {p.get("name", "") for p in profiles})
+    copy["name"] = copy_name(name, {p.get("name", "") for p in profiles})
     profiles.insert(index + 1, copy)
     SettingsManager.instance().launch_profiles = profiles
     return True
