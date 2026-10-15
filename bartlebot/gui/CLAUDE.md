@@ -1039,6 +1039,10 @@ that apply. The rules for a page:
   `ready_changed` when that may have changed; the dialog disables Next until it is true.
   The game folder page is ready only for a folder holding the client. A page that is
   always ready, as most are, leaves the default.
+- **A page with work running says so with `busy()`**, and the dialog disables Back and Next
+  until it ends, so the user can't change an earlier answer under it: Back to the Options
+  page could turn the art off under a run installing it. Escape and the close button
+  still leave. It emits `ready_changed` when that may have changed.
 - **A page with work running stops it in `stop()`**, which the dialog calls from `done()`
   whenever setup closes, finished or not. The Card art page stops its extraction there;
   the extractor removes what it wrote, and the page stays unanswered. A page's work runs

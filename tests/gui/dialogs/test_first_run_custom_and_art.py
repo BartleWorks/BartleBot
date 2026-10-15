@@ -259,6 +259,61 @@ async def test_quick_extracts_the_art_on_the_last_page(qapp, prefs, game):
     assert SettingsManager.instance().get_general(ART_ANSWERED_KEY) is True
 
 
+async def test_back_and_next_wait_while_the_run_goes(qapp, prefs, game):
+    """Back to the Options page could turn the art off under a run that installs it anyway."""
+    dialog, options, art = _dialog(prefs, SetupMode.CUSTOM)
+    _next(dialog, 3)
+    assert dialog.current is art
+    assert art.extraction.running
+
+    assert not dialog.back_button.isEnabled()
+    assert not dialog.commit_button.isEnabled()
+    dialog.back_button.click()
+    assert dialog.current is art
+
+    await art.extraction.task
+
+    assert dialog.back_button.isEnabled()
+    assert dialog.commit_button.isEnabled()
+    dialog.back_button.click()
+    assert dialog.current is options
+
+
+async def test_after_a_failed_run_back_and_next_try_it_again(qapp, prefs, game, monkeypatch):
+    real = art_extraction.extract_art
+
+    def broken(_game_dir, _progress, *, cancelled):
+        raise ExtractionError("The archive could not be read.")
+
+    monkeypatch.setattr(art_extraction, "extract_art", broken)
+    dialog, _options, art = _dialog(prefs)
+    _next(dialog, 2)
+    await art.extraction.task
+    assert dialog.back_button.isEnabled()
+
+    monkeypatch.setattr(art_extraction, "extract_art", real)
+    dialog.back_button.click()
+    _next(dialog)
+    assert dialog.current is art
+    assert not dialog.back_button.isEnabled()
+    await art.extraction.task
+
+    assert art.extraction.ok
+    assert dialog.back_button.isEnabled()
+
+
+async def test_closing_still_works_while_the_run_goes(qapp, prefs, game):
+    dialog, _options, art = _dialog(prefs)
+    _next(dialog, 2)
+    assert art.busy()
+
+    dialog.reject()
+    await art.extraction.task
+
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    assert not art.extraction.ended
+
+
 async def test_custom_with_art_on_extracts_after_the_options(qapp, prefs, game):
     dialog, _options, art = _dialog(prefs, SetupMode.CUSTOM)
     _next(dialog, 3)

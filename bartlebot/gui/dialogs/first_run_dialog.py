@@ -16,10 +16,11 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and six methods.``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and seven methods. ``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
 belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
-recorded, and Next waits for it. ``record()`` writes its answer and says whether that
+recorded, and Next waits for it. ``busy()`` says work running holds the user on the page,
+and Back and Next both wait for it. ``record()`` writes its answer and says whether that
 reached disk. ``enter()``, a no-op by default, runs each time the dialog turns to the page,
 for a page that draws what an earlier page wrote. ``stop()``, also a no-op, runs when setup
 closes, for a page with work running.
@@ -150,6 +151,14 @@ class FirstRunPage(QWidget):
     def ready(self) -> bool:
         """Whether the answer shown can be recorded. Next is disabled while it can't."""
         return True
+
+    def busy(self) -> bool:
+        """Whether work running holds the user on the page: Back and Next are disabled until it ends.
+
+        Escape and the close button still leave, and :meth:`stop` ends the work. Emit
+        ``ready_changed`` when this may have changed.
+        """
+        return False
 
     def enter(self) -> None:
         """Called each time the dialog turns to this page, by Next or Back.
@@ -843,7 +852,7 @@ class OptionsPage(FirstRunPage):
 CARD_ART_HEADING = "Extracting the card art"
 CARD_ART_INTRO = (
     "BartleBot is copying the pictures of the spell cards, and the game's school, world and badge "
-    "icons, out of your game's files, to show them in its own lists. Finish is ready when it ends. "
+    "icons, out of your game's files, to show them in its own lists. Back and Finish wait for it to end. "
     "Closing setup stops it, keeping any art from before."
 )
 
@@ -896,6 +905,12 @@ class CardArtPage(FirstRunPage):
 
     def ready(self) -> bool:
         return self._extraction.ended
+
+    def busy(self) -> bool:
+        # Held here while it runs: Back to the Options page could turn the art off under a
+        # run that would install it anyway. Ended is set before ``finished`` is emitted,
+        # while the task is still finishing.
+        return self._extraction.running and not self._extraction.ended
 
     def enter(self) -> None:
         self._extraction.start()
@@ -1131,14 +1146,16 @@ class FirstRunDialog(QDialog):
         walk = self.walk
         index = walk.index(self.current)
         self._step.setText(STEP.format(n=index + 1, m=len(walk)))
+        busy = self.current.busy()
         self._back.setVisible(index > 0)
+        self._back.setEnabled(not busy)
         self._commit.setText(FINISH if index == len(walk) - 1 else NEXT)
-        self._commit.setEnabled(self.current.ready())
+        self._commit.setEnabled(self.current.ready() and not busy)
 
     def _advance(self) -> None:
         """Next or Finish: record the page shown, and move on only once that reached disk."""
         page = self.current
-        if not page.ready():
+        if page.busy() or not page.ready():
             return
         if not page.record():
             logger.warning("Could not save the setup answer to %r; the page stays open", page.heading)
@@ -1153,6 +1170,8 @@ class FirstRunDialog(QDialog):
             self._show(walk[index + 1])
 
     def _go_back(self) -> None:
+        if self.current.busy():
+            return
         walk = self.walk
         index = walk.index(self.current)
         if index > 0:

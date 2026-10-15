@@ -25,6 +25,9 @@ included, so choosing Custom can change it.
 - **Next waits for a page that isn't ready.** A page's `ready()` says its answer can be
   recorded, and it emits `ready_changed` when that may have changed; Next is disabled
   until it is. The game folder page is the one that uses it.
+- **Back and Next wait for a page with work running.** A page's `busy()` holds the user on
+  it, and both are disabled until it ends. The Card art page is the one that uses it,
+  while the extraction runs.
 - **Back records nothing.**
 - **There is no Skip.** Escape and the close button reject and write nothing more. What
   was answered stays answered, and the next launch opens on the pages still unanswered.
@@ -305,7 +308,9 @@ count where the step has one. Finish waits for the run to end.
   `art.partial` beside the art folder and swaps it in only once it finished, so a stopped
   run removes its partial folder and leaves the art before it, or none. The page stays
   unanswered, and the next first run asks it again.
-- **Back and Next again** keep a run going; one that failed is tried again.
+- **Back and Finish wait while it runs** (`FirstRunPage.busy`): Back to the Options page
+  could turn the art off under a run that would install it anyway. Escape and the close
+  button still leave, and stop it. Once a run has failed, Back and Next try it again.
 
 Art already extracted, by the tool or Settings, answers the page, and so does Extract card art
 turned off on the Options page: the page applies under Quick whatever Custom chose, so
