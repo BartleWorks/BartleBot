@@ -268,7 +268,7 @@ Under Custom only, after Realm and Safety Delay: **A few more choices**, three c
 boxes, all on, each with a description of what it costs, every one shown.
 
 - **Extract card art**: the game's own pictures for spell cards, schools and worlds,
-  copied into AppData, about 40 MB, never shared. Off, there is no Card art page.
+  copied into AppData, about 35 MB, never shared. Off, there is no Card art page.
 - **Automatically group players**: Settings › Bot's row, which needs every account on the
   others' friends lists.
 - **Refill potions**: Settings › Bot's row, which spends gold.

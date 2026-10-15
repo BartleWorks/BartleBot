@@ -42,7 +42,7 @@ EXTRACT_SUMMARY = "Show spell cards, schools and worlds with the game's own pict
 #: The cost, said once for setup's choice and the Settings row.
 EXTRACT_DETAILS = (
     "BartleBot copies them out of your game's files into its own folder in AppData, about "
-    "40 MB, and never shares them or puts them in a bot file. Without them, cards and lists "
+    "35 MB, and never shares them or puts them in a bot file. Without them, cards and lists "
     "show names only. Extract them again from Settings › General › Card art after a game "
     "patch adds spells."
 )

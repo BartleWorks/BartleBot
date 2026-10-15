@@ -148,7 +148,7 @@ def test_each_option_says_what_it_costs(qapp):
     page = OptionsPage()
     details = {row.title: row.details.text() for row in page.findChildren(SettingRow)}
 
-    assert "40 MB" in details["Extract card art"]
+    assert "35 MB" in details["Extract card art"]
     assert "friends lists" in details["Automatically group players"]
     assert "gold" in details["Refill potions"]
 

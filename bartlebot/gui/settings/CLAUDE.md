@@ -173,7 +173,7 @@ same `ArtExtraction` setup's Card art page holds: a progress bar and the step, C
 it runs, Close once it ended, and the row's line rereads the index when the dialog closes.
 It reads the game folder stored, not one the Game folder row shows but OK has not written.
 Its description is the text setup's Extract card art choice carries (`EXTRACT_DETAILS`), so
-the cost, about 40 MB in AppData, is said once.
+the cost, about 35 MB in AppData, is said once.
 
 ## The Bot tab
 
