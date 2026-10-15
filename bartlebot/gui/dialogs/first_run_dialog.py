@@ -44,6 +44,7 @@ from collections.abc import Sequence
 from enum import Enum
 
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QDialog, QGridLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
 
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
@@ -282,6 +283,8 @@ class FirstRunDialog(QDialog):
         # Fixed here, not asked as the user goes: a page answered on the way stays in the walk.
         self._asked = [page for page in pages if rerun or not page.answered()]
         self._rerun = rerun
+        #: Whether the first show has placed the dialog; a later show leaves it where it is.
+        self._placed = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
@@ -362,6 +365,38 @@ class FirstRunDialog(QDialog):
     @property
     def back_button(self) -> ActionButton:
         return self._back
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._placed:
+            self._placed = True
+            self._center_on_window()
+
+    def _center_on_window(self) -> None:
+        """Center on the main window, or on its screen while the window is maximized.
+
+        Qt centers a dialog over its parent's geometry, but at startup that geometry is
+        stale: the window was just shown maximized, and Windows applies the maximize after
+        the timer that opens setup has fired. Qt then centers on the window's normal-size
+        rectangle, which puts the dialog near the screen's top left. A maximized window
+        fills its screen's available area, so that area is the one to center on.
+        """
+        parent = self.parentWidget()
+        window = parent.window() if parent is not None else None
+        screen = (window or self).screen() or QGuiApplication.primaryScreen()
+        if screen is None:
+            return
+        usable = screen.availableGeometry()
+        if window is not None and window.isVisible() and not (window.isMaximized() or window.isFullScreen()):
+            center = window.frameGeometry().center()
+        else:
+            center = usable.center()
+        frame = self.frameGeometry()
+        frame.moveCenter(center)
+        # Kept on the screen, for a window mostly dragged off it.
+        frame.moveLeft(max(usable.left(), min(frame.left(), usable.right() - frame.width())))
+        frame.moveTop(max(usable.top(), min(frame.top(), usable.bottom() - frame.height())))
+        self.move(frame.topLeft())
 
     def _show(self, page: FirstRunPage) -> None:
         self._stack.setCurrentWidget(page)

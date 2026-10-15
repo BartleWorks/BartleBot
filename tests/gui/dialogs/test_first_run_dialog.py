@@ -11,9 +11,9 @@ import json
 from pathlib import Path
 
 import pytest
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QDialog
+from PyQt6.QtWidgets import QDialog, QWidget
 
 from bartlebot.gui.dialogs.first_run_dialog import (
     BACK,
@@ -426,3 +426,61 @@ def test_the_heading_follows_the_page(qapp, prefs):
     _next(dialog)
 
     assert dialog.heading_text == COMBAT_HEADING
+
+
+# -- where it opens -------------------------------------------------------------------------
+
+
+class _JustMaximized(QWidget):
+    """The main window as setup finds it at startup: maximized, at its stale normal size."""
+
+    def isMaximized(self) -> bool:
+        return True
+
+
+def _center(dialog: FirstRunDialog) -> QPoint:
+    return dialog.frameGeometry().center()
+
+
+def test_it_opens_centered_on_the_screen_over_a_window_still_being_maximized(qapp):
+    window = _JustMaximized()
+    window.setGeometry(40, 40, 300, 200)
+    window.show()
+    dialog = FirstRunDialog([_Page("First?")], parent=window)
+
+    dialog.show()
+
+    usable = window.screen().availableGeometry()
+    assert (_center(dialog) - usable.center()).manhattanLength() <= 2
+    dialog.close()
+    window.close()
+
+
+def test_it_opens_centered_over_a_window_that_is_not_maximized(qapp):
+    window = QWidget()
+    window.setGeometry(100, 80, 900, 700)
+    window.show()
+    dialog = FirstRunDialog([_Page("First?")], parent=window)
+
+    dialog.show()
+
+    assert (_center(dialog) - window.frameGeometry().center()).manhattanLength() <= 2
+    dialog.close()
+    window.close()
+
+
+def test_a_later_show_leaves_it_where_the_user_put_it(qapp):
+    window = QWidget()
+    window.setGeometry(100, 80, 900, 700)
+    window.show()
+    dialog = FirstRunDialog([_Page("First?")], parent=window)
+    dialog.show()
+    dialog.move(dialog.pos() + QPoint(30, 20))
+    moved = dialog.pos()
+
+    dialog.hide()
+    dialog.show()
+
+    assert dialog.pos() == moved
+    dialog.close()
+    window.close()
