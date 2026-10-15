@@ -69,11 +69,14 @@ from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
+from bartlebot.gui.settings.quicksell_group import QuicksellSettings
+from bartlebot.gui.settings.rows import SettingsForm
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
@@ -636,9 +639,66 @@ class LaunchProfilePage(FirstRunPage):
         return record_launch_profile_answered(self._prefs)
 
 
+# -- quicksell ----------------------------------------------------------------------
+
+QUICKSELL_HEADING = "What may bots sell?"
+#: Above the rows: what the explanation before each run used to say, which this page
+#: turns off, and where the same rows are later.
+QUICKSELL_INTRO = (
+    "When a backpack is full, bots sell what dropped, except what these settings keep. An item you "
+    "lock in the game is never sold: turn on Backpack Item Lock, under Options › Gameplay Options 2, "
+    "to lock one. These are the Quicksell settings in Settings › Bot, and a bot's own Options can "
+    "change them for that bot."
+)
+
+
+class QuicksellPage(FirstRunPage):
+    """What bots may sell: Settings › Bot's quicksell rows, on the stored values.
+
+    The rows are :class:`~bartlebot.gui.settings.quicksell_group.QuicksellSettings`, the
+    builder the Bot tab uses, without its Show Quicksell explanation row: Next writes
+    through :func:`~bartlebot.options.quicksell_setup.record_quicksell`, which turns the
+    explanation off, since this page has given it.
+    """
+
+    heading = QUICKSELL_HEADING
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._settings = SettingsManager.instance()
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(QUICKSELL_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        self._quicksell = QuicksellSettings(self._settings, foldable=False)
+        form = SettingsForm(margin=0)
+        form.add_group(self._quicksell.group)
+        form.finish(stretch=False)
+        column.addWidget(form)
+        column.addStretch()
+
+    @property
+    def quicksell(self) -> QuicksellSettings:
+        return self._quicksell
+
+    def answered(self) -> bool:
+        return quicksell_answered(self._settings)
+
+    def record(self) -> bool:
+        return record_quicksell(self._settings, self._quicksell.flags(), self._quicksell.keep_list())
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
-    return [GameFolderPage(prefs), AccountsPage(prefs), LaunchProfilePage(prefs), CombatQuestionPage(prefs)]
+    return [
+        GameFolderPage(prefs),
+        AccountsPage(prefs),
+        LaunchProfilePage(prefs),
+        CombatQuestionPage(prefs),
+        QuicksellPage(),
+    ]
 
 
 def needs_asking(pages: Sequence[FirstRunPage]) -> bool:

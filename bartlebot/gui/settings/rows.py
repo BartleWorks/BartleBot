@@ -483,9 +483,15 @@ class SettingGroup(SettingCard):
     open. While the check box is off the rows under it are grayed, not hidden.
     While the card is collapsed and one of them has left its default, the header's bar
     lights, so a fold never hides a change -- the rule #138's cards follow.
+
+    With *foldable* False it has no chevron and is always open, and reads and writes no
+    fold state: setup's Quicksell page shows the group whole, whatever the user folded in
+    Settings.
     """
 
-    def __init__(self, group_id: str, header: SettingRow, rows: Sequence[SettingRow], parent=None) -> None:
+    def __init__(
+        self, group_id: str, header: SettingRow, rows: Sequence[SettingRow], parent=None, *, foldable: bool = True
+    ) -> None:
         if group_id not in SETTINGS_FOLD_DEFAULTS:
             raise KeyError(f"{group_id!r} is not in SETTINGS_FOLD_DEFAULTS")
         if not isinstance(header.control, QCheckBox):
@@ -495,15 +501,17 @@ class SettingGroup(SettingCard):
         self._header = header
         self._rows = list(rows)
         self._ui_state = UiState()
-        self._collapsed = self._ui_state.folds(FOLD_SURFACE, SETTINGS_FOLD_DEFAULTS)[group_id]
+        self._collapsed = foldable and self._ui_state.folds(FOLD_SURFACE, SETTINGS_FOLD_DEFAULTS)[group_id]
 
         self.add_row(header)
         self._dividers = [self.add_row(row) for row in self._rows]
 
-        self._fold = IconButton("chevron_down", tooltip="", size=FOLD_SLOT_PX, icon_size=FOLD_ICON_PX, parent=self)
-        self._fold.setFocusPolicy(Qt.FocusPolicy.TabFocus)
-        self._fold.clicked.connect(lambda: self.set_collapsed(not self._collapsed))
-        header.set_trailing(self._fold)
+        self._fold: IconButton | None = None
+        if foldable:
+            self._fold = IconButton("chevron_down", tooltip="", size=FOLD_SLOT_PX, icon_size=FOLD_ICON_PX, parent=self)
+            self._fold.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+            self._fold.clicked.connect(lambda: self.set_collapsed(not self._collapsed))
+            header.set_trailing(self._fold)
 
         header.control.toggled.connect(self._refresh_gate)
         for row in self._rows:
@@ -524,7 +532,8 @@ class SettingGroup(SettingCard):
         return list(self._rows)
 
     @property
-    def fold_button(self) -> IconButton:
+    def fold_button(self) -> IconButton | None:
+        """The chevron; None for a group that does not fold."""
         return self._fold
 
     @property
@@ -533,7 +542,7 @@ class SettingGroup(SettingCard):
 
     def set_collapsed(self, collapsed: bool) -> None:
         """Fold or open the card, and remember it in ``ui_state.json``."""
-        if collapsed == self._collapsed:
+        if collapsed == self._collapsed or self._fold is None:
             return
         self._collapsed = collapsed
         self._ui_state.set_collapsed(FOLD_SURFACE, self._id, collapsed, default=SETTINGS_FOLD_DEFAULTS[self._id])
@@ -545,9 +554,10 @@ class SettingGroup(SettingCard):
             row.setVisible(shown)
             if divider is not None:
                 divider.setVisible(shown)
-        self._fold.set_icon_name("chevron_down" if self._collapsed else "chevron_up")
-        verb = "Expand" if self._collapsed else "Collapse"
-        self._fold.setToolTip(f"{verb} {self._header.title}")
+        if self._fold is not None:
+            self._fold.set_icon_name("chevron_down" if self._collapsed else "chevron_up")
+            verb = "Expand" if self._collapsed else "Collapse"
+            self._fold.setToolTip(f"{verb} {self._header.title}")
         self._refresh_rollup()
 
     def _refresh_gate(self, *_args) -> None:

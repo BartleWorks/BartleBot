@@ -195,6 +195,21 @@ def test_folds_never_reach_settings_json(qapp):
     assert "folds" not in json.dumps(SettingsManager.instance().get("general", default={}))
 
 
+def test_a_group_that_does_not_fold_is_open_whatever_was_folded_and_stores_nothing(qapp):
+    """Setup's Quicksell page: every row shown, and the user's fold in Settings left alone."""
+    _group().set_collapsed(False)
+    _group().set_collapsed(True)
+    stored = (product_dir() / UI_STATE_FILE).read_text(encoding="utf-8")
+
+    group = SettingGroup("quicksell", _check_row(), [_check_row(False)], foldable=False)
+    group.set_collapsed(True)
+
+    assert group.fold_button is None
+    assert not group.is_collapsed
+    assert not any(row.isHidden() for row in group.rows)
+    assert (product_dir() / UI_STATE_FILE).read_text(encoding="utf-8") == stored
+
+
 def test_a_group_the_dialog_does_not_declare_is_refused(qapp):
     with pytest.raises(KeyError):
         SettingGroup("retired", _check_row(), [_check_row()])

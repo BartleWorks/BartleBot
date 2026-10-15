@@ -4,6 +4,7 @@ import pytest
 from PyQt6.QtWidgets import QCheckBox
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.gui.dialogs.first_run_dialog import QuicksellPage
 from bartlebot.gui.dialogs.safety_warning_dialog import (
     QUICKSELL_OPT_OUT_LABEL,
     SafetyWarning,
@@ -335,6 +336,27 @@ def test_a_sale_run_past_for_one_bot_is_not_asked_about_again_for_it(qapp):
     _run(collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)))
 
     assert SettingsManager.instance().accepted_quicksell_sales("tree-of-life") == ["Sell Skeleton Keys"]
+    assert collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)) == []
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_after_setups_quicksell_page_no_run_shows_the_explanation(qapp, enabled):
+    """#230: the page explained quicksell, so a run after it does not explain it again."""
+    page = QuicksellPage()
+    page.quicksell.group.header.control.setChecked(enabled)
+
+    assert page.record()
+
+    assert collect_safety_warnings(_quicksell_bot()) == []
+
+
+def test_after_setups_quicksell_page_a_declared_sale_is_still_flagged_once(qapp):
+    QuicksellPage().record()
+
+    (warning,) = collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True))
+    assert warning.message == declared_sales_message(["Sell Skeleton Keys"])
+
+    _run([warning])
     assert collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)) == []
 
 
