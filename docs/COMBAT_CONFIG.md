@@ -207,7 +207,9 @@ the fights that need it:
 
 Default Team Boss Duel and Default Turn 1 AoE Mob Duel left the set at version 6 (#218,
 Stage 5): Default Team Duel reads the fight kind in its strategies, and a default can't be
-chosen by fight kind. Nothing leaves the set after 1.0.0 (`official_set.SHARED_SET_VERSION`),
+chosen by fight kind. The player strategy the second one linked, Default Turn 1 AoE mob
+fight, followed at version 8 (#212): every shipped team strategy already AoEs in round 1 of
+a mob fight, and despite its name it cast an AoE every round, boss or not. Nothing leaves the set after 1.0.0 (`official_set.SHARED_SET_VERSION`),
 since a user's link to it would then point at nothing. Before then a Bot Combat Strategy
 still linking one gets that fault before a run, and its card reads "(missing strategy)";
 nothing relinks it for the user.
@@ -353,7 +355,7 @@ blades; Potent Trap into traps) before the round's card is cast. Fusing never en
 turn, and each fuse frees a hand slot that the next refill draws into, which is how a big
 deck cycles. wizsprinter holds such a line until it knows the round's card, and drops it
 when that card attacks, leaving the hand alone; wizsprinter's `CONDITIONS.md` has the rule.
-Three rules hold for the line:
+Two rules hold for the line:
 
 - **It is gated `?(deck.remaining >= 2)`.** A deck the hand already holds gains nothing
   from a freed slot. `deck.remaining` counts treasure cards until the main pile first runs
@@ -362,7 +364,6 @@ Three rules hold for the line:
   slot for the rest of the fight. So the No-Blades support fuses no Sharpened Blade, and
   the No-Feints support's Potent Traps go only into traps that are not feints: those two
   exist for bosses that cheat when a blade or a feint is cast.
-- **A strategy that attacks every round has none.** Turn 1 AoE never runs it.
 
 `LAST_RESORT_DSL` carries the line too, since it is Default's text.
 
