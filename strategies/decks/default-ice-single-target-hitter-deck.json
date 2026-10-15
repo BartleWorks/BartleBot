@@ -1,0 +1,25 @@
+{
+  "id": "fd6af2ab-1aac-40c0-837d-f0d0660a4663",
+  "name": "Default Ice Single-target Hitter Deck",
+  "deck": {
+    "normal": {
+      "Novus Ice - T05 - B": 1,
+      "Shu - T05 - A": 1,
+      "Snow Serpent - T05 - A": 1,
+      "Epic": 3,
+      "Frenzy": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Death",
+    "apply_archmastery": true
+  },
+  "description": "Ice single-target hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default Single-target Hitter.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Ice"
+  ]
+}

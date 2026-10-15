@@ -1,0 +1,31 @@
+{
+  "id": "2e1c05a7-9a99-42b7-9cb0-e4564ef058b0",
+  "name": "Default Ice Solo Deck",
+  "deck": {
+    "normal": {
+      "Blizzard": 1,
+      "Count Croakula - T05 - A": 1,
+      "Frost Giant - T05 - A": 1,
+      "Iceblade": 2,
+      "Epic": 3,
+      "Potent Trap": 1,
+      "Sharpened Blade": 1,
+      "Frenzy": 1,
+      "Feint": 2
+    },
+    "card_kinds": {
+      "Iceblade": "blade",
+      "Frenzy": "aura",
+      "Feint": "trap"
+    },
+    "archmastery_school": "Myth",
+    "apply_archmastery": true
+  },
+  "description": "For one Ice wizard alone: hits, Epic, Feint and a Ice blade, with Potent Trap and Sharpened Blade to enchant them, and Frenzy as its aura. Pairs with Default.",
+  "tags": [
+    "Solo"
+  ],
+  "schools": [
+    "Ice"
+  ]
+}

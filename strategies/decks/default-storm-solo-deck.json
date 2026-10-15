@@ -1,0 +1,31 @@
+{
+  "id": "d9d3cfff-9937-40f0-978e-bcdfff89ac8c",
+  "name": "Default Storm Solo Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Potent Trap": 1,
+      "Sharpened Blade": 1,
+      "Frenzy": 1,
+      "Feint": 2,
+      "Bunyips Rage - T05 - A": 1,
+      "Storm Lord - T05 - A": 1,
+      "Stormblade": 2,
+      "Tempest": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura",
+      "Feint": "trap",
+      "Stormblade": "blade"
+    },
+    "archmastery_school": "Death",
+    "apply_archmastery": true
+  },
+  "description": "For one Storm wizard alone: hits, Epic, Feint and a Storm blade, with Potent Trap and Sharpened Blade to enchant them, and Frenzy as its aura. Pairs with Default.",
+  "tags": [
+    "Solo"
+  ],
+  "schools": [
+    "Storm"
+  ]
+}

@@ -29,6 +29,7 @@ from bartlebot.combat.strategy_store import (
     StrategyKind,
     list_duel_strategies,
     list_player_strategies,
+    save_deck_preset,
     save_duel_strategy,
     save_player_strategy,
 )
@@ -362,6 +363,23 @@ def test_every_card_says_where_its_entry_comes_from(qapp, roots, where, label):
     dlg = _dialog(roots, kind=StrategyKind.PLAYER)
 
     assert dlg._pages[StrategyKind.PLAYER].card_for(pcs.id).source_text == label
+
+
+@pytest.mark.parametrize(
+    ("where", "label"),
+    [("shipped", "Official"), ("override", "Official (modified)"), ("user", "Custom")],
+)
+def test_every_deck_card_says_where_its_deck_comes_from(qapp, roots, where, label):
+    """Decks shipped for the first time in #212; their cards wear the pill the other kinds do."""
+    shipped, user = roots
+    deck = DeckPreset(name="Feint Support", deck=DeckData(normal={"Feint": 3}))
+    if where in ("shipped", "override"):
+        save_deck_preset(deck, shipped)
+    if where in ("override", "user"):
+        save_deck_preset(deck.model_copy(update={"description": "mine"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.DECK)
+
+    assert dlg._pages[StrategyKind.DECK].card_for(deck.id).source_text == label
 
 
 def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):

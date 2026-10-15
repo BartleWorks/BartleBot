@@ -1,0 +1,25 @@
+{
+  "id": "90ffd62f-f17c-47e5-a5d7-b4bdefe66182",
+  "name": "Default Life Single-target Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Centaur - T05 - A": 1,
+      "Leprechaun - T05 - A": 1,
+      "Novus Life - T05 - B": 1,
+      "Frenzy": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Fire",
+    "apply_archmastery": true
+  },
+  "description": "Life single-target hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default Single-target Hitter.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Life"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "311e8680-2b45-4f86-9989-caf6d8f10aae",
+  "name": "Default Feint Support Deck",
+  "deck": {
+    "normal": {
+      "Potent Trap": 1,
+      "Feint": 3
+    },
+    "item": {
+      "Potent Trap - Tear": 1,
+      "Feint Mass - Amulet": 1,
+      "Pet - Feint": 1
+    },
+    "card_kinds": {
+      "Feint": "trap"
+    },
+    "archmastery_school": "Death",
+    "apply_archmastery": false
+  },
+  "description": "Carries stacking copies of Feint and Mass Feint, and the Potent Traps to enchant them. For any school. Pairs with Default Support or Default No-Blades Support, but not No-Feints.",
+  "tags": [
+    "Support"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "7e9c4070-e9ae-4075-8540-98b907ac4fe7",
+  "name": "Default Spirit Blade Support Deck",
+  "deck": {
+    "normal": {
+      "Sharpened Blade": 1,
+      "Spirit Blade": 4
+    },
+    "item": {
+      "Sharpened Blade - Tear": 1,
+      "Pet - Sharpened Blade": 1
+    },
+    "card_kinds": {
+      "Spirit Blade": "blade"
+    },
+    "archmastery_school": "Balance",
+    "apply_archmastery": false
+  },
+  "description": "Carries four copies of Spirit Blade and three stacking copies of Sharpened Blade (trained, item card, and pet). Spirit Blade boosts Life, Death and Myth hits. Pairs with Default Support or Default No-Feints Support, but not No-Blades.",
+  "tags": [
+    "Support"
+  ]
+}

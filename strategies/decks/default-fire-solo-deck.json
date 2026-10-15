@@ -1,0 +1,31 @@
+{
+  "id": "2bb533eb-a4d0-48fc-bb86-e07deefb30c3",
+  "name": "Default Fire Solo Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Potent Trap": 1,
+      "Sharpened Blade": 1,
+      "Fire Dragon - T05 - A": 1,
+      "Fireblade": 2,
+      "Meteor Strike": 1,
+      "Phantasmania - T05 - A": 1,
+      "Frenzy": 1,
+      "Feint": 2
+    },
+    "card_kinds": {
+      "Fireblade": "blade",
+      "Frenzy": "aura",
+      "Feint": "trap"
+    },
+    "archmastery_school": "Life",
+    "apply_archmastery": true
+  },
+  "description": "For one Fire wizard alone: hits, Epic, Feint and a Fire blade, with Potent Trap and Sharpened Blade to enchant them, and Frenzy as its aura. Pairs with Default.",
+  "tags": [
+    "Solo"
+  ],
+  "schools": [
+    "Fire"
+  ]
+}

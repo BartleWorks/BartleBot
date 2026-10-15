@@ -226,7 +226,7 @@ def test_shared_set_version_rose_when_turn_1_aoe_left():
     """Default Turn 1 AoE mob fight left the set at version 8 (#212): its duel had gone at
     version 6, and every shipped team strategy now AoEs in round 1 of a mob fight. The same
     version added the No-Blades and No-Feints hitters, and Default Single-target Hitter
-    started hitting a mob in a mob fight."""
+    started hitting a mob in a mob fight. The decks first shipped at version 8 too."""
     assert SHARED_SET_VERSION >= 8
 
 
@@ -448,3 +448,35 @@ def test_the_recommended_choice_is_stored_as_no_key(tmp_path, recommended):
     record = json.loads((tmp_path / "preferences.json").read_text(encoding="utf-8"))
     assert PREFERENCE_KEYS[TeamSize.TEAM] not in record
     assert record[PREFERENCE_KEYS[TeamSize.SOLO]] == "kept"
+
+
+# ---------------------------------------------------------------------------
+# The shipped decks (#212)
+# ---------------------------------------------------------------------------
+
+
+def _deck_files() -> list[Path]:
+    return sorted((STRATEGIES / "decks").glob("*.json"))
+
+
+@pytest.mark.parametrize("path", _deck_files(), ids=lambda p: p.name)
+def test_every_shipped_deck_is_named_a_deck_and_says_what_it_is_for(path: Path):
+    from bartlebot.shared.strategy_models import DeckPreset  # noqa: PLC0415
+
+    deck = DeckPreset.load(path)
+
+    assert deck.name.startswith("Default ") and deck.name.endswith(" Deck"), deck.name
+    assert "Pairs with" in deck.description, deck.name
+
+
+def test_the_shipped_decks_read_as_official(tmp_path: Path):
+    """A deck in the install directory and none in the user's is Official, as a strategy is."""
+    from bartlebot.combat.strategy_store import StrategyKind  # noqa: PLC0415
+    from bartlebot.combat.strategy_workset import StrategyWorkingSet  # noqa: PLC0415
+    from bartlebot.content.store_roots import Origin  # noqa: PLC0415
+
+    ws = StrategyWorkingSet.from_store(root=STRATEGIES.parent, user_root=tmp_path)
+    ids = list(index_dir(STRATEGIES / "decks"))
+
+    assert ids
+    assert {ws.status(StrategyKind.DECK, deck_id) for deck_id in ids} == {Origin.SHIPPED}

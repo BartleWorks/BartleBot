@@ -1,0 +1,25 @@
+{
+  "id": "997ad334-a792-4200-97d6-fa89209cfc39",
+  "name": "Default Storm AoE Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Frenzy": 1,
+      "Bunyips Rage - T05 - A": 1,
+      "Storm Lord - T05 - A": 1,
+      "Tempest": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Death",
+    "apply_archmastery": true
+  },
+  "description": "Storm AoE hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default AoE Hitter, or with Default Team Hitter as P1 of a team duel.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Storm"
+  ]
+}

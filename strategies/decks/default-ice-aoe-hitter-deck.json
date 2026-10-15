@@ -1,0 +1,25 @@
+{
+  "id": "1630af69-8aca-424b-a15a-a9a66aae6cb7",
+  "name": "Default Ice AoE Hitter Deck",
+  "deck": {
+    "normal": {
+      "Blizzard": 1,
+      "Count Croakula - T05 - A": 1,
+      "Frost Giant - T05 - A": 1,
+      "Epic": 3,
+      "Frenzy": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Myth",
+    "apply_archmastery": true
+  },
+  "description": "Ice AoE hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default AoE Hitter, or with Default Team Hitter as P1 of a team duel.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Ice"
+  ]
+}
