@@ -38,6 +38,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     RECOMMENDED_DETAIL,
     SAVE_FAILED,
     SETTINGS_COMBAT,
+    SETUP_PAGE_TYPES,
     TACTIC_CARDS,
     AccountsPage,
     CardArtPage,
@@ -51,6 +52,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     QuicksellPage,
     RealmAndDelayPage,
     SetupMode,
+    needs_asking,
     setup_pages,
 )
 from bartlebot.gui.settings import accounts_tab
@@ -61,6 +63,8 @@ from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.options import bot_options, option_values
+from bartlebot.options.custom_setup import ART_ANSWERED_KEY, EXTRACT_ART_KEY
+from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.options.quicksell_setup import SellFlags, current_flags, write_sell_flags
 from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
 from bartlebot.settings_manager import SettingsManager, default_for
@@ -456,6 +460,57 @@ def test_the_pages_are_in_the_plans_order(qapp, prefs):
         OptionsPage,
         CardArtPage,
     ]
+
+
+def test_the_page_types_are_the_pages_built(qapp, prefs):
+    assert [type(page) for page in setup_pages(prefs)] == list(SETUP_PAGE_TYPES)
+
+
+def _two_accounts() -> None:
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO)]
+
+
+def _everything_answered(prefs: PreferenceStore, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(game_install, "_places", _Launcher(_install(tmp_path / "Wizard101")))
+    _two_accounts()
+    settings = SettingsManager.instance()
+    settings.launch_profiles = [{"name": "Everyone", "accounts": [ONE, TWO]}]
+    prefs.set(ANSWERED_KEY, True)
+    settings.set_general(QUICKSELL_ANSWERED, True)
+    settings.set_general(REALM_DELAY_ANSWERED, True)
+    settings.set_general(ART_ANSWERED_KEY, True)
+
+
+#: Machine states the first-run check is asked in, each a function of (prefs, tmp_path, monkeypatch).
+_STATES = {
+    "fresh": lambda prefs, tmp_path, monkeypatch: None,
+    "one account": lambda prefs, tmp_path, monkeypatch: setattr(
+        SettingsManager.instance(), "accounts", [{"username": ONE, "alias": ""}]
+    ),
+    "two accounts": lambda prefs, tmp_path, monkeypatch: _two_accounts(),
+    "art turned off": lambda prefs, tmp_path, monkeypatch: SettingsManager.instance().set_general(
+        EXTRACT_ART_KEY, False
+    ),
+    "everything answered": _everything_answered,
+}
+
+
+@pytest.mark.parametrize("state", list(_STATES))
+def test_each_page_asks_a_first_run_as_its_answer_and_walk_say(qapp, prefs, tmp_path, monkeypatch, state):
+    """``asks_first_run`` reads the stores without building the page; it must agree with the page built."""
+    _STATES[state](prefs, tmp_path, monkeypatch)
+
+    for page in setup_pages(prefs):
+        built = not page.answered() and page.applies(SetupMode.QUICK)
+        assert type(page).asks_first_run(prefs) == built, type(page).__name__
+
+
+def test_a_first_run_is_needed_until_every_page_is_answered(qapp, prefs, tmp_path, monkeypatch):
+    assert needs_asking(prefs)
+
+    _everything_answered(prefs, tmp_path, monkeypatch)
+
+    assert not needs_asking(prefs)
 
 
 def test_the_dialog_needs_a_page(qapp):

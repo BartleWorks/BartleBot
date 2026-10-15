@@ -140,6 +140,18 @@ class FirstRunPage(QWidget):
     #: The question the page asks, shown above it.
     heading = ""
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        """Whether this page, unanswered and applying under Quick, opens a first run.
+
+        Asked before any page is built, at every launch, so it reads the stores and builds
+        no widget: building every page reads the registry and each Steam library, draws
+        the account cards and measures the screen. Always ``not answered() and
+        applies(SetupMode.QUICK)`` for the page as it would be built now, which
+        ``test_each_page_asks_a_first_run_as_its_answer_and_walk_say`` holds each page to.
+        """
+        return False
+
     def answered(self) -> bool:
         """Whether its setting already exists, so a first run need not ask."""
         return False
@@ -330,6 +342,10 @@ class CombatQuestionPage(_CardsPage):
     def select(self, tactic: BossTactic | None) -> None:
         self._choose(tactic)
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not combat_question_answered(prefs)
+
     def answered(self) -> bool:
         return combat_question_answered(self._prefs)
 
@@ -393,6 +409,10 @@ class GameFolderPage(FirstRunPage):
         self._status.setText(text)
         self._status.set_color("error" if problem else "text_muted")
         self.ready_changed.emit()
+
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return find_install(prefs) is None
 
     def answered(self) -> bool:
         return self._found is not None
@@ -487,6 +507,10 @@ class AccountsPage(FirstRunPage):
 
     def _on_reordered(self, order: list) -> None:
         self._changed(reorder_accounts(list(order)))
+
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not accounts_answered(prefs, SettingsManager.instance().account_store)
 
     def answered(self) -> bool:
         return accounts_answered(self._prefs, SettingsManager.instance().account_store)
@@ -653,6 +677,11 @@ class LaunchProfilePage(FirstRunPage):
         self._res_combo.setCurrentIndex(index)
         return True
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        store = cls._store()
+        return len(store.accounts) >= 2 and not launch_profile_answered(prefs, store)
+
     def applies(self, mode: SetupMode) -> bool:
         return len(self._store().accounts) >= 2
 
@@ -714,6 +743,10 @@ class QuicksellPage(FirstRunPage):
     def quicksell(self) -> QuicksellSettings:
         return self._quicksell
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not quicksell_answered(SettingsManager.instance())
+
     def answered(self) -> bool:
         return quicksell_answered(self._settings)
 
@@ -768,6 +801,10 @@ class RealmAndDelayPage(FirstRunPage):
     @property
     def delay_box(self) -> QDoubleSpinBox:
         return self._delay
+
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not realm_delay_answered(SettingsManager.instance())
 
     def answered(self) -> bool:
         return realm_delay_answered(self._settings)
@@ -832,6 +869,11 @@ class OptionsPage(FirstRunPage):
     def extract_art(self) -> bool:
         return self._art.isChecked()
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        # Custom only, so never: see needs_asking.
+        return False
+
     def applies(self, mode: SetupMode) -> bool:
         return mode is SetupMode.CUSTOM
 
@@ -895,6 +937,11 @@ class CardArtPage(FirstRunPage):
     def extraction(self) -> ArtExtraction:
         return self._extraction
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        # Art on disk answers the page as well as taking it out of the walk.
+        return not art_answered(SettingsManager.instance())
+
     def applies(self, mode: SetupMode) -> bool:
         if self._had_art:
             return False
@@ -922,6 +969,19 @@ class CardArtPage(FirstRunPage):
         return record_art_answered(self._settings)
 
 
+#: Every setup page after Quick or Custom, in the order shown: what :func:`setup_pages` builds.
+SETUP_PAGE_TYPES: tuple[type[FirstRunPage], ...] = (
+    GameFolderPage,
+    AccountsPage,
+    LaunchProfilePage,
+    CombatQuestionPage,
+    QuicksellPage,
+    RealmAndDelayPage,
+    OptionsPage,
+    CardArtPage,
+)
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
     options = OptionsPage()
@@ -937,8 +997,11 @@ def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     ]
 
 
-def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
+def needs_asking(prefs: PreferenceStore) -> bool:
     """Whether a first run has anything to ask: a page unanswered that applies under Quick.
+
+    Asked of each page's type (:meth:`FirstRunPage.asks_first_run`), so no page is built
+    at a launch with nothing to ask.
 
     Quick is the walk a first run takes unless the user picks Custom. A page that applies
     only under Custom, the Options page, opens nothing on its own: its choices are the ones
@@ -948,7 +1011,7 @@ def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
     walk when another page opens it, so choosing Custom, or adding accounts on the way,
     brings them in.
     """
-    return any(not page.answered() and page.applies(SetupMode.QUICK) for page in pages)
+    return any(page_type.asks_first_run(prefs) for page_type in SETUP_PAGE_TYPES)
 
 
 # -- the dialog ---------------------------------------------------------------------

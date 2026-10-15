@@ -1022,10 +1022,16 @@ again in Settings. The dialog opens on Quick or Custom (`ModePage`), then walks 
 that apply. The rules for a page:
 
 - **It is a `FirstRunPage`**, with a `heading`, `answered()`, `applies(mode)` and
-  `record() -> bool`, and joins `setup_pages`. What it stores lives in a Qt-free module, as
+  `record() -> bool`, and joins `setup_pages` and `SETUP_PAGE_TYPES`. What it stores lives in a Qt-free module, as
   `shared/first_run.py` does for the combat page, so the other product asks the same
   question and writes the same keys, and it writes through the function its Settings row
   uses.
+- **Its classmethod `asks_first_run(prefs)` answers for it before it is built**: whether it
+  is unanswered and applies under Quick, read from the stores alone, since every launch
+  asks it and building every page is slow. It must agree with `not answered() and
+  applies(SetupMode.QUICK)` on the page built;
+  `test_each_page_asks_a_first_run_as_its_answer_and_walk_say` checks each page across
+  several machine states, so a page that changes one changes the other.
 - **`answered()` is "the setting already exists"**, not a key of the dialog's own: an
   account, a found install, or the page's record key. A first run passes an answered page
   over; a rerun shows it on the current value.

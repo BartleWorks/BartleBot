@@ -1230,10 +1230,12 @@ class AppController(QObject):
         next launch opens on the pages still unanswered. ``docs/FIRST_RUN.md`` says when
         each page counts as answered.
         """
-        pages = setup_pages(PreferenceStore())
-        if not needs_asking(pages):
+        prefs = PreferenceStore()
+        # Each page's answer is read first: building the pages costs a registry and Steam
+        # search, the account cards and screen measuring, at a launch with nothing to ask.
+        if not needs_asking(prefs):
             return
-        self._open_setup(pages, rerun=False)
+        self._open_setup(setup_pages(prefs), rerun=False)
 
     def _rerun_setup(self) -> None:
         """File › Set up BartleBot…: every page that applies, on the current values."""

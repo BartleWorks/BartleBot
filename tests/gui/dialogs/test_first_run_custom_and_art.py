@@ -23,10 +23,8 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     CombatQuestionPage,
     FirstRunDialog,
     OptionsPage,
-    QuicksellPage,
     RealmAndDelayPage,
     SetupMode,
-    needs_asking,
 )
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.card_art_row import NO_GAME
@@ -122,17 +120,15 @@ def test_custom_with_extract_card_art_off_keeps_setup_closed_next_launch(qapp, p
     options, art = _pages(prefs)
 
     assert art.answered()
-    assert not needs_asking([RealmAndDelayPage(), options, art])
+    assert not CardArtPage.asks_first_run(prefs)
 
 
 def test_the_options_page_alone_never_opens_setup(qapp, prefs):
     """Its choices are Quick's: opened for it, setup would end on Quick or Custom, and open again next launch."""
-    options, art = _pages(prefs)
-    SettingsManager.instance().set_general(ART_ANSWERED_KEY, True)
+    options, _art = _pages(prefs)
 
     assert not options.answered()
-    assert not needs_asking([options, art])
-    assert needs_asking([options, art, QuicksellPage()])
+    assert not OptionsPage.asks_first_run(prefs)
 
 
 # -- the Options page ---------------------------------------------------------------

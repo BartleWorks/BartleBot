@@ -34,8 +34,11 @@ included, so choosing Custom can change it.
 
 ## First run and rerun
 
-`AppController._offer_first_run` builds the pages (`setup_pages`) and opens the dialog
-when any page is unanswered. It runs from `_after_window_shown`, before a file named at
+`AppController._offer_first_run` asks `needs_asking` first, which reads each page's
+answer from the stores without building it (`FirstRunPage.asks_first_run`), and only then
+builds the pages (`setup_pages`) and opens the dialog. Building them searches the registry
+and every Steam library, draws the account cards and measures the screen, which a launch
+with nothing to ask should not pay for. It runs from `_after_window_shown`, before a file named at
 launch is imported, so the two modals never stack.
 
 - **A first run** walks the pages unanswered when the dialog opened. A page answered on
