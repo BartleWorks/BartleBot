@@ -258,6 +258,15 @@ def forget_cache() -> None:
     _manifest.cache_clear()
 
 
+def manifest() -> dict:
+    """The extractor's index as it was written, or empty when no art has been extracted.
+
+    For the surfaces that report on the art as a whole, such as when it was extracted.
+    A copy, so a caller cannot change what the lookups read.
+    """
+    return dict(_manifest())
+
+
 def is_available() -> bool:
     """Whether any card art has been extracted on this machine."""
     return bool(_index())

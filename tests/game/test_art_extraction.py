@@ -33,6 +33,14 @@ from tests.art_fixture import ICON_KEYS, SPELLS, game_install
 from tools import extract_card_art
 
 
+@pytest.fixture(autouse=True)
+def _fresh_art_index():
+    """The art index is cached per process, and each test has its own ``%APPDATA%``."""
+    card_art.forget_cache()
+    yield
+    card_art.forget_cache()
+
+
 @pytest.fixture
 def game(tmp_path):
     return game_install(tmp_path / "game")

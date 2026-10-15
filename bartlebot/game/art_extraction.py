@@ -96,8 +96,8 @@ OLD_SUFFIX = ".old"
 #: The steps a run reports, in order. Said to the user, so in their words.
 STEP_READING = "Reading the spell list"
 STEP_INDEXING = "Finding the game's pictures"
-STEP_SPELLS = "Copying spell card art"
-STEP_ICONS = "Copying icons"
+STEP_SPELLS = "Extracting spell card art"
+STEP_ICONS = "Extracting icons"
 STEP_SAVING = "Saving"
 #: How many spells or textures pass between progress reports.
 REPORT_EVERY = 50

@@ -16,12 +16,13 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and five methods. ``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and six methods.``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
 belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
 recorded, and Next waits for it. ``record()`` writes its answer and says whether that
 reached disk. ``enter()``, a no-op by default, runs each time the dialog turns to the page,
-for a page that draws what an earlier page wrote.
+for a page that draws what an earlier page wrote. ``stop()``, also a no-op, runs when setup
+closes, for a page with work running.
 
 The dialog opens on :class:`ModePage`, Quick or Custom, which is not stored: it only
 decides which pages follow. **There is no Skip.** Next records the page shown and moves on
@@ -69,6 +70,8 @@ from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
+from bartlebot.gui.settings.card_art_row import ArtExtraction, extract_art_row
+from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
 from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
 from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
@@ -79,6 +82,13 @@ from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, fold
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.options.custom_setup import (
+    art_answered,
+    extract_art_chosen,
+    options_answered,
+    record_art_answered,
+    record_options,
+)
 from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
 from bartlebot.options.realm_delay_setup import realm_delay_answered, record_realm_delay, setup_realm
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -150,6 +160,12 @@ class FirstRunPage(QWidget):
     def record(self) -> bool:
         """Store this page's answer. Whether it reached disk."""
         raise NotImplementedError
+
+    def stop(self) -> None:
+        """Called when setup closes, finished or not: a page with work running stops it.
+
+        The Card art page stops its extraction, which removes what it wrote.
+        """
 
 
 class _CardsPage(FirstRunPage):
@@ -750,8 +766,140 @@ class RealmAndDelayPage(FirstRunPage):
         return record_realm_delay(self._settings, self._realm.get_value(), self._delay.value())
 
 
+# -- Custom's options ---------------------------------------------------------------
+
+OPTIONS_HEADING = "A few more choices"
+OPTIONS_INTRO = (
+    "Quick setup turns all three on. Each has a cost, said under it. You can change them later: "
+    "card art on Settings › General, the other two on Settings › Bot."
+)
+
+
+class OptionsPage(FirstRunPage):
+    """Custom setup only: Extract card art, Automatically group players and Refill potions, all on.
+
+    The last two are Settings › Bot's rows, from the same builder. Next writes all three
+    through :func:`~bartlebot.options.custom_setup.record_options`. Under Quick the page is
+    not shown and nothing of it is written: grouping and refills stay as they are, and the
+    art is extracted.
+    """
+
+    heading = OPTIONS_HEADING
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._settings = SettingsManager.instance()
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(OPTIONS_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        # Every description shown: each says what its choice costs.
+        form = SettingsForm(margin=0, always_describe=True)
+        self._art = form.add_row(extract_art_row(extract_art_chosen(self._settings))).control
+        self._group = form.add_row(auto_group_row(self._settings)).control
+        self._refill = form.add_row(refill_potions_row(self._settings)).control
+        form.finish(stretch=False)
+        column.addWidget(form)
+        column.addStretch()
+        # Whether the Card art page follows.
+        self._art.toggled.connect(lambda _on: self.walk_changed.emit())
+
+    @property
+    def art_box(self) -> QCheckBox:
+        return self._art
+
+    @property
+    def group_box(self) -> QCheckBox:
+        return self._group
+
+    @property
+    def refill_box(self) -> QCheckBox:
+        return self._refill
+
+    @property
+    def extract_art(self) -> bool:
+        return self._art.isChecked()
+
+    def applies(self, mode: SetupMode) -> bool:
+        return mode is SetupMode.CUSTOM
+
+    def answered(self) -> bool:
+        return options_answered(self._settings)
+
+    def record(self) -> bool:
+        return record_options(
+            self._settings,
+            extract_art=self._art.isChecked(),
+            auto_group=self._group.isChecked(),
+            refill=self._refill.isChecked(),
+        )
+
+
+# -- card art -----------------------------------------------------------------------
+
+CARD_ART_HEADING = "Extracting the card art"
+CARD_ART_INTRO = (
+    "BartleBot is copying the pictures of the spell cards, and the game's school, world and badge "
+    "icons, out of your game's files, to show them in its own lists. Finish is ready when it ends. "
+    "Closing setup stops it, keeping any art from before."
+)
+
+
+class CardArtPage(FirstRunPage):
+    """The last page whenever card art is on, as it is under Quick: the extraction, with its progress.
+
+    Entered, it starts :func:`~bartlebot.game.art_extraction.extract_art` off the GUI
+    thread, in an :class:`~bartlebot.gui.settings.card_art_row.ArtExtraction`. Finish waits
+    for the run to end, worked or not: a failure says why, is logged, and setup ends as
+    usual, since art is optional everywhere. Closing setup stops the run, which leaves
+    nothing half written, and leaves the page unanswered.
+    """
+
+    heading = CARD_ART_HEADING
+
+    def __init__(self, options: OptionsPage, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._settings = SettingsManager.instance()
+        self._options = options
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(12)
+        intro = ThemedTextLabel(CARD_ART_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        self._extraction = ArtExtraction(prefs)
+        self._extraction.finished.connect(lambda _ok: self.ready_changed.emit())
+        column.addWidget(self._extraction)
+        column.addStretch()
+
+    @property
+    def extraction(self) -> ArtExtraction:
+        return self._extraction
+
+    def applies(self, mode: SetupMode) -> bool:
+        return mode is SetupMode.QUICK or self._options.extract_art
+
+    def answered(self) -> bool:
+        return art_answered(self._settings)
+
+    def ready(self) -> bool:
+        return self._extraction.ended
+
+    def enter(self) -> None:
+        self._extraction.start()
+
+    def stop(self) -> None:
+        self._extraction.stop()
+
+    def record(self) -> bool:
+        return record_art_answered(self._settings)
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
+    options = OptionsPage()
     return [
         GameFolderPage(prefs),
         AccountsPage(prefs),
@@ -759,18 +907,23 @@ def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
         CombatQuestionPage(prefs),
         QuicksellPage(),
         RealmAndDelayPage(),
+        options,
+        CardArtPage(options, prefs),
     ]
 
 
 def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
-    """Whether a first run has anything to ask: a page unanswered that applies under some mode.
+    """Whether a first run has anything to ask: a page unanswered that applies under Quick.
 
-    A page that applies under neither, such as the Launch profile page with fewer than two
-    accounts, opens nothing on its own: the walk would be Quick or Custom and then
-    nothing. It is still in the dialog's walk when another page opens it, so accounts
-    added on the way bring it in.
+    Quick is the walk a first run takes unless the user picks Custom. A page that applies
+    only under Custom, the Options page, opens nothing on its own: its choices are the ones
+    Quick applies, and a setup opened for it would end on Quick or Custom with nothing
+    asked, and open again next launch. Nor does a page that applies under neither, such as
+    the Launch profile page with fewer than two accounts. Both are still in the dialog's
+    walk when another page opens it, so choosing Custom, or adding accounts on the way,
+    brings them in.
     """
-    return any(not page.answered() and any(page.applies(mode) for mode in SetupMode) for page in pages)
+    return any(not page.answered() and page.applies(SetupMode.QUICK) for page in pages)
 
 
 # -- the dialog ---------------------------------------------------------------------
@@ -878,6 +1031,12 @@ class FirstRunDialog(QDialog):
     @property
     def back_button(self) -> ActionButton:
         return self._back
+
+    def done(self, result: int) -> None:
+        # Finish, Escape or the close button: a page with work running stops it.
+        for page in self._pages:
+            page.stop()
+        super().done(result)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 
+from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
 from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
@@ -76,21 +77,8 @@ class BotTab(SettingsForm):
         # ------------------------------------------------------------------
         self.add_heading("Players")
 
-        self._auto_group_cb = QCheckBox()
-        self._auto_group_cb.setChecked(sm.auto_group_players)
-        self.add_row(
-            SettingRow(
-                "Automatically group players",
-                "Put every player in one in-game group when a run starts.",
-                self._auto_group_cb,
-                default=_default("auto_group_players"),
-                details=(
-                    "And again after one crashes or is closed. Group members get wisps after combat "
-                    "and take the first turn in battle, and crashing drops a player out of the group. "
-                    "Requires every account to be on the others' friends lists in-game."
-                ),
-            )
-        )
+        # The same rows setup's Options page shows, from the same builder.
+        self._auto_group_cb = self.add_row(auto_group_row(sm)).control
 
         self._friend_name_edit = QLineEdit(sm.default_friend_name)
         self._friend_name_edit.setPlaceholderText("Wizard name")
@@ -108,20 +96,7 @@ class BotTab(SettingsForm):
             )
         )
 
-        self._refill_potions_cb = QCheckBox()
-        self._refill_potions_cb.setChecked(sm.get_general("default_refill_potions", default=True))
-        self.add_row(
-            SettingRow(
-                "Refill potions",
-                "Buy potions from Hilda Brewer when a player runs out.",
-                self._refill_potions_cb,
-                default=_default("default_refill_potions"),
-                details=(
-                    "Players go to the Commons, buy, then recall to where they were. Buying costs "
-                    "gold. Off, they keep farming without potions."
-                ),
-            )
-        )
+        self._refill_potions_cb = self.add_row(refill_potions_row(sm)).control
 
         # ------------------------------------------------------------------
         # Realms
