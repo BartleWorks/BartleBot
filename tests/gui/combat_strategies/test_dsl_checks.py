@@ -129,6 +129,32 @@ def test_a_child_that_dies_is_replaced_by_a_thread_and_the_check_runs_again(qtbo
     assert [thread.name.startswith("dsl-check") for _dsl, thread in parses] == [True]
 
 
+def test_every_check_waiting_on_a_child_that_dies_moves_to_one_thread(qtbot, parses):
+    class _DyingPool(_CountingExecutor):
+        def __init__(self) -> None:
+            super().__init__()
+            self.waiting: list[Future] = []
+
+        def submit(self, fn, /, *args, **kwargs):
+            self.submitted.append(args[0])
+            future: Future = Future()
+            self.waiting.append(future)
+            return future
+
+    pool = _DyingPool()
+    own = DslChecker(pool)
+    other = "any<blade> @ self"
+    own.request(_BROKEN)
+    own.request(other)
+
+    for future in pool.waiting:
+        future.set_exception(BrokenProcessPool("the child died"))
+    qtbot.waitUntil(lambda: not own.is_pending(_BROKEN) and not own.is_pending(other), timeout=_WAIT_MS)
+
+    assert known_dsl_check(_BROKEN) is not None and known_dsl_check(other) is not None
+    assert len({thread for _dsl, thread in parses}) == 1, "one fallback thread, not one per check"
+
+
 def test_the_checker_is_made_once(qapp):
     assert dsl_checks.checker() is dsl_checks.checker()
 

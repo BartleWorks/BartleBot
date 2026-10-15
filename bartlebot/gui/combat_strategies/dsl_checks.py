@@ -49,7 +49,8 @@ class DslChecker(QObject):
 
     #: A DSL whose check is now known, so ``known_dsl_check`` answers it. GUI thread.
     checked = pyqtSignal(str)
-    #: Emitted from the executor's own thread; queued to the GUI thread, which stores the answer.
+    #: Emitted from the executor's own thread with the future and the executor it ran on;
+    #: queued to the GUI thread, which stores the answer.
     _finished = pyqtSignal(str, object)
 
     def __init__(self, executor: Executor | None = None) -> None:
@@ -80,15 +81,19 @@ class DslChecker(QObject):
             logger.warning("The DSL check process is unavailable; checking on a thread instead", exc_info=True)
             self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="dsl-check")
             future = self._executor.submit(check_dsl_uncached, dsl)
-        future.add_done_callback(lambda done, dsl=dsl: self._finished.emit(dsl, done))
+        executor = self._executor
+        future.add_done_callback(lambda done, dsl=dsl: self._finished.emit(dsl, (done, executor)))
 
-    def _on_finished(self, dsl: str, future: Future) -> None:
+    def _on_finished(self, dsl: str, ran: tuple[Future, Executor]) -> None:
+        future, executor = ran
         try:
             store_dsl_check(dsl, future.result())
         except BrokenProcessPool:
-            # The child died: start over on a thread, and check this one again there.
-            logger.warning("The DSL check process stopped; checking on a thread instead", exc_info=True)
-            self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="dsl-check")
+            # The child died: start over on a thread, and check this one again there. Every
+            # check still waiting on the child lands here too, and they share one thread.
+            if self._executor is executor:
+                logger.warning("The DSL check process stopped; checking on a thread instead", exc_info=True)
+                self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="dsl-check")
             self._submit(dsl)
             return
         except Exception:
