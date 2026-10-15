@@ -11,7 +11,7 @@ is their default, and card art is extracted, which is what Quick means by its de
 
 The Card art page records :data:`ART_ANSWERED_KEY` when the user leaves it with Finish,
 whether the extraction worked or not: art is optional everywhere, so a failure is not
-asked about again on every launch.
+asked about again on every launch. Art turned off on the Options page answers it too.
 
 No Qt here: the pages are the only Qt around it.
 """
@@ -65,12 +65,19 @@ def record_options(settings: SettingsManager, *, extract_art: bool, auto_group: 
 
 
 def art_answered(settings: SettingsManager) -> bool:
-    """Whether a first run need not show the Card art page: it was left with Finish, or art is already extracted.
+    """Whether a first run need not show the Card art page.
 
+    It was left with Finish, Custom's Options page turned the art off, or art is already
+    extracted. The page applies under Quick whatever the Options page chose, so without
+    the second a user who turned the art off would have setup open on every launch.
     Art extracted before setup asked, with ``tools/extract_card_art.py`` or Settings, is
     the page's work already done.
     """
-    return bool(settings.get_general(ART_ANSWERED_KEY, default=False)) or card_art.is_available()
+    return (
+        bool(settings.get_general(ART_ANSWERED_KEY, default=False))
+        or settings.get_general(EXTRACT_ART_KEY, default=None) is False
+        or card_art.is_available()
+    )
 
 
 def record_art_answered(settings: SettingsManager) -> bool:

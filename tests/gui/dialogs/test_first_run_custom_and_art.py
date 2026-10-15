@@ -111,6 +111,20 @@ def test_custom_with_extract_card_art_off_has_no_art_page(qapp, prefs):
     assert dialog.result() == QDialog.DialogCode.Accepted
 
 
+def test_custom_with_extract_card_art_off_keeps_setup_closed_next_launch(qapp, prefs):
+    """The Card art page applies under Quick whatever Custom chose, so only its answer keeps it shut."""
+    dialog, options, _art = _dialog(prefs, SetupMode.CUSTOM)
+    _next(dialog, 2)
+    options.art_box.setChecked(False)
+    _next(dialog)
+    assert dialog.result() == QDialog.DialogCode.Accepted
+
+    options, art = _pages(prefs)
+
+    assert art.answered()
+    assert not needs_asking([RealmAndDelayPage(), options, art])
+
+
 def test_the_options_page_alone_never_opens_setup(qapp, prefs):
     """Its choices are Quick's: opened for it, setup would end on Quick or Custom, and open again next launch."""
     options, art = _pages(prefs)

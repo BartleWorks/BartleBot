@@ -67,6 +67,18 @@ def test_record_art_answered_writes_its_key(sm):
     assert art_answered(sm)
 
 
+def test_turning_art_off_answers_the_art_page(sm):
+    record_options(sm, extract_art=False, auto_group=True, refill=True)
+
+    assert art_answered(sm)
+
+
+def test_turning_art_on_leaves_the_art_page_to_ask(sm):
+    record_options(sm, extract_art=True, auto_group=True, refill=True)
+
+    assert not art_answered(sm)
+
+
 def test_art_extracted_before_setup_answers_the_art_page(sm):
     card_art.spells_dir().mkdir(parents=True)
     card_art.index_path().write_text(json.dumps({"images": {"Fixture Bolt": "x.png"}}), encoding="utf-8")
