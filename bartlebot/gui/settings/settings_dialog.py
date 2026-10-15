@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QDialog,
@@ -19,7 +21,7 @@ from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab, SettingsForm
 from bartlebot.gui.settings.theme_tab import ThemeTab
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.layout.dialog_footer import claim_default, dialog_footer
 from bartlebot.settings_manager import SettingsManager
 
 # The size the dialog opens at when the screen has room for it. The height clears the
@@ -39,6 +41,47 @@ _PREFERRED_SIZE = (900, 860)
 _QT_MAX_SIZE = (1 << 24) - 1
 
 
+class _LazyTab(QWidget):
+    """A tab that builds its page the first time it is shown, or asked for.
+
+    Settings opened with all seven pages built, about half a second on every open, for
+    the one page the user came to. A page that was never shown holds nothing the user
+    typed, so :meth:`apply` has nothing to push until it exists -- which is what lets
+    ``SettingsDialog.apply_all`` keep walking the tab bar as it always has.
+    """
+
+    def __init__(self, build: Callable[[], QWidget], on_built: Callable[[QWidget], None]) -> None:
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self._build = build
+        self._on_built = on_built
+        self._page: QWidget | None = None
+
+    @property
+    def page(self) -> QWidget:
+        """The page, built now if it has not been."""
+        if self._page is None:
+            self._page = self._build()
+            self.layout().addWidget(self._page)
+            if self.isVisible():
+                # Added to a tab already on screen: Qt would only show it a turn later.
+                self._page.show()
+            self._on_built(self._page)
+        return self._page
+
+    def is_built(self) -> bool:
+        return self._page is not None
+
+    def apply(self) -> None:
+        if self._page is not None:
+            self._page.apply()
+
+    def showEvent(self, event) -> None:  # noqa: N802 — Qt naming
+        self.page  # noqa: B018 — built on the way up
+        super().showEvent(event)
+
+
 class SettingsDialog(QDialog):
     """Modal settings dialog opened via Settings menu or Ctrl+,."""
 
@@ -55,48 +98,30 @@ class SettingsDialog(QDialog):
         self.setMinimumSize(480, 400)
 
         self._tabs = QTabWidget()
+        self._commit = None
+        # Show and Hide descriptions are one preference for the whole dialog, so one tab's
+        # links reach every form -- including the ones inside Theme and Game. Gathered as
+        # each page is built.
+        self._forms: list[SettingsForm] = []
 
         # The four form tabs are as tall as their rows make them -- every setting is a
         # row plus a visible description under it -- so each is wrapped in a scroll area.
-        # Theme scrolls its own color grid already, and Game is elastic.
-
-        # General tab
-        self._general_tab = ScrollableTab(GeneralTab())
-        self._tabs.addTab(self._general_tab, "General")
-
-        # Bot tab (how a run behaves, and the app-setting level of every bot option)
-        self._bot_tab = ScrollableTab(BotTab())
-        self._tabs.addTab(self._bot_tab, "Bot")
-
-        # Combat tab (the Solo and Team Default Duel Strategies, shared with BartleBuddy)
-        self._combat_tab = ScrollableTab(CombatDefaultsTab())
-        self._tabs.addTab(self._combat_tab, "Combat")
-
-        # Canvas tab
-        self._canvas_tab = ScrollableTab(CanvasTab())
-        self._tabs.addTab(self._canvas_tab, "Canvas")
-
-        # Authoring tab (the speed multiplier and the authoring utilities' hotkeys)
-        self._authoring_tab = ScrollableTab(AuthoringTab())
-        self._tabs.addTab(self._authoring_tab, "Authoring")
-
-        # Theme tab
-        self._theme_tab = ThemeTab()
-        self._tabs.addTab(self._theme_tab, "Theme")
-
-        # Game tab (accounts, launch profiles, game embed resolution)
-        self._accounts_tab = AccountsTab(live_game_area=live_game_area)
-        self._tabs.addTab(self._accounts_tab, "Game")
-
-        # Show and Hide descriptions are one preference for the whole dialog, so one tab's
-        # links reach every form -- including the ones inside Theme and Game.
-        self._forms: list[SettingsForm] = []
-        for i in range(self._tabs.count()):
-            self._forms.extend(_forms_in(self._tabs.widget(i)))
-        for form in self._forms:
-            form.descriptions_toggled.connect(self._on_descriptions_toggled)
+        # Theme scrolls its own color grid already, and Game is elastic. Every page is
+        # built when its tab is first shown: see _LazyTab.
+        self._general_tab = self._add_tab("General", lambda: ScrollableTab(GeneralTab()))
+        # How a run behaves, and the app-setting level of every bot option.
+        self._bot_tab = self._add_tab("Bot", lambda: ScrollableTab(BotTab()))
+        # The Solo and Team Default Duel Strategies, shared with BartleBuddy.
+        self._combat_tab = self._add_tab("Combat", lambda: ScrollableTab(CombatDefaultsTab()))
+        self._canvas_tab = self._add_tab("Canvas", lambda: ScrollableTab(CanvasTab()))
+        # The speed multiplier and the authoring utilities' hotkeys.
+        self._authoring_tab = self._add_tab("Authoring", lambda: ScrollableTab(AuthoringTab()))
+        self._theme_tab = self._add_tab("Theme", ThemeTab)
+        # Accounts, launch profiles and game embed resolution.
+        self._accounts_tab = self._add_tab("Game", lambda: AccountsTab(live_game_area=live_game_area))
 
         footer = dialog_footer(self, on_commit=self._on_accept)
+        self._commit = footer.commit
 
         layout = QVBoxLayout(self)
         layout.addWidget(self._tabs, 1)
@@ -149,6 +174,20 @@ class SettingsDialog(QDialog):
             frame.moveCenter(usable.center())
             self.move(frame.topLeft())
 
+    def _add_tab(self, title: str, build: Callable[[], QWidget]) -> _LazyTab:
+        tab = _LazyTab(build, self._on_page_built)
+        self._tabs.addTab(tab, title)
+        return tab
+
+    def _on_page_built(self, page: QWidget) -> None:
+        for form in _forms_in(page):
+            form.descriptions_toggled.connect(self._on_descriptions_toggled)
+            self._forms.append(form)
+        # The page's buttons arrive after the footer claimed Enter for OK, and a button in
+        # a dialog takes Enter by default: hand it back.
+        if self._commit is not None:
+            claim_default(self, self._commit)
+
     @property
     def tabs(self) -> QTabWidget:
         """The tab bar itself, for anything that needs to ask what tabs there are."""
@@ -161,7 +200,7 @@ class SettingsDialog(QDialog):
         one line to forget when a tab is added, and forgetting it discards
         everything the user typed into the new tab with no error anywhere.
         ``AccountsTab`` persists eagerly and its ``apply`` is a documented no-op,
-        which is what makes iterating safe.
+        which is what makes iterating safe. A tab never opened has nothing to push.
         """
         for i in range(self._tabs.count()):
             self._tabs.widget(i).apply()
@@ -180,9 +219,15 @@ class SettingsDialog(QDialog):
         if w := widgets.get(tab_name):
             self._tabs.setCurrentWidget(w)
 
+    def page(self, index: int) -> QWidget:
+        """The page on tab *index*, built now if it has not been."""
+        return self._tabs.widget(index).page
+
     @property
     def forms(self) -> list[SettingsForm]:
-        """Every column of settings rows in the dialog, tab by tab."""
+        """Every column of settings rows in the dialog, tab by tab. Builds every page."""
+        for i in range(self._tabs.count()):
+            self.page(i)
         return list(self._forms)
 
     def _on_descriptions_toggled(self, shown: bool) -> None:
