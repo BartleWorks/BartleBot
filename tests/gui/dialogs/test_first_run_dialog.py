@@ -1211,3 +1211,24 @@ def test_a_failed_quicksell_write_keeps_the_user_on_the_page(qapp, monkeypatch):
 
     assert dialog.current is page
     assert dialog.error_shown
+
+
+def test_the_dialog_grows_to_fit_wrapped_text_on_a_page_turn(qapp):
+    """Qt sizes a window from its layout's guessed label heights, never its height at the
+    window's width; on the Quicksell page that cut Always keep's summary short."""
+    page = QuicksellPage()
+    dialog = FirstRunDialog([page])
+    dialog.show()
+    _next(dialog)
+    # As short as Qt allows: what the guess gives, before the page needs more.
+    dialog.resize(dialog.minimumWidth(), dialog.minimumSizeHint().height())
+    qapp.processEvents()
+
+    dialog.back_button.click()
+    _next(dialog)
+    qapp.processEvents()
+
+    assert dialog.height() >= dialog.layout().totalHeightForWidth(dialog.width())
+    for row in page.findChildren(SettingRow):
+        assert row.summary.height() >= row.summary.heightForWidth(row.summary.width()), row.title
+    dialog.close()

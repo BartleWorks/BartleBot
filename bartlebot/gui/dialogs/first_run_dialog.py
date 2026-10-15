@@ -820,9 +820,26 @@ class FirstRunDialog(QDialog):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
+        self._fit_height()
         if not self._placed:
             self._placed = True
             self._center_on_window()
+
+    def _fit_height(self) -> None:
+        """Grow to the height the page shown needs at the dialog's width.
+
+        A window's minimum is taken from its layout's minimum size, which guesses each
+        wrapped label's height at a width of the label's own choosing. Qt never asks a
+        window's layout for its height at the window's real width, so a wrapped line the
+        guess left out was cut off: Always keep's summary on the Quicksell page lost its
+        second. Only ever grows: a dialog the user made taller stays so.
+        """
+        layout = self.layout()
+        if layout is None or not layout.hasHeightForWidth():
+            return
+        needed = layout.totalHeightForWidth(self.width())
+        if needed > self.height():
+            self.resize(self.width(), needed)
 
     def _center_on_window(self) -> None:
         """Center on the main window, or on its screen while the window is maximized.
@@ -856,6 +873,8 @@ class FirstRunDialog(QDialog):
         self._heading.setText(page.heading)
         self._error.setVisible(False)
         self._refresh()
+        if self.isVisible():
+            self._fit_height()
 
     def _refresh(self) -> None:
         """The step count, Back, and Next or Finish, for the page shown and the walk as it stands."""
