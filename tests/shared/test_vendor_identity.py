@@ -123,6 +123,7 @@ def test_the_shared_layer_has_no_stray_files():
     """Every module here is one a second product would want. A reminder, not a rule."""
     assert {p.name for p in SHARED.glob("*.py")} == {
         "__init__.py",
+        "account_setup.py",
         "account_slots.py",
         "account_store.py",
         "combat_defaults.py",
