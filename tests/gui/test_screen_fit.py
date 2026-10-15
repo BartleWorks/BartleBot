@@ -638,3 +638,19 @@ def test_one_client_is_fitted_to_a_profile_that_follows_it(screen):
     SettingsManager.instance().launch_profiles = [_profile("ab")]
 
     assert screen_fit.fitted_layout().resolution == (560, 420)
+
+
+def test_one_client_on_1440p_leaves_the_canvas_its_share(screen):
+    """1680x1050 is the largest that fits, but leaves the canvas 231px; 1600x900 leaves 381."""
+    screen(((2560, 1392), 1.0))
+    fitted = screen_fit.fitted_layout()
+
+    assert fitted.resolution == (1600, 900)
+    assert fitted.panes["bottom_section_height"] == 1392 - 60 - (900 + 51)
+
+
+def test_one_client_on_4k_at_150_percent_keeps_the_largest(screen):
+    """2560x1440 leaves 329 of 1400, over the share: the bar is set so this stays."""
+    screen(((2560, 1400), 1.5))
+
+    assert screen_fit.fitted_layout().resolution == (2560, 1440)

@@ -64,8 +64,13 @@ The global resolution is fitted with it, since 800×600 is a quarter of a 4K scr
 single account. Launch profiles with a resolution of their own decide the layout first,
 since a user with one runs it more than a single account; the global resolution is then
 the largest that fits in the game area they leave, for one client and for every profile
-following it. With no such profile it is simply the largest one client fits, and decides
-the layout itself. The other way round, the largest single client would be the tallest
+following it. With no such profile it is the largest one client fits that still leaves
+the canvas 23% of the screen's usable height (`game_sizing.SINGLE_CLIENT_CANVAS_SHARE`),
+and decides the layout itself. Without that bar the largest wins however little it leaves:
+1680×1050 left a 1440p screen a 231 px canvas, where 1600×900 leaves 381. It is 23 rather
+than a round 25 because 4K at 150% keeps 2560×1440 with 329 px of its 1400 (23.5%); at 25%
+it fell to 1920×1200, a much smaller game for a canvas it did not need. A taller taskbar
+can still tip it there. The other way round, the largest single client would be the tallest
 grid on every screen and squeeze the canvas of every user with a profile.
 
 | 1080p less a taskbar | profile | one client | canvas | sidebars |

@@ -103,6 +103,16 @@ BOTCANVAS_MIN_HEIGHT = 180
 # has (``canvas_height_for``). Also the height setup judges a new profile's resolution at,
 # so a canvas already fitted to one account cannot crowd out the profile for four.
 BOTCANVAS_DEFAULT_HEIGHT = 220
+# The share of the screen's height a single client leaves the canvas, at least, when setup
+# fits the global resolution with no launch profile deciding the layout. Without it the
+# largest resolution one client fits wins however little it leaves: 1680x1050 on a 1440p
+# screen kept a 231px canvas, where 1600x900 keeps 381. 23% rather than a round 25%
+# because 4K at 150% keeps 2560x1440 with 329px of 1400 (23.5%); at 25% it fell to
+# 1920x1200, a much smaller game for a canvas it did not need. The share is of the usable
+# height, after the taskbar, and that margin is thin: 24%, or a taller taskbar, tips 4K at
+# 150% down a rung. tests/gui/test_screen_fit.py pins both screens, so retuning this
+# means deciding what each of them should get.
+SINGLE_CLIENT_CANVAS_SHARE = 0.23
 # Sidebar minimums. Both are *measured*, not pixels: each panel's widest row is a set of
 # controls that carry a ``Minimum``/``Preferred`` size policy with no shrink flag, so they
 # run off the panel rather than getting narrower, and their own width scales with the
@@ -536,6 +546,11 @@ def canvas_height_for(screen_h: int, launches: Iterable[tuple[tuple[int, int], i
     if tallest is None:
         return BOTCANVAS_DEFAULT_HEIGHT
     return max(BOTCANVAS_DEFAULT_HEIGHT, screen_h - WINDOW_CHROME_ESTIMATE_PX - tallest)
+
+
+def single_client_canvas_floor(screen_h: int) -> int:
+    """The canvas height setup leaves at least, fitting one client to *screen_h* (``SINGLE_CLIENT_CANVAS_SHARE``)."""
+    return max(BOTCANVAS_DEFAULT_HEIGHT, math.ceil(SINGLE_CLIENT_CANVAS_SHARE * screen_h))
 
 
 def sidebar_widths_for(

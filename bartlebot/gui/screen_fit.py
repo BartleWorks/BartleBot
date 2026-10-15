@@ -376,8 +376,10 @@ def fitted_layout(widget: QWidget | None = None) -> FittedLayout | None:
     The launch profiles with a resolution of their own decide the layout first, since a
     user with one runs it more than a single account. The global resolution, while it is
     still setup's to choose, is then the largest that fits in the game area they leave, for
-    one client and for every profile following it; with no such profile it is simply the
-    largest that fits, and decides the layout itself. Fitted the other way round, the
+    one client and for every profile following it. With no such profile it is the largest
+    that fits and still leaves the canvas ``single_client_canvas_floor``, and decides the
+    layout itself; on a screen where none does, simply the largest that fits. Fitted the
+    other way round, the
     largest single client would be the tallest grid on every screen and squeeze the canvas
     of every user with a profile. None for a screen that cannot be measured.
     """
@@ -429,6 +431,15 @@ def fitted_layout(widget: QWidget | None = None) -> FittedLayout | None:
                 splitter_handle=game_sizing.SPLITTER_HANDLE_PX,
             )
             chosen = largest_for_following(left_by_pinned)
+        else:
+            room_for_canvas = game_sizing.screen_budget(
+                screen_size,
+                left_sidebar=left_sidebar_floor(),
+                right_sidebar=right_sidebar_floor(),
+                bottom_section=game_sizing.single_client_canvas_floor(screen_size[1]),
+                splitter_handle=game_sizing.SPLITTER_HANDLE_PX,
+            )
+            chosen = largest_for_following(room_for_canvas)
         resolution = chosen or largest_for_following(area) or resolution
     launches = pinned + [(resolution, n) for n in sorted(following) if game_sizing.fits(resolution, n, area, dpr)]
     panes = panes_for(launches)

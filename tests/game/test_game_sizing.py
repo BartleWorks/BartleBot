@@ -467,3 +467,8 @@ def test_a_sidebar_that_cannot_grow_leaves_all_of_it_to_the_other():
 def test_no_spare_width_or_no_launch_leaves_the_sidebars_alone():
     assert gs.sidebar_widths_for(1920, 404, 300, [((800, 600), 2)]) == (404, 300)
     assert gs.sidebar_widths_for(1920, 404, 300, []) == (404, 300)
+
+
+def test_one_client_leaves_the_canvas_its_share_of_the_screen():
+    assert gs.single_client_canvas_floor(1392) == 321
+    assert gs.single_client_canvas_floor(700) == gs.BOTCANVAS_DEFAULT_HEIGHT
