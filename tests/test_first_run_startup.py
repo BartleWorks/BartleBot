@@ -29,11 +29,12 @@ _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
 
 
 class _Window(QWidget):
-    """The main window as far as setup reaches: a parent, and the Combat tab to refresh."""
+    """The main window as far as setup reaches: a parent, the Combat tab, and the launch screen to refresh."""
 
     def __init__(self, events: list[str]) -> None:
         super().__init__()
         self.left_sidebar = SimpleNamespace(combat_tab=SimpleNamespace(refresh_source=lambda: events.append("refresh")))
+        self.catch_up_with_accounts = lambda: events.append("accounts")
 
 
 class _Launcher(game_install.NoPlaces):
@@ -148,11 +149,11 @@ def test_it_opens_on_the_answer_the_team_default_already_is(startup):
     assert combat.tactic is BossTactic.EVERYONE_ATTACKS
 
 
-def test_it_comes_before_a_file_named_at_launch_and_refreshes_the_combat_tab(startup):
+def test_it_comes_before_a_file_named_at_launch_and_refreshes_what_it_changed(startup):
     """Never two modals at once: the import's summary waits for setup to close."""
     startup.ns._after_window_shown()
 
-    assert startup.events == ["first run", "refresh", "import"]
+    assert startup.events == ["first run", "refresh", "accounts", "import"]
 
 
 def test_set_up_again_shows_every_page_once_all_are_answered(startup):
@@ -164,7 +165,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
     assert startup.opened[0].rerun
     assert _walked(startup.opened[0]) == [GameFolderPage, AccountsPage, CombatQuestionPage]
     assert _prefs().get(_TEAM) is None
-    assert startup.events == ["first run", "refresh"]
+    assert startup.events == ["first run", "refresh", "accounts"]
 
 
 def test_the_file_menu_offers_set_up_after_settings(qapp):

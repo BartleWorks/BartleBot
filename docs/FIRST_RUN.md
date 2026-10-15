@@ -40,8 +40,10 @@ launch is imported, so the two modals never stack.
 - **A rerun**, from File › Set up BartleBot… (after Settings…), walks every page that
   applies, each on the current value.
 
-After either, the Combat tab rereads its source, since the combat page may have changed
-the Team default.
+After either, finished or closed, the Combat tab rereads its source, since the combat page
+may have changed the Team default, and `MainWindow.catch_up_with_accounts` rebuilds the
+Launch menu, the window minimum and the launch screen's cards, since the Accounts page
+writes accounts without the window seeing it.
 
 ## The pages
 

@@ -1242,8 +1242,10 @@ class AppController(QObject):
     def _open_setup(self, pages: list[FirstRunPage], *, rerun: bool) -> None:
         dialog = FirstRunDialog(pages, rerun=rerun, parent=self._window)
         dialog.exec()
-        # Whatever was answered is on disk, finished or not.
+        # Whatever was answered is on disk, finished or not: the combat page may have changed
+        # the Team default, and the Accounts page the accounts the launch screen draws.
         self._window.left_sidebar.combat_tab.refresh_source()
+        self._window.catch_up_with_accounts()
 
     def _import_from_arguments(self) -> None:
         """Import each share file named on the command line: how a double-clicked file arrives (#27)."""
