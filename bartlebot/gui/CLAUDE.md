@@ -1012,25 +1012,34 @@ redrawn by `refresh_source` and after each `_save_bcs`, never during the rebuild
 it: the pick is resolved from its file, so a fight just given a strategy would still read
 as on the default.
 
-**First run is a list of pages, and each page writes a choice** (epic #201, Stage 6,
-`gui/dialogs/first_run_dialog.py`). A page that only explains gets skipped, so a page
-asks something whose answer is stored and can be changed again in Settings. Today there
-is one, `CombatQuestionPage`: two `StartCard`s, the recommended answer first and selected,
-and a note naming Settings › Combat and the Combat tab. The rules for a page added later
-(accounts, the game path):
+**Setup is a list of pages, and each page writes a choice** (epics #201 and #215,
+`gui/dialogs/first_run_dialog.py`; `docs/FIRST_RUN.md` lists the pages). A page that only
+explains gets skipped, so a page asks something whose answer is stored and can be changed
+again in Settings. The dialog opens on Quick or Custom (`ModePage`), then walks the pages
+that apply. The rules for a page:
 
-- **It is a `FirstRunPage`**, with a `heading` and `record(prefs, skipped=)`. What it
-  stores lives in a Qt-free module, as `shared/first_run.py` does for the combat page, so
-  the other product asks the same question and writes the same keys.
-- **Skip ends the whole dialog, and every page records itself skipped**, so nothing is
-  asked again. Escape and the close button are Skip. Back and Next walk the pages, and
-  the last one's commit is Continue.
+- **It is a `FirstRunPage`**, with a `heading`, `answered()`, `applies(mode)` and
+  `record() -> bool`, and joins `setup_pages`. What it stores lives in a Qt-free module, as
+  `shared/first_run.py` does for the combat page, so the other product asks the same
+  question and writes the same keys, and it writes through the function its Settings row
+  uses.
+- **`answered()` is "the setting already exists"**, not a key of the dialog's own: an
+  account, a found install, or the page's record key. A first run passes an answered page
+  over; a rerun shows it on the current value.
+- **There is no Skip.** Next calls `record()` and moves on only when it returns true; a
+  failed write keeps the user on the page and says so. Back records nothing. Escape and
+  the close button write nothing more, so the next launch resumes at the first
+  unanswered page. A page never records on its own: only Next does.
+- **A page whose answer changes what follows emits `walk_changed`**, and the dialog
+  recounts Step N of M and Next or Finish. `ModePage` does, on a change of mode.
 - **A card that selects itself on focus needs the selected one focused on show**, or the
-  focus chain hands it to the first card and changes the answer. `CombatQuestionPage`
-  does it in `showEvent`. In the constructor it is lost when the page joins the dialog.
+  focus chain hands it to the first card and changes the answer. `_CardsPage` does it in
+  `showEvent`, and with no card selected focuses the page itself. In the constructor it
+  is lost when the page joins the dialog.
 - **It is opened from `AppController._after_window_shown`**, a timer's synchronous slot,
   before a file named at launch is imported. Each opens a modal, and a second timer
-  would fire inside the first one's `exec()`.
+  would fire inside the first one's `exec()`. File › Set up BartleBot… opens it with
+  `rerun=True`.
 
 Every test's `%APPDATA%` is a first run, so `tests/conftest.py` makes
 `FirstRunDialog.exec` fail the test that calls it. Drive the dialog by its buttons, as
