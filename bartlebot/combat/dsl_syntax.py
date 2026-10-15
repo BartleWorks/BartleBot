@@ -98,7 +98,8 @@ CONDITION_SUBJECTS: tuple[str, ...] = ("self", "boss", "enemy", "ally", "deck")
 #: ``any(enemies).health < 50%``.
 AGGREGATES: tuple[str, ...] = ("any", "all", "avg")
 AGGREGATE_GROUPS: tuple[str, ...] = ("enemies", "allies")
-#: What ``self.<attribute>`` can read: a ``CombatMember`` method returning a number.
+#: What ``self.<attribute>`` can read: a ``CombatMember`` method returning a number or a
+#: flag, and wizsprinter's ``MEMBER_ATTRIBUTES``, which refuses any other name.
 #: A percentage divides by ``max_<attribute>``, so only ``health`` and ``mana`` take one.
 MEMBER_ATTRIBUTES: tuple[str, ...] = (
     "health",
@@ -109,6 +110,12 @@ MEMBER_ATTRIBUTES: tuple[str, ...] = (
     "power_pips",
     "shadow_pips",
     "level",
+    "is_boss",
+    "is_dead",
+    "is_stunned",
+    "is_player",
+    "is_monster",
+    "is_minion",
 )
 CONDITION_ATTRIBUTES: tuple[str, ...] = MEMBER_ATTRIBUTES + HANGING_KINDS
 #: What ``deck.<attribute>`` can read: cards left in the main pile.

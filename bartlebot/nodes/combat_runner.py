@@ -189,7 +189,7 @@ class DslError(NamedTuple):
     """Why a DSL does not parse, and where.
 
     ``line`` and ``column`` are 1-based, and 0 when the failure has no position — an
-    unexpected end of input, or an error raised while transforming a tree that parsed.
+    unexpected end of input, or a transform error in a rule that holds no token.
     """
 
     message: str
@@ -234,7 +234,12 @@ def dsl_error(dsl: str) -> DslError | None:
         # own first line only names the rule. The wrapped error says what is wrong.
         message = str(getattr(exc, "orig_exc", exc)).strip()
         # Lark's UnexpectedInput carries both; an unexpected end of input sets them to -1.
+        # A transform error carries the rule's tree instead, so it is placed at the rule's
+        # first token: the attribute in ``?(boss.hp > 0)``, the kind in ``gambit(chrams)``.
         line, column = getattr(exc, "line", 0), getattr(exc, "column", 0)
+        token = _first_token(getattr(exc, "obj", None))
+        if token is not None:
+            line, column = token.line, token.column
         positioned = isinstance(line, int) and isinstance(column, int) and line > 0 and column > 0
         return DslError(
             message.splitlines()[0] if message else exc.__class__.__name__,
@@ -242,6 +247,14 @@ def dsl_error(dsl: str) -> DslError | None:
             column if positioned else 0,
         )
     return None
+
+
+def _first_token(tree):  # noqa: ANN001, ANN202 - a Lark Tree, imported lazily
+    from lark import Token, Tree  # noqa: PLC0415
+
+    if not isinstance(tree, Tree):
+        return None
+    return next(tree.scan_values(lambda value: isinstance(value, Token)), None)
 
 
 class DslWarning(NamedTuple):

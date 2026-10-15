@@ -155,6 +155,26 @@ def test_a_parse_error_says_where_the_parser_stopped():
     assert error.message == validate_dsl("pass @ self\nany<damag> @ enemy")
 
 
+@pytest.mark.parametrize(
+    "dsl, line, column",
+    [
+        ("pass @ self\n?(boss.hp > 0) pass", 2, 8),
+        ("?(self.power_pips < 50%) pass", 1, 8),
+        ("any<gambit(chrams)> @ enemy", 1, 12),
+    ],
+)
+def test_an_error_found_while_transforming_is_placed_at_its_rule(dsl, line, column):
+    """The editor underlines the misspelled name, not nothing (#214)."""
+    error = dsl_error(dsl)
+
+    assert error is not None
+    assert (error.line, error.column) == (line, column)
+
+
+def test_an_unknown_attribute_suggests_the_close_one():
+    assert validate_dsl("?(boss.heath > 0) pass") == "Unknown condition attribute 'heath'. Did you mean 'health'?"
+
+
 def test_an_error_with_no_position_reports_zero_rather_than_lark_s_minus_one():
     error = dsl_error("any<blade")
 

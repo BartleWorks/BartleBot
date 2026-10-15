@@ -233,6 +233,28 @@ def test_broken_linked_preset_dsl_is_reported(tmp_path: Path):
     assert "does not parse" in warnings[0]
 
 
+@pytest.mark.parametrize(
+    "dsl, named",
+    [
+        ("?(boss.hp > 0) any<damage> @ boss | any<damage> @ enemy", "'hp'"),
+        ("?(self.power_pips < 50%) pass | any<damage> @ enemy", "'power_pips' takes no %"),
+        ("?(deck.health >= 2) pass | any<damage> @ enemy", "deck.health"),
+    ],
+)
+def test_a_condition_that_reads_nothing_is_a_fault_that_names_it(tmp_path: Path, dsl, named):
+    """#214: each of these parsed and was false on every turn, which reads like a
+    condition that doesn't hold. Now the run stops before it starts, and says which."""
+    pcs = _pcs(tmp_path, "Typo", dsl)
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)])
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id)
+
+    warnings = _faults(bcs.id, 1, root=tmp_path)
+
+    assert len(warnings) == 1
+    assert "does not parse" in warnings[0]
+    assert named in warnings[0]
+
+
 @pytest.mark.parametrize("dsl", ["", "   ", "\n\t "])
 def test_empty_dsl_is_never_flagged(tmp_path: Path, dsl):
     """Empty resolves to the built-in default and never runs; a new preset starts
