@@ -1,0 +1,30 @@
+{
+  "id": "57071f2b-78f6-4316-9b14-44710fb0e533",
+  "name": "Default Life Solo Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Potent Trap": 1,
+      "Sharpened Blade": 1,
+      "Forest Lord - T05 - A": 1,
+      "Lifeblade": 2,
+      "Zand The Bandit - T05 - A": 2,
+      "Frenzy": 1,
+      "Feint": 2
+    },
+    "card_kinds": {
+      "Lifeblade": "blade",
+      "Frenzy": "aura",
+      "Feint": "trap"
+    },
+    "archmastery_school": "Storm",
+    "apply_archmastery": true
+  },
+  "description": "For one Life wizard alone: hits, Epic, Feint and a Life blade, with Potent Trap and Sharpened Blade to enchant them, and Frenzy as its aura. Pairs with Default.",
+  "tags": [
+    "Solo"
+  ],
+  "schools": [
+    "Life"
+  ]
+}

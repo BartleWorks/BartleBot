@@ -8,7 +8,7 @@ A fight's choices leave no other record: before the trace, a support that clicke
 and never cast it showed in the log only as a fight that finished. So the trace records
 the hand each round began with, every priority walked and why a card was passed over,
 every fuse with the hand on either side, which card was then cast and how it was found,
-and at which seat. A combatant is named by its seat, never by its name.
+and at which slot. A combatant is named by its slot, never by its name.
 """
 
 from __future__ import annotations
@@ -90,14 +90,14 @@ async def test_a_round_is_traced_from_the_hand_to_the_cast(trace):
     )
     assert _keep(messages, "#", "picked", "fuse", "fused", "names", "to cast", "cast") == [
         "#1:",
-        "picked Storm Blade (template 2001) (slot 1) for team seat 2",
+        "picked Storm Blade (template 2001) (slot 1) for team slot 2",
         "fuse Sharpened Blade (template 1001) (slot 2) onto Storm Blade (template 2001) (slot 1), 3 cards in hand",
         "fused after 1 click(s): 2 cards in hand",
         "fused the move's enchant. Hand before: 1: Storm Blade (template 2001) | "
         "2: Sharpened Blade (template 1001) | 3: Storm Shark (template 4001)",
         "names new to the hand: none",
         "to cast: Storm Blade (template 2001, enchant 1001) (slot 1), the fused card, found by its template and enchant",
-        "cast Storm Blade (template 2001, enchant 1001) (slot 1) at team seat 2",
+        "cast Storm Blade (template 2001, enchant 1001) (slot 1) at team slot 2",
         "#1 ended the turn",
     ]
 
@@ -112,7 +112,7 @@ async def test_a_card_passed_over_says_why(trace):
 
     assert trace()[1:] == [
         "#1:",
-        "skip Storm Blade (template 2001): it would not stack on team seat 2",
+        "skip Storm Blade (template 2001): it would not stack on team slot 2",
         "#2:",
         "pass",
         "#2 ended the turn",
@@ -180,11 +180,11 @@ async def test_a_fused_card_that_is_renamed_is_found_by_its_new_name(parse, trac
 
 
 # ---------------------------------------------------------------------------
-# Seats, tags, and staying out of the way
+# Slots, tags, and staying out of the way
 # ---------------------------------------------------------------------------
 
 
-async def test_a_combatant_is_named_by_its_seat_never_its_name(trace):
+async def test_a_combatant_is_named_by_its_slot_never_its_name(trace):
     """Wizard names are synthetic, from tools/name_key_samples.json."""
     fight = Fight(
         team=(Wizard("Luke SkullHunter"), Wizard("Luke CycloneHunter")),
@@ -198,8 +198,8 @@ async def test_a_combatant_is_named_by_its_seat_never_its_name(trace):
     await cast("any<blade> @ self | pass", fight)
 
     text = "\n".join(trace())
-    assert "at team seat 2" in text
-    assert "at enemy seat 1 (boss)" in text
+    assert "at team slot 2" in text
+    assert "at enemy slot 1 (boss)" in text
     assert "at self" in text
     assert "Luke" not in text and "Rattlebones" not in text
 

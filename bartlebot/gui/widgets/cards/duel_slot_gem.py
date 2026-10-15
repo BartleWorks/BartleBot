@@ -3,7 +3,7 @@
 WHY THE COMBAT ORDER READS RIGHT TO LEFT
 ----------------------------------------
 
-A Wizard101 duel seats four wizards around a circle and takes turns clockwise, which
+A Wizard101 duel puts four wizards around a circle and takes turns clockwise, which
 puts a team's own players **right to left**: slot 1 is the rightmost, slot 4 the
 leftmost. The game's "Set Sigil Slot Preference" dialog lists them that way, and marks
 each with one of four gold diamonds -- Sun, Eye, Star, Moon, first position to last.

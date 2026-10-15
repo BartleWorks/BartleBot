@@ -1,0 +1,24 @@
+{
+  "id": "bc7813c8-cc0e-4dfd-a227-a633eda06ddc",
+  "name": "Default Life AoE Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Forest Lord - T05 - A": 1,
+      "Zand The Bandit - T05 - A": 2,
+      "Frenzy": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Storm",
+    "apply_archmastery": true
+  },
+  "description": "Life AoE hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default AoE Hitter, or with Default Team Hitter as P1 of a team duel.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Life"
+  ]
+}

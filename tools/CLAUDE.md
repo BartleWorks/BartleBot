@@ -156,7 +156,7 @@ wrong. `Weapon` is the wand, and `Art_Quest_Wand` is the same art at 64px. `Hous
 the quest page has no spellement, so Spellements draws `Button_BG_Reward_Spellement02`,
 the reward-category icon the Spellements tag also uses.
 
-**The duel slot gems are keyed by position, not by symbol.** A duel seats four wizards
+**The duel slot gems are keyed by position, not by symbol.** A duel puts four wizards
 around a circle and turns run clockwise, which puts a team's own players **right to left**:
 slot 1 is the rightmost. The game's "Set Sigil Slot Preference" dialog lists them that way
 and marks each with a gold diamond — Sun, Eye, Star, Moon, first position to last. The key

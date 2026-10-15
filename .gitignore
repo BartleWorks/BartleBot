@@ -35,14 +35,6 @@ Thumbs.db
 logs/
 !logs/.gitkeep
 
-# Deck presets — snapshots of whatever cards a wizard happened to be carrying,
-# personal to one account and not meaningful to anyone else.  strategies/duel/
-# and strategies/player/ stay tracked: those are shareable strategy definitions.
-# Deck data embedded in a bot_strategies/ file is also tracked — it is part of
-# what makes that specific strategy runnable.
-# The directory is recreated on demand (list_deck_presets tolerates it missing).
-strategies/decks/
-
 # Real player data — see CLAUDE.md, "No real player data".
 #
 # Some tools record actual character names and ids by design, and those must never be

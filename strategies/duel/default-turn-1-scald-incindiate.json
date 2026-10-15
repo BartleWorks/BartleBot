@@ -30,7 +30,7 @@
       "dsl": "detonate all"
     }
   ],
-  "description": "Default duel strategy for a turn 1 Scald-Incindiate team strategy",
+  "description": "For a team of 4 that ends the fight in round 1. P1 and P2 buff P3 with Mass Feint, Feint on the boss or a blade. P3 casts Scald, and P4 detonates it with Incindiate.",
   "id": "5fc877c1-f46b-4e52-9c75-3df5d26a89e9",
   "name": "Default Turn 1 Scald-Incindiate"
 }

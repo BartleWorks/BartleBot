@@ -489,7 +489,7 @@ it, and an uncategorized row or an install with no art keeps the text alone. A p
 icon depends on its name (`card_art.drop_icon_name`), so pass the item name as well as the
 category.
 
-**The combat order is drawn right to left, and it is not a style choice.** A duel seats
+**The combat order is drawn right to left, and it is not a style choice.** A duel puts
 four wizards around a circle and turns run clockwise, which puts a team's own players
 right to left: slot 1 is the rightmost, and the game's own "Set Sigil Slot Preference"
 dialog lists 4, 3, 2, 1 in that order with a gold gem on each. `duel_slot_gem.py` holds

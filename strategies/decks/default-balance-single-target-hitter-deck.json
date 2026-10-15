@@ -1,0 +1,23 @@
+{
+  "id": "a43c100a-2d39-4268-8a3c-0edd4f5d2a99",
+  "name": "Default Balance Single-target Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Frenzy": 1,
+      "Judgement": 3
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Balance",
+    "apply_archmastery": false
+  },
+  "description": "Balance single-target hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default Single-target Hitter.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Balance"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "fca7e3a5-6026-4940-ab40-be6c5722225c",
+  "name": "Default Life Healer Deck",
+  "deck": {
+    "normal": {
+      "Radical": 3,
+      "Rebirth - T05 - A": 1,
+      "Satyr": 1,
+      "Unicorn": 1,
+      "Renew": 1
+    },
+    "card_kinds": {
+      "Renew": "aura"
+    },
+    "archmastery_school": "Storm"
+  },
+  "description": "Life heals, with Radical to enchant them and Renew as its aura. Pairs with Default Guardian Support.",
+  "tags": [
+    "Healer"
+  ],
+  "schools": [
+    "Life"
+  ]
+}

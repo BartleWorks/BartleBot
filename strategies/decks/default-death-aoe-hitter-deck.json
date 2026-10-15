@@ -1,0 +1,24 @@
+{
+  "id": "e211db5a-a039-4e1a-b185-23e71444d52a",
+  "name": "Default Death AoE Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Frenzy": 1,
+      "Scarecrow - T05 - A": 1,
+      "Wobbegong Frenzy - T05 - A": 2
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Ice",
+    "apply_archmastery": true
+  },
+  "description": "Death AoE hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default AoE Hitter, or with Default Team Hitter as P1 of a team duel.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Death"
+  ]
+}

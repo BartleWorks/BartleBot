@@ -308,6 +308,8 @@ class StrategyPanel(CardFrame):
         # Whether the name currently reports a DSL that does not parse. Held rather than
         # re-derived because the theme pass needs it and does not have the summary.
         self._invalid = False
+        # Whether it reports a warning instead: a strategy that runs, but maybe not as meant.
+        self._warned = False
         self._fights: list[tuple[str, str]] = []
         # What answers in place of an unset binding, on the default card: the Solo or
         # Team default, one per size named. Empty means it is not known here.
@@ -758,6 +760,7 @@ class StrategyPanel(CardFrame):
     def _render_bare(self, name: str, meta: str, invalid: bool = False) -> None:
         """A card with no configuration behind it: a name, one sentence, no assignments."""
         self._invalid = invalid
+        self._warned = False
         self._name.setText(name)
         self._name.setToolTip(name)
         self._meta.setText(meta)
@@ -780,11 +783,15 @@ class StrategyPanel(CardFrame):
     def _render_summary(self, name: str, summary: StrategySummary) -> None:
         """Name, facets and one line per player assignment, all from one summary."""
         self._invalid = summary.health.status is HealthStatus.INVALID_DSL
+        self._warned = summary.health.is_warning
         if self._invalid:
             # The same mark and the same reason ``StrategyCard`` uses, so a strategy that
             # does not parse looks identical wherever the user meets it.
             self._name.setText(f"{name}  ⚠")
             self._name.setToolTip(f"Does not parse: {summary.health.reason}")
+        elif self._warned:
+            self._name.setText(f"{name}  ⚠")
+            self._name.setToolTip(summary.health.reason)
         else:
             self._name.setText(name)
             self._name.setToolTip(summary.description or name)
@@ -876,6 +883,6 @@ class StrategyPanel(CardFrame):
         Through :meth:`ElidedLabel.set_text_color` rather than a stylesheet: an
         ``ElidedLabel`` paints its own text, so a QSS ``color:`` rule never reaches it.
         """
-        self._name.set_text_color(THEME.error if self._invalid else THEME.text)
+        self._name.set_text_color(THEME.error if self._invalid else THEME.warning if self._warned else THEME.text)
         for label in (self._scope, self._meta, *self._assignment_lbls):
             label.set_text_color(THEME.text_muted)

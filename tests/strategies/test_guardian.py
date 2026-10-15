@@ -51,7 +51,7 @@ def guardian_dsl() -> str:
 
 
 def as_p2(*hand, enemies=(BOSS,), round=2, me: Wizard | None = None, p1: Wizard | None = None) -> Fight:
-    """P2 of a two-player team, P1 in the last seat."""
+    """P2 of a two-player team, P1 in the last slot."""
     return Fight(
         team=[me or Wizard("P2"), p1 or Wizard("P1")], me="P2", enemies=list(enemies), hand=list(hand), round=round
     )

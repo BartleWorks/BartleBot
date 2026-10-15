@@ -11,7 +11,7 @@
       "players": [
         1
       ],
-      "player_combat_strategy_id": "615bbd5f-eb76-4f47-b0da-7e16de8a7b33"
+      "player_combat_strategy_id": "1fd335b0-1d99-4f80-a0cc-e33a52804f86"
     },
     {
       "players": [
@@ -22,7 +22,7 @@
       "player_combat_strategy_id": "f0b1a45f-4b97-4b7e-aae8-e334307185ce"
     }
   ],
-  "description": "Default duel strategy for a 2-4 player team boss duel where Feints are not allowed.",
+  "description": "For a team of 2–4 against a boss that cheats when a Feint is cast. P1 runs Default No-Feints Hitter and P2–P4 Default No-Feints Support, so no one casts one.",
   "id": "73d9e424-d576-4068-a779-4b914ae07201",
   "name": "Default Team Boss Duel (No Feints)"
 }

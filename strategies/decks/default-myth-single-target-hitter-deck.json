@@ -1,0 +1,25 @@
+{
+  "id": "449cf9f7-933d-49ae-8d78-9cf8a3b0e4d3",
+  "name": "Default Myth Single-target Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Cyclops - T05 - A": 1,
+      "Ninja Pig - T02 - A": 1,
+      "Troll - T05 - A": 1,
+      "Frenzy": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Myth",
+    "apply_archmastery": true
+  },
+  "description": "Myth single-target hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default Single-target Hitter.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Myth"
+  ]
+}

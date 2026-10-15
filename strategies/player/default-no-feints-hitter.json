@@ -1,0 +1,9 @@
+{
+  "id": "1fd335b0-1d99-4f80-a0cc-e33a52804f86",
+  "name": "Default No-Feints Hitter",
+  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage>) & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap & !feint>) & potent @ spell(any<trap & !feint>) | ?(self.health < 30%) any<heal> @ self | ?(self.beneficial_wards == 0) any<ward> @ self | any<trap & !aoe & !feint & stacks>[potent] @ boss | any<blade & stacks>[sharp] @ self | ?(self.beneficial_auras == 0) any<aura & out_damage> | any<damage & aoe>[any<mod_damage>] | any<damage>[any<mod_damage>] @ boss | any<global> | any<shadow> | any<trap & !aoe & !feint>[potent] @ boss | any<blade>[sharp] @ self | pass",
+  "description": "P1 of Default Team Boss Duel (No Feints). Plays as Default, but never casts or enchants a Feint or Mass Feint to avoid boss cheats.",
+  "tags": [
+    "Hitter"
+  ]
+}

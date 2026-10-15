@@ -98,14 +98,10 @@ def _enchant_only(dsl: str) -> list[bool]:
 
 
 @pytest.mark.parametrize("path", _player_files(), ids=lambda p: p.name)
-def test_every_shipped_strategy_enchants_ahead_first_unless_it_only_attacks(path: Path):
-    """The slot covers only the casts below it, so it leads. A strategy that attacks every
-    round never runs it, so it has none."""
+def test_every_shipped_strategy_enchants_ahead_first(path: Path):
+    """The slot covers only the casts below it, so it leads."""
     strategy = PlayerCombatStrategy.load(path)
     held = _enchant_only(strategy.dsl)
-    if not any(p.startswith("any<blade") or "trap" in p for p in strategy.dsl.split(" | ")):
-        assert held == [False] * len(held), strategy.name
-        return
     assert held[0], strategy.name
     assert strategy.dsl.startswith(ENCHANT_AHEAD_GATE), strategy.name
     assert held.count(True) == 1, strategy.name
@@ -226,8 +222,27 @@ def test_shared_set_version_rose_with_the_guardian():
     assert SHARED_SET_VERSION >= 7
 
 
+def test_shared_set_version_rose_when_turn_1_aoe_left():
+    """Default Turn 1 AoE mob fight left the set at version 8 (#212): its duel had gone at
+    version 6, and every shipped team strategy now AoEs in round 1 of a mob fight. The same
+    version added the No-Blades and No-Feints hitters, and Default Single-target Hitter
+    started hitting a mob in a mob fight. The decks first shipped at version 8 too."""
+    assert SHARED_SET_VERSION >= 8
+
+
+@pytest.mark.parametrize("path", _duel_files(), ids=lambda p: p.name)
+def test_no_shipped_duel_leaves_a_slot_to_chance(path: Path):
+    """A shipped support aims at ``ally(last)``, which is P1 only under a combat order that
+    puts P1 in the last slot (#212)."""
+    from bartlebot.combat.strategy_summary import slot_order_warning  # noqa: PLC0415
+
+    pcs_dsl = {pcs.id: pcs.dsl for pcs in map(PlayerCombatStrategy.load, _player_files())}
+
+    assert slot_order_warning(DuelCombatStrategy.load(path), pcs_dsl) is None
+
+
 def test_no_shipped_duel_links_the_guardian():
-    """A team rarely needs one, so a user picks it for a seat (#224)."""
+    """A team rarely needs one, so a user picks it for a slot (#224)."""
     duels = Path(__file__).resolve().parents[2] / "strategies" / "duel"
     for path in duels.glob("*.json"):
         assert SHIPPED_GUARDIAN_SUPPORT_ID not in path.read_text(encoding="utf-8"), path.name
@@ -239,6 +254,24 @@ RETIRED_DUEL_IDS = ("1bd16a10-285b-4a78-b8d2-cd16433df54e", "7cd5d91b-2d67-4599-
 
 #: Every shipped tree a link to a duel could sit in: bots, templates, subgraphs, strategies.
 _SHIPPED_TREES = [STRATEGIES.parent / name for name in ("bots", "templates", "subgraphs", "strategies")]
+
+
+#: Default Turn 1 AoE mob fight, which left the Official set in #212.
+RETIRED_PLAYER_IDS = ("1337f552-1404-4411-9c35-eb9b4f18d149",)
+
+
+def test_a_retired_player_strategy_is_no_longer_shipped():
+    assert not set(RETIRED_PLAYER_IDS) & set(index_dir(PLAYERS))
+
+
+def test_nothing_shipped_links_a_retired_player_strategy():
+    linking = [
+        str(path.relative_to(STRATEGIES.parent))
+        for tree in _SHIPPED_TREES
+        for path in tree.rglob("*.json")
+        if any(pcs_id in path.read_text(encoding="utf-8") for pcs_id in RETIRED_PLAYER_IDS)
+    ]
+    assert linking == []
 
 
 @pytest.mark.parametrize("duel_id", RETIRED_DUEL_IDS)
@@ -342,7 +375,7 @@ def test_a_stored_id_that_does_not_fit_falls_to_the_shipped_duel_and_says_why(tm
 
 
 def test_an_ambient_team_fight_falls_to_everyone_attacks(tmp_path):
-    """Nothing orders who joins a fight no node started, so no seat is the hitter's."""
+    """Nothing orders who joins a fight no node started, so no slot is the hitter's."""
     everyone = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
     answer = default_duel(3, _prefs(tmp_path), _library(_duel(SHIPPED_TEAM_DUEL_ID), everyone), ambient=True)
     assert (answer.duel, answer.source) == (everyone, DefaultSource.SHIPPED)
@@ -415,3 +448,35 @@ def test_the_recommended_choice_is_stored_as_no_key(tmp_path, recommended):
     record = json.loads((tmp_path / "preferences.json").read_text(encoding="utf-8"))
     assert PREFERENCE_KEYS[TeamSize.TEAM] not in record
     assert record[PREFERENCE_KEYS[TeamSize.SOLO]] == "kept"
+
+
+# ---------------------------------------------------------------------------
+# The shipped decks (#212)
+# ---------------------------------------------------------------------------
+
+
+def _deck_files() -> list[Path]:
+    return sorted((STRATEGIES / "decks").glob("*.json"))
+
+
+@pytest.mark.parametrize("path", _deck_files(), ids=lambda p: p.name)
+def test_every_shipped_deck_is_named_a_deck_and_says_what_it_is_for(path: Path):
+    from bartlebot.shared.strategy_models import DeckPreset  # noqa: PLC0415
+
+    deck = DeckPreset.load(path)
+
+    assert deck.name.startswith("Default ") and deck.name.endswith(" Deck"), deck.name
+    assert "Pairs with" in deck.description, deck.name
+
+
+def test_the_shipped_decks_read_as_official(tmp_path: Path):
+    """A deck in the install directory and none in the user's is Official, as a strategy is."""
+    from bartlebot.combat.strategy_store import StrategyKind  # noqa: PLC0415
+    from bartlebot.combat.strategy_workset import StrategyWorkingSet  # noqa: PLC0415
+    from bartlebot.content.store_roots import Origin  # noqa: PLC0415
+
+    ws = StrategyWorkingSet.from_store(root=STRATEGIES.parent, user_root=tmp_path)
+    ids = list(index_dir(STRATEGIES / "decks"))
+
+    assert ids
+    assert {ws.status(StrategyKind.DECK, deck_id) for deck_id in ids} == {Origin.SHIPPED}

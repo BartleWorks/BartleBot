@@ -2,7 +2,7 @@
   "id": "a6ddb3e8-5a97-42de-a8d6-174a8353a589",
   "name": "Default",
   "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage>) & sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap>) & potent @ spell(any<trap>) | ?(self.health < 30%) any<heal> @ self | ?(self.beneficial_wards == 0) any<ward> @ self | \"Feint Mass - Amulet\" | any<trap & !aoe & stacks>[potent] @ boss | any<blade & stacks>[sharp] @ self | ?(self.beneficial_auras == 0) any<aura & out_damage> | any<damage & aoe>[any<mod_damage>] | any<damage>[any<mod_damage>] @ boss | any<global> | any<shadow> | any<trap & !aoe>[potent] @ boss | any<blade>[sharp] @ self | pass",
-  "description": "Default strategy for a single wizard, and the hitter's ladder. Below 30% health it heals itself, and it shields itself while it has no shield. Otherwise it buffs while a buff adds to the next hit: Mass Feint, Feint on the boss, a blade on itself, an aura while none is up. Then it hits: AoE, or single-target at the boss. Short of pips for a hit it casts a global or a shadow spell, then a buff that won't stack, and otherwise passes, keeping its buffs.",
+  "description": "For one wizard. Heals itself below 30% health and shields itself when it has no shield. Casts stacking buffs before it attacks (Mass Feint, Feint on the boss, a blade on itself, an aura), then hits with AoE, or single-target at the boss. Only casts a global, a shadow spell or a non-stacking buff when it doesn't have enough pips to attack.",
   "tags": [
     "Hitter"
   ]

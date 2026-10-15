@@ -1,0 +1,25 @@
+{
+  "id": "8871ac96-1236-4210-a6e3-368a62137f2a",
+  "name": "Default Storm Single-target Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Frenzy": 1,
+      "Heqet - T05 - A": 1,
+      "Lightning Bats - T05 - A": 1,
+      "Novus Storm - T05 - B": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Life",
+    "apply_archmastery": true
+  },
+  "description": "Storm single-target hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default Single-target Hitter.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Storm"
+  ]
+}

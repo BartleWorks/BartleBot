@@ -1,0 +1,25 @@
+{
+  "id": "4acdec7a-bae1-41e5-bc2a-6b8b4290b2f9",
+  "name": "Default Death Single-target Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Frenzy": 1,
+      "Anubis - T05 - A": 1,
+      "Ghoul - T05 - A": 1,
+      "Novus Death - T05 - B": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Storm",
+    "apply_archmastery": true
+  },
+  "description": "Death single-target hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default Single-target Hitter.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Death"
+  ]
+}

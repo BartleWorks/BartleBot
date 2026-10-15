@@ -1,0 +1,31 @@
+{
+  "id": "fb6c2bce-a353-43da-978d-52ccfb1fb7b8",
+  "name": "Default Balance Solo Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Potent Trap": 1,
+      "Sharpened Blade": 1,
+      "Frenzy": 1,
+      "Feint": 2,
+      "Balanceblade": 2,
+      "Judgement": 1,
+      "Power Nova - T05 - A": 1,
+      "Rainbow Serpent - T05 - A": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura",
+      "Feint": "trap",
+      "Balanceblade": "blade"
+    },
+    "archmastery_school": "Death",
+    "apply_archmastery": true
+  },
+  "description": "For one Balance wizard alone: hits, Epic, Feint and a Balance blade, with Potent Trap and Sharpened Blade to enchant them, and Frenzy as its aura. Pairs with Default.",
+  "tags": [
+    "Solo"
+  ],
+  "schools": [
+    "Balance"
+  ]
+}

@@ -97,9 +97,9 @@ Players are named by number in every log line (P1, P2), never by name.
    client seen in battle gets its combat run with **its own slot's** strategy
    (`resolve_combat(..., num_clients=len(clients), ambient=True)` gives one per slot): a helper,
    a client that walked into the fight, a bystander pulled into a second one. Drops are polled
-   for every participant. Nothing here orders who joins, so no seat is known to be P1's, and a
+   for every participant. Nothing here orders who joins, so no slot is known to be P1's, and a
    bot running on the shipped defaults has everyone attack (Default Team Duel (Everyone
-   Attacks)) rather than support a last seat that may not be the hitter's. A duel the user
+   Attacks)) rather than support a last slot that may not be the hitter's. A duel the user
    chose still runs; `docs/COMBAT_CONFIG.md` has why.
 7. **Afterwards**, per fight: a won one as below, a fled one by collecting wisps in the hub where
    the flee left its players.

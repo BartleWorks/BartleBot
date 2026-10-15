@@ -1,0 +1,23 @@
+{
+  "id": "4020e014-8a95-4998-995b-b72235f45794",
+  "name": "Default Elemental Blade Support Deck",
+  "deck": {
+    "normal": {
+      "Sharpened Blade": 1,
+      "Tri Blade": 4
+    },
+    "item": {
+      "Sharpened Blade - Tear": 1,
+      "Pet - Sharpened Blade": 1
+    },
+    "card_kinds": {
+      "Tri Blade": "blade"
+    },
+    "archmastery_school": "Balance",
+    "apply_archmastery": false
+  },
+  "description": "Carries four copies of Elemental Blade and three stacking copies of Sharpened Blade (trained, item card, and pet). Elemental Blade boosts Fire, Ice and Storm hits. Pairs with Default Support or Default No-Feints Support, but not No-Blades.",
+  "tags": [
+    "Support"
+  ]
+}

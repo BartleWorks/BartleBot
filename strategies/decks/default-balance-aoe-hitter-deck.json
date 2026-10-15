@@ -1,0 +1,25 @@
+{
+  "id": "c950f119-2af2-4448-8ac5-4306ba7e6f34",
+  "name": "Default Balance AoE Hitter Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Frenzy": 1,
+      "Power Nova - T05 - A": 1,
+      "Rainbow Serpent - T05 - A": 1,
+      "Sandstorm": 1
+    },
+    "card_kinds": {
+      "Frenzy": "aura"
+    },
+    "archmastery_school": "Death",
+    "apply_archmastery": true
+  },
+  "description": "Balance AoE hits, with Epic to enchant them and Frenzy as its aura. Pairs with Default AoE Hitter, or with Default Team Hitter as P1 of a team duel.",
+  "tags": [
+    "Hitter"
+  ],
+  "schools": [
+    "Balance"
+  ]
+}

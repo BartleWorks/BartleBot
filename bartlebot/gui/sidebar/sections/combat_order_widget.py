@@ -243,7 +243,7 @@ class CombatOrderWidget(QWidget):
         self._rebuild_chips()
 
     def _sync_header_visibility(self) -> None:
-        """Show one header cell per seat this duel has.
+        """Show one header cell per slot this duel has.
 
         By slot rather than by layout position. The cells are laid out reversed, so
         hiding "the last few" would hide slots 1 and 2 -- the two a two-player duel

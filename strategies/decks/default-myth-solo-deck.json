@@ -1,0 +1,31 @@
+{
+  "id": "e45d2352-c57f-462b-9348-3a17e7bc8eb4",
+  "name": "Default Myth Solo Deck",
+  "deck": {
+    "normal": {
+      "Epic": 3,
+      "Potent Trap": 1,
+      "Sharpened Blade": 1,
+      "Drop Bear Fury - T05 - A": 1,
+      "Humongofrog": 1,
+      "Mythblade": 2,
+      "Orthrus - T05 - A": 1,
+      "Frenzy": 1,
+      "Feint": 2
+    },
+    "card_kinds": {
+      "Mythblade": "blade",
+      "Frenzy": "aura",
+      "Feint": "trap"
+    },
+    "archmastery_school": "Fire",
+    "apply_archmastery": true
+  },
+  "description": "For one Myth wizard alone: hits, Epic, Feint and a Myth blade, with Potent Trap and Sharpened Blade to enchant them, and Frenzy as its aura. Pairs with Default.",
+  "tags": [
+    "Solo"
+  ],
+  "schools": [
+    "Myth"
+  ]
+}

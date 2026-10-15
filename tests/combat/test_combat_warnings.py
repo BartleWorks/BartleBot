@@ -26,7 +26,7 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.paths import project_root
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
-_VALID_DSL = "any<blade>[sharp]@ally(2)"
+_VALID_DSL = "any<blade>[sharp]@self"
 _OTHER_VALID_DSL = "any<aura & out_damage> | any<aoe>[epic]"
 _BROKEN_DSL = "@@@ not a dsl"
 
@@ -856,3 +856,50 @@ def test_a_link_to_a_retired_duel_is_a_fault_and_nothing_rewrites_it(
     assert fault in faults[0]
     assert retired_id[:8] in faults[0]
     assert {path: path.read_bytes() for path in tmp_path.rglob("*.json")} == files
+
+
+# ---------------------------------------------------------------------------
+# Slot order: a strategy aiming at a slot the duel leaves to chance (#212)
+# ---------------------------------------------------------------------------
+
+_SUPPORT_DSL = "any<blade>[sharp] @ ally(last) | pass"
+
+
+def test_a_duel_with_no_combat_order_and_a_slot_target_is_a_slot_order_notice(tmp_path: Path):
+    support = _pcs(tmp_path, "Support", _SUPPORT_DSL)
+    dcs = _dcs(
+        tmp_path,
+        name="Unordered Team",
+        max_players=4,
+        player_assignments=[PlayerAssignment(players=[2, 3, 4], player_combat_strategy_id=support.id)],
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id)
+
+    check = check_combat(bcs.id, 4, root=tmp_path)
+
+    assert check.faults == []
+    assert len(check.slot_order) == 1
+    assert check.slot_order[0].startswith("Duel strategy 'Unordered Team': P2–P4 target ally(last)")
+    assert check.slot_order[0] in check.notices
+
+
+def test_a_combat_order_leaves_no_slot_order_notice(tmp_path: Path):
+    dcs = _dcs(
+        tmp_path,
+        combat_order=[4, 3, 2, 1],
+        player_assignments=[PlayerAssignment(players=[2, 3, 4], dsl=_SUPPORT_DSL)],
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id)
+
+    assert check_combat(bcs.id, 4, root=tmp_path).slot_order == []
+
+
+def test_a_duel_two_fights_share_is_one_slot_order_notice(tmp_path: Path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[2], dsl=_SUPPORT_DSL)])
+    bcs = _bcs(
+        tmp_path,
+        default_strategy_id=dcs.id,
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)],
+    )
+
+    assert len(check_combat(bcs.id, 2, _boss_bot(), root=tmp_path).slot_order) == 1

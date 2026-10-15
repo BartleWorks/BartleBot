@@ -16,6 +16,7 @@ from bartlebot.combat.strategy_summary import (
     UsageCount,
     find_references,
     format_players,
+    slot_order_warning,
     summarize_bot,
     summarize_deck,
     summarize_duel,
@@ -222,6 +223,50 @@ def test_summarize_deck_preset_with_cards():
 
 
 # ---------------------------------------------------------------------------
+def test_summarize_duel_warns_when_a_slot_is_left_to_chance():
+    """No combat order, so ``ally(2)`` is whoever sat down third (#212)."""
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1, 2], dsl=_VALID_DSL)])
+
+    health = summarize_duel(config, []).health
+
+    assert health.status is HealthStatus.SLOT_ORDER
+    assert health.is_ok and health.is_warning
+    assert health.reason.startswith("P1–P2 target ally(2), a slot on the team")
+    assert "Set a combat order" in health.reason
+
+
+def test_a_broken_dsl_outranks_the_slot_warning():
+    config = DuelConfig(
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl=_VALID_DSL),
+            PlayerAssignment(players=[2], dsl=_BROKEN_DSL),
+        ]
+    )
+
+    assert summarize_duel(config, []).health.status is HealthStatus.INVALID_DSL
+
+
+def test_the_slot_warning_names_each_assignment_and_reads_a_linked_strategy():
+    pcs = PlayerCombatStrategy(name="Support", dsl="any<ward> @ ally(0) | any<blade> @ ally(last)")
+    config = DuelConfig(
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl=_VALID_DSL),
+            PlayerAssignment(players=[2, 3], player_combat_strategy_id=pcs.id),
+        ]
+    )
+
+    warning = slot_order_warning(config, {pcs.id: pcs.dsl})
+
+    assert warning.startswith("P1 targets ally(2); P2–P3 target ally(0) and ally(last), a slot")
+
+
+def test_a_duel_with_a_combat_order_has_no_slot_warning():
+    config = DuelConfig(combat_order=[2, 1], player_assignments=[PlayerAssignment(players=[1, 2], dsl=_VALID_DSL)])
+
+    assert slot_order_warning(config, {}) is None
+    assert summarize_duel(config, []).health.status is HealthStatus.OK
+
+
 # Health
 # ---------------------------------------------------------------------------
 
@@ -230,6 +275,13 @@ def test_health_is_ok_true_only_when_not_invalid():
     assert Health(HealthStatus.OK).is_ok
     assert Health(HealthStatus.EMPTY).is_ok
     assert not Health(HealthStatus.INVALID_DSL, "boom").is_ok
+    assert Health(HealthStatus.SLOT_ORDER, "why").is_ok
+
+
+def test_health_is_warning_only_for_a_slot_left_to_chance():
+    assert Health(HealthStatus.SLOT_ORDER, "why").is_warning
+    assert not Health(HealthStatus.OK).is_warning
+    assert not Health(HealthStatus.INVALID_DSL, "boom").is_warning
 
 
 # ---------------------------------------------------------------------------
