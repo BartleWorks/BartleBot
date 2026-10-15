@@ -15,7 +15,13 @@ import pytest
 from PyQt6.QtWidgets import QMenu, QWidget
 
 from bartlebot.app_controller import AppController
-from bartlebot.gui.dialogs.first_run_dialog import AccountsPage, CombatQuestionPage, FirstRunDialog, GameFolderPage
+from bartlebot.gui.dialogs.first_run_dialog import (
+    AccountsPage,
+    CombatQuestionPage,
+    FirstRunDialog,
+    GameFolderPage,
+    LaunchProfilePage,
+)
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import game_install
 from bartlebot.shared.account_setup import ANSWERED_KEY as ACCOUNTS_ANSWERED
@@ -73,7 +79,11 @@ def startup(qapp, monkeypatch, tmp_path):
             dialog.commit_button.click()  # the folder found
         if isinstance(dialog.current, AccountsPage):
             dialog.commit_button.click()  # the accounts as they are
-        if state.answer is None:
+        if isinstance(dialog.current, LaunchProfilePage):
+            dialog.commit_button.click()  # every account, checked
+        if not isinstance(dialog.current, CombatQuestionPage):
+            pass  # finished on an earlier page
+        elif state.answer is None:
             dialog.reject()
         else:
             dialog.current.select(state.answer)
@@ -221,3 +231,53 @@ def test_an_account_in_the_shared_file_keeps_the_accounts_page_closed(startup):
     startup.ns._offer_first_run()
 
     assert startup.opened == []
+
+
+# -- the Launch profile page (Stage 4) ----------------------------------------------
+
+
+def _two_accounts() -> None:
+    AccountStore().set_accounts([{"username": u, "alias": ""} for u in ("one@example.com", "two@example.com")])
+
+
+def test_it_asks_for_a_launch_profile_with_two_accounts_and_none(startup):
+    _two_accounts()
+    record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert _walked(startup.opened[0]) == [LaunchProfilePage]
+    assert [p["name"] for p in AccountStore().launch_profiles] == ["Everyone"]
+
+
+def test_one_account_and_no_profile_keep_it_closed(startup):
+    """Unanswered, but the page applies under neither mode: it opens nothing on its own."""
+    AccountStore().set_accounts([{"username": "one@example.com", "alias": ""}])
+    record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert startup.opened == []
+
+
+def test_a_profile_made_in_setup_is_under_launch_and_on_the_launch_screen_once_it_closes(qapp):
+    """What ``_open_setup`` runs when setup closes: the window never saw the page's write."""
+    from bartlebot.gui.game_embed.game_view import _GamePlaceholder  # noqa: PLC0415
+    from bartlebot.gui.main_window import MainWindow  # noqa: PLC0415
+
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in ("one@example.com", "two@example.com")]
+    window = MainWindow()
+    try:
+        launch_menu = next(menu for menu in window.findChildren(QMenu) if menu.title() == "Launch")
+        placeholder = window.findChild(_GamePlaceholder)
+        window.catch_up_with_accounts()
+        assert "Everyone" not in [action.text() for action in launch_menu.actions()]
+        assert placeholder.profiles_column.cards == []
+
+        assert LaunchProfilePage(_prefs()).record()
+        window.catch_up_with_accounts()
+
+        assert "Everyone" in [action.text() for action in launch_menu.actions()]
+        assert len(placeholder.profiles_column.cards) == 1
+    finally:
+        window.bot_canvas.prepare_for_shutdown()

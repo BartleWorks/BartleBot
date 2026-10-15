@@ -51,7 +51,7 @@ from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
-from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage, setup_pages
+from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage, needs_asking, setup_pages
 from bartlebot.gui.dialogs.import_dialog import TITLE as IMPORT_TITLE
 from bartlebot.gui.dialogs.import_dialog import ask_for_file, confirm_import
 from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
@@ -1231,7 +1231,7 @@ class AppController(QObject):
         each page counts as answered.
         """
         pages = setup_pages(PreferenceStore())
-        if all(page.answered() for page in pages):
+        if not needs_asking(pages):
             return
         self._open_setup(pages, rerun=False)
 
@@ -1243,7 +1243,8 @@ class AppController(QObject):
         dialog = FirstRunDialog(pages, rerun=rerun, parent=self._window)
         dialog.exec()
         # Whatever was answered is on disk, finished or not: the combat page may have changed
-        # the Team default, and the Accounts page the accounts the launch screen draws.
+        # the Team default, and the Accounts and Launch profile pages the accounts and
+        # profiles the launch screen and the Launch menu draw.
         self._window.left_sidebar.combat_tab.refresh_source()
         self._window.catch_up_with_accounts()
 

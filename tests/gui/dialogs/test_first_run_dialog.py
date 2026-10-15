@@ -25,9 +25,13 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     COMBAT_HEADING,
     FINISH,
     GAME_FOLDER_HEADING,
+    LAUNCH_PROFILE_HEADING,
     MODE_CARDS,
     MODE_HEADING,
     NEXT,
+    PROFILE_EXISTS,
+    PROFILE_TOO_FEW,
+    PROFILE_WILL_MAKE,
     RECOMMENDED_DETAIL,
     SAVE_FAILED,
     SETTINGS_COMBAT,
@@ -37,6 +41,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     FirstRunDialog,
     FirstRunPage,
     GameFolderPage,
+    LaunchProfilePage,
     ModePage,
     SetupMode,
     setup_pages,
@@ -46,7 +51,7 @@ from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared import account_setup, game_install
+from bartlebot.shared import account_setup, game_install, launch_profiles
 from bartlebot.shared.account_store import AccountStore
 from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
 from bartlebot.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
@@ -413,7 +418,12 @@ def test_a_user_who_answered_in_209_is_not_asked_again(qapp, prefs):
 
 
 def test_the_pages_are_in_the_plans_order(qapp, prefs):
-    assert [type(page) for page in setup_pages(prefs)] == [GameFolderPage, AccountsPage, CombatQuestionPage]
+    assert [type(page) for page in setup_pages(prefs)] == [
+        GameFolderPage,
+        AccountsPage,
+        LaunchProfilePage,
+        CombatQuestionPage,
+    ]
 
 
 def test_the_dialog_needs_a_page(qapp):
@@ -793,3 +803,185 @@ def test_a_rerun_shows_the_page_on_the_stored_accounts(qapp, prefs):
 
     assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING]
     assert len(dialog.walk[1].accounts_column.cards) == 2
+
+
+# -- the Launch profile page (Stage 4) -----------------------------------------------
+
+THREE = "three@example.com"
+
+
+def _profiles_on_disk() -> list[dict]:
+    """The launch profiles in the shared ``accounts.json``, read fresh as the other product would."""
+    return AccountStore().launch_profiles
+
+
+def _three_accounts() -> None:
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO, THREE)]
+
+
+def test_every_account_is_listed_checked_in_the_order_of_the_accounts_page(qapp, prefs):
+    SettingsManager.instance().accounts = [
+        {"username": TWO, "alias": "Second"},
+        {"username": ONE, "alias": "First"},
+    ]
+
+    page = LaunchProfilePage(prefs)
+
+    assert [box.text() for box in page.boxes] == ["Second", "First"]
+    assert all(box.isChecked() for box in page.boxes)
+    assert page.checked == [TWO, ONE]
+    assert page.status_text == PROFILE_WILL_MAKE.format(name="Everyone", n=2)
+
+
+def test_next_makes_one_profile_of_the_checked_accounts_in_order(qapp, prefs):
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    page.boxes[1].setChecked(False)
+
+    assert page.record()
+
+    assert _profiles_on_disk() == [{"name": "Everyone", "accounts": [ONE, THREE]}]
+    assert _record(prefs)[launch_profiles.ANSWERED_KEY] is True
+
+
+def test_the_profile_shows_on_settings_game(qapp, prefs):
+    _three_accounts()
+
+    assert LaunchProfilePage(prefs).record()
+
+    assert len(AccountsTab().profiles_column.cards) == 1
+
+
+def test_a_name_already_taken_gets_the_next_free_one(qapp, prefs):
+    _three_accounts()
+    SettingsManager.instance().launch_profiles = [{"name": "Everyone", "accounts": [ONE]}]
+    page = LaunchProfilePage(prefs)
+
+    assert page.status_text == PROFILE_WILL_MAKE.format(name="Everyone 2", n=3)
+    assert page.record()
+
+    assert [p["name"] for p in _profiles_on_disk()] == ["Everyone", "Everyone 2"]
+
+
+def test_fewer_than_two_checked_makes_no_profile_and_still_records_the_page(qapp, prefs):
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    page.boxes[0].setChecked(False)
+    page.boxes[2].setChecked(False)
+
+    assert page.status_text == PROFILE_TOO_FEW
+    assert page.record()
+
+    assert _profiles_on_disk() == []
+    assert _record(prefs)[launch_profiles.ANSWERED_KEY] is True
+    assert LaunchProfilePage(prefs).answered()
+
+
+def test_the_same_accounts_already_launching_together_make_no_second_profile(qapp, prefs):
+    """A rerun, or Next tried again after a failed write, finds the profile already made."""
+    _three_accounts()
+    SettingsManager.instance().launch_profiles = [{"name": "Team", "accounts": [ONE, TWO, THREE]}]
+    page = LaunchProfilePage(prefs)
+
+    assert page.status_text == PROFILE_EXISTS.format(name="Team")
+    assert page.record()
+
+    assert [p["name"] for p in _profiles_on_disk()] == ["Team"]
+
+
+def test_a_failed_profile_write_keeps_the_user_on_the_page(qapp, prefs, monkeypatch):
+    _three_accounts()
+    monkeypatch.setattr(AccountStore, "save", lambda self: False)
+    dialog = FirstRunDialog([LaunchProfilePage(prefs), _Page("Last?")])
+    _next(dialog, 2)
+
+    assert dialog.heading_text == LAUNCH_PROFILE_HEADING
+    assert dialog.error_shown
+    assert launch_profiles.ANSWERED_KEY not in _record(prefs)
+
+
+def test_the_page_does_not_apply_with_fewer_than_two_accounts(qapp, prefs):
+    SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}]
+
+    dialog = FirstRunDialog([LaunchProfilePage(prefs), _Page("Last?")])
+
+    assert _headings(dialog) == [MODE_HEADING, "Last?"]
+
+
+def test_the_page_is_not_shown_when_a_profile_exists(qapp, prefs):
+    """Made by either product: ``accounts.json`` holds it before BartleBot reads the file."""
+    other = AccountStore()
+    other.set_accounts([{"username": u, "alias": ""} for u in (ONE, TWO, THREE)])
+    other.set_launch_profiles([{"name": "Duo", "accounts": [ONE, TWO]}])
+
+    dialog = FirstRunDialog([LaunchProfilePage(prefs), _Page("Last?")])
+
+    assert _headings(dialog) == [MODE_HEADING, "Last?"]
+
+
+def test_a_rerun_shows_the_page_while_two_accounts_exist(qapp, prefs):
+    _three_accounts()
+    SettingsManager.instance().launch_profiles = [{"name": "Duo", "accounts": [ONE, TWO]}]
+
+    dialog = FirstRunDialog([LaunchProfilePage(prefs)], rerun=True)
+
+    assert _headings(dialog) == [MODE_HEADING, LAUNCH_PROFILE_HEADING]
+
+
+def test_accounts_added_on_the_page_before_bring_the_launch_profile_page(qapp, prefs, editor):
+    """The walk across both pages: Stage 3's open item for #229."""
+    accounts_page = AccountsPage(prefs)
+    dialog = FirstRunDialog([accounts_page, LaunchProfilePage(prefs), _Page("Last?")])
+    _next(dialog)
+    assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING, "Last?"]
+
+    accounts_page.accounts_column.add_card.add_requested.emit()
+    assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING, "Last?"]
+    editor.username_typed = TWO
+    accounts_page.accounts_column.add_card.add_requested.emit()
+    assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING, LAUNCH_PROFILE_HEADING, "Last?"]
+    assert dialog.step_text == "Step 2 of 4"
+
+    _next(dialog)
+    assert dialog.heading_text == LAUNCH_PROFILE_HEADING
+    assert dialog.current.checked == [ONE, TWO]
+    _next(dialog)
+
+    assert dialog.heading_text == "Last?"
+    assert _profiles_on_disk() == [{"name": "Everyone", "accounts": [ONE, TWO]}]
+
+
+def test_next_with_no_account_passes_the_launch_profile_page_over(qapp, prefs):
+    dialog = FirstRunDialog([AccountsPage(prefs), LaunchProfilePage(prefs), _Page("Last?")])
+    _next(dialog, 2)
+
+    assert dialog.heading_text == "Last?"
+    assert _profiles_on_disk() == []
+
+
+def test_an_account_removed_before_the_page_is_not_on_it(qapp, prefs, editor):
+    _three_accounts()
+    accounts_page = AccountsPage(prefs)
+    dialog = FirstRunDialog([accounts_page, LaunchProfilePage(prefs)], rerun=True)
+    _next(dialog)
+    _next(dialog)
+    assert dialog.current.checked == [ONE, TWO, THREE]
+    dialog.back_button.click()
+
+    accounts_page.accounts_column.cards[2].delete_account_requested.emit(THREE)
+    _next(dialog)
+
+    assert dialog.current.checked == [ONE, TWO]
+
+
+def test_an_account_unchecked_stays_unchecked_after_back(qapp, prefs):
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    dialog = FirstRunDialog([AccountsPage(prefs), page], rerun=True)
+    _next(dialog, 2)
+    page.boxes[0].setChecked(False)
+
+    dialog.back_button.click()
+    _next(dialog)
+
+    assert page.checked == [TWO, THREE]

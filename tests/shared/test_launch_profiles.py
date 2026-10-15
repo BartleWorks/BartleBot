@@ -8,7 +8,19 @@ from pathlib import Path
 import pytest
 
 from bartlebot.shared.account_store import AccountStore
-from bartlebot.shared.launch_profiles import EVERYONE, add_profile, build_profile, copy_name, free_name, profile_names
+from bartlebot.shared.launch_profiles import (
+    ANSWERED_KEY,
+    EVERYONE,
+    add_profile,
+    build_profile,
+    copy_name,
+    free_name,
+    launch_profile_answered,
+    matching_profile,
+    profile_names,
+    record_launch_profile_answered,
+)
+from bartlebot.shared.preferences import PreferenceStore
 
 
 @pytest.fixture
@@ -68,3 +80,24 @@ def test_a_failed_write_is_reported(store, monkeypatch):
     monkeypatch.setattr("bartlebot.shared.account_store.update_json", fail)
 
     assert not add_profile(store, build_profile("Duo", ["a@example.com"]))
+
+
+def test_the_page_is_answered_by_any_profile_or_by_its_key(store, tmp_path):
+    prefs = PreferenceStore(tmp_path / "vendor")
+    assert not launch_profile_answered(prefs, store)
+
+    store.set_launch_profiles([build_profile("Duo", ["a@example.com", "b@example.com"])])
+    assert launch_profile_answered(prefs, store)
+
+    store.set_launch_profiles([])
+    assert record_launch_profile_answered(prefs)
+    assert prefs.get(ANSWERED_KEY) is True
+    assert launch_profile_answered(prefs, store)
+
+
+def test_a_matching_profile_has_the_same_accounts_in_the_same_order(store):
+    store.set_launch_profiles([build_profile("Duo", ["a@example.com", "b@example.com"])])
+
+    assert matching_profile(store, ["a@example.com", "b@example.com"]) == "Duo"
+    assert matching_profile(store, ["b@example.com", "a@example.com"]) is None
+    assert matching_profile(store, ["a@example.com"]) is None

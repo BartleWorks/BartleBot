@@ -6,6 +6,11 @@ setup's Launch profile page makes one from a checklist; both build and add it he
 record's shape and the refusal of a name already taken are written once.
 
 No Qt and nothing from the rest of ``bartlebot``: BartleBuddy's setup asks the same page.
+
+The page is answered once any launch profile exists, made by either product, or once it
+was answered with fewer than two accounts checked: :data:`ANSWERED_KEY` keeps that user
+from being asked again. Never "fewer than two accounts", which is whether the page
+*applies*: a first run that adds the accounts on the page before would never reach it.
 """
 
 from __future__ import annotations
@@ -15,9 +20,33 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bartlebot.shared.account_store import AccountStore
+    from bartlebot.shared.preferences import PreferenceStore
 
 #: The name setup gives the profile it makes, or the first free one after it.
 EVERYONE = "Everyone"
+
+#: Set once the Launch profile page has been answered, whether or not it made a profile.
+ANSWERED_KEY = "setup.launch_profile_answered"
+
+
+def launch_profile_answered(prefs: PreferenceStore, store: AccountStore) -> bool:
+    """Whether the Launch profile page needs no asking: a profile exists, or the page was answered."""
+    return bool(store.launch_profiles) or bool(prefs.get(ANSWERED_KEY))
+
+
+def record_launch_profile_answered(prefs: PreferenceStore) -> bool:
+    """Record the Launch profile page answered. Whether it reached disk."""
+    return prefs.set(ANSWERED_KEY, True)
+
+
+def matching_profile(store: AccountStore, usernames: Sequence[str]) -> str | None:
+    """The name of a profile launching exactly *usernames*, in that order, if one exists.
+
+    So a rerun of setup, or Next tried again after a failed write, finds the profile it
+    made rather than adding "Everyone 2" beside it.
+    """
+    wanted = list(usernames)
+    return next((p.get("name", "") for p in store.launch_profiles if p.get("accounts") == wanted), None)
 
 
 def _first_free(taken: Iterable[str], first: str, numbered: Callable[[int], str]) -> str:
