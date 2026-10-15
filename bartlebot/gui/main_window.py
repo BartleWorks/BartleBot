@@ -1013,16 +1013,17 @@ class MainWindow(QMainWindow):
         self._launch_progress = progress
         self._dismiss_launch_fn = dismiss
 
-    def _open_launch(self, usernames: list[str]) -> list[str]:
-        """Claim slots for *usernames*, returning the ones not already launching.
+    def _open_launch(self, usernames: list[str], resolution: tuple[int, int]) -> list[str]:
+        """Claim slots for *usernames*, launching at *resolution*, returning the ones not already launching.
 
         Every account launched from this window passes through here, whichever surface
         asked — a Quick Launch card, the menu, or the floating popup. That is the point:
-        the guard can only reject a duplicate where all of them meet.
+        the guard can only reject a duplicate where all of them meet. *resolution* sizes
+        their pending tiles' grid until the windows are there to measure.
         """
         if self._begin_launch is None:
             return list(usernames)
-        return self._begin_launch(usernames)
+        return self._begin_launch(usernames, resolution)
 
     def _close_launch(self, usernames: list[str]) -> None:
         """Release the launches opened by ``_open_launch``. Always from a ``finally``."""
@@ -1064,7 +1065,7 @@ class MainWindow(QMainWindow):
             # profile that is already coming up is rejected before anything spawns. The
             # accounts already in flight drop out and the rest still launch — a profile of
             # four with one account up should bring up the other three.
-            accepted = self._open_launch(list(profile.get("accounts", [])))
+            accepted = self._open_launch(list(profile.get("accounts", [])), screen_fit.profile_resolution(profile))
             if not accepted:
                 # Said out loud rather than logged, because this is the click that looks
                 # broken: nothing spawns, nothing changes on screen, and the tiles that
@@ -1115,7 +1116,7 @@ class MainWindow(QMainWindow):
             # Claim the slot at the moment of launching, so launching two accounts
             # back-to-back orders them by when they were asked for, not by which one
             # happens to load in first.
-            if not self._open_launch([username]):
+            if not self._open_launch([username], SettingsManager.instance().game_resolution):
                 logger.info("Account '%s' is already running or launching", display_name)
                 QMessageBox.information(
                     self,

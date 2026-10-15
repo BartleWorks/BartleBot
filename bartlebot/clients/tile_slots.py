@@ -87,6 +87,9 @@ class TileSlot:
     # Whether that status is a launch that gave up. A failed tile waits to be dismissed
     # instead of spinning, so it is the one pending tile with something to click.
     failed: bool = False
+    # The resolution a pending tile's window will open at, where the launch said: the room
+    # the grid holds for it until there is a window to measure.
+    resolution: tuple[int, int] | None = None
 
     @property
     def key(self) -> TileKey:
@@ -189,6 +192,7 @@ def build_tile_slots(
                         status=None if attempt is None else attempt.stage.value,
                         status_since=None if attempt is None else attempt.stage_since,
                         failed=attempt is not None and attempt.stage.is_terminal,
+                        resolution=None if attempt is None else attempt.resolution,
                     )
                 )
             continue

@@ -83,6 +83,9 @@ class LaunchAttempt:
     # launch: the question a stalled launch raises is "stuck doing what, and for how long",
     # and a total that keeps climbing across a normal stage change does not answer it.
     stage_since: float = field(default_factory=time.monotonic)
+    # The resolution the window will open at, where the launch said: what its pending tile
+    # holds room for until the window is there to measure.
+    resolution: tuple[int, int] | None = None
 
     def elapsed(self, now: float | None = None) -> float:
         """Seconds spent in the current stage."""
@@ -106,7 +109,7 @@ class LaunchTracker:
     def __len__(self) -> int:
         return len(self._attempts)
 
-    def begin(self, usernames: list[str]) -> list[str]:
+    def begin(self, usernames: list[str], resolution: tuple[int, int] | None = None) -> list[str]:
         """Open an attempt for each of *usernames* not already in flight, and return those.
 
         Returns the accepted subset rather than a bool so a partly-busy batch launches the
@@ -116,7 +119,7 @@ class LaunchTracker:
         """
         accepted = [u for u in usernames if u not in self._attempts]
         for username in accepted:
-            self._attempts[username] = LaunchAttempt(username)
+            self._attempts[username] = LaunchAttempt(username, resolution=resolution)
         return accepted
 
     def set_stage(self, username: str, stage: LaunchStage) -> bool:
