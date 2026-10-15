@@ -426,6 +426,11 @@ def isolated_settings(_appdata_root, monkeypatch):
 
     monkeypatch.setattr(official_set, "_registry", official_set.NoRegistry())
     official_set.reset_shipped_root()
+    # Nor the game the developer has installed, which would decide whether setup asks
+    # for a game folder (see shared.game_install).
+    from bartlebot.shared import game_install  # noqa: PLC0415
+
+    monkeypatch.setattr(game_install, "_places", game_install.NoPlaces())
 
 
 # ---------------------------------------------------------------------------

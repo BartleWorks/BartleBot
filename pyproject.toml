@@ -17,6 +17,7 @@ dependencies = [
     "beautifulsoup4>=4.0",
     "wizwalker",
     "wizsprinter",
+    "vdf>=3.4",
 ]
 
 [dependency-groups]

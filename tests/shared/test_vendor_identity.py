@@ -128,6 +128,7 @@ def test_the_shared_layer_has_no_stray_files():
         "combat_defaults.py",
         "content_hash.py",
         "first_run.py",
+        "game_install.py",
         "json_update.py",
         "official_set.py",
         "preferences.py",
