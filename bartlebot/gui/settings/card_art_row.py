@@ -29,6 +29,7 @@ from bartlebot.game.art_extraction import (
 )
 from bartlebot.gui.settings.rows import Binding, SettingRow
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import ThemedMixin
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
@@ -62,12 +63,15 @@ FAILED = (
 )
 NO_GAME = "Wizard101's folder wasn't found, so there is nothing to read."
 
+#: The progress bar's height.
+BAR_PX = 8
+
 DIALOG_TITLE = "Extract card art"
 CLOSE = "Close"
 CANCEL = "Cancel"
 
 
-class ArtExtraction(QWidget):
+class ArtExtraction(ThemedMixin, QWidget):
     """A run of the extractor, with a progress bar, the step it is on, and how it ended.
 
     :meth:`start` runs it in a worker thread, from a task this widget owns; progress
@@ -102,6 +106,17 @@ class ArtExtraction(QWidget):
         self._outcome.setWordWrap(True)
         self._outcome.setVisible(False)
         column.addWidget(self._outcome)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        # Drawn by hand: Qt's Windows 11 style draws a bar without text as a hairline,
+        # and in the dark theme its fill barely shows against the track.
+        self._bar.setFixedHeight(BAR_PX)
+        self._bar.setStyleSheet(
+            f"QProgressBar {{ background: {THEME.surface}; border: 1px solid {THEME.border};"
+            f" border-radius: {BAR_PX // 2}px; }}"
+            f"QProgressBar::chunk {{ background: {THEME.accent}; border-radius: {BAR_PX // 2 - 1}px; }}"
+        )
 
     @property
     def task(self) -> asyncio.Task | None:
