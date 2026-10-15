@@ -18,6 +18,12 @@ dependencies = [
     "wizwalker",
     "wizsprinter",
     "vdf>=3.4",
+    # Card art extraction (bartlebot/game/art_extraction.py), from setup and Settings:
+    # katsuba reads the game's WADs and spell templates, and Pillow decodes their
+    # DXT3/DXT5 textures to PNG, since Qt's build here has no dds plugin. Nothing else
+    # reads a WAD at run time.
+    "katsuba>=0.4.0",
+    "pillow>=11.0",
 ]
 
 [dependency-groups]
@@ -29,12 +35,7 @@ dev = [
     "pre-commit>=4.0",
     # Supplies the session-scoped `qapp` fixture the GUI tests share.
     "pytest-qt>=4.5.0",
-    "katsuba>=0.4.0",
     "pytest-cov>=6.0",
-    # Decodes the game's DXT3/DXT5 textures for tools/extract_card_art.py. Dev-only:
-    # nothing at runtime reads a WAD, and the extracted art is PNG by the time the app
-    # sees it -- Qt's build here has no dds plugin, which is why the tool converts.
-    "pillow>=11.0",
 ]
 
 # Ours, not upstream: these carry fixes the original projects do not have,

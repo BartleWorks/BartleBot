@@ -11,8 +11,8 @@ Qt-free module, so BartleBuddy can ask the same question and write the same keys
 ## The walk
 
 1. **Quick or Custom.** Two cards, Quick first, recommended and selected. The choice is
-   not stored: it only decides which pages follow. Custom adds pages Quick applies at
-   their defaults (none yet: the Options page arrives with #232).
+   not stored: it only decides which pages follow. Custom adds the Options page, whose
+   three choices Quick leaves on without showing them.
 2. **Every page after it that applies.** A page applies under the mode chosen and with
    what is set up so far.
 
@@ -41,9 +41,16 @@ launch is imported, so the two modals never stack.
   applies, each on the current value.
 
 A first run opens only when `needs_asking` finds a page unanswered that applies under
-Quick or Custom. The Launch profile page, unanswered with fewer than two accounts, opens
-nothing on its own; it is in the walk whenever another page opens setup, so accounts
-added on the way bring it in.
+Quick, the walk a first run takes unless the user picks Custom. Two kinds of page open
+nothing on their own. The Launch profile page, unanswered with fewer than two accounts,
+is in the walk whenever another page opens setup, so accounts added on the way bring it
+in. The Options page applies only under Custom, and its choices are the ones Quick
+applies: a setup opened for it alone would end on Quick or Custom with nothing asked, and
+open again every launch. It is still in the walk when another page opens setup and the
+user picks Custom.
+
+Closing setup, finished or not, calls each page's `stop()`, which is how the Card art
+page stops an extraction that is running.
 
 After either, finished or closed, the Combat tab rereads its source, since the combat page
 may have changed the Team default, and `MainWindow.catch_up_with_accounts` rebuilds the
@@ -98,6 +105,8 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | How should your team take on bosses? | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
 | What may bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
 | Where do you play, and how quick is your connection? | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
+| A few more choices (Custom only) | `setup.extract_art`, `auto_group_players` and `default_refill_potions`, all in BartleBot's `settings.json` (`general`), through `options/custom_setup.record_options`; the last two are the keys Settings › Bot's OK writes | `options_answered`: `setup.extract_art` is stored |
+| Extracting the card art (whenever card art is on, as under Quick) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, or art is already extracted |
 
 ### The combat question
 
@@ -252,3 +261,52 @@ bot options, so a bot's own Options still win over them (`docs/BOT_OPTIONS.md`).
 A user with a favorite realm already set, in Settings › Bot, is not asked on a first run.
 A Safety Delay changed on its own does not answer the page, since the realm would still
 be unset.
+
+### Custom's options
+
+Under Custom only, after Realm and Safety Delay: **A few more choices**, three check
+boxes, all on, each with a description of what it costs, every one shown.
+
+- **Extract card art**: the game's own pictures for spell cards, schools and worlds,
+  copied into AppData, about 35 MB, never shared. Off, there is no Card art page.
+- **Automatically group players**: Settings › Bot's row, which needs every account on the
+  others' friends lists.
+- **Refill potions**: Settings › Bot's row, which spends gold.
+
+The last two are built for both by `gui/settings/players_rows`, so the page and the tab
+say the same. Next writes all three through `options/custom_setup.record_options`:
+`setup.extract_art`, which is also the page's record, and the two Bot tab keys. Turning
+Extract card art off emits `walk_changed`, so the step count drops and Next becomes
+Finish.
+
+Quick writes none of the three. Grouping and refills stay as they are, which on a first
+run is their default, and the art is extracted: a rerun with Quick never turns a setting
+off that the user turned on in Settings, or the reverse.
+
+### Card art
+
+The last page whenever card art is on: always under Quick, and under Custom when Extract
+card art is checked. Entered, it runs `game/art_extraction.extract_art` in a worker thread
+(`asyncio.to_thread`), from a task its `ArtExtraction` owns
+(`gui/settings/card_art_row.py`), and shows a progress bar and the step it is on, with a
+count where the step has one. Finish waits for the run to end.
+
+- **It reads the game** from the folder the app launches from
+  (`art_extraction.installed_game_data_dir`, through `find_install`), so a Steam install is
+  read as readily as the launcher's, and the type list from the newest
+  `tools/r<rev>_WizardDev.json` in the install directory.
+- **A run that worked** says how many pictures, cards and icons, and how many MB, and the
+  app shows them at once (`card_art.forget_cache`).
+- **A run that failed** says why, in the error color, adds that BartleBot works without
+  the art and where to try again, logs a warning (with the trace for an unexpected error),
+  and enables Finish. Setup ends as usual, and Finish records the page, so a failure is
+  not asked about on every launch: art is optional everywhere.
+- **Closing setup during a run** stops it (`FirstRunPage.stop`). The run writes into
+  `art.partial` beside the art folder and swaps it in only once it finished, so a stopped
+  run removes its partial folder and leaves the art before it, or none. The page stays
+  unanswered, and the next first run asks it again.
+- **Back and Next again** keep a run going; one that failed is tried again.
+
+Art already extracted, by the tool or Settings, answers the page. Settings › General ›
+**Card art** runs the same extraction later, after a game patch adds spells
+(`bartlebot/gui/settings/CLAUDE.md`, "The Card art row").

@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import QMenu, QWidget
 from bartlebot.app_controller import AppController
 from bartlebot.gui.dialogs.first_run_dialog import (
     AccountsPage,
+    CardArtPage,
     CombatQuestionPage,
     FirstRunDialog,
     GameFolderPage,
@@ -24,6 +25,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     QuicksellPage,
     RealmAndDelayPage,
 )
+from bartlebot.options.custom_setup import ART_ANSWERED_KEY as ART_ANSWERED
 from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
 from bartlebot.settings_manager import SettingsManager
@@ -63,8 +65,8 @@ def startup(qapp, monkeypatch, tmp_path):
     """The controller's setup methods, the dialogs they open, and what happened in order.
 
     The game is installed where the KingsIsle launcher puts it, so the game folder page is
-    answered, the Accounts page was answered with none, and the Quicksell and Realm and Safety
-    Delay pages were answered. ``state.answer`` is the combat answer to finish on; None
+    answered, the Accounts page was answered with none, and the Quicksell, Realm and Safety
+    Delay and Card art pages were answered. ``state.answer`` is the combat answer to finish on; None
     closes the dialog on the combat page instead.
     """
     (tmp_path / "Wizard101" / "Bin").mkdir(parents=True)
@@ -74,6 +76,7 @@ def startup(qapp, monkeypatch, tmp_path):
     settings = SettingsManager.instance()
     settings.set_general(QUICKSELL_ANSWERED, True)
     settings.set_general(REALM_DELAY_ANSWERED, True)
+    settings.set_general(ART_ANSWERED, True)
     settings.save()
     # Read again when a test first asks, so accounts it writes first are in it.
     monkeypatch.setattr(SettingsManager, "_instance", None)
@@ -194,6 +197,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
         CombatQuestionPage,
         QuicksellPage,
         RealmAndDelayPage,
+        CardArtPage,
     ]
     assert _prefs().get(_TEAM) is None
     assert startup.events == ["first run", "refresh", "layout", "accounts"]

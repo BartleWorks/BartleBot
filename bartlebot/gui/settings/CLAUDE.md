@@ -163,6 +163,18 @@ agree; `docs/FIRST_RUN.md` ("The game folder") has where the folder is looked fo
   client as it starts: it is where the game is, which every launch and every read of the
   game's `Bin` files asks first.
 
+## The Card art row
+
+Under Game folder (`card_art_row.py`, #232), and an **action, not a value**: its control is
+**Extract**, its binding reads and writes nothing, so it is never changed and has nothing
+to revert. Its line says when the art was extracted and how many pictures, from the index
+(`card_art.manifest()`), or that there is none. Extract opens `ArtExtractionDialog`, the
+same `ArtExtraction` setup's Card art page holds: a progress bar and the step, Cancel while
+it runs, Close once it ended, and the row's line rereads the index when the dialog closes.
+It reads the game folder stored, not one the Game folder row shows but OK has not written.
+Its description is the text setup's Extract card art choice carries (`EXTRACT_DETAILS`), so
+the cost, about 35 MB in AppData, is said once.
+
 ## The Bot tab
 
 Every row on it is the **app setting** level of the four-level resolution below,

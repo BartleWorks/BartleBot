@@ -101,7 +101,7 @@ DUNGEON_WORLDS: tuple[str, ...] = (
 and three of those four are dungeon groups -- Castle Darkmoor, Kembaalung Village, and
 Zigazag. The game ships no ``Button_World_`` texture for any of them, so they take
 the generic dungeon badge instead; see ``WORLD_ICON_SOURCES`` in
-``tools/extract_card_art.py``.
+``bartlebot/game/art_extraction.py``.
 
 Aquila is the fourth non-door world and is deliberately **not** here: it is a world with
 its own emblem, reached by the Cyclops Lane chariot rather than the door.

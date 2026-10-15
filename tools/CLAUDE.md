@@ -116,15 +116,27 @@ Darkmoor wrong once already.
 
 Everything above ends as a checked-in file. **Art cannot**: the repo goes public at
 1.0.0 and a committed game texture is the same exposure a committed wizard name is. So
-`tools/extract_card_art.py` writes to `%APPDATA%/Bartleby/BartleBot/art` instead — the
-user's own machine, which the repo cannot reach even by accident — and the app treats
-its absence as the ordinary case rather than as a missing dependency.
+the extractor writes to `%APPDATA%/Bartleby/BartleBot/art` instead — the user's own
+machine, which the repo cannot reach even by accident — and the app treats its absence as
+the ordinary case rather than as a missing dependency.
+
+**The extractor is in the app** (#232): `bartlebot/game/art_extraction.py`, run from
+setup's Card art page and Settings › General › Card art. `tools/extract_card_art.py` is the
+command line over the same `extract_art`, and still the quickest way to rerun it while
+developing. It reads the game from the folder the app launches from (`find_install`, so a
+Steam install too), and the type list from the newest `tools/r<rev>_WizardDev.json`, which
+ships in the install directory with the rest of `tools/`. A run writes into `art.partial`
+and swaps it in only once it finished, so a failed or cancelled run leaves the art before
+it. Its tests run on `tests/art_fixture.py`'s made-up install: real KIWAD archives (the
+CRC is CRC-32 with no inversion) and spells serialized against a one-class type list, with
+tiny PNGs drawn there, so nothing of the game's is committed.
 
 It reads each spell's `m_imageName` and pulls that texture from `GUI/SummonedImages`
 (nearly all in `_Shared-WorldData.wad`, a dozen in `Root.wad`), converting DXT3/DXT5 to
 PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per template:
-18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
-is not imported at runtime. `bartlebot/game/card_art.py` is the read side.
+18,007 templates share 1,308 images. `katsuba` and `Pillow` are runtime dependencies for
+exactly this, and nothing else at run time reads a WAD or decodes a texture.
+`bartlebot/game/card_art.py` is the read side.
 
 The same run also writes 163 UI icons into `art/icons/`, and they are keyed by a
 **logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,
@@ -168,7 +180,7 @@ schools**, with their own `school_` medallions that look nothing like these; a c
 reaching for `school_sun` to draw slot 1 gets the archmastery picker's ringed medallion, and
 it looks plausible. `test_duel_slot_icons.py` is the guard, and it also checks the run-time
 symbol names in `card_art.DUEL_SLOT_SYMBOLS` against the texture table — those names are read
-for tooltips on the majority of machines, which never ran the extractor, so they cannot be
+for tooltips on every machine without art, which can decline it or fail to extract it, so they cannot be
 derived from a texture that is not there. `Art_Target_Sun` is the one of the four in
 `Root.wad`; a probe listing only `_Shared-WorldData.wad` concludes there are three gems.
 

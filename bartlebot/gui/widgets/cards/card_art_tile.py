@@ -1,6 +1,6 @@
 """Card art tiles, and the wrapping strip of them a deck card shows.
 
-The art itself is extracted by the user (``tools/extract_card_art.py``) and found by
+The art itself is extracted on the user's machine (``game/art_extraction.py``) and found by
 :mod:`bartlebot.game.card_art`; this is only the drawing. Three pieces:
 
 * :class:`CardArtTile` -- one card's art at a fixed size, with a count badge when the

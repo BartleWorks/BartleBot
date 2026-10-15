@@ -1,4 +1,4 @@
-"""Settings tab: General (the game folder, log, window layout, privacy, auto-save).
+"""Settings tab: General (the game folder and card art, log, window layout, privacy, auto-save).
 
 The Bot section that used to sit at the bottom is :mod:`bartlebot.gui.settings.bot_tab`
 now. What is left is the app itself -- how it opens, what it keeps, what it shows --
@@ -16,6 +16,7 @@ from bartlebot.game.game_sizing import (
     RIGHT_SIDEBAR_MIN_WIDTH,
 )
 from bartlebot.gui import screen_fit
+from bartlebot.gui.settings.card_art_row import card_art_row
 from bartlebot.gui.settings.game_folder_row import apply_game_folder, game_folder_row
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for
@@ -44,6 +45,9 @@ class GeneralTab(SettingsForm):
         self._game_folder_row, self._game_folder = game_folder_row(self._prefs)
         self._game_folder_opened = self._game_folder.value()
         self.add_row(self._game_folder_row)
+        # An action rather than a value: it extracts the art again, for after a game patch.
+        self._card_art_row, self._card_art_button = card_art_row(self._prefs)
+        self.add_row(self._card_art_row)
 
         # ------------------------------------------------------------------
         # Log section
@@ -250,6 +254,10 @@ class GeneralTab(SettingsForm):
     @property
     def game_folder_row(self) -> SettingRow:
         return self._game_folder_row
+
+    @property
+    def card_art_row(self) -> SettingRow:
+        return self._card_art_row
 
     def apply(self) -> None:
         if apply_game_folder(self._prefs, self._game_folder_opened, self._game_folder.value()):

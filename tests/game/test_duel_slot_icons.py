@@ -20,13 +20,13 @@ from PIL import Image
 
 from bartlebot.combat.strategy_summary import format_combat_order
 from bartlebot.game import card_art
-from bartlebot.game.card_art import DUEL_SLOT_SYMBOLS, DUEL_SLOTS, duel_slot_icon_name
-from tools.extract_card_art import (
+from bartlebot.game.art_extraction import (
     DUEL_SLOT_ICON_SOURCES,
     DUEL_SLOT_TEXTURES,
     ICON_SOURCES,
     STATE_SHEET_ICONS,
 )
+from bartlebot.game.card_art import DUEL_SLOT_SYMBOLS, DUEL_SLOTS, duel_slot_icon_name
 
 # -- keys, and the two tables that have to agree -----------------------------------------
 

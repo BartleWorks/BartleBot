@@ -1,0 +1,101 @@
+"""Settings › General › Card art, and the run it opens (epic #215, Stage 7, #232).
+
+The run is real, against ``tests/art_fixture.py``'s made-up install; the async tests await
+the dialog's own task, the way the app's loop would run it.
+"""
+
+from __future__ import annotations
+
+import pytest
+from PyQt6.QtWidgets import QDialog
+
+from bartlebot.game import art_extraction, card_art
+from bartlebot.gui.settings.card_art_row import (
+    EXTRACT_DETAILS,
+    NOT_EXTRACTED,
+    ArtExtractionDialog,
+    card_art_row,
+)
+from bartlebot.gui.settings.general_tab import GeneralTab
+from bartlebot.shared.game_install import set_install_dir
+from bartlebot.shared.preferences import PreferenceStore
+from tests.art_fixture import game_install
+
+
+@pytest.fixture(autouse=True)
+def _fresh_art_index():
+    card_art.forget_cache()
+    yield
+    card_art.forget_cache()
+
+
+@pytest.fixture
+def prefs(tmp_path) -> PreferenceStore:
+    return PreferenceStore(tmp_path / "vendor")
+
+
+@pytest.fixture
+def game(tmp_path, prefs, monkeypatch):
+    fixture = game_install(tmp_path / "game")
+    set_install_dir(prefs, fixture.install)
+    monkeypatch.setattr(art_extraction, "type_dump", lambda root=None: fixture.types)
+    return fixture
+
+
+def test_settings_general_has_the_row_under_game(qapp):
+    tab = GeneralTab()
+
+    assert tab.card_art_row.title == "Card art"
+    assert tab.card_art_row.details.text() == EXTRACT_DETAILS
+
+
+def test_with_no_art_the_row_says_so(qapp, prefs):
+    row, _button = card_art_row(prefs)
+
+    assert row.summary.text() == NOT_EXTRACTED
+    assert not row.is_changed
+
+
+def test_with_art_the_row_says_when_and_how_much(qapp, prefs, game):
+    art_extraction.extract_art(game.game_data)
+
+    row, _button = card_art_row(prefs)
+
+    assert "2 pictures for 3 cards" in row.summary.text()
+    assert "Extracted on" in row.summary.text()
+
+
+async def test_the_dialog_extracts_and_close_is_ready_when_it_ends(qapp, prefs, game):
+    dialog = ArtExtractionDialog(prefs)
+    assert not dialog.close_button.isEnabled()
+
+    await dialog.extraction.task
+
+    assert dialog.extraction.ok
+    assert dialog.close_button.isEnabled()
+    assert card_art.is_available()
+    dialog.close_button.click()
+    assert dialog.result() == QDialog.DialogCode.Accepted
+
+
+async def test_cancel_stops_the_run_and_keeps_the_art_before_it(qapp, prefs, game):
+    art_extraction.extract_art(game.game_data)
+    before = card_art.index_path().read_bytes()
+    dialog = ArtExtractionDialog(prefs)
+
+    dialog.cancel_button.click()
+    await dialog.extraction.task
+
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    assert card_art.index_path().read_bytes() == before
+    assert not card_art.art_dir().with_name("art.partial").exists()
+
+
+async def test_a_failed_run_says_why_and_close_is_ready(qapp, prefs):
+    dialog = ArtExtractionDialog(prefs)
+
+    await dialog.extraction.task
+
+    assert not dialog.extraction.ok
+    assert "folder wasn't found" in dialog.extraction.outcome_text
+    assert dialog.close_button.isEnabled()
