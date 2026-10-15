@@ -15,8 +15,7 @@ from PIL import Image, ImageDraw
 
 from bartlebot.content.bot_tags import BOT_TAGS
 from bartlebot.game import card_art
-from bartlebot.game.card_art import tag_icon_name
-from tools.extract_card_art import (
+from bartlebot.game.art_extraction import (
     BAND_COLOR,
     ICON_SOURCES,
     STATE_SHEET_ICONS,
@@ -28,6 +27,7 @@ from tools.extract_card_art import (
     gauntlet_icon,
     ring_inner_radius,
 )
+from bartlebot.game.card_art import tag_icon_name
 
 # -- keys ------------------------------------------------------------------------------
 

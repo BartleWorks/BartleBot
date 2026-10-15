@@ -3,8 +3,9 @@
 The game ships every spell's art as a DDS texture inside its own WADs. Nothing in
 this repo may carry one: the repo goes public at 1.0.0 and a committed game texture
 is the same exposure a committed wizard name is (see "No real player data" in the
-root ``CLAUDE.md``). So the art is *extracted by the user, on their own machine*, by
-``tools/extract_card_art.py``, into the machine-local product directory -- the same
+root ``CLAUDE.md``). So the art is *extracted on the user's own machine*, by
+:mod:`bartlebot.game.art_extraction` (from setup, Settings › General, or
+``tools/extract_card_art.py``), into the machine-local product directory -- the same
 place ``settings_manager`` already writes ``autosave/``, and gitignored by
 construction because it is not in the tree at all.
 
@@ -20,8 +21,9 @@ THE LOOKUP KEY IS THE TEMPLATE NAME
     up by display name: one display name can cover many templates.
 
 EVERY LOOKUP MAY RETURN NONE, AND THAT IS THE ORDINARY CASE
-    Most users will never run the extractor, so ``art_path`` returning None is not an
-    error and must never be logged as one. Individual cards miss too: a handful of
+    Art is optional: a user can turn it off in Custom setup, an extraction can fail,
+    and an install from before setup asked has none until the user extracts it. So
+    ``art_path`` returning None is not an error and must never be logged as one. Individual cards miss too: a handful of
     templates name an image the game's own files do not contain, and the snapshot can
     be older than the game. Callers render their text form instead.
 """
@@ -61,7 +63,7 @@ INDEX_FILENAME = "index.json"
 def art_dir() -> Path:
     """``%APPDATA%/Bartleby/BartleBot/art`` -- the extracted art cache.
 
-    May not exist: the extractor is run by hand, and most installs never run it.
+    May not exist: art is optional, and an extraction can be declined or fail.
     """
     return product_dir() / ART_DIRNAME
 
@@ -195,8 +197,8 @@ def _manifest() -> dict:
     """The whole index file, or empty when no art has been extracted.
 
     Cached because it is read once per card per redraw and the file only changes when
-    the extractor runs -- which is a manual act, after which :func:`forget_cache`
-    is what makes the new file visible. A missing file is the common case and says
+    the extractor runs, which ends with :func:`forget_cache` to make the new file
+    visible. A missing file is the common case and says
     nothing; an unreadable one is worth a line in the log, since the user did run the
     extractor and is entitled to know why they see no art.
 

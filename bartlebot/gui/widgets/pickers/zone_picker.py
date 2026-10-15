@@ -6,7 +6,7 @@ broad filter), and the zone id rides along as each row's meta, so a zone can als
 name the tester and the session log use.
 
 Each world's section header carries that world's emblem, extracted from the game by
-``tools/extract_card_art.py`` and found through ``card_art.world_icon_path`` (#29). Every one of
+``game/art_extraction.py`` and found through ``card_art.world_icon_path`` (#29). Every one of
 the 25 sections resolves: 22 worlds have a ``Button_World_`` texture of their own, and the three
 that are dungeon groups rather than worlds -- Castle Darkmoor, Kembaalung, Zigazag -- share
 the generic dungeon badge. **The icon is decoration over a caption that already carries the

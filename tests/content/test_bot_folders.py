@@ -22,6 +22,7 @@ from bartlebot.content.bot_folders import (
     folder_slug,
 )
 from bartlebot.game import badge_categories
+from bartlebot.game.art_extraction import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
 from bartlebot.game.card_art import RECENT_ICON, badge_icon_name
 from bartlebot.gui.canvas.bot_canvas import (
     CATEGORY_LIST_WIDTH,
@@ -30,7 +31,6 @@ from bartlebot.gui.canvas.bot_canvas import (
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartlebot.paths import project_root
-from tools.extract_card_art import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
 
 BOTS = project_root() / "bots"
 

@@ -3,8 +3,8 @@
 The extractor itself needs a game install and a WAD, so what is checked here is the part
 that can be wrong without one — the mapping — plus the crop, which is pure Pillow.
 
-``tools.extract_card_art`` is imported directly, the way ``test_dialog_captions`` and
-``test_zone_nav_edits`` import their tools.
+The tables are imported from ``bartlebot.game.art_extraction``, the extractor the app and
+``tools/extract_card_art.py`` both run.
 """
 
 from __future__ import annotations
@@ -12,9 +12,7 @@ from __future__ import annotations
 from PIL import Image
 
 from bartlebot.game import zone_nav
-from bartlebot.game.card_art import DUNGEON_ICON, world_icon_name
-from bartlebot.game.worlds import DUNGEON_WORLDS, SPIRAL_DOOR_WORLDS
-from tools.extract_card_art import (
+from bartlebot.game.art_extraction import (
     DUNGEON_TEXTURE,
     ICON_SOURCES,
     STATE_SHEET_ICONS,
@@ -22,6 +20,8 @@ from tools.extract_card_art import (
     WORLD_TEXTURES,
     top_left_quadrant,
 )
+from bartlebot.game.card_art import DUNGEON_ICON, world_icon_name
+from bartlebot.game.worlds import DUNGEON_WORLDS, SPIRAL_DOOR_WORLDS
 
 
 def test_every_world_on_the_map_has_an_emblem():

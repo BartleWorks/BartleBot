@@ -315,7 +315,7 @@ class _DeckCard(CardFrame):
 
         # The collapsed card's card art: one tile per distinct card, wrapping, with a
         # rotated divider between Normal and Item. Hidden while the card is unfolded,
-        # and on any install whose user has not run tools/extract_card_art.py -- the
+        # and on any install with no card art extracted -- the
         # summary line above says what is in the deck either way.
         self._art = CardArtStrip(parent=self)
         self._art.setVisible(False)
