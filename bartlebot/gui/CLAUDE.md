@@ -1036,6 +1036,14 @@ that apply. The rules for a page:
   `ready_changed` when that may have changed; the dialog disables Next until it is true.
   The game folder page is ready only for a folder holding the client. A page that is
   always ready, as most are, leaves the default.
+- **A page that draws what an earlier page wrote rereads it in `enter()`**, which the
+  dialog calls each time it turns to the page, by Next or Back. The Launch profile page
+  lists the accounts the Accounts page added there. `showEvent` is not the place: the
+  tests drive a dialog that is never shown.
+- **A page that applies only once an earlier page is answered is unanswered until its
+  own setting exists**, never "doesn't apply yet", or it is not in the walk when the
+  dialog opens and the earlier page can't bring it in. `needs_asking` keeps such a page
+  from opening setup on its own while it applies under no mode.
 - **A card that selects itself on focus needs the selected one focused on show**, or the
   focus chain hands it to the first card and changes the answer. `_CardsPage` does it in
   `showEvent`, and with no card selected focuses the page itself. In the constructor it

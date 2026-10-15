@@ -40,10 +40,17 @@ launch is imported, so the two modals never stack.
 - **A rerun**, from File › Set up BartleBot… (after Settings…), walks every page that
   applies, each on the current value.
 
+A first run opens only when `needs_asking` finds a page unanswered that applies under
+Quick or Custom. The Launch profile page, unanswered with fewer than two accounts, opens
+nothing on its own; it is in the walk whenever another page opens setup, so accounts
+added on the way bring it in.
+
 After either, finished or closed, the Combat tab rereads its source, since the combat page
 may have changed the Team default, and `MainWindow.catch_up_with_accounts` rebuilds the
-Launch menu, the window minimum and the launch screen's cards, since the Accounts page
-writes accounts without the window seeing it.
+Launch menu, the window minimum and the launch screen's account and profile cards, since
+the Accounts and Launch profile pages write accounts and profiles without the window
+seeing it. An account or profile made in setup is on the launch screen and under Launch
+as soon as setup closes.
 
 ## The pages
 
@@ -52,6 +59,7 @@ writes accounts without the window seeing it.
 | Quick or Custom | nothing | never: it is always the first page |
 | Where is Wizard101 installed? | `game.install_dir` in `preferences.json`, through `shared/game_install.set_install_dir`, only for a folder the user changed to | `find_install` finds an install, stored or detected |
 | Which accounts should BartleBot log in to? | each account as it is added, edited or removed, to `accounts.json` (and its password to Credential Manager), through `accounts_tab`'s card actions; on Next, `setup.accounts_answered` in `preferences.json`, through `shared/account_setup.record_accounts_answered` | `accounts_answered`: `accounts.json` holds an account, from either product, or the key is set |
+| Which accounts launch together? (two or more accounts) | one launch profile of the accounts checked, to `accounts.json`, through `shared/launch_profiles.add_profile`, the function Settings › Game's Add uses; and `setup.launch_profile_answered` in `preferences.json`, through `record_launch_profile_answered` | `launch_profile_answered`: `accounts.json` holds a launch profile, from either product, or the key is set |
 | How should your team take on bosses? | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
 
 ### The combat question
@@ -117,3 +125,25 @@ added by either product, the page is answered without the key.
 Every change on the page emits `walk_changed`, since how many accounts there are decides
 whether the Launch profile page follows.
 
+
+### Launch profile
+
+The page applies once there are two or more accounts, so it follows the Accounts page
+only when that page leaves two. It lists every account as a check box, all checked, in
+the Accounts page's order, which is player order: the first checked is Player 1. The list
+is read each time the page is entered (`FirstRunPage.enter`), so an account added or
+removed on the page before is there, and one the user unchecked stays unchecked.
+
+Next makes one profile of the checked accounts, named **Everyone**, or the first of
+"Everyone 2", "Everyone 3"... no profile has (`shared/launch_profiles.free_name`). It is
+built and added by `build_profile` and `add_profile`, which Settings › Game's Add uses
+too, and has no resolution of its own. A line under the list says what Next will do.
+
+- **Fewer than two checked** makes no profile, and still records the page.
+- **The same accounts in the same order already launching together** make no second
+  profile (`matching_profile`), so a rerun, or Next tried again after a failed write,
+  finds the one already made.
+- **A failed write** keeps the user on the page, as any page's does.
+
+More profiles, a resolution override, and every edit after are in Settings › Game, under
+Launch Profiles.
