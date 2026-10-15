@@ -133,7 +133,18 @@ switch is one answer for the whole app. What the explanation asks (lock what you
 keep it on a list) is the same for every bot, and a per-bot answer would ask the same
 question eighty times.
 
-The switch does not reach the one case this dialog exists for. With the user's settings
+**Answering setup's Quicksell page turns the explanation off too** (#230). The page
+says the same things above the Bot tab's own quicksell rows (the sell switches and the
+Always keep list, the game's item lock, and where to change them later), so an
+explanation before every run after it repeats what the user just read.
+`options/quicksell_setup.record_quicksell` writes the switches, the user's keep list,
+`show_quicksell_explanation = False` and `setup.quicksell_answered`, and Settings › Bot
+writes the switches and the list through the same `write_sell_flags` and
+`write_keep_list`. The setting stays on the Bot tab, so the user can turn it back on. The
+page asks nothing of a user who already has a quicksell setting off its default, the
+explanation's own switch included: they have already decided.
+
+Neither the switch nor the setup page reaches the one case this dialog exists for. With the user's settings
 as the baseline, a sale they set up themselves, in Settings or as a value for this bot,
 needs no warning. The one level that can sell more than the user asked for without the
 user touching anything is the bot file, so `quicksell.declared_sales` names the sell
