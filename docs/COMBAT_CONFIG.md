@@ -521,7 +521,7 @@ team takes on bosses.
 |---|---|
 | **One hitter, the others support** (recommended, first) | no Team default: Default Team Duel |
 | **Everyone attacks** | `SHIPPED_EVERYONE_ATTACKS_DUEL_ID` as the Team default |
-| **Skip** (or Escape, or closing it) | nothing but the record that it was asked |
+| neither selected (a rerun on a Team default neither answer names) | nothing but the record that it was answered |
 
 Every answer sets `setup.combat_defaults_answered` in `preferences.json`, so whichever
 product asks first, the other doesn't ask again. The logic is
@@ -533,19 +533,22 @@ Four rules:
   says solo fights use Default Solo Duel, that Settings › Combat changes either default
   later, and that any bot's combat is tailored on its Combat tab.
 - **It writes only what the user answered.** One hitter is stored as no key, like every
-  "recommended". The Solo default is never touched, and Skip changes no default.
+  "recommended". The Solo default is never touched. There is no Skip (#226): closing
+  the dialog records nothing, and the question is asked again next launch. #209's Skip
+  set the key, so a user who skipped then is not asked again.
 - **A Team default the user already chose is the answer.** While the Team default is a
   duel neither answer names, chosen in Settings › Combat or in the other product,
-  `combat_question_answered` is true and nothing is asked or written. When it is one of
-  the two, the dialog opens with that card selected.
+  `combat_question_answered` is true and a first run asks nothing. A rerun opens with no
+  card selected, and Next keeps that duel. When it is one of the two, the page opens
+  with that card selected.
 - **The record follows the write.** `record_answer` marks the question answered only
   once its default is on disk, so a failed write asks again next time rather than losing
   the choice.
 
-Upgrading users see it once too, which is how they learn the defaults changed.
-`AppController._after_window_shown` opens it after the main window shows, before a file
-named at launch is imported, so the two dialogs never stack. `bartlebot/gui/CLAUDE.md`
-has the dialog and its page list.
+Upgrading users see it once too, which is how they learn the defaults changed. It is one
+page of setup (epic #215), after Quick or Custom, and File › Set up BartleBot… asks it
+again on the current answer. `docs/FIRST_RUN.md` has the walk, and
+`bartlebot/gui/CLAUDE.md` the rules for a page.
 
 ## After a lost fight: the mark on a fight fled on the default (#210)
 

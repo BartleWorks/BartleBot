@@ -10,11 +10,12 @@ answer                             what it stores
 =================================  =====================================================
 One hitter, the others support     no Team default: the shipped Default Team Duel
 Everyone attacks                   :data:`SHIPPED_EVERYONE_ATTACKS_DUEL_ID` as the Team default
-Skip                               nothing beyond the record that it was asked
+None: a rerun on a Team default    nothing beyond the record that it was answered
+neither answer names
 =================================  =====================================================
 
-Every answer, Skip included, sets :data:`ANSWERED_KEY` in ``preferences.json``, which every
-product reads, so BartleBuddy does not ask again after BartleBot has, or the other way round.
+Every answer sets :data:`ANSWERED_KEY` in ``preferences.json``, which every product reads,
+so BartleBuddy does not ask again after BartleBot has, or the other way round.
 
 "Solo or team?" is not asked: both defaults exist, and which one a fight uses comes from
 the clients connected (``combat_defaults.team_size``).
@@ -35,7 +36,7 @@ from bartlebot.shared.combat_defaults import (
 if TYPE_CHECKING:
     from bartlebot.shared.preferences import PreferenceStore
 
-#: Set once the combat question has been answered or skipped, by either product.
+#: Set once the combat question has been answered, by either product. #209's Skip set it too.
 ANSWERED_KEY = "setup.combat_defaults_answered"
 
 
@@ -66,15 +67,16 @@ def current_tactic(prefs: PreferenceStore) -> BossTactic | None:
 def combat_question_answered(prefs: PreferenceStore) -> bool:
     """Whether the combat question needs no asking.
 
-    True once either product has recorded an answer, or Skip. True as well while the Team
-    default is a duel neither answer names: the user chose it in Settings › Combat, or in
-    the other product, and the question exists to make that choice. Nothing is written.
+    True once either product has recorded an answer (#209's Skip counted). True as well
+    while the Team default is a duel neither answer names: the user chose it in Settings ›
+    Combat, or in the other product, and the question exists to make that choice. Nothing
+    is written.
     """
     return bool(prefs.get(ANSWERED_KEY)) or current_tactic(prefs) is None
 
 
 def record_answer(prefs: PreferenceStore, tactic: BossTactic | None) -> bool:
-    """Store *tactic*'s Team default, or nothing for None (Skip), and record the question answered.
+    """Store *tactic*'s Team default, or keep the stored one for None, and record the question answered.
 
     Returns whether both writes reached disk. The answer is recorded only once its default
     is, so a failed write asks again next time rather than losing the choice.
