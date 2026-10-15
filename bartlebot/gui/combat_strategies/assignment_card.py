@@ -66,6 +66,7 @@ from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.combat_strategies.dsl_checks import checker
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.buttons.icon_button import IconButton
 from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
@@ -528,19 +529,20 @@ class AssignmentCard(CardFrame):
         # checking the text here parsed it on the GUI thread.
         error = self._shown_error if self.is_custom() else None
         title_color = THEME.error if error else THEME.text
-        self._title_lbl.setStyleSheet(f"color: {title_color}; background: transparent;")
+        set_style_sheet(self._title_lbl, f"color: {title_color}; background: transparent;")
         for label in (self._desc_lbl, self._dsl_lbl):
-            label.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; background: transparent;"
+            set_style_sheet(
+                label, f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; background: transparent;"
             )
-        self._school_label.setStyleSheet(f"color: {THEME.text_muted}; background: transparent;")
+        set_style_sheet(self._school_label, f"color: {THEME.text_muted}; background: transparent;")
         label_color = THEME.error if error else THEME.syntax_warning
-        self._dsl_error_lbl.setStyleSheet(f"color: {label_color}; background: transparent;")
+        set_style_sheet(self._dsl_error_lbl, f"color: {label_color}; background: transparent;")
         self._dsl_edit.setFont(THEME.font_mono())
-        self._dsl_edit.setStyleSheet(
+        set_style_sheet(
+            self._dsl_edit,
             f"QTextEdit {{ background: {THEME.surface if self._dsl_edit.isReadOnly() else THEME.bg};"
             f" color: {THEME.text}; border: 1px solid {THEME.border};"
-            f" border-left: 3px solid {THEME.error if error else THEME.border}; }}"
+            f" border-left: 3px solid {THEME.error if error else THEME.border}; }}",
         )
 
     # ------------------------------------------------------------------

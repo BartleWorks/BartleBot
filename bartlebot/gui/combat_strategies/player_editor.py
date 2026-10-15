@@ -30,6 +30,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.combat_strategies.dsl_checks import checker
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.inputs.dsl_edit import DslPlainTextEdit
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import DslError, dsl_error, dsl_warning_text, dsl_warnings
@@ -193,11 +194,12 @@ class PlayerStrategyEditor(QWidget):
         # checking the text here parsed it on the GUI thread.
         error = self._shown_error
         border = THEME.error if error else THEME.border
-        self._dsl_edit.setStyleSheet(
+        set_style_sheet(
+            self._dsl_edit,
             f"QPlainTextEdit {{ background: {THEME.bg}; color: {THEME.text}; "
-            f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}"
+            f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}",
         )
-        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error if error else THEME.syntax_warning};")
+        set_style_sheet(self._dsl_error_lbl, f"color: {THEME.error if error else THEME.syntax_warning};")
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)

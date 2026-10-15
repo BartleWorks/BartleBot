@@ -138,6 +138,7 @@ from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.labels.elided_label import apply_muted_color
@@ -556,8 +557,10 @@ class _KindPage(QWidget):
         splitter.setStretchFactor(1, 3)
         layout.addWidget(splitter, 1)
 
-        self.rebuild_list()
+        # Styled before the cards go in: a list's stylesheet re-polishes every row widget
+        # it holds, so set afterwards it cost a pass over every card.
         self._apply_style()
+        self.rebuild_list()
 
     # -- construction ---------------------------------------------------
 
@@ -1297,11 +1300,12 @@ class _KindPage(QWidget):
         # No border on the list itself. It holds a column of cards, each of which draws
         # its own edge when it is selected, and the splitter handle already says where
         # this pane stops — a box around a column of boxes is one line too many.
-        self._list.setStyleSheet(
+        set_style_sheet(
+            self._list,
             f"QListWidget {{ border: none; background: {THEME.bg}; }}"
             f"QListWidget::item {{ background: transparent; border: none; padding: {_ROW_PAD}px; }}"
             f"QListWidget::item:selected {{ background: transparent; border: none; }}"
-            f"QListWidget::item:hover {{ background: transparent; border: none; }}"
+            f"QListWidget::item:hover {{ background: transparent; border: none; }}",
         )
 
     def changeEvent(self, event: QEvent) -> None:

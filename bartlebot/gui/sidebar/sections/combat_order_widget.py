@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.theming.account_accent import account_accent, account_tint
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.cards.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
 from bartlebot.gui.widgets.layout.discard import discard_widget
 
@@ -86,9 +87,11 @@ class _PlayerChip(QFrame):
                 border, border_width = account_accent(self._color_key), "1px"
             else:
                 border, border_width = THEME.border, "1px"
-        self.setStyleSheet(f"QFrame {{ background: {bg}; border: {border_width} solid {border}; border-radius: 4px; }}")
-        self._label.setStyleSheet(
-            f"color: {text_color}; font-size: {THEME.font_small_px}px; font-weight: 600; border: none;"
+        set_style_sheet(
+            self, f"QFrame {{ background: {bg}; border: {border_width} solid {border}; border-radius: 4px; }}"
+        )
+        set_style_sheet(
+            self._label, f"color: {text_color}; font-size: {THEME.font_small_px}px; font-weight: 600; border: none;"
         )
 
     def set_enabled_visual(self, enabled: bool) -> None:
@@ -267,7 +270,7 @@ class CombatOrderWidget(QWidget):
         row.addStretch(1)
         row.addWidget(DuelSlotGem(slot, parent=cell), 0, Qt.AlignmentFlag.AlignVCenter)
         label = QLabel(_ordinal(slot), cell)
-        label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
+        set_style_sheet(label, f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
         row.addWidget(label, 0, Qt.AlignmentFlag.AlignVCenter)
         row.addStretch(1)
         cell.setToolTip(duel_slot_tooltip(slot))
@@ -396,6 +399,6 @@ class CombatOrderWidget(QWidget):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             for lbl in self._header_labels:
-                lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
+                set_style_sheet(lbl, f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
             for chip in self._chips:
                 chip._refresh_style()
