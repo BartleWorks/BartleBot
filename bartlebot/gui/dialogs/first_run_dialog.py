@@ -46,7 +46,7 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -673,7 +673,8 @@ class QuicksellPage(FirstRunPage):
         intro.setWordWrap(True)
         column.addWidget(intro)
         self._quicksell = QuicksellSettings(self._settings, foldable=False)
-        form = SettingsForm(margin=0)
+        # Every description shown: on a first run each is part of the question.
+        form = SettingsForm(margin=0, always_describe=True)
         form.add_group(self._quicksell.group)
         form.finish(stretch=False)
         column.addWidget(form)
@@ -825,6 +826,13 @@ class FirstRunDialog(QDialog):
             self._placed = True
             self._center_on_window()
 
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        # A page turn, or a page growing as it is used, re-lays the dialog out.
+        if event.type() == QEvent.Type.LayoutRequest and self.isVisible():
+            self._fit_height()
+        return handled
+
     def _fit_height(self) -> None:
         """Grow to the height the page shown needs at the dialog's width.
 
@@ -832,14 +840,29 @@ class FirstRunDialog(QDialog):
         wrapped label's height at a width of the label's own choosing. Qt never asks a
         window's layout for its height at the window's real width, so a wrapped line the
         guess left out was cut off: Always keep's summary on the Quicksell page lost its
-        second. Only ever grows: a dialog the user made taller stays so.
+        second. Run on show and on every layout change, so a page turn, or a page growing as
+        it is used, is fitted too. Only ever grows: a dialog the user made taller stays so.
+        It grows about its center, so a dialog centered on show stays centered, kept on
+        its screen.
         """
         layout = self.layout()
         if layout is None or not layout.hasHeightForWidth():
             return
         needed = layout.totalHeightForWidth(self.width())
-        if needed > self.height():
+        if needed <= self.height():
+            return
+        if not self._placed:
+            # Not yet centered: a move now would also tell Qt the dialog was placed by hand.
             self.resize(self.width(), needed)
+            return
+        top = self.y() - (needed - self.height()) // 2
+        screen = self.screen()
+        if screen is not None:
+            top = max(top, screen.availableGeometry().top())
+        # move() places the frame, as x() and y() read it; setGeometry() would place the
+        # client area, a frame's thickness off.
+        self.resize(self.width(), needed)
+        self.move(self.x(), top)
 
     def _center_on_window(self) -> None:
         """Center on the main window, or on its screen while the window is maximized.
@@ -873,8 +896,6 @@ class FirstRunDialog(QDialog):
         self._heading.setText(page.heading)
         self._error.setVisible(False)
         self._refresh()
-        if self.isVisible():
-            self._fit_height()
 
     def _refresh(self) -> None:
         """The step count, Back, and Next or Finish, for the page shown and the walk as it stands."""

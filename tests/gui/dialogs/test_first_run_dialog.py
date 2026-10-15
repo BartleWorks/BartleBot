@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QDialog, QLabel, QWidget
+from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 from wizwalker import utils as wizwalker_utils
 
 from bartlebot.clients import character_roster
@@ -53,7 +53,7 @@ from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
-from bartlebot.gui.settings.rows import SettingRow
+from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
 from bartlebot.options.quicksell_setup import SellFlags, current_flags, write_sell_flags
 from bartlebot.settings_manager import SettingsManager
@@ -1231,4 +1231,51 @@ def test_the_dialog_grows_to_fit_wrapped_text_on_a_page_turn(qapp):
     assert dialog.height() >= dialog.layout().totalHeightForWidth(dialog.width())
     for row in page.findChildren(SettingRow):
         assert row.summary.height() >= row.summary.heightForWidth(row.summary.width()), row.title
+    dialog.close()
+
+
+def test_the_quicksell_page_shows_every_description_with_no_way_to_hide_one(qapp):
+    page = QuicksellPage()
+    form = page.findChild(SettingsForm)
+
+    assert form.switches.isHidden()
+    for row in page.findChildren(SettingRow):
+        assert row.help_button.isHidden(), row.title
+        if row.details is not None:
+            assert row.details_shown, row.title
+
+
+@pytest.mark.parametrize(
+    ("title", "keyword"), [("Sell Socket Wrenches", "Socket Wrench"), ("Sell Skeleton Keys", "Skeleton Key")]
+)
+def test_the_wrench_and_key_rows_say_what_they_do_to_quicksell(qapp, title, keyword):
+    """On the page and on Settings › Bot alike: the rows come from one builder."""
+    expected = f'When off, quicksell keeps any item with "{keyword}" in its name.'
+
+    assert _row(QuicksellPage(), title).summary.text() == expected
+    assert _row(BotTab(), title).summary.text() == expected
+
+
+def test_the_dialog_grows_when_the_page_shown_grows(qapp):
+    """Showing more on a page after it is shown re-lays the dialog out, and it is fitted again."""
+    page = _Page("Growing?")
+    column = QVBoxLayout(page)
+    dialog = FirstRunDialog([page])
+    dialog.show()
+    _next(dialog)
+    qapp.processEvents()
+    before = dialog.height()
+    center = _center(dialog)
+
+    more = QLabel(" ".join(["Every wizard keeps what the settings keep."] * 30), page)
+    more.setWordWrap(True)
+    column.addWidget(more)
+    # Shown on a later event, as a widget added to a shown parent is, then laid out.
+    for _ in range(3):
+        qapp.processEvents()
+
+    assert dialog.height() > before
+    assert dialog.height() >= dialog.layout().totalHeightForWidth(dialog.width())
+    # About its center, so a dialog centered on show stays so.
+    assert (_center(dialog) - center).manhattanLength() <= 2
     dialog.close()

@@ -382,6 +382,13 @@ class SettingRow(QWidget):
         if self._details is not None:
             self._help.setChecked(shown)
 
+    def pin_details(self) -> None:
+        """Show the prose for good, with no ``?`` to fold it: setup's pages, where every
+        description is part of the question. The ``?``'s slot stays, so rows line up."""
+        if self._details is not None:
+            self._help.setChecked(True)
+            keep_slot_when_hidden(self._help)
+
     def set_available(self, available: bool, reason: str = "") -> None:
         """Gray the body, leaving the gutter live -- the sidebar's rule for a dependent row.
 
@@ -586,8 +593,13 @@ class SettingsForm(QWidget):
     #: The reader used Show or Hide descriptions on this form.
     descriptions_toggled = pyqtSignal(bool)
 
-    def __init__(self, parent: QWidget | None = None, *, margin: int = 12, intro: str = "") -> None:
+    def __init__(
+        self, parent: QWidget | None = None, *, margin: int = 12, intro: str = "", always_describe: bool = False
+    ) -> None:
+        """With *always_describe*, every description is shown and none can be folded: no
+        Show · Hide descriptions, and no ``?`` on a row. Setup's pages are built so."""
         super().__init__(parent)
+        self._always_describe = always_describe
         self._rows: list[SettingRow] = []
         self._groups: list[SettingGroup] = []
         self._layout = QVBoxLayout(self)
@@ -657,15 +669,23 @@ class SettingsForm(QWidget):
         A form with no description to open hides the links rather than offering two
         commands that do nothing.
         """
-        self._switches.setVisible(any(row.details is not None for row in self._rows))
+        if self._always_describe:
+            self._switches.setVisible(False)
+            for row in self._rows:
+                row.pin_details()
+        else:
+            self._switches.setVisible(any(row.details is not None for row in self._rows))
         if stretch:
             self._layout.addStretch(1)
         else:
             # Embedded above something else, it is as tall as its rows and no taller.
             self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        self.set_descriptions_shown(_read_descriptions_shown())
+        if not self._always_describe:
+            self.set_descriptions_shown(_read_descriptions_shown())
 
     def set_descriptions_shown(self, shown: bool) -> None:
+        if self._always_describe:
+            return
         for row in self._rows:
             row.set_details_shown(shown)
 

@@ -77,14 +77,14 @@ class QuicksellSettings:
         self._sell_socket_wrenches = _check_box(flags.sell_socket_wrenches)
         sell_wrenches = SettingRow(
             SELL_SOCKET_WRENCHES_TITLE,
-            "Wrenches unlock jewel sockets on gear, and are not otherwise farmable.",
+            'When off, quicksell keeps any item with "Socket Wrench" in its name.',
             self._sell_socket_wrenches,
             default=default_for("general", SELL_SOCKET_WRENCHES_KEY),
         )
         self._sell_skeleton_keys = _check_box(flags.sell_skeleton_keys)
         sell_keys = SettingRow(
             SELL_SKELETON_KEYS_TITLE,
-            "Keys open the skeleton-key dungeons, and are not otherwise farmable.",
+            'When off, quicksell keeps any item with "Skeleton Key" in its name.',
             self._sell_skeleton_keys,
             default=default_for("general", SELL_SKELETON_KEYS_KEY),
         )
