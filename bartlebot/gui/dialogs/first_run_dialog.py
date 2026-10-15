@@ -518,6 +518,9 @@ class LaunchProfilePage(FirstRunPage):
     def enter(self) -> None:
         for _, box in self._boxes:
             self._list.removeWidget(box)
+            # Hidden first: out of the layout, it would be drawn at the page's corner
+            # until the deferred delete runs.
+            box.hide()
             box.deleteLater()
         self._boxes = []
         for account in self._store().accounts:

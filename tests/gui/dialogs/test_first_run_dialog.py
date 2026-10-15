@@ -985,3 +985,15 @@ def test_an_account_unchecked_stays_unchecked_after_back(qapp, prefs):
     _next(dialog)
 
     assert page.checked == [TWO, THREE]
+
+
+def test_a_box_drawn_again_leaves_none_of_the_old_ones_showing(qapp, prefs):
+    """Out of the layout and waiting for its deferred delete, an old box sat over the intro."""
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    old = page.boxes
+
+    page.enter()
+
+    assert all(box.isHidden() for box in old)
+    assert not any(box.isHidden() for box in page.boxes)
