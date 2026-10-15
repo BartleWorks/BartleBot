@@ -127,7 +127,8 @@ developing. It reads the game from the folder the app launches from (`find_insta
 Steam install too), and the type list from the newest `tools/r<rev>_WizardDev.json`, which
 ships in the install directory with the rest of `tools/`. A run writes into `art.partial`
 and swaps it in only once it finished, so a failed or cancelled run leaves the art before
-it. Its tests run on `tests/art_fixture.py`'s made-up install: real KIWAD archives (the
+it. So the tool's `--out` folder is **replaced whole**, not written into: whatever else is
+in it is deleted with the old art. Point it only at a folder of its own. Its tests run on `tests/art_fixture.py`'s made-up install: real KIWAD archives (the
 CRC is CRC-32 with no inversion) and spells serialized against a one-class type list, with
 tiny PNGs drawn there, so nothing of the game's is committed.
 
