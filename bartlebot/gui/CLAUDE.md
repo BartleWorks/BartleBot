@@ -620,6 +620,11 @@ edit redraws the strategy's card. A surface drawing health passes
 listens for `checked`. Both live in `gui/combat_strategies/dsl_checks.py`, which also has
 why the checks run in a child process rather than a thread (the interpreter lock).
 
+One known exception, kept on purpose: loading a strategy into `PlayerStrategyEditor`, or
+refreshing an `AssignmentCard`, still parses an unknown DSL on the GUI thread, because a
+loaded strategy shows its error at once and tests hold it to that. It costs up to ~800 ms
+only for a DSL with no answer yet (just imported, or after a wizsprinter bump).
+
 ## How big a game window is, and what will not fit
 
 `docs/WINDOW_SIZING.md` is the file. The short form, because both halves are easy to
