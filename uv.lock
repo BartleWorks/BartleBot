@@ -75,7 +75,7 @@ requires-dist = [
     { name = "qasync", specifier = ">=0.27" },
     { name = "transitions", specifier = ">=0.9" },
     { name = "wakepy", specifier = ">=1.0" },
-    { name = "wizsprinter", git = "https://github.com/The-World-Tree/wizsprinter.git?rev=1fb669f067fbd45c41ab2b8ee219e3bd906454e2" },
+    { name = "wizsprinter", git = "https://github.com/The-World-Tree/wizsprinter.git?rev=2f0afe2e136bd5b8eb392f1d24b55b92340f795c" },
     { name = "wizwalker", git = "https://github.com/The-World-Tree/wizwalker.git?rev=a8811d05391ad65eb23f4f4aec0e41c0177dcd10" },
 ]
 
@@ -1176,7 +1176,7 @@ wheels = [
 [[package]]
 name = "wizsprinter"
 version = "0.5.5"
-source = { git = "https://github.com/The-World-Tree/wizsprinter.git?rev=1fb669f067fbd45c41ab2b8ee219e3bd906454e2#1fb669f067fbd45c41ab2b8ee219e3bd906454e2" }
+source = { git = "https://github.com/The-World-Tree/wizsprinter.git?rev=2f0afe2e136bd5b8eb392f1d24b55b92340f795c#2f0afe2e136bd5b8eb392f1d24b55b92340f795c" }
 dependencies = [
     { name = "lark" },
     { name = "wizwalker" },

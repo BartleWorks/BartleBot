@@ -71,13 +71,20 @@ def test_hanging_kinds_match_the_combat_api():
     assert set(ds.HANGING_KINDS) == set(hanging_type_aliases())
 
 
+def test_condition_attributes_are_the_ones_wizsprinter_accepts():
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_api import DECK_ATTRIBUTES, MEMBER_ATTRIBUTES
+
+    assert set(ds.MEMBER_ATTRIBUTES) == set(MEMBER_ATTRIBUTES)
+    assert ds.DECK_ATTRIBUTES == DECK_ATTRIBUTES
+
+
 def test_member_attributes_are_numeric_reads_on_a_combat_member():
     from wizwalker.combat.member import CombatMember
 
     for name in ds.MEMBER_ATTRIBUTES:
         method = getattr(CombatMember, name)
         assert inspect.iscoroutinefunction(method), name
-        assert inspect.signature(method).return_annotation in (int, float, "int", "float"), name
+        assert inspect.signature(method).return_annotation in (int, float, bool, "int", "float", "bool"), name
 
 
 @pytest.mark.parametrize(
@@ -87,7 +94,8 @@ def test_member_attributes_are_numeric_reads_on_a_combat_member():
         [f"any<{verb}({kind})> @ enemy" for verb in ds.HANGING_VERBS for kind in ds.HANGING_KINDS[:3]]
         + [f"any<gambit({kind}, 2)> @ enemy" for kind in ds.HANGING_KINDS],
         [f"pass @ {t}" for t in ds.TARGETS] + ["pass @ select(enemy, boss)", "pass @ enemy(last)"],
-        [f"?({s}.health < 50%) pass" for s in ds.CONDITION_SUBJECTS]
+        [f"?({s}.health < 50%) pass" for s in ds.CONDITION_SUBJECTS if s != "deck"]
+        + [f"?(deck.{attr} >= 1) pass" for attr in ds.DECK_ATTRIBUTES]
         + [f"?({a}({g}).mana > 1) pass" for a in ds.AGGREGATES for g in ds.AGGREGATE_GROUPS]
         + [f"?(self.{attr} >= 1) pass" for attr in ds.CONDITION_ATTRIBUTES],
         list(ds.MOVE_KEYWORDS) + ["discard @ spell(Tempest, any<aoe>)"],

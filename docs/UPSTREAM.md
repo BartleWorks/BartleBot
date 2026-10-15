@@ -122,9 +122,10 @@ cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origi
 ```
 
 Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `a8811d0`
-(`bartlebot-pin-20261012`) and wizsprinter `1fb669f`
-(`bartlebot-pin-20261015`, on its `harmful-aura` branch, which adds the `harmful_aura`
-and `stronger` template keywords, on top of `turn-trace`, which logs each turn's decisions
+(`bartlebot-pin-20261012`) and wizsprinter `2f0afe2`
+(`bartlebot-pin-20261015b`, on its `condition-attributes` branch, which refuses a
+condition attribute that can never be read, on top of `harmful-aura`, which adds the
+`harmful_aura` and `stronger` template keywords, on top of `turn-trace`, which logs each turn's decisions
 and casts the card a move's own enchant fused into, on top of `enchant-only-lookup`,
 which looks up a card aimed at a spell among enchants only, on top of `stacks` and its
 `stacks` template keyword, on top of `enchant-ahead`). A second pin on the same day takes a

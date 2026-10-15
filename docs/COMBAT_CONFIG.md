@@ -344,7 +344,8 @@ it skips when there is no boss. Write the condition this way and no other:
 
 - **Never `?(boss.health > 0)`.** It goes through resolving `boss`, which may come up
   empty while the boss can't be targeted.
-- **Never `boss.hp`.** A misspelled attribute parses and is silently false on every turn.
+- **Never `boss.hp`.** It is no attribute, and since #214 it does not parse; before
+  that it was silently false on every turn.
 
 **Every shipped player strategy enchants ahead, first.** Its first line fuses enchants
 into the cards they fit (damage enchants into damage, AoEs first; Sharpened Blade into
@@ -433,7 +434,16 @@ unassigned, fallbacks)`, the last two being its `notices`:
 The faults:
 
 - **A DSL that doesn't parse, anywhere this run could reach**: every duel the pick links,
-  whatever the team size, and every duel a fight falls to.
+  whatever the team size, and every duel a fight falls to. That includes a condition that
+  could never read anything (#214): an attribute wizsprinter doesn't know (`boss.hp`), a
+  `%` on one with no maximum (`self.power_pips < 50%`, where only `health` and `mana`
+  have one), and anything on `deck` but `remaining`. Each was false on every turn, which
+  reads exactly like a condition that doesn't hold. Wizsprinter's parser refuses them,
+  naming the attribute and the close name when there is one, so the dialog, the strategy
+  summaries and the DSL editor all report them as they report a syntax error, and the
+  editor underlines the attribute. The accepted names are `MEMBER_ATTRIBUTES`,
+  `DECK_ATTRIBUTES` and `hanging_attributes()` in wizsprinter's `combat_api`, which
+  `dsl_syntax`'s completion lists are tested against.
 - **A link the user made that points at nothing**: the picked Bot Combat Strategy's
   file, or a duel or player strategy it links.
 - **The user's own pick needing more players than are connected** (`min_players`).

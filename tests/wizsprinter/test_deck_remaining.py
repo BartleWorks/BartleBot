@@ -17,7 +17,12 @@ from types import SimpleNamespace
 
 import pytest
 from lark import Lark
-from wizwalker.extensions.wizsprinter.combat_backends.combat_api import TargetType
+from wizwalker.extensions.wizsprinter.combat_backends.combat_api import (
+    ComparisonOp,
+    Condition,
+    ConditionTarget,
+    TargetType,
+)
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (
     TreeToConfig,
     get_sprinty_grammar,
@@ -138,12 +143,14 @@ async def test_deck_remaining_compares_like_any_attribute(condition, left, holds
     assert await combat.evaluate_condition(condition("?(deck.remaining >= 2) pass")) is holds
 
 
-@pytest.mark.parametrize("dsl", ["?(deck.remaining >= 50%) pass", "?(deck.size >= 2) pass"])
-async def test_a_percentage_or_an_unknown_deck_attribute_is_false(condition, dsl):
-    """As for a member: a condition that cannot be read does not hold."""
+@pytest.mark.parametrize("attribute, is_percent", [("remaining", True), ("size", False)])
+async def test_a_percentage_or_an_unknown_deck_attribute_is_false(attribute, is_percent):
+    """The parser refuses both (`test_condition_attributes.py`), so only a condition
+    built in code reaches here; one that cannot be read does not hold."""
     combat = _combat(round_start_hand=7, max_hand_size=7, label_left=13)
+    built = Condition(ConditionTarget(TargetType.type_deck), attribute, ComparisonOp.ge, 2.0, is_percent)
 
-    assert await combat.evaluate_condition(condition(dsl)) is False
+    assert await combat.evaluate_condition(built) is False
 
 
 async def test_a_deck_clause_joins_others_with_and(condition):
