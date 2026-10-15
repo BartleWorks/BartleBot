@@ -179,13 +179,17 @@ are all extracted from `Root.wad` and all tracked, because a snapshot of names i
 lets the app talk about the game without shipping any of it.
 
 Art therefore has no checked-in snapshot and never gets one — not the spell card art,
-and not the school and archmastery icons beside it. The user extracts all of it on
-their own machine with `tools/extract_card_art.py`, into
+and not the school and archmastery icons beside it. The app extracts all of it on the
+user's own machine, from their game install, with `bartlebot/game/art_extraction.py`: on
+setup's last page, from Settings › General › Card art, or by `tools/extract_card_art.py`,
+the command line over the same function. It writes into
 `%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely, so an accidental `git
-add` cannot reach it. `bartlebot/game/card_art.py` is the read side, and **every lookup
-returning `None` is the ordinary case**: most installs never run the extractor, so any
-surface using art needs a form that works without it. `tools/CLAUDE.md` has the
-extraction details, `bartlebot/gui/CLAUDE.md` the fallback rules.
+add` cannot reach it — and its tests use a made-up install (`tests/art_fixture.py`), never
+the game's files. `bartlebot/game/card_art.py` is the read side, and **every lookup
+returning `None` is the ordinary case**: a user can decline the art in Custom setup and an
+extraction can fail, so any surface using art needs a form that works without it.
+`tools/CLAUDE.md` has the extraction details, `bartlebot/gui/CLAUDE.md` the fallback
+rules.
 
 ### Restricted zones (PvP)
 

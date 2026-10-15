@@ -423,11 +423,14 @@ is still asked about.)
 
 ## Card art is optional, and missing is the ordinary case
 
-Spell art is the game's own and is never in this repo: the user extracts it with
-`tools/extract_card_art.py`, and `bartlebot/game/card_art.py` is the only thing that knows
-where it lands. **Every lookup can return `None`** — most installs never run the
-extractor, a few templates name a texture the game's own files do not contain, and the
-names snapshot can be older than the game. So a surface showing art needs a form that
+Spell art is the game's own and is never in this repo: the app extracts it on the user's
+machine (`game/art_extraction.py`, from setup's last page or Settings › General › Card
+art), and `bartlebot/game/card_art.py` is the only thing that knows where it lands.
+**Every lookup can return `None`** — a user can turn the art off in Custom setup, an
+extraction can fail and setup still finishes, an install from before setup asked has none
+until the user extracts it, a few templates name a texture the game's own files do not
+contain, and the names snapshot can be older than the game. Setup offering the art made
+none of this rarer to plan for. So a surface showing art needs a form that
 works without it, and must never log the absence as an error.
 
 `_DeckCard` is the worked example: the strip is hidden outright when nothing resolves,
@@ -1036,6 +1039,11 @@ that apply. The rules for a page:
   `ready_changed` when that may have changed; the dialog disables Next until it is true.
   The game folder page is ready only for a folder holding the client. A page that is
   always ready, as most are, leaves the default.
+- **A page with work running stops it in `stop()`**, which the dialog calls from `done()`
+  whenever setup closes, finished or not. The Card art page stops its extraction there;
+  the extractor removes what it wrote, and the page stays unanswered. A page's work runs
+  in a task it owns, started from `enter()`, and only when a loop is running, so the tests
+  that never await build the page without starting anything (`ArtExtraction.start`).
 - **A page that draws what an earlier page wrote rereads it in `enter()`**, which the
   dialog calls each time it turns to the page, by Next or Back. The Launch profile page
   lists the accounts the Accounts page added there. `showEvent` is not the place: the
@@ -1043,7 +1051,10 @@ that apply. The rules for a page:
 - **A page that applies only once an earlier page is answered is unanswered until its
   own setting exists**, never "doesn't apply yet", or it is not in the walk when the
   dialog opens and the earlier page can't bring it in. `needs_asking` keeps such a page
-  from opening setup on its own while it applies under no mode.
+  from opening setup on its own: it counts only a page that applies under Quick, so
+  neither one that applies under no mode yet nor a Custom-only page opens setup by itself.
+  The Options page's choices are the ones Quick applies, and a setup opened for it alone
+  would end on Quick or Custom with nothing asked, and open again next launch.
 - **A card that selects itself on focus needs the selected one focused on show**, or the
   focus chain hands it to the first card and changes the answer. `_CardsPage` does it in
   `showEvent`, and with no card selected focuses the page itself. In the constructor it

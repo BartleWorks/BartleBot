@@ -20,7 +20,7 @@ The stages land in this order, each building only on the ones before:
 | 4 | #229 | launch profile: one profile from a checklist | landed |
 | 5 | #230 | quicksell: Settings › Bot's rows, the keep list, the per-run explanation off | landed |
 | 6 | #231 | realm and Safety Delay: one page | landed |
-| 7 | #232 | card art and Custom: the extractor in the app, the Options page, the art page | planned |
+| 7 | #232 | card art and Custom: the extractor in the app, the Options page, the art page | landed |
 
 `docs/FIRST_RUN.md` is the feature as built: the pages, what each writes, and when each
 counts as answered. `bartlebot/gui/CLAUDE.md` has the rules for writing a page.
