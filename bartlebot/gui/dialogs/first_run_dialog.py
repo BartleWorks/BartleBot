@@ -49,13 +49,19 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QDialog, QGridLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
 
+from bartlebot.clients import character_roster
 from bartlebot.clients.install_location import apply_install
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
+from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
+from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
+from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
 from bartlebot.shared.game_install import SOURCE_NAMES, find_install, is_install, set_install_dir
 from bartlebot.shared.preferences import PreferenceStore
@@ -340,9 +346,94 @@ class GameFolderPage(FirstRunPage):
         return True
 
 
+# -- accounts -----------------------------------------------------------------------
+
+ACCOUNTS_HEADING = "Which accounts should BartleBot log in to?"
+ACCOUNTS_INTRO = (
+    "BartleBot logs these accounts in when it launches the game for you. Passwords are kept in "
+    "Windows Credential Manager, never in a file."
+)
+#: Beneath Add account while there is none: leaving the page empty is an answer too.
+ACCOUNTS_EMPTY = (
+    "With no account, BartleBot can still hook game windows you start yourself. Accounts can be "
+    "added at any time from Launch › Manage Accounts…"
+)
+ADD_ACCOUNT = "Add account"
+
+
+class AccountsPage(FirstRunPage):
+    """The accounts to log in: the cards Settings › Game draws, on the same editor and the same writes.
+
+    Add, Edit and Remove each write ``accounts.json`` (and a password to Credential
+    Manager) as they happen, through ``accounts_tab``'s card actions, so Next has nothing
+    left to store but the page answered. It may be left empty, and is passed over on a
+    first run once an account exists, from either product.
+    """
+
+    heading = ACCOUNTS_HEADING
+
+    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._prefs = prefs
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(ACCOUNTS_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        # No heading of its own: the page's is above it.
+        self._column = CardColumn("", ACCOUNTS_EMPTY, ADD_ACCOUNT, show_settings_link=False)
+        self._column.setMinimumHeight(220)
+        self._column.add_requested.connect(self._on_add)
+        self._column.reordered.connect(self._on_reordered)
+        column.addWidget(self._column, 1)
+        self._refresh()
+
+    @property
+    def accounts_column(self) -> CardColumn:
+        return self._column
+
+    def _refresh(self) -> None:
+        accounts = SettingsManager.instance().accounts
+        cards: list[QWidget] = []
+        for account in accounts:
+            username = account.get("username", "")
+            card = AccountCard(
+                account, character_roster.load(username) if username else [], accounts, mode=CardMode.MANAGE
+            )
+            card.edit_account_requested.connect(self._on_edit)
+            card.delete_account_requested.connect(self._on_delete)
+            cards.append(card)
+        self._column.set_cards(cards)
+
+    def _changed(self, written: bool) -> None:
+        if written:
+            self._refresh()
+            # How many accounts there are decides whether the Launch profile page follows.
+            self.walk_changed.emit()
+
+    def _on_add(self) -> None:
+        self._changed(add_account(self))
+
+    def _on_edit(self, username: str) -> None:
+        self._changed(bool(username) and edit_account(username, self))
+
+    def _on_delete(self, username: str) -> None:
+        self._changed(bool(username) and delete_account(username, self))
+
+    def _on_reordered(self, order: list) -> None:
+        self._changed(reorder_accounts(list(order)))
+
+    def answered(self) -> bool:
+        return accounts_answered(self._prefs, SettingsManager.instance().account_store)
+
+    def record(self) -> bool:
+        return record_accounts_answered(self._prefs)
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
-    return [GameFolderPage(prefs), CombatQuestionPage(prefs)]
+    return [GameFolderPage(prefs), AccountsPage(prefs), CombatQuestionPage(prefs)]
 
 
 # -- the dialog ---------------------------------------------------------------------

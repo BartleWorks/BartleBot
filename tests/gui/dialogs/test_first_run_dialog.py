@@ -13,10 +13,14 @@ from pathlib import Path
 import pytest
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QDialog, QWidget
+from PyQt6.QtWidgets import QDialog, QLabel, QWidget
 from wizwalker import utils as wizwalker_utils
 
+from bartlebot.clients import character_roster
+from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.dialogs.first_run_dialog import (
+    ACCOUNTS_EMPTY,
+    ACCOUNTS_HEADING,
     BACK,
     COMBAT_HEADING,
     FINISH,
@@ -28,6 +32,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     SAVE_FAILED,
     SETTINGS_COMBAT,
     TACTIC_CARDS,
+    AccountsPage,
     CombatQuestionPage,
     FirstRunDialog,
     FirstRunPage,
@@ -36,9 +41,13 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     SetupMode,
     setup_pages,
 )
+from bartlebot.gui.settings import accounts_tab
+from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
-from bartlebot.shared import game_install
+from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared import account_setup, game_install
+from bartlebot.shared.account_store import AccountStore
 from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
 from bartlebot.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
 from bartlebot.shared.preferences import PreferenceStore
@@ -404,7 +413,7 @@ def test_a_user_who_answered_in_209_is_not_asked_again(qapp, prefs):
 
 
 def test_the_pages_are_in_the_plans_order(qapp, prefs):
-    assert [type(page) for page in setup_pages(prefs)] == [GameFolderPage, CombatQuestionPage]
+    assert [type(page) for page in setup_pages(prefs)] == [GameFolderPage, AccountsPage, CombatQuestionPage]
 
 
 def test_the_dialog_needs_a_page(qapp):
@@ -629,3 +638,158 @@ def test_a_folder_changed_to_on_a_rerun_is_stored(qapp, prefs, tmp_path, monkeyp
     assert page.record()
     assert prefs.get(game_install.INSTALL_DIR_KEY) == str(other)
     assert GameFolderPage(prefs).folder_input.path() == str(other)
+
+
+# -- accounts (Stage 3) ---------------------------------------------------------------------
+
+# Synthetic: account usernames, never a real login.
+ONE = "one@example.com"
+TWO = "two@example.com"
+
+
+class _AccountEditor:
+    """Stands in for ``accounts_tab._AccountDialog``, whose ``exec()`` a test cannot run."""
+
+    accepted = True
+    username_typed = ONE
+    alias_typed = ""
+    password_typed = "pw"
+
+    def __init__(self, username="", alias="", color=None, taken=None, parent=None):
+        self._username = username or type(self).username_typed
+
+    def exec(self):
+        return QDialog.DialogCode.Accepted if type(self).accepted else QDialog.DialogCode.Rejected
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def alias(self):
+        return type(self).alias_typed
+
+    @property
+    def password(self):
+        return type(self).password_typed
+
+    @property
+    def color(self):
+        return None
+
+
+@pytest.fixture
+def editor(monkeypatch):
+    """The account editor answered per test, with Credential Manager and the roster recorded instead."""
+
+    class Editor(_AccountEditor):
+        passwords: dict[str, str] = {}
+
+    monkeypatch.setattr(accounts_tab, "_AccountDialog", Editor)
+    monkeypatch.setattr(CredentialStore, "store", staticmethod(lambda u, pw: Editor.passwords.__setitem__(u, pw)))
+    monkeypatch.setattr(CredentialStore, "delete", staticmethod(lambda u: Editor.passwords.pop(u, None)))
+    monkeypatch.setattr(character_roster, "forget", lambda u: None)
+    monkeypatch.setattr(
+        accounts_tab.QMessageBox, "question", lambda *a, **k: accounts_tab.QMessageBox.StandardButton.Yes
+    )
+    return Editor
+
+
+def _accounts_on_disk() -> list[str]:
+    """The usernames in the shared ``accounts.json``, read fresh as the other product would."""
+    return [account["username"] for account in AccountStore().accounts]
+
+
+def test_an_account_added_on_the_page_is_stored_and_shows_in_settings(qapp, prefs, editor):
+    page = AccountsPage(prefs)
+    walk_changes: list[int] = []
+    page.walk_changed.connect(lambda: walk_changes.append(1))
+
+    page.accounts_column.add_card.add_requested.emit()
+
+    assert _accounts_on_disk() == [ONE]
+    assert editor.passwords == {ONE: "pw"}
+    assert len(page.accounts_column.cards) == 1
+    assert len(AccountsTab().accounts_column.cards) == 1
+    assert walk_changes == [1]
+
+
+def test_a_cancelled_add_changes_nothing(qapp, prefs, editor):
+    editor.accepted = False
+    page = AccountsPage(prefs)
+
+    page.accounts_column.add_card.add_requested.emit()
+
+    assert _accounts_on_disk() == []
+    assert page.accounts_column.cards == []
+
+
+def test_edit_and_remove_on_the_page_use_the_settings_actions(qapp, prefs, editor):
+    SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}, {"username": TWO, "alias": ""}]
+    editor.passwords.update({ONE: "pw1", TWO: "pw2"})
+    editor.alias_typed = "Main"
+    editor.password_typed = ""  # kept, as the editor says
+    page = AccountsPage(prefs)
+
+    page.accounts_column.cards[0].edit_account_requested.emit(ONE)
+    page.accounts_column.cards[1].delete_account_requested.emit(TWO)
+
+    assert [(a["username"], a["alias"]) for a in AccountStore().accounts] == [(ONE, "Main")]
+    assert editor.passwords == {ONE: "pw1"}
+    assert len(page.accounts_column.cards) == 1
+
+
+def test_with_no_account_the_page_says_what_still_works(qapp, prefs):
+    page = AccountsPage(prefs)
+
+    texts = [label.text() for label in page.accounts_column.findChildren(QLabel)]
+    assert ACCOUNTS_EMPTY in texts
+    assert page.ready()
+
+
+def test_next_with_no_account_records_the_page_answered(qapp, prefs):
+    page = AccountsPage(prefs)
+    dialog = FirstRunDialog([page])
+    _next(dialog)
+
+    assert dialog.heading_text == ACCOUNTS_HEADING
+    _next(dialog)
+
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert _record(prefs)[account_setup.ANSWERED_KEY] is True
+    assert SettingsManager.instance().accounts == []
+    assert AccountsPage(prefs).answered()
+
+
+def test_a_failed_record_keeps_the_user_on_the_page(qapp, prefs, monkeypatch):
+    monkeypatch.setattr(PreferenceStore, "set", lambda self, key, value: False)
+    dialog = FirstRunDialog([AccountsPage(prefs)])
+    _next(dialog, 2)
+
+    assert dialog.heading_text == ACCOUNTS_HEADING
+    assert dialog.error_shown
+
+
+def test_an_account_in_the_shared_file_answers_the_page(qapp, prefs):
+    """Written by the other product, before BartleBot read the file."""
+    AccountStore().set_accounts([{"username": ONE, "alias": ""}])
+
+    assert AccountsPage(prefs).answered()
+    assert _record(prefs) == {}
+
+
+def test_a_first_run_with_an_account_does_not_show_the_page(qapp, prefs):
+    SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}]
+
+    dialog = FirstRunDialog([AccountsPage(prefs), _Page("Last?")])
+
+    assert _headings(dialog) == [MODE_HEADING, "Last?"]
+
+
+def test_a_rerun_shows_the_page_on_the_stored_accounts(qapp, prefs):
+    SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}, {"username": TWO, "alias": ""}]
+
+    dialog = FirstRunDialog([AccountsPage(prefs)], rerun=True)
+
+    assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING]
+    assert len(dialog.walk[1].accounts_column.cards) == 2

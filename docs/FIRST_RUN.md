@@ -40,8 +40,10 @@ launch is imported, so the two modals never stack.
 - **A rerun**, from File › Set up BartleBot… (after Settings…), walks every page that
   applies, each on the current value.
 
-After either, the Combat tab rereads its source, since the combat page may have changed
-the Team default.
+After either, finished or closed, the Combat tab rereads its source, since the combat page
+may have changed the Team default, and `MainWindow.catch_up_with_accounts` rebuilds the
+Launch menu, the window minimum and the launch screen's cards, since the Accounts page
+writes accounts without the window seeing it.
 
 ## The pages
 
@@ -49,6 +51,7 @@ the Team default.
 |---|---|---|
 | Quick or Custom | nothing | never: it is always the first page |
 | Where is Wizard101 installed? | `game.install_dir` in `preferences.json`, through `shared/game_install.set_install_dir`, only for a folder the user changed to | `find_install` finds an install, stored or detected |
+| Which accounts should BartleBot log in to? | each account as it is added, edited or removed, to `accounts.json` (and its password to Credential Manager), through `accounts_tab`'s card actions; on Next, `setup.accounts_answered` in `preferences.json`, through `shared/account_setup.record_accounts_answered` | `accounts_answered`: `accounts.json` holds an account, from either product, or the key is set |
 | How should your team take on bosses? | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
 
 ### The combat question
@@ -94,3 +97,23 @@ install that moves is still found.
 The suite looks in no real place: `tests/conftest.py` puts `NoPlaces` in, so a game on the
 developer's machine can't decide which pages setup shows. A test that wants an install
 sets `game_install._places` to one of its own.
+
+### Accounts
+
+The page draws the account cards Settings › Game draws, in the same `CardColumn`, with
+**Add account** at its foot. Add, Edit (a click on the card, or its pencil), Remove (its
+trash) and dragging to reorder are `accounts_tab`'s card actions, the ones Settings and the
+launch screen call, so the editor, the duplicate and empty-field refusals, the delete
+cascade and the writes are theirs. Each writes `accounts.json` as it happens, and a
+password goes to Windows Credential Manager through `CredentialStore`, never to disk. An
+account added here is on Settings › Game and in the Launch menu at once.
+
+So Next has nothing of the accounts left to store. It records `setup.accounts_answered`,
+which is what keeps a user who chose no account from being asked again: the page may be
+left empty, since clients started by hand can still be hooked, and with none it says so
+and names **Launch › Manage Accounts…** for later. With an account in `accounts.json`,
+added by either product, the page is answered without the key.
+
+Every change on the page emits `walk_changed`, since how many accounts there are decides
+whether the Launch profile page follows.
+

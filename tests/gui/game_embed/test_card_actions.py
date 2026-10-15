@@ -427,6 +427,17 @@ def test_a_written_action_refreshes_the_menu_and_the_cards(monkeypatch, slot, fu
     assert calls == ["menu", "minimum", "cards"]
 
 
+def test_catching_up_after_setup_refreshes_the_menu_and_the_cards():
+    """Setup's Accounts page writes through the card actions without this window seeing them."""
+    from bartlebot.gui.main_window import MainWindow
+
+    calls, stub = main_window_stub()
+
+    MainWindow.catch_up_with_accounts(stub)
+
+    assert calls == ["menu", "minimum", "cards"]
+
+
 @pytest.mark.parametrize(
     ("slot", "function", "args"),
     [

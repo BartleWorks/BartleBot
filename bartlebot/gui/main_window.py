@@ -849,6 +849,15 @@ class MainWindow(QMainWindow):
             self.refresh_minimum_size()
         self._game_view_panel.refresh_launch_lists()
 
+    def catch_up_with_accounts(self) -> None:
+        """Bring the app back in line with accounts and profiles another surface changed.
+
+        For a surface that writes them through the card actions without going through
+        this window: setup's Accounts page. The Launch menu, the window minimum and the
+        launch screen's cards all read the store, and none of them is told on its own.
+        """
+        self._after_card_action(True)
+
     def _edit_launch_profile(self, name: str) -> None:
         """Edit one launch profile, from the pencil on its card or its context menu.
 
