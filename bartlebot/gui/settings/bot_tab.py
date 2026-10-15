@@ -20,9 +20,8 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
+from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
-from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for
 
 _INTRO = (
@@ -45,22 +44,8 @@ class BotTab(SettingsForm):
         # ------------------------------------------------------------------
         self.add_heading("Timing")
 
-        self._safety_delay_sb = QDoubleSpinBox()
-        self._safety_delay_sb.setRange(0.0, 30.0)
-        self._safety_delay_sb.setSingleStep(0.5)
-        self._safety_delay_sb.setDecimals(1)
-        self._safety_delay_sb.setSuffix(" sec")
-        self._safety_delay_sb.setValue(sm.default_safety_delay)
-        self.add_row(
-            SettingRow(
-                "Default Safety Delay",
-                "How long the game server gets before an action counts as failed.",
-                self._safety_delay_sb,
-                default=_default("default_safety_delay"),
-                # The option's own text: one value, described once (see settings/CLAUDE.md).
-                details=SAFETY_DELAY_DESCRIPTION,
-            )
-        )
+        # The same row setup's realm page shows, from the same builder.
+        self._safety_delay_sb = self.add_row(safety_delay_row(sm)).control
 
         self._relog_interval_sb = QDoubleSpinBox()
         self._relog_interval_sb.setRange(0.0, 24.0)
@@ -143,22 +128,7 @@ class BotTab(SettingsForm):
         # ------------------------------------------------------------------
         self.add_heading("Realms")
 
-        self._favorite_realm_combo = RealmCombo()
-        self._favorite_realm_combo.set_value(sm.favorite_realm)
-        self.add_row(
-            SettingRow(
-                "Favorite realm",
-                "The realm Change Realm switches every player to.",
-                self._favorite_realm_combo,
-                default=_default("favorite_realm"),
-                details=(
-                    "Yours rather than the bot's: a realm in a shared bot file would send everyone who "
-                    "runs it to the same place. With one set, every launched player also has the game's "
-                    "Remember Realm option turned on, so a relogged player comes back to the realm it "
-                    "left."
-                ),
-            )
-        )
+        self._favorite_realm_combo = self.add_row(favorite_realm_row(sm)).control
 
         # ------------------------------------------------------------------
         # Quicksell

@@ -81,7 +81,8 @@ SOURCE_LEVELS: tuple[str, ...] = (SOURCE_OVERRIDE, SOURCE_BOT_FILE, SOURCE_APP_S
 #: disagree -- ``test_the_safety_delay_setting_and_option_read_the_same`` is the guard.
 SAFETY_DELAY_DESCRIPTION = (
     "Seconds to allow the game server to answer an action before treating it as failed: "
-    "a prompt or menu opening, a zone change, a mark. Increase on high-latency connections."
+    "a prompt or menu opening, a zone change, a mark. Increase on high-latency connections: "
+    "3 to 5 seconds in North America; 5 to 10 elsewhere, depending on location and connection quality."
 )
 
 # Bot options that also exist as an app setting, and the ``general`` key holding it.
