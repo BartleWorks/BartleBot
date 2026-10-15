@@ -16,10 +16,11 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and three methods. ``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and four methods. ``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
-belongs in the walk now, under Quick or Custom. ``record()`` writes its answer and says
-whether that reached disk.
+belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
+recorded, and Next waits for it. ``record()`` writes its answer and says whether that
+reached disk.
 
 The dialog opens on :class:`ModePage`, Quick or Custom, which is not stored: it only
 decides which pages follow. **There is no Skip.** Next records the page shown and moves on
@@ -42,17 +43,21 @@ from __future__ import annotations
 import logging
 from collections.abc import Sequence
 from enum import Enum
+from pathlib import Path
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QDialog, QGridLayout, QLabel, QStackedWidget, QVBoxLayout, QWidget
 
+from bartlebot.clients.install_location import apply_install
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
+from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
+from bartlebot.shared.game_install import SOURCE_NAMES, find_install, is_install, set_install_dir
 from bartlebot.shared.preferences import PreferenceStore
 
 logger = logging.getLogger(__name__)
@@ -80,6 +85,8 @@ class FirstRunPage(QWidget):
 
     #: Emitted when the page's answer changes what follows: the walk is recounted.
     walk_changed = pyqtSignal()
+    #: Emitted when :meth:`ready` may have changed: Next is enabled or not again.
+    ready_changed = pyqtSignal()
 
     #: The question the page asks, shown above it.
     heading = ""
@@ -90,6 +97,10 @@ class FirstRunPage(QWidget):
 
     def applies(self, mode: SetupMode) -> bool:
         """Whether the page belongs in the walk now: under *mode*, and with what is set up so far."""
+        return True
+
+    def ready(self) -> bool:
+        """Whether the answer shown can be recorded. Next is disabled while it can't."""
         return True
 
     def record(self) -> bool:
@@ -256,9 +267,82 @@ class CombatQuestionPage(_CardsPage):
         return record_answer(self._prefs, self._value)
 
 
+# -- the game folder ----------------------------------------------------------------
+
+GAME_FOLDER_HEADING = "Where is Wizard101 installed?"
+GAME_FOLDER_INTRO = (
+    "BartleBot starts the game from this folder, the one holding its Bin folder. The KingsIsle "
+    "launcher installs it in C:\\ProgramData\\KingsIsle Entertainment\\Wizard101, and Steam in "
+    "steamapps\\common\\Wizard101 inside a Steam library."
+)
+
+
+class GameFolderPage(FirstRunPage):
+    """Where the game is: shown on a first run only when no install is found.
+
+    On a rerun it opens on the folder in use, and Next leaves a detected folder detected:
+    only a folder the user changed to is stored, so an install that moves is still found.
+    Next is enabled only for a folder holding the client.
+    """
+
+    heading = GAME_FOLDER_HEADING
+
+    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._prefs = prefs
+        self._found = find_install(prefs)
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(8)
+        intro = ThemedTextLabel(GAME_FOLDER_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro.setWordWrap(True)
+        column.addWidget(intro)
+        self._input = GameFolderInput()
+        column.addWidget(self._input)
+        self._status = ThemedTextLabel("", css=f"font-size: {THEME.font_small_px}px;")
+        self._status.setWordWrap(True)
+        column.addWidget(self._status)
+        column.addStretch()
+        if self._found is not None:
+            self._input.set_path(self._found.path)
+        self._input.changed.connect(self._on_changed)
+        self._on_changed()
+
+    @property
+    def folder_input(self) -> GameFolderInput:
+        return self._input
+
+    @property
+    def status_text(self) -> str:
+        return self._status.text()
+
+    def _on_changed(self) -> None:
+        found_path = self._found.path if self._found is not None else None
+        source = SOURCE_NAMES[self._found.source] if self._found is not None else ""
+        text, problem = folder_status(self._input.path(), found_path, source)
+        self._status.setText(text)
+        self._status.set_color("error" if problem else "text_muted")
+        self.ready_changed.emit()
+
+    def answered(self) -> bool:
+        return self._found is not None
+
+    def ready(self) -> bool:
+        return is_install(self._input.path())
+
+    def record(self) -> bool:
+        path = Path(self._input.path())
+        if self._found is not None and path == self._found.path:
+            return True
+        if not set_install_dir(self._prefs, path):
+            return False
+        self._found = apply_install(self._prefs)
+        return True
+
+
 def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
     """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
-    return [CombatQuestionPage(prefs)]
+    return [GameFolderPage(prefs), CombatQuestionPage(prefs)]
 
 
 # -- the dialog ---------------------------------------------------------------------
@@ -301,6 +385,7 @@ class FirstRunDialog(QDialog):
         for page in self._pages:
             self._stack.addWidget(page)
             page.walk_changed.connect(self._refresh)
+            page.ready_changed.connect(self._refresh)
         self._error = ThemedTextLabel(SAVE_FAILED, color="error", css=f"font-size: {THEME.font_small_px}px;")
         self._error.setWordWrap(True)
         self._error.setVisible(False)
@@ -411,10 +496,13 @@ class FirstRunDialog(QDialog):
         self._step.setText(STEP.format(n=index + 1, m=len(walk)))
         self._back.setVisible(index > 0)
         self._commit.setText(FINISH if index == len(walk) - 1 else NEXT)
+        self._commit.setEnabled(self.current.ready())
 
     def _advance(self) -> None:
         """Next or Finish: record the page shown, and move on only once that reached disk."""
         page = self.current
+        if not page.ready():
+            return
         if not page.record():
             logger.warning("Could not save the setup answer to %r; the page stays open", page.heading)
             self._error.setVisible(True)

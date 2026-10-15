@@ -142,6 +142,27 @@ persist on one tab is not an oversight: a card on the launch screen has no
 Settings dialog behind it to press OK on, and a check box in this dialog that
 ignored Cancel would be the odd one out.
 
+## The Game folder row
+
+The first row on General (`game_folder_row.py`), and the one row there that is **not** a
+`settings.json` key: it writes `game.install_dir` in the vendor-wide `preferences.json`,
+because BartleBuddy launches the game from the same folder. Setup's game folder page writes
+the same key through the same `shared/game_install.set_install_dir`, so the two always
+agree; `docs/FIRST_RUN.md` ("The game folder") has where the folder is looked for.
+
+- **Its value is the folder chosen, or None for detected.** Detected is the default, so
+  Detect and the row's reset are the same move: the key is cleared on OK, and the folder is
+  found again wherever it is. The line under the title says where the folder shown came
+  from, or that nothing was found.
+- **The apply rule holds,** as on the Combat tab: OK writes it only when it changed since
+  the tab opened, so a folder the other product chose meanwhile stands. A folder without
+  the game is never stored; the row says so in its line, in the error color.
+- **A write is handed to wizwalker at once** (`clients/install_location.apply_install`), so
+  the next launch uses it without a restart.
+- It is on General rather than the Game tab because nothing about it is applied to a
+  client as it starts: it is where the game is, which every launch and every read of the
+  game's `Bin` files asks first.
+
 ## The Bot tab
 
 Every row on it is the **app setting** level of the four-level resolution below,

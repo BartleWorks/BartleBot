@@ -14,11 +14,13 @@ import pytest
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QDialog, QWidget
+from wizwalker import utils as wizwalker_utils
 
 from bartlebot.gui.dialogs.first_run_dialog import (
     BACK,
     COMBAT_HEADING,
     FINISH,
+    GAME_FOLDER_HEADING,
     MODE_CARDS,
     MODE_HEADING,
     NEXT,
@@ -29,11 +31,14 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     CombatQuestionPage,
     FirstRunDialog,
     FirstRunPage,
+    GameFolderPage,
     ModePage,
     SetupMode,
     setup_pages,
 )
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
+from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
+from bartlebot.shared import game_install
 from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
 from bartlebot.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
 from bartlebot.shared.preferences import PreferenceStore
@@ -392,14 +397,14 @@ def test_a_user_who_answered_in_209_is_not_asked_again(qapp, prefs):
     """#209's Skip, or either answer, set the same key; the page is passed over."""
     prefs.set(ANSWERED_KEY, True)
 
-    assert setup_pages(prefs)[0].answered()
+    assert next(page for page in setup_pages(prefs) if isinstance(page, CombatQuestionPage)).answered()
 
 
 # -- building and opening it ---------------------------------------------------------------
 
 
-def test_the_combat_question_is_a_setup_page(qapp, prefs):
-    assert [type(page) for page in setup_pages(prefs)] == [CombatQuestionPage]
+def test_the_pages_are_in_the_plans_order(qapp, prefs):
+    assert [type(page) for page in setup_pages(prefs)] == [GameFolderPage, CombatQuestionPage]
 
 
 def test_the_dialog_needs_a_page(qapp):
@@ -484,3 +489,143 @@ def test_a_later_show_leaves_it_where_the_user_put_it(qapp):
     assert dialog.pos() == moved
     dialog.close()
     window.close()
+
+
+# -- a page that isn't ready -------------------------------------------------------
+
+
+class _Unready(_Page):
+    def __init__(self, heading: str) -> None:
+        super().__init__(heading)
+        self.is_ready = False
+
+    def ready(self) -> bool:
+        return self.is_ready
+
+
+def test_next_waits_for_a_page_that_is_not_ready(qapp):
+    page = _Unready("Where?")
+    dialog = FirstRunDialog([page, _Page("Then?")])
+    _next(dialog)
+
+    assert not dialog.commit_button.isEnabled()
+    dialog.commit_button.click()
+    assert (dialog.current, page.recorded) == (page, 0)
+
+    page.is_ready = True
+    page.ready_changed.emit()
+    assert dialog.commit_button.isEnabled()
+    _next(dialog)
+    assert page.recorded == 1
+
+
+# -- the game folder ---------------------------------------------------------------
+
+
+def _install(folder: Path) -> Path:
+    """A folder the game's client is in."""
+    (folder / "Bin").mkdir(parents=True)
+    (folder / "Bin" / "WizardGraphicalClient.exe").write_bytes(b"")
+    return folder
+
+
+class _Launcher(game_install.NoPlaces):
+    """A machine where the KingsIsle launcher installed the game in *folder*."""
+
+    def __init__(self, folder: Path) -> None:
+        self.folder = folder
+
+    def launcher_dir(self) -> Path:
+        return self.folder
+
+
+@pytest.fixture
+def wizwalker_install():
+    """wizwalker's override, put back afterwards: Next hands it the folder."""
+    yield wizwalker_utils
+    wizwalker_utils.override_wiz_install_location(None)
+
+
+def _folder_page(dialog: FirstRunDialog) -> GameFolderPage:
+    return next(page for page in dialog.pages if isinstance(page, GameFolderPage))
+
+
+def test_the_game_folder_page_shows_only_when_nothing_is_found(qapp, prefs, tmp_path, monkeypatch):
+    assert not GameFolderPage(prefs).answered()
+    assert GameFolderPage in [type(page) for page in FirstRunDialog(setup_pages(prefs)).walk]
+
+    monkeypatch.setattr(game_install, "_places", _Launcher(_install(tmp_path / "Wizard101")))
+
+    assert GameFolderPage(prefs).answered()
+    assert GameFolderPage not in [type(page) for page in FirstRunDialog(setup_pages(prefs)).walk]
+
+
+def test_the_game_folder_page_accepts_only_a_folder_holding_the_client(qapp, prefs, tmp_path, wizwalker_install):
+    dialog = FirstRunDialog(setup_pages(prefs))
+    _next(dialog)
+    page = _folder_page(dialog)
+    assert dialog.current is page
+    assert (dialog.heading_text, page.status_text) == (GAME_FOLDER_HEADING, FOLDER_EMPTY)
+    assert not dialog.commit_button.isEnabled()
+
+    empty = tmp_path / "Empty"
+    empty.mkdir()
+    page.folder_input.set_path(empty)
+    assert page.status_text == FOLDER_MISSING
+    assert not dialog.commit_button.isEnabled()
+
+    folder = _install(tmp_path / "Games" / "Wizard101")
+    page.folder_input.set_path(folder)
+    assert page.status_text == FOLDER_OK
+    assert dialog.commit_button.isEnabled()
+
+    _next(dialog)
+    assert prefs.get(game_install.INSTALL_DIR_KEY) == str(folder)
+    assert wizwalker_install.get_wiz_install() == folder.absolute()
+    assert dialog.current is not page
+
+
+def test_browse_puts_the_folder_chosen_in_the_field(qapp, prefs, tmp_path):
+    page = GameFolderPage(prefs)
+    folder = _install(tmp_path / "Wizard101")
+    page.folder_input.choose_directory = lambda _parent, _start: str(folder)
+
+    page.folder_input.browse_button.click()
+
+    assert page.folder_input.path() == str(folder)
+    assert page.ready()
+
+
+def test_cancelling_browse_leaves_the_field(qapp, prefs, tmp_path):
+    page = GameFolderPage(prefs)
+    page.folder_input.set_path(tmp_path)
+    page.folder_input.choose_directory = lambda _parent, _start: ""
+
+    page.folder_input.browse_button.click()
+
+    assert page.folder_input.path() == str(tmp_path)
+
+
+def test_a_rerun_shows_the_folder_in_use_and_next_keeps_it_detected(qapp, prefs, tmp_path, monkeypatch):
+    folder = _install(tmp_path / "Wizard101")
+    monkeypatch.setattr(game_install, "_places", _Launcher(folder))
+    dialog = FirstRunDialog(setup_pages(prefs), rerun=True)
+    _next(dialog)
+    page = _folder_page(dialog)
+
+    assert page.folder_input.path() == str(folder)
+    assert page.status_text == "Found in the KingsIsle launcher's folder."
+    _next(dialog)
+    assert prefs.get(game_install.INSTALL_DIR_KEY) is None
+
+
+def test_a_folder_changed_to_on_a_rerun_is_stored(qapp, prefs, tmp_path, monkeypatch, wizwalker_install):
+    monkeypatch.setattr(game_install, "_places", _Launcher(_install(tmp_path / "Launcher")))
+    other = _install(tmp_path / "Other")
+    page = GameFolderPage(prefs)
+
+    page.folder_input.set_path(other)
+
+    assert page.record()
+    assert prefs.get(game_install.INSTALL_DIR_KEY) == str(other)
+    assert GameFolderPage(prefs).folder_input.path() == str(other)

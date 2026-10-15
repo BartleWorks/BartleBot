@@ -1,4 +1,4 @@
-"""Settings tab: General (log, window layout, privacy, auto-save).
+"""Settings tab: General (the game folder, log, window layout, privacy, auto-save).
 
 The Bot section that used to sit at the bottom is :mod:`bartlebot.gui.settings.bot_tab`
 now. What is left is the app itself -- how it opens, what it keeps, what it shows --
@@ -11,8 +11,10 @@ from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
 from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
+from bartlebot.gui.settings.game_folder_row import apply_game_folder, game_folder_row
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for
+from bartlebot.shared.preferences import PreferenceStore
 
 #: Each of the window size's two boxes, which share one row and one control slot.
 _SIZE_BOX_PX = 112
@@ -26,6 +28,17 @@ class GeneralTab(SettingsForm):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         sm = SettingsManager.instance()
+
+        # ------------------------------------------------------------------
+        # Game section
+        # ------------------------------------------------------------------
+        self.add_heading("Game")
+
+        # A shared preference, not a settings.json key: BartleBuddy launches from it too.
+        self._prefs = PreferenceStore()
+        self._game_folder_row, self._game_folder = game_folder_row(self._prefs)
+        self._game_folder_opened = self._game_folder.value()
+        self.add_row(self._game_folder_row)
 
         # ------------------------------------------------------------------
         # Log section
@@ -224,7 +237,13 @@ class GeneralTab(SettingsForm):
         # parent setting whose rows only count while it is on.
         self._size_row.set_available(not checked, "Maximize on open is on, so this has no effect.")
 
+    @property
+    def game_folder_row(self) -> SettingRow:
+        return self._game_folder_row
+
     def apply(self) -> None:
+        if apply_game_folder(self._prefs, self._game_folder_opened, self._game_folder.value()):
+            self._game_folder_opened = self._game_folder.value()
         sm = SettingsManager.instance()
         sm.set_general("clear_log_on_run", self._clear_log_cb.isChecked())
         sm.set_general("log_max_lines", self._log_max_lines_sb.value())
