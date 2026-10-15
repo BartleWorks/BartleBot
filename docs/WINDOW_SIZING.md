@@ -553,11 +553,18 @@ user should never have to scroll to see a game window.
 
 ## Beyond that, stay out of the way
 
-Nothing picks a resolution on the user's behalf. Running four clients at 534x300 on a 4K
-monitor to save the machine some work is a legitimate and probably common choice — small
-resolutions are a performance lever, not only a screen-space workaround — so nothing
-should push users toward "the biggest that fits". `largest_fitting_resolution` exists only
-to *say* what would work.
+Nothing picks a resolution on the user's behalf, with one exception. Running four clients
+at 534x300 on a 4K monitor to save the machine some work is a legitimate and probably
+common choice — small resolutions are a performance lever, not only a screen-space
+workaround — so nothing should push users toward "the biggest that fits".
+`largest_fitting_resolution` exists to *say* what would work.
+
+The exception is setup's Launch profile page (`docs/FIRST_RUN.md`), which has to give the
+profile it makes *some* resolution: the global 800x600 makes a two-account profile on
+1080p that cannot launch. It starts the page's combo on `screen_fit.setup_resolution`, the
+largest that fits, as a value the user sees and can lower before Next. Setup then fits the
+canvas to the launches (`fitted_canvas_height`), the one other place the layout is derived
+rather than configured.
 
 ## Why not Deimos' runtime resize
 

@@ -9,7 +9,12 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
-from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.game.game_sizing import (
+    BOTCANVAS_DEFAULT_HEIGHT,
+    BOTCANVAS_MIN_HEIGHT,
+    LEFT_SIDEBAR_MIN_WIDTH,
+    RIGHT_SIDEBAR_MIN_WIDTH,
+)
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.game_folder_row import apply_game_folder, game_folder_row
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
@@ -155,16 +160,21 @@ class GeneralTab(SettingsForm):
         )
 
         self._bottom_sb = QSpinBox()
-        self._bottom_sb.setRange(BOTCANVAS_MIN_HEIGHT, 800)
+        # Up to a 4K screen's height: setup fits the canvas to the screen, and a range
+        # below what it wrote would clamp it on the next Save.
+        self._bottom_sb.setRange(BOTCANVAS_MIN_HEIGHT, 2160)
         self._bottom_sb.setSuffix(" px")
-        self._bottom_sb.setValue(sm.get_general("bottom_section_height", default=220))
+        self._bottom_sb.setValue(sm.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT))
         self.add_row(
             SettingRow(
                 "Default bottom section height",
                 "The bot canvas under the game view.",
                 self._bottom_sb,
                 default=_default("bottom_section_height"),
-                details="Both sections are draggable once open.",
+                details=(
+                    "Setup fits it to your screen, leaving the game view room for your launches, "
+                    "until you change it here. Both sections are draggable once open."
+                ),
             )
         )
 

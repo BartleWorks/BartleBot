@@ -35,11 +35,12 @@ _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
 
 
 class _Window(QWidget):
-    """The main window as far as setup reaches: a parent, the Combat tab, and the launch screen to refresh."""
+    """The main window as far as setup reaches: a parent, the Combat tab, the canvas, and the launch screen."""
 
     def __init__(self, events: list[str]) -> None:
         super().__init__()
         self.left_sidebar = SimpleNamespace(combat_tab=SimpleNamespace(refresh_source=lambda: events.append("refresh")))
+        self.fit_canvas_to_launches = lambda: events.append("canvas")
         self.catch_up_with_accounts = lambda: events.append("accounts")
 
 
@@ -163,7 +164,7 @@ def test_it_comes_before_a_file_named_at_launch_and_refreshes_what_it_changed(st
     """Never two modals at once: the import's summary waits for setup to close."""
     startup.ns._after_window_shown()
 
-    assert startup.events == ["first run", "refresh", "accounts", "import"]
+    assert startup.events == ["first run", "refresh", "canvas", "accounts", "import"]
 
 
 def test_set_up_again_shows_every_page_once_all_are_answered(startup):
@@ -175,7 +176,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
     assert startup.opened[0].rerun
     assert _walked(startup.opened[0]) == [GameFolderPage, AccountsPage, CombatQuestionPage]
     assert _prefs().get(_TEAM) is None
-    assert startup.events == ["first run", "refresh", "accounts"]
+    assert startup.events == ["first run", "refresh", "canvas", "accounts"]
 
 
 def test_the_file_menu_offers_set_up_after_settings(qapp):
@@ -281,3 +282,42 @@ def test_a_profile_made_in_setup_is_under_launch_and_on_the_launch_screen_once_i
         assert len(placeholder.profiles_column.cards) == 1
     finally:
         window.bot_canvas.prepare_for_shutdown()
+
+
+def _fit_window(qapp, monkeypatch):
+    """A real window on a 1080p screen less its taskbar, shown so its splitter has an extent."""
+    from bartlebot.gui import screen_fit  # noqa: PLC0415
+    from bartlebot.gui.main_window import MainWindow  # noqa: PLC0415
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((1920, 1032), 1.0))
+    SettingsManager.instance().set_general("maximize_on_open", False)
+    window = MainWindow()
+    window.resize(1920, 1032)
+    window.show()
+    qapp.processEvents()
+    return window
+
+
+def test_setup_fits_the_canvas_to_what_the_launches_leave(qapp, monkeypatch):
+    """One account at 800x600 on 1080p: the game area keeps its 651px tile and the canvas the rest."""
+    window = _fit_window(qapp, monkeypatch)
+    try:
+        window.fit_canvas_to_launches()
+
+        assert SettingsManager.instance().get_general("bottom_section_height") == 321
+        assert window.bot_canvas.height() == 321
+    finally:
+        window.bot_canvas.prepare_for_shutdown()
+        window.hide()
+
+
+def test_setup_leaves_a_canvas_height_chosen_in_settings(qapp, monkeypatch):
+    SettingsManager.instance().set_general("bottom_section_height", 260)
+    window = _fit_window(qapp, monkeypatch)
+    try:
+        window.fit_canvas_to_launches()
+
+        assert SettingsManager.instance().get_general("bottom_section_height") == 260
+    finally:
+        window.bot_canvas.prepare_for_shutdown()
+        window.hide()

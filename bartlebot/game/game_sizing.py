@@ -51,6 +51,7 @@ Nothing here is a QWidget or reads settings, so the arithmetic can be tested on 
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from typing import NamedTuple
 
 # ---------------------------------------------------------------------------
@@ -98,6 +99,10 @@ GAME_PANEL_CHROME_PX = 32
 # Minimum BotCanvas size (toolbar + enough graph space)
 BOTCANVAS_MIN_WIDTH = 320
 BOTCANVAS_MIN_HEIGHT = 180
+# The canvas height a new install opens at, before setup fits it to the launches the user
+# has (``canvas_height_for``). Also the height setup judges a new profile's resolution at,
+# so a canvas already fitted to one account cannot crowd out the profile for four.
+BOTCANVAS_DEFAULT_HEIGHT = 220
 # Sidebar minimums. Both are *measured*, not pixels: each panel's widest row is a set of
 # controls that carry a ``Minimum``/``Preferred`` size policy with no shrink flag, so they
 # run off the panel rather than getting narrower, and their own width scales with the
@@ -515,6 +520,22 @@ def screen_budget(
     width = screen_w - left_sidebar - right_sidebar - 2 * splitter_handle
     height = screen_h - bottom_section - WINDOW_CHROME_ESTIMATE_PX
     return max(0, width), max(0, height)
+
+
+def canvas_height_for(screen_h: int, launches: Iterable[tuple[tuple[int, int], int]], dpr: float = 1.0) -> int:
+    """The bot canvas height that leaves *screen_h* exactly the tallest grid of *launches*.
+
+    Each launch is ``(resolution, client_count)``. The inverse of ``screen_budget``'s
+    height: everything the tallest grid does not need goes to the canvas rather than
+    sitting empty around the tiles, which is most of a 1080p screen for the one or two
+    accounts most users have. Never below ``BOTCANVAS_DEFAULT_HEIGHT``, so a screen too
+    small for its launches keeps the layout it always had rather than losing canvas too,
+    and so does an empty *launches*, which has no grid to measure.
+    """
+    tallest = max((required_game_area(resolution, count, dpr)[1] for resolution, count in launches), default=None)
+    if tallest is None:
+        return BOTCANVAS_DEFAULT_HEIGHT
+    return max(BOTCANVAS_DEFAULT_HEIGHT, screen_h - WINDOW_CHROME_ESTIMATE_PX - tallest)
 
 
 def fits(resolution: tuple[int, int], client_count: int, budget: tuple[int, int], dpr: float = 1.0) -> bool:

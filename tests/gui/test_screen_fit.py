@@ -541,3 +541,46 @@ def test_a_new_stylesheet_measures_the_floors_again(qapp, counted_measures):
         qapp.setStyleSheet(sheet)
 
     assert counted_measures == {"left": 2, "right": 2}
+
+
+# -- what setup fits: a new profile's resolution, and the canvas -----------------------
+
+_1080P_TASKBAR = ((1920, 1032), 1.0)
+
+
+def test_setup_judges_a_new_profile_at_the_default_canvas(screen):
+    """Not the canvas as configured: one fitted to a single account would leave four nothing."""
+    screen(_1080P_TASKBAR)
+    SettingsManager.instance().set_general("bottom_section_height", 500)
+
+    assert screen_fit.setup_area()[1] == 1032 - game_sizing.BOTCANVAS_DEFAULT_HEIGHT - 60
+    assert screen_fit.setup_resolution(4) == (534, 300)
+
+
+def test_the_canvas_is_fitted_to_one_client_at_the_global_resolution(screen):
+    screen(_1080P_TASKBAR)
+
+    assert screen_fit.fitted_canvas_height() == 1032 - 60 - (600 + 51)
+
+
+def test_the_canvas_leaves_room_for_the_tallest_launch_profile(screen):
+    screen(_1080P_TASKBAR)
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "abcd"]
+    SettingsManager.instance().launch_profiles = [_profile("abcd", (534, 300))]
+
+    assert screen_fit.fitted_canvas_height() == 1032 - 60 - 2 * (300 + 51)
+
+
+def test_a_launch_profile_that_cannot_fit_does_not_shrink_the_canvas(screen):
+    """Two at 800x600 can't launch on 1080p whatever the canvas does."""
+    screen(_1080P_TASKBAR)
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
+    SettingsManager.instance().launch_profiles = [_profile("ab")]
+
+    assert screen_fit.fitted_canvas_height() == 1032 - 60 - (600 + 51)
+
+
+def test_an_unmeasurable_screen_fits_no_canvas(screen):
+    screen((screen_fit._UNMEASURABLE, 1.0))
+
+    assert screen_fit.fitted_canvas_height() is None

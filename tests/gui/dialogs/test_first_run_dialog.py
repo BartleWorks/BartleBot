@@ -18,6 +18,7 @@ from wizwalker import utils as wizwalker_utils
 
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
+from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.first_run_dialog import (
     ACCOUNTS_EMPTY,
     ACCOUNTS_HEADING,
@@ -30,6 +31,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     MODE_HEADING,
     NEXT,
     PROFILE_EXISTS,
+    PROFILE_NO_FIT,
     PROFILE_TOO_FEW,
     PROFILE_WILL_MAKE,
     RECOMMENDED_DETAIL,
@@ -62,9 +64,24 @@ _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
 _CUSTOM_DUEL = "00000000-0000-0000-0000-0000000000d1"
 
 
+#: A 1080p screen less its taskbar: what most users have, and where a profile's resolution matters.
+_1080P = ((1920, 1032), 1.0)
+
+
 @pytest.fixture
 def prefs(tmp_path: Path) -> PreferenceStore:
     return PreferenceStore(tmp_path / "vendor")
+
+
+@pytest.fixture(autouse=True)
+def screen(monkeypatch):
+    """Pin the screen the Launch profile page fits its resolution to, so it is not the runner's."""
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: _1080P)
+
+    def _use(metrics):
+        monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: metrics)
+
+    return _use
 
 
 def _record(prefs: PreferenceStore) -> dict:
@@ -840,7 +857,7 @@ def test_next_makes_one_profile_of_the_checked_accounts_in_order(qapp, prefs):
 
     assert page.record()
 
-    assert _profiles_on_disk() == [{"name": "Everyone", "accounts": [ONE, THREE]}]
+    assert _profiles_on_disk() == [{"name": "Everyone", "accounts": [ONE, THREE], "resolution": [560, 420]}]
     assert _record(prefs)[launch_profiles.ANSWERED_KEY] is True
 
 
@@ -948,7 +965,7 @@ def test_accounts_added_on_the_page_before_bring_the_launch_profile_page(qapp, p
     _next(dialog)
 
     assert dialog.heading_text == "Last?"
-    assert _profiles_on_disk() == [{"name": "Everyone", "accounts": [ONE, TWO]}]
+    assert _profiles_on_disk() == [{"name": "Everyone", "accounts": [ONE, TWO], "resolution": [560, 420]}]
 
 
 def test_next_with_no_account_passes_the_launch_profile_page_over(qapp, prefs):
@@ -997,3 +1014,84 @@ def test_a_box_drawn_again_leaves_none_of_the_old_ones_showing(qapp, prefs):
 
     assert all(box.isHidden() for box in old)
     assert not any(box.isHidden() for box in page.boxes)
+
+
+# -- the Launch profile page's resolution ---------------------------------------------
+
+
+def test_the_resolution_starts_on_the_largest_that_fits_the_accounts_checked(qapp, prefs):
+    """Two 800x600 clients do not fit side by side on 1080p: the global one would make a dead profile."""
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    assert page.resolution == (534, 300)
+
+    page.boxes[2].setChecked(False)
+
+    assert page.resolution == (560, 420)
+
+
+def test_resolutions_too_big_for_the_accounts_checked_are_grayed(qapp, prefs):
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO)]
+    combo = LaunchProfilePage(prefs).resolution_combo
+    model = combo.model()
+
+    enabled = {combo.itemData(i): model.item(i).isEnabled() for i in range(combo.count())}
+
+    assert enabled[(560, 420)]
+    assert not enabled[(800, 600)]
+
+
+def test_a_smaller_resolution_picked_is_the_one_saved(qapp, prefs):
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO)]
+    page = LaunchProfilePage(prefs)
+    combo = page.resolution_combo
+    index = next(i for i in range(combo.count()) if combo.itemData(i) == (534, 300))
+
+    combo.setCurrentIndex(index)
+    combo.activated.emit(index)
+
+    assert page.record()
+    assert _profiles_on_disk()[0]["resolution"] == [534, 300]
+
+
+def test_a_pick_that_stops_fitting_gives_way_to_the_largest_that_does(qapp, prefs):
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    page.boxes[2].setChecked(False)
+    combo = page.resolution_combo
+    index = next(i for i in range(combo.count()) if combo.itemData(i) == (560, 420))
+    combo.activated.emit(index)
+
+    page.boxes[2].setChecked(True)
+
+    assert page.resolution == (534, 300)
+
+
+def test_the_resolution_is_judged_at_the_default_canvas_whatever_setup_fitted(qapp, prefs):
+    """A canvas fitted to one account would otherwise leave three no resolution at all."""
+    SettingsManager.instance().set_general("bottom_section_height", 500)
+    _three_accounts()
+
+    assert LaunchProfilePage(prefs).resolution == (534, 300)
+
+
+def test_with_no_resolution_that_fits_the_profile_follows_the_global_one(qapp, prefs, screen):
+    screen(((1366, 728), 1.0))
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+
+    assert page.resolution is None
+    assert page.status_text.endswith(PROFILE_NO_FIT.format(n=3))
+    assert page.record()
+    assert "resolution" not in _profiles_on_disk()[0]
+
+
+def test_the_resolution_is_disabled_when_no_profile_is_made(qapp, prefs):
+    _three_accounts()
+    page = LaunchProfilePage(prefs)
+    assert page.resolution_combo.isEnabled()
+
+    page.boxes[0].setChecked(False)
+    page.boxes[1].setChecked(False)
+
+    assert not page.resolution_combo.isEnabled()

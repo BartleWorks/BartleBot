@@ -421,3 +421,30 @@ def test_the_widescreen_form_reproduces_the_game_s_own_sixteen_by_nine_entries()
     assert gs.widescreen_form((0, 990)) == (1760, 990)
     assert gs.widescreen_form((0, 720)) == (1280, 720)
     assert gs.widescreen_form((0, 1080)) == (1920, 1080)
+
+
+# -- the canvas setup fits to the launches ---------------------------------------------
+
+
+def test_the_canvas_takes_what_the_tallest_grid_leaves():
+    """1080p less its taskbar, one client at 800x600: 1032 - 60 of chrome - a 651px tile."""
+    assert gs.canvas_height_for(1032, [((800, 600), 1)]) == 321
+
+
+def test_the_tallest_of_several_launches_decides():
+    launches = [((800, 600), 1), ((560, 420), 2), ((534, 300), 4)]
+
+    assert gs.canvas_height_for(1032, launches) == 1032 - gs.WINDOW_CHROME_ESTIMATE_PX - 2 * (300 + 51)
+
+
+def test_a_screen_too_small_for_its_launches_keeps_the_default_canvas():
+    assert gs.canvas_height_for(700, [((800, 600), 1)]) == gs.BOTCANVAS_DEFAULT_HEIGHT
+
+
+def test_no_launch_keeps_the_default_canvas():
+    assert gs.canvas_height_for(1032, []) == gs.BOTCANVAS_DEFAULT_HEIGHT
+
+
+def test_the_canvas_is_measured_in_logical_pixels():
+    """At 150%, a 1200px-tall client is an 800-point tile."""
+    assert gs.canvas_height_for(1400, [((1600, 1200), 1)], dpr=1.5) == 1400 - gs.WINDOW_CHROME_ESTIMATE_PX - 851

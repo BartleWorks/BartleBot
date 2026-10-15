@@ -9,7 +9,7 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.clients.credentials import CredentialStore
-from bartlebot.game.game_sizing import LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.game.game_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
@@ -374,7 +374,7 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         sm = SettingsManager.instance()
-        bot_h = sm.get_general("bottom_section_height", default=220)
+        bot_h = sm.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT)
         # A seed only. Nothing here sticks: the splitter has no extent yet, so this is a
         # ratio rather than a size, and the real one is applied on the first showEvent.
         self._top_splitter.setSizes([300, 800, 300])
@@ -442,7 +442,7 @@ class MainWindow(QMainWindow):
             int(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
             screen_fit.right_sidebar_floor(),
         )
-        bot_h = int(sm.get_general("bottom_section_height", default=220))
+        bot_h = int(sm.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT))
 
         top_total = sum(self._top_splitter.sizes())
         if top_total > 0:
@@ -626,7 +626,7 @@ class MainWindow(QMainWindow):
                 self._game_view_visible = False
                 self._game_view_panel.setVisible(False)
             self._top_splitter.setSizes(self._pre_maximize_sizes.get("top", [300, 800, 300]))
-            self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, 220]))
+            self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, BOTCANVAS_DEFAULT_HEIGHT]))
         self._sync_pane_actions()
 
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
@@ -857,6 +857,25 @@ class MainWindow(QMainWindow):
         launch screen's cards all read the store, and none of them is told on its own.
         """
         self._after_card_action(True)
+
+    def fit_canvas_to_launches(self) -> None:
+        """Give the bot canvas the height the user's launches leave, after setup (epic #215).
+
+        The game area keeps the tallest grid the user can launch, and the canvas the rest
+        (``screen_fit.fitted_canvas_height``). Stored, as the Settings › General row stores
+        it, and applied to the window now. Only while the height is still the shipped one
+        or setup's own: one chosen in Settings is the user's.
+        """
+        sm = SettingsManager.instance()
+        if not sm.canvas_height_follows_setup:
+            return
+        height = screen_fit.fitted_canvas_height(self)
+        if height is None or height == sm.get_general("bottom_section_height"):
+            return
+        sm.set_fitted_canvas_height(height)
+        outer_total = sum(self._outer_splitter.sizes())
+        if outer_total > 0 and self._game_view_visible and not self._game_view_maximized:
+            self._outer_splitter.setSizes(_splitter_sizes(outer_total, [height], flexible=0))
 
     def _edit_launch_profile(self, name: str) -> None:
         """Edit one launch profile, from the pencil on its card or its context menu.

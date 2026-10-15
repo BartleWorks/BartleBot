@@ -320,3 +320,57 @@ def largest_fitting_resolution(
     """
     budget, dpr = budget_for(widget, live_area)
     return game_sizing.largest_fitting(VALID_RESOLUTIONS, client_count, budget, dpr)
+
+
+def setup_area(widget: QWidget | None = None) -> tuple[int, int]:
+    """The game area setup judges a new profile's resolution against.
+
+    The screen with the configured sidebars and a canvas no taller than
+    ``BOTCANVAS_DEFAULT_HEIGHT``. Not the canvas as configured: setup fits the canvas to
+    the launches it knows (``fitted_canvas_height``), so a canvas already fitted to one
+    account would otherwise leave a four-account profile no resolution at all. Passed to
+    the fit questions as their live area, the larger term ``budget_for`` takes.
+    """
+    screen_size, _ = screen_metrics(widget)
+    sm = SettingsManager.instance()
+    height = min(
+        int(sm.get_general("bottom_section_height", default=game_sizing.BOTCANVAS_DEFAULT_HEIGHT)),
+        game_sizing.BOTCANVAS_DEFAULT_HEIGHT,
+    )
+    return sm.layout_budget(
+        screen_size,
+        right_sidebar_floor=right_sidebar_floor(),
+        left_sidebar_floor=left_sidebar_floor(),
+        bottom_section=height,
+    )
+
+
+def setup_resolution(client_count: int, widget: QWidget | None = None) -> tuple[int, int] | None:
+    """The resolution setup gives a new profile of *client_count* accounts: the largest that fits.
+
+    A starting value the user sees and can lower on the page, not a nudge toward the
+    biggest (see ``largest_fitting_resolution``): a profile left on the global resolution
+    is one that two accounts on a 1080p screen cannot launch at all.
+    """
+    return largest_fitting_resolution(client_count, widget, setup_area(widget))
+
+
+def fitted_canvas_height(widget: QWidget | None = None) -> int | None:
+    """The canvas height that leaves the game area just the tallest grid the user can launch.
+
+    The launches are one client at the global resolution, and each launch profile at its
+    own; any that does not fit ``setup_area`` is left out, since it cannot launch whatever
+    the canvas does. None for a screen that cannot be measured.
+    """
+    screen_size, dpr = screen_metrics(widget)
+    if screen_size == _UNMEASURABLE:
+        return None
+    sm = SettingsManager.instance()
+    launches = [(sm.game_resolution, 1)]
+    for profile in sm.account_store.launch_profiles:
+        count = len(profile.get("accounts") or [])
+        if count:
+            launches.append((profile_resolution(profile), count))
+    area = setup_area(widget)
+    fitting = [(resolution, count) for resolution, count in launches if game_sizing.fits(resolution, count, area, dpr)]
+    return game_sizing.canvas_height_for(screen_size[1], fitting, dpr)

@@ -52,6 +52,18 @@ the Accounts and Launch profile pages write accounts and profiles without the wi
 seeing it. An account or profile made in setup is on the launch screen and under Launch
 as soon as setup closes.
 
+Then the bot canvas is fitted, before the launch screen is judged against it:
+`MainWindow.fit_canvas_to_launches` gives the game area the tallest grid the user can
+launch (one client at the global resolution, and each launch profile at its own) and the
+canvas the rest, through `screen_fit.fitted_canvas_height`. A fixed 220 px left most of a
+1080p screen empty above one or two accounts, and a taller fixed height would have stopped
+four fitting at all. It is stored in `general.bottom_section_height`, the key Settings ›
+General's row writes, and marked as setup's in `general.fitted_bottom_section_height`; a
+later setup changes it only while it is still the shipped 220 or setup's own, so a height
+the user chose there stays theirs. A launch that cannot fit anyway is left out, and the
+canvas is never below 220. On 1080p less a taskbar that is 321 px for one account at
+800×600, and 270 for a four-account profile at 534×300.
+
 ## The pages
 
 | page | writes | answered when |
@@ -137,7 +149,17 @@ removed on the page before is there, and one the user unchecked stays unchecked.
 Next makes one profile of the checked accounts, named **Everyone**, or the first of
 "Everyone 2", "Everyone 3"... no profile has (`shared/launch_profiles.free_name`). It is
 built and added by `build_profile` and `add_profile`, which Settings › Game's Add uses
-too, and has no resolution of its own. A line under the list says what Next will do.
+too. A line under the list says what Next will do.
+
+The profile gets a resolution of its own, from a combo under the list that starts on the
+largest that fits the accounts checked (`screen_fit.setup_resolution`), with every size
+too big for them grayed. Left on the global 800×600, two accounts on a 1080p screen would
+make a profile the launch screen refuses as soon as setup closes; 560×420 is what fits
+them. The fit is judged with the canvas at 220 px whatever it is set to (`setup_area`), so
+a canvas setup already fitted to one account leaves room for four. A smaller size the
+user picks is kept while it still fits the accounts checked, and falls back to the largest
+once it doesn't. With none that fits, the line says so and the profile follows the global
+resolution.
 
 - **Fewer than two checked** makes no profile, and still records the page.
 - **The same accounts in the same order already launching together** make no second
@@ -145,5 +167,4 @@ too, and has no resolution of its own. A line under the list says what Next will
   finds the one already made.
 - **A failed write** keeps the user on the page, as any page's does.
 
-More profiles, a resolution override, and every edit after are in Settings › Game, under
-Launch Profiles.
+More profiles, and every edit after, are in Settings › Game, under Launch Profiles.
