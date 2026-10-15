@@ -2,7 +2,7 @@
   "id": "0c0f0554-df96-440d-837e-21ca2004198e",
   "name": "Default No-Blades Support",
   "dsl": "?(deck.remaining >= 2) potent @ spell(any<trap>) & potent @ spell(any<trap>) | ?(ally(last).health == 0) any<damage & aoe>[any<mod_damage>] | ?(ally(last).health == 0) any<damage>[any<mod_damage>] @ enemy | \"Feint Mass - Amulet\" | any<trap & !aoe & stacks>[potent] @ boss | any<trap & aoe & stacks> | any<trap & !aoe>[potent] @ boss | any<trap & aoe> | any<global> | any<harmful_aura & inc_damage & stronger> @ boss | pass",
-  "description": "Support for a boss that cheats when a Blade is cast; it never casts or enchants one. Mass Feint, Feint and traps on the boss, each that stacks before the same ones that don't, then a global, then a negative aura such as Attenuate on the boss when it beats the aura there, and it passes rather than spend P1's buffs. Once P1 is dead, it attacks.",
+  "description": "P2–P4 of Default Team Boss Duel (No Blades). Never casts or enchants a blade to avoid boss cheats. Buffs with Mass Feint, Feint on the boss and traps, stacking ones first, then a global and a negative aura such as Attenuate on the boss. Attacks only once P1 is dead.",
   "tags": [
     "Support"
   ]

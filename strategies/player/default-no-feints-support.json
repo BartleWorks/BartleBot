@@ -2,7 +2,7 @@
   "id": "f0b1a45f-4b97-4b7e-aae8-e334307185ce",
   "name": "Default No-Feints Support",
   "dsl": "?(deck.remaining >= 2) sharp @ spell(any<blade>) & sharp @ spell(any<blade>) & potent @ spell(any<trap & !feint>) & potent @ spell(any<trap & !feint>) | ?(ally(last).health == 0) any<damage & aoe>[any<mod_damage>] | ?(ally(last).health == 0) any<damage>[any<mod_damage>] @ enemy | any<blade & stacks>[sharp] @ ally(last) | any<trap & aoe & !feint & stacks> | any<trap & !aoe & !feint & stacks>[potent] @ boss | any<blade>[sharp] @ ally(last) | any<trap & aoe & !feint> | any<trap & !aoe & !feint>[potent] @ boss | any<global> | any<harmful_aura & inc_damage & stronger> @ boss | pass",
-  "description": "Support for a boss that cheats when a Feint is cast; it never casts or enchants one. A blade on P1, a mass trap and a trap on the boss, each that stacks before the same ones that don't, then a global, then a negative aura such as Attenuate on the boss when it beats the aura there, and it passes rather than spend P1's buffs. Once P1 is dead, it attacks.",
+  "description": "P2–P4 of Default Team Boss Duel (No Feints). Never casts or enchants a Feint or Mass Feint to avoid boss cheats. Buffs with a blade on P1 and traps, stacking ones first, then a global and a negative aura such as Attenuate on the boss. Attacks only once P1 is dead.",
   "tags": [
     "Support"
   ]
