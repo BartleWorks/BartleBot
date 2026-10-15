@@ -53,14 +53,74 @@ def test_accepting_the_dialog_applies_every_tab(qapp):
     so every tab in the bar is applied, with no list to keep in step.
     """
     dlg = SettingsDialog()
-    tabs = [dlg.tabs.widget(i) for i in range(dlg.tabs.count())]
+    pages = [dlg.page(i) for i in range(dlg.tabs.count())]  # every page opened, so each has edits
     called: list[object] = []
-    for tab in tabs:
-        tab.apply = lambda tab=tab: called.append(tab)
+    for page in pages:
+        page.apply = lambda page=page: called.append(page)
 
     dlg.apply_all()
 
-    assert called == tabs
+    assert called == pages
+
+
+# ---------------------------------------------------------------------------
+# Built when first shown
+# ---------------------------------------------------------------------------
+
+
+def _built(dlg: SettingsDialog) -> list[str]:
+    return [dlg.tabs.tabText(i) for i in range(dlg.tabs.count()) if dlg.tabs.widget(i).is_built()]
+
+
+def test_a_page_is_built_when_its_tab_is_first_shown(qapp):
+    """Building all seven on every open cost about half a second, for the one page wanted."""
+    dlg = SettingsDialog()
+    assert _built(dlg) == []
+
+    dlg.open_tab("bot")
+    dlg.show()
+    assert _built(dlg) == ["Bot"]
+
+    dlg.open_tab("game")
+    assert _built(dlg) == ["Bot", "Game"]
+    assert dlg.page(6).isVisible()
+    dlg.close()
+
+
+def test_a_page_never_opened_has_nothing_to_apply(qapp):
+    dlg = SettingsDialog()
+    built = dlg.page(1)
+    called: list[object] = []
+    built.apply = lambda: called.append(built)
+
+    dlg.apply_all()
+
+    assert called == [built]
+    assert _built(dlg) == ["Bot"], "applying built nothing"
+
+
+def test_a_page_built_later_follows_the_descriptions_toggle(qapp):
+    """One Show or Hide reaches every form, the ones built after the dialog opened too."""
+    dlg = SettingsDialog()
+    first = dlg.page(0).content
+    later = dlg.page(1).content  # built after the first
+
+    later.descriptions_toggled.emit(True)
+
+    for form in (first, later):
+        assert all(row.details_shown for row in form.rows if row.details is not None), form
+
+
+def test_enter_still_belongs_to_ok_after_a_page_with_buttons_is_built(qapp):
+    from PyQt6.QtWidgets import QPushButton
+
+    dlg = SettingsDialog()
+    dlg.open_tab("game")
+    dlg.show()
+
+    claimed = [b for b in dlg.findChildren(QPushButton) if b.autoDefault() or b.isDefault()]
+    assert [b.text() for b in claimed] == ["OK"]
+    dlg.close()
 
 
 def test_the_bot_tab_writes_what_it_was_given(qapp):
@@ -333,7 +393,7 @@ def test_the_form_tabs_scroll_rather_than_setting_the_dialogs_height(qapp, scree
     """
     screen((1920, 1080))
     dlg = SettingsDialog()
-    wrapped = {dlg.tabs.tabText(i): isinstance(dlg.tabs.widget(i), ScrollableTab) for i in range(dlg.tabs.count())}
+    wrapped = {dlg.tabs.tabText(i): isinstance(dlg.page(i), ScrollableTab) for i in range(dlg.tabs.count())}
 
     assert wrapped == {
         "General": True,

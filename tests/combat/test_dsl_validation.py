@@ -13,6 +13,7 @@ import pytest
 from bartlebot.nodes.combat_runner import (
     _lark_parser,
     _str_provider_class,
+    dsl_check,
     dsl_error,
     dsl_warning_text,
     dsl_warnings,
@@ -100,7 +101,7 @@ def test_lark_grammar_is_compiled_only_once():
         return real_lark(*args, **kwargs)
 
     _lark_parser.cache_clear()
-    dsl_error.cache_clear()  # else validate_dsl's cache answers 4 of the 5
+    dsl_check.cache_clear()  # else validate_dsl's cache answers 4 of the 5
     try:
         with patch("lark.Lark", side_effect=counting_lark):
             for _ in range(5):
@@ -109,7 +110,7 @@ def test_lark_grammar_is_compiled_only_once():
         assert build_count == 1
     finally:
         _lark_parser.cache_clear()
-        dsl_error.cache_clear()
+        dsl_check.cache_clear()
 
 
 def test_parser_returns_the_same_object_every_time():
@@ -125,7 +126,7 @@ def test_repeated_validation_of_one_dsl_parses_it_once():
     every entry's DSL each time it redraws a card. Without this cache, typing one
     character in the filter box cost seconds (#43)."""
     dsl = "any<blade>[sharp]@ally(2)"
-    dsl_error.cache_clear()
+    dsl_check.cache_clear()
     try:
         with patch("bartlebot.nodes.combat_runner._str_provider_class", wraps=_str_provider_class) as provider_class:
             for _ in range(10):
@@ -134,17 +135,67 @@ def test_repeated_validation_of_one_dsl_parses_it_once():
 
         assert provider_class.call_count == 1
     finally:
-        dsl_error.cache_clear()
+        dsl_check.cache_clear()
 
 
 def test_the_cache_does_not_confuse_two_dsls():
-    dsl_error.cache_clear()
+    dsl_check.cache_clear()
     try:
         assert validate_dsl("any<blade>[sharp]@ally(2)") is None
         assert validate_dsl("@@@ not a dsl") is not None
         assert validate_dsl("any<blade>[sharp]@ally(2)") is None
     finally:
-        dsl_error.cache_clear()
+        dsl_check.cache_clear()
+
+
+def test_the_error_and_the_name_warnings_come_from_one_parse():
+    """Selecting a strategy asks for both, and the second parse of a long DSL was the
+    same 800 ms over again."""
+    dsl = "Strom Lord @ aoe"
+    dsl_check.cache_clear()
+    try:
+        with patch("bartlebot.nodes.combat_runner._lark_parser", wraps=_lark_parser) as parser:
+            assert dsl_error(dsl) is None
+            (warning,) = dsl_warnings(dsl)
+
+        assert parser.call_count == 1
+        assert warning.message.endswith("Did you mean Storm Lord?")
+    finally:
+        dsl_check.cache_clear()
+
+
+def test_a_new_session_answers_from_disk_without_parsing(monkeypatch):
+    from bartlebot.combat import dsl_check_cache
+
+    dsl = "Strom Lord @ aoe\nany<blade>[sharp]@ally(2)"
+    broken = "pass @ self\nany<damag> @ enemy"
+    dsl_check.cache_clear()
+    try:
+        first = (dsl_check(dsl), dsl_check(broken))
+        # The memory of a session that has ended: the answers, and the file as it was read.
+        dsl_check.cache_clear()
+        monkeypatch.setattr(dsl_check_cache, "_instances", {})
+
+        with patch("bartlebot.nodes.combat_runner._lark_parser", side_effect=AssertionError("parsed again")):
+            assert (dsl_check(dsl), dsl_check(broken)) == first
+        assert first[1].error is not None and (first[1].error.line, first[1].error.column) == (2, 5)
+        assert first[0].warnings, "the warnings survive the round trip as well as the error"
+    finally:
+        dsl_check.cache_clear()
+
+
+def test_an_answer_stored_in_another_shape_is_checked_again():
+    from bartlebot.combat.dsl_check_cache import shared_cache
+    from bartlebot.nodes.combat_runner import _check_fingerprint
+
+    dsl = "any<blade>[sharp]@ally(2)"
+    shared_cache(_check_fingerprint()).put(dsl, {"something": "else"})
+    dsl_check.cache_clear()
+    try:
+        assert dsl_error(dsl) is None
+        assert shared_cache(_check_fingerprint()).get(dsl) == {"error": None, "warnings": []}
+    finally:
+        dsl_check.cache_clear()
 
 
 def test_a_parse_error_says_where_the_parser_stopped():

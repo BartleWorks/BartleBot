@@ -37,6 +37,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.list_text import parse_list_text
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
@@ -930,17 +931,19 @@ class DropKeepListWidget(QWidget):
 
     def _apply_styles(self) -> None:
         line = f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;"
-        self._rule.setStyleSheet(line)
-        self._summary.setStyleSheet(line)
-        self._empty.setStyleSheet(line)
-        self._warning.setStyleSheet(f"color: {THEME.warning}; font-size: {THEME.font_subtext_px}px;")
-        self._search.setStyleSheet(
-            f"padding: 2px 6px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: {THEME.font_small_px}px;"
+        set_style_sheet(self._rule, line)
+        set_style_sheet(self._summary, line)
+        set_style_sheet(self._empty, line)
+        set_style_sheet(self._warning, f"color: {THEME.warning}; font-size: {THEME.font_subtext_px}px;")
+        set_style_sheet(
+            self._search,
+            f"padding: 2px 6px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: {THEME.font_small_px}px;",
         )
-        self._tree.setStyleSheet(
+        set_style_sheet(
+            self._tree,
             f"QTreeWidget {{ border: 1px solid {THEME.border}; font-size: {THEME.font_small_px}px; background: {THEME.bg};"
             f" alternate-background-color: {THEME.surface}; }}"
-            " QTreeWidget::item { padding: 2px 4px; }"
+            " QTreeWidget::item { padding: 2px 4px; }",
         )
         self._rule.setText(f"Checked drops are {self._emphasis('kept')}, unchecked drops are {self._emphasis('sold')}")
 

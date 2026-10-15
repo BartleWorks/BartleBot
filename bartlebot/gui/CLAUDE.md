@@ -608,6 +608,18 @@ async def _some_async_method(self):
 
 For `QThread`, call `thread.quit()` and `thread.wait()` in `closeEvent` before letting the dialog be destroyed.
 
+## Never parse a combat DSL on the GUI thread
+
+A DSL check is an Earley parse, up to ~800 ms for a long strategy. `combat_runner.dsl_check`
+caches answers in memory and on disk, but a strategy just written or imported, or every
+strategy after a wizsprinter bump, has none, and asking for it from a widget freezes the
+window -- once per card in a list, and once per *keystroke* in a DSL box, since every
+edit redraws the strategy's card. A surface drawing health passes
+`DeferredDslChecks.validator(key)` to `summarize_duel`/`summarize_player` and calls
+`request_unknown()` afterwards; an editor's debounce calls `checker().request(text)` and
+listens for `checked`. Both live in `gui/combat_strategies/dsl_checks.py`, which also has
+why the checks run in a child process rather than a thread (the interpreter lock).
+
 ## How big a game window is, and what will not fit
 
 `docs/WINDOW_SIZING.md` is the file. The short form, because both halves are easy to

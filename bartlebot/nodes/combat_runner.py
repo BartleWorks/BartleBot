@@ -140,8 +140,10 @@ def _lark_parser():
     ``CombatConfigProvider.parse_config()`` rebuilds a ``Lark`` instance on every
     call (~77 ms), and ``_run_combat`` constructs a provider per client per fight,
     so that cost lands squarely in the hot path.  Lark parsers are reusable across
-    ``parse()`` calls and this app is single-threaded under qasync, so one shared
-    instance is safe.
+    ``parse()`` calls, and one shared instance is safe across threads too: the GUI's
+    background checks (``gui/combat_strategies/dsl_checks.py``) parse on a worker while
+    the event loop may parse a fight's DSL. lark's Earley parser sets its state when it
+    is built and keeps each parse's in locals.
     """
     from lark import Lark  # noqa: PLC0415
     from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
@@ -171,15 +173,18 @@ def _str_provider_class():
     class _StrCombatConfigProvider(CombatConfigProvider):
         """CombatConfigProvider variant that accepts a DSL string directly."""
 
-        def __init__(self, content: str, cast_time: float = 0.2):
+        def __init__(self, content: str, cast_time: float = 0.2, *, tree=None):  # noqa: ANN001 - a Lark Tree
+            """*tree* is *content* already parsed, for a caller that wants the tree as well."""
             # Bypass the parent __init__ (which opens a file path).
             BaseCombatBackend.__init__(self, cast_time=cast_time)
             self.filename = "<inline>"
-            self.config = self.parse_config(content)
+            self.config = self.parse_config(content) if tree is None else self._config_from(tree)
 
         def parse_config(self, file_contents):
             # Same as the parent, but against the shared parser instead of a new one.
-            tree = _lark_parser().parse(file_contents)
+            return self._config_from(_lark_parser().parse(file_contents))
+
+        def _config_from(self, tree):  # noqa: ANN001, ANN202 - a Lark Tree and wizsprinter's config
             return self._expand_config(TreeToConfig().transform(tree))
 
     return _StrCombatConfigProvider
@@ -203,7 +208,6 @@ def validate_dsl(dsl: str) -> str | None:
     return error.message if error else None
 
 
-@lru_cache(maxsize=512)
 def dsl_error(dsl: str) -> DslError | None:
     """Return why ``dsl`` does not parse, and where, or None if it is valid.
 
@@ -215,38 +219,10 @@ def dsl_error(dsl: str) -> DslError | None:
     it is never executed.  A newly created preset starts empty by design and must
     not be flagged.
 
-    Pure — no client, no Qt, no disk.  Used to surface syntax errors in the pre-run
-    warning dialog instead of mid-fight.
-
-    Cached because it is not cheap: a parse plus a transform is ~60-90 ms for a
-    typical preset, and the strategy dialog re-summarizes a whole list whenever a
-    card is redrawn.  The grammar is fixed for the life of the process, so the
-    answer for a given string never changes.  ``maxsize`` is generous on purpose —
-    typing in the DSL editor mints a new string per keystroke, and evicting the
-    saved strategies to hold those would defeat the point.
+    Pure — no client, no Qt.  Used to surface syntax errors in the pre-run warning
+    dialog instead of mid-fight.  Answered by :func:`dsl_check`, which caches it.
     """
-    if not dsl or not dsl.strip():
-        return None
-    try:
-        _str_provider_class()(dsl)
-    except Exception as exc:
-        # An error raised while transforming arrives wrapped in Lark's VisitError, whose
-        # own first line only names the rule. The wrapped error says what is wrong.
-        message = str(getattr(exc, "orig_exc", exc)).strip()
-        # Lark's UnexpectedInput carries both; an unexpected end of input sets them to -1.
-        # A transform error carries the rule's tree instead, so it is placed at the rule's
-        # first token: the attribute in ``?(boss.hp > 0)``, the kind in ``gambit(chrams)``.
-        line, column = getattr(exc, "line", 0), getattr(exc, "column", 0)
-        token = _first_token(getattr(exc, "obj", None))
-        if token is not None:
-            line, column = token.line, token.column
-        positioned = isinstance(line, int) and isinstance(column, int) and line > 0 and column > 0
-        return DslError(
-            message.splitlines()[0] if message else exc.__class__.__name__,
-            line if positioned else 0,
-            column if positioned else 0,
-        )
-    return None
+    return dsl_check(dsl).error
 
 
 def _first_token(tree):  # noqa: ANN001, ANN202 - a Lark Tree, imported lazily
@@ -278,7 +254,16 @@ _RESERVED_SPELL_NAMES = frozenset({"pass", "none", "willcast", "discard"})
 _CARD_NAME_NODES = frozenset({"spell", "enchant", "second_enchant", "target_spell", "neg_name"})
 
 
-@lru_cache(maxsize=512)
+class DslCheck(NamedTuple):
+    """Everything checking a DSL says: why it does not parse, or the names in it no card has."""
+
+    error: DslError | None
+    warnings: tuple[DslWarning, ...] = ()
+
+
+_BLANK = DslCheck(None)
+
+
 def dsl_warnings(dsl: str) -> tuple[DslWarning, ...]:
     """Every spell name in ``dsl`` that will never find a card, in the order written.
 
@@ -287,14 +272,116 @@ def dsl_warnings(dsl: str) -> tuple[DslWarning, ...]:
     decides what counts, against the snapshot of every card name.
 
     Empty for a DSL that does not parse — :func:`dsl_error` has the one thing to fix.
+    Answered by :func:`dsl_check`, from the same parse as the error.
+    """
+    return dsl_check(dsl).warnings
+
+
+@lru_cache(maxsize=512)
+def dsl_check(dsl: str) -> DslCheck:
+    """Check ``dsl`` once: the parse error, or the spell names no card has.
+
+    Cached twice over, because a check is the most expensive thing the GUI does. A parse
+    is an Earley parse and grows faster than the text does — 4 ms for one move, 300 ms
+    for a typical shipped player strategy, 800 ms for the longest — and the strategy
+    dialog asks about every entry it lists. In memory, for the life of the process;
+    ``maxsize`` is generous on purpose, since typing in the DSL editor mints a new string
+    per pause and evicting the saved strategies to hold those would defeat the point.
+    And on disk (:mod:`bartlebot.combat.dsl_check_cache`), so the next session does not
+    parse the same strategies again: that was most of the first open of the strategy
+    dialog.
+    """
+    if not dsl or not dsl.strip():
+        return _BLANK
+    cache = _disk_cache()
+    stored = cache.get(dsl) if cache is not None else None
+    if stored is not None:
+        try:
+            return _decoded(stored)
+        except (TypeError, ValueError, KeyError):
+            pass  # written by a different shape of this code; check it again
+    result = _checked(dsl)
+    if cache is not None:
+        cache.put(dsl, _encoded(result))
+    return result
+
+
+def known_dsl_check(dsl: str) -> DslCheck | None:
+    """The check for ``dsl`` if it is already known, in memory or on disk; never a parse.
+
+    None means checking it would parse it. Every answer :func:`dsl_check` gives is
+    stored in the disk cache's table, which is read once and kept in memory, so this is
+    a hash and a lookup -- what a surface asks while drawing, before deciding whether to
+    check the rest somewhere the user is not waiting on.
+    """
+    if not dsl or not dsl.strip():
+        return _BLANK
+    stored = _disk_cache().get(dsl)
+    if stored is None:
+        return None
+    try:
+        return _decoded(stored)
+    except (TypeError, ValueError, KeyError):
+        return None
+
+
+def store_dsl_check(dsl: str, check: DslCheck) -> None:
+    """Record *check*, worked out elsewhere, as the answer for ``dsl``.
+
+    For a check run in another process (``gui/combat_strategies/dsl_checks.py``): once
+    stored, :func:`known_dsl_check` and :func:`dsl_check` answer it without parsing.
+    """
+    if dsl and dsl.strip():
+        _disk_cache().put(dsl, _encoded(check))
+
+
+def check_dsl_uncached(dsl: str) -> DslCheck:
+    """Check ``dsl`` from scratch: a parse, and no cache read or written.
+
+    What a separate process runs, leaving the caches to the process that asked. Anything
+    else wants :func:`dsl_check`.
+    """
+    if not dsl or not dsl.strip():
+        return _BLANK
+    return _checked(dsl)
+
+
+def _checked(dsl: str) -> DslCheck:
+    """Parse ``dsl`` once and answer both questions from that parse."""
+    try:
+        tree = _lark_parser().parse(dsl)
+        _str_provider_class()(dsl, tree=tree)
+    except Exception as exc:
+        return DslCheck(_error_from(exc))
+    return DslCheck(None, _warnings_in(tree))
+
+
+def _error_from(exc: Exception) -> DslError:
+    # An error raised while transforming arrives wrapped in Lark's VisitError, whose
+    # own first line only names the rule. The wrapped error says what is wrong.
+    message = str(getattr(exc, "orig_exc", exc)).strip()
+    # Lark's UnexpectedInput carries both; an unexpected end of input sets them to -1.
+    # A transform error carries the rule's tree instead, so it is placed at the rule's
+    # first token: the attribute in ``?(boss.hp > 0)``, the kind in ``gambit(chrams)``.
+    line, column = getattr(exc, "line", 0), getattr(exc, "column", 0)
+    token = _first_token(getattr(exc, "obj", None))
+    if token is not None:
+        line, column = token.line, token.column
+    positioned = isinstance(line, int) and isinstance(column, int) and line > 0 and column > 0
+    return DslError(
+        message.splitlines()[0] if message else exc.__class__.__name__,
+        line if positioned else 0,
+        column if positioned else 0,
+    )
+
+
+def _warnings_in(tree) -> tuple[DslWarning, ...]:  # noqa: ANN001 - a Lark Tree, imported lazily
+    """The spell names in a parsed DSL that no card has.
 
     Names come from the parse tree rather than the text, because the two differ: the
     grammar reads a number in an unquoted name a digit at a time, so ``Detonate All 200``
-    reaches the card lookup as ``Detonate All 2 0 0``. Cached for the same reason as
-    :func:`dsl_error`: this is a second parse of the same string.
+    reaches the card lookup as ``Detonate All 2 0 0``.
     """
-    if not dsl or not dsl.strip() or dsl_error(dsl) is not None:
-        return ()
     from lark import Token, Tree  # noqa: PLC0415
     from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
         TreeToConfig,
@@ -304,7 +391,7 @@ def dsl_warnings(dsl: str) -> tuple[DslWarning, ...]:
 
     transformer = TreeToConfig()
     warnings = []
-    for node in _lark_parser().parse(dsl).iter_subtrees():
+    for node in tree.iter_subtrees():
         if node.data not in _CARD_NAME_NODES:
             continue
         for child in node.children:
@@ -325,6 +412,62 @@ def dsl_warnings(dsl: str) -> tuple[DslWarning, ...]:
             end = last.end_column if last.line == first.line else first.end_column
             warnings.append(DslWarning(problem, first.line, first.column, end - first.column))
     return tuple(sorted(warnings, key=lambda warning: (warning.line, warning.column)))
+
+
+def _encoded(check: DslCheck) -> dict:
+    return {
+        "error": list(check.error) if check.error is not None else None,
+        "warnings": [list(warning) for warning in check.warnings],
+    }
+
+
+def _decoded(stored: dict) -> DslCheck:
+    error = stored["error"]
+    return DslCheck(
+        DslError(*error) if error is not None else None,
+        tuple(DslWarning(*warning) for warning in stored["warnings"]),
+    )
+
+
+def _disk_cache():  # noqa: ANN202 - imported lazily
+    """The on-disk cache for this build of the checker."""
+    from bartlebot.combat import dsl_check_cache  # noqa: PLC0415
+
+    return dsl_check_cache.shared_cache(_check_fingerprint())
+
+
+@lru_cache(maxsize=1)
+def _check_fingerprint() -> str:
+    """A hash of everything an answer depends on besides the DSL itself.
+
+    The grammar and the transform (wizsprinter's parser and backend modules), the
+    spell-name snapshot and the code that reads it, and this module. A change to any of
+    them discards the whole on-disk cache, which is cheaper than being clever about
+    which answers it could have changed.
+    """
+    import hashlib  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    from wizwalker.extensions.wizsprinter.combat_backends import (  # noqa: PLC0415
+        combat_config_parser,
+        config_backend,
+    )
+
+    from bartlebot.game import spell_names  # noqa: PLC0415
+
+    digest = hashlib.sha256(b"dsl-check-v1")
+    for path in (
+        combat_config_parser.__file__,
+        config_backend.__file__,
+        spell_names.__file__,
+        spell_names.NAMES_PATH,
+        __file__,
+    ):
+        try:
+            digest.update(Path(path).read_bytes())
+        except OSError:
+            digest.update(b"missing:" + str(path).encode())
+    return digest.hexdigest()
 
 
 def dsl_warning_text(warnings: tuple[DslWarning, ...]) -> str:

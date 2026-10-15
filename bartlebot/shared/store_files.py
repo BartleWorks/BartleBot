@@ -27,8 +27,10 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 
@@ -70,6 +72,36 @@ _NUMBERED = re.compile(r"^(?P<stem>.*?)-(?P<n>\d+)$")
 #: a file in it is added, removed or rewritten, which the listing's stats show.
 _scan_cache: dict[Path, tuple[frozenset[tuple[str, int, int]], list[tuple[Path, str]]]] = {}
 
+#: Per thread: while :func:`held_listings` is open, ``dir`` → its scan, taken once.
+_held = threading.local()
+
+
+@contextmanager
+def held_listings() -> Iterator[None]:
+    """List and ``stat`` each directory at most once inside the block.
+
+    :func:`_scan` checks a directory's whole listing on every call, so that a file
+    changed on disk is seen at once -- which is right for one lookup and wasteful for a
+    pass over many. The strategy dialog asks where each of its cards' files is, twice a
+    card, under two roots: 175 listings and 1,775 ``stat`` calls on every open, for
+    folders nothing was writing to. Wrap such a pass in this. A save or delete through
+    this module inside the block drops what is held, so it never hides its own writes.
+    Nested blocks share the outermost one's listings.
+    """
+    if getattr(_held, "scans", None) is not None:
+        yield
+        return
+    _held.scans = {}
+    try:
+        yield
+    finally:
+        _held.scans = None
+
+
+def _forget_held() -> None:
+    if getattr(_held, "scans", None) is not None:
+        _held.scans = {}
+
 
 def slugify(name: str) -> str:
     """``Default Team Boss Duel (No Feints)`` → ``default-team-boss-duel-no-feints``.
@@ -101,6 +133,16 @@ def declared_id(path: Path) -> str:
 
 def _scan(d: Path) -> list[tuple[Path, str]]:
     """``[(path, declared id), …]`` for every ``*.json`` in ``d``, sorted by path."""
+    held = getattr(_held, "scans", None)
+    if held is not None and d in held:
+        return held[d]
+    scanned = _scan_now(d)
+    if held is not None:
+        held[d] = scanned
+    return scanned
+
+
+def _scan_now(d: Path) -> list[tuple[Path, str]]:
     entries = []
     for p in sorted(d.glob("*.json")):
         try:
@@ -218,6 +260,7 @@ def save_by_id(d: Path, item_id: str, name: str, write: Callable[[Path], None]) 
     for p in stale:
         logger.info("Renamed %s to %s", p.name, target.name)
         p.unlink(missing_ok=True)
+    _forget_held()
     return target
 
 
@@ -226,6 +269,7 @@ def delete_by_id(d: Path, item_id: str) -> None:
     for p, i in _scan(d):
         if i == item_id:
             p.unlink(missing_ok=True)
+    _forget_held()
 
 
 def merged_by_id(shipped_dir: Path, user_dir: Path, loader: Callable[[Path], object]) -> dict[str, object]:
