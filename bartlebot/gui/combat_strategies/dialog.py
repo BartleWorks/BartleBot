@@ -147,6 +147,7 @@ from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.store_files import held_listings
 
 logger = logging.getLogger(__name__)
 
@@ -776,13 +777,20 @@ class _KindPage(QWidget):
     def rebuild_list(self) -> None:
         """Redraw every card. Selection is restored by id, not by row index.
 
+        Inside :func:`held_listings`: each card asks where its file is, and without it
+        every one of those questions listed and checked the strategy folders again.
+
         Every entry gets a row, filtered-out ones included — the filter only
         decides which rows are *visible*. Building a ``StrategyCard`` means
-        summarizing the entry, and summarizing a duel or player entry parses each
-        DSL it references, so this is far too expensive to run per keystroke.
+        summarizing the entry and building its widgets, so this is far too expensive
+        to run per keystroke.
         Call it when the list's *contents* change; call ``_apply_filter`` when
         only the query does.
         """
+        with held_listings():
+            self._rebuild_list()
+
+    def _rebuild_list(self) -> None:
         self._checks.reset()
         blocked = self._list.blockSignals(True)
         try:
@@ -1038,6 +1046,10 @@ class _KindPage(QWidget):
 
     def _refresh_card(self, uuid: str) -> None:
         """Redraw the card for *uuid* in place, if it is in the list."""
+        with held_listings():
+            self._refresh_card_now(uuid)
+
+    def _refresh_card_now(self, uuid: str) -> None:
         entry = self._ws.get(self._kind, uuid)
         if entry is None:
             return

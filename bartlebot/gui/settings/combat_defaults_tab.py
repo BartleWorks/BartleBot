@@ -67,6 +67,7 @@ from bartlebot.shared.combat_defaults import (
     set_default_choice,
 )
 from bartlebot.shared.preferences import PreferenceStore
+from bartlebot.shared.store_files import held_listings
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +219,10 @@ class DefaultDuelCard(SettingCard):
             self.set_choice(dlg.selected_id())
 
     def _redraw(self) -> None:
+        with held_listings():
+            self._redraw_now()
+
+    def _redraw_now(self) -> None:
         self._checks.reset()
         library = StrategyWorkingSet.from_store()
         duel = library.get(StrategyKind.DUEL, self._chosen) if self._chosen else None
