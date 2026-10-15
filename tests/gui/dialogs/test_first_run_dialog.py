@@ -1,4 +1,4 @@
-"""The first-run dialog and its combat question (epic #201, Stage 6).
+"""The setup dialog: Quick or Custom, its pages, and the combat question (epic #215, Stage 1).
 
 Driven by its buttons, never by ``exec()``: the suite refuses that (``tests/conftest.py``),
 so no test can leave a modal open. What an answer stores is checked in ``preferences.json``
@@ -16,16 +16,22 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.gui.dialogs.first_run_dialog import (
+    BACK,
     COMBAT_HEADING,
-    CONTINUE,
+    FINISH,
+    MODE_CARDS,
+    MODE_HEADING,
     NEXT,
     RECOMMENDED_DETAIL,
+    SAVE_FAILED,
     SETTINGS_COMBAT,
-    SKIP,
     TACTIC_CARDS,
     CombatQuestionPage,
     FirstRunDialog,
     FirstRunPage,
+    ModePage,
+    SetupMode,
+    setup_pages,
 )
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
@@ -34,6 +40,7 @@ from bartlebot.shared.preferences import PreferenceStore
 from tests.conftest import FIRST_RUN_REFUSED
 
 _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
+_CUSTOM_DUEL = "00000000-0000-0000-0000-0000000000d1"
 
 
 @pytest.fixture
@@ -46,24 +53,243 @@ def _record(prefs: PreferenceStore) -> dict:
 
 
 class _Page(FirstRunPage):
-    """A page that remembers how it was recorded, for the dialog's walk across pages."""
+    """A page with a stored answer of its own, for the dialog's walk across pages."""
 
-    def __init__(self, heading: str, *, ok: bool = True) -> None:
+    def __init__(self, heading: str, *, answered: bool = False, custom_only: bool = False, ok: bool = True) -> None:
         super().__init__()
         self.heading = heading
-        self.recorded: list[bool] = []
-        self._ok = ok
+        self.recorded = 0
+        self._answered = answered
+        self._custom_only = custom_only
+        self.ok = ok
 
-    def record(self, prefs, *, skipped: bool) -> bool:
-        self.recorded.append(skipped)
-        return self._ok
+    def answered(self) -> bool:
+        return self._answered
+
+    def applies(self, mode: SetupMode) -> bool:
+        return mode is SetupMode.CUSTOM or not self._custom_only
+
+    def record(self) -> bool:
+        if not self.ok:
+            return False
+        self.recorded += 1
+        self._answered = True
+        return True
 
 
-# -- the combat question ----------------------------------------------------
+def _headings(dialog: FirstRunDialog) -> list[str]:
+    return [page.heading for page in dialog.walk]
 
 
-def test_the_recommended_answer_comes_first_and_is_selected(qapp):
-    page = CombatQuestionPage()
+def _next(dialog: FirstRunDialog, times: int = 1) -> None:
+    for _ in range(times):
+        dialog.commit_button.click()
+
+
+# -- Quick or Custom ------------------------------------------------------------
+
+
+def test_quick_comes_first_and_is_selected(qapp):
+    page = ModePage()
+
+    assert [card.name for card in page.cards] == [MODE_CARDS[SetupMode.QUICK][0], MODE_CARDS[SetupMode.CUSTOM][0]]
+    assert page.mode is SetupMode.QUICK
+    assert [card.selected for card in page.cards] == [True, False]
+    assert [card.detail_text for card in page.cards] == [RECOMMENDED_DETAIL, ""]
+
+
+def test_the_dialog_opens_on_quick_or_custom_with_a_step_count(qapp):
+    dialog = FirstRunDialog([_Page("First?"), _Page("Second?")])
+
+    assert dialog.current is dialog.mode_page
+    assert dialog.heading_text == MODE_HEADING
+    assert dialog.step_text == "Step 1 of 3"
+    assert dialog.commit_button.text() == NEXT
+    assert not dialog.back_button.isVisibleTo(dialog)
+
+
+def test_the_mode_is_not_stored(qapp, prefs):
+    dialog = FirstRunDialog([CombatQuestionPage(prefs)])
+    dialog.mode_page.select(SetupMode.CUSTOM)
+
+    _next(dialog)
+
+    assert _record(prefs) == {}
+
+
+# -- no Skip: Next records, Back doesn't, closing keeps what was answered ---------------
+
+
+def test_there_is_no_skip_only_back_and_next(qapp):
+    dialog = FirstRunDialog([_Page("First?")])
+
+    assert dialog.back_button.text() == BACK
+    texts = {button.text() for button in dialog.findChildren(type(dialog.commit_button))}
+    assert texts == {BACK, NEXT}
+
+
+def test_next_records_the_page_shown_and_back_records_nothing(qapp):
+    first, second = _Page("First?"), _Page("Second?")
+    dialog = FirstRunDialog([first, second])
+
+    _next(dialog)
+    assert (dialog.current, dialog.step_text, first.recorded) == (first, "Step 2 of 3", 0)
+    _next(dialog)
+    assert (dialog.current, first.recorded, second.recorded) == (second, 1, 0)
+    assert dialog.commit_button.text() == FINISH
+
+    dialog.back_button.click()
+    assert (dialog.current, first.recorded, second.recorded) == (first, 1, 0)
+    assert dialog.back_button.isVisibleTo(dialog)
+    assert dialog.result() != QDialog.DialogCode.Accepted
+
+
+def test_finish_records_the_last_page_and_accepts(qapp):
+    first, second = _Page("First?"), _Page("Second?")
+    dialog = FirstRunDialog([first, second])
+
+    _next(dialog, 3)
+
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert (first.recorded, second.recorded) == (1, 1)
+
+
+def test_a_page_answered_on_the_way_stays_in_the_walk(qapp):
+    """Back reaches it, and the count doesn't drop, though it is now answered."""
+    first, second = _Page("First?"), _Page("Second?")
+    dialog = FirstRunDialog([first, second])
+    _next(dialog, 2)
+
+    assert first.answered()
+    assert _headings(dialog) == [MODE_HEADING, "First?", "Second?"]
+    dialog.back_button.click()
+    assert dialog.current is first
+
+
+def test_escape_rejects_and_records_nothing_more(qapp):
+    first, second = _Page("First?"), _Page("Second?")
+    dialog = FirstRunDialog([first, second])
+    dialog.show()
+    _next(dialog, 2)
+
+    QTest.keyClick(dialog, Qt.Key.Key_Escape)
+
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    assert (first.recorded, second.recorded) == (1, 0)
+
+
+def test_closing_on_page_n_keeps_the_pages_before_it_and_resumes_after_them(qapp):
+    pages = [_Page("First?"), _Page("Second?"), _Page("Third?")]
+    dialog = FirstRunDialog(pages)
+    _next(dialog, 3)
+    assert dialog.current is pages[2]
+    dialog.reject()
+
+    resumed = FirstRunDialog(pages)
+    assert _headings(resumed) == [MODE_HEADING, "Third?"]
+    _next(resumed)
+    assert resumed.current is pages[2]
+
+
+# -- first run and rerun ----------------------------------------------------------------
+
+
+def test_a_first_run_shows_no_answered_page(qapp):
+    dialog = FirstRunDialog([_Page("Answered?", answered=True), _Page("Open?")])
+
+    assert _headings(dialog) == [MODE_HEADING, "Open?"]
+
+
+def test_a_rerun_shows_every_page_that_applies(qapp):
+    dialog = FirstRunDialog([_Page("Answered?", answered=True), _Page("Open?")], rerun=True)
+
+    assert _headings(dialog) == [MODE_HEADING, "Answered?", "Open?"]
+
+
+def test_a_rerun_opens_the_combat_page_on_the_stored_answer(qapp, prefs):
+    prefs.set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    prefs.set(ANSWERED_KEY, True)
+    page = CombatQuestionPage(prefs)
+
+    dialog = FirstRunDialog([page], rerun=True)
+
+    assert page in dialog.walk
+    assert page.tactic is BossTactic.EVERYONE_ATTACKS
+
+
+# -- Custom only ------------------------------------------------------------------------
+
+
+def test_a_page_for_custom_only_follows_custom_and_not_quick(qapp):
+    dialog = FirstRunDialog([_Page("Always?"), _Page("Custom?", custom_only=True)])
+
+    assert _headings(dialog) == [MODE_HEADING, "Always?"]
+    assert dialog.step_text == "Step 1 of 2"
+
+    dialog.mode_page.select(SetupMode.CUSTOM)
+
+    assert _headings(dialog) == [MODE_HEADING, "Always?", "Custom?"]
+    assert dialog.step_text == "Step 1 of 3"
+
+
+def test_switching_mode_with_back_changes_the_step_count_and_the_last_page(qapp):
+    dialog = FirstRunDialog([_Page("Always?"), _Page("Custom?", custom_only=True)])
+    _next(dialog)
+    assert (dialog.step_text, dialog.commit_button.text()) == ("Step 2 of 2", FINISH)
+
+    dialog.back_button.click()
+    QTest.mouseClick(dialog.mode_page.cards[1], Qt.MouseButton.LeftButton)
+    _next(dialog)
+
+    assert (dialog.step_text, dialog.commit_button.text()) == ("Step 2 of 3", NEXT)
+
+
+# -- a failed write -----------------------------------------------------------------------
+
+
+def test_a_failed_write_keeps_the_user_on_the_page_and_says_so(qapp, caplog):
+    page = _Page("First?", ok=False)
+    dialog = FirstRunDialog([page])
+    _next(dialog)
+
+    _next(dialog)
+
+    assert dialog.current is page
+    assert dialog.result() != QDialog.DialogCode.Accepted
+    assert dialog.error_shown
+    assert "Could not save the setup answer" in caplog.text
+    assert SAVE_FAILED.startswith("Couldn't save")
+
+    page.ok = True
+    _next(dialog)
+    assert dialog.result() == QDialog.DialogCode.Accepted
+
+
+def test_the_failure_goes_once_the_page_is_left(qapp):
+    page = _Page("First?", ok=False)
+    dialog = FirstRunDialog([page])
+    _next(dialog, 2)
+
+    dialog.back_button.click()
+
+    assert not dialog.error_shown
+
+
+def test_a_failed_combat_write_keeps_the_question_unanswered(qapp, prefs, monkeypatch):
+    monkeypatch.setattr(PreferenceStore, "set", lambda self, key, value: False)
+    page = CombatQuestionPage(prefs)
+    dialog = FirstRunDialog([page])
+    _next(dialog, 2)
+
+    assert dialog.current is page
+    assert not combat_question_answered(prefs)
+
+
+# -- the combat question ------------------------------------------------------------------
+
+
+def test_the_recommended_answer_comes_first_and_is_selected(qapp, prefs):
+    page = CombatQuestionPage(prefs)
 
     assert [card.name for card in page.cards] == [
         TACTIC_CARDS[BossTactic.ONE_HITTER][0],
@@ -74,36 +300,49 @@ def test_the_recommended_answer_comes_first_and_is_selected(qapp):
     assert [card.detail_text for card in page.cards] == [RECOMMENDED_DETAIL, ""]
 
 
-def test_the_note_names_the_solo_default_settings_and_the_combat_tab(qapp):
-    note = CombatQuestionPage().note_text
+def test_the_note_names_the_solo_default_settings_and_the_combat_tab(qapp, prefs):
+    note = CombatQuestionPage(prefs).note_text
 
     assert "Default Solo Duel" in note
     assert SETTINGS_COMBAT in note
-    assert SETTINGS_COMBAT.replace(" ", " ") == "Settings › Combat"
+    assert SETTINGS_COMBAT.replace(" ", " ") == "Settings › Combat"
     assert "Combat tab" in note
 
 
-def test_the_stored_answer_is_the_one_selected(qapp):
-    page = CombatQuestionPage(BossTactic.EVERYONE_ATTACKS)
+def test_the_stored_answer_is_the_one_selected(qapp, prefs):
+    prefs.set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    page = CombatQuestionPage(prefs)
 
     assert page.tactic is BossTactic.EVERYONE_ATTACKS
     assert [card.selected for card in page.cards] == [False, True]
 
 
-def test_showing_the_dialog_keeps_the_stored_answer_selected(qapp):
+def test_showing_the_page_keeps_the_stored_answer_selected(qapp, prefs):
     """A card selects itself on taking focus; the first card must not take it on show."""
-    page = CombatQuestionPage(BossTactic.EVERYONE_ATTACKS)
-    dialog = FirstRunDialog([page])
-
+    prefs.set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    page = CombatQuestionPage(prefs)
+    dialog = FirstRunDialog([page], rerun=True)
     dialog.show()
+    _next(dialog)
     qapp.processEvents()
 
     assert page.tactic is BossTactic.EVERYONE_ATTACKS
     dialog.close()
 
 
-def test_a_click_on_a_card_selects_it(qapp):
-    page = CombatQuestionPage()
+def test_showing_the_dialog_keeps_quick_selected(qapp):
+    dialog = FirstRunDialog([_Page("First?")])
+    dialog.mode_page.select(SetupMode.CUSTOM)
+
+    dialog.show()
+    qapp.processEvents()
+
+    assert dialog.mode_page.mode is SetupMode.CUSTOM
+    dialog.close()
+
+
+def test_a_click_on_a_card_selects_it(qapp, prefs):
+    page = CombatQuestionPage(prefs)
 
     QTest.mouseClick(page.card_for(BossTactic.EVERYONE_ATTACKS), Qt.MouseButton.LeftButton)
 
@@ -111,31 +350,19 @@ def test_a_click_on_a_card_selects_it(qapp):
     assert [card.selected for card in page.cards] == [False, True]
 
 
-# -- one page: Continue and Skip ---------------------------------------------
-
-
-def test_one_page_asks_its_question_with_continue_and_skip(qapp):
-    dialog = FirstRunDialog([CombatQuestionPage()])
-
-    assert dialog.heading_text == COMBAT_HEADING
-    assert dialog.commit_button.text() == CONTINUE
-    assert dialog.skip_button.text() == SKIP
-    assert not dialog.back_button.isVisibleTo(dialog)
-
-
 @pytest.mark.parametrize(
     ("tactic", "stored"),
     [(BossTactic.ONE_HITTER, None), (BossTactic.EVERYONE_ATTACKS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)],
 )
-def test_continue_stores_the_answer_and_settings_combat_shows_it(qapp, prefs, tactic, stored):
-    page = CombatQuestionPage()
+def test_next_stores_the_answer_and_settings_combat_shows_it(qapp, prefs, tactic, stored):
+    page = CombatQuestionPage(prefs)
     dialog = FirstRunDialog([page])
+    _next(dialog)
     page.select(tactic)
 
-    dialog.commit_button.click()
+    _next(dialog)
 
     assert dialog.result() == QDialog.DialogCode.Accepted
-    assert dialog.record(prefs)
     assert _record(prefs).get(_TEAM) == stored
     assert combat_question_answered(prefs)
     card = CombatDefaultsTab(prefs=PreferenceStore(prefs.path.parent)).card(TeamSize.TEAM)
@@ -144,82 +371,35 @@ def test_continue_stores_the_answer_and_settings_combat_shows_it(qapp, prefs, ta
     assert card.strategy_card._name_lbl.text() == expected
 
 
-def test_skip_records_the_question_asked_and_stores_no_answer(qapp, prefs):
-    page = CombatQuestionPage()
-    dialog = FirstRunDialog([page])
-    page.select(BossTactic.EVERYONE_ATTACKS)
-
-    dialog.skip_button.click()
-
-    assert dialog.result() == QDialog.DialogCode.Rejected
-    assert dialog.record(prefs)
-    assert _record(prefs) == {"version": 1, ANSWERED_KEY: True}
-
-
-def test_escape_is_skip(qapp, prefs):
-    page = CombatQuestionPage()
-    dialog = FirstRunDialog([page])
-    page.select(BossTactic.EVERYONE_ATTACKS)
+def test_a_rerun_on_a_duel_neither_answer_names_selects_none_and_keeps_it(qapp, prefs):
+    """Settings › Combat chose it; Next on the page with no card taken leaves it alone."""
+    prefs.set(_TEAM, _CUSTOM_DUEL)
+    page = CombatQuestionPage(prefs)
+    dialog = FirstRunDialog([page], rerun=True)
     dialog.show()
+    _next(dialog)
+    qapp.processEvents()
 
-    QTest.keyClick(dialog, Qt.Key.Key_Escape)
-
-    assert dialog.result() == QDialog.DialogCode.Rejected
-    dialog.record(prefs)
-    assert _TEAM not in _record(prefs)
-
-
-# -- the page list ------------------------------------------------------------
-
-
-def test_pages_are_walked_with_next_and_back_and_end_on_continue(qapp):
-    first, second = _Page("First?"), _Page("Second?")
-    dialog = FirstRunDialog([first, second])
-
-    assert (dialog.page, dialog.heading_text, dialog.commit_button.text()) == (0, "First?", NEXT)
-    assert not dialog.back_button.isVisibleTo(dialog)
-
-    dialog.commit_button.click()
-    assert (dialog.page, dialog.heading_text, dialog.commit_button.text()) == (1, "Second?", CONTINUE)
-    assert dialog.back_button.isVisibleTo(dialog)
-    assert dialog.result() != QDialog.DialogCode.Accepted
-
-    dialog.back_button.click()
-    assert dialog.page == 0
-
-    dialog.commit_button.click()
-    dialog.commit_button.click()
+    assert page.tactic is None
+    assert [card.selected for card in page.cards] == [False, False]
+    _next(dialog)
     assert dialog.result() == QDialog.DialogCode.Accepted
+    assert _record(prefs)[_TEAM] == _CUSTOM_DUEL
+    dialog.close()
 
 
-def test_continue_records_every_page_answered(qapp, prefs):
-    pages = [_Page("First?"), _Page("Second?")]
-    dialog = FirstRunDialog(pages)
-    dialog.commit_button.click()
-    dialog.commit_button.click()
+def test_a_user_who_answered_in_209_is_not_asked_again(qapp, prefs):
+    """#209's Skip, or either answer, set the same key; the page is passed over."""
+    prefs.set(ANSWERED_KEY, True)
 
-    dialog.record(prefs)
-
-    assert [page.recorded for page in pages] == [[False], [False]]
+    assert setup_pages(prefs)[0].answered()
 
 
-def test_skip_on_the_first_page_records_every_page_skipped(qapp, prefs):
-    pages = [_Page("First?"), _Page("Second?")]
-    dialog = FirstRunDialog(pages)
-
-    dialog.skip_button.click()
-    dialog.record(prefs)
-
-    assert [page.recorded for page in pages] == [[True], [True]]
+# -- building and opening it ---------------------------------------------------------------
 
 
-def test_one_page_failing_to_save_still_records_the_rest(qapp, prefs):
-    pages = [_Page("First?", ok=False), _Page("Second?")]
-    dialog = FirstRunDialog(pages)
-    dialog.skip_button.click()
-
-    assert not dialog.record(prefs)
-    assert pages[1].recorded == [True]
+def test_the_combat_question_is_a_setup_page(qapp, prefs):
+    assert [type(page) for page in setup_pages(prefs)] == [CombatQuestionPage]
 
 
 def test_the_dialog_needs_a_page(qapp):
@@ -227,15 +407,22 @@ def test_the_dialog_needs_a_page(qapp):
         FirstRunDialog([])
 
 
-def test_building_the_dialog_never_shows_a_parentless_widget(qapp, parentless_shows):
-    FirstRunDialog([CombatQuestionPage(BossTactic.EVERYONE_ATTACKS)])
+def test_building_the_dialog_never_shows_a_parentless_widget(qapp, prefs, parentless_shows):
+    FirstRunDialog([CombatQuestionPage(prefs)])
 
     assert parentless_shows == []
 
 
-def test_the_suite_refuses_to_open_it_modally(qapp):
+def test_the_suite_refuses_to_open_it_modally(qapp, prefs):
     """So a test that ever builds an ``AppController`` fails, rather than hanging on it."""
-    dialog = FirstRunDialog([CombatQuestionPage()])
+    dialog = FirstRunDialog([CombatQuestionPage(prefs)])
 
     with pytest.raises(AssertionError, match=FIRST_RUN_REFUSED):
         dialog.exec()
+
+
+def test_the_heading_follows_the_page(qapp, prefs):
+    dialog = FirstRunDialog([CombatQuestionPage(prefs)])
+    _next(dialog)
+
+    assert dialog.heading_text == COMBAT_HEADING

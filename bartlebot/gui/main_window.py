@@ -141,6 +141,9 @@ class MainWindow(QMainWindow):
         # a direct connection lands that bool in tab_name and asks for a tab called False.
         settings_action.triggered.connect(lambda: self._open_settings())
         file_menu.addAction(settings_action)
+        # Setup again, every page on the current values (epic #215). AppController opens it.
+        self.action_setup = QAction("Set up BartleBot…", self)
+        file_menu.addAction(self.action_setup)
 
         file_menu.addSeparator()
 

@@ -251,8 +251,9 @@ def _new_bot_dialog():
 
 def _first_run_dialog():
     from bartlebot.gui.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog
+    from bartlebot.shared.preferences import PreferenceStore
 
-    return FirstRunDialog([CombatQuestionPage()])
+    return FirstRunDialog([CombatQuestionPage(PreferenceStore())])
 
 
 def _variable_dialog():
@@ -286,7 +287,7 @@ CONVERTED = [
     ("rewards_tag", _rewards_tag_dialog, "Save"),
     ("new_bot", _new_bot_dialog, "Next"),
     ("variable", _variable_dialog, "Save"),
-    ("first_run", _first_run_dialog, "Continue"),
+    ("first_run", _first_run_dialog, "Next"),
 ]
 
 

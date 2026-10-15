@@ -50,7 +50,7 @@ from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
-from bartlebot.gui.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog
+from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage, setup_pages
 from bartlebot.gui.dialogs.import_dialog import TITLE as IMPORT_TITLE
 from bartlebot.gui.dialogs.import_dialog import ask_for_file, confirm_import
 from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
@@ -69,7 +69,6 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.options import option_values, player_realms
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared import first_run
 from bartlebot.shared.preferences import PreferenceStore
 from bartlebot.shared.vendor import PRODUCT, VENDOR
 
@@ -360,6 +359,7 @@ class AppController(QObject):
         w.action_templates.triggered.connect(lambda: self._open_templates_dialog())
         w.action_export.triggered.connect(lambda: self._export_open_document())
         w.action_import.triggered.connect(lambda: self._import_share_file())
+        w.action_setup.triggered.connect(lambda: self._rerun_setup())
         w.open_recent_requested.connect(self._open_bot)
 
         # Canvas signals
@@ -1220,19 +1220,25 @@ class AppController(QObject):
         self._import_from_arguments()
 
     def _offer_first_run(self) -> None:
-        """Ask the first-run questions, once across every product (epic #201, Stage 6).
+        """Open setup when any page is unanswered, here or in BartleBuddy (epic #215).
 
-        Asked when ``preferences.json`` says the combat question has not been answered here
-        or in BartleBuddy. Continue stores the answers and Skip records that they were asked,
-        so either way it is not asked again; a write that fails leaves it to ask next time.
+        Each page records its answer on Next, so closing keeps what was answered, and the
+        next launch opens on the pages still unanswered. ``docs/FIRST_RUN.md`` says when
+        each page counts as answered.
         """
-        prefs = PreferenceStore()
-        if first_run.combat_question_answered(prefs):
+        pages = setup_pages(PreferenceStore())
+        if all(page.answered() for page in pages):
             return
-        dialog = FirstRunDialog([CombatQuestionPage(first_run.current_tactic(prefs))], parent=self._window)
+        self._open_setup(pages, rerun=False)
+
+    def _rerun_setup(self) -> None:
+        """File › Set up BartleBot…: every page that applies, on the current values."""
+        self._open_setup(setup_pages(PreferenceStore()), rerun=True)
+
+    def _open_setup(self, pages: list[FirstRunPage], *, rerun: bool) -> None:
+        dialog = FirstRunDialog(pages, rerun=rerun, parent=self._window)
         dialog.exec()
-        if not dialog.record(prefs):
-            logger.warning("Could not save the first-run answers, so they will be asked again next time")
+        # Whatever was answered is on disk, finished or not.
         self._window.left_sidebar.combat_tab.refresh_source()
 
     def _import_from_arguments(self) -> None:
