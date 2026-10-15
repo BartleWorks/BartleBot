@@ -15,8 +15,8 @@ The stages land in this order, each building only on the ones before:
 | stage | issue | what | status |
 |---|---|---|---|
 | 1 | #226 | the setup frame: Quick or Custom, no Skip, saved as you go, File › Set up BartleBot… | landed |
-| 2 | #227 | game folder: install detection with Steam, the page, a Settings row | planned |
-| 3 | #228 | accounts: the page, on the existing account editor | planned |
+| 2 | #227 | game folder: install detection with Steam, the page, a Settings row | landed |
+| 3 | #228 | accounts: the page, on the existing account editor | landed |
 | 4 | #229 | launch profile: one profile from a checklist | planned |
 | 5 | #230 | quicksell: three answers, the keep list, the per-run explanation off | planned |
 | 6 | #231 | realm and Safety Delay: one page | planned |
