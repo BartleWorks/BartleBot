@@ -1032,6 +1032,10 @@ that apply. The rules for a page:
   unanswered page. A page never records on its own: only Next does.
 - **A page whose answer changes what follows emits `walk_changed`**, and the dialog
   recounts Step N of M and Next or Finish. `ModePage` does, on a change of mode.
+- **A page that can't be answered as it stands says so with `ready()`**, and emits
+  `ready_changed` when that may have changed; the dialog disables Next until it is true.
+  The game folder page is ready only for a folder holding the client. A page that is
+  always ready, as most are, leaves the default.
 - **A card that selects itself on focus needs the selected one focused on show**, or the
   focus chain hands it to the first card and changes the answer. `_CardsPage` does it in
   `showEvent`, and with no card selected focuses the page itself. In the constructor it
