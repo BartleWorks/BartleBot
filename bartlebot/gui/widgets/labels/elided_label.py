@@ -17,6 +17,10 @@ from bartlebot.gui.theming.theme import THEME
 #: Taller than any label, so a wrap measurement is never cut short by its own rect.
 _UNBOUNDED_HEIGHT = 1 << 20
 
+#: How many widths a WrappingElidedLabel remembers its elided text at: the width it is,
+#: and the few a list asks about while it settles a row's height.
+_ELIDED_WIDTHS_KEPT = 8
+
 _WHITESPACE = re.compile(r"(\s+)")
 
 
@@ -203,12 +207,19 @@ class WrappingElidedLabel(QLabel):
         super().__init__(parent)
         self._full_text = ""
         self._own_tooltip = ""
+        #: Content width -> the text as shown at it, for the current text and font. See
+        #: :meth:`elided_text`.
+        self._elided: dict[int, str] = {}
+        #: The font the text was last laid out in, so a FontChange that changed nothing
+        #: -- most of them -- costs nothing.
+        self._font_key = ""
         self.setTextFormat(Qt.TextFormat.PlainText)
         self.setWordWrap(True)
         self.setText(text)
 
     def setText(self, text: str) -> None:  # noqa: N802 — Qt naming
         self._full_text = text or ""
+        self._elided.clear()
         self._reflow()
         # The shown text can come out the same while the full text changed, and the
         # height at another width depends on the full one.
@@ -230,8 +241,18 @@ class WrappingElidedLabel(QLabel):
         return self.shown_text() != self._full_text
 
     def elided_text(self, width: int) -> str:
-        """The text as it would be shown in *width* pixels of content."""
-        return elide_long_words(self._full_text, self.fontMetrics(), width)
+        """The text as it would be shown in *width* pixels of content.
+
+        Remembered per width until the text or the font changes. Eliding measures every
+        word, and a list sizing its rows asks again at each width on every layout pass:
+        the strategy dialog measured ~49,000 words to open, for a few dozen cards.
+        """
+        shown = self._elided.get(width)
+        if shown is None:
+            if len(self._elided) >= _ELIDED_WIDTHS_KEPT:
+                self._elided.clear()
+            shown = self._elided[width] = elide_long_words(self._full_text, self.fontMetrics(), width)
+        return shown
 
     def setToolTip(self, tip: str) -> None:  # noqa: N802 — Qt naming
         self._own_tooltip = tip or ""
@@ -274,6 +295,12 @@ class WrappingElidedLabel(QLabel):
     def changeEvent(self, event) -> None:  # noqa: N802 — Qt naming
         super().changeEvent(event)
         # A stylesheet's font-size lands after construction, and the words that fit change with it.
+        # Qt sends one on every polish, though, and most leave the font as it was.
         if event.type() == QEvent.Type.FontChange:
+            key = self.font().key()
+            if key == self._font_key:
+                return
+            self._font_key = key
+            self._elided.clear()
             self._reflow()
             self.updateGeometry()

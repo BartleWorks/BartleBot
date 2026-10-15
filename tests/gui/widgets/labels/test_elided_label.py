@@ -291,3 +291,77 @@ def test_the_themed_wrapping_label_reads_its_color_from_the_token(qapp):
 
     assert THEME.warning in lbl.styleSheet()
     assert "font-weight: bold;" in lbl.styleSheet()
+
+
+# ---------------------------------------------------------------------------
+# WrappingElidedLabel remembers what it measured
+# ---------------------------------------------------------------------------
+
+
+def _font_px(px: int):
+    from PyQt6.QtGui import QFont
+
+    font = QFont()
+    font.setPixelSize(px)
+    return font
+
+
+def _counting_elision(monkeypatch) -> list[int]:
+    """Every width ``elide_long_words`` was actually run at."""
+    from bartlebot.gui.widgets.labels import elided_label
+
+    widths: list[int] = []
+    real = elided_label.elide_long_words
+
+    def counting(text, metrics, width):
+        widths.append(width)
+        return real(text, metrics, width)
+
+    monkeypatch.setattr(elided_label, "elide_long_words", counting)
+    return widths
+
+
+def test_the_text_at_a_width_is_measured_once(qapp, monkeypatch):
+    """A list sizing its rows asks again at every layout pass: ~49,000 words to open the strategy dialog."""
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    measured = _counting_elision(monkeypatch)
+
+    first = [lbl.heightForWidth(w) for w in (80, 120, 80, 120, 80)]
+
+    assert sorted(measured) == [80, 120]
+    assert first[0] == first[2] == first[4]
+
+
+def test_new_text_is_measured_again(qapp, monkeypatch):
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    lbl.elided_text(80)
+    measured = _counting_elision(monkeypatch)
+
+    lbl.setText(_SENTENCE)
+
+    assert lbl.elided_text(80) == elide_long_words(_SENTENCE, lbl.fontMetrics(), 80)
+    assert 80 in measured
+
+
+def test_a_font_change_that_changes_nothing_costs_nothing(qapp, monkeypatch):
+    """Qt sends FontChange on every polish; most leave the font as it was."""
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    lbl.setFont(_font_px(13))
+    lbl.elided_text(80)
+    measured = _counting_elision(monkeypatch)
+
+    lbl.setFont(_font_px(13))  # a new QFont, equal to the old: still a FontChange to Qt
+    lbl.elided_text(80)
+
+    assert measured == []
+
+
+def test_a_real_font_change_elides_again_at_the_new_size(qapp):
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    lbl.setFont(_font_px(10))
+    small = lbl.elided_text(80)
+
+    lbl.setFont(_font_px(24))
+
+    assert lbl.elided_text(80) == elide_long_words(_UNBROKEN, lbl.fontMetrics(), 80)
+    assert lbl.elided_text(80) != small
