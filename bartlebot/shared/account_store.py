@@ -147,8 +147,8 @@ class AccountStore:
     # Writes -- the only two, deliberately
     # ------------------------------------------------------------------
 
-    def set_accounts(self, accounts: list[dict], save: bool = True) -> None:
-        """Replace the account list, writing it out unless *save* is False.
+    def set_accounts(self, accounts: list[dict], save: bool = True) -> bool:
+        """Replace the account list, writing it out unless *save* is False. False only for a failed write.
 
         *save* exists for the one caller that changes both lists -- deleting an account
         also strips it from every profile that names it -- so the pair reaches disk in a
@@ -157,24 +157,24 @@ class AccountStore:
         """
         self._accounts = list(accounts)
         self._dirty.add(_ACCOUNTS)
-        if save:
-            self.save()
+        return self.save() if save else True
 
-    def set_launch_profiles(self, profiles: list[dict], save: bool = True) -> None:
-        """Replace the launch profiles, writing them out unless *save* is False."""
+    def set_launch_profiles(self, profiles: list[dict], save: bool = True) -> bool:
+        """Replace the launch profiles, writing them out unless *save* is False. False only for a failed write."""
         self._launch_profiles = list(profiles)
         self._dirty.add(_LAUNCH_PROFILES)
-        if save:
-            self.save()
+        return self.save() if save else True
 
-    def save(self) -> None:
-        """Write the entries changed since the last write, atomically. Never raises: a failure is logged.
+    def save(self) -> bool:
+        """Write the entries changed since the last write, atomically. Whether that reached disk.
 
         Only those: the rest of the file is whatever is on disk now, which may be another
-        product's newer write (see the module docstring for the merge). Called from GUI
-        slots and from the client loop, where an exception escaping looks like the launch
-        screen breaking. The data is still in memory either way, and its key stays
-        pending, so the next successful save writes it.
+        product's newer write (see the module docstring for the merge). Never raises: a
+        failure is logged. Called from GUI slots and from the client loop, where an
+        exception escaping looks like the launch screen breaking. The data is still in
+        memory either way, and its key stays pending, so the next successful save writes
+        it. The result is for a caller that has to say so, such as a setup page, which
+        keeps the user on it.
         """
         pending = {key: (self._accounts if key == _ACCOUNTS else self._launch_profiles) for key in sorted(self._dirty)}
         base = {key: self._base[key] for key in pending}
@@ -193,9 +193,10 @@ class AccountStore:
             written = update_json(self._path, mutate)
         except OSError:
             logger.exception("Could not write the shared accounts file at %s", self._path)
-            return
+            return False
         self._dirty.clear()
         self._take(written)
+        return True
 
     # ------------------------------------------------------------------
     # Load and migration
