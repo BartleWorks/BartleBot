@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from bartlebot.combat.seat_order import unfixed_seat_uses
 from bartlebot.content.store_roots import Origin
 from bartlebot.nodes.combat_runner import validate_dsl
 
@@ -35,6 +36,8 @@ class HealthStatus(Enum):
     OK = "ok"
     EMPTY = "empty"
     INVALID_DSL = "invalid_dsl"
+    #: Runs, but a strategy aims at a seat the duel leaves to chance (:mod:`~bartlebot.combat.seat_order`).
+    SEAT_ORDER = "seat_order"
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,9 @@ class Health:
     for an unset config, same as validate_dsl treats an empty string as valid.
     It exists as its own status because a picker still wants to say "nothing
     configured yet" rather than "OK", which reads as "checked and fine".
+
+    SEAT_ORDER is not a problem either, in that the strategy runs: it is a warning, which
+    the user may mean (``is_warning``).
     """
 
     status: HealthStatus
@@ -53,6 +59,10 @@ class Health:
     @property
     def is_ok(self) -> bool:
         return self.status is not HealthStatus.INVALID_DSL
+
+    @property
+    def is_warning(self) -> bool:
+        return self.status is HealthStatus.SEAT_ORDER
 
 
 _OK = Health(HealthStatus.OK)
@@ -288,6 +298,25 @@ def format_combat_order(order: list[int] | tuple[int, ...]) -> str:
     return " ← ".join(f"P{p}" for p in reversed(order)) if order else "Simultaneous"
 
 
+def seat_order_warning(config: DuelConfig, pcs_dsl: dict[str, str]) -> str | None:
+    """Say which players aim at a seat this duel leaves to chance, or None.
+
+    ``pcs_dsl`` maps a linked player strategy's id to its DSL.
+    """
+    uses = unfixed_seat_uses(config, pcs_dsl)
+    if not uses:
+        return None
+    clauses = [
+        f"{format_players(players)} {'targets' if len(players) == 1 else 'target'} {' and '.join(seats)}"
+        for players, seats in uses
+    ]
+    return (
+        f"{'; '.join(clauses)}, a seat on the team rather than a player. With no combat order, "
+        "players take their seats in the order they arrive, so that seat can be a different "
+        "player each fight. Set a combat order to fix who sits where."
+    )
+
+
 def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy]) -> Health:
     if config.is_empty():
         return _EMPTY
@@ -300,6 +329,9 @@ def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy])
         error = validate_dsl(dsl)
         if error:
             return Health(HealthStatus.INVALID_DSL, error)
+    warning = seat_order_warning(config, {pcs_id: pcs.dsl for pcs_id, pcs in pcs_by_id.items()})
+    if warning:
+        return Health(HealthStatus.SEAT_ORDER, warning)
     return _OK
 
 

@@ -17,6 +17,11 @@ only, with Go back as its default:
 Strategy covers with its default. A setup with notices and no faults is valid, so notices
 go to the log and never to a dialog (``docs/COMBAT_CONFIG.md``, "Before a run").
 
+A seating notice is the third kind: a duel the run reaches whose player strategy aims at
+a seat, ``ally(last)`` or ``ally(0)``, while the duel has no combat order to fix who sits
+there (:mod:`bartlebot.combat.seat_order`). It runs, so it is no fault, but it may not do
+what its author meant, so it is logged as a warning.
+
 The DSL check is the reason this runs before the bot starts. A syntax error otherwise
 surfaces inside SprintyCombat mid-fight, several minutes into a run.
 """
@@ -38,6 +43,7 @@ from bartlebot.combat.combat_resolution import (
 )
 from bartlebot.combat.fight_keys import bind, exposed_combat_states
 from bartlebot.combat.strategy_summary import format_players as _format_players
+from bartlebot.combat.strategy_summary import seat_order_warning
 from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.shared.strategy_models import DuelConfig
 
@@ -61,20 +67,22 @@ def _short(uuid: str) -> str:
 class CombatCheck:
     """What :func:`check_combat` found. No faults and no notices means nothing to say.
 
-    The notices come in two kinds. ``unassigned`` names the exposed fights the pick's own
+    The notices come in three kinds. ``unassigned`` names the exposed fights the pick's own
     default covers; ``fallbacks`` names the fights that fall past level 1, grouped by duel
-    and level. The run-start line (``combat_resolution.describe_run``) says the same as
-    ``fallbacks``, so only ``unassigned`` is logged before a run.
+    and level; ``seating`` names each duel whose seats a strategy aims at but nothing fixes.
+    The run-start line (``combat_resolution.describe_run``) says the same as ``fallbacks``,
+    so only ``unassigned`` and ``seating`` are logged before a run.
     """
 
     faults: list[str] = field(default_factory=list)
     unassigned: list[str] = field(default_factory=list)
     fallbacks: list[str] = field(default_factory=list)
+    seating: list[str] = field(default_factory=list)
 
     @property
     def notices(self) -> list[str]:
-        """Both kinds of notice, the unassigned fights first."""
-        return [*self.unassigned, *self.fallbacks]
+        """Every kind of notice, the unassigned fights first."""
+        return [*self.unassigned, *self.fallbacks, *self.seating]
 
 
 def check_combat(
@@ -119,6 +127,7 @@ def check_combat(
     check.faults.extend(_validate_dsls(dsl_sources))
     check.unassigned.extend(_unassigned_notices(config, resolutions))
     check.fallbacks.extend(_fallback_notices(config, resolutions))
+    check.seating.extend(_seating_notices(resolutions))
     return check
 
 
@@ -191,6 +200,26 @@ def _fallback_notices(config: BotConfig | None, resolutions: dict[str | None, Fi
             verb = "runs" if len(fights) == 1 and fights[0] is not None else "run"
             who = f"{labels[0].upper()}{labels[1:]} {verb}"
         notices.append(f"{who} {name} ({where}).")
+    return notices
+
+
+def _seating_notices(resolutions: dict[str | None, FightResolution]) -> list[str]:
+    """One line per duel the run reaches that leaves a seat its strategies aim at to chance."""
+    notices: list[str] = []
+    seen: set[str] = set()
+    for res in resolutions.values():
+        duel = res.duel
+        if duel is None or duel.id in seen:
+            continue
+        seen.add(duel.id)
+        pcs_dsl = {}
+        for pcs_id in duel.linked_pcs_ids():
+            pcs = res.lookup.player(pcs_id)
+            if pcs is not None:
+                pcs_dsl[pcs_id] = pcs.dsl
+        warning = seat_order_warning(duel, pcs_dsl)
+        if warning:
+            notices.append(f"Duel strategy '{duel.name}': {warning}")
     return notices
 
 

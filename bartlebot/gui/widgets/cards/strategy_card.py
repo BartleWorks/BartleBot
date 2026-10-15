@@ -78,6 +78,7 @@ class StrategyCard(QWidget):
         self._hovered = False
         self._applying_style = False
         self._invalid = summary.health.status is HealthStatus.INVALID_DSL
+        self._warned = summary.health.is_warning
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setObjectName("StrategyCard")
 
@@ -99,6 +100,9 @@ class StrategyCard(QWidget):
         if self._invalid:
             name_row.setText(f"{summary.name}  ⚠")
             name_row.setToolTip(f"Does not parse: {summary.health.reason}")
+        elif self._warned:
+            name_row.setText(f"{summary.name}  ⚠")
+            name_row.setToolTip(summary.health.reason)
         else:
             name_row.setText(summary.name)
         self._name_lbl = name_row
@@ -297,7 +301,7 @@ class StrategyCard(QWidget):
             set_style_sheet(
                 self, f"#StrategyCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}"
             )
-            name_color = THEME.error if self._invalid else THEME.text
+            name_color = THEME.error if self._invalid else THEME.warning if self._warned else THEME.text
             set_style_sheet(self._name_lbl, f"color: {name_color}; background: transparent;")
             for label in self._sub_lbls:
                 set_style_sheet(

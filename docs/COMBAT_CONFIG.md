@@ -425,7 +425,7 @@ does; see `docs/BOT_OPTIONS.md`.
 ## Before a run: faults and notices (#207)
 
 `combat_warnings.check_combat` sorts what it finds into two tiers, `CombatCheck(faults,
-unassigned, fallbacks)`, the last two being its `notices`:
+unassigned, fallbacks, seating)`, the last three being its `notices`:
 
 | tier | what it is | where it goes |
 |---|---|---|
@@ -459,9 +459,17 @@ The notices, grouped so that a setup says each thing once rather than once per f
 - `unassigned`: exposed fights with no assignment, which the pick's own default covers;
 - `fallbacks`: fights that fall past level 1, grouped by the duel they run and the level
   that answered: "Every fight runs duel strategy 'Default Team Duel' (the shipped Team
-  default; this bot has no Bot Combat Strategy)."
+  default; this bot has no Bot Combat Strategy).";
+- `seating`: each duel a fight reaches with no combat order whose player strategy aims at
+  a seat, `ally(last)` or `ally(0)` (#212). The team lists players in the order they sat
+  down, and with Simultaneous entry that is whatever order they arrived in, so a support's
+  blade on `ally(last)` lands on a different player each fight. It runs, so it is no fault,
+  and it may be meant, but it is logged at WARNING rather than INFO. A duel seating one
+  player, or with any combat order, never gets it. `seat_order` finds the seats, and the
+  same sentence is the duel's health (`HealthStatus.SEAT_ORDER`): a ⚠ in the warning color
+  on its card and the Combat tab, and a line under Combat Order in the duel editor.
 
-Each is logged once. `AppController._confirm_combat` logs `unassigned` only: the
+Each is logged once. `AppController._confirm_combat` logs `unassigned` and `seating`: the
 fallbacks are in the line `_log_combat_sources` writes before the first node
 (`describe_run`), which names every fight's source, the pick's included, and logging
 both would say each fallback twice.
