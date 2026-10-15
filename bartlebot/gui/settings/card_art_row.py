@@ -140,6 +140,11 @@ class ArtExtraction(ThemedMixin, QWidget):
         return self._step.text()
 
     @property
+    def step_shown(self) -> bool:
+        """Whether the step line is up: while a run goes, and hidden once its outcome is."""
+        return not self._step.isHidden()
+
+    @property
     def outcome_text(self) -> str:
         return self._outcome.text()
 
@@ -159,7 +164,9 @@ class ArtExtraction(ThemedMixin, QWidget):
         self._cancel = threading.Event()
         self._error = None
         self._outcome.setVisible(False)
+        # A failed run hid it for its outcome; a retry reports its steps again.
         self._step.setText(STARTING)
+        self._step.setVisible(True)
         self._bar.setRange(0, 0)
         self._task = loop.create_task(self._run(loop, self._cancel))
         return True
