@@ -63,7 +63,7 @@ BACK = "Back"
 #: Under the heading: where the user is in the walk.
 STEP = "Step {n} of {m}"
 #: Under the page, when its answer did not reach disk.
-SAVE_FAILED = "Couldn't save this answer, so it will be asked again. Try Next again, or close and reopen BartleBot."
+SAVE_FAILED = "Couldn't save this answer. Try again, or close setup and it will be asked the next time BartleBot opens."
 RECOMMENDED_DETAIL = "Recommended"
 
 
