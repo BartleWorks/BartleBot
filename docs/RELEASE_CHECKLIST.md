@@ -24,7 +24,7 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
 ## 1. Fresh install
 
 - [ ] Run Setup.exe from C:\Users\Public\BartleBot\<version>. SmartScreen says "Windows
-      protected your PC", and More info › Run anyway is as the README's install page says.
+      protected your PC", and More info › Run anyway is as the site's install page says.
       No UAC prompt. The logo shows with a green bar. The app opens into setup, and
       BartleBot is on the Desktop and in the Start Menu.
       If it fails: %LocalAppData%\velopack\velopack.log
@@ -87,6 +87,9 @@ bartlebot/packaging/, gui/update_prompt.py or the Velopack pin.
 - [ ] gh release edit v<version> --draft=false
       It is the latest release, and not a pre-release:
       gh release view --json tagName,isPrerelease
+- [ ] The site's button fetches this Setup.exe. Select Download BartleBot on
+      https://bartleworks.github.io/BartleBot/, then in PowerShell this prints True:
+      (Get-FileHash "$HOME\Downloads\BartleBot-win-Setup.exe").Hash -eq (Get-FileHash C:\Users\Public\BartleBot\<version>\BartleBot-win-Setup.exe).Hash
 
 ## 6. After publishing (skip for the first release)
 
@@ -97,5 +100,5 @@ The one update that comes from GitHub itself, the way every user's does.
 - [ ] Close the app and start it from the Start Menu, with no BARTLEBOT_UPDATE_FEED: the
       popup offers <version>, with its notes and without the install page.
 - [ ] Install when I close BartleBot › close the app › start it again. No SmartScreen or
-      antivirus prompt appears at any point, as the README's install page says. The
+      antivirus prompt appears at any point, as the site's install page says. The
       session log header says <version>.

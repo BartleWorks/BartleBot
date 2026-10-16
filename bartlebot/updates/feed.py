@@ -48,8 +48,8 @@ REPOSITORY = f"https://github.com/BartleWorks/{PRODUCT}"
 #: Where an installed app looks: the assets of the latest published release. GitHub
 #: redirects each name to that release's asset, and a draft is never "latest".
 FEED_URL = f"{REPOSITORY}/releases/latest/download/"
-#: Where a release's notes stop being about the release. What follows is the README's
-#: install page, which the release's GitHub page shows someone arriving to install it
+#: Where a release's notes stop being about the release. What follows is the download
+#: site's install page, which the release's GitHub page shows someone arriving to install it
 #: (``tools/pack_release.py``), and which the popup leaves out, since whoever it is offered
 #: to has already installed. GitHub draws an HTML comment as nothing.
 INSTALL_NOTES_MARKER = "<!-- installing -->"

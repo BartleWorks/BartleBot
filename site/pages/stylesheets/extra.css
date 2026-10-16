@@ -1,0 +1,31 @@
+/* The logo's blue, #4488cc, darkened until white on it reads at 5.5:1, for the header
+   accents, the download button and links. Dark mode keeps the button and lightens links,
+   which sit on the dark page instead. */
+:root {
+  --md-primary-fg-color: #2e6ca8;
+  --md-primary-fg-color--light: #4488cc;
+  --md-primary-fg-color--dark: #245887;
+  --md-primary-bg-color: #fff;
+  --md-primary-bg-color--light: #ffffffb3;
+  --md-accent-fg-color: #4488cc;
+  --md-accent-fg-color--transparent: #4488cc1a;
+  --md-typeset-a-color: #2e6ca8;
+}
+[data-md-color-scheme="slate"] {
+  --md-typeset-a-color: #6fa3db;
+  --md-accent-fg-color: #7aaee3;
+}
+
+/* The install page's screenshots are full-size captures of a dialog. Two fit side by side
+   on a wide screen; a narrow one shows them one under the other. The page itself stays
+   plain markdown, since it is also every release's notes. */
+.md-typeset img[src*="images/install/"] {
+  width: 100%;
+  margin-bottom: 0.5em;
+}
+@media screen and (min-width: 45em) {
+  .md-typeset img[src*="images/install/"] {
+    /* Less than half, so the space between the two images fits beside them. */
+    width: calc(50% - 0.4em);
+  }
+}

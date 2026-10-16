@@ -8,8 +8,8 @@ the previous release's full package is already there, which is what the download
 there, ``vpk pack`` writes a delta against it as well. ``releases.win.json`` is the feed
 an installed app reads to find updates.
 
-The release notes are ``release_notes/<version>.md`` followed by the README's install
-page, with its links made absolute at the release's tag. ``vpk pack`` puts them in the
+The release notes are ``release_notes/<version>.md`` followed by the download site's
+install page, with its links made absolute at the release's tag. ``vpk pack`` puts them in the
 package, the feed carries them to the update popup, and ``vpk upload github`` makes them
 the release's description, which is the page someone arriving to install it reads. The
 popup leaves the install page out (``bartlebot.updates.feed.INSTALL_NOTES_MARKER``).
@@ -22,6 +22,7 @@ an install or an update, is what this is for outside CI.
 from __future__ import annotations
 
 import argparse
+import posixpath
 import re
 import subprocess
 import sys
@@ -41,6 +42,9 @@ VELOPACK_VERSION = "1.2.161"
 #: Velopack's id for the app: the install folder is ``%LocalAppData%\<id>``, and an update
 #: is matched to an install by it, so it never changes.
 PACK_ID = PRODUCT
+#: The installer ``vpk pack`` writes, named for the pack id. The download site's button
+#: links to it in whichever release is the latest (``site/pages/index.md``).
+SETUP_NAME = f"{PACK_ID}-win-Setup.exe"
 #: A Desktop shortcut and the Start Menu entry, so the app is found without knowing where
 #: ``%LocalAppData%`` is. This is ``vpk pack``'s own default, spelled out so it never drifts.
 SHORTCUTS = "Desktop,StartMenuRoot"
@@ -50,17 +54,18 @@ DEFAULT_BUILD = ROOT / "dist"
 DEFAULT_OUT = ROOT / "releases"
 #: One file per version, ``<version>.md``, written before the version is tagged.
 NOTES_DIR = ROOT / "release_notes"
-README = ROOT / "README.md"
-#: The README's install page lies between these two lines, and is copied into every
-#: release's notes.
-INSTALL_START = "<!-- install:start -->"
-INSTALL_END = "<!-- install:end -->"
+#: The download site's install page, which every release's notes carry after their own,
+#: as a path in the repository: its relative links are resolved against it.
+INSTALL_PAGE_PATH = "site/pages/install.md"
+INSTALL_PAGE = ROOT / INSTALL_PAGE_PATH
 #: Where the composed notes are written, in the build folder, for ``vpk pack`` to read.
 NOTES_NAME = "release-notes.md"
 
-#: A markdown link or image whose target is relative to the README: neither ``http(s):``
-#: nor ``mailto:``.
+#: A markdown link or image whose target is relative to the file it is in: neither
+#: ``http(s):`` nor ``mailto:``.
 _RELATIVE_LINK = re.compile(r"(!?)\[([^\]]*)\]\((?!https?://|mailto:)([^)\s]+)\)")
+#: An ATX heading that can still be made one level lower.
+_HEADING = re.compile(r"#{1,5} ")
 
 
 def notes_path(version: str, notes_dir: Path = NOTES_DIR) -> Path:
@@ -68,37 +73,54 @@ def notes_path(version: str, notes_dir: Path = NOTES_DIR) -> Path:
     return notes_dir / f"{version}.md"
 
 
-def install_page(readme: str) -> str:
-    """The README's install page: the lines between :data:`INSTALL_START` and :data:`INSTALL_END`."""
-    start, end = readme.find(INSTALL_START), readme.find(INSTALL_END)
-    if start < 0 or end < start:
-        raise ValueError(f"README.md has no install page between {INSTALL_START} and {INSTALL_END}")
-    return readme[start + len(INSTALL_START) : end].strip()
+def install_page(page: str) -> str:
+    """The site's install page as a release's notes carry it: every heading one level lower.
 
-
-def absolute_links(markdown: str, tag: str) -> str:
-    """``markdown`` with every README-relative link pointing at the repository at ``tag``.
-
-    The notes are read on the release's page and in the popup, where a path relative to the
-    README leads nowhere. An image needs the file itself (``raw``), a link the page about it
-    (``blob``), and a bare ``#anchor`` is in the README. Pinning to the tag keeps an old
-    release's notes showing what that release shipped.
+    In a release's description the page follows the version's own notes, so its title is a
+    section of the description rather than a second title. A line in a fenced code block
+    is left alone.
     """
+    lines, fenced = [], False
+    for line in page.strip().splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+        elif not fenced and _HEADING.match(line):
+            line = f"#{line}"
+        lines.append(line)
+    if not lines:
+        raise ValueError(f"{INSTALL_PAGE_PATH} is empty")
+    return "\n".join(lines)
+
+
+def absolute_links(markdown: str, tag: str, source: str = INSTALL_PAGE_PATH) -> str:
+    """``markdown`` with every relative link pointing at the repository at ``tag``.
+
+    ``source`` is the file ``markdown`` came from, as a path in the repository, and its
+    relative links are relative to it. The notes are read on the release's page and in the
+    popup, where such a path leads nowhere. An image needs the file itself (``raw``), a link
+    the page about it (``blob``), and a bare ``#anchor`` is in ``source``. Pinning to the
+    tag keeps an old release's notes showing what that release shipped.
+    """
+    folder = posixpath.dirname(source)
 
     def absolute(match: re.Match[str]) -> str:
         image, text, target = match.groups()
         if target.startswith("#"):
-            target = f"README.md{target}"
+            target = f"{source}{target}"
+        else:
+            target = posixpath.normpath(posixpath.join(folder, target))
         return f"{image}[{text}]({REPOSITORY}/{'raw' if image else 'blob'}/{tag}/{target})"
 
     return _RELATIVE_LINK.sub(absolute, markdown)
 
 
-def release_notes(version: str, notes_dir: Path = NOTES_DIR, readme: Path = README) -> str:
-    """``version``'s notes, then :data:`INSTALL_NOTES_MARKER`, then the README's install page."""
+def release_notes(version: str, notes_dir: Path = NOTES_DIR, page: Path = INSTALL_PAGE) -> str:
+    """``version``'s notes, then :data:`INSTALL_NOTES_MARKER`, then the site's install page."""
+    tag = f"v{version}"
     own = notes_path(version, notes_dir).read_text(encoding="utf-8").strip()
-    page = install_page(readme.read_text(encoding="utf-8"))
-    return absolute_links(f"{own}\n\n{INSTALL_NOTES_MARKER}\n\n{page}\n", f"v{version}")
+    own = absolute_links(own, tag, f"{NOTES_DIR.name}/{version}.md")
+    install = absolute_links(install_page(page.read_text(encoding="utf-8")), tag)
+    return f"{own}\n\n{INSTALL_NOTES_MARKER}\n\n{install}\n"
 
 
 def pack_command(version: str, vpk: str = "vpk", build: Path = DEFAULT_BUILD, out: Path = DEFAULT_OUT) -> list[str]:
@@ -156,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{required} is missing: run tools/build_package.py first", file=sys.stderr)
             return 1
     try:
-        notes = release_notes(args.version, NOTES_DIR, README)
+        notes = release_notes(args.version, NOTES_DIR, INSTALL_PAGE)
     except (OSError, ValueError) as exc:
         print(f"no release notes: {exc}", file=sys.stderr)
         return 1

@@ -2,8 +2,8 @@
 
 How BartleBot becomes something a user with no Python can run. This file covers the
 packaged build and the checks that hold it to the checkout, the version, the release
-workflow that turns a tag into a signed draft release, how a draft is tested before it is
-published, and the key it signs with. What an
+workflow that turns a tag into a signed draft release, the download site, how a draft is
+tested before it is published, and the key it signs with. What an
 install puts where, what install, update and uninstall do, and how an installed app finds
 and checks an update, is `docs/INSTALLER.md`. The plan behind both is epic #27
 (`docs/EPICS.md`, *Installer and updater*).
@@ -299,26 +299,67 @@ headings, since the popup draws a markdown heading larger than its own.
 
 `tools/pack_release.py` composes what `vpk pack --releaseNotes` is given, into
 `dist/release-notes.md`: the version's notes, then the line `INSTALL_NOTES_MARKER`
-(`<!-- installing -->`, in `bartlebot/updates/feed.py`), then the README's install page,
-the lines between `<!-- install:start -->` and `<!-- install:end -->`. Its links are made
-absolute at the release's tag (`absolute_links`): `raw/<tag>/` for an image and
-`blob/<tag>/` for a link, since a path relative to the README leads nowhere on a release
-page, and the tag keeps an old release's notes showing what that release shipped.
+(`<!-- installing -->`, in `bartlebot/updates/feed.py`), then the download site's install
+page, `site/pages/install.md` (`INSTALL_PAGE`), with every heading one level lower so its
+title is a section of the notes (`install_page`). Links are made absolute at the release's
+tag (`absolute_links`): `raw/<tag>/` for an image and `blob/<tag>/` for a link, each
+resolved against the file it is in, since a relative path leads nowhere on a release page,
+and the tag keeps an old release's notes showing what that release shipped.
 
 Those notes go two places:
 
 - **The release's description.** `vpk upload github` makes the package's notes the body
   of the draft it creates (Velopack 1.2.161, `_GitRelease.cs`), so nothing in
-  `release.yml` writes one. The release page is where someone arriving to install
-  BartleBot lands, which is why it carries the install page.
+  `release.yml` writes one. Someone who reaches BartleBot through GitHub rather than the
+  site lands on the release page, which is why it carries the install page too.
 - **The update popup**, through the feed's `NotesMarkdown`. `feed.parse` cuts the notes at
   the marker, since whoever is offered an update has installed already. GitHub draws the
   marker, an HTML comment, as nothing.
 
-So the README is the one copy of the install page, and every release carries the version
-of it that was true when it was built.
-`test_the_checkouts_version_has_notes_and_the_readme_an_install_page` fails a checkout
-whose version has no notes, or whose README lost its markers, before a tag would.
+So the site holds the one copy of the install page, and every release carries the version
+of it that was true when it was built. GitHub draws it there, not Zensical, so the page
+stays plain markdown: no admonitions, attribute lists or icons, which
+`test_the_install_page_is_markdown_github_draws` holds it to.
+`test_the_checkouts_version_has_notes_and_the_site_an_install_page` fails a checkout
+whose version has no notes, or whose site lost its install page, before a tag would, and
+`test_everything_the_release_notes_link_in_the_repository_is_there` one whose page links a
+screenshot that is not there.
+
+## The download site
+
+`site/` is the site at `bartleworks.github.io/BartleBot`: a landing page with one download
+button, and the install page. It is built with [Zensical](https://zensical.org/), pinned in
+the `site` dependency group, and is separate from `docs/`, which are the developer docs.
+The rest of the user docs, the node reference and the guides, are #25's.
+
+```powershell
+uv run --group site zensical serve -f site/zensical.toml   # preview at localhost:8000
+uv run --group site zensical build --strict -f site/zensical.toml   # into site/build/
+```
+
+**The download button** links `releases/latest/download/BartleBot-win-Setup.exe`
+(`feed.FEED_URL` and `pack_release.SETUP_NAME`): the same redirect the updater reads its
+feed through, which names the newest published release and never a draft or a
+pre-release. So the site never changes for a release, and the button fetches each one as
+soon as it is published.
+
+**`.github/workflows/site.yml`** builds the site on every push to `master` and every pull
+request into it, with `--strict`, which fails the build on a link to a page or an anchor
+that is not there. A missing image is no warning to Zensical, so `tests/test_site.py`
+checks those, with the rest a build cannot see: the button's URL, the logo, which is a
+copy of `bartlebot/gui/logo/bartlebot.svg` because a page can show only files under
+`site/pages/`, and no web fonts, so a visit sends nothing to anyone but GitHub. The
+workflow publishes the build to GitHub Pages from `master` only, and only while the repo
+is public: GitHub Free serves Pages from no private repo.
+
+**Publishing it the first time**, once the repo is public and before the first beta's
+tag:
+
+1. Turn Pages on, with GitHub Actions as its source:
+   `gh api -X POST repos/BartleWorks/BartleBot/pages -f build_type=workflow`
+2. Publish `master`'s site without a commit: `gh workflow run site.yml --ref master`
+3. Open the site from a browser that is signed out of GitHub, and check both pages and
+   the button. Until the first release is published, the button's link answers 404.
 
 ## Testing a draft
 
@@ -365,7 +406,7 @@ the checklist gives Setup.exe the mark a browser would: a `Zone.Identifier` stre
 the Internet zone (`ZoneId=3`), which is what SmartScreen reads. Once a release is
 published, the first install from it is a real browser download, which shows whether the
 two agree. An update carries no mark at all, since the app downloads it itself rather than
-a browser, which is why the README says Windows does not warn about one. Local feeds have
+a browser, which is why the install page says Windows does not warn about one. Local feeds have
 borne that out, and the checklist's last section confirms it for an update fetched from
 GitHub.
 
@@ -394,6 +435,11 @@ previous release's update code, which has already shipped. The draft's own runs 
 the next release is offered to it. So for the first release, and whenever a draft changes
 the update code or the Velopack pin, the checklist also updates *from* the draft, to a
 version packed locally.
+
+**The site's button is tried once the release is published.** It is the one way in most
+users take, and it fetches whatever GitHub calls the latest release, so it is the check
+that publishing made this one the latest. Comparing the download's hash with the draft's
+Setup.exe says it fetched this version rather than the one before.
 
 **A step that fails** leaves the draft unpublished: fix the problem, and release a new
 version.

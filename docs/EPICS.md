@@ -237,9 +237,11 @@ first release. https://claude.ai/artifact/BNNKxZLiNZ4Pd9kcV8fdGd
 | 3 | #237 | install key, file types and single instance |
 | 4 | #238 | updater: the signed feed, the startup check, one popup per version |
 | 5 | #239 | art appears at once: one `art_changed` signal, every art surface redraws |
-| 6 | #240 | first release: the checklist, the install page, an update through GitHub |
+| 6 | #240 | first release: the checklist, the install page, an update through GitHub; split into 6.1 and 6.2, which waits for Stage 7 and a public repo |
+| 7 | #248 | download site: a Zensical site with a landing page, the download button and the install page; lands between 6.1 and 6.2 |
 
-`docs/RELEASING.md` is the build and the release as built.
+`docs/RELEASING.md` is the build and the release as built, and "The download site" is
+Stage 7.
 
 The rules every stage keeps:
 
