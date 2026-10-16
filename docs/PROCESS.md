@@ -4,7 +4,7 @@ Issues, the backlog board, and how work lands. The merge procedure itself is the
 
 
 Issues live in the GitHub repo; the backlog board is the **org-level** project
-**The World Tree Backlog** (`gh project … --owner The-World-Tree`, number 1), linked to
+**The World Tree Backlog** (`gh project … --owner BartleWorks`, number 1), linked to
 BartleBot, BartleBuddy and BartleBuilder.
 
 The board is org-level because **milestones are per-repo and cannot cross products**.

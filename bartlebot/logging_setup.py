@@ -14,12 +14,14 @@ overwhelming majority of them were noise of three specific kinds:
     ``RepeatCollapsingFilter`` keeps the first and counts the rest.
 """
 
+import asyncio
 import datetime
 import importlib.metadata
 import logging
 import logging.handlers
 import platform
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
 
@@ -154,18 +156,39 @@ class _GuiBridgeHandler(logging.Handler):
     def __init__(self) -> None:
         super().__init__()
         self._callbacks: list[Callable[[str, int], None]] = []
+        # The GUI thread's loop, taken when a callback is added, for a record logged from
+        # another thread. See emit.
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def add_callback(self, cb: Callable[[str, int], None]) -> None:
         self._callbacks.append(cb)
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
 
     def remove_callback(self, cb: Callable[[str, int], None]) -> None:
         self._callbacks = [c for c in self._callbacks if c is not cb]
 
     def emit(self, record: logging.LogRecord) -> None:
         msg = self.format(record)
+        if threading.current_thread() is threading.main_thread():
+            self._deliver(msg, record.levelno)
+            return
+        # A worker thread -- asyncio.to_thread's: the update check, an art extraction -- must
+        # never touch a widget, and the callbacks write the log panel. The line goes to the
+        # GUI thread's loop, or, with none, only to the session file (#154).
+        loop = self._loop
+        if loop is not None and not loop.is_closed():
+            try:
+                loop.call_soon_threadsafe(self._deliver, msg, record.levelno)
+            except RuntimeError:
+                pass  # the loop closed in between
+
+    def _deliver(self, msg: str, levelno: int) -> None:
         for cb in list(self._callbacks):
             try:
-                cb(msg, record.levelno)
+                cb(msg, levelno)
             except Exception:
                 pass  # never let GUI errors silence the logger
 
@@ -268,6 +291,33 @@ def set_turn_trace(enabled: bool) -> bool:
     on = enabled or dev_mode()
     logging.getLogger(TURN_TRACE_LOGGER).setLevel(logging.DEBUG if on else logging.NOTSET)
     return on
+
+
+def install_excepthook() -> None:
+    """Log an exception nothing caught, and carry on (#154).
+
+    PyQt6 aborts the process on an exception that escapes a slot unless ``sys.excepthook``
+    has been replaced. A packaged build has no console, so the abort left no trace at all,
+    and it took every embedded game window with it. Replaced, the exception is logged at
+    CRITICAL with its traceback and the app keeps running. Threads get the same, since a
+    worker's uncaught exception otherwise goes only to the missing console.
+    """
+    log = logging.getLogger(__name__)
+
+    def _hook(exc_type, exc, tb) -> None:
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc, tb)
+            return
+        log.critical("Uncaught exception", exc_info=(exc_type, exc, tb))
+
+    def _thread_hook(args: threading.ExceptHookArgs) -> None:
+        name = args.thread.name if args.thread is not None else "?"
+        log.critical(
+            "Uncaught exception in thread %s", name, exc_info=(args.exc_type, args.exc_value, args.exc_traceback)
+        )
+
+    sys.excepthook = _hook
+    threading.excepthook = _thread_hook
 
 
 def add_gui_callback(cb: Callable[[str, int], None]) -> None:

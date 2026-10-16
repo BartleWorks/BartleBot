@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import re
 import subprocess
 from collections.abc import Awaitable, Callable
@@ -110,7 +111,15 @@ def _patch_xml_fields(path, updates: dict[str, str]) -> None:
         text, count = re.subn(rf"(<{tag}\b[^>]*>)[^<]*(</\s*{tag}\s*>)", rf"\g<1>{value}\2", text)
         if count == 0:
             logger.warning("No <%s> element in %s — leaving it unset", tag, path.name)
-    path.write_text(text, encoding="utf-8")
+    # Through a sibling and a rename: the game reads this file at every start, and one cut
+    # off part-way by a crash would leave it a config it cannot parse (#154).
+    tmp = path.with_name(f"{path.name}.tmp")
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def _launch_config_updates() -> dict[str, str]:

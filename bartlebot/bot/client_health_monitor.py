@@ -185,8 +185,8 @@ class ClientHealthMonitor:
     """Monitors WizSprinter clients for crashes and loading-screen hangs.
 
     Intended to be run as a single asyncio task from BotMachine.run().
-    Internally manages two sub-tasks and tears them down cleanly when
-    cancelled or when the stop flag is set.
+    Internally runs the five loops the module docstring lists, and tears them
+    down cleanly when cancelled or when the stop flag is set.
 
     Args:
         clients_ref: Callable that returns the current client list.
@@ -468,6 +468,9 @@ class ClientHealthMonitor:
                             hwnd,
                             fail_counts[hwnd],
                         )
+                        # Counted afresh once unflagged: a client a relog suspended and
+                        # handed back must fail the whole threshold again, not one check (#154).
+                        fail_counts[hwnd] = 0
                         self._flagged.add(hwnd)
                         self._fire_disconnected(hwnd)
 

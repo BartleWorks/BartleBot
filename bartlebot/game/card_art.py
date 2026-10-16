@@ -1,7 +1,7 @@
 """Where extracted game art lives, and how a template name finds its image.
 
 The game ships every spell's art as a DDS texture inside its own WADs. Nothing in
-this repo may carry one: the repo goes public at 1.0.0 and a committed game texture
+this repo may carry one: the repo goes public with the first beta and a committed game texture
 is the same exposure a committed wizard name is (see "No real player data" in the
 root ``CLAUDE.md``). So the art is *extracted on the user's own machine*, by
 :mod:`bartlebot.game.art_extraction` (from setup, Settings › General, or

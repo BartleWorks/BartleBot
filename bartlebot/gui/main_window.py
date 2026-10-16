@@ -4,7 +4,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
@@ -1066,7 +1066,7 @@ class MainWindow(QMainWindow):
             # means one of them was stale rather than that the user was warned.
             reason = None if profile is None else screen_fit.profile_fit_problem(profile, self, self.live_game_area)
             if reason is not None:
-                QMessageBox.critical(self, "Launch failed", reason)
+                self._tell_later(QMessageBox.critical, "Launch failed", reason)
                 return
 
             # Claimed here rather than inside launch_profile, so a second click on a
@@ -1080,8 +1080,8 @@ class MainWindow(QMainWindow):
                 # explain why were already there before the click. Only when the *whole*
                 # profile drops out -- a partial one still visibly brings up the rest.
                 logger.info("Launch profile '%s' has nothing left to launch", profile_name)
-                QMessageBox.information(
-                    self,
+                self._tell_later(
+                    QMessageBox.information,
                     "Nothing to launch",
                     f"Every account in '{profile_name}' is already running or launching.",
                 )
@@ -1102,7 +1102,7 @@ class MainWindow(QMainWindow):
                 self._close_launch(accepted)
             self._record_recent_launch("profile", profile_name)
         except Exception as e:
-            QMessageBox.critical(self, "Launch failed", str(e))
+            self._tell_later(QMessageBox.critical, "Launch failed", str(e))
             logger.exception("Profile launch failed")
 
     async def launch_account_named(self, username: str, display_name: str) -> None:
@@ -1111,12 +1111,12 @@ class MainWindow(QMainWindow):
             from bartlebot.launcher.launch_profile import launch_account
 
             if (reason := self._single_account_fit_problem()) is not None:
-                QMessageBox.critical(self, "Launch failed", reason)
+                self._tell_later(QMessageBox.critical, "Launch failed", reason)
                 return
             password = CredentialStore.retrieve(username)
             if password is None:
-                QMessageBox.critical(
-                    self,
+                self._tell_later(
+                    QMessageBox.critical,
                     "Launch failed",
                     f"No stored password for '{display_name}'.\nPlease add the account in Settings → Accounts.",
                 )
@@ -1126,8 +1126,8 @@ class MainWindow(QMainWindow):
             # happens to load in first.
             if not self._open_launch([username], SettingsManager.instance().game_resolution):
                 logger.info("Account '%s' is already running or launching", display_name)
-                QMessageBox.information(
-                    self,
+                self._tell_later(
+                    QMessageBox.information,
                     "Nothing to launch",
                     f"'{display_name}' is already running or launching.",
                 )
@@ -1144,8 +1144,16 @@ class MainWindow(QMainWindow):
                 self._close_launch([username])
             self._record_recent_launch("account", username)
         except Exception as e:
-            QMessageBox.critical(self, "Launch failed", str(e))
+            self._tell_later(QMessageBox.critical, "Launch failed", str(e))
             logger.exception("Account launch failed")
+
+    def _tell_later(self, show, title: str, text: str) -> None:
+        """Show a message box once the calling task has yielded.
+
+        The launch methods run as asyncio tasks, and a modal opened inside one wedges every
+        task that wakes while it is up (bartlebot/gui/CLAUDE.md, #154).
+        """
+        QTimer.singleShot(0, lambda: show(self, title, text))
 
     def _record_recent_launch(self, entry_type: str, identifier: str) -> None:
         SettingsManager.instance().add_recent_launch(entry_type, identifier)

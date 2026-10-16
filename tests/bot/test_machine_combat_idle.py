@@ -192,3 +192,37 @@ async def test_a_flee_in_an_ambient_session_is_left_to_the_session(popups):
     session.note_fled.assert_called_once_with(idle)
     assert machine._flees == []  # the session counts it, once its fight ends
     assert machine.state == "a"
+
+
+async def test_a_pass_that_raises_does_not_end_the_watcher(popups, monkeypatch, caplog):
+    """One bad pass used to end the watcher, silently, for the rest of the run (#154)."""
+    machine, _recover = _machine(_Node())
+    real = machine._flee_idle_popups
+    calls = []
+
+    async def _fails_once(clients):
+        calls.append(clients)
+        if len(calls) == 1:
+            raise RuntimeError("a read went wrong")
+        return await real(clients)
+
+    monkeypatch.setattr(machine, "_flee_idle_popups", _fails_once)
+    watcher = asyncio.create_task(machine._combat_idle_watcher())
+    await _until(lambda: len(calls) >= 2)
+    machine.stop()
+    await asyncio.wait_for(watcher, timeout=1.0)
+
+    assert "Idle popup watcher failed" in caplog.text
+
+
+def test_a_flee_by_a_client_the_session_never_had_is_ignored():
+    """Recovery can bring a client back mid-fight; the idle watcher must not raise on it (#154)."""
+    from bartlebot.bot.ambient_combat import AmbientSession
+
+    known = FakeClient()
+    session = AmbientSession(MagicMock(), [known], [known])
+
+    session.note_fled(FakeClient())
+    session.note_fled(known)
+
+    assert session.idle_fled == {1}

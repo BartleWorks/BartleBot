@@ -315,7 +315,7 @@ not grouped: it leaves no row dangling.
 
 **Share files** need nothing new: a bot carries its variables inside it. If this lands
 after a release, `SHARE_FORMAT` rises with it, since an older app would drop the field it
-does not know on its first save. Before 1.0.0 there is no older release.
+does not know on its first save. Before the first public release there is no older release.
 
 ## When not to use one
 

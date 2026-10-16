@@ -265,6 +265,37 @@ async def test_a_closed_window_is_still_reported_as_removed_first(harness):
         harness.stop()
 
 
+async def test_a_failed_pass_keeps_the_list_so_a_death_is_still_reported(harness):
+    """A dying client's last reads fail the pass; the next pass must still report it removed (#154)."""
+    from wizwalker.errors import MemoryReadError
+
+    alive, dying = FakeHookClient(100), FakeHookClient(200)
+    for client in (alive, dying):
+        harness._handler.add(client)
+        client.hooks_ready.set_result(None)
+    harness.start()
+    try:
+        await _tick()
+        assert harness.published_hwnds == {100, 200}
+
+        failed = []
+
+        async def _fails_once(_clients):
+            if not failed:
+                failed.append(True)
+                raise MemoryReadError("the dying client's last read")
+
+        harness._refresh_account_identity.side_effect = _fails_once
+        harness._handler.clients.remove(dying)
+        await _tick()
+
+        assert harness.published_hwnds == {100}
+        harness._on_clients_removed.assert_called_once_with({200})
+        harness._game_view.unembed_all.assert_not_called()
+    finally:
+        harness.stop()
+
+
 async def test_stop_cancels_in_flight_activation(harness):
     """A never-resolving activation must not outlive the manager."""
     stuck = FakeHookClient(100)

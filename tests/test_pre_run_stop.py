@@ -63,7 +63,8 @@ class _Harness:
 def quiet(monkeypatch):
     """The machine, the wake lock and the log bridge, none of which this is about."""
     monkeypatch.setattr(app_controller, "BotMachine", _Machine)
-    monkeypatch.setattr(app_controller, "keep", SimpleNamespace(running=lambda **_k: contextlib.nullcontext()))
+    # wakepy is imported as the run starts, so the patch is on the module it comes from.
+    monkeypatch.setattr("wakepy.keep", SimpleNamespace(running=lambda **_k: contextlib.nullcontext()))
     monkeypatch.setattr(app_controller, "add_gui_callback", lambda _cb: None)
     monkeypatch.setattr(app_controller, "remove_gui_callback", lambda _cb: None)
 

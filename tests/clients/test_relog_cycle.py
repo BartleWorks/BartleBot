@@ -76,6 +76,7 @@ class RelogHarness:
 def _make_machine(*, parked: bool = True, ambient: bool = False) -> MagicMock:
     machine = MagicMock()
     machine.is_stopped = False
+    machine.is_paused = False
     machine.is_ambient_combat_active = ambient
     machine.wait_until_parked = AsyncMock(return_value=parked)
     return machine
@@ -146,12 +147,33 @@ class TestQuietPoint:
         harness._machine.resume.assert_called_once()  # the run must not be left paused
         assert "did not reach a node boundary" in caplog.text
 
-    async def test_defers_while_ambient_combat_is_being_handled(self, harness, caplog):
+    async def test_defers_while_ambient_combat_is_being_handled_without_touching_the_pause(self, harness):
+        """The ambient watcher paused the bot for its fight; a resume here would run a node beside it (#154)."""
         harness._machine.is_ambient_combat_active = True
+        with _closes_cleanly() as close:
+            assert await harness.relog_clients(harness._clients, reason="scheduled") is False
+        close.assert_not_awaited()
+        harness._machine.pause.assert_not_called()
+        harness._machine.resume.assert_not_called()
+
+    async def test_leaves_a_paused_bot_paused(self, harness):
+        """The user paused it, perhaps to play by hand: the relog must neither close clients nor resume (#154)."""
+        harness._machine.is_paused = True
+        with _closes_cleanly() as close:
+            assert await harness.relog_clients(harness._clients, reason="scheduled") is False
+        close.assert_not_awaited()
+        harness._machine.resume.assert_not_called()
+
+    async def test_a_fight_that_starts_while_parking_defers_and_resumes_its_own_pause(self, harness, caplog):
+        async def _parks_into_a_fight(_timeout):
+            harness._machine.is_ambient_combat_active = True
+            return True
+
+        harness._machine.wait_until_parked = _parks_into_a_fight
         with _closes_cleanly() as close, caplog.at_level(logging.INFO):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is False
         close.assert_not_awaited()
-        harness._machine.resume.assert_called_once()
+        harness._machine.resume.assert_called_once()  # the relog's own pause, given back
         assert "ambient combat" in caplog.text
 
 

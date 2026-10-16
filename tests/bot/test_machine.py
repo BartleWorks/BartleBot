@@ -566,6 +566,27 @@ async def test_client_status_watcher_reports_a_client_that_keeps_failing_once():
     assert client.zone_name.await_count == health_module._CLIENT_STATUS_CHECK_FAIL_THRESHOLD
 
 
+async def test_client_status_watcher_counts_afresh_once_a_client_is_unflagged():
+    """A client handed back by unflag must fail the whole threshold again before it is reported (#154)."""
+    client = AsyncMock()
+    client.window_handle = 4243
+    client.zone_name.side_effect = RuntimeError("still loading")
+    disconnected: list[int] = []
+    monitor = None
+
+    def _first_report_is_handed_back(hwnd: int) -> None:
+        disconnected.append(hwnd)
+        if len(disconnected) == 1:
+            monitor.unflag(hwnd)
+
+    monitor = _status_monitor(client, [], _first_report_is_handed_back)
+    await _run_status_watcher(monitor)
+
+    threshold = health_module._CLIENT_STATUS_CHECK_FAIL_THRESHOLD
+    assert disconnected == [4243, 4243]
+    assert client.zone_name.await_count == 2 * threshold
+
+
 async def test_client_status_watcher_needs_the_failures_to_be_consecutive():
     """A slow client that still answers now and then is not dead."""
     threshold = health_module._CLIENT_STATUS_CHECK_FAIL_THRESHOLD

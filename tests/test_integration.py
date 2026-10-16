@@ -868,7 +868,7 @@ def test_every_self_loop_lands_on_a_node_with_a_retry_cap():
 def test_no_bot_stores_a_friend_name():
     """A character name in a bot file is both a privacy leak and a portability bug.
 
-    This repo goes public at 1.0.0 without rewriting history, so a name committed now
+    This repo goes public with the first beta release without rewriting history, so a name committed now
     ships then and links the account to whoever wrote the commit (CLAUDE.md, "No real
     player data"). It also breaks the bot for everyone else, who has no such friend.
 

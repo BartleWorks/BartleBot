@@ -5,7 +5,7 @@ Two names, and they answer different questions:
 ============  ==========================================  =================
 name          where it appears                            value
 ============  ==========================================  =================
-organization  the GitHub org that owns every repo         ``The-World-Tree``
+organization  the GitHub org that owns every repo         ``BartleWorks``
 vendor        ``%APPDATA%/<vendor>/``, Credential Manager  ``Bartleby``
 ============  ==========================================  =================
 

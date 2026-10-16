@@ -124,7 +124,7 @@ async def test_a_client_that_has_not_logged_in_is_left_alone():
 
 
 async def test_a_failing_read_does_not_raise():
-    """This runs in the client loop, whose MemoryReadError branch empties the client list."""
+    """This runs in the client loop, where an exception would cost the rest of the pass."""
     harness = IdentityHarness(_accounts(("user1", UID_ONE)))
     await _run(harness, [_client(100, None)])
 

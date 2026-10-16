@@ -613,6 +613,10 @@ Python 3.13 enforces that only one asyncio task may be executing at a time. `QDi
 
 **Rule:** If you need to show a blocking dialog before starting an async operation, do it in the synchronous Qt slot *before* calling `asyncio.create_task()`. Example pattern in `AppController._on_run_requested()` — the safety warning dialog runs there, in the slot, so no asyncio task exists yet when `.exec()` blocks.
 
+A coroutine that has something to say afterwards defers it: `QTimer.singleShot(0, lambda: ...)`, a
+queued signal, or `QMenu.popup` rather than `exec`. `test_no_coroutine_opens_a_modal_itself` reads
+every `async def` and fails on a modal opened in its own body.
+
 This bug caused the client section sidebar (zone/XYZ display) to freeze for the entire duration of any bot run that included a node with `safety_warning` set in its `NodeSpec`. The `SafetyWarningDialog.exec()` call inside the async `_start_bot()` task was killing the `_refresh_loop` and `_client_loop` tasks on every run.
 
 ## Background task lifetime in GUI widgets

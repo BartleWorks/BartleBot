@@ -118,8 +118,13 @@ class AmbientSession:
 
     def note_fled(self, client) -> None:
         """Record a flee made outside the session's combat: the machine's idle watcher answering
-        "You Are Idle" (#203). The fight then ends as a fled one, counted toward the flee limit."""
-        self.idle_fled.add(self._slot[client] + 1)
+        "You Are Idle" (#203). The fight then ends as a fled one, counted toward the flee limit.
+
+        A client the session never had, one recovery brought back mid-fight, is no flee of its
+        fights, and is ignored rather than raising into the idle watcher (#154)."""
+        slot = self._slot.get(client)
+        if slot is not None:
+            self.idle_fled.add(slot + 1)
 
     def _p(self, client) -> str:
         return f"P{self._slot[client] + 1}"

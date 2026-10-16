@@ -17,7 +17,8 @@ update finds its install by it.
 | `%LocalAppData%\BartleBot\Update.exe` | Velopack's updater and uninstaller |
 | `%LocalAppData%\BartleBot\current\` | the app: the PyInstaller build, as `tools/build_package.py` made it, plus Velopack's `sq.version` manifest |
 | `%LocalAppData%\BartleBot\packages\` | the installed version's full package, which the next update's delta is applied against |
-| `%APPDATA%\Microsoft\Windows\Start Menu\Programs\BartleBot.lnk` | the Start Menu entry, and the only shortcut (`SHORTCUTS`). No Desktop shortcut |
+| `%APPDATA%\Microsoft\Windows\Start Menu\Programs\BartleBot.lnk` | the Start Menu entry (`SHORTCUTS`) |
+| `%USERPROFILE%\Desktop\BartleBot.lnk` | the Desktop shortcut (`SHORTCUTS`), which uninstall removes with the Start Menu entry |
 | `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\BartleBot` | the entry in Settings › Apps. Publisher is `VENDOR`, and the uninstall command is `Update.exe --uninstall` |
 | `HKCU\Software\Bartleby\BartleBot` | the install key, written by our install hook (*The install key*) |
 | `HKCU\Software\Classes\.bbot`, five more, and their ProgIDs | the share file types, registered by our install hook (*The file types*) |
@@ -52,8 +53,8 @@ anything written there would be lost.
 
 ## Install
 
-Setup.exe needs no elevation, and asks for none. It extracts the app, makes the Start
-Menu entry, runs the install hook, writes the uninstall entry, and then starts the app,
+Setup.exe needs no elevation, and asks for none. It extracts the app, makes the Desktop
+shortcut and the Start Menu entry, runs the install hook, writes the uninstall entry, and then starts the app,
 which opens into first-run setup (`docs/FIRST_RUN.md`). That setup is the interactive
 part of the install: Velopack shows no pages of its own, only the logo with a progress bar
 along its foot for the few seconds it takes (`docs/RELEASING.md`, `--splashImage`).
@@ -72,7 +73,7 @@ and how it knows the feed is ours, is *The update check* below.
 ## Uninstall
 
 `Update.exe --uninstall` runs the uninstall hook, which deletes the install key and the
-file types (below), then removes the Start Menu entry, the install folder and the
+file types (below), then removes the shortcuts, the install folder and the
 uninstall entry. It asks nothing, and keeps all user data:
 `%APPDATA%\Bartleby` and Qt's cache are not touched. A hook cannot show a prompt, so
 there is no "remove my data too" option. Anyone who wants the data gone deletes the
@@ -99,6 +100,10 @@ a window, so a hook may never show UI and never wait on anything. That is why
 registry values and removes one folder of the app's own, and nothing else: on the spike's machine the install hook took 0.6 s
 while it did nothing, almost all of it the frozen interpreter starting, and the suite
 holds the three that write to a tenth of the 15 s limit.
+
+A hook never raises. Nothing it writes is needed for the app to start, and a hook that
+raised would fail the install, update or uninstall around it, so what fails is printed to
+stderr (logging is not set up yet) and the step goes on.
 
 `after_update` writes exactly what `after_install` did. The values are the same, since
 nothing in them changes with an update, so writing them again only mends a key or a type
@@ -278,8 +283,8 @@ handing Velopack the same update twice.
 
 ## Trying an install, an update and an uninstall
 
-The repo is private until 1.0.0, so a release's downloads need authentication, and an
-install is tried from a local folder instead. This touches the account it runs in, so
+A draft's downloads need a GitHub sign-in, and a published release is offered to every
+user, so an install or an update is tried from a local folder instead. This touches the account it runs in, so
 try it in the test account (`docs/RELEASING.md`, *Testing a draft*), or check that
 `%LocalAppData%\BartleBot` does not already exist, and uninstall afterwards.
 

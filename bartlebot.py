@@ -39,9 +39,11 @@ if __name__ == "__main__":
     import qasync
 
     from bartlebot.app_controller import AppController
-    from bartlebot.logging_setup import configure_logging
+    from bartlebot.logging_setup import configure_logging, install_excepthook
 
     configure_logging()
+    # Before the controller: PyQt6 aborts on an exception escaping a slot without one.
+    install_excepthook()
 
     loop = qasync.QEventLoop(app)
     asyncio.set_event_loop(loop)

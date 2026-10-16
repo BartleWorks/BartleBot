@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
@@ -84,10 +85,17 @@ class LauncherPopup(QWidget):
             # substitute for — the slot ordering and the guard both live over there — so
             # say so rather than falling back to a launch that ignores both.
             logger.error("Launcher popup has no main window to launch '%s' through", profile_name)
-            QMessageBox.critical(self, "Launch failed", "The launcher is not connected to the main window.")
+            QTimer.singleShot(
+                0,
+                lambda: QMessageBox.critical(
+                    self, "Launch failed", "The launcher is not connected to the main window."
+                ),
+            )
             return
         try:
             await launch(profile_name)
         except Exception as e:
-            QMessageBox.critical(self, "Launch failed", str(e))
+            # Deferred: this is a task, where a modal wedges every other task (#154).
+            message = str(e)
+            QTimer.singleShot(0, lambda: QMessageBox.critical(self, "Launch failed", message))
             logger.exception("Profile launch failed")

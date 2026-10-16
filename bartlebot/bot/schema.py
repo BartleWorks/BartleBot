@@ -758,6 +758,9 @@ def atomic_write_json(data: dict, path: str | Path, *, newline: str | None = Non
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline=newline) as f:
             json.dump(data, f, indent=2)
+            # On disk before the rename: without it a power cut can leave the new name on an empty file (#154).
+            f.flush()
+            os.fsync(f.fileno())
         os.replace(tmp_path, path)
     except Exception:
         try:

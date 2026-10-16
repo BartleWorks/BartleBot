@@ -157,8 +157,9 @@ and uninstalled on a Windows 11 machine with Smart App Control off.
 What the spike showed, and what was done about it:
 
 - **A Desktop shortcut by default.** `vpk pack` writes `Desktop,StartMenuRoot` into the
-  package's shortcut list. `tools/pack_release.py` passes `--shortcuts StartMenuRoot`,
-  since the plan promises a Start Menu entry and nothing more.
+  package's shortcut list. `tools/pack_release.py` passed `--shortcuts StartMenuRoot`,
+  since the plan promised a Start Menu entry and nothing more. #240 put the Desktop
+  shortcut back, so a user finds the app without knowing where `%LocalAppData%` is.
 - **`Setup.exe --silent` does not start the app.** A Setup run without it does, and the
   app opens into first-run setup. Stage 2 saw that from a fresh profile
   (`docs/INSTALLER.md`).
@@ -188,12 +189,23 @@ compares versions that way and refuses anything else. To release a version:
 
 1. Set it in `pyproject.toml`, and run `uv lock`. The lock records the project's version,
    so a bump without relocking fails `uv sync --locked` in CI.
-2. Commit, and tag that commit `v<version>`: `v1.2.0` for `1.2.0`.
+2. Write its notes, `release_notes/<version>.md` (*The release notes*, below).
+3. Commit, and tag that commit `v<version>`: `v1.2.0` for `1.2.0`.
 
 `tools/release_version.py <tag>` is the workflow's first step. It fails when the tag is
-not `v` + the version, when the version is not SemVer 2, or when the environment's
-metadata says something else (a version bumped without `uv sync`), and prints every
-reason. On success it prints the version alone, for the steps after it.
+not `v` + the version, when the version is not SemVer 2, when the environment's
+metadata says something else (a version bumped without `uv sync`), or when the version
+has no notes file or an empty one, and prints every reason. On success it prints the
+version alone, for the steps after it.
+
+**The betas are 0.x, and 1.0.0 is the first release that is not one.** A beta is an
+ordinary release in every other way: it is published as GitHub's latest release, never
+marked a pre-release, and nothing passes `--pre` to `vpk`. Both readers of a release
+skip pre-releases: the app's `FEED_URL` is `releases/latest/download/`, and
+`vpk download github`, which fetches the release the next delta is made against, takes
+the latest stable one unless told `--pre`. A beta marked as a pre-release would be
+offered to no one and left out of the next delta. It also means the betas run the
+release path 1.0.0 will, rather than one of their own.
 
 ## A release
 
@@ -211,9 +223,9 @@ the key; `sign`, on `ubuntu-latest`, reads only the feed; and `publish`, on
 3. **Fetch the previous release**: `vpk download github` puts the latest *published*
    release's full package and feed in `releases/`. With none published yet, it says so
    and exits 0, and the release has no delta.
-4. **Pack**: `tools/pack_release.py <version>`, which runs `vpk pack`. It writes
-   Setup.exe, the full package, a delta against the previous release when step 3 found
-   one, and `releases.win.json`, the feed. `vpk` also writes `RELEASES` and
+4. **Pack**: `tools/pack_release.py <version>`, which composes the release notes and runs
+   `vpk pack`. It writes Setup.exe, the full package, a delta against the previous
+   release when step 3 found one, and `releases.win.json`, the feed. `vpk` also writes `RELEASES` and
    `assets.win.json`, which it uses itself. Everything goes up as the `releases`
    artifact, and the feed alone as `feed`.
 
@@ -267,8 +279,9 @@ What `vpk pack` is told is in `tools/pack_release.py`, held there so a test can 
 | `--icon` | `dist/bartlebot.ico` | Setup.exe's icon |
 | `--splashImage` | `dist/bartlebot-splash.png` | the window Setup.exe shows while it installs, in place of Velopack's plain progress dialog. Velopack draws it borderless at its own size times the monitor's scaling, resampled, so above 100% the cells' edges soften a little; and it lays a 12 px bar, scaled the same, along its bottom edge. So it is the square, opaque to the corners, and 24 px cells leave 36 px of background under the tree for the bar |
 | `SPLASH_PROGRESS_COLOR` | `#22b14c` | that bar's color: the leaves' green. Velopack's default is `#00FF00` |
-| `SHORTCUTS` | `StartMenuRoot` | the Start Menu entry only; `vpk`'s default adds one on the Desktop |
+| `SHORTCUTS` | `Desktop,StartMenuRoot` | a Desktop shortcut and the Start Menu entry, so the app is found without knowing where `%LocalAppData%` is. It is `vpk`'s default, spelled out so a change to that default changes nothing here |
 | `--noPortable` | | Setup.exe is the one way to install. A portable copy runs outside the install and the updater, and the plan leaves it out of scope |
+| `--releaseNotes` | `dist/release-notes.md` | the version's notes and the install page, composed by `release_notes` (*The release notes*, below): the release's description, and the popup's notes |
 
 **Velopack is pinned at one version, `VELOPACK_VERSION`: 1.2.161,** for the `velopack`
 package in `pyproject.toml` and for `vpk` in `release.yml` alike. The Stage 1 spike
@@ -277,9 +290,35 @@ the tool and the workflow to it, so a bump changes all three at once. Before a b
 read Velopack's advisories and repeat the install, update and uninstall in
 `docs/INSTALLER.md`.
 
-Until the repo is public, a release's downloads need authentication, so no installed app
-can update from GitHub yet. Installs and updates are tried from a local folder
-(`docs/INSTALLER.md`).
+### The release notes
+
+Each version's notes are `release_notes/<version>.md`, written by hand before the tag
+and committed with the version bump. They say what changed for a user, in their words:
+what a release fixes or adds, not which files moved. Write paragraphs and lists, and no
+headings, since the popup draws a markdown heading larger than its own.
+
+`tools/pack_release.py` composes what `vpk pack --releaseNotes` is given, into
+`dist/release-notes.md`: the version's notes, then the line `INSTALL_NOTES_MARKER`
+(`<!-- installing -->`, in `bartlebot/updates/feed.py`), then the README's install page,
+the lines between `<!-- install:start -->` and `<!-- install:end -->`. Its links are made
+absolute at the release's tag (`absolute_links`): `raw/<tag>/` for an image and
+`blob/<tag>/` for a link, since a path relative to the README leads nowhere on a release
+page, and the tag keeps an old release's notes showing what that release shipped.
+
+Those notes go two places:
+
+- **The release's description.** `vpk upload github` makes the package's notes the body
+  of the draft it creates (Velopack 1.2.161, `_GitRelease.cs`), so nothing in
+  `release.yml` writes one. The release page is where someone arriving to install
+  BartleBot lands, which is why it carries the install page.
+- **The update popup**, through the feed's `NotesMarkdown`. `feed.parse` cuts the notes at
+  the marker, since whoever is offered an update has installed already. GitHub draws the
+  marker, an HTML comment, as nothing.
+
+So the README is the one copy of the install page, and every release carries the version
+of it that was true when it was built.
+`test_the_checkouts_version_has_notes_and_the_readme_an_install_page` fails a checkout
+whose version has no notes, or whose README lost its markers, before a tag would.
 
 ## Testing a draft
 
@@ -314,14 +353,41 @@ outside the account, so its ticks survive the reset partway through, and a rerun
   full control, so it launches and patches the same copy.
 
 It cannot show what is machine-wide: the Windows version, the graphics drivers, the Visual
-C++ runtimes, the fonts. Before 1.0.0, try one draft on a machine that has never had a
-development environment, such as a VM or another PC.
+C++ runtimes, the fonts. Before the first public release, and again before 1.0.0, try one
+draft on a machine that has never had a development environment, such as a VM or another
+PC.
 
-**The draft's assets** need a GitHub sign-in while the repo is private, so the checklist
-fetches them with `gh` from the maintainer's account into `C:\Users\Public`, which every
-account can read. A file fetched that way carries no Mark of the Web, so SmartScreen says
-nothing about it. Before 1.0.0, and whenever the signing changes, download Setup.exe
-through a browser in the test account once, to see what a user sees.
+**The draft's assets** need a GitHub sign-in, public repo or not, since only the org's
+members can see a draft. So the checklist fetches them with `gh` from the maintainer's
+account into `C:\Users\Public`, which every account can read. A file fetched that way
+carries no Mark of the Web, so SmartScreen says nothing about it. To see what a user sees,
+the checklist gives Setup.exe the mark a browser would: a `Zone.Identifier` stream naming
+the Internet zone (`ZoneId=3`), which is what SmartScreen reads. Once a release is
+published, the first install from it is a real browser download, which shows whether the
+two agree. An update carries no mark at all, since the app downloads it itself rather than
+a browser, which is why the README says Windows does not warn about one. Local feeds have
+borne that out, and the checklist's last section confirms it for an update fetched from
+GitHub.
+
+**What is tried in game** is every shipped item the release changed since the previous
+one: each Official bot, template, subgraph and strategy whose file differs from the
+previous tag's, run to its end. The first release has no previous one, so it tries every
+shipped item. What ships is Official, and Official means tested in game, so an item that
+fails is put back as it was, or the draft waits for its fix.
+
+**The draft is reported to Microsoft** once it has passed, before it is published:
+Setup.exe and the app's own exe go to Microsoft's false-positive submission page
+(<https://www.microsoft.com/en-us/wdsi/filesubmission>), as software, saying it is an
+unsigned open-source app that reads a game's memory. Publishing does not wait for the
+verdict, which can take days: the submission is what clears a detection on a release users
+already have. Users are never told to add an exclusion, so a detection is cleared this way
+or not at all.
+
+**Velopack's advisories are read before tagging**, on its security page
+(<https://github.com/velopack/velopack/security/advisories>). Squirrel.Windows, which
+Velopack replaced, had a DLL search-path flaw (CVE-2022-46330), and an installer framework
+runs on every user's machine. An advisory that affects the pinned version means a bump
+first, and a bump means the install, update and uninstall in `docs/INSTALLER.md` again.
 
 **The update is tried both ways.** Updating the previous release to the draft runs the
 previous release's update code, which has already shipped. The draft's own runs only when
@@ -342,8 +408,8 @@ maintainer's backup. **It never goes in the repo, a log, an issue or a plan page
 
 **Where the secret is.** Until the repo is public it is a repository secret: GitHub Free
 gives a private repository no environment rules, and while it is private only the org's
-members can push a tag. When the repo goes public at 1.0.0 (#240), it moves into a
-`release` environment that only `v*` tags may deploy to, the `sign` job gains
+members can push a tag. When the repo goes public, with the first beta release (#240), it
+moves into a `release` environment that only `v*` tags may deploy to, the `sign` job gains
 `environment: release`, and the repository secret is deleted. Whoever owns the org owns
 the key that way, so handing the project over needs nothing beyond the org.
 

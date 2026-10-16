@@ -39,6 +39,8 @@ class ControllerHarness:
             "_new_bot_folder",
             "_open_bot",
             "_close_bot",
+            "_confirm_unsaved",
+            "_confirm_shutdown",
             "_save_bot",
             "_save_bot_as",
             "_do_autosave",
