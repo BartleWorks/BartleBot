@@ -20,6 +20,7 @@ from bartlebot.logging_setup import (
     RepeatCollapsingFilter,
     ShortNameFormatter,
     _GuiBridgeHandler,
+    install_excepthook,
     prune_session_logs,
     set_turn_trace,
 )
@@ -537,3 +538,40 @@ def test_the_check_catches_a_name_in_a_log_call(source):
 )
 def test_the_check_passes_a_label_or_a_name_outside_a_log(source):
     assert _log_leaks(source) == []
+
+
+# ---------------------------------------------------------------------------
+# The uncaught-exception hook (#154)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def hooks(monkeypatch):
+    """Install the hooks for one test, and put the originals back after it."""
+    import sys
+    import threading
+
+    monkeypatch.setattr(sys, "excepthook", sys.excepthook)
+    monkeypatch.setattr(threading, "excepthook", threading.excepthook)
+    install_excepthook()
+    return sys, threading
+
+
+def test_an_uncaught_exception_is_logged_at_critical_with_its_traceback(hooks, caplog):
+    sys, _threading = hooks
+    try:
+        raise RuntimeError("bug in a slot")
+    except RuntimeError:
+        sys.excepthook(*sys.exc_info())
+
+    record = next(r for r in caplog.records if r.levelno == logging.CRITICAL)
+    assert record.exc_info[1].args == ("bug in a slot",)
+
+
+def test_a_threads_uncaught_exception_is_logged_too(hooks, caplog):
+    _sys, threading = hooks
+    worker = threading.Thread(target=lambda: 1 / 0, name="worker")
+    worker.start()
+    worker.join()
+
+    assert any(r.levelno == logging.CRITICAL and "worker" in r.getMessage() for r in caplog.records)

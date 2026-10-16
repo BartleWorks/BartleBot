@@ -20,6 +20,7 @@ import logging
 import logging.handlers
 import platform
 import sys
+import threading
 from collections.abc import Callable
 from pathlib import Path
 
@@ -268,6 +269,33 @@ def set_turn_trace(enabled: bool) -> bool:
     on = enabled or dev_mode()
     logging.getLogger(TURN_TRACE_LOGGER).setLevel(logging.DEBUG if on else logging.NOTSET)
     return on
+
+
+def install_excepthook() -> None:
+    """Log an exception nothing caught, and carry on (#154).
+
+    PyQt6 aborts the process on an exception that escapes a slot unless ``sys.excepthook``
+    has been replaced. A packaged build has no console, so the abort left no trace at all,
+    and it took every embedded game window with it. Replaced, the exception is logged at
+    CRITICAL with its traceback and the app keeps running. Threads get the same, since a
+    worker's uncaught exception otherwise goes only to the missing console.
+    """
+    log = logging.getLogger(__name__)
+
+    def _hook(exc_type, exc, tb) -> None:
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc, tb)
+            return
+        log.critical("Uncaught exception", exc_info=(exc_type, exc, tb))
+
+    def _thread_hook(args: threading.ExceptHookArgs) -> None:
+        name = args.thread.name if args.thread is not None else "?"
+        log.critical(
+            "Uncaught exception in thread %s", name, exc_info=(args.exc_type, args.exc_value, args.exc_traceback)
+        )
+
+    sys.excepthook = _hook
+    threading.excepthook = _thread_hook
 
 
 def add_gui_callback(cb: Callable[[str, int], None]) -> None:
