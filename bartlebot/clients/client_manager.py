@@ -654,21 +654,14 @@ class ClientManager(QObject):
 
                 await asyncio.sleep(CLIENT_DETECT_INTERVAL)
 
+            # Both keep the client list as it was. The next pass compares against it, and that
+            # comparison is what reports a client that died as removed and queues its recovery:
+            # emptying the list here, as both once did, lost the removal of a client whose last
+            # reads were what failed, and popped every game window out of its tile (#154).
             except MemoryReadError:
-                self._clients = []
-                self._game_view.unembed_all()
-                if self._machine:
-                    self._machine.set_clients(self._clients)
-                self.clients_changed.emit([])
-                self.all_clients_changed.emit([], list(self._unhooked_clients))
+                logger.debug("Client loop: a memory read failed; trying again", exc_info=True)
                 await asyncio.sleep(CLIENT_DETECT_INTERVAL)
             except Exception:
-                self._clients = []
-                self._game_view.unembed_all()
-                if self._machine:
-                    self._machine.set_clients(self._clients)
-                self.clients_changed.emit([])
-                self.all_clients_changed.emit([], list(self._unhooked_clients))
                 logger.exception("Client loop error")
                 await asyncio.sleep(CLIENT_DETECT_ERROR_BACKOFF)
 
@@ -751,9 +744,8 @@ class ClientManager(QObject):
         when the roster actually changes, which for a stable set of characters is once
         each, ever.
 
-        Never raises: this runs inside the client loop, whose MemoryReadError branch
-        empties the client list, so an exception escaping here would look like every
-        client vanishing at once. character_roster's own calls swallow their failures,
+        Never raises: this runs inside the client loop, where an exception escaping here
+        would cost the rest of the pass, tiles and names included. character_roster's own calls swallow their failures,
         so the remaining risk is a client object going away mid-pass.
         """
         from bartlebot.clients import character_roster  # noqa: PLC0415
@@ -815,9 +807,8 @@ class ClientManager(QObject):
           the configured accounts. This is what makes a window launched elsewhere and
           adopted here recoverable.
 
-        Never raises: this runs inside the client loop, whose MemoryReadError branch
-        silently empties the client list, so an exception escaping here would look like
-        every client vanishing at once.
+        Never raises: this runs inside the client loop, where an exception escaping here
+        would cost the rest of the pass, the client list's update included.
         """
         settings = SettingsManager.instance()
         accounts = settings.accounts

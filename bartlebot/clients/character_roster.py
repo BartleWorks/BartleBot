@@ -148,8 +148,7 @@ def save(username: str, roster: list[dict]) -> bool:
     """Store *roster* for *username*. Returns whether it was written.
 
     Never raises, for the same reason ``_learn_account_identities`` never does: this runs
-    inside the client loop, where an exception escaping looks like every client vanishing
-    at once.
+    inside the client loop, where an exception escaping costs the rest of that pass.
     """
     try:
         keyring.set_password(_SERVICE, username, json.dumps(entries(roster)))

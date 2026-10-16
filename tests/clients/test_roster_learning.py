@@ -158,8 +158,8 @@ def test_a_rename_is_written_through(store):
 
 
 def test_a_broken_client_does_not_stop_the_pass(store):
-    """This runs inside the client loop, whose MemoryReadError branch empties the client
-    list — an exception escaping here would look like every client vanishing at once."""
+    """This runs inside the client loop, where an exception escaping here would cost the
+    rest of the pass."""
     harness = RosterHarness()
     broken = MagicMock()
     type(broken).window_handle = property(lambda _self: (_ for _ in ()).throw(RuntimeError("client is gone")))
