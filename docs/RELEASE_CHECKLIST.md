@@ -25,7 +25,8 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
 
 - [ ] Run Setup.exe from C:\Users\Public\BartleBot\<version>. SmartScreen says "Windows
       protected your PC", and More info › Run anyway is as the README's install page says.
-      No UAC prompt. The logo shows with a green bar. The app opens into setup.
+      No UAC prompt. The logo shows with a green bar. The app opens into setup, and
+      BartleBot is on the Desktop and in the Start Menu.
       If it fails: %LocalAppData%\velopack\velopack.log
 - [ ] Setup's Quick path: game folder found, account added, game art extracted.
 - [ ] Bot library shows badges and tag icons as soon as the art is in, without a relaunch.
@@ -47,7 +48,8 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
 ## 2. Uninstall
 
 - [ ] Settings › Apps › BartleBot › Uninstall. It asks nothing.
-- [ ] The exported bot on the Desktop is no longer a BartleBot bot.
+- [ ] The exported bot on the Desktop is no longer a BartleBot bot, and the BartleBot
+      shortcut is gone from the Desktop and the Start Menu.
 - [ ] This prints False, False, False, True, in PowerShell:
       Test-Path "$env:LOCALAPPDATA\BartleBot", 'HKCU:\Software\Bartleby', 'HKCU:\Software\Classes\.bbot', "$env:APPDATA\Bartleby"
 

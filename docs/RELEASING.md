@@ -157,8 +157,9 @@ and uninstalled on a Windows 11 machine with Smart App Control off.
 What the spike showed, and what was done about it:
 
 - **A Desktop shortcut by default.** `vpk pack` writes `Desktop,StartMenuRoot` into the
-  package's shortcut list. `tools/pack_release.py` passes `--shortcuts StartMenuRoot`,
-  since the plan promises a Start Menu entry and nothing more.
+  package's shortcut list. `tools/pack_release.py` passed `--shortcuts StartMenuRoot`,
+  since the plan promised a Start Menu entry and nothing more. #240 put the Desktop
+  shortcut back, so a user finds the app without knowing where `%LocalAppData%` is.
 - **`Setup.exe --silent` does not start the app.** A Setup run without it does, and the
   app opens into first-run setup. Stage 2 saw that from a fresh profile
   (`docs/INSTALLER.md`).
@@ -278,7 +279,7 @@ What `vpk pack` is told is in `tools/pack_release.py`, held there so a test can 
 | `--icon` | `dist/bartlebot.ico` | Setup.exe's icon |
 | `--splashImage` | `dist/bartlebot-splash.png` | the window Setup.exe shows while it installs, in place of Velopack's plain progress dialog. Velopack draws it borderless at its own size times the monitor's scaling, resampled, so above 100% the cells' edges soften a little; and it lays a 12 px bar, scaled the same, along its bottom edge. So it is the square, opaque to the corners, and 24 px cells leave 36 px of background under the tree for the bar |
 | `SPLASH_PROGRESS_COLOR` | `#22b14c` | that bar's color: the leaves' green. Velopack's default is `#00FF00` |
-| `SHORTCUTS` | `StartMenuRoot` | the Start Menu entry only; `vpk`'s default adds one on the Desktop |
+| `SHORTCUTS` | `Desktop,StartMenuRoot` | a Desktop shortcut and the Start Menu entry, so the app is found without knowing where `%LocalAppData%` is. It is `vpk`'s default, spelled out so a change to that default changes nothing here |
 | `--noPortable` | | Setup.exe is the one way to install. A portable copy runs outside the install and the updater, and the plan leaves it out of scope |
 | `--releaseNotes` | `dist/release-notes.md` | the version's notes and the install page, composed by `release_notes` (*The release notes*, below): the release's description, and the popup's notes |
 

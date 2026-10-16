@@ -41,8 +41,9 @@ VELOPACK_VERSION = "1.2.161"
 #: Velopack's id for the app: the install folder is ``%LocalAppData%\<id>``, and an update
 #: is matched to an install by it, so it never changes.
 PACK_ID = PRODUCT
-#: The Start Menu entry and nothing else. ``vpk pack``'s default adds a Desktop shortcut.
-SHORTCUTS = "StartMenuRoot"
+#: A Desktop shortcut and the Start Menu entry, so the app is found without knowing where
+#: ``%LocalAppData%`` is. This is ``vpk pack``'s own default, spelled out so it never drifts.
+SHORTCUTS = "Desktop,StartMenuRoot"
 #: The splash's progress bar: the logo's own leaf green, where Velopack's default is #00FF00.
 SPLASH_PROGRESS_COLOR = "#22b14c"
 DEFAULT_BUILD = ROOT / "dist"

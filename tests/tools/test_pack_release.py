@@ -64,9 +64,9 @@ def test_the_splash_progress_bar_is_a_color_from_the_logo(tmp_path):
     assert f'fill="{SPLASH_PROGRESS_COLOR}"' in LOGO_SVG.read_text(encoding="utf-8")
 
 
-def test_only_a_start_menu_shortcut_is_made(tmp_path):
-    """``vpk pack``'s default also puts one on the Desktop, which the plan does not promise."""
-    assert _value(pack_command("1.2.0", build=tmp_path), "--shortcuts") == "StartMenuRoot"
+def test_the_shortcuts_are_on_the_desktop_and_in_the_start_menu(tmp_path):
+    """The install folder is under %LocalAppData%, which a user would not look in for the app."""
+    assert _value(pack_command("1.2.0", build=tmp_path), "--shortcuts") == "Desktop,StartMenuRoot"
 
 
 def test_no_portable_zip_is_made(tmp_path):

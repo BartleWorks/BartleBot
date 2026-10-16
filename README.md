@@ -11,8 +11,9 @@ You need 64-bit Windows 10 or 11 and Wizard101.
 1. Download **BartleBot-win-Setup.exe** from the
    [latest release](https://github.com/The-World-Tree/BartleBot/releases/latest).
 2. Run it. It installs BartleBot for your Windows account only, and neither installing
-   nor running it needs an administrator. Then it opens BartleBot's setup, which finds
-   your game, adds your accounts, and copies the game's art from your own install.
+   nor running it needs an administrator. It puts BartleBot on your Desktop and in the
+   Start Menu, then opens BartleBot's setup, which finds your game, adds your accounts,
+   and copies the game's art from your own install.
 
 Windows will probably warn you about the download first, because BartleBot is not
 code-signed. What each warning means is below.
