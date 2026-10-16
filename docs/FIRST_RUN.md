@@ -319,7 +319,7 @@ count where the step has one. Finish waits for the run to end.
 - **It reads the game** from the folder the app launches from
   (`art_extraction.installed_game_data_dir`, through `find_install`), so a Steam install is
   read as readily as the launcher's, and the type list from the newest
-  `tools/r<rev>_WizardDev.json` in the install directory.
+  `bartlebot/game/data/r<rev>_WizardDev.json` in the install directory.
 - **A run that worked** says how many pictures, cards and icons, and how many MB, and the
   app shows them at once (`card_art.forget_cache`).
 - **A run that failed** says why, in the error color, adds that BartleBot works without

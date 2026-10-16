@@ -7,7 +7,7 @@ from PyQt6.QtCore import QStandardPaths, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 
-_ICONS_DIR = Path(__file__).parent.parent / "icons"
+ICONS_DIR = Path(__file__).parent.parent / "icons"
 _DISABLED_OPACITY = 0.35
 
 
@@ -62,7 +62,7 @@ def svg_pixmap(name: str, size: int, tint: str | None = None, opacity: float = 1
 
 @cache
 def _svg_pixmap_cached(name: str, size: int, tint: str | None, opacity: float) -> QPixmap:
-    renderer = QSvgRenderer(str(_ICONS_DIR / f"{name}.svg"))
+    renderer = QSvgRenderer(str(ICONS_DIR / f"{name}.svg"))
     pm = QPixmap(size, size)
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)

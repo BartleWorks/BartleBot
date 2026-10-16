@@ -1,4 +1,4 @@
-"""Query the Wizard101 type dump (``tools/r<rev>_WizardDev.json``).
+"""Query the Wizard101 type dumps (``r<rev>_WizardDev.json``: the newest in ``bartlebot/game/data/``, older ones in ``tools/``).
 
 The dump lists every game class with the exact byte offset of each property, so
 it answers the questions the ``probe_*.py`` scripts otherwise have to answer by
@@ -17,7 +17,7 @@ poking at a live client:
     uv run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
 
     # diff two dumps after a game patch
-    uv run python tools/typedump.py diff tools/r800294_WizardDev.json tools/r810000_WizardDev.json
+    uv run python tools/typedump.py diff tools/r800294_WizardDev.json bartlebot/game/data/r810000_WizardDev.json
 """
 
 from __future__ import annotations
@@ -30,7 +30,10 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
-TOOLS_DIR = Path(__file__).parent
+TOOLS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOLS_DIR.parent))
+
+from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -189,11 +192,11 @@ def _sizeof(p: Prop) -> int:
 
 
 def default_dump() -> Path:
-    """The newest ``r<rev>_WizardDev.json`` in tools/."""
-    dumps = sorted(TOOLS_DIR.glob("r*_WizardDev.json"))
-    if not dumps:
-        sys.exit("no r<rev>_WizardDev.json found in tools/")
-    return dumps[-1]
+    """The newest ``r<rev>_WizardDev.json``, from ``bartlebot/game/data/`` or ``tools/``."""
+    dump = newest_type_dump(TYPE_DUMP_DIR, TOOLS_DIR)
+    if dump is None:
+        sys.exit("no r<rev>_WizardDev.json found in bartlebot/game/data/ or tools/")
+    return dump
 
 
 def _fmt(p: Prop, show_owner: bool = False) -> str:

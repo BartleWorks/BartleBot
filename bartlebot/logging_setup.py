@@ -34,6 +34,8 @@ GUI_ONLY = {"gui_only": True}
 _NOISY_LIBRARIES = (
     "asyncio",
     "keyring",
+    # Pillow logs every image plugin it imports and every TIFF tag it reads, on each art extraction.
+    "PIL",
     "qasync",
     "transitions",
     "wakepy",
@@ -227,6 +229,9 @@ def configure_logging() -> None:
     logger.info("=== BartleBot startup ===")
     logger.info("Python %s", sys.version.split()[0])
     logger.info("Platform: %s", platform.platform())
+    from bartlebot.packaging.build_kind import build_kind  # noqa: PLC0415
+
+    logger.info("Build: %s", build_kind())
     for lib in ("PyQt6", "qasync", "transitions", "wizwalker"):
         try:
             import importlib.metadata

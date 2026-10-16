@@ -589,7 +589,7 @@ This bug caused the client section sidebar (zone/XYZ display) to freeze for the 
 
 ## Background task lifetime in GUI widgets
 
-Any `asyncio.Task` or `QThread` started inside a `QWidget` or `QDialog` must be explicitly cleaned up in `closeEvent` to prevent callbacks from firing on a destroyed widget.
+Any `asyncio.Task` started inside a `QWidget` or `QDialog` must be explicitly cleaned up in `closeEvent` to prevent callbacks from firing on a destroyed widget.
 
 Pattern for asyncio tasks:
 ```python
@@ -609,7 +609,10 @@ async def _some_async_method(self):
     # ... do work ...
 ```
 
-For `QThread`, call `thread.quit()` and `thread.wait()` in `closeEvent` before letting the dialog be destroyed.
+Blocking work goes off the GUI thread through `asyncio.to_thread` inside such a task, never a
+`QThread`: Nuitka documents Qt threading as unsupported under PyQt6, and the packaged build
+must not depend on it (`docs/RELEASING.md`). `test_no_qthread_remains_in_bartlebot` keeps it out.
+Cancelling the task does not stop the thread; it only makes sure nothing it returns is shown.
 
 ## Never parse a combat DSL on the GUI thread
 

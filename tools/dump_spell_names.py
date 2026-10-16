@@ -16,7 +16,7 @@ WHERE THE DATA COMES FROM
     A deserializer *is* needed to find the right *field*, though.
     ``katsuba`` (the same library the wizdb/Kimerith-WindHammer toolchain uses,
     and already used by ``wizwalker/examples/read_deck.py`` in our fork) reads
-    a spell's BINd bytes against ``tools/r800294_WizardDev.json`` -- the wiztype
+    a spell's BINd bytes against ``bartlebot/game/data/r800294_WizardDev.json`` -- the wiztype
     dump already checked in for ``typedump.py`` -- and returns a real object with
     ``m_displayName``, the exact field ``CombatCard.display_name`` reads from a
     live client (wizwalker/wizwalker/combat/card.py). That value is a langcode
@@ -45,7 +45,7 @@ WHY A SNAPSHOT IS SAFE
 USAGE
     uv run python tools/dump_spell_names.py
     uv run python tools/dump_spell_names.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
-    uv run python tools/dump_spell_names.py --types tools/r800294_WizardDev.json
+    uv run python tools/dump_spell_names.py --types bartlebot/game/data/r800294_WizardDev.json
 """
 
 from __future__ import annotations
@@ -63,10 +63,12 @@ from wizwalker.file_readers.cache_handler import CacheHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
 from bartlebot.game.spell_names import NAMES_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
-DEFAULT_TYPES = Path(__file__).resolve().parent / "r800294_WizardDev.json"
+# The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
+DEFAULT_TYPES = newest_type_dump(TYPE_DUMP_DIR, Path(__file__).resolve().parent)
 SPELLS_GLOB = "Spells/**/*.xml"
 
 

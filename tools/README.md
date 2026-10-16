@@ -42,6 +42,12 @@ game assets, either*).
 | `drop_categories.py` | surveys the drop categories across the library; rerun after importing bots, since quicksell must classify each one |
 | `drop_name_patterns.py` | surveys the `(...)` suffixes on drop names that `bartlebot/game/wiki_drops.py` has no rule for |
 
+## Building the app
+
+| tool | does |
+|---|---|
+| `build_package.py` | builds a packaged BartleBot with PyInstaller, strips install records from its metadata, and runs its `--self-check` (`docs/RELEASING.md`) |
+
 ## On live clients
 
 These hook the game themselves, so **close BartleBot first**: two sets of hooks in one

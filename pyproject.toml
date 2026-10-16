@@ -37,6 +37,9 @@ dev = [
     "pytest-qt>=4.5.0",
     "pytest-cov>=6.0",
 ]
+package = [
+    "pyinstaller>=6.22.3",
+]
 
 # Ours, not upstream: these carry fixes the original projects do not have,
 # including the memory offsets bartlebot/combat/deck_io.py depends on. Pinned by exact

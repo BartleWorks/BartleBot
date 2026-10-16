@@ -12,7 +12,7 @@ WHY THIS EXISTS
         build      index    m_cardSize
         2024       0x2C0    0x2C4
         r794561    0x308    0x30C
-        r800294    0x388    0x38C   (tools/r800294_WizardDev.json; confirmed below)
+        r800294    0x388    0x38C   (bartlebot/game/data/r800294_WizardDev.json; confirmed below)
 
     r800294 shifted the class by 0x80, leaving the write on 0x308 -- now the
     entry vector's end pointer, which is why it crashed the client and why

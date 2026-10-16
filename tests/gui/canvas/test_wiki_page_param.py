@@ -133,27 +133,11 @@ def test_the_recorded_page_resolves_back_to_a_url(qapp):
 # ---------------------------------------------------------------------------
 
 
-class _StubWorker:
-    """Stands in for _FetchWorker so no network call happens."""
-
-    def __init__(self, url, parent=None):
-        self.url = url
-
-    def start(self):
-        pass
-
-    class _Sig:
-        def connect(self, _fn):
-            pass
-
-    finished = _Sig()
-    error = _Sig()
-
-
 def _dialog(qapp, monkeypatch, url):
     from bartlebot.gui.dialogs import wiki_import_dialog
 
-    monkeypatch.setattr(wiki_import_dialog, "_FetchWorker", _StubWorker)
+    # No network: the fetch returns nothing, and a sync test starts no task anyway.
+    monkeypatch.setattr(wiki_import_dialog, "_fetch_drops", lambda _url: {})
     dlg = wiki_import_dialog.WikiImportDialog()
     dlg._url_edit.setText(url)
     dlg._on_fetch()

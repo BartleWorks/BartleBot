@@ -18,13 +18,18 @@ from katsuba.wad import Archive
 
 GAME_DATA = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData")
 TOOLS_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_TYPES = TOOLS_DIR / "r800294_WizardDev.json"
 # Deimos' hand-built navigation data, in our wizsprinter checkout.
 TRAVERSAL_DATA = Path(r"C:\GitHub\wizsprinter\wizwalker\extensions\wizsprinter\traversalData")
 # Root.wad ships Locale/<locale>/ for de, el, en-US, es, fr, it and pl; the tools only expose English.
 DEFAULT_LOCALE = "en-US"
 
 sys.path.insert(0, str(TOOLS_DIR))
+sys.path.insert(0, str(TOOLS_DIR.parent))
+
+from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
+
+# The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
+DEFAULT_TYPES = newest_type_dump(TYPE_DUMP_DIR, TOOLS_DIR)
 
 from dump_dialog_captions import parse_lang  # noqa: E402, F401  (re-exported for the tools)
 

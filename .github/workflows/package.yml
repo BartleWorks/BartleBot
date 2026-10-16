@@ -1,0 +1,70 @@
+name: Package
+
+# Started by hand: builds a packaged BartleBot with PyInstaller, proves the build carries
+# everything the app reads (--self-check), scans it with Defender, and uploads it.
+# docs/RELEASING.md has why, and what each step answers.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --locked --group package
+
+      # Builds, then runs the build's own --self-check, which fails this step on any
+      # missing file, module or plugin. Writes dist/build-report.json.
+      - name: Build and self-check
+        run: uv run --group package python tools/build_package.py
+
+      - name: Defender scan
+        if: always()
+        shell: pwsh
+        run: |
+          $folder = (Resolve-Path dist/BartleBot).Path
+          Update-MpSignature -ErrorAction SilentlyContinue
+          $status = Get-MpComputerStatus
+          $scan = & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File $folder -DisableRemediation | Out-String
+          $threats = Get-MpThreatDetection | Where-Object { $_.Resources -match [regex]::Escape($folder) }
+          @(
+            "## Defender",
+            "Engine $($status.AMProductVersion), signatures $($status.AntivirusSignatureVersion)",
+            '```', $scan.Trim(), '```',
+            "Detections in the build: $(@($threats).Count)"
+          ) -join "`n" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          $scan.Trim() | Out-File -Encoding utf8 dist/defender.txt
+
+      - name: Report
+        if: always()
+        run: |
+          if [ -f dist/build-report.json ]; then
+            {
+              echo "## Build"
+              echo '```json'
+              cat dist/build-report.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bartlebot
+          path: dist
+          if-no-files-found: warn
+          retention-days: 14

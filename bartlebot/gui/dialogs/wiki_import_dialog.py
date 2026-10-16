@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -60,36 +61,22 @@ _ITEM_NAMESPACES = {
 
 
 # ---------------------------------------------------------------------------
-# Background fetch worker
+# Background fetch
 # ---------------------------------------------------------------------------
 
 
-class _FetchWorker(QThread):
-    """Fetches and parses a wiki page in a background thread."""
+def _fetch_drops(url: str) -> dict[str, list[str]]:
+    """Fetch and parse a wiki page: ``{category: [item_name, ...]}``. Blocking, so run off the GUI thread.
 
-    finished = pyqtSignal(dict)  # {category: [item_name, ...]}
-    error = pyqtSignal(str)
+    An ``asyncio.to_thread`` call rather than a ``QThread``, as game art does: Nuitka
+    documents Qt threading as unsupported under PyQt6, and the packaged build must not
+    depend on it (``docs/RELEASING.md``).
+    """
+    from curl_cffi import requests as cf_requests
 
-    def __init__(self, url: str, parent=None):
-        super().__init__(parent)
-        self._url = url
-
-    def run(self) -> None:
-        try:
-            try:
-                from curl_cffi import requests as cf_requests
-            except ImportError as exc:
-                self.error.emit(f"curl_cffi is not available ({exc}). Run: pip install curl_cffi")
-                return
-            from bs4 import BeautifulSoup  # noqa: F401 — confirm dep available
-
-            resp = cf_requests.get(self._url, timeout=15, impersonate="chrome124")
-            resp.raise_for_status()
-            drops = _parse_drops(resp.text)
-            self.finished.emit(drops)
-        except Exception as exc:
-            logger.exception("Wiki fetch failed for %s", self._url)
-            self.error.emit(str(exc))
+    resp = cf_requests.get(url, timeout=15, impersonate="chrome124")
+    resp.raise_for_status()
+    return _parse_drops(resp.text)
 
 
 # ---------------------------------------------------------------------------
@@ -186,7 +173,8 @@ class WikiImportDialog(ThemedMixin, QDialog):
         self.setWindowTitle("Import Drops from Wiki")
         self.setMinimumSize(480, 500)
         self.resize(540, 580)
-        self._worker: _FetchWorker | None = None
+        self._task: asyncio.Task | None = None
+        self._closed = False
         self._selected: list[DropModel] = []
         self._page: str | None = None
         self._build_ui()
@@ -281,17 +269,11 @@ class WikiImportDialog(ThemedMixin, QDialog):
     # ------------------------------------------------------------------
 
     def closeEvent(self, event) -> None:
-        worker = self._worker
-        self._worker = None
-        if worker is not None and worker.isRunning():
-            # Disconnect before the dialog is destroyed so the thread's
-            # signals don't fire into a dead widget.
-            worker.finished.disconnect(self._on_fetch_done)
-            worker.error.disconnect(self._on_fetch_error)
-            # Detach from dialog so the dialog destructor doesn't block
-            # waiting for the thread; the thread will self-delete when done.
-            worker.setParent(None)  # type: ignore[arg-type]
-            worker.finished.connect(worker.deleteLater)
+        # The thread runs on to the end of its request, but nothing it returns is shown.
+        self._closed = True
+        if self._task is not None:
+            self._task.cancel()
+            self._task = None
         super().closeEvent(event)
 
     # ------------------------------------------------------------------
@@ -314,10 +296,22 @@ class WikiImportDialog(ThemedMixin, QDialog):
         self._ok_btn.setEnabled(False)
         self._ok_btn.setText("Add 0 items")
 
-        self._worker = _FetchWorker(url, parent=self)
-        self._worker.finished.connect(self._on_fetch_done)
-        self._worker.error.connect(self._on_fetch_error)
-        self._worker.start()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        self._task = loop.create_task(self._fetch(url))
+
+    async def _fetch(self, url: str) -> None:
+        try:
+            drops = await asyncio.to_thread(_fetch_drops, url)
+        except Exception as exc:
+            logger.exception("Wiki fetch failed for %s", url)
+            if not self._closed:
+                self._on_fetch_error(str(exc))
+            return
+        if not self._closed:
+            self._on_fetch_done(drops)
 
     def _on_fetch_done(self, drops: dict[str, list[str]]) -> None:
         self._btn_fetch.setEnabled(True)

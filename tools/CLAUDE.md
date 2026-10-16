@@ -5,7 +5,7 @@ questions without probing a live client. **Check both before writing a probe** �
 several days of `probe_*.py` work has been spent rediscovering things that were
 sitting in one of these.
 
-## Type dumps: `tools/r<rev>_WizardDev.json`
+## Type dumps: `r<rev>_WizardDev.json`
 
 A wiztype dump of every game class with the exact byte offset of each property —
 about 7,000 classes and 49,000 properties. Query it with `tools/typedump.py`:
@@ -39,6 +39,14 @@ previous layout. The checked-in dumps are the only record of what the offsets we
 when our code last worked; `typedump.py diff` against a fresh dump then says
 exactly what moved. `.gitattributes` disables textual diffing for them — use the
 tool, not `git diff`.
+
+**The newest dump lives in `bartlebot/game/data/`, the older ones in `tools/`.** Art
+extraction reads the newest at run time (`art_extraction.type_dump()`), so it is app data
+and ships in the install directory; `tools/` does not ship. When a new dump is captured, it
+goes in `bartlebot/game/data/` and the one it replaces moves back to `tools/` (`git mv`, so
+history follows it), which keeps one 26 MB dump in each install rather than one per patch.
+Every tool that defaults to a dump takes the newest across both folders
+(`art_extraction.newest_type_dump`).
 
 ## Game data: `Root.wad`
 
@@ -124,8 +132,8 @@ the ordinary case rather than as a missing dependency.
 setup's Game art page and Settings › General › Game art. `tools/extract_card_art.py` is the
 command line over the same `extract_art`, and still the quickest way to rerun it while
 developing. It reads the game from the folder the app launches from (`find_install`, so a
-Steam install too), and the type list from the newest `tools/r<rev>_WizardDev.json`, which
-ships in the install directory with the rest of `tools/`. A run writes into `art.partial`
+Steam install too), and the type list from the newest `bartlebot/game/data/r<rev>_WizardDev.json`,
+which ships in the install directory with the rest of `game/data/`. A run writes into `art.partial`
 and swaps it in only once it finished, so a failed or cancelled run leaves the art before
 it. So the tool's `--out` folder is **replaced whole**, not written into: whatever else is
 in it is deleted with the old art. Point it only at a folder of its own. Its tests run on `tests/art_fixture.py`'s made-up install: real KIWAD archives (the
@@ -280,7 +288,7 @@ their "display name" before this was caught).
 
 [`katsuba`](https://pypi.org/project/katsuba/) is a real BINd deserializer — the
 same one the wizdb/Kimerith-WindHammer Discord-bot toolchain uses — and it reads
-straight off `tools/r800294_WizardDev.json`, the wiztype dump already checked in
+straight off `bartlebot/game/data/r800294_WizardDev.json`, the wiztype dump already checked in
 for `typedump.py`, so no separate type dump is needed:
 
 ```python
@@ -288,7 +296,7 @@ from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
 from katsuba.wad import Archive
 
 archive = Archive.mmap(str(wad_path))
-types = TypeList.open("tools/r800294_WizardDev.json")
+types = TypeList.open("bartlebot/game/data/r800294_WizardDev.json")
 opts = SerializerOptions()
 opts.flags = STATEFUL_FLAGS
 opts.shallow = False

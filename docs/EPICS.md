@@ -221,3 +221,33 @@ The rules every stage kept:
   with their Qt-free code in `bartlebot/shared/`.
 - **An answered page is never shown on a first run.** A user who answered the combat
   question in #209, or in BartleBuddy, is not asked it again.
+
+## Installer and updater
+
+Epic #27: a packaged build, a per-user Velopack install, a signed update feed, and the
+first release. https://claude.ai/artifact/BNNKxZLiNZ4Pd9kcV8fdGd
+
+**In progress; the page is kept current while stages land.**
+
+| stage | issue | what |
+|---|---|---|
+| 1 | #235 | packaged build: the spike, `--self-check`, the packager chosen, Velopack's questions answered |
+| 2 | #236 | installer and release build: one version, Velopack in the app, `release.yml` making a draft release |
+| 3 | #237 | install key, file types and single instance |
+| 4 | #238 | updater: the signed feed, the startup check, one popup per version |
+| 5 | #239 | art appears at once: one `art_changed` signal, every art surface redraws |
+| 6 | #240 | first release: the checklist, the install page, an update through GitHub |
+
+`docs/RELEASING.md` is the build and the release as built.
+
+The rules every stage keeps:
+
+- **A checkout run never changes.** No Velopack, no registry writes and no update check
+  outside an installed build.
+- **A release is built by CI from a tag, never on a maintainer's machine,** and a
+  maintainer publishes the draft CI makes.
+- **Everything the app reads at run time is bundled, and `--self-check` proves it** on
+  every build, before anything else is done with it.
+- **Install, update and uninstall never touch `%APPDATA%\Bartleby`.**
+- **No update is applied while a bot runs,** and one whose signature does not verify is
+  never offered.
