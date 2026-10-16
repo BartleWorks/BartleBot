@@ -321,7 +321,11 @@ count where the step has one. Finish waits for the run to end.
   read as readily as the launcher's, and the type list from the newest
   `bartlebot/game/data/r<rev>_WizardDev.json` in the install directory.
 - **A run that worked** says how many pictures, cards and icons, and how many MB, and the
-  app shows them at once (`card_art.forget_cache`).
+  app shows them at once. `extract_art` ends with `card_art.forget_cache`, so the next
+  lookup reads the new files, and `ArtExtraction` then announces `art_changed` once
+  (`gui/art_signal.py`, #239), so what is already on screen redraws: the bot library
+  behind setup shows its badges and tag medallions as soon as the page finishes. A failed
+  or stopped run announces nothing.
 - **A run that failed** says why, in the error color, adds that BartleBot works without
   the art and where to try again, logs a warning (with the trace for an unexpected error),
   and enables Finish. Setup ends as usual, and Finish records the page, so a failure is
