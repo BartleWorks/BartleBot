@@ -1,15 +1,19 @@
 name: Release
 
 # On a v* tag: checks the tag names the app's version, builds and self-checks the app,
-# packs it with Velopack against the previous release, and creates a DRAFT GitHub Release
-# with every asset. A maintainer publishes the draft, once what ships has been tested in
-# game. docs/RELEASING.md has why, and the version rule.
+# packs it with Velopack against the previous release, signs the feed, and creates a
+# DRAFT GitHub Release with every asset and the feed's signature. A maintainer publishes
+# the draft, once what ships has been tested in game. docs/RELEASING.md has why, the
+# version rule, and the signing key.
+#
+# Three jobs, so the signing key reaches only the one that needs it: `build` runs every
+# dependency's code and never sees it, `sign` reads only the feed, and `publish` uploads.
 on:
   push:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 # One release at a time: each one's delta is made against the release before it.
 concurrency:
@@ -20,14 +24,18 @@ env:
   # Pinned, never floating. tools/pack_release.py's VELOPACK_VERSION and the velopack
   # package in pyproject.toml are the same version, and a test holds all three together.
   VELOPACK_VERSION: "1.2.161"
+  # The cryptography the signing job installs on its own: uv.lock's, which a test holds it to.
+  CRYPTOGRAPHY_VERSION: "50.0.1"
 
 jobs:
-  release:
+  build:
     runs-on: windows-latest
     timeout-minutes: 30
     defaults:
       run:
         shell: bash
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,15 +83,20 @@ jobs:
           uv run --no-sync python tools/pack_release.py "${{ steps.version.outputs.version }}"
           --vpk "$RUNNER_TEMP/vpk/vpk" --out releases
 
-      # Without --publish, vpk leaves the release as a draft: publishing it is the
-      # maintainer's step, and the one that makes users see it.
-      - name: Create the draft release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >
-          "$RUNNER_TEMP/vpk/vpk" upload github
-          --repoUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --token "$GH_TOKEN" --outputDir releases
-          --tag "$GITHUB_REF_NAME" --releaseName "BartleBot ${{ steps.version.outputs.version }}"
+      - name: Keep the packages for the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: releases
+          path: releases/
+          if-no-files-found: error
+
+      # The feed alone, for the signing job, which never needs the packages.
+      - name: Keep the feed for the signing job
+        uses: actions/upload-artifact@v4
+        with:
+          name: feed
+          path: releases/releases.win.json
+          if-no-files-found: error
 
       - name: Report
         if: always()
@@ -101,3 +114,98 @@ jobs:
               echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # The one job that reads FEED_SIGNING_KEY. Until the repo is public it is a repository
+  # secret, since GitHub Free gives a private repo no environment rules; at 1.0.0 it moves
+  # into a `release` environment only v* tags may deploy to (docs/RELEASING.md, "The
+  # signing key").
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Fetch the feed
+        uses: actions/download-artifact@v4
+        with:
+          name: feed
+          path: feed
+
+      # Then checks the signature against TRUSTED_KEYS, the keys the app itself trusts,
+      # so a secret that does not match them fails here rather than shipping a feed no
+      # installed copy would accept.
+      - name: Sign the feed
+        env:
+          FEED_SIGNING_KEY: ${{ secrets.FEED_SIGNING_KEY }}
+        run: |
+          uv run --no-project --with "cryptography==$CRYPTOGRAPHY_VERSION" python tools/sign_feed.py sign feed/releases.win.json
+          uv run --no-project --with "cryptography==$CRYPTOGRAPHY_VERSION" python tools/sign_feed.py verify feed/releases.win.json
+
+      - name: Keep the signature for the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: feed-signature
+          path: feed/releases.win.json.sig
+          if-no-files-found: error
+
+  publish:
+    needs: [build, sign]
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Fetch the packages
+        uses: actions/download-artifact@v4
+        with:
+          name: releases
+          path: releases
+
+      - name: Fetch the signature
+        uses: actions/download-artifact@v4
+        with:
+          name: feed-signature
+          path: releases
+
+      # The feed about to be uploaded is the one that was signed: any difference fails
+      # the release before it exists.
+      - name: Check the signature against the feed being published
+        run: uv run --no-project --with "cryptography==$CRYPTOGRAPHY_VERSION" python tools/sign_feed.py verify releases/releases.win.json
+
+      - name: Install vpk
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet tool install vpk --version "$VELOPACK_VERSION" --tool-path "$RUNNER_TEMP/vpk"
+
+      # Without --publish, vpk leaves the release as a draft: publishing it is the
+      # maintainer's step, and the one that makes users see it.
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          "$RUNNER_TEMP/vpk/vpk" upload github
+          --repoUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --token "$GH_TOKEN" --outputDir releases
+          --tag "$GITHUB_REF_NAME" --releaseName "BartleBot ${{ needs.build.outputs.version }}"
+
+      # vpk uploads only what it packed, so the signature is added to the draft after it.
+      - name: Attach the feed's signature
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" releases/releases.win.json.sig --repo "$GITHUB_REPOSITORY"

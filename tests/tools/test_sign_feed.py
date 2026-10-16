@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 import sys
+import tomllib
 
 import pytest
 
@@ -81,3 +83,46 @@ def test_verify_without_a_signature_fails(tmp_path):
     feed = tmp_path / "releases.win.json"
     feed.write_bytes(FEED)
     assert main(["verify", str(feed)]) == 1
+
+
+# -- release.yml's signing job ---------------------------------------------------------
+
+RELEASE_YML = project_root() / ".github" / "workflows" / "release.yml"
+
+
+def _jobs() -> dict[str, str]:
+    """``release.yml``'s jobs by name, each its own text."""
+    body = RELEASE_YML.read_text(encoding="utf-8").split("\njobs:\n", 1)[1]
+    parts = re.split(r"^  ([a-z_-]+):\n", body, flags=re.MULTILINE)
+    return dict(zip(parts[1::2], parts[2::2]))
+
+
+def test_only_the_signing_job_can_read_the_key():
+    jobs = _jobs()
+
+    assert set(jobs) == {"build", "sign", "publish"}
+    assert [name for name, text in jobs.items() if "secrets.FEED_SIGNING_KEY" in text] == ["sign"]
+    assert "write" not in jobs["sign"], "the job holding the key never gets a token that can write"
+
+
+def test_the_signing_job_signs_then_checks_against_the_apps_keys():
+    sign_job = _jobs()["sign"]
+
+    assert "needs: build" in sign_job
+    assert sign_job.index("sign_feed.py sign") < sign_job.index("sign_feed.py verify")
+
+
+def test_publishing_checks_the_feed_it_uploads_and_attaches_the_signature_after_the_draft():
+    publish = _jobs()["publish"]
+
+    assert "needs: [build, sign]" in publish
+    assert publish.index("sign_feed.py verify") < publish.index("upload github")
+    assert publish.index("upload github") < publish.index("gh release upload")
+    assert "releases.win.json.sig" in publish[publish.index("gh release upload") :]
+
+
+def test_the_signing_job_installs_the_locked_cryptography():
+    lock = tomllib.loads((project_root() / "uv.lock").read_text(encoding="utf-8"))
+    (locked,) = [p["version"] for p in lock["package"] if p["name"] == "cryptography"]
+
+    assert f'CRYPTOGRAPHY_VERSION: "{locked}"' in RELEASE_YML.read_text(encoding="utf-8")

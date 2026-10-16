@@ -1,10 +1,11 @@
 # Releasing
 
 How BartleBot becomes something a user with no Python can run. This file covers the
-packaged build and the checks that hold it to the checkout, the version, and the release
-workflow that turns a tag into a draft release. What an install puts where, and what
-install, update and uninstall do, is `docs/INSTALLER.md`. The updater is added by a later
-stage of epic #27 (`docs/EPICS.md`, *Installer and updater*).
+packaged build and the checks that hold it to the checkout, the version, the release
+workflow that turns a tag into a signed draft release, and the key it signs with. What an
+install puts where, what install, update and uninstall do, and how an installed app finds
+and checks an update, is `docs/INSTALLER.md`. The plan behind both is epic #27
+(`docs/EPICS.md`, *Installer and updater*).
 
 ## A packaged build
 
@@ -91,7 +92,7 @@ read, so in a build it reads the build (`bartlebot/packaging/self_check.py`).
 | `shared set` | every duel, player strategy and deck loads, and every shipped default id in `shared/combat_defaults.py` is among them |
 | `game data` | every snapshot in `game/data/` is there and parses. The list is the readers' own path constants (`game_data_files`), and a test fails when a file there has no entry |
 | `type dump` | the dump art extraction reads is there, and katsuba's native extension opens it |
-| `native` | curl_cffi (wiki import), Pillow's DDS decoder (game art) and Velopack import, and the combat DSL grammar parses the last-resort DSL |
+| `native` | curl_cffi (wiki import), Pillow's DDS decoder (game art) and Velopack import, the combat DSL grammar parses the last-resort DSL, and cryptography loads every key in `TRUSTED_KEYS` and refuses a signature of zeros (the update feed) |
 | `qt` | a `QApplication` starts on Qt's platform plugin, and every icon and the logo render through QtSvg |
 
 A check that raises is a failure with the exception's text, and one failure stops none
@@ -161,7 +162,7 @@ What the spike showed, and what was done about it:
 - **The hash check covers the packages, not the feed.** Velopack checks a package against
   the hashes in `releases.win.json`, so a feed rewritten with a tampered package's hashes
   would pass it. The spike did not try that, since it follows from where the hashes are.
-  It is the gap Stage 4's signature over the feed closes.
+  It is the gap the signature over the feed closes (*The signing key*).
 
 ## `package.yml`
 
@@ -193,8 +194,13 @@ reason. On success it prints the version alone, for the steps after it.
 
 ## A release
 
-`.github/workflows/release.yml` runs on every pushed `v*` tag, on a `windows-latest`
-runner. It never runs on a branch, and is never started by hand.
+`.github/workflows/release.yml` runs on every pushed `v*` tag. It never runs on a branch,
+and is never started by hand. It is three jobs, so the signing key reaches only the one
+that needs it: `build`, on `windows-latest`, runs every dependency's code and never sees
+the key; `sign`, on `ubuntu-latest`, reads only the feed; and `publish`, on
+`windows-latest`, is the only one whose token can write.
+
+`build`:
 
 1. **Check the tag**: `tools/release_version.py`, before anything is built.
 2. **Build and self-check**: `tools/build_package.py`, as `package.yml` does. A failing
@@ -205,9 +211,26 @@ runner. It never runs on a branch, and is never started by hand.
 4. **Pack**: `tools/pack_release.py <version>`, which runs `vpk pack`. It writes
    Setup.exe, the full package, a delta against the previous release when step 3 found
    one, and `releases.win.json`, the feed. `vpk` also writes `RELEASES` and
-   `assets.win.json`, which it uses itself.
-5. **Create the draft**: `vpk upload github`, without `--publish`, creates a draft
+   `assets.win.json`, which it uses itself. Everything goes up as the `releases`
+   artifact, and the feed alone as `feed`.
+
+`sign`:
+
+5. **Sign the feed**: `tools/sign_feed.py sign`, with the key in `FEED_SIGNING_KEY`,
+   writes `releases.win.json.sig`. Only `cryptography` is installed for it, at uv.lock's
+   version (`CRYPTOGRAPHY_VERSION`, which a test holds to the lock).
+6. **Check it against the app's keys**: `tools/sign_feed.py verify` fails the release
+   when the signature matches no key in `TRUSTED_KEYS`, so a wrong secret fails here
+   rather than shipping a feed no installed copy would accept.
+
+`publish`:
+
+7. **Check the feed being published**: the same `verify`, on the `releases` artifact's
+   feed and the signature, so the feed uploaded is byte for byte the one signed.
+8. **Create the draft**: `vpk upload github`, without `--publish`, creates a draft
    release on the tag with every asset.
+9. **Attach the signature**: `gh release upload`, since `vpk` uploads only what it
+   packed.
 
 **CI never publishes.** What ships is Official, and Official means tested in game, which
 CI cannot do. A maintainer installs from the draft, tests, and publishes it. Publishing is
@@ -235,3 +258,50 @@ read Velopack's advisories and repeat the install, update and uninstall in
 Until the repo is public, a release's downloads need authentication, so no installed app
 can update from GitHub yet. Installs and updates are tried from a local folder
 (`docs/INSTALLER.md`).
+
+## The signing key
+
+Every feed is signed with one Ed25519 key, so an installed app can tell a feed CI built
+from one swapped in afterwards (`docs/INSTALLER.md`, *The signature*). Its public half is
+in `bartlebot/updates/keys.py`'s `TRUSTED_KEYS`. Its private half is the
+`FEED_SIGNING_KEY` Actions secret, which only `release.yml`'s `sign` job reads, and a
+maintainer's backup. **It never goes in the repo, a log, an issue or a plan page.**
+
+**Where the secret is.** Until the repo is public it is a repository secret: GitHub Free
+gives a private repository no environment rules, and while it is private only the org's
+members can push a tag. When the repo goes public at 1.0.0 (#240), it moves into a
+`release` environment that only `v*` tags may deploy to, the `sign` job gains
+`environment: release`, and the repository secret is deleted. Whoever owns the org owns
+the key that way, so handing the project over needs nothing beyond the org.
+
+**The key is backed up before the first release**, somewhere outside GitHub that its
+owner controls, such as a password manager. A secret cannot be read back out of GitHub,
+so without a backup a lost org is a lost key. Losing the key strands every installed copy
+on the version it has: none of them will accept a feed signed by a new key until a release
+they already trust tells them to. A user stranded that way installs the next version from
+its Setup.exe, which is not checked against the feed.
+
+**To make a key**, once, or to replace one:
+
+```bash
+uv run python tools/sign_feed.py generate <a file outside the repo>
+```
+
+It writes the private key, the base64 of its 32-byte seed, to that file, refuses to
+overwrite one, and prints the public key. Back the file up, set it as the secret
+(`gh secret set FEED_SIGNING_KEY < <file>`), and delete the file.
+
+**To replace a key**, without stranding anyone:
+
+1. Make the new key and back it up.
+2. Add its public key to `TRUSTED_KEYS`, after the old one, and release as usual. That
+   release is still signed by the old key, so every installed copy takes it, and with it
+   the new list.
+3. Once that release is out, set the secret to the new key. The next release is signed
+   by it, and every copy that took step 2's release accepts it.
+4. A later release drops the old key from `TRUSTED_KEYS`.
+
+An app reads only the latest release's feed, so a copy that has not taken step 2's
+release by the time step 3's is out sees a feed signed by a key it does not trust, and is
+offered nothing from then on. Its user installs the latest Setup.exe over it, which keeps
+their data. So leave step 2's release out for a while, a release or more, before step 3.
