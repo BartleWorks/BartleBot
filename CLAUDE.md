@@ -125,7 +125,7 @@ built record.
 
 Never commit real, identifiable player data — wizard names, character ids, account
 ids, friend codes, or screenshots showing them. This repo is private today but goes
-public at 1.0.0, and history is not rewritten on the way — anything committed now
+public with the first beta release, and history is not rewritten on the way — anything committed now
 ships then. A real wizard name links the account to whoever wrote the commit.
 
 This applies to test fixtures, sample data, docstrings, comments, log excerpts

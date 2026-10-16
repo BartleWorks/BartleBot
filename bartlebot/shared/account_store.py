@@ -237,7 +237,7 @@ class AccountStore:
         The one-time migration out of ``settings.json``, and it is free only while it
         stays one-time: it runs when there is no shared file yet, so the moment a user
         has one, the settings file's copy is dead weight that the caller drops. Doing
-        this before 1.0.0 is what keeps it from becoming migration code with no end date.
+        this before the first public release is what keeps it from becoming migration code with no end date.
 
         Refuses when a shared file already exists, so a stale ``accounts`` key left in a
         hand-edited settings file cannot overwrite the real store on the next start.

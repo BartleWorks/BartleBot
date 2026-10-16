@@ -122,8 +122,8 @@ Darkmoor wrong once already.
 
 ### Art is extracted per machine, and is never a snapshot
 
-Everything above ends as a checked-in file. **Art cannot**: the repo goes public at
-1.0.0 and a committed game texture is the same exposure a committed wizard name is. So
+Everything above ends as a checked-in file. **Art cannot**: the repo goes public with
+the first beta and a committed game texture is the same exposure a committed wizard name is. So
 the extractor writes to `%APPDATA%/Bartleby/BartleBot/art` instead — the user's own
 machine, which the repo cannot reach even by accident — and the app treats its absence as
 the ordinary case rather than as a missing dependency.

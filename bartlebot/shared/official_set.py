@@ -13,8 +13,8 @@ there are two shipped copies. The rule (``docs/EPICS.md``, *Official and shared 
 
 Each set says its own version, in :data:`SET_FILE` beside it, and that file is the only
 place the version lives. It is raised whenever a shared Official item is added, changed
-or removed, and never lowered. Nothing leaves a set after 1.0.0, since a user's link to
-it would then point at nothing. Before 1.0.0 there are no users: version 6 removed two
+or removed, and never lowered. Nothing leaves a set after the first public release, since a user's link
+to it would then point at nothing. Before it there were no users: version 6 removed two
 duels (#223), and version 8 retired a player strategy (#212). Version 8 also first
 shipped the decks.
 

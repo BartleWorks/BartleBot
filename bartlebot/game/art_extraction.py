@@ -6,8 +6,8 @@ Stage 7). It reads only the user's own game install and writes only under
 :func:`~bartlebot.game.card_art.art_dir`, ``%APPDATA%/Bartleby/BartleBot/art``.
 
 WHY THE ART IS EXTRACTED, AND NEVER SHIPPED
-    Nothing extracted may ever become a tracked file: the repo goes public at 1.0.0
-    and a committed game texture carries the same exposure as committed player data
+    Nothing extracted may ever become a tracked file: the repo goes public with the
+    first beta release and a committed game texture carries the same exposure as committed player data
     (see "No game assets, either" in the root ``CLAUDE.md``). Writing into
     ``%APPDATA%/Bartleby/BartleBot/art`` puts the output somewhere the repo cannot
     reach even by accident. ``bartlebot/game/card_art.py`` is the read side, and treats

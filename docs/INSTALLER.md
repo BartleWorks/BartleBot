@@ -278,8 +278,8 @@ handing Velopack the same update twice.
 
 ## Trying an install, an update and an uninstall
 
-The repo is private until 1.0.0, so a release's downloads need authentication, and an
-install is tried from a local folder instead. This touches the account it runs in, so
+A draft's downloads need a GitHub sign-in, and a published release is offered to every
+user, so an install or an update is tried from a local folder instead. This touches the account it runs in, so
 try it in the test account (`docs/RELEASING.md`, *Testing a draft*), or check that
 `%LocalAppData%\BartleBot` does not already exist, and uninstall afterwards.
 
