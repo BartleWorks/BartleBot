@@ -14,6 +14,7 @@ from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QWidget
 
 from bartlebot.content.bot_tags import REWARDS
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.sidebar.sidebar_section import value_label
 from bartlebot.gui.widgets.layout.flow_layout import flow_container
 from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, TagPickerButton, TagVocabulary
@@ -91,6 +92,8 @@ class TagsField(QWidget):
         self._pill_layout.addWidget(self._buttons)
 
         self._rebuild()
+        # A chip or pill is drawn with its medallion or without it once, when it is made.
+        follow_art(self, self._rebuild)
 
     def _build_pickers(self) -> None:
         """One picker button per group of the vocabulary, replacing any there were."""

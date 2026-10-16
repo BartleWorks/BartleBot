@@ -380,3 +380,22 @@ def test_a_strategy_chip_and_pill_take_their_color_from_the_strategy_vocabulary(
     assert STRATEGY_VOCABULARY.accent("Custom") in chip.styleSheet()
     assert STRATEGY_VOCABULARY.accent("Hitter") in pill.styleSheet()
     assert STRATEGY_VOCABULARY.accent("Custom") != STRATEGY_VOCABULARY.accent("Hitter")
+
+
+def test_new_art_rebuilds_the_rows_keeping_their_counts(qapp):
+    """The rows hold their medallions, so art extracted after the button was made needs new rows (#239)."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    button = TagPickerButton(counts={"Gold": 3}, group="Rewards")
+
+    def gold_row():
+        return next(r for _title, rows in button._sections for r in rows if r.key == "Gold")
+
+    assert gold_row().icon is None
+
+    write_extracted_art(icons=["tag_gold"])
+    announce_art_changed()
+
+    assert gold_row().icon is not None
+    assert gold_row().meta == "3 bots"

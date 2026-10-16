@@ -442,6 +442,11 @@ def isolated_settings(_appdata_root, monkeypatch):
 
     monkeypatch.setattr(official_set, "_registry", official_set.NoRegistry())
     official_set.reset_shipped_root()
+    # The art index is cached, and a cache read under the last test's APPDATA describes
+    # an art folder this test does not have (#239's tests write one each).
+    from bartlebot.game import card_art  # noqa: PLC0415
+
+    card_art.forget_cache()
     # Nor may a test that reaches an install hook write the machine's install key or file
     # types: both registry roots point at a throwaway key, removed at the end of the
     # session, and Explorer is never told (see packaging.install_hooks). Before this, a

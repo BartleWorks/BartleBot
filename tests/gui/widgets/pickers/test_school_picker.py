@@ -60,3 +60,23 @@ def test_counts_carry_the_callers_noun():
     assert meta["Storm"] == ("1 duel", False)
     assert meta["Fire"] == ("3 duels", False)
     assert meta["Life"] == ("0 duels", True)
+
+
+def test_new_art_rebuilds_the_rows_keeping_their_counts(qapp):
+    """The rows hold their medallions, so art extracted after the button was made needs new rows (#239)."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    button = SchoolPickerButton(caption="School")
+    button.set_counts({"Fire": 2}, ("strategy", "strategies"))
+
+    def fire_row():
+        return next(r for _title, rows in button._sections for r in rows if r.key == "Fire")
+
+    assert fire_row().icon is None
+
+    write_extracted_art(icons=["school_fire"])
+    announce_art_changed()
+
+    assert fire_row().icon is not None
+    assert fire_row().meta == "2 strategies"

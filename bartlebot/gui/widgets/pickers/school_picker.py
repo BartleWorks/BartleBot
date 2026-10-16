@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import QWidget
 
 from bartlebot.combat.deck_io import PIP_SCHOOLS
 from bartlebot.game import card_art
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow, Section, summarize
 from bartlebot.gui.widgets.pickers.tag_picker import count_label
@@ -63,7 +64,9 @@ class SchoolPickerButton(PickerButton):
             parent=parent,
         )
         self._caption = caption
-        self.set_sections(school_sections())
+        self.set_counts(None)
+        # The rows hold their medallions, so new art means new rows.
+        follow_art(self, lambda: self.set_counts(*self._counts))
 
     def format_text(self, labels: list[str]) -> str:
         if self._caption is not None:
@@ -72,6 +75,7 @@ class SchoolPickerButton(PickerButton):
 
     def set_counts(self, counts: dict[str, int] | None, noun: tuple[str, str] = ("entry", "entries")) -> None:
         """Rebuild the rows with how many entries work with each school."""
+        self._counts = (counts, noun)
         self.set_sections(school_sections(counts, noun))
 
     def value(self) -> list[str]:
