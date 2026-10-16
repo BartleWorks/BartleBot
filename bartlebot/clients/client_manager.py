@@ -1752,6 +1752,13 @@ class ClientManager(QObject):
         if self._relog_in_progress or self._recovery_in_progress or self._pending_recovery:
             logger.debug("Skipping %s relog — a recovery or relog is already in flight", reason)
             return False
+        if machine.is_paused or machine.is_ambient_combat_active:
+            # The bot is held by someone else: the user, or the ambient watcher mid-fight. The
+            # relog pauses and resumes on its own account, so starting now would resume a bot
+            # it never paused -- running a node beside the ambient fight, or overriding the
+            # user's pause (#154). The next tick tries again.
+            logger.debug("Deferring %s relog — the bot is paused or fighting", reason)
+            return False
 
         gaps = self.recovery_gaps()
         if gaps:
