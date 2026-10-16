@@ -18,6 +18,7 @@ from tools.build_package import (  # noqa: E402
     WHOLE_PACKAGES,
     pyinstaller_command,
     strip_install_records,
+    write_icon,
 )
 
 
@@ -60,3 +61,25 @@ def test_install_records_are_stripped_and_metadata_kept(tmp_path):
     assert sorted(p.name for p in removed) == ["INSTALLER", "RECORD", "direct_url.json", "uv_cache.json"]
     assert sorted(p.name for p in info.iterdir()) == ["METADATA", "entry_points.txt"]
     assert (tmp_path / "direct_url.json").exists()
+
+
+def test_the_command_carries_the_icon_when_given_one(tmp_path):
+    icon = tmp_path / "bartlebot.ico"
+
+    with_icon, _exe = pyinstaller_command(tmp_path / "dist", tmp_path / "work", icon)
+    without, _exe = pyinstaller_command(tmp_path / "dist", tmp_path / "work")
+
+    assert with_icon[with_icon.index("--icon") + 1] == str(icon)
+    assert "--icon" not in without
+
+
+def test_the_icon_is_the_logo_at_every_window_icon_size(qapp, tmp_path):
+    from PIL import Image
+
+    from bartlebot.gui.logo import ICON_SIZES
+
+    icon = write_icon(tmp_path)
+
+    assert icon == tmp_path / "bartlebot.ico"
+    with Image.open(icon) as image:
+        assert sorted(image.info["sizes"]) == sorted((size, size) for size in ICON_SIZES)

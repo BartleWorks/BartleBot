@@ -45,7 +45,7 @@ METADATA = ("bartlebot",)
 WHOLE_PACKAGES = ("katsuba",)
 
 
-def pyinstaller_command(dist: Path, work: Path) -> tuple[list[str], Path]:
+def pyinstaller_command(dist: Path, work: Path, icon: Path | None = None) -> tuple[list[str], Path]:
     """The onedir build, and the exe it makes. Data lands beside ``bartlebot/`` in ``_internal``."""
     sep = os.pathsep
     command = [
@@ -66,6 +66,8 @@ def pyinstaller_command(dist: Path, work: Path) -> tuple[list[str], Path]:
         "--specpath",
         str(work),
     ]
+    if icon is not None:
+        command += ["--icon", str(icon)]
     for folder in DATA_DIRS:
         command += ["--add-data", f"{ROOT / folder}{sep}{folder}"]
     for file in DATA_FILES:
@@ -91,6 +93,22 @@ def strip_install_records(folder: Path) -> list[Path]:
     return removed
 
 
+def write_icon(dist: Path) -> Path:
+    """Draw ``bartlebot.ico`` into ``dist`` from the logo's SVG, and return its path.
+
+    The exe carries it, so the Start Menu entry, the uninstall entry and Explorer show the
+    logo rather than PyInstaller's. ``release.yml`` hands the same file to ``vpk pack`` for
+    Setup.exe.
+    """
+    sys.path.insert(0, str(ROOT))
+    from PyQt6.QtGui import QGuiApplication  # noqa: PLC0415
+
+    from tools.export_logo import write_icon as write_logo_icon  # noqa: PLC0415
+
+    _app = QGuiApplication.instance() or QGuiApplication([NAME, "-platform", "offscreen"])  # noqa: F841 - QPainter needs one
+    return write_logo_icon(dist)
+
+
 def folder_size(folder: Path) -> tuple[int, int]:
     """The total bytes and the number of files under ``folder``."""
     files = [p for p in folder.rglob("*") if p.is_file()]
@@ -114,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     work = ROOT / "build" / "pyinstaller"
     for folder in (dist / NAME, work):
         shutil.rmtree(folder, ignore_errors=True)
-    command, exe = pyinstaller_command(dist, work)
+    command, exe = pyinstaller_command(dist, work, write_icon(dist))
 
     started = time.perf_counter()
     built = subprocess.run(command, cwd=ROOT)

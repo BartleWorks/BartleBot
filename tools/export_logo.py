@@ -40,15 +40,20 @@ def export(out_dir: Path) -> list[Path]:
         if not logo_image(size).save(str(path), "PNG"):
             raise OSError(f"Could not write {path}")
         written.append(path)
+    written.append(write_icon(out_dir))
+    return written
 
+
+def write_icon(out_dir: Path) -> Path:
+    """Write ``bartlebot.ico`` into *out_dir* and return its path. ``tools/build_package.py`` uses it too."""
+    out_dir.mkdir(parents=True, exist_ok=True)
     # Pillow resamples a single image to each size by default, which would undo the
     # snapping; handing it every size ready-made keeps each one exactly as drawn.
     frames = [_pil(tree_image(size)) for size in ICON_SIZES]
     ico = out_dir / "bartlebot.ico"
     largest = frames[-1]
     largest.save(ico, format="ICO", sizes=[f.size for f in frames], append_images=frames[:-1])
-    written.append(ico)
-    return written
+    return ico
 
 
 def _pil(image) -> Image.Image:
