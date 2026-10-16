@@ -112,6 +112,14 @@ def test_a_shipped_default_missing_from_the_set_fails(tmp_path):
         check_shared_set(tmp_path)
 
 
+def test_a_set_that_says_no_version_fails(tmp_path):
+    shutil.copytree(project_root() / "strategies", tmp_path / "strategies")
+    (tmp_path / "strategies" / "official_set.json").unlink()
+
+    with pytest.raises(CheckFailed, match="no version in strategies/official_set.json"):
+        check_shared_set(tmp_path)
+
+
 def test_one_failing_check_stops_none_of_the_others(tmp_path):
     def boom(_root):
         raise RuntimeError("no such thing")

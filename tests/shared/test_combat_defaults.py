@@ -32,15 +32,17 @@ from bartlebot.shared.combat_defaults import (
     set_default_choice,
     team_size,
 )
-from bartlebot.shared.official_set import SHARED_SET_VERSION
+from bartlebot.shared.official_set import set_version
 from bartlebot.shared.store_files import index_dir, slugify
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 STRATEGIES = Path(__file__).resolve().parents[2] / "strategies"
 DUELS = STRATEGIES / "duel"
 PLAYERS = STRATEGIES / "player"
+#: The shipped set's version, as ``strategies/official_set.json`` says it.
+SHARED_SET_VERSION = set_version(STRATEGIES.parent)
 
-#: The value of ``SHARED_SET_VERSION`` before this stage changed shared Official items.
+#: The shared set's version before this stage changed shared Official items.
 VERSION_BEFORE_DEFAULT_DUELS = 1
 
 

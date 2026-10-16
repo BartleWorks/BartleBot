@@ -158,11 +158,14 @@ def check_subgraphs(root: Path) -> str:
 
 
 def check_shared_set(root: Path) -> str:
-    """The shared Official set: every duel, player strategy and deck loads, and the shipped defaults are in it."""
+    """The shared Official set: its version, every duel, player strategy and deck loads, and the shipped defaults are in it."""
     from bartlebot.shared import combat_defaults  # noqa: PLC0415
+    from bartlebot.shared.official_set import SET_FILE, set_version  # noqa: PLC0415
     from bartlebot.shared.strategy_library import LIBRARY_DIRNAME, MODELS, LibraryKind, kind_dir  # noqa: PLC0415
 
     _folder(root, LIBRARY_DIRNAME)
+    version = set_version(root)
+    _require(version is not None, f"no version in {SET_FILE.as_posix()}")
     ids: dict[LibraryKind, set[str]] = {}
     for kind, model in MODELS.items():
         folder = kind_dir(root, kind)
@@ -186,7 +189,7 @@ def check_shared_set(root: Path) -> str:
     }
     missing = sorted((duels - ids[LibraryKind.DUEL]) | (players - ids[LibraryKind.PLAYER]))
     _require(not missing, f"shipped defaults missing from the set: {missing}")
-    return ", ".join(_count(len(found), kind.value) for kind, found in ids.items())
+    return f"version {version}: " + ", ".join(_count(len(found), kind.value) for kind, found in ids.items())
 
 
 def game_data_files() -> list[Path]:
