@@ -175,6 +175,9 @@ to revert. Its line says when the art was extracted and how many pictures, from 
 (`card_art.manifest()`), or that there is none. Extract opens `ArtExtractionDialog`, the
 same `ArtExtraction` setup's Game art page holds: a progress bar and the step, Cancel while
 it runs, Close once it ended, and the row's line rereads the index when the dialog closes.
+A run that wrote art announces `art_changed` (`bartlebot/gui/CLAUDE.md`, "Art extracted while
+the app is open"), and Settings itself is open behind the dialog, so its own art surfaces
+follow it: the Combat Defaults tab's strategy cards and the quicksell keep list.
 It reads the game folder stored, not one the Game folder row shows but OK has not written.
 Its description is the text setup's Extract game art choice carries (`EXTRACT_DETAILS`), so
 the cost, about 35 MB in AppData, is said once.

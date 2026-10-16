@@ -7,6 +7,7 @@ category reads.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import lru_cache
 
 from PyQt6.QtCore import QSize
@@ -14,6 +15,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 from bartlebot.game import card_art
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 
 #: Shown in the Category column for a drop that has none — every drop imported
@@ -49,6 +51,21 @@ def _drop_icon(key: str, _generation: int) -> QIcon | None:
 def show_drop_icons(tree: QTreeWidget) -> None:
     """Draw *tree*'s category icons at :data:`DROP_ICON_PX` rather than Qt's default 16."""
     tree.setIconSize(QSize(DROP_ICON_PX, DROP_ICON_PX))
+
+
+def follow_drop_icons(tree: QTreeWidget, column: int, icon_for: Callable[[QTreeWidgetItem], QIcon | None]) -> None:
+    """Give each of *tree*'s rows its icon again in *column* whenever the art changes (#239).
+
+    The rows are not rebuilt: a sort, a selection and the keep list's ticks all stay.
+    *icon_for* is the tree's own ``drop_icon`` call for a row, None where it has none.
+    """
+
+    def reicon() -> None:
+        for index in range(tree.topLevelItemCount()):
+            item = tree.topLevelItem(index)
+            item.setIcon(column, icon_for(item) or QIcon())
+
+    follow_art(tree, reicon)
 
 
 class CaseInsensitiveTreeItem(QTreeWidgetItem):

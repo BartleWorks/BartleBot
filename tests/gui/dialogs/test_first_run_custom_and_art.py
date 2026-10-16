@@ -443,3 +443,24 @@ def test_a_first_run_with_art_already_extracted_skips_the_page(qapp, prefs, game
     dialog = FirstRunDialog([CombatQuestionPage(prefs), options, art])
 
     assert art not in dialog.walk
+
+
+async def test_setups_art_page_announces_the_new_art_once(qapp, prefs, game):
+    """What makes the bot library behind setup show its badges and tag medallions at once (#239)."""
+    from bartlebot.gui.art_signal import art_signal  # noqa: PLC0415
+
+    seen: list[None] = []
+
+    def note() -> None:
+        seen.append(None)
+
+    art_signal().art_changed.connect(note)
+    try:
+        dialog, _options, art = _dialog(prefs)
+        _next(dialog, 2)
+        await art.extraction.task
+    finally:
+        art_signal().art_changed.disconnect(note)
+
+    assert art.extraction.ok
+    assert len(seen) == 1

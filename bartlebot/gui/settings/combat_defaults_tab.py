@@ -51,6 +51,7 @@ from bartlebot.combat.combat_resolution import SIZE_RANGE, default_choice_notes
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_summary import summarize_duel
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.settings.rows import SettingCard, SettingRow, SettingsForm
@@ -157,6 +158,9 @@ class DefaultDuelCard(SettingCard):
 
         self.layout().addWidget(body)
         self._redraw()
+        # The card draws its schools as medallions or as words once, when it is made, and
+        # Settings is open behind the extraction its own General tab starts.
+        follow_art(self, self._redraw)
 
     # -- reading --------------------------------------------------------
 

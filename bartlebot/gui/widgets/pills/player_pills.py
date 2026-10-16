@@ -37,6 +37,7 @@ from collections.abc import Sequence
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.theming.account_accent import account_accent, account_tint
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import set_style_sheet
@@ -364,6 +365,8 @@ class PlayerBadgeRow(QWidget):
         self._gems: list[DuelSlotGem] = []
         self._separators: list[ThemedTextLabel] = []
         self._players: list[int] = []
+        #: What :meth:`set_players` was last handed, first to last.
+        self._given: list[int] = []
         self._color_keys: list[int | None] = []
         self._account_labels: list[str] = []
         for index in range(_MAX_SLOTS):
@@ -381,6 +384,9 @@ class PlayerBadgeRow(QWidget):
             self._badges.append(badge)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.set_players([])
+        if duel_order:
+            # Which gems show is this row's to say, by how many players it holds.
+            follow_art(self, lambda: self.set_players(self._given))
 
     @property
     def players(self) -> list[int]:
@@ -400,6 +406,7 @@ class PlayerBadgeRow(QWidget):
         which way this one runs. :attr:`players` reports what is on screen, which for a
         mirrored row is the reverse of what came in.
         """
+        self._given = list(players)
         self._players = list(players)[:_MAX_SLOTS]
         if self._duel_order:
             self._players.reverse()

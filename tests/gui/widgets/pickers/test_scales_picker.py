@@ -254,3 +254,18 @@ def test_an_unset_scales_waits_for_a_bots_blank_setup_steps():
 def test_an_unset_scales_is_an_error_once_the_steps_name_a_world_with_no_default():
     for draft in (True, False):
         assert any("no default Scales" in r for r in _template_errors("Aquila/AQ_Z00_Hub", draft=draft))
+
+
+def test_a_button_made_before_the_art_was_extracted_shows_it_at_the_next_open(qapp):
+    """The headers are looked up as each popup opens, so no art_changed connection is needed (#239)."""
+    from bartlebot.game import card_art, worlds  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    button = ScalesButton()
+    entry = next(iter(button.table.values()))
+    resolve = button._popup_options["section_icon"]
+    assert resolve(worlds.label(entry.world)) is None
+
+    write_extracted_art(icons=[card_art.world_icon_name(entry.world)])
+
+    assert resolve(worlds.label(entry.world)) is not None

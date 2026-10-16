@@ -174,3 +174,27 @@ def test_a_row_does_not_say_an_unresolved_name_twice(qapp):
     listing.set_deck(DeckData(normal={"Not A Real Card Template": 1}))
 
     assert listing.row_texts()[1] == "×1 Not A Real Card Template"
+
+
+def test_new_art_gives_the_rows_their_tiles(qapp):
+    """Art extracted while the list is up (#239): each row gains the tile it lacked."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    listing = DeckCardList()
+    listing.set_deck(DeckData(normal={"Test Card": 2}))
+    assert _tiles(listing) == []
+
+    write_extracted_art(images=["Test Card"])
+    announce_art_changed()
+
+    assert [tile.entry.template for tile in _tiles(listing)] == ["Test Card"]
+
+
+def test_new_art_leaves_a_list_never_filled_empty(qapp):
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+
+    listing = DeckCardList(empty_text="No cards")
+    announce_art_changed()
+
+    assert listing.rows == []

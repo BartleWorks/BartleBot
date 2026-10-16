@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -30,6 +31,7 @@ from bartlebot.gui.widgets.layout.drop_tree import (
     UNCATEGORIZED_DISPLAY,
     CategoryThenNameTreeItem,
     drop_icon,
+    follow_drop_icons,
     show_drop_icons,
 )
 from bartlebot.nodes.utility.quicksell import DROP_CATEGORIES
@@ -259,6 +261,7 @@ class _DropsListWidget(QWidget):
         header.setSectionResizeMode(self.COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
         self._list.setColumnWidth(self.COL_CATEGORY, 92)
         show_drop_icons(self._list)
+        follow_drop_icons(self._list, self.COL_CATEGORY, self._icon_for)
         layout.addWidget(self._list, 1)
 
         # Button row — shown only in edit mode
@@ -306,6 +309,10 @@ class _DropsListWidget(QWidget):
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
         self._btn_row.setVisible(editable)
+
+    def _icon_for(self, item: QTreeWidgetItem) -> QIcon | None:
+        entry = item.data(self.COL_NAME, Qt.ItemDataRole.UserRole)
+        return None if entry is None else drop_icon(entry.category, entry.name)
 
     def set_items(self, entries: list[DropModel]) -> None:
         """Replace table contents. The view keeps whichever column the user sorted by."""

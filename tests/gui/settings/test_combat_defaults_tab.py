@@ -225,3 +225,17 @@ def test_ok_stores_the_record_setting_and_applies_it_at_once(qapp, prefs, trace_
 
     assert sm.record_combat_decisions is record
     assert trace_level.level == (logging.DEBUG if record else logging.NOTSET)
+
+
+def test_new_art_redraws_each_cards_strategy(qapp, prefs):
+    """Settings is open behind the extraction its General tab starts (#239): the card is made again."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+
+    tab = CombatDefaultsTab(prefs=prefs)
+    before = {size: tab.card(size).strategy_card for size in (TeamSize.SOLO, TeamSize.TEAM)}
+
+    announce_art_changed()
+
+    for size, card in before.items():
+        assert tab.card(size).strategy_card is not card
+        assert tab.card(size).strategy_card._name_lbl.text() == card._name_lbl.text()

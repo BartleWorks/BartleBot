@@ -28,6 +28,7 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.combat.deck_content import DeckCardEntry, deck_groups
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.card_art_tile import ROW_TILE, CardArtTile, card_icon, tooltip_for
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.discard import discard_widget
@@ -55,10 +56,14 @@ class DeckCardList(QWidget):
     ) -> None:
         super().__init__(parent)
         self._empty_text = empty_text
+        self._deck: DeckData | None = None
         self._rows: list[QWidget] = []
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(*margins)
         self._layout.setSpacing(_ROW_SPACING)
+        # A row without art is a row minus its tile, so new art means new rows. A list
+        # never filled stays empty rather than gaining its empty text.
+        follow_art(self, lambda: self.set_deck(self._deck) if self._rows else None)
 
     # -- reading --------------------------------------------------------
 
@@ -92,6 +97,7 @@ class DeckCardList(QWidget):
 
     def set_deck(self, deck: DeckData | None) -> None:
         """Redraw from *deck*. ``None`` and an empty deck are the same thing here."""
+        self._deck = deck
         self._clear()
         for group in deck_groups(deck) if deck is not None else []:
             self._add(ThemedTextLabel(group.heading, color="text", css=_HEADING_CSS, parent=self))

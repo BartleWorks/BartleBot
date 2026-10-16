@@ -79,6 +79,7 @@ from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game import card_art, scales
 from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import EdgeItem
@@ -784,11 +785,26 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # that survives the filter, which is the whole library on a fresh install.
         self._listed = False
         self._build_ui()
+        follow_art(self, self._on_art_changed)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
         if not self._listed:
             self.refresh()
+
+    def _on_art_changed(self) -> None:
+        """Relist with the new badges and tag medallions, or on the next show when out of sight.
+
+        Every card's pills and every category row's badge were drawn from the art there
+        was, so the listing is rebuilt rather than patched. Hidden behind an open bot, the
+        panel only forgets it was listed: ``showEvent`` relists when it is next looked at.
+        """
+        if not self._listed:
+            return
+        if self.isVisible():
+            self.refresh(keep_category=True)
+        else:
+            self._listed = False
 
     # ------------------------------------------------------------------
     # Construction

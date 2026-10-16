@@ -1,7 +1,8 @@
 """Game art in the app: the run with its progress, setup's choice, and Settings › General › Game art (#232).
 
 :class:`ArtExtraction` runs :func:`bartlebot.game.art_extraction.extract_art` off the GUI
-thread and shows how far it has got. Setup's Game art page holds one, and so does
+thread and shows how far it has got. A run that writes art announces it once
+(:mod:`bartlebot.gui.art_signal`), so what is already on screen redraws with it. Setup's Game art page holds one, and so does
 :class:`ArtExtractionDialog`, which the Settings row opens for a run after a game patch.
 The choice on Custom setup's Options page is :func:`extract_art_row`, with the same text the
 Settings row carries.
@@ -27,6 +28,7 @@ from bartlebot.game.art_extraction import (
     Progress,
     installed_game_data_dir,
 )
+from bartlebot.gui.art_signal import announce_art_changed
 from bartlebot.gui.settings.rows import Binding, SettingRow
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import ThemedMixin
@@ -215,6 +217,9 @@ class ArtExtraction(ThemedMixin, QWidget):
 
     def _succeed(self, result: ExtractionResult) -> None:
         self._result = result
+        # Before the stopped check: a stop that came after the extractor's last check
+        # did not undo anything, so the new art is on disk and every surface should show it.
+        announce_art_changed()
         if self._stopped:
             return
         self._bar.setRange(0, 1)

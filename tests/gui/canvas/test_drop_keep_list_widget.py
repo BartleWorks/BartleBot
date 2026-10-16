@@ -996,3 +996,22 @@ def test_pets_the_keep_list_cannot_keep_stay_out_of_bulk_changes(qapp):
     w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
     w._btn_check_all.click()
     assert w.get_value() == ["=Amber Ring"]
+
+
+def test_new_art_gives_the_rows_their_category_icons_keeping_the_ticks(qapp):
+    """Art extracted while the keep list is up, as in Settings (#239): rows re-icon in place."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartlebot.gui.canvas.drop_keep_list import _COL_CATEGORY  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    w = _make(qapp, keep_list=["Mandrake"])
+    rows_before = list(w._rows)
+    ticks_before = [_checked(w, name) for name in _rows(w)]
+    assert _row(w, "Mandrake").icon(_COL_CATEGORY).isNull()
+
+    write_extracted_art(icons=["drop_reagents"])
+    announce_art_changed()
+
+    assert not _row(w, "Mandrake").icon(_COL_CATEGORY).isNull()
+    assert w._rows == rows_before
+    assert [_checked(w, name) for name in _rows(w)] == ticks_before

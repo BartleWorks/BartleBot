@@ -171,3 +171,17 @@ def test_a_zone_id_finds_its_row():
 def test_the_default_filter_still_ignores_section_titles_and_meta():
     assert filter_sections(_SECTIONS, "celestia") == []
     assert filter_sections(_SECTIONS, "kt_hub") == []
+
+
+def test_a_button_made_before_the_art_was_extracted_shows_it_at_the_next_open(qapp):
+    """The headers are looked up as each popup opens, so no art_changed connection is needed (#239)."""
+    from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    button = NavZoneButton(nav=_nav())
+    resolve = button._popup_options["section_icon"]
+    assert resolve("Krokotopia") is None
+
+    write_extracted_art(icons=["world_krokotopia"])
+
+    assert resolve("Krokotopia") is not None

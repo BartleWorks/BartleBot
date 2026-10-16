@@ -527,6 +527,34 @@ An icon is artwork in its own colors, so a widget drawing one reads no `THEME` v
 and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
 the same exemption the card art tiles take.
 
+### Art extracted while the app is open
+
+Art can arrive while everything is on screen: setup's Game art page runs straight after an
+install, with the bot library behind it, and Settings › General › Game art runs again after
+a patch, with Settings open behind it. `extract_art` ends with `card_art.forget_cache()`, so
+every *later* lookup sees the new files, but a widget that looked once and drew what it
+found keeps it. So `ArtExtraction` announces **`art_changed`** once per run that wrote art
+(`bartlebot/gui/art_signal.py`, #239), and a surface that draws art follows it with
+`follow_art(self, redraw)`. A failed or stopped run announces nothing. `card_art` stays
+free of Qt; the signal is in `gui/`.
+
+- **The widget that chooses between art and text is the one that follows**, and it reruns
+  its own fill method. A deck card shows its `CardArtStrip` or its summary line and its
+  `ArchmasteryBadge` or its sentence, so `_DeckCard` follows and reruns `set_deck`; the strip
+  and the badge do not follow on their own, or the card would keep showing the text form
+  beside them. The same goes for a `TagPill` or `TagChip`, which is drawn in one form or the
+  other when it is made: `TagsField` and the bot library rebuild theirs.
+- **Rows that hold an icon are given it again.** `TagPickerButton` and `SchoolPickerButton`
+  rebuild their sections, counts kept, and both drop tables re-icon each row in place
+  (`drop_tree.follow_drop_icons`), so a sort, a selection and the keep list's ticks stay.
+- **A surface built afresh each time it opens needs no connection.** The zone and Scales
+  pickers resolve their section icons as each popup opens, and the New Bot, Templates and
+  node browser dialogs look art up as they are built. The pickers and New Bot have a test
+  each showing that a later open wears art extracted after the button or dialog was made.
+- **Follow through `follow_art`, never by connecting to the signal directly.** It hangs the
+  connection on a child `QObject`, so it ends when the widget is destroyed, and catches
+  what the redraw raises, since a slot that raises aborts the process under PyQt6.
+
 ## A widget that wraps has to say so in its size policy
 
 `FlowLayout` wraps correctly and the parent still reserves **one row**, because a

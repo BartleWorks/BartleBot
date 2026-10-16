@@ -3083,3 +3083,24 @@ def test_a_flagged_pill_keeps_its_click(qapp):
 
     assert pill.flagged
     assert seen == ["state_9"]
+
+
+def test_new_art_swaps_a_deck_cards_summary_for_its_strip_and_its_sentence_for_icons(qapp):
+    """Art extracted while the sidebar is up (#239): the folded card shows tiles and the badge."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Test Card": 4}, archmastery_school="Fire")})
+    card = section.card(1)
+    assert card._art.isHidden()
+    assert card._archmastery_icons.isHidden()
+    assert not card._archmastery.isHidden()
+
+    write_extracted_art(icons=["archmastery", "universal", "school_fire"], images=["Test Card"])
+    announce_art_changed()
+
+    assert not card._art.isHidden()
+    assert [tile.entry.template for tile in card._art.tiles] == ["Test Card"]
+    assert not card._archmastery_icons.isHidden()
+    assert card._archmastery.isHidden()

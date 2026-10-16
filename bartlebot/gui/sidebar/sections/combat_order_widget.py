@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.theming.account_accent import account_accent, account_tint
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import set_style_sheet
@@ -221,6 +222,7 @@ class CombatOrderWidget(QWidget):
         header_layout.setSpacing(4)
         self._header_cells: list[QWidget] = []
         self._header_labels: list[QLabel] = []
+        self._gems: list[DuelSlotGem] = []
         for slot in reversed(range(1, _MAX_SLOTS + 1)):
             cell, label = self._build_header_cell(slot)
             header_layout.addWidget(cell, 1)
@@ -230,6 +232,9 @@ class CombatOrderWidget(QWidget):
             self._header_labels.insert(0, label)
         self._sync_header_visibility()
         outer.addWidget(self._header_row)
+        # A gem shows or hides on whether its art resolved, so each looks again. Only its
+        # cell is ever hidden for the duel's size, so the gem's own visibility is its own.
+        follow_art(self, lambda: [gem.set_slot(gem.slot) for gem in self._gems])
 
         # Row 3: draggable chip row
         self._chip_row = QWidget()
@@ -268,7 +273,9 @@ class CombatOrderWidget(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
         row.addStretch(1)
-        row.addWidget(DuelSlotGem(slot, parent=cell), 0, Qt.AlignmentFlag.AlignVCenter)
+        gem = DuelSlotGem(slot, parent=cell)
+        self._gems.append(gem)
+        row.addWidget(gem, 0, Qt.AlignmentFlag.AlignVCenter)
         label = QLabel(_ordinal(slot), cell)
         set_style_sheet(label, f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
         row.addWidget(label, 0, Qt.AlignmentFlag.AlignVCenter)

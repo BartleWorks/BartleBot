@@ -249,3 +249,19 @@ def test_the_icons_are_absent_on_an_install_that_never_extracted_them(art_home, 
     assert editor._icons.isHidden()
     assert editor._school.text() == "Fire", "the school still has to be legible"
     assert not editor._modes.isHidden(), "and still editable"
+
+
+def test_new_art_shows_the_icons_in_place_of_nothing(qapp, art_home, app_setting):
+    """Art extracted while the editor is up (#239): the badge appears beside the school."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+
+    editor = ArchmasteryEditor()
+    editor.load(DeckData(normal={"Test Card": 1}, archmastery_school="Fire"))
+    assert editor._icons.isHidden()
+
+    _extract_icons()
+    card_art.forget_cache()
+    announce_art_changed()
+
+    assert not editor._icons.isHidden()
+    assert editor._icons.has_icons()

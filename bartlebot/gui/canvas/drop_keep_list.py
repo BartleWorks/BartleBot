@@ -16,7 +16,7 @@ from collections.abc import Callable
 from typing import Any
 
 from PyQt6.QtCore import QEvent, QModelIndex, QRect, Qt, pyqtSignal
-from PyQt6.QtGui import QBrush, QColor, QFontMetrics, QPainter, QPalette
+from PyQt6.QtGui import QBrush, QColor, QFontMetrics, QIcon, QPainter, QPalette
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -45,6 +45,7 @@ from bartlebot.gui.widgets.layout.drop_tree import (
     UNCATEGORIZED_DISPLAY,
     CaseInsensitiveTreeItem,
     drop_icon,
+    follow_drop_icons,
     show_drop_icons,
 )
 from bartlebot.gui.widgets.layout.flow_layout import FlowLayout
@@ -253,6 +254,12 @@ class _MatchDelegate(QStyledItemDelegate):
 # ---------------------------------------------------------------------------
 
 
+def _row_icon(row: QTreeWidgetItem) -> QIcon | None:
+    """A keep-list row's category icon, as ``_rebuild_rows`` gives it."""
+    entry = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
+    return None if entry is None else drop_icon(entry.category or "", entry.name)
+
+
 class DropKeepListWidget(QWidget):
     """Keyword line edit plus the bot's drop table, checkable and filterable.
 
@@ -361,6 +368,7 @@ class DropKeepListWidget(QWidget):
         self._tree.setColumnWidth(_COL_KEEP, 42)
         self._tree.setColumnWidth(_COL_CATEGORY, 92)
         show_drop_icons(self._tree)
+        follow_drop_icons(self._tree, _COL_CATEGORY, _row_icon)
         self._match_delegate = _MatchDelegate(self._tree)
         self._tree.setItemDelegateForColumn(_COL_ITEM, self._match_delegate)
         self._tree.itemChanged.connect(self._on_item_changed)

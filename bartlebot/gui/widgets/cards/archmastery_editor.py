@@ -38,6 +38,7 @@ from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QRadioButton, QVBoxLayout
 
 from bartlebot.combat.deck_content import ARCHMASTERY_MODES, archmastery_note
 from bartlebot.combat.deck_io import resolve_apply_archmastery
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.shared.strategy_models import DeckData
@@ -95,6 +96,8 @@ class ArchmasteryEditor(QWidget):
         self._caption = ThemedTextLabel("", parent=self)
         self._caption.setWordWrap(True)
         layout.addWidget(self._caption)
+        # The icons or the school alone, decided by what resolved: a reload decides again.
+        follow_art(self, lambda: self.load(self._deck))
 
     # -- reading --------------------------------------------------------
 

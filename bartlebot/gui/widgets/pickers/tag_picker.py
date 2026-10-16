@@ -28,6 +28,7 @@ from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: 
 from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 from bartlebot.game import card_art
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
@@ -234,7 +235,10 @@ class TagPickerButton(PickerButton):
         self._caption = caption
         if caption is not None:
             self.setText(caption)
+        self._counts = counts
         self.set_counts(counts)
+        # The rows hold their medallions, so new art means new rows.
+        follow_art(self, lambda: self.set_counts(self._counts))
 
     @property
     def group(self) -> str | None:
@@ -261,6 +265,7 @@ class TagPickerButton(PickerButton):
 
     def set_counts(self, counts: dict[str, int] | None) -> None:
         """Rebuild the rows against fresh per-tag counts."""
+        self._counts = counts
         self.set_sections(tag_sections(counts, self._group, self._vocabulary))
 
     def tags(self) -> list[str]:
