@@ -259,3 +259,20 @@ def _left_press():
         Qt.MouseButton.LeftButton,
         Qt.KeyboardModifier.NoModifier,
     )
+
+
+def test_new_art_shows_the_gems_of_the_players_listed_and_no_others(qapp):
+    """Art extracted while a combat order is summarized (#239)."""
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    row = PlayerBadgeRow(duel_order=True)
+    row.set_players([2, 1])
+    assert all(gem.isHidden() for gem in row._gems)
+
+    write_extracted_art(icons=[f"duel_slot_{slot}" for slot in range(1, 5)])
+    announce_art_changed()
+
+    shown = [gem.slot for gem in row._gems if not gem.isHidden()]
+    assert shown == [2, 1]

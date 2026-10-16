@@ -131,6 +131,7 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.combat.strategy_summary import summarize_bot
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots
+from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import NONE_LABEL, NONE_TOOLTIP, CombatStrategyDialog, DialogMode
@@ -278,6 +279,8 @@ class _DeckCard(CardFrame):
         self._color_key: int | None = None
         self._build()
         self.activated.connect(self._toggle_expanded)
+        # The strip or the summary, the icons or the sentence: set_deck decides both again.
+        follow_art(self, lambda: self.set_deck(self._deck))
         self.refresh_theme_styles()
 
     def _build(self) -> None:
