@@ -1,6 +1,7 @@
 import asyncio
 import sys
 
+from bartlebot.packaging.install_hooks import run_velopack
 from bartlebot.shared.keyring_backend import use_windows_backend
 
 
@@ -11,6 +12,9 @@ def _self_check() -> int:
 
 
 if __name__ == "__main__":
+    # First of all: a launch that is one of Velopack's install, update or uninstall hooks
+    # runs it and exits here, inside its time limit. A checkout returns at once.
+    run_velopack()
     # Before anything reads a password, and before the self-check reports on it.
     use_windows_backend()
     if "--self-check" in sys.argv[1:]:

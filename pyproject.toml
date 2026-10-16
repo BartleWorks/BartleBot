@@ -24,6 +24,7 @@ dependencies = [
     # reads a WAD at run time.
     "katsuba>=0.4.0",
     "pillow>=11.0",
+    "velopack==1.2.161",
 ]
 
 [dependency-groups]
