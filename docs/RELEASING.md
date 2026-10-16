@@ -2,7 +2,8 @@
 
 How BartleBot becomes something a user with no Python can run. This file covers the
 packaged build and the checks that hold it to the checkout, the version, the release
-workflow that turns a tag into a signed draft release, and the key it signs with. What an
+workflow that turns a tag into a signed draft release, how a draft is tested before it is
+published, and the key it signs with. What an
 install puts where, what install, update and uninstall do, and how an installed app finds
 and checks an update, is `docs/INSTALLER.md`. The plan behind both is epic #27
 (`docs/EPICS.md`, *Installer and updater*).
@@ -235,7 +236,8 @@ the key; `sign`, on `ubuntu-latest`, reads only the feed; and `publish`, on
    packed.
 
 **CI never publishes.** What ships is Official, and Official means tested in game, which
-CI cannot do. A maintainer installs from the draft, tests, and publishes it. Publishing is
+CI cannot do. A maintainer installs from the draft, tests, and publishes it (*Testing a
+draft*, below). Publishing is
 what makes users see it, and what makes it the "previous release" the next delta is made
 against. A draft no one publishes is never offered, so a bad build costs nothing.
 
@@ -262,6 +264,57 @@ read Velopack's advisories and repeat the install, update and uninstall in
 Until the repo is public, a release's downloads need authentication, so no installed app
 can update from GitHub yet. Installs and updates are tried from a local folder
 (`docs/INSTALLER.md`).
+
+## Testing a draft
+
+Official means tested in game, so every draft is installed and tried before it is
+published, in a Windows account that has never run BartleBot. The steps are
+`docs/RELEASE_CHECKLIST.md`. This is why they are what they are.
+
+**The account.** `tools/release_test_user.ps1` makes a standard account, `BartleTest`, and
+makes it again from nothing whenever the checklist needs a fresh one. Everything an install
+and the app write is per user (`docs/INSTALLER.md`, *What installs where*), and all of it
+is in the profile the script deletes. From an elevated PowerShell, with the account signed
+out:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\release_test_user.ps1 -Version 1.2.0 -Previous 1.1.0
+powershell -ExecutionPolicy Bypass -File tools\release_test_user.ps1 -Remove
+```
+
+It copies the checklist into `C:\Users\Public\BartleBot\<version>`, beside the draft, with
+the versions filled in, and puts a shortcut to it on the account's desktop. The copy is
+outside the account, so its ticks survive the reset partway through, and a rerun keeps it.
+`-Previous` is left out for the first release, and `-WhatIf` says what it would do.
+
+**Why it is a fair test:**
+
+- It has no Python. The python.org installer and uv both install into the user's own
+  profile, so a DLL the build left out fails here, rather than being found on the
+  maintainer's `PATH`.
+- It is a standard user, so an install that needed elevation would stop and ask for an
+  administrator's password.
+- It shares the game, under `C:\ProgramData\KingsIsle Entertainment`, where Everyone has
+  full control, so it launches and patches the same copy.
+
+It cannot show what is machine-wide: the Windows version, the graphics drivers, the Visual
+C++ runtimes, the fonts. Before 1.0.0, try one draft on a machine that has never had a
+development environment, such as a VM or another PC.
+
+**The draft's assets** need a GitHub sign-in while the repo is private, so the checklist
+fetches them with `gh` from the maintainer's account into `C:\Users\Public`, which every
+account can read. A file fetched that way carries no Mark of the Web, so SmartScreen says
+nothing about it. Before 1.0.0, and whenever the signing changes, download Setup.exe
+through a browser in the test account once, to see what a user sees.
+
+**The update is tried both ways.** Updating the previous release to the draft runs the
+previous release's update code, which has already shipped. The draft's own runs only when
+the next release is offered to it. So for the first release, and whenever a draft changes
+the update code or the Velopack pin, the checklist also updates *from* the draft, to a
+version packed locally.
+
+**A step that fails** leaves the draft unpublished: fix the problem, and release a new
+version.
 
 ## The signing key
 

@@ -47,6 +47,7 @@ game assets, either*).
 | tool | does |
 |---|---|
 | `build_package.py` | builds a packaged BartleBot with PyInstaller, strips install records from its metadata, and runs its `--self-check` (`docs/RELEASING.md`) |
+| `release_test_user.ps1` | creates, or recreates from nothing, the standard Windows account a release draft is tested in, with `docs/RELEASE_CHECKLIST.md` on its desktop; run it from an elevated PowerShell (`docs/RELEASING.md`, *Testing a draft*) |
 
 ## On live clients
 

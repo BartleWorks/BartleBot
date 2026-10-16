@@ -279,8 +279,9 @@ handing Velopack the same update twice.
 ## Trying an install, an update and an uninstall
 
 The repo is private until 1.0.0, so a release's downloads need authentication, and an
-install is tried from a local folder instead. This touches the machine it runs on, so
-check that `%LocalAppData%\BartleBot` does not already exist, and uninstall afterwards.
+install is tried from a local folder instead. This touches the account it runs in, so
+try it in the test account (`docs/RELEASING.md`, *Testing a draft*), or check that
+`%LocalAppData%\BartleBot` does not already exist, and uninstall afterwards.
 
 1. Build twice: `tools/build_package.py --out <dir>`, and a copy of that folder with one
    extra file in `BartleBot\`.
