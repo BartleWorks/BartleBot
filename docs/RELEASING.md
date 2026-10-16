@@ -241,6 +241,22 @@ draft*, below). Publishing is
 what makes users see it, and what makes it the "previous release" the next delta is made
 against. A draft no one publishes is never offered, so a bad build costs nothing.
 
+**To rebuild a draft, delete it before moving the tag.** A fix found while testing goes in
+a new commit, and the tag moves to it. But step 8 refuses when a release on the tag
+already exists, draft or not, and fails the run only after the whole build:
+
+```
+gh release delete v<version> --yes
+git tag -f v<version>
+git push -f origin v<version>
+```
+
+`gh release delete` without `--cleanup-tag` leaves the tag alone. A run that has already
+failed at step 8 needs no new build: delete the draft, then `gh run rerun <run> --failed`
+runs `publish` again on the artifacts `build` and `sign` left. The checklist copy in
+`C:\Users\Public\BartleBot\<version>` stays as it was, so delete it too when the
+checklist changed, or when the ticks were for the build being replaced.
+
 What `vpk pack` is told is in `tools/pack_release.py`, held there so a test can read it:
 
 | constant or flag | value | why |
