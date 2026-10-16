@@ -198,7 +198,7 @@ def test_the_notes_stop_where_the_install_page_starts():
 
 def test_the_location_is_the_latest_release_unless_the_variable_names_another(monkeypatch, tmp_path):
     monkeypatch.delenv(feed.FEED_ENV_VAR, raising=False)
-    assert feed.location() == "https://github.com/The-World-Tree/BartleBot/releases/latest/download/"
+    assert feed.location() == "https://github.com/BartleWorks/BartleBot/releases/latest/download/"
     monkeypatch.setenv(feed.FEED_ENV_VAR, str(tmp_path))
     assert feed.location() == str(tmp_path)
 

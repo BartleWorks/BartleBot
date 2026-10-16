@@ -44,7 +44,7 @@ def test_a_newer_release_is_offered(release, keys, caplog):
     assert result.status is Status.OFFERED
     assert result.offer.version == "1.2.0"
     assert result.offer.current == "1.1.0"
-    assert result.offer.release_page == "https://github.com/The-World-Tree/BartleBot/releases/tag/v1.2.0"
+    assert result.offer.release_page == "https://github.com/BartleWorks/BartleBot/releases/tag/v1.2.0"
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
 
 

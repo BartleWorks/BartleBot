@@ -27,7 +27,7 @@ SHARED = project_root() / "bartlebot" / "shared"
 def test_the_vendor_is_not_the_product():
     """Two names answering two questions — see shared/vendor.py.
 
-    The organization (``The-World-Tree``) is developer-facing and lives in URLs; the
+    The organization (``BartleWorks``) is developer-facing and lives in URLs; the
     vendor is user-facing and lives on the user's disk. Collapsing them back into one
     string is what this guards against.
     """

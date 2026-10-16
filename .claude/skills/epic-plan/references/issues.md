@@ -35,7 +35,7 @@ multi-line `--body` inline from PowerShell.
 ## Filing
 
 ```bash
-R=The-World-Tree/BartleBot
+R=BartleWorks/BartleBot
 
 # One issue, with one area label, plus a milestone only if it blocks going public
 gh issue create -R $R --title "…" --body-file <file> --label area/engine --milestone 1.0.0
@@ -48,8 +48,8 @@ id=$(gh api repos/$R/issues/<n> -q .id)
 gh api -X POST repos/$R/issues/<E>/sub_issues -F sub_issue_id=$id
 
 # Put it on the board and set Product = BartleBot
-gh project item-add 1 --owner The-World-Tree --url https://github.com/$R/issues/<n>
-gh project field-list 1 --owner The-World-Tree --format json   # field and option ids
+gh project item-add 1 --owner BartleWorks --url https://github.com/$R/issues/<n>
+gh project field-list 1 --owner BartleWorks --format json   # field and option ids
 gh project item-edit --project-id <id> --id <item id> --field-id <Product field id> --single-select-option-id <BartleBot option id>
 ```
 

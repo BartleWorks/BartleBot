@@ -1,13 +1,13 @@
 # Upstream libraries
 
-wizwalker and wizsprinter are **ours**. Both live under `The-World-Tree`, both are
+wizwalker and wizsprinter are **ours**. Both live under `BartleWorks`, both are
 maintained here rather than staged for someone else's PR queue, and both are pinned by
 exact commit. The local checkout paths and repo URLs are in the root `CLAUDE.md`.
 
 ## The libraries
 
-- **WizWalker**: low-level Wizard101 memory hooking — `The-World-Tree/wizwalker`, branch `main`
-- **WizSprinter**: safe wrappers + combat DSL — `The-World-Tree/wizsprinter`, branch `main`
+- **WizWalker**: low-level Wizard101 memory hooking — `BartleWorks/wizwalker`, branch `main`
+- **WizSprinter**: safe wrappers + combat DSL — `BartleWorks/wizsprinter`, branch `main`
 
 Both are pinned by exact commit `rev` in `pyproject.toml`, using HTTPS URLs so CI can
 fetch them without SSH credentials. They carry fixes the original projects do not have,
@@ -140,7 +140,7 @@ Each checkout has the same shape:
 
 | remote | points at |
 |---|---|
-| `origin` | `The-World-Tree/<lib>` — where our work goes |
+| `origin` | `BartleWorks/<lib>` — where our work goes |
 | `laurenz` | `LaurenzLikeThat/wizwalker` — offset fixes (wizwalker only) |
 | `deimos` | `Deimos-Wizard101/<lib>` — the original project |
 

@@ -170,7 +170,7 @@ def test_a_readme_without_an_install_page_is_refused():
 def test_links_are_made_absolute_at_the_tag():
     """A path relative to the README leads nowhere on the release page or in the popup."""
     page = absolute_links(install_page(README), "v1.2.0")
-    repo = "https://github.com/The-World-Tree/BartleBot"
+    repo = "https://github.com/BartleWorks/BartleBot"
 
     assert f"![SmartScreen]({repo}/raw/v1.2.0/docs/images/install/smartscreen.png)" in page
     assert f"[where your data lives]({repo}/blob/v1.2.0/docs/INSTALLER.md)" in page

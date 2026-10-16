@@ -227,9 +227,10 @@ both products launch from (`shared/game_install.py`), and the library of duel st
 `strategies/` (`docs/COMBAT_CONFIG.md`). Their code is in `bartlebot/shared/`, which imports
 nothing from `bartlebot` outside itself, so it can become a library of its own. The prefix is defined
 once, in `bartlebot/shared/vendor.py`, and imported — never spelled out again, on disk or
-in Credential Manager. `The-World-Tree` is the GitHub organization and is a separate
-string on purpose: it is developer-facing and carries none of the trademark exposure a
-name on the user's disk does.
+in Credential Manager. `BartleWorks` is the GitHub organization and is a separate
+string on purpose: it lives in URLs, where a rename is a search and replace, and it keeps
+`Bartleby`, the in-game tree's own name, off GitHub. It was `The-World-Tree` until
+2026-10-16; GitHub redirects the old URLs.
 
 A value that is not a fact about *this node in this graph* is a bot option, not a
 node param:
@@ -312,15 +313,15 @@ a `QApplication`; extract the testable logic into a plain function or class.
 ## Reference libraries
 
 Downloaded locally so they can be referenced directly. WizWalker and WizSprinter
-are **ours** — libraries we maintain under `The-World-Tree`, not forks staged for
+are **ours** — libraries we maintain under `BartleWorks`, not forks staged for
 an upstream PR — pinned by exact commit in `pyproject.toml`. See
 `docs/UPSTREAM.md` before changing a pin or chasing a memory offset after a game
 patch.
 
 | Library | Local Location | Repo URL | Description |
 |---|---|---|---|
-| WizWalker | `C:\GitHub\wizwalker` | https://github.com/The-World-Tree/wizwalker | Low-level memory hooking. Ours. Still tracks `LaurenzLikeThat/wizwalker` for offset fixes, not the `Deimos-Wizard101` original. |
-| WizSprinter | `C:\GitHub\wizsprinter` | https://github.com/The-World-Tree/wizsprinter | Safe wrappers and the combat DSL. Ours. Pull selectively from `Deimos-Wizard101/wizsprinter`; their `main` is no longer our baseline. |
+| WizWalker | `C:\GitHub\wizwalker` | https://github.com/BartleWorks/wizwalker | Low-level memory hooking. Ours. Still tracks `LaurenzLikeThat/wizwalker` for offset fixes, not the `Deimos-Wizard101` original. |
+| WizSprinter | `C:\GitHub\wizsprinter` | https://github.com/BartleWorks/wizsprinter | Safe wrappers and the combat DSL. Ours. Pull selectively from `Deimos-Wizard101/wizsprinter`; their `main` is no longer our baseline. |
 | Deimos | `C:\GitHub\Deimos-Wizard101` | https://github.com/Deimos-Wizard101/Deimos-Wizard101 | An existing Wizard101 botting tool. Examples of interfacing with WizWalker and WizSprinter, plus some custom utilities. |
 
 ## Ruff

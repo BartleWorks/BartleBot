@@ -44,7 +44,7 @@ FEED_NAME = "releases.win.json"
 SIGNATURE_NAME = f"{FEED_NAME}.sig"
 
 #: The repository a release is published from.
-REPOSITORY = f"https://github.com/The-World-Tree/{PRODUCT}"
+REPOSITORY = f"https://github.com/BartleWorks/{PRODUCT}"
 #: Where an installed app looks: the assets of the latest published release. GitHub
 #: redirects each name to that release's asset, and a draft is never "latest".
 FEED_URL = f"{REPOSITORY}/releases/latest/download/"

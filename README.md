@@ -9,7 +9,7 @@ fights in between. BartleBot is in public beta.
 You need 64-bit Windows 10 or 11 and Wizard101.
 
 1. Download **BartleBot-win-Setup.exe** from the
-   [latest release](https://github.com/The-World-Tree/BartleBot/releases/latest).
+   [latest release](https://github.com/BartleWorks/BartleBot/releases/latest).
 2. Run it. It installs BartleBot for your Windows account only, and neither installing
    nor running it needs an administrator. It puts BartleBot on your Desktop and in the
    Start Menu, then opens BartleBot's setup, which finds your game, adds your accounts,
@@ -42,7 +42,7 @@ An antivirus program may flag BartleBot. It reads and writes the game's memory, 
 how it knows where you are and what is happening in a fight, and malware does the same
 thing. Every release is sent to Microsoft for review. We will never ask you to turn your
 antivirus off or to add an exclusion for BartleBot. If yours removes it, please
-[open an issue](https://github.com/The-World-Tree/BartleBot/issues) saying which
+[open an issue](https://github.com/BartleWorks/BartleBot/issues) saying which
 antivirus it was.
 
 ### Updates
@@ -80,8 +80,8 @@ uv run python bartlebot.py
 ```
 
 `CLAUDE.md` covers the rest: developer mode, the tests, and how the code is laid out.
-BartleBot is built on [WizWalker](https://github.com/The-World-Tree/wizwalker) and
-[WizSprinter](https://github.com/The-World-Tree/wizsprinter).
+BartleBot is built on [WizWalker](https://github.com/BartleWorks/wizwalker) and
+[WizSprinter](https://github.com/BartleWorks/wizsprinter).
 
 ## License
 

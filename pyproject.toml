@@ -52,8 +52,8 @@ package = [
 # commit -- see docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
-wizwalker = { git = "https://github.com/The-World-Tree/wizwalker.git", rev = "f5a613b463ca5a796f7240c515f3c27dc9630a23" }
-wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "716bf3d503a3f2d967667e691373afd6cbdaf5d9" }
+wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "f5a613b463ca5a796f7240c515f3c27dc9630a23" }
+wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "716bf3d503a3f2d967667e691373afd6cbdaf5d9" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
