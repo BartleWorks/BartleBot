@@ -1,0 +1,69 @@
+# The download site, published to GitHub Pages by .github/workflows/site.yml.
+# docs/RELEASING.md ("The download site") says how to preview and publish it.
+#
+#     uv run --group site zensical serve -f site/zensical.toml
+#
+# pages/install.md is also the second half of every release's notes
+# (tools/pack_release.py), so it stays in markdown GitHub can draw: none of the
+# admonitions, attribute lists or icons the landing page uses (tests/test_site.py).
+
+[project]
+site_name = "BartleBot"
+site_url = "https://bartleworks.github.io/BartleBot/"
+site_description = "A Wizard101 bot for the repetitive parts of the game."
+repo_url = "https://github.com/BartleWorks/BartleBot"
+repo_name = "BartleWorks/BartleBot"
+copyright = "BartleBot is free software under the GPL 3.0. It is not made by or affiliated with KingsIsle Entertainment."
+docs_dir = "pages"
+# Inside site/, beside its source: `build/` is ignored at every depth (.gitignore).
+site_dir = "build"
+extra_css = ["stylesheets/extra.css"]
+nav = [
+  { "Home" = "index.md" },
+  { "Installing" = "install.md" },
+]
+
+[project.theme]
+language = "en"
+logo = "assets/bartlebot.svg"
+favicon = "assets/bartlebot.svg"
+# The system's fonts, rather than the theme's from Google Fonts, so a visit sends nothing
+# to anyone but GitHub.
+font = false
+features = [
+  "navigation.footer",
+  "navigation.instant",
+  "navigation.tracking",
+  "navigation.top",
+  "search.highlight",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
