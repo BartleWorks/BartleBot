@@ -4,7 +4,7 @@
 says with a mark and a medallion, in a sidebar whose deck cards are otherwise all
 picture. So where the icons have been extracted this replaces that line; where they
 have not, the card keeps the line, which is the same fallback every other art surface
-makes (see "Card art is optional" in ``gui/CLAUDE.md``).
+makes (see "Game art is optional" in ``gui/CLAUDE.md``).
 
 TWO ICONS, AND THE SECOND ONE IS A CLAIM
     The first is ``Icon_Archmastery`` -- the rainbow spiral that means *archmastery*,

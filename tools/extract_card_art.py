@@ -1,6 +1,6 @@
-"""Extract spell card art from the installed game into the local art cache, from the command line.
+"""Extract spell card art and the game's icons from the installed game into the local art cache, from the command line.
 
-The app does the same from setup's Card art page and Settings › General › Card art; this
+The app does the same from setup's Game art page and Settings › General › Game art; this
 is the command line over the one function all three call,
 ``bartlebot.game.art_extraction.extract_art``, which has the reasoning::
 

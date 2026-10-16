@@ -121,7 +121,7 @@ machine, which the repo cannot reach even by accident — and the app treats its
 the ordinary case rather than as a missing dependency.
 
 **The extractor is in the app** (#232): `bartlebot/game/art_extraction.py`, run from
-setup's Card art page and Settings › General › Card art. `tools/extract_card_art.py` is the
+setup's Game art page and Settings › General › Game art. `tools/extract_card_art.py` is the
 command line over the same `extract_art`, and still the quickest way to rerun it while
 developing. It reads the game from the folder the app launches from (`find_install`, so a
 Steam install too), and the type list from the newest `tools/r<rev>_WizardDev.json`, which

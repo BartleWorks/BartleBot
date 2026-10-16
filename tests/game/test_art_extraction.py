@@ -1,4 +1,4 @@
-"""Card art extraction from a made-up install: what it writes, and that it never leaves half (epic #215, Stage 7, #232).
+"""Game art extraction from a made-up install: what it writes, and that it never leaves half (epic #215, Stage 7, #232).
 
 The install is ``tests/art_fixture.py``'s: real KIWAD archives and a real deserializer,
 with synthetic contents, so nothing of the game's is in the repo.

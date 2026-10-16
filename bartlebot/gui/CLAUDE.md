@@ -421,10 +421,10 @@ the launch cards' hover-revealed buttons use — but it only applies to a widget
 is still asked about.)
 
 
-## Card art is optional, and missing is the ordinary case
+## Game art is optional, and missing is the ordinary case
 
 Spell art is the game's own and is never in this repo: the app extracts it on the user's
-machine (`game/art_extraction.py`, from setup's last page or Settings › General › Card
+machine (`game/art_extraction.py`, from setup's last page or Settings › General › Game
 art), and `bartlebot/game/card_art.py` is the only thing that knows where it lands.
 **Every lookup can return `None`** — a user can turn the art off in Custom setup, an
 extraction can fail and setup still finishes, an install from before setup asked has none
@@ -1050,7 +1050,7 @@ that apply. The rules for a page:
   page could turn the art off under a run installing it. Escape and the close button
   still leave. It emits `ready_changed` when that may have changed.
 - **A page with work running stops it in `stop()`**, which the dialog calls from `done()`
-  whenever setup closes, finished or not. The Card art page stops its extraction there;
+  whenever setup closes, finished or not. The Game art page stops its extraction there;
   the extractor removes what it wrote, and the page stays unanswered. A page's work runs
   in a task it owns, started from `enter()`, and only when a loop is running, so the tests
   that never await build the page without starting anything (`ArtExtraction.start`).

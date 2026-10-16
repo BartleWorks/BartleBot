@@ -1,4 +1,4 @@
-"""What Custom setup's Options page and the Card art page record (epic #215, Stage 7, #232).
+"""What Custom setup's Options page and the Game art page record (epic #215, Stage 7, #232).
 
 Checked against ``settings.json`` on disk, since a first run that closed after the page
 has to find the answer there next launch.

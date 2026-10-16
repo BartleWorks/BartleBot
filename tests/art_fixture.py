@@ -1,4 +1,4 @@
-"""A made-up Wizard101 install for the card art extractor: real KIWAD archives, synthetic contents.
+"""A made-up Wizard101 install for the game art extractor: real KIWAD archives, synthetic contents.
 
 Nothing here is the game's: the textures are tiny PNGs drawn here (Pillow opens an image
 by its content, so a ``.dds`` name holding PNG bytes decodes the same), the spells are

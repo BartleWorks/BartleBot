@@ -18,9 +18,9 @@ from bartlebot import app_controller
 from bartlebot.app_controller import AppController
 from bartlebot.gui.dialogs.first_run_dialog import (
     AccountsPage,
-    CardArtPage,
     CombatQuestionPage,
     FirstRunDialog,
+    GameArtPage,
     GameFolderPage,
     LaunchProfilePage,
     QuicksellPage,
@@ -67,7 +67,7 @@ def startup(qapp, monkeypatch, tmp_path):
 
     The game is installed where the KingsIsle launcher puts it, so the game folder page is
     answered, the Accounts page was answered with none, and the Quicksell, Realm and Safety
-    Delay and Card art pages were answered. ``state.answer`` is the combat answer to finish on; None
+    Delay and Game art pages were answered. ``state.answer`` is the combat answer to finish on; None
     closes the dialog on the combat page instead.
     """
     (tmp_path / "Wizard101" / "Bin").mkdir(parents=True)
@@ -212,7 +212,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
         CombatQuestionPage,
         QuicksellPage,
         RealmAndDelayPage,
-        CardArtPage,
+        GameArtPage,
     ]
     assert _prefs().get(_TEAM) is None
     assert startup.events == ["first run", "refresh", "layout", "accounts"]

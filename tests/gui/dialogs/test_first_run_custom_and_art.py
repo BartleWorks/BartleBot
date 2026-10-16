@@ -1,6 +1,6 @@
-"""Setup's Options page, for Custom, and its Card art page (epic #215, Stage 7, #232).
+"""Setup's Options page, for Custom, and its Game art page (epic #215, Stage 7, #232).
 
-Driven by the dialog's buttons, never by ``exec()`` (``tests/conftest.py``). The card art
+Driven by the dialog's buttons, never by ``exec()`` (``tests/conftest.py``). The art
 runs are real: ``tests/art_fixture.py`` builds an install of synthetic archives, and the
 async tests await the page's own task, the way the app's loop would run it.
 """
@@ -19,15 +19,15 @@ from PyQt6.QtWidgets import QDialog
 from bartlebot.game import art_extraction, card_art
 from bartlebot.game.art_extraction import ExtractionError
 from bartlebot.gui.dialogs.first_run_dialog import (
-    CardArtPage,
     CombatQuestionPage,
     FirstRunDialog,
+    GameArtPage,
     OptionsPage,
     RealmAndDelayPage,
     SetupMode,
 )
 from bartlebot.gui.settings.bot_tab import BotTab
-from bartlebot.gui.settings.card_art_row import NO_GAME
+from bartlebot.gui.settings.game_art_row import NO_GAME
 from bartlebot.gui.settings.rows import SettingRow
 from bartlebot.options.custom_setup import (
     ART_ANSWERED_KEY,
@@ -63,9 +63,9 @@ def game(tmp_path, prefs, monkeypatch):
     return fixture
 
 
-def _pages(prefs: PreferenceStore) -> tuple[OptionsPage, CardArtPage]:
+def _pages(prefs: PreferenceStore) -> tuple[OptionsPage, GameArtPage]:
     options = OptionsPage()
-    return options, CardArtPage(options, prefs)
+    return options, GameArtPage(options, prefs)
 
 
 def _dialog(prefs: PreferenceStore, mode: SetupMode = SetupMode.QUICK, *, rerun: bool = False):
@@ -110,7 +110,7 @@ def test_custom_with_extract_card_art_off_has_no_art_page(qapp, prefs):
 
 
 def test_custom_with_extract_card_art_off_keeps_setup_closed_next_launch(qapp, prefs):
-    """The Card art page applies under Quick whatever Custom chose, so only its answer keeps it shut."""
+    """The Game art page applies under Quick whatever Custom chose, so only its answer keeps it shut."""
     dialog, options, _art = _dialog(prefs, SetupMode.CUSTOM)
     _next(dialog, 2)
     options.art_box.setChecked(False)
@@ -120,7 +120,7 @@ def test_custom_with_extract_card_art_off_keeps_setup_closed_next_launch(qapp, p
     options, art = _pages(prefs)
 
     assert art.answered()
-    assert not CardArtPage.asks_first_run(prefs)
+    assert not GameArtPage.asks_first_run(prefs)
 
 
 def test_the_options_page_alone_never_opens_setup(qapp, prefs):
@@ -138,7 +138,7 @@ def test_the_options_page_is_three_rows_all_on_every_description_shown(qapp):
     page = OptionsPage()
     rows = page.findChildren(SettingRow)
 
-    assert [row.title for row in rows] == ["Extract card art", "Automatically group players", "Refill potions"]
+    assert [row.title for row in rows] == ["Extract game art", "Automatically group players", "Refill potions"]
     assert all(row.control.isChecked() for row in rows)
     for row in rows:
         assert row.details_shown, row.title
@@ -158,7 +158,7 @@ def test_each_option_says_what_it_costs(qapp):
     page = OptionsPage()
     details = {row.title: row.details.text() for row in page.findChildren(SettingRow)}
 
-    assert "35 MB" in details["Extract card art"]
+    assert "35 MB" in details["Extract game art"]
     assert "friends lists" in details["Automatically group players"]
     assert "gold" in details["Refill potions"]
 
@@ -216,7 +216,7 @@ def test_a_failed_options_write_keeps_the_user_on_the_page(qapp, prefs, monkeypa
     assert dialog.error_shown
 
 
-# -- the Card art page --------------------------------------------------------------
+# -- the Game art page --------------------------------------------------------------
 
 
 def test_the_art_page_is_asked_until_finished_or_art_exists(qapp, prefs, game):
@@ -409,7 +409,7 @@ async def test_with_no_game_found_the_page_says_so_and_finish_is_ready(qapp, pre
 
 @pytest.mark.parametrize("mode", list(SetupMode))
 def test_a_rerun_with_art_already_extracted_skips_the_page(qapp, prefs, game, mode):
-    """Extracting again is Settings › General › Card art's job, after a game patch."""
+    """Extracting again is Settings › General › Game art's job, after a game patch."""
     art_extraction.extract_art(game.game_data)
 
     dialog, _options, art = _dialog(prefs, mode, rerun=True)

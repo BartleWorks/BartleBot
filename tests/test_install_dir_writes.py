@@ -42,7 +42,7 @@ def _default_write_paths() -> dict[str, Path]:
         "autosaves": SettingsManager.autosave_dir(),
         "settings": SettingsManager.instance().settings_path,
         "ui state": UiState().path,
-        "card art": card_art.art_dir(),
+        "game art": card_art.art_dir(),
         "accounts": vendor_dir(),
         "shared preferences": PreferenceStore().path,
         "session logs": session_log_dir(),

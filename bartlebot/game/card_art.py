@@ -1,4 +1,4 @@
-"""Where extracted card art lives, and how a template name finds its image.
+"""Where extracted game art lives, and how a template name finds its image.
 
 The game ships every spell's art as a DDS texture inside its own WADs. Nothing in
 this repo may carry one: the repo goes public at 1.0.0 and a committed game texture
@@ -212,7 +212,7 @@ def _manifest() -> dict:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        logger.exception("could not read extracted card art index at %s", path)
+        logger.exception("could not read extracted game art index at %s", path)
         return {}
     return raw if isinstance(raw, dict) else {}
 
@@ -268,7 +268,7 @@ def manifest() -> dict:
 
 
 def is_available() -> bool:
-    """Whether any card art has been extracted on this machine."""
+    """Whether any game art has been extracted on this machine."""
     return bool(_index())
 
 

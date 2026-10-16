@@ -1,4 +1,4 @@
-"""Tests for bartlebot.game.card_art — finding extracted card art, and not finding it.
+"""Tests for bartlebot.game.card_art — finding extracted game art, and not finding it.
 
 Every test points ``APPDATA`` at a tmp directory, because that is what
 ``shared/vendor.product_dir`` reads and so what decides where the cache is. The

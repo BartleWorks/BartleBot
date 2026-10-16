@@ -26,7 +26,7 @@ included, so choosing Custom can change it.
   recorded, and it emits `ready_changed` when that may have changed; Next is disabled
   until it is. The game folder page is the one that uses it.
 - **Back and Next wait for a page with work running.** A page's `busy()` holds the user on
-  it, and both are disabled until it ends. The Card art page is the one that uses it,
+  it, and both are disabled until it ends. The Game art page is the one that uses it,
   while the extraction runs.
 - **Back records nothing.**
 - **There is no Skip.** Escape and the close button reject and write nothing more. What
@@ -55,7 +55,7 @@ applies: a setup opened for it alone would end on Quick or Custom with nothing a
 open again every launch. It is still in the walk when another page opens setup and the
 user picks Custom.
 
-Closing setup, finished or not, calls each page's `stop()`, which is how the Card art
+Closing setup, finished or not, calls each page's `stop()`, which is how the Game art
 page stops an extraction that is running.
 
 After either, finished or closed, the Combat tab rereads its source, since the combat page
@@ -112,7 +112,7 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | What may bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
 | Where do you play, and how quick is your connection? | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
 | A few more choices (Custom only) | `setup.extract_art`, `auto_group_players` and `default_refill_potions`, all in BartleBot's `settings.json` (`general`), through `options/custom_setup.record_options`; the last two are the keys Settings › Bot's OK writes | `options_answered`: `setup.extract_art` is stored |
-| Extracting the card art (whenever card art is on, as under Quick, and none is extracted) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, the Options page turned the art off, or art is already extracted |
+| Extracting the game art (whenever game art is on, as under Quick, and none is extracted) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, the Options page turned the art off, or art is already extracted |
 
 ### The combat question
 
@@ -290,8 +290,8 @@ be unset.
 Under Custom only, after Realm and Safety Delay: **A few more choices**, three check
 boxes, all on, each with a description of what it costs, every one shown.
 
-- **Extract card art**: the game's own pictures for spell cards, schools and worlds,
-  copied into AppData, about 35 MB, never shared. Off, there is no Card art page.
+- **Extract game art**: the game's own pictures for spell cards, schools, worlds and tags,
+  copied into AppData, about 35 MB, never shared. Off, there is no Game art page.
 - **Automatically group players**: Settings › Bot's row, which needs every account on the
   others' friends lists.
 - **Refill potions**: Settings › Bot's row, which spends gold.
@@ -299,19 +299,19 @@ boxes, all on, each with a description of what it costs, every one shown.
 The last two are built for both by `gui/settings/players_rows`, so the page and the tab
 say the same. Next writes all three through `options/custom_setup.record_options`:
 `setup.extract_art`, which is also the page's record, and the two Bot tab keys. Turning
-Extract card art off emits `walk_changed`, so the step count drops and Next becomes
+Extract game art off emits `walk_changed`, so the step count drops and Next becomes
 Finish.
 
 Quick writes none of the three. Grouping and refills stay as they are, which on a first
 run is their default, and the art is extracted: a rerun with Quick never turns a setting
 off that the user turned on in Settings, or the reverse.
 
-### Card art
+### Game art
 
-The last page whenever card art is on and none is extracted yet: always under Quick, and
-under Custom when Extract card art is checked. Entered, it runs `game/art_extraction.extract_art` in a worker thread
+The last page whenever game art is on and none is extracted yet: always under Quick, and
+under Custom when Extract game art is checked. Entered, it runs `game/art_extraction.extract_art` in a worker thread
 (`asyncio.to_thread`), from a task its `ArtExtraction` owns
-(`gui/settings/card_art_row.py`), and shows a progress bar and the step it is on, with a
+(`gui/settings/game_art_row.py`), and shows a progress bar and the step it is on, with a
 count where the step has one. Finish waits for the run to end.
 
 - **It reads the game** from the folder the app launches from
@@ -332,13 +332,13 @@ count where the step has one. Finish waits for the run to end.
   could turn the art off under a run that would install it anyway. Escape and the close
   button still leave, and stop it. Once a run has failed, Back and Next try it again.
 
-Art already extracted, by the tool or Settings, answers the page, and so does Extract card art
+Art already extracted, by the tool or Settings, answers the page, and so does Extract game art
 turned off on the Options page: the page applies under Quick whatever Custom chose, so
 without it a user who turned the art off would have setup open on every launch.
 
 **Art already extracted keeps the page out of a rerun too**, under either mode: setup never
-extracts the art again. Settings › General › **Card art** does, after a game patch adds
-spells (`bartlebot/gui/settings/CLAUDE.md`, "The Card art row"). Whether there was art is
+extracts the art again. Settings › General › **Game art** does, after a game patch adds
+spells (`bartlebot/gui/settings/CLAUDE.md`, "The Game art row"). Whether there was art is
 read when the page is built, so its own run finishing never takes it out of the walk. A
 user who turned the art off has none, so a rerun under Quick still ends on the page, in
 case they changed their mind.

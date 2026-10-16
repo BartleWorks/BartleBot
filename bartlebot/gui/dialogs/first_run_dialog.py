@@ -72,7 +72,7 @@ from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
-from bartlebot.gui.settings.card_art_row import ArtExtraction, extract_art_row
+from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row
 from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
 from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
@@ -193,7 +193,7 @@ class FirstRunPage(QWidget):
     def stop(self) -> None:
         """Called when setup closes, finished or not: a page with work running stops it.
 
-        The Card art page stops its extraction, which removes what it wrote.
+        The Game art page stops its extraction, which removes what it wrote.
         """
 
 
@@ -875,12 +875,12 @@ class RealmAndDelayPage(FirstRunPage):
 OPTIONS_HEADING = "A few more choices"
 OPTIONS_INTRO = (
     "Quick setup turns all three on. Each has a cost, said under it. You can change them later: "
-    "card art on Settings › General, the other two on Settings › Bot."
+    "game art on Settings › General, the other two on Settings › Bot."
 )
 
 
 class OptionsPage(FirstRunPage):
-    """Custom setup only: Extract card art, Automatically group players and Refill potions, all on.
+    """Custom setup only: Extract game art, Automatically group players and Refill potions, all on.
 
     The last two are Settings › Bot's rows, from the same builder. Next writes all three
     through :func:`~bartlebot.options.custom_setup.record_options`. Under Quick the page is
@@ -907,7 +907,7 @@ class OptionsPage(FirstRunPage):
         form.finish(stretch=False)
         column.addWidget(form)
         column.addStretch()
-        # Whether the Card art page follows.
+        # Whether the Game art page follows.
         self._art.toggled.connect(lambda _on: self.walk_changed.emit())
 
     @property
@@ -946,33 +946,33 @@ class OptionsPage(FirstRunPage):
         )
 
 
-# -- card art -----------------------------------------------------------------------
+# -- game art -----------------------------------------------------------------------
 
-CARD_ART_HEADING = "Extracting the card art"
-CARD_ART_INTRO = (
+GAME_ART_HEADING = "Extracting the game art"
+GAME_ART_INTRO = (
     "BartleBot is copying the pictures of the spell cards, and the game's school, world and badge "
     "icons, out of your game's files, to show them in its own lists. Back and Finish wait for it to end. "
     "Closing setup stops it, keeping any art from before."
 )
 
 
-class CardArtPage(FirstRunPage):
-    """The last page whenever card art is on, as it is under Quick, and none is extracted yet.
+class GameArtPage(FirstRunPage):
+    """The last page whenever game art is on, as it is under Quick, and none is extracted yet.
 
     Entered, it starts :func:`~bartlebot.game.art_extraction.extract_art` off the GUI
-    thread, in an :class:`~bartlebot.gui.settings.card_art_row.ArtExtraction`. Finish waits
+    thread, in an :class:`~bartlebot.gui.settings.game_art_row.ArtExtraction`. Finish waits
     for the run to end, worked or not: a failure says why, is logged, and setup ends as
     usual, since art is optional everywhere. Closing setup stops the run, which leaves
     nothing half written, and leaves the page unanswered.
 
     Art already extracted keeps the page out of the walk, a rerun's too: extracting it
-    again is Settings › General › Card art's job, after a game patch. Whether there was
+    again is Settings › General › Game art's job, after a game patch. Whether there was
     art is read once, when the page is built, so the page's own run finishing never takes
     it out of the walk while it is shown. A user who turned the art off before has none,
     so a rerun still offers it to them.
     """
 
-    heading = CARD_ART_HEADING
+    heading = GAME_ART_HEADING
 
     def __init__(self, options: OptionsPage, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -982,7 +982,7 @@ class CardArtPage(FirstRunPage):
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(12)
-        intro = ThemedTextLabel(CARD_ART_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro = ThemedTextLabel(GAME_ART_INTRO, css=f"font-size: {THEME.font_small_px}px;")
         intro.setWordWrap(True)
         column.addWidget(intro)
         self._extraction = ArtExtraction(prefs)
@@ -1035,7 +1035,7 @@ SETUP_PAGE_TYPES: tuple[type[FirstRunPage], ...] = (
     QuicksellPage,
     RealmAndDelayPage,
     OptionsPage,
-    CardArtPage,
+    GameArtPage,
 )
 
 
@@ -1054,7 +1054,7 @@ def setup_pages(prefs: PreferenceStore, *, rerun: bool = False) -> list[FirstRun
         QuicksellPage(),
         RealmAndDelayPage(),
         options,
-        CardArtPage(options, prefs),
+        GameArtPage(options, prefs),
     ]
 
 

@@ -181,7 +181,7 @@ lets the app talk about the game without shipping any of it.
 Art therefore has no checked-in snapshot and never gets one — not the spell card art,
 and not the school and archmastery icons beside it. The app extracts all of it on the
 user's own machine, from their game install, with `bartlebot/game/art_extraction.py`: on
-setup's last page, from Settings › General › Card art, or by `tools/extract_card_art.py`,
+setup's last page, from Settings › General › Game art, or by `tools/extract_card_art.py`,
 the command line over the same function. It writes into
 `%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely, so an accidental `git
 add` cannot reach it — and its tests use a made-up install (`tests/art_fixture.py`), never

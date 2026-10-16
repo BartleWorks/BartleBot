@@ -1,12 +1,12 @@
-"""Card art in the app: the run with its progress, setup's choice, and Settings › General › Card art (#232).
+"""Game art in the app: the run with its progress, setup's choice, and Settings › General › Game art (#232).
 
 :class:`ArtExtraction` runs :func:`bartlebot.game.art_extraction.extract_art` off the GUI
-thread and shows how far it has got. Setup's Card art page holds one, and so does
+thread and shows how far it has got. Setup's Game art page holds one, and so does
 :class:`ArtExtractionDialog`, which the Settings row opens for a run after a game patch.
 The choice on Custom setup's Options page is :func:`extract_art_row`, with the same text the
 Settings row carries.
 
-Art is optional everywhere (``bartlebot/gui/CLAUDE.md``, "Card art is optional"), so a
+Art is optional everywhere (``bartlebot/gui/CLAUDE.md``, "Game art is optional"), so a
 failed run says why, logs it, and lets the user carry on.
 """
 
@@ -37,17 +37,17 @@ from bartlebot.shared.preferences import PreferenceStore
 
 logger = logging.getLogger(__name__)
 
-EXTRACT_TITLE = "Extract card art"
-EXTRACT_SUMMARY = "Show spell cards, schools and worlds with the game's own pictures."
+EXTRACT_TITLE = "Extract game art"
+EXTRACT_SUMMARY = "Show spell cards, schools, worlds and tags with the game's own pictures."
 #: The cost, said once for setup's choice and the Settings row.
 EXTRACT_DETAILS = (
     "BartleBot copies them out of your game's files into its own folder in AppData, about "
     "35 MB, and never shares them or puts them in a bot file. Without them, cards and lists "
-    "show names only. Extract them again from Settings › General › Card art after a game "
+    "show names only. Extract them again from Settings › General › Game art after a game "
     "patch adds spells."
 )
 
-SETTINGS_TITLE = "Card art"
+SETTINGS_TITLE = "Game art"
 EXTRACT_BUTTON = "Extract"
 NOT_EXTRACTED = "Not extracted: cards and lists show names only."
 EXTRACTED = "Extracted on {date}: {files:,} pictures for {templates:,} cards."
@@ -58,15 +58,15 @@ STEP_COUNTED = "{step} · {done:,} of {total:,}"
 STARTING = "Starting…"
 DONE = "Done: {files:,} pictures for {templates:,} cards, and {icons:,} icons, {mb:.0f} MB."
 FAILED = (
-    "Couldn't extract the card art: {reason} BartleBot works without it, showing names where the "
-    "art would be. Try again from Settings › General › Card art."
+    "Couldn't extract the game art: {reason} BartleBot works without it, showing names where the "
+    "art would be. Try again from Settings › General › Game art."
 )
 NO_GAME = "Wizard101's folder wasn't found, so there is nothing to read."
 
 #: The progress bar's height.
 BAR_PX = 8
 
-DIALOG_TITLE = "Extract card art"
+DIALOG_TITLE = "Extract game art"
 CLOSE = "Close"
 CANCEL = "Cancel"
 
@@ -193,11 +193,11 @@ class ArtExtraction(ThemedMixin, QWidget):
         except ExtractionCancelled:
             return
         except ExtractionError as exc:
-            logger.warning("Card art was not extracted: %s", exc)
+            logger.warning("Game art was not extracted: %s", exc)
             self._fail(str(exc))
             return
         except Exception as exc:
-            logger.warning("Card art extraction failed", exc_info=True)
+            logger.warning("Game art extraction failed", exc_info=True)
             self._fail(f"{exc}.")
             return
         self._succeed(result)
@@ -304,7 +304,7 @@ def _status() -> str:
     return EXTRACTED_UNDATED.format(files=files, templates=len(images))
 
 
-def card_art_row(prefs: PreferenceStore | None = None) -> tuple[SettingRow, ActionButton]:
+def game_art_row(prefs: PreferenceStore | None = None) -> tuple[SettingRow, ActionButton]:
     """Settings › General's row: whether art is extracted, and **Extract**, which opens the dialog."""
     button = ActionButton("download", EXTRACT_BUTTON, fill=False)
     row = SettingRow(

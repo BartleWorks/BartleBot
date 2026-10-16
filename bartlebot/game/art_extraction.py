@@ -1,6 +1,6 @@
 """Extract spell card art and the game's icons from the installed game into the local art cache.
 
-Run from setup's Card art page, from Settings › General › Card art, and from the command
+Run from setup's Game art page, from Settings › General › Game art, and from the command
 line by ``tools/extract_card_art.py``; all three call :func:`extract_art` (epic #215,
 Stage 7). It reads only the user's own game install and writes only under
 :func:`~bartlebot.game.card_art.art_dir`, ``%APPDATA%/Bartleby/BartleBot/art``.

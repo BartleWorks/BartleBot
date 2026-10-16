@@ -42,10 +42,10 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     SETUP_PAGE_TYPES,
     TACTIC_CARDS,
     AccountsPage,
-    CardArtPage,
     CombatQuestionPage,
     FirstRunDialog,
     FirstRunPage,
+    GameArtPage,
     GameFolderPage,
     LaunchProfilePage,
     ModePage,
@@ -459,7 +459,7 @@ def test_the_pages_are_in_the_plans_order(qapp, prefs):
         QuicksellPage,
         RealmAndDelayPage,
         OptionsPage,
-        CardArtPage,
+        GameArtPage,
     ]
 
 
