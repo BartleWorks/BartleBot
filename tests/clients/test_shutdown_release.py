@@ -130,6 +130,12 @@ class _GateStub:
         self.asked: list[int] = []
         self.released: list[bool] = []
 
+    def _close_definitions(self) -> bool:
+        return True
+
+    def _confirm_unsaved(self, title: str) -> bool:
+        return True  # the unsaved-edits question has tests of its own, in tests/test_autosave.py
+
     def _ask_shutdown_choice(self, total: int) -> bool | None:
         self.asked.append(total)
         return self._choice

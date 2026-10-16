@@ -563,6 +563,8 @@ class AppController(QObject):
             return True
         if self._shutdown_task is not None:
             return False  # already releasing; the task will close the window
+        if not self._close_definitions() or not self._confirm_unsaved("Quit BartleBot"):
+            return False
         hooked = len(self._client_manager.clients)
         unhooked = len(self._client_manager.unhooked_clients)
         if not hooked and not unhooked:
@@ -816,6 +818,8 @@ class AppController(QObject):
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return False
+        if not self._confirm_unsaved("New Bot"):
+            return False
         # Composed before it is written, so the file holds what opening it would make
         # of it and the first Save after that changes nothing.
         config, _report = self._compose(new_bot.create_bot(dialog.start, dialog.details()))
@@ -841,6 +845,8 @@ class AppController(QObject):
         if path is None:
             path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot File", "", "Bot Files (*.json)")
         if not path:
+            return
+        if not self._confirm_unsaved("Open Bot"):
             return
         try:
             config = BotConfig.load(path)
@@ -884,23 +890,9 @@ class AppController(QObject):
             # Close is the document on top: a definition goes back to what it was opened from.
             self._definition_back()
             return
-        # The flag is raised by edits that change nothing, too: ask only when one did.
-        if self._has_unsaved_changes and not _matches_clean(self._loaded_config, self._clean_snapshot):
-            reply = QMessageBox.question(
-                self._window,
-                "Close Bot",
-                "You have unsaved changes. Close without saving?",
-                QMessageBox.StandardButton.Save
-                | QMessageBox.StandardButton.Discard
-                | QMessageBox.StandardButton.Cancel,
-            )
-            if reply == QMessageBox.StandardButton.Cancel:
-                return
-            if reply == QMessageBox.StandardButton.Save:
-                self._save_bot()
-                if self._has_unsaved_changes:  # save was cancelled or failed
-                    return
-        self._delete_autosave()
+        if not self._confirm_unsaved("Close Bot"):
+            return
+        self._delete_autosave(stem=self._autosave_stem())
         self._loaded_config = None
         self._last_save_path = None
         self._official_open = False
@@ -914,6 +906,33 @@ class AppController(QObject):
         self._window.set_save_enabled(False)
         self._window.set_close_enabled(False)
         self._window.set_start_enabled(False)
+
+    def _confirm_unsaved(self, title: str) -> bool:
+        """Ask about the open bot's unsaved edits before something replaces it. False to stay put.
+
+        Save saves, and stays put if the save is cancelled or fails. Discard drops the edits
+        and their recovery file, so the next launch does not offer them back. Open, New Bot
+        and Quit used to replace an edited bot without asking, deleting its recovery file on
+        the way (#154). The flag is raised by edits that change nothing, too: ask only when
+        one did. A definition on top is closed first, by ``_close_definitions``.
+        """
+        config = self._loaded_config
+        if config is None or not self._has_unsaved_changes or _matches_clean(config, self._clean_snapshot):
+            return True
+        reply = QMessageBox.question(
+            self._window,
+            title,
+            f"Save your changes to '{config.name}' first?",
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save,
+        )
+        if reply == QMessageBox.StandardButton.Save:
+            return self._save_bot() and not self._has_unsaved_changes
+        if reply != QMessageBox.StandardButton.Discard:
+            return False
+        self._delete_autosave(stem=self._autosave_stem())
+        self._has_unsaved_changes = False
+        return True
 
     def _save_and_done(self) -> None:
         """Save & Done: back to Run mode, but only once the save has gone through.

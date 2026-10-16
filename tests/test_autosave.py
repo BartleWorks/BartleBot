@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 from PyQt6.QtWidgets import QMessageBox
@@ -202,3 +203,68 @@ def test_startup_offers_a_recovery_file_that_will_not_load(tmp_path):
     offered, _ = _scan(tmp_path, "{not json")
 
     assert len(offered) == 1, "a comparison that cannot be made leaves it to the user"
+
+
+# ---------------------------------------------------------------------------
+# Replacing an edited bot asks first (#154)
+# ---------------------------------------------------------------------------
+
+
+def _edit_and_autosave(harness) -> None:
+    harness._loaded_config.name = "Renamed"
+    harness._on_config_changed()
+    harness._do_autosave()
+    assert _autosave().exists()
+
+
+def _other_bot(library, tmp_path):
+    path = tmp_path / "other.json"
+    linked_bot(library.get(SYNC_ID), library).save(path)
+    return path
+
+
+def test_opening_another_bot_asks_about_a_real_edit(harness, asked, library, tmp_path):
+    _edit_and_autosave(harness)
+    other = _other_bot(library, tmp_path)
+
+    harness._open_bot(str(other))
+
+    assert asked == ["Open Bot"]
+    assert harness._last_save_path == str(other)
+    assert not _autosave().exists(), "a discarded edit is not offered back at the next launch"
+
+
+def test_cancel_keeps_the_edited_bot_open(harness, monkeypatch, library, tmp_path):
+    monkeypatch.setattr(app_controller.QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
+    _edit_and_autosave(harness)
+
+    harness._open_bot(str(_other_bot(library, tmp_path)))
+
+    assert harness._loaded_config.name == "Renamed"
+    assert harness._has_unsaved_changes
+    assert _autosave().exists()
+
+
+def test_opening_over_an_unedited_bot_asks_nothing(harness, asked, library, tmp_path):
+    harness._open_bot(str(_other_bot(library, tmp_path)))
+
+    assert asked == []
+
+
+def test_discarding_on_close_removes_the_bots_own_recovery_file(harness, asked):
+    _edit_and_autosave(harness)
+
+    harness._close_bot()
+
+    assert asked == ["Close Bot"]
+    assert not _autosave().exists()
+
+
+def test_quitting_asks_about_a_real_edit(harness, asked):
+    harness._clients_released = False
+    harness._shutdown_task = None
+    harness._client_manager = MagicMock(clients=[], unhooked_clients=[])
+    _edit_and_autosave(harness)
+
+    assert harness._confirm_shutdown()
+    assert asked == ["Quit BartleBot"]
