@@ -14,6 +14,7 @@ import pytest
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.clients import wizwalker_cache
 from bartlebot.combat import dsl_check_cache
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import save_bot_strategy, save_player_strategy
@@ -49,6 +50,7 @@ def _default_write_paths() -> dict[str, Path]:
         "session logs": session_log_dir(),
         "DSL check cache": dsl_check_cache.cache_path(),
         "update staging": staging_dir(),
+        "wizwalker cache": wizwalker_cache.cache_dir(),
     }
 
 

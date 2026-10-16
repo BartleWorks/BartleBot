@@ -25,6 +25,7 @@ from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, Author
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.clients.install_location import apply_install
 from bartlebot.clients.window_kill import force_close_client
+from bartlebot.clients.wizwalker_cache import apply_cache_dir
 from bartlebot.combat import strategy_store
 from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_run
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
@@ -199,6 +200,8 @@ class AppController(QObject):
         # Before anything asks wizwalker's get_wiz_install(): a Steam install, or a folder
         # chosen in setup, is somewhere wizwalker never looks (epic #215, Stage 2).
         apply_install()
+        # Before anything reads wizwalker's cache, or its default under StarrFox is made (#234).
+        apply_cache_dir()
         self._handler = WizSprinter()
         self._current_machine: BotMachine | None = None
         # Every bot's fights fled on a default, for as long as the app is open: the Combat

@@ -55,6 +55,17 @@ def vendor_dir() -> Path:
     return Path(base) / VENDOR
 
 
+def local_vendor_dir() -> Path:
+    """``%LocalAppData%/Bartleby`` — the vendor's root for what belongs to this machine alone.
+
+    Caches and downloads: whatever describes this machine, or is too large to roam, and
+    can be rebuilt. The user's own data goes under :func:`vendor_dir`. Falls back to the
+    home directory where ``LOCALAPPDATA`` is unset, as :func:`vendor_dir` does.
+    """
+    base = os.environ.get("LOCALAPPDATA") or Path.home()
+    return Path(base) / VENDOR
+
+
 def product_dir(product: str = PRODUCT) -> Path:
     """``%APPDATA%/Bartleby/<product>`` — one product's own data directory."""
     return vendor_dir() / product
