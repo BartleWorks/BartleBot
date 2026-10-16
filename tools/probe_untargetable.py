@@ -221,7 +221,7 @@ async def _watch(
 
     The caller owns both, so a Ctrl+C that cancels this still leaves the summary its data.
     """
-    # The client has no combat_handler attribute; build one, as probe_spell_damage does.
+    # The client has no combat_handler attribute; build one.
     handler = CombatHandler(client)
     loop = asyncio.get_running_loop()
     start = loop.time()

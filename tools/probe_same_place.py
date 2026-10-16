@@ -55,7 +55,7 @@ It also reports two things a design would otherwise assume:
 HOW TO RUN
 
     CLOSE BARTLEBOT FIRST. This probe hooks every client itself, and two sets of hooks in one
-    game process corrupt each other (see the note in tools/probe_character_gid.py).
+    game process corrupt each other (see the note in launcher/auto_select.py).
 
     1. Log in two or more clients, all on the SAME realm, in one zone.
     2. uv run python tools/probe_same_place.py

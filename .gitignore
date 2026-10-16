@@ -47,9 +47,8 @@ logs/
 # `probe_name_behavior.py --record` writes the .local.json beside it instead.
 #
 # The infix is what carries the meaning, not the extension: drop exports land as
-# .local.csv, and `probe_chat_log_size.py --csv` writes one too, refusing any other
-# suffix so a recording cannot land on a tracked path. Anything else that records live
-# account data should follow the same naming rather than needing a new rule here.
+# .local.csv. Anything else that records live account data should follow the same naming
+# rather than needing a new rule here.
 *.local.*
 probe_*_report.txt
 

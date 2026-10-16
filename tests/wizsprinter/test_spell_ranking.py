@@ -4,7 +4,7 @@ The policy lives upstream but is pinned by exact commit here, so this is where
 it gets covered: the module is pure, so none of this needs a game attached.
 
 The numbers are the ones from BartleBot#6 and its follow-up comment, read off a
-live client with `tools/probe_spell_damage.py`.
+live client.
 """
 
 import pytest

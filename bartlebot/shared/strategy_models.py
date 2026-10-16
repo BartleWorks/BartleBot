@@ -7,7 +7,7 @@ PlayerCombatStrategy  — an optional *shared preset*: a named WizSprinter DSL
 DuelCombatStrategy    — team-level config for one type of fight
 DeckPreset            — named, reusable deck configuration in the library
 
-Every product by this vendor reads and writes these (``docs/SHARED_CONTENT.md``), so
+Every product by this vendor reads and writes these (``docs/EPICS.md``, *Official and shared content*), so
 they live in :mod:`bartlebot.shared` and import nothing product-specific, and every
 surface imports them from here. BartleBot's Bot Combat Strategy, which embeds them, is
 BartleBot's own and lives in :mod:`bartlebot.combat.bot_strategy_models`.

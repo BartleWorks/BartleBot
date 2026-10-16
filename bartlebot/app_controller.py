@@ -3088,7 +3088,7 @@ class AppController(QObject):
         # The win is smaller than N: memory reads are synchronous ReadProcessMemory
         # on the loop thread and SendMessageW blocks until the target game's message
         # pump answers, so only the sleeps actually overlap. Measured at 1.88x for
-        # four clients (tools/probe_deck_apply_timing.py).
+        # four clients.
         #
         # Each task swallows its own failures, so no return_exceptions is needed and
         # one bad client cannot cancel the others' applies half-finished.

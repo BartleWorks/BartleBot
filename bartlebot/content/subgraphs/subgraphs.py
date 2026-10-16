@@ -7,7 +7,7 @@ local ids and positions relative to ``(0, 0)``. An *instance* is an ordinary
 the engine sees as any other, and the editor draws the whole instance as one call node.
 Everything here is a function over Pydantic models with no Qt, no settings and no file
 access beyond the :class:`SubgraphLibrary` it is handed, so the whole policy is
-testable on a ``tmp_path``. The plan is linked from docs/SUBGRAPH_CALLS.md.
+testable on a ``tmp_path``. The plan is linked from docs/EPICS.md.
 
 The rules this module owns:
 

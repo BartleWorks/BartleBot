@@ -1,7 +1,8 @@
 """Diagnostic: is the wizard name readable from ClientWizPlayerNameBehavior?
 
 WHY THIS EXISTS
-    probe_wizard_name.py concluded there was no usable memory route, but it could not
+    An earlier probe, probe_wizard_name.py (removed; it is in git history), concluded there
+    was no usable memory route, but it could not
     identify the object that actually holds the name -- reaching it "would mean identifying
     its type and finding its live instance by vtable-from-constructor-pattern plus a heap
     scan".  The r800294 type dump names a strong candidate outright:

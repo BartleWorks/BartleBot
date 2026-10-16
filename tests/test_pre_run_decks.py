@@ -1,8 +1,8 @@
 """Pre-run deck apply: slot routing, failure isolation, and concurrency.
 
 The decks are applied concurrently because doing them in sequence made a
-four-client run wait four times over for what is mostly sleeping — see
-``tools/probe_deck_apply_timing.py``. Concurrency is only safe because each
+four-client run wait four times over for what is mostly sleeping (concurrent,
+four clients measured 1.88x faster). Concurrency is only safe because each
 client's failures stay its own, so most of what is tested here is that one bad
 client cannot take the others down with it.
 """

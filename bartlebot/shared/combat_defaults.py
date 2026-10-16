@@ -1,7 +1,7 @@
 """The shipped default duel strategies, and the DSL a fight runs when no file can be read.
 
 Every product by this vendor fights, and the defaults are shipped content they share
-(``docs/COMBAT_DEFAULTS.md``), so the ids and the last-resort DSL live here and import
+(``docs/EPICS.md``, *Combat defaults*), so the ids and the last-resort DSL live here and import
 nothing product-specific.
 
 The three duels are Official items in ``strategies/duel/``, found by id:

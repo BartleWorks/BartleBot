@@ -119,8 +119,8 @@ the closer of the two answers, and still read when the mode key is absent.
 
 ## The library migration
 
-`tools/drop_default_failure_edges.py` is the one-shot tool that removed the redundant
-edges from `bots/`. It dropped 710 of the 790 across 71 of the 87 bots; the other 80 it
+A one-shot tool, `tools/drop_default_failure_edges.py` (since removed; it is in git
+history), took the redundant edges out of `bots/`. It dropped 710 of the 790 across 71 of the 87 bots; the other 80 it
 refused, and each refusal is a case where deleting the edge would change what the bot
 does:
 
@@ -131,6 +131,6 @@ does:
 - its source is a member of a **linked subgraph instance**, whose edges belong to the
   definition in the library rather than to this file.
 
-It is deliberately a tool and not a load-time migration. Silently rewriting a user's bot
+It was deliberately a tool and not a load-time migration. Silently rewriting a user's bot
 file on open is the thing `docs/BOT_OPTIONS.md` is careful never to do either, and the
 three-mode toggle is what an unmigrated file gets instead.

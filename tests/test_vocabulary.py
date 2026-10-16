@@ -47,10 +47,9 @@ COMBAT_DOCS = [
     ROOT / "CLAUDE.md",
     ROOT / "bartlebot" / "gui" / "CLAUDE.md",
     ROOT / "docs" / "COMBAT_CONFIG.md",
-    ROOT / "docs" / "COMBAT_DEFAULTS.md",
+    ROOT / "docs" / "EPICS.md",
     ROOT / "docs" / "SHARING.md",
     ROOT / "docs" / "TEMPLATES.md",
-    ROOT / "docs" / "LIBRARY_MIGRATION.md",
 ]
 
 

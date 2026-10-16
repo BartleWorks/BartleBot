@@ -296,6 +296,60 @@ A Bot Combat Strategy finds a fight by its enemy as well as by its state id, so 
 follows a fight a template update replaced. `docs/COMBAT_CONFIG.md` has it, under "Fight
 keys".
 
+## How the shipped templates are cut
+
+Six templates ship: Boss Farmer, Dungeon Farmer, Spellement Farmer, Mob Farmer, Reagent
+Collector and Gauntlet Farmer. Every shipped bot was rebuilt on one by the library rewrite
+(#59), except three built by hand on purpose: `queen_calypso` (below), and
+`the_portico_pearl` and `scrap_iron_collector`, which collect reagents inside a dungeon.
+These are the decisions a later release, or a seventh template, keeps.
+
+**Recovery is a relog, and every failure goes there.** Each template's recovery state is
+Sync players' Recover port, which is `relog`: a soft relog is the only step that clears
+both dangerous stuck states, stuck in combat and stuck with the UI open, and
+`teleport_to_world_hub` clears neither. So there is no second-tier recovery hub, and no
+failure edge is drawn into one: an unrouted `FAILURE` already goes to the recovery state
+(`docs/RETURN_ROUTING.md`). A relog that fails stops the run after two attempts through
+`relog`'s own `max_consecutive_retries`, with no self-loop drawn, since the recovery
+state's own failure is exempt from the default edge. Escalating to a hard relog from inside
+a node cannot work: `ClientManager.relog_clients` waits for the machine to park, which a
+running node never lets it do.
+
+**The retry cap is per node.** `AppController` passes no `max_consecutive_same_state`, so
+only a node's own `max_consecutive_retries` stops a spinning state, and
+`test_every_self_loop_lands_on_a_node_with_a_retry_cap` fails when a shipped self-loop lands
+on an uncapped node.
+
+**Dungeon Farmer leaves by recall; Boss and Spellement Farmer walk out.** Dungeon Farmer
+marks the entrance once per Sync players and recalls to it at the end, because a dungeon's
+way out is often no door at all (the hub button, a teleporter after the last boss), and
+none of those is a zone change an exit could record. A recall covers all of them in one
+loading screen and skips the closing cutscene. A single-room farm loops far more often, and
+a recall there spends mana every loop where the door costs nothing, so those two keep a
+walk-out exit. A bot's own mark inside the dungeon is not allowed: the recall goes to the
+latest mark.
+
+**Team-Up is on in Boss and Spellement Farmer and off in Dungeon Farmer; Challenge Mode is
+off in all three.** These are `enter_dungeon` defaults, not locks.
+
+**Level scaling goes after the entry when the Scales are in the farm's own dungeon.**
+Spellement Farmer scales before `enter_dungeon`. A bot that farms the Scales' own dungeon
+moves `handle_level_scaling` after the entry, so its players scale in place rather than
+marking outside, going in and recalling out (`docs/LEVEL_SCALING.md`). That changes four
+template-owned edge slots, so only a release that changes one of those four reaches such a
+bot, as a conflict. A second spellement template for these dungeons was rejected, since it
+would double every spellement release.
+
+**A boss fought again without leaving its zone stays by hand.** Every template's loop
+leaves each pass and refills, sells and collects outside, while Queen Calypso is entered
+once and fought forever; leaving gives the respawn up. Its `handle_level_scaling` and
+`handle_potions` sit inside the loop and recall back into the instance. A second bot of the
+same shape would justify a template of its own; one does not.
+
+**`interact` and `interact_menu` stay two nodes.** `interact_menu`'s `menu_path` waits for
+the NPC menu to show before the clicks that follow, so they do not race it. That is
+load-bearing for its one bot, and not worth two more params on a node with nearly 180 uses.
+
 ## What must stay true
 
 - Every bot file round-trips byte-identical, with `template` or without.
