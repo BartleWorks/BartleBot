@@ -9,8 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from wakepy import ActivationError, keep
-
 logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, Qt, QTimer
@@ -3028,6 +3026,9 @@ class AppController(QObject):
             if machine.is_stopped:
                 return  # a stop that landed just as the setup finished
             self._log_combat_sources()
+            # Here rather than at the top: importing wakepy costs startup a tenth of a second (#154).
+            from wakepy import ActivationError, keep  # noqa: PLC0415
+
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()
