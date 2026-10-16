@@ -67,7 +67,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `clients/` | game clients at run time: the client and group managers, accounts, credentials, launch tracking, relog, porting, sightings, tile slots, process and window helpers |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
 | `launcher/` | auto-select, launch profiles, Remember Realm |
-| `packaging/` | the app as a packaged build: `--self-check`, and whether this process is one (`docs/RELEASING.md`) |
+| `packaging/` | the app as a packaged build: `--self-check`, whether this process is one, and Velopack's install hooks (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
 | `shared/` | what every Bartleby product shares; imports nothing from the rest of `bartlebot` |
 | `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`, `title_bar/`) |
 
@@ -110,7 +110,8 @@ read on purpose.
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |
-| `docs/RELEASING.md` | the packaged build: what is bundled and why, `--self-check` and each of its checks, the packager and why it won, what Velopack was shown to do, and `package.yml` |
+| `docs/RELEASING.md` | the packaged build: what is bundled and why, `--self-check` and each of its checks, the packager and why it won, what Velopack was shown to do, and `package.yml`; the one version number and how to bump it; `release.yml`, from a `v*` tag to a draft release, what `vpk pack` is told, and the pinned Velopack version |
+| `docs/INSTALLER.md` | what an install puts where and what the app writes elsewhere, install, update and uninstall, the hooks and their time limits, why a checkout never calls Velopack, and trying an install from a local folder |
 | `docs/PROCESS.md` | issues, labels, milestones, the backlog board |
 
 Landing a branch on `master` is the `merge` skill — the gate, the commit message

@@ -1,9 +1,10 @@
 # Releasing
 
 How BartleBot becomes something a user with no Python can run. This file covers the
-packaged build and the checks that hold it to the checkout. The installer, the release
-workflow and the updater are added by the later stages of epic #27 (`docs/EPICS.md`,
-*Installer and updater*).
+packaged build and the checks that hold it to the checkout, the version, and the release
+workflow that turns a tag into a draft release. What an install puts where, and what
+install, update and uninstall do, is `docs/INSTALLER.md`. The updater is added by a later
+stage of epic #27 (`docs/EPICS.md`, *Installer and updater*).
 
 ## A packaged build
 
@@ -20,7 +21,9 @@ The build is a PyInstaller onedir (*The packager*, below, has why). PyInstaller 
 `package` dependency group, so a plain `uv sync` leaves it out. The build lands in
 `dist/BartleBot/` with `dist/build-report.json` beside it: the build time, the folder's
 size and file count, and the self-check's lines. The script exits non-zero when
-PyInstaller or the self-check fails.
+PyInstaller or the self-check fails. It also draws `dist/bartlebot.ico` from the logo's
+SVG (`tools/export_logo.py`'s `write_icon`) and gives it to the exe, so the Start Menu
+entry, the uninstall entry and Explorer show the logo rather than PyInstaller's icon.
 
 **A release is never built on a maintainer's machine.** CI builds every release from a
 tag. A local build is for working on the build itself. The rule is about what a binary
@@ -88,7 +91,7 @@ read, so in a build it reads the build (`bartlebot/packaging/self_check.py`).
 | `shared set` | every duel, player strategy and deck loads, and every shipped default id in `shared/combat_defaults.py` is among them |
 | `game data` | every snapshot in `game/data/` is there and parses. The list is the readers' own path constants (`game_data_files`), and a test fails when a file there has no entry |
 | `type dump` | the dump art extraction reads is there, and katsuba's native extension opens it |
-| `native` | curl_cffi (wiki import) and Pillow's DDS decoder (game art) import, and the combat DSL grammar parses the last-resort DSL |
+| `native` | curl_cffi (wiki import), Pillow's DDS decoder (game art) and Velopack import, and the combat DSL grammar parses the last-resort DSL |
 | `qt` | a `QApplication` starts on Qt's platform plugin, and every icon and the logo render through QtSvg |
 
 A check that raises is a failure with the exception's text, and one failure stops none
@@ -147,14 +150,14 @@ and uninstalled on a Windows 11 machine with Smart App Control off.
 | Does `UpdateManager` apply an update from a local folder? | **Yes.** `UpdateManager(<folder>)` found 1.0.1, chose the 26 KB delta over the 11 MB full package, downloaded it, and `apply_updates_and_exit` left 1.0.1 installed |
 | Does it refuse a package whose SHA-256 differs from the feed's? | **Yes.** With one byte changed in 1.0.2's delta and in its full package, the delta failed its SHA-256 check, Velopack fell back to the full package, that failed too, and `download_updates` raised. The install stayed at 1.0.1 |
 
-Things the spike showed that a later stage has to handle:
+What the spike showed, and what was done about it:
 
 - **A Desktop shortcut by default.** `vpk pack` writes `Desktop,StartMenuRoot` into the
-  package's shortcut list. Stage 2 passes `--shortcuts StartMenuRoot`, since the plan
-  promises a Start Menu entry and nothing more.
-- **`Setup.exe --silent` does not start the app.** Velopack documents that a Setup run
-  without it opens the app once it has installed it, which is how the install opens into
-  first-run setup. The spike did not try that, so Stage 2's Done when checks it.
+  package's shortcut list. `tools/pack_release.py` passes `--shortcuts StartMenuRoot`,
+  since the plan promises a Start Menu entry and nothing more.
+- **`Setup.exe --silent` does not start the app.** A Setup run without it does, and the
+  app opens into first-run setup. Stage 2 saw that from a fresh profile
+  (`docs/INSTALLER.md`).
 - **The hash check covers the packages, not the feed.** Velopack checks a package against
   the hashes in `releases.win.json`, so a feed rewritten with a tampered package's hashes
   would pass it. The spike did not try that, since it follows from where the hashes are.
@@ -167,5 +170,68 @@ Things the spike showed that a later stage has to handle:
 Defender, writes the report and the scan to the job summary, and uploads the build as an
 artifact for 14 days. A workflow can only be started by hand once it is on the default
 branch. Stage 1 ran it from its branch with a temporary `push` trigger, dropped before
-the merge (run 38927474706, both packagers). Stage 2's `release.yml` builds the same way
-on a tag.
+the merge (run 38927474706, both packagers). `release.yml` builds the same way on a tag.
+
+## The version
+
+**BartleBot has one version number: `[project] version` in `pyproject.toml`.** The app
+reads it through `importlib.metadata`, from the metadata `uv sync` writes and the build
+bundles (`METADATA`). Share files record it, the self-check prints it, Velopack is given
+it as the package version, and the release tag names it. Nothing else holds a version.
+
+It is SemVer 2, `MAJOR.MINOR.PATCH` with an optional `-prerelease`, because Velopack
+compares versions that way and refuses anything else. To release a version:
+
+1. Set it in `pyproject.toml`, and run `uv lock`. The lock records the project's version,
+   so a bump without relocking fails `uv sync --locked` in CI.
+2. Commit, and tag that commit `v<version>`: `v1.2.0` for `1.2.0`.
+
+`tools/release_version.py <tag>` is the workflow's first step. It fails when the tag is
+not `v` + the version, when the version is not SemVer 2, or when the environment's
+metadata says something else (a version bumped without `uv sync`), and prints every
+reason. On success it prints the version alone, for the steps after it.
+
+## A release
+
+`.github/workflows/release.yml` runs on every pushed `v*` tag, on a `windows-latest`
+runner. It never runs on a branch, and is never started by hand.
+
+1. **Check the tag**: `tools/release_version.py`, before anything is built.
+2. **Build and self-check**: `tools/build_package.py`, as `package.yml` does. A failing
+   self-check fails the release.
+3. **Fetch the previous release**: `vpk download github` puts the latest *published*
+   release's full package and feed in `releases/`. With none published yet, it says so
+   and exits 0, and the release has no delta.
+4. **Pack**: `tools/pack_release.py <version>`, which runs `vpk pack`. It writes
+   Setup.exe, the full package, a delta against the previous release when step 3 found
+   one, and `releases.win.json`, the feed. `vpk` also writes `RELEASES` and
+   `assets.win.json`, which it uses itself.
+5. **Create the draft**: `vpk upload github`, without `--publish`, creates a draft
+   release on the tag with every asset.
+
+**CI never publishes.** What ships is Official, and Official means tested in game, which
+CI cannot do. A maintainer installs from the draft, tests, and publishes it. Publishing is
+what makes users see it, and what makes it the "previous release" the next delta is made
+against. A draft no one publishes is never offered, so a bad build costs nothing.
+
+What `vpk pack` is told is in `tools/pack_release.py`, held there so a test can read it:
+
+| constant or flag | value | why |
+|---|---|---|
+| `PACK_ID` | `PRODUCT` | names the install folder, and matches an update to its install, so it never changes |
+| `--packTitle` | `PRODUCT` | the Start Menu entry's and the uninstall entry's name |
+| `--packAuthors` | `VENDOR` | the uninstall entry's publisher |
+| `--icon` | `dist/bartlebot.ico` | Setup.exe's icon |
+| `SHORTCUTS` | `StartMenuRoot` | the Start Menu entry only; `vpk`'s default adds one on the Desktop |
+| `--noPortable` | | Setup.exe is the one way to install. A portable copy runs outside the install and the updater, and the plan leaves it out of scope |
+
+**Velopack is pinned at one version, `VELOPACK_VERSION`: 1.2.161,** for the `velopack`
+package in `pyproject.toml` and for `vpk` in `release.yml` alike. The Stage 1 spike
+tried that version. `test_one_velopack_version_for_the_package_and_vpk` holds the lock,
+the tool and the workflow to it, so a bump changes all three at once. Before a bump,
+read Velopack's advisories and repeat the install, update and uninstall in
+`docs/INSTALLER.md`.
+
+Until the repo is public, a release's downloads need authentication, so no installed app
+can update from GitHub yet. Installs and updates are tried from a local folder
+(`docs/INSTALLER.md`).

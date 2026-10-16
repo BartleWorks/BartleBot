@@ -250,7 +250,8 @@ def check_type_dump(_root: Path) -> str:
 
 
 def check_native(_root: Path) -> str:
-    """The native extensions a screen loads on demand: curl_cffi (wiki import) and Pillow's DDS decoder (game art)."""
+    """The native extensions loaded on demand: curl_cffi (wiki import), Pillow's DDS decoder (game art), Velopack."""
+    import velopack  # noqa: F401, PLC0415
     from curl_cffi import requests  # noqa: F401, PLC0415
     from PIL import DdsImagePlugin, Image  # noqa: F401, PLC0415
 
@@ -259,7 +260,7 @@ def check_native(_root: Path) -> str:
 
     checked = check_dsl_uncached(LAST_RESORT_DSL)
     _require(checked.error is None, f"the combat DSL grammar does not parse the last-resort DSL: {checked.error}")
-    return "curl_cffi, Pillow DDS, combat DSL grammar"
+    return "curl_cffi, Pillow DDS, Velopack, combat DSL grammar"
 
 
 def check_qt(_root: Path) -> str:

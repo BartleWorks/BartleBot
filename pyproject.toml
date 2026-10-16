@@ -24,6 +24,9 @@ dependencies = [
     # reads a WAD at run time.
     "katsuba>=0.4.0",
     "pillow>=11.0",
+    # Installs and updates a packaged build (docs/INSTALLER.md). Pinned, never floating:
+    # vpk in release.yml is the same version, and a test holds the two together.
+    "velopack==1.2.161",
 ]
 
 [dependency-groups]
