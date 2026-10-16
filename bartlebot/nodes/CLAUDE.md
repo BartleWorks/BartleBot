@@ -181,7 +181,11 @@ between a log you can debug from and one you scroll past is entirely in what doe
   the case this exists for — they were a fifth of the file.
 - **Never log a wizard name, or its `m_nameKeys`.** Logs get pasted into bug reports,
   and `tools/name_keys.py --decode` turns the key straight back into the name, so it
-  is not a safer stand-in. See *No real player data*.
+  is not a safer stand-in. See *No real player data*. Not a friend's, either, and not at
+  DEBUG: the session file keeps DEBUG. Say a name was found, not which.
+- **Never log an account's username.** Name the account by its slot (`P1`) or by
+  `credentials.account_label`. `test_no_log_call_names_an_account_or_a_wizard` guards
+  both rules.
 
 `RepeatCollapsingFilter` keeps the first of a run of identical messages and reports a
 count when the streak ends. It only collapses *consecutive* repeats, deliberately: two

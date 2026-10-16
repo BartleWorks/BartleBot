@@ -269,6 +269,11 @@ recent kept, plus a bridge handler for the in-app log widget.
 - **Never log a wizard name, or its `m_nameKeys`.** Logs get pasted into bug
   reports, and `tools/name_keys.py --decode` turns the key straight back into the
   name, so it is not a safer stand-in.
+- **Never log an account's username, either.** It identifies a person as surely as a
+  wizard name, and it is half of a login. Name an account by its slot (`P1`) or by
+  `clients.credentials.account_label` (its alias, or the username censored).
+  `test_no_log_call_names_an_account_or_a_wizard` fails on a log call handed
+  `username`, `friend_name`, `cached_name` and the like.
 
 ### Timing
 
