@@ -109,12 +109,12 @@ hook a real client, and what does Defender make of it.
 | | PyInstaller 6.22.3, onedir | Nuitka 4.3, standalone |
 |---|---|---|
 | build time, local (16 threads) | 0.7 min | 10.9 min, with Zig 0.16.0 |
-| build time, CI | to come | to come |
-| folder | 160 MB in 532 files | 208 MB in 339 files |
+| build time, CI (`windows-latest`, MSVC for Nuitka) | 1.3 min | 62.4 min |
+| folder, CI | 162 MB in 515 files | 198 MB in 339 files |
 | `--self-check`, local | 11 of 11 | 11 of 11 |
-| `--self-check`, CI | to come | to come |
+| `--self-check`, CI | 11 of 11 | 11 of 11 |
 | Defender, local (engine 4.18.26090.9, signatures 1.461.43.0) | no threats | no threats |
-| Defender, CI | to come | to come |
+| Defender, CI | no threats | no threats |
 | hooks a real client and runs a bot to the end | to come | to come |
 
 Two things the numbers leave out. Nuitka on Python 3.13 needs MSVC 14.3 (Visual Studio
