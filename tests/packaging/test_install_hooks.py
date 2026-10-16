@@ -1,16 +1,26 @@
-"""Velopack's part of startup: first of all in a packaged build, and never in a checkout."""
+"""Velopack's part of startup: first of all in a packaged build, and never in a checkout.
+
+The hooks write the real registry, under scratch keys each test removes (``machine``).
+"""
 
 from __future__ import annotations
 
 import ast
 import subprocess
 import sys
+import time
+import uuid
+from types import SimpleNamespace
 
 import pytest
 import velopack
 
 from bartlebot.packaging import install_hooks
 from bartlebot.paths import project_root
+from bartlebot.shared import file_types, install_key
+from bartlebot.shared.install_key import InstallRecord
+from bartlebot.shared.official_set import SET_FILE
+from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 
 class _FakeApp:
@@ -68,9 +78,120 @@ def test_the_hooks_cover_velopacks_four_fast_callbacks():
     assert {method for method, _hook in install_hooks.HOOKS} == fast
 
 
-@pytest.mark.parametrize("hook", [hook for _method, hook in install_hooks.HOOKS])
-def test_each_hook_returns_without_doing_anything(hook):
-    assert hook("1.0.0") is None
+@pytest.fixture
+def machine(monkeypatch, tmp_path):
+    """An installed BartleBot in ``tmp_path``, with the registry under scratch keys and Explorer's notice counted."""
+    winreg = pytest.importorskip("winreg")
+    scratch = rf"Software\Bartleby-test-{uuid.uuid4().hex}"
+    monkeypatch.setattr(install_key, "REGISTRY_KEY", rf"{scratch}\Vendor")
+    monkeypatch.setattr(file_types, "CLASSES_KEY", rf"{scratch}\Classes")
+    notices = []
+    monkeypatch.setattr(file_types, "notify", lambda: notices.append(1))
+    root = tmp_path / "BartleBot"
+    shipped = root / "current" / "_internal"
+    shipped.mkdir(parents=True)
+    monkeypatch.setattr(sys, "executable", str(root / "current" / "BartleBot.exe"))
+    monkeypatch.setattr(install_hooks, "install_dir", lambda: shipped)
+    yield SimpleNamespace(root=root, shipped=shipped, stub=root / "BartleBot.exe", notices=notices)
+    install_key.delete_tree(winreg.HKEY_CURRENT_USER, scratch)
+
+
+ALL_SIX = (".bbot", ".bbcombat", ".bbsubgraph", ".bbduel", ".bbplayer", ".bbdeck")
+
+
+def _commands() -> dict[str, str | None]:
+    return {t.extension: file_types.registered_command(t) for t in install_hooks.own_types() + file_types.SHARED_TYPES}
+
+
+def test_bartlebots_own_types_are_its_three():
+    assert [(t.extension, t.prog_id, t.description) for t in install_hooks.own_types()] == [
+        (".bbot", "BartleBot.Bot", "BartleBot bot"),
+        (".bbcombat", "BartleBot.BotCombatStrategy", "BartleBot Bot Combat Strategy"),
+        (".bbsubgraph", "BartleBot.Subgraph", "BartleBot subgraph"),
+    ]
+
+
+def test_the_executable_is_velopacks_stub_beside_current(tmp_path):
+    assert install_hooks.installed_executable(tmp_path / "current" / "BartleBot.exe") == tmp_path / "BartleBot.exe"
+
+
+def test_a_build_outside_current_names_its_own_exe(tmp_path):
+    assert (
+        install_hooks.installed_executable(tmp_path / "dist" / "BartleBot.exe") == tmp_path / "dist" / "BartleBot.exe"
+    )
+
+
+def test_the_install_dir_is_where_the_shipped_set_is():
+    assert (install_hooks.install_dir() / SET_FILE).is_file()
+
+
+def test_install_writes_the_key_and_registers_all_six_types(machine):
+    install_hooks.after_install("1.0.0")
+
+    assert install_key.read_all() == [InstallRecord(PRODUCT, machine.shipped, machine.stub)]
+    assert _commands() == dict.fromkeys(ALL_SIX, f'"{machine.stub}" "%1"')
+    assert machine.notices == [1]
+
+
+def test_update_writes_the_same_again(machine):
+    install_hooks.after_install("1.0.0")
+    install_key.delete(PRODUCT)  # something removed it
+
+    install_hooks.after_update("1.0.1")
+
+    assert install_key.read_all() == [InstallRecord(PRODUCT, machine.shipped, machine.stub)]
+    assert set(_commands().values()) == {f'"{machine.stub}" "%1"'}
+
+
+def test_before_update_does_nothing(machine):
+    install_hooks.before_update("1.0.0")
+
+    assert install_key.read_all() == []
+    assert machine.notices == []
+
+
+def test_uninstall_alone_removes_the_key_and_all_six_types(machine):
+    install_hooks.after_install("1.0.0")
+
+    install_hooks.before_uninstall("1.0.0")
+
+    assert install_key.read_all() == []
+    assert _commands() == dict.fromkeys(ALL_SIX)
+    assert machine.notices == [1, 1]
+
+
+def test_uninstall_hands_the_shared_types_to_the_other_product(machine, tmp_path):
+    buddy = tmp_path / "BartleBuddy" / "BartleBuddy.exe"
+    buddy.parent.mkdir()
+    buddy.write_bytes(b"")
+    install_key.write("BartleBuddy", buddy.parent, buddy)
+    install_hooks.after_install("1.0.0")
+
+    install_hooks.before_uninstall("1.0.0")
+
+    assert [r.product for r in install_key.read_all()] == ["BartleBuddy"]
+    commands = _commands()
+    assert {commands[ext] for ext in (".bbduel", ".bbplayer", ".bbdeck")} == {f'"{buddy}" "%1"'}
+    assert {commands[ext] for ext in (".bbot", ".bbcombat", ".bbsubgraph")} == {None}
+
+
+def test_uninstall_removes_the_shared_types_when_the_other_products_exe_is_gone(machine, tmp_path):
+    gone = tmp_path / "BartleBuddy" / "BartleBuddy.exe"
+    install_key.write("BartleBuddy", gone.parent, gone)
+    install_hooks.after_install("1.0.0")
+
+    install_hooks.before_uninstall("1.0.0")
+
+    assert _commands() == dict.fromkeys(ALL_SIX)
+
+
+def test_the_hooks_run_well_inside_velopacks_limit(machine):
+    started = time.perf_counter()
+    install_hooks.after_install("1.0.0")
+    install_hooks.after_update("1.0.1")
+    install_hooks.before_uninstall("1.0.1")
+
+    assert time.perf_counter() - started < install_hooks.UPDATE_LIMIT_SECONDS / 10
 
 
 def _run(code: str) -> subprocess.CompletedProcess:
@@ -111,3 +232,9 @@ def test_bartlebot_py_hands_the_launch_to_velopack_before_anything_else():
     first = main.body[0]
     assert isinstance(first, ast.Expr) and isinstance(first.value, ast.Call)
     assert ast.unparse(first.value) == "run_velopack()"
+
+
+def test_the_suite_never_reaches_the_machines_registry():
+    """``conftest`` points both roots at a throwaway key, so an unpatched hook call writes nothing real."""
+    assert not install_key.REGISTRY_KEY.endswith(rf"Software\{VENDOR}")
+    assert file_types.CLASSES_KEY != r"Software\Classes"

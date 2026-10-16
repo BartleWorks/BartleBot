@@ -8,16 +8,32 @@ process, so the app never starts. Velopack kills a hook that runs too long
 :func:`run_velopack` first, before Qt, logging or anything else is loaded, and a hook may
 never show a window. On every other launch ``run()`` returns and the app starts as usual.
 
+Install and update record the install and register the share file types; uninstall
+takes both away again (``docs/INSTALLER.md``):
+
+- **The install key**, ``HKCU\\Software\\Bartleby\\BartleBot``, with the install directory
+  and the exe (:mod:`bartlebot.shared.install_key`). An update writes the same values
+  again, which mends a key that went missing and changes nothing otherwise.
+- **The six share file types** (:mod:`bartlebot.shared.file_types`): BartleBot's own
+  three, :func:`own_types`, and the three it shares with every product by the vendor.
+  Uninstall removes its own three, and hands the shared three to another installed
+  product, or removes them when there is none.
+
 A checkout never calls Velopack: there is nothing installed for it to find, and it would
 say so on stderr at every launch. :func:`run_velopack` returns at once unless this is a
-packaged build (``docs/INSTALLER.md``).
+packaged build. So a checkout never writes the registry either.
 """
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable, Sequence
+from pathlib import Path
 
 from bartlebot.packaging.build_kind import is_packaged
+from bartlebot.shared import file_types, install_key
+from bartlebot.shared.file_types import SHARED_TYPES, FileType
+from bartlebot.shared.vendor import PRODUCT
 
 #: How long Velopack lets the install and uninstall hooks run before it kills them.
 INSTALL_LIMIT_SECONDS = 30
@@ -25,20 +41,82 @@ INSTALL_LIMIT_SECONDS = 30
 UPDATE_LIMIT_SECONDS = 15
 
 
+#: The folder Velopack keeps the installed app in, and swaps whole on an update.
+CURRENT_DIRNAME = "current"
+
+
+def own_types() -> tuple[FileType, ...]:
+    """BartleBot's own share types: ``.bbot``, ``.bbcombat`` and ``.bbsubgraph``, ProgIDs under the product."""
+    from bartlebot.content.share_export import EXTENSIONS, FILE_TYPES  # noqa: PLC0415 - only a hook needs it
+    from bartlebot.shared.share_file import SHARED_EXTENSIONS  # noqa: PLC0415
+
+    own = {kind: ext for kind, ext in EXTENSIONS.items() if kind not in SHARED_EXTENSIONS}
+    return file_types.file_types(PRODUCT, own, FILE_TYPES)
+
+
+def installed_executable(executable: Path | None = None) -> Path:
+    """The exe anything outside the install should name: Velopack's stub, beside ``current\\``.
+
+    The stub's path stays the same across updates, and it starts ``current\\BartleBot.exe``
+    with the arguments it was given. A build not under ``current\\`` names its own exe.
+    """
+    exe = Path(executable or sys.executable)
+    if exe.parent.name.lower() == CURRENT_DIRNAME:
+        return exe.parent.parent / exe.name
+    return exe
+
+
+def install_dir() -> Path:
+    """Where this build's shipped content sits: the folder holding ``strategies/``."""
+    from bartlebot.paths import project_root  # noqa: PLC0415
+
+    return project_root()
+
+
+def record_install() -> None:
+    """Write the install key and register all six share types to this install's exe."""
+    exe = installed_executable()
+    install_key.write(PRODUCT, install_dir(), exe)
+    file_types.register(own_types() + SHARED_TYPES, exe)
+    file_types.notify()
+
+
+def remove_install() -> None:
+    """Delete the install key and BartleBot's own types, and hand the shared ones on or remove them."""
+    install_key.delete(PRODUCT)
+    file_types.unregister(own_types())
+    other = next(
+        (r for r in install_key.read_all() if r.product != PRODUCT and r.executable.is_file()),
+        None,
+    )
+    if other is not None:
+        file_types.register(SHARED_TYPES, other.executable)
+    else:
+        file_types.unregister(SHARED_TYPES)
+    file_types.notify()
+
+
 def after_install(version: str) -> None:
-    """The new install's first launch, before Velopack opens the app. Nothing to do yet."""
+    """The new install's first launch, before Velopack opens the app: record it, and register the types."""
+    record_install()
 
 
 def before_update(version: str) -> None:
-    """The installed version, just before Velopack replaces its folder. Nothing to do yet."""
+    """The installed version, just before Velopack replaces its folder. Nothing to do."""
 
 
 def after_update(version: str) -> None:
-    """The new version, just after Velopack swapped its folder in. Nothing to do yet."""
+    """The new version, just after Velopack swapped its folder in: record it and register the types again.
+
+    Both are the same values as before. Writing them again mends a key or a type that
+    something removed, and picks up a share type a new release added.
+    """
+    record_install()
 
 
 def before_uninstall(version: str) -> None:
-    """The installed version, just before Velopack deletes its folder. Nothing to do yet."""
+    """The installed version, just before Velopack deletes its folder: take the key and the types away."""
+    remove_install()
 
 
 #: Each ``velopack.App`` registration method, and the hook it is given.

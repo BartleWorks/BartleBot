@@ -388,6 +388,22 @@ def _appdata_root(tmp_path_factory):
 
 _APPDATA_SERIAL = itertools.count()
 
+#: Where the install key and the file types go in a test that does not choose a key of its
+#: own: one throwaway key per worker, never the vendor's or ``Software\Classes``.
+UNGUARDED_REGISTRY_KEY = rf"Software\Bartleby-test-unguarded-{os.getpid()}"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _remove_unguarded_registry_key():
+    """Remove whatever a test wrote under :data:`UNGUARDED_REGISTRY_KEY`, at the end of the session."""
+    yield
+    if sys.platform == "win32":
+        import winreg  # noqa: PLC0415
+
+        from bartlebot.shared.install_key import delete_tree  # noqa: PLC0415
+
+        delete_tree(winreg.HKEY_CURRENT_USER, UNGUARDED_REGISTRY_KEY)
+
 
 @pytest.fixture(autouse=True)
 def isolated_settings(_appdata_root, monkeypatch):
@@ -426,6 +442,15 @@ def isolated_settings(_appdata_root, monkeypatch):
 
     monkeypatch.setattr(official_set, "_registry", official_set.NoRegistry())
     official_set.reset_shipped_root()
+    # Nor may a test that reaches an install hook write the machine's install key or file
+    # types: both registry roots point at a throwaway key, removed at the end of the
+    # session, and Explorer is never told (see packaging.install_hooks). Before this, a
+    # hook test registered all six share types to the venv's python.
+    from bartlebot.shared import file_types, install_key  # noqa: PLC0415
+
+    monkeypatch.setattr(install_key, "REGISTRY_KEY", UNGUARDED_REGISTRY_KEY)
+    monkeypatch.setattr(file_types, "CLASSES_KEY", rf"{UNGUARDED_REGISTRY_KEY}\Classes")
+    monkeypatch.setattr(file_types, "notify", lambda: None)
     # Nor the game the developer has installed, which would decide whether setup asks
     # for a game folder (see shared.game_install).
     from bartlebot.shared import game_install  # noqa: PLC0415
