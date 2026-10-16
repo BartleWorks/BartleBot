@@ -76,7 +76,7 @@ Its own strategies have ids like any other entry, and are linked with the existi
 
 **The first three are one library for every product by the vendor** (#168): BartleBuddy reads and writes the same `%APPDATA%/Bartleby/strategies/`, beside `accounts.json`. Their models and their store live in `bartlebot/shared/` (`strategy_models`, `strategy_library`), which imports nothing from `bartlebot` outside itself, and `strategy_store` is BartleBot's facade over them. Bot Combat Strategies stay BartleBot's own, since only BartleBot has bots. `store_roots.resolve_shared_roots` gives the library's pair; in developer mode both are the repo, whatever else is installed.
 
-**Which shipped copy.** Each product ships the shared Official set in its own install directory, pinned from one source. With two installed, `official_set.shipped_root` reads both products' install keys under `HKCU\Software\Bartleby\<product>` (`InstallDir`, `SharedSetVersion`, written by #27's installer) and uses the higher set version, whole, never mixing items from two sets; on a tie, or once the other product is uninstalled, our own. `SHARED_SET_VERSION` is raised whenever a shared Official item changes. The registry is read through `InstallRegistry`, and the suite swaps in an empty one.
+**Which shipped copy.** Each product ships the shared Official set in its own install directory, pinned from one source. With two installed, `official_set.shipped_root` reads both products' install keys under `HKCU\Software\Bartleby\<product>` (`shared.install_key`, written by the install hook; `docs/INSTALLER.md`), reads each set's version from the `strategies/official_set.json` in that product's install directory, and uses the higher version, whole, never mixing items from two sets; on a tie, or once the other product is uninstalled, our own. A key whose directory is gone is skipped. The version lives only in that file, beside the set it describes, and is raised whenever a shared Official item changes. The registry is read through `InstallRegistry`, and the suite swaps in an empty one.
 
 **Two products, one file.** Every write to the shared library checks first (`shared/strategy_library.py`):
 
@@ -209,7 +209,7 @@ Default Team Boss Duel and Default Turn 1 AoE Mob Duel left the set at version 6
 Stage 5): Default Team Duel reads the fight kind in its strategies, and a default can't be
 chosen by fight kind. The player strategy the second one linked, Default Turn 1 AoE mob
 fight, followed at version 8 (#212): every shipped team strategy already AoEs in round 1 of
-a mob fight, and despite its name it cast an AoE every round, boss or not. Nothing leaves the set after 1.0.0 (`official_set.SHARED_SET_VERSION`),
+a mob fight, and despite its name it cast an AoE every round, boss or not. Nothing leaves the set after 1.0.0 (`shared/official_set.py`),
 since a user's link to it would then point at nothing. Before then a Bot Combat Strategy
 still linking one gets that fault before a run, and its card reads "(missing strategy)";
 nothing relinks it for the user.
@@ -377,7 +377,8 @@ Two rules hold for the line:
 
 `LAST_RESORT_DSL` carries the line too, since it is Default's text.
 
-**`SHARED_SET_VERSION` rises whenever a shared Official item changes**, so a product
+**The set's version in `strategies/official_set.json` rises whenever a shared Official
+item changes**, so a product
 shipping an older set never mixes items with this one's.
 
 ## Resolution at run time (#207)

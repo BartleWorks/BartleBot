@@ -183,7 +183,8 @@ The rules every stage kept:
 - **The fight kind is read by one rule**: `?(any(enemies).is_boss == 1)` for a boss fight,
   `?(all(enemies).is_boss == 0)` for a mob fight; never `boss.health` or `boss.hp`. P1's
   death is `ally(last).health == 0`, never `is_dead`.
-- **`SHARED_SET_VERSION` rises with every change to a shared Official item.**
+- **The shared set's version rises with every change to a shared Official item.** It is
+  `strategies/official_set.json`'s since #237; it was `SHARED_SET_VERSION` then.
 - **Nothing writes to a bot or a Bot Combat Strategy file at load or at run time.**
 - **`bartlebot/shared/` imports nothing from the rest of `bartlebot`.**
 
