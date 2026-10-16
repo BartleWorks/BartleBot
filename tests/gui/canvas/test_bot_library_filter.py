@@ -618,3 +618,62 @@ def test_the_clear_button_recolors_while_it_exists(qapp, theme):
     _switch(qapp, panel, theme, "dark")
 
     assert panel._clear_btn.styleSheet() != before
+
+
+# ---------------------------------------------------------------------------
+# Art extracted while the library is open (#239)
+# ---------------------------------------------------------------------------
+
+
+def _tagged_bot(folder: Path, name: str, tag: str) -> None:
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{name}.json").write_text(json.dumps({"name": name, "tags": [tag]}), encoding="utf-8")
+
+
+def _rows_with_icons(panel: _BotLibraryPanel) -> set[str]:
+    items = [panel._cat_list.item(i) for i in range(panel._cat_list.count())]
+    return {item.data(Qt.ItemDataRole.UserRole) for item in items if not item.icon().isNull()}
+
+
+def _pills(panel: _BotLibraryPanel) -> list:
+    from bartlebot.gui.widgets.pills.tag_pill import TagPill  # noqa: PLC0415
+
+    return [pill for card in _cards(panel) for pill in card.findChildren(TagPill)]
+
+
+def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qapp, library):
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    _tagged_bot(library / "31_four_dungeons", "Gold Run", "Gold")
+    panel = _BotLibraryPanel()
+    panel.show()
+    panel._cat_list.setCurrentRow(2)
+    assert _rows_with_icons(panel) == set()
+    assert _pills(panel) and not any(pill.has_icon for pill in _pills(panel))
+
+    write_extracted_art(icons=["badge_all", "badge_4dungeons", "tag_gold"])
+    announce_art_changed()
+
+    assert _rows_with_icons(panel) == {panel._ALL_KEY, "31_four_dungeons"}
+    assert all(pill.has_icon for pill in _pills(panel))
+    # The user stays in the folder they were looking at.
+    assert panel.current_folder() == "31_four_dungeons"
+    panel.hide()
+
+
+def test_a_library_hidden_behind_an_open_bot_relists_when_next_shown(qapp, library):
+    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    panel = _BotLibraryPanel()
+    panel.show()
+    panel.hide()
+
+    write_extracted_art(icons=["badge_all"])
+    announce_art_changed()
+    assert _rows_with_icons(panel) == set()
+
+    panel.show()
+    assert _rows_with_icons(panel) == {panel._ALL_KEY}
+    panel.hide()
