@@ -171,6 +171,21 @@ def test_a_group_added_after_a_switch_is_still_styled(qapp, theme):
     assert THEME.border in w.styleSheet()
 
 
+def test_no_sheet_above_a_condition_rows_fields_reaches_into_them(qapp, theme):
+    """A "QWidget { border: none; }" above the row took the borders off its combos and
+    squashed its spin box's arrows to a dash (#154). Each reset now names its own widget."""
+    theme("light")
+    w = _FlagConditionsWidget()
+    w._add_group()
+    row = w.add_condition()
+
+    ancestor = row.value.parentWidget()
+    while ancestor is not None:
+        sheet = ancestor.styleSheet().replace(" ", "")
+        assert "QWidget{" not in sheet, ancestor.objectName() or type(ancestor).__name__
+        ancestor = ancestor.parentWidget()
+
+
 # ---------------------------------------------------------------------------
 # _ParamPanel
 # ---------------------------------------------------------------------------

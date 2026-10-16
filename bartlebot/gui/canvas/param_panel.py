@@ -2124,7 +2124,10 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
 
         # Group header: inner-op selector + remove button
         header = QWidget()
-        header.setStyleSheet("QWidget { border: none; }")
+        # By name, never "QWidget": that selector reaches every descendant, and took the
+        # borders off the combo inside, and the spin box's arrows with them (#154).
+        header.setObjectName("FlagGroupHeader")
+        header.setStyleSheet("#FlagGroupHeader { border: none; }")
         h_layout = QHBoxLayout(header)
         h_layout.setContentsMargins(0, 0, 0, 0)
         h_layout.setSpacing(4)
@@ -2149,7 +2152,8 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
 
         # Rows container for this group
         rows_widget = QWidget()
-        rows_widget.setStyleSheet("QWidget { border: none; }")
+        rows_widget.setObjectName("FlagGroupRows")
+        rows_widget.setStyleSheet("#FlagGroupRows { border: none; }")
         rows_layout = QVBoxLayout(rows_widget)
         rows_layout.setContentsMargins(0, 0, 0, 0)
         rows_layout.setSpacing(2)
