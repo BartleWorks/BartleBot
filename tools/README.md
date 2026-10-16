@@ -46,7 +46,7 @@ game assets, either*).
 
 | tool | does |
 |---|---|
-| `build_package.py` | builds a packaged BartleBot with PyInstaller or Nuitka, strips install records from its metadata, and runs its `--self-check` (`docs/RELEASING.md`) |
+| `build_package.py` | builds a packaged BartleBot with PyInstaller, strips install records from its metadata, and runs its `--self-check` (`docs/RELEASING.md`) |
 
 ## On live clients
 

@@ -1,8 +1,6 @@
-"""Tests for tools/build_package.py: both packagers bundle the same files, and no install record ships."""
+"""Tests for tools/build_package.py: every file the app reads is bundled, and no install record ships."""
 
 import sys
-
-import pytest
 
 from bartlebot.game.art_extraction import TYPE_DUMP_DIR
 from bartlebot.gui.logo import LOGO_SVG
@@ -17,8 +15,8 @@ from tools.build_package import (  # noqa: E402
     DATA_FILES,
     ENTRY,
     METADATA,
-    PACKAGERS,
     WHOLE_PACKAGES,
+    pyinstaller_command,
     strip_install_records,
 )
 
@@ -36,9 +34,8 @@ def test_every_folder_the_app_reads_is_bundled():
     assert all(path.exists() for path in bundled)
 
 
-@pytest.mark.parametrize("packager", sorted(PACKAGERS))
-def test_both_packagers_bundle_the_same_lists(packager, tmp_path):
-    command, exe = PACKAGERS[packager](tmp_path / "dist", tmp_path / "work")
+def test_the_command_bundles_every_list(tmp_path):
+    command, exe = pyinstaller_command(tmp_path / "dist", tmp_path / "work")
     text = " ".join(command)
 
     for folder in DATA_DIRS:

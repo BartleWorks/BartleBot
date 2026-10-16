@@ -13,15 +13,14 @@ unpacks into `%TEMP%` at every launch and looks like a dropper to antivirus. The
 installer makes onefile pointless anyway.
 
 ```bash
-uv run --group package python tools/build_package.py pyinstaller
-uv run --group package python tools/build_package.py nuitka            # needs Visual Studio 2022
-uv run --group package python tools/build_package.py nuitka -- --zig   # or Zig, which Nuitka downloads
+uv run --group package python tools/build_package.py
 ```
 
-The packagers are in the `package` dependency group, so a plain `uv sync` leaves them
-out. The build lands in `dist/<packager>/` with `build-report.json` beside it: the build
-time, the folder's size and file count, and the self-check's lines. The script exits
-non-zero when the packager or the self-check fails.
+The build is a PyInstaller onedir (*The packager*, below, has why). PyInstaller is in the
+`package` dependency group, so a plain `uv sync` leaves it out. The build lands in
+`dist/BartleBot/` with `dist/build-report.json` beside it: the build time, the folder's
+size and file count, and the self-check's lines. The script exits non-zero when
+PyInstaller or the self-check fails.
 
 **A release is never built on a maintainer's machine.** CI builds every release from a
 tag. A local build is for working on the build itself. The rule is about what a binary
@@ -29,17 +28,16 @@ can carry, and the spike found one way it happens. PyInstaller strips source pat
 none of a local build's 1,332 frozen modules named the checkout. But `--copy-metadata`
 copied the editable install's `direct_url.json`, which did. So the script deletes every
 install record from the bundled `.dist-info` folders (`INSTALL_RECORDS`): the app reads
-only `METADATA`. Nuitka compiles the metadata in, and its build named no local path in
-any file. SignPath requires an automated build anyway.
+only `METADATA`. After that, no file in the build names a local path. SignPath requires an
+automated build anyway.
 
 ### What is bundled, and why
 
 `bartlebot.paths.project_root()` is `Path(__file__).parent.parent` from
-`bartlebot/paths.py`, and in a build that is the build's own root: `_internal/` beside
-PyInstaller's exe, and the `.dist` folder for Nuitka. So everything the app reads goes
-at the same relative path under that root as under the project root, and no reader
-needs to know it is frozen. The lists are in `tools/build_package.py`, and both packagers
-read them:
+`bartlebot/paths.py`, and in a build that is the build's own root, `_internal/` beside
+the exe. So everything the app reads goes at the same relative path under that root as
+under the project root, and no reader needs to know it is frozen. The lists are in
+`tools/build_package.py`:
 
 | list | holds | why |
 |---|---|---|
@@ -54,7 +52,8 @@ reads moved to `bartlebot/game/data/` (`tools/CLAUDE.md`, "Type dumps").
 ### What the build must not depend on
 
 - **No `QThread`.** Nuitka documents Qt threading as unsupported under PyQt6, and its
-  PyQt6 plugin says so on every build. Blocking work goes through `asyncio.to_thread`
+  PyQt6 plugin says so on every build. PyInstaller won, but the rule stays, so the
+  packager can change without the app changing. Blocking work goes through `asyncio.to_thread`
   from a task the widget owns (`bartlebot/gui/CLAUDE.md`, "Background task lifetime").
   `test_no_qthread_remains_in_bartlebot` keeps it out.
 - **No backend keyring has to find.** keyring finds its backends through package entry
@@ -70,7 +69,7 @@ reads moved to `bartlebot/game/data/` (`tools/CLAUDE.md`, "Type dumps").
 
 ```bash
 uv run python bartlebot.py --self-check          # from the checkout
-dist/pyinstaller/BartleBot/BartleBot.exe --self-check
+dist/BartleBot/BartleBot.exe --self-check
 ```
 
 It loads everything the app reads at run time, prints one line per check, and exits
@@ -80,7 +79,7 @@ read, so in a build it reads the build (`bartlebot/packaging/self_check.py`).
 
 | check | proves |
 |---|---|
-| `version` | the package metadata is bundled, and `importlib.metadata` reports a version |
+| `version` | the package metadata is bundled, and `importlib.metadata` reports a version. Its line also says `packaged (PyInstaller)` or `checkout` (`packaging/build_kind.py`), as the session log's header does |
 | `keyring` | the backend is Windows Credential Manager, and a read through it works. It reads an entry that does not exist, so nothing is written |
 | `app` | `app_controller` imports, which pulls in nearly every module, and the node library is not empty |
 | `bots` | every Official bot loads |
@@ -103,26 +102,36 @@ one that already reads its kind.
 
 ## The packager
 
-Both were built in Stage 1 of #27 and judged on what matters for a user: does the build
-hook a real client, and what does Defender make of it.
+**PyInstaller, onedir.** Both packagers were built in Stage 1 of #27 and judged first on
+what matters for a user: does the build hook a real client, and what does Defender make
+of it. Both hooked and ran a bot, and Defender found nothing in either, so the tie went
+to the rest of the table.
 
 | | PyInstaller 6.22.3, onedir | Nuitka 4.3, standalone |
 |---|---|---|
+| build time, CI (`windows-latest`) | 1.3 min | 62.4 min |
 | build time, local (16 threads) | 0.7 min | 10.9 min, with Zig 0.16.0 |
-| build time, CI (`windows-latest`, MSVC for Nuitka) | 1.3 min | 62.4 min |
 | folder, CI | 162 MB in 515 files | 198 MB in 339 files |
-| `--self-check`, local | 11 of 11 | 11 of 11 |
-| `--self-check`, CI | 11 of 11 | 11 of 11 |
-| Defender, local (engine 4.18.26090.9, signatures 1.461.43.0) | no threats | no threats |
-| Defender, CI | no threats | no threats |
-| hooks a real client and runs a bot to the end | to come | to come |
+| `--self-check`, CI and local | 11 of 11 | 11 of 11 |
+| Defender, CI and local (engine 4.18.26090.9, signatures 1.461.43.0) | no threats | no threats |
+| hooks a real client and runs a bot (in game, a fresh profile) | yes | yes, with one unexplained freeze in one session |
 
-Two things the numbers leave out. Nuitka on Python 3.13 needs MSVC 14.3 (Visual Studio
-2022) or Zig, and refused the 2019 Build Tools. And its PyQt6 plugin warns on every build
-that Qt threading does not work, which is why the app has no `QThread`.
+Why PyInstaller:
 
-The choice, and why, goes here once the in-game run is in, and the losing configuration
-leaves `tools/build_package.py`.
+- **A build takes a minute.** Every release, and every run of `package.yml`, waits on it.
+  Nuitka took 62 minutes on the runner.
+- **A smaller download,** by 36 MB.
+- **No caveat on the GUI toolkit.** Nuitka calls its PyQt6 support imperfect and
+  recommends PySide6. The one freeze in testing was on Nuitka. Its log shows nothing, so
+  it is not known to be Nuitka's fault, but nothing like it happened on PyInstaller.
+- **No compiler to keep.** Nuitka on Python 3.13 needs MSVC 14.3 (Visual Studio 2022) or
+  Zig, and refused the 2019 Build Tools.
+
+What Nuitka would have bought: its code is compiled rather than bytecode, and its folder
+has fewer files. Neither matters to a user here. PyInstaller's known cost is its shared
+bootloader, which antivirus tools have flagged because malware uses it too. Defender
+did not flag this build, and Stage 6's checklist submits every release to Microsoft's
+false-positive portal.
 
 ## Velopack
 
@@ -143,17 +152,20 @@ Things the spike showed that a later stage has to handle:
 - **A Desktop shortcut by default.** `vpk pack` writes `Desktop,StartMenuRoot` into the
   package's shortcut list. Stage 2 passes `--shortcuts StartMenuRoot`, since the plan
   promises a Start Menu entry and nothing more.
-- **`Setup.exe --silent` does not start the app.** Without it, Setup opens the app once
-  it has installed it, which is how the install opens into first-run setup.
-- **The hash check covers the packages, not the feed.** A feed rewritten with the hashes
-  of a tampered package passes it. That is the gap Stage 4's signature over
-  `releases.win.json` closes.
+- **`Setup.exe --silent` does not start the app.** Velopack documents that a Setup run
+  without it opens the app once it has installed it, which is how the install opens into
+  first-run setup. The spike did not try that, so Stage 2's Done when checks it.
+- **The hash check covers the packages, not the feed.** Velopack checks a package against
+  the hashes in `releases.win.json`, so a feed rewritten with a tampered package's hashes
+  would pass it. The spike did not try that, since it follows from where the hashes are.
+  It is the gap Stage 4's signature over the feed closes.
 
 ## `package.yml`
 
-`.github/workflows/package.yml` is started by hand (`workflow_dispatch`). It builds each
-packager on a `windows-latest` runner, runs that build's `--self-check`, scans the build
-folder with Defender, writes the report and the scan to the job summary, and uploads the
-build as an artifact for 14 days. Each packager is its own job, so one failing leaves
-the other's result. A workflow can only be started by hand once it is on the default
-branch.
+`.github/workflows/package.yml` is started by hand (`workflow_dispatch`). It builds on a
+`windows-latest` runner, runs the build's `--self-check`, scans the build folder with
+Defender, writes the report and the scan to the job summary, and uploads the build as an
+artifact for 14 days. A workflow can only be started by hand once it is on the default
+branch. Stage 1 ran it from its branch with a temporary `push` trigger, dropped before
+the merge (run 38927474706, both packagers). Stage 2's `release.yml` builds the same way
+on a tag.
