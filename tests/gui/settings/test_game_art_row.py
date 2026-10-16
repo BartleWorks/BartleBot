@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import QDialog
 
 from bartlebot.game import art_extraction, card_art
 from bartlebot.game.art_extraction import ExtractionError
+from bartlebot.gui.art_signal import art_signal
 from bartlebot.gui.settings.game_art_row import (
     EXTRACT_DETAILS,
     NOT_EXTRACTED,
@@ -29,6 +30,19 @@ def _fresh_art_index():
     card_art.forget_cache()
     yield
     card_art.forget_cache()
+
+
+@pytest.fixture
+def announced(qapp):
+    """How many times ``art_changed`` has fired since the test began."""
+    count = [0]
+
+    def bump() -> None:
+        count[0] += 1
+
+    art_signal().art_changed.connect(bump)
+    yield count
+    art_signal().art_changed.disconnect(bump)
 
 
 @pytest.fixture
@@ -133,3 +147,46 @@ async def test_a_failed_run_says_why_and_close_is_ready(qapp, prefs):
     assert not dialog.extraction.ok
     assert "folder wasn't found" in dialog.extraction.outcome_text
     assert dialog.close_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# art_changed (#239)
+# ---------------------------------------------------------------------------
+
+
+async def test_a_run_that_writes_art_announces_it_once(qapp, prefs, game, announced):
+    dialog = ArtExtractionDialog(prefs)
+
+    await dialog.extraction.task
+
+    assert dialog.extraction.ok
+    assert announced[0] == 1
+
+
+async def test_a_failed_run_announces_nothing(qapp, prefs, game, announced, monkeypatch):
+    def broken(_game_dir, _progress, *, cancelled):
+        raise ExtractionError("The archive could not be read.")
+
+    monkeypatch.setattr(art_extraction, "extract_art", broken)
+    extraction = ArtExtraction(prefs)
+    extraction.start()
+    await extraction.task
+
+    assert announced[0] == 0
+
+
+async def test_a_run_with_no_game_announces_nothing(qapp, prefs, announced):
+    extraction = ArtExtraction(prefs)
+    extraction.start()
+    await extraction.task
+
+    assert announced[0] == 0
+
+
+async def test_a_stopped_run_announces_nothing(qapp, prefs, game, announced):
+    dialog = ArtExtractionDialog(prefs)
+
+    dialog.cancel_button.click()
+    await dialog.extraction.task
+
+    assert announced[0] == 0
