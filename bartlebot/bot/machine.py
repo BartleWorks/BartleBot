@@ -575,10 +575,11 @@ class BotMachine:
         while the current node is still running -- for the whole of a fight, in the worst
         case. Closing a client on the strength of that kills it mid-node.
 
-        False on timeout, and False when no run loop is active at all: a machine that was
-        never started, or one already past its loop, never parks and callers must not wait
-        out the timeout expecting otherwise. A stop while waiting returns False at once, since
-        a loop that stops breaks out without parking.
+        False on timeout. A machine with no run loop active never parks, so for one never
+        started, or already past its loop, this waits out the whole timeout and returns False:
+        a caller must not read that as a node that would not stop. A run just created as a
+        task counts as started, which is why this does not return early on one. A stop while
+        waiting returns False at once, since a loop that stops breaks out without parking.
         """
         if self._stop_flag.is_set():
             return False
