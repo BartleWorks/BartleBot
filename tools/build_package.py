@@ -1,8 +1,8 @@
 """Build a packaged BartleBot, check it with ``--self-check``, and report what it cost.
 
-    uv run --group package python packaging/build.py pyinstaller
-    uv run --group package python packaging/build.py nuitka
-    uv run --group package python packaging/build.py nuitka -- --zig   # without Visual Studio 2022
+    uv run --group package python tools/build_package.py pyinstaller
+    uv run --group package python tools/build_package.py nuitka
+    uv run --group package python tools/build_package.py nuitka -- --zig   # without Visual Studio 2022
 
 Both packagers bundle the same files, from the lists below, so their builds differ only
 in how they freeze Python. The build lands in ``dist/<packager>/``, with
@@ -111,6 +111,20 @@ def nuitka_command(dist: Path, _work: Path) -> tuple[list[str], Path]:
 PACKAGERS = {"pyinstaller": pyinstaller_command, "nuitka": nuitka_command}
 
 
+#: Files an installer leaves in a ``.dist-info`` that say where and how it installed:
+#: ``direct_url.json`` names the checkout's path, since the project is an editable install.
+#: The app reads only ``METADATA``, so these never ship.
+INSTALL_RECORDS = ("direct_url.json", "uv_build.json", "uv_cache.json", "INSTALLER", "REQUESTED", "RECORD")
+
+
+def strip_install_records(folder: Path) -> list[Path]:
+    """Remove :data:`INSTALL_RECORDS` from every ``.dist-info`` under ``folder``, and return what went."""
+    removed = [p for p in folder.rglob("*.dist-info/*") if p.name in INSTALL_RECORDS and p.is_file()]
+    for path in removed:
+        path.unlink()
+    return removed
+
+
 def folder_size(folder: Path) -> tuple[int, int]:
     """The total bytes and the number of files under ``folder``."""
     files = [p for p in folder.rglob("*") if p.is_file()]
@@ -148,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{args.packager} failed (exit {built.returncode}); no {exe}", file=sys.stderr)
         return built.returncode or 1
 
+    strip_install_records(exe.parent)
     size, files = folder_size(exe.parent)
     checked = self_check(exe)
     report = {

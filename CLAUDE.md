@@ -97,7 +97,7 @@ read on purpose.
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and when its warning is shown |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels and how to name them, the two storage roots, a Bot Combat Strategy's own strategies and the own-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: a definition as a node type (inputs, ports, panels), an instance that sets inputs and nothing else, derived member ids, follow-latest with snapshot fallback, the authoring verbs, the two roots, categories, and what a signature change warns about |
-| `docs/EPICS.md` | the index of epic plans, each on a private claude.ai page: Subgraph Calls, Official and Shared Content (#173), Runtime Control Flow (#16), Combat Defaults (#201), Default Strategies (#218) and First-Run Setup (#215), each with its stage-to-issue table, its feature doc and the rules every stage kept; a complete page is frozen |
+| `docs/EPICS.md` | the index of epic plans, each on a private claude.ai page: Subgraph Calls, Official and Shared Content (#173), Runtime Control Flow (#16), Combat Defaults (#201), Default Strategies (#218), First-Run Setup (#215) and Installer and Updater (#27), each with its stage-to-issue table, its feature doc and the rules every stage kept; a complete page is frozen |
 | `docs/SHARING.md` | share files: the format, the extension and what rides inside for each kind, what never travels (settings, anything that executes), Export: where it is on each item's menu, and the summary, and Import: its ways in, what is refused, matching by id, what Import as copy rewrites, and where things go |
 | `docs/TEMPLATES.md` | the template store, template-owned ids and a fork's prefixes, release, user templates and File › Templates…, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
@@ -110,6 +110,7 @@ read on purpose.
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |
+| `docs/RELEASING.md` | the packaged build: what is bundled and why, `--self-check` and each of its checks, the packager and why it won, what Velopack was shown to do, and `package.yml` |
 | `docs/PROCESS.md` | issues, labels, milestones, the backlog board |
 
 Landing a branch on `master` is the `merge` skill — the gate, the commit message

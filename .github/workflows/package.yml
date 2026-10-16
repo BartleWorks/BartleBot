@@ -33,7 +33,7 @@ jobs:
       # Builds, then runs the build's own --self-check, which fails this step on any
       # missing file, module or plugin. Writes dist/<packager>/build-report.json.
       - name: Build and self-check
-        run: uv run --group package python packaging/build.py ${{ matrix.packager }}
+        run: uv run --group package python tools/build_package.py ${{ matrix.packager }}
 
       - name: Defender scan
         if: always()
