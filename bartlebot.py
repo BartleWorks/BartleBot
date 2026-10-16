@@ -20,22 +20,33 @@ if __name__ == "__main__":
     if "--self-check" in sys.argv[1:]:
         sys.exit(_self_check())
 
-    import qasync
     from PyQt6.QtWidgets import QApplication
 
-    from bartlebot.app_controller import AppController
     from bartlebot.gui.debug.qt_paint_debug import install as install_qt_diagnostics
     from bartlebot.gui.native_widgets import keep_siblings_alien
-    from bartlebot.logging_setup import configure_logging
+    from bartlebot.gui.single_instance import SingleInstance
 
-    configure_logging()
     install_qt_diagnostics()
     keep_siblings_alien()
     app = QApplication(sys.argv)
+    # One BartleBot per user: a later launch, such as a double-clicked share file, hands
+    # its arguments to the running app and exits (#27). Before the log is started, so a
+    # launch that only hands over neither writes a session log nor prunes a real one.
+    instance = SingleInstance()
+    if not instance.claim(sys.argv[1:]):
+        sys.exit(0)
+
+    import qasync
+
+    from bartlebot.app_controller import AppController
+    from bartlebot.logging_setup import configure_logging
+
+    configure_logging()
 
     loop = qasync.QEventLoop(app)
     asyncio.set_event_loop(loop)
 
     with loop:
         controller = AppController(app)
+        controller.listen_for_launches(instance)
         loop.run_until_complete(controller.run())
