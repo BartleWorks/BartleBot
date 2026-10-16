@@ -19,7 +19,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 
-from PyQt6.QtCore import QStringListModel, Qt, pyqtSignal
+from PyQt6.QtCore import QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QCompleter,
     QLineEdit,
@@ -142,15 +142,22 @@ class FriendNameEdit(QWidget):
             await node_helpers.close_friends_list(client)
         except Exception as exc:
             logger.debug("Could not read the friends list", exc_info=True)
-            QMessageBox.information(self, "Friends list", f"Could not read the friends list: {exc}")
+            self._tell_later(f"Could not read the friends list: {exc}")
             return
         if not names:
-            QMessageBox.information(self, "Friends list", "No friends are online.")
+            self._tell_later("No friends are online.")
             return
+        # popup(), never exec(): this is a task, and a nested event loop inside one wedges
+        # every other task that wakes while the menu is open (bartlebot/gui/CLAUDE.md, #154).
         menu = popup_menu(self._pick)
+        menu.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         for name in names:
             menu.addAction(name).triggered.connect(lambda _checked, n=name: self._choose(n))
-        menu.exec(self._pick.mapToGlobal(self._pick.rect().bottomLeft()))
+        menu.popup(self._pick.mapToGlobal(self._pick.rect().bottomLeft()))
+
+    def _tell_later(self, text: str) -> None:
+        """Say *text* about the friends list once the reading task has yielded."""
+        QTimer.singleShot(0, lambda: QMessageBox.information(self, "Friends list", text))
 
     def _choose(self, name: str) -> None:
         self.set_value(name)

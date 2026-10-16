@@ -496,8 +496,12 @@ class AppController(QObject):
             lambda: asyncio.ensure_future(self._client_manager.rehook_all())
         )
 
+        # Queued: recovery emits from inside its own task, and a modal opened there wedges
+        # every task that wakes while it is up -- _client_loop among them, which recovery is
+        # waiting on (bartlebot/gui/CLAUDE.md, #154).
         self._client_manager.recovery_error.connect(
-            lambda msg: QMessageBox.critical(self._window, "Client Recovery Failed", msg)
+            lambda msg: QMessageBox.critical(self._window, "Client Recovery Failed", msg),
+            type=Qt.ConnectionType.QueuedConnection,
         )
 
         # Authoring utilities: the buttons, the focus that arms their hotkeys, and the
