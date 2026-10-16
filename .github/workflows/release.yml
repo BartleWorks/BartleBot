@@ -1,0 +1,103 @@
+name: Release
+
+# On a v* tag: checks the tag names the app's version, builds and self-checks the app,
+# packs it with Velopack against the previous release, and creates a DRAFT GitHub Release
+# with every asset. A maintainer publishes the draft, once what ships has been tested in
+# game. docs/RELEASING.md has why, and the version rule.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+# One release at a time: each one's delta is made against the release before it.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  # Pinned, never floating. tools/pack_release.py's VELOPACK_VERSION and the velopack
+  # package in pyproject.toml are the same version, and a test holds all three together.
+  VELOPACK_VERSION: "1.2.161"
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # --locked also fails a version bumped in pyproject.toml without relocking.
+      - name: Install dependencies
+        run: uv sync --locked --group package
+
+      # Fails the run before anything is built when the tag is not "v" + the version
+      # in pyproject.toml, or that version is not SemVer 2.
+      - name: Check the tag names the version
+        id: version
+        run: |
+          version=$(uv run --no-sync python tools/release_version.py "$GITHUB_REF_NAME")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Builds dist/BartleBot and dist/bartlebot.ico, then runs the build's own
+      # --self-check, which fails this step on any missing file, module or plugin.
+      - name: Build and self-check
+        run: uv run --no-sync --group package python tools/build_package.py
+
+      - name: Install vpk
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet tool install vpk --version "$VELOPACK_VERSION" --tool-path "$RUNNER_TEMP/vpk"
+
+      # The latest published release's full package and feed, so the pack can make a
+      # delta against it. With no published release yet, vpk says so and exits 0.
+      - name: Fetch the previous release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          "$RUNNER_TEMP/vpk/vpk" download github
+          --repoUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --token "$GH_TOKEN" --outputDir releases
+
+      - name: Pack
+        run: >
+          uv run --no-sync python tools/pack_release.py "${{ steps.version.outputs.version }}"
+          --vpk "$RUNNER_TEMP/vpk/vpk" --out releases
+
+      # Without --publish, vpk leaves the release as a draft: publishing it is the
+      # maintainer's step, and the one that makes users see it.
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          "$RUNNER_TEMP/vpk/vpk" upload github
+          --repoUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --token "$GH_TOKEN" --outputDir releases
+          --tag "$GITHUB_REF_NAME" --releaseName "BartleBot ${{ steps.version.outputs.version }}"
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "## Release ${GITHUB_REF_NAME}"
+            if [ -d releases ]; then
+              echo '```'
+              ls -l releases
+              echo '```'
+            fi
+            if [ -f dist/build-report.json ]; then
+              echo '```json'
+              cat dist/build-report.json
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
