@@ -86,3 +86,28 @@ def test_the_app_applies_it_at_startup_before_anything_asks_wizwalker(monkeypatc
         AppController(app)
 
     assert calls == ["install", "handler"]
+
+
+class _Running(game_install.NoPlaces):
+    """A machine where the game is found only because it is running, from *folder*."""
+
+    def __init__(self, folder: Path) -> None:
+        self.folder = folder
+
+    def running_clients(self) -> list[Path]:
+        return [self.folder / "Bin" / "WizardGraphicalClient.exe"]
+
+
+def test_a_folder_found_from_the_running_game_is_stored(tmp_path, monkeypatch):
+    """The next launch may find the game closed, and nothing else would find the folder again."""
+    folder = _install(tmp_path / "Games" / "W101")
+    monkeypatch.setattr(game_install, "_places", _Running(folder))
+    prefs = PreferenceStore()
+
+    found = apply_install(prefs)
+
+    assert found.path == folder
+    assert wizwalker_utils.get_wiz_install() == folder.absolute()
+    assert game_install.stored_install_dir(PreferenceStore()) == folder
+    monkeypatch.setattr(game_install, "_places", game_install.NoPlaces())
+    assert game_install.find_install(PreferenceStore()).path == folder
