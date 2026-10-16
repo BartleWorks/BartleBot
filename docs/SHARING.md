@@ -3,7 +3,7 @@
 A user sends a bot, a Bot Combat Strategy, a subgraph, a duel strategy, a player
 strategy or a deck to someone else as **one file that carries its own dependencies**.
 Stage 4 of epic #173 (#170) built the format and Export; Stage 5 (#171) built Import.
-The plan, with the reasoning behind every rule here, is `docs/SHARED_CONTENT.md`'s page.
+The plan, with the reasoning behind every rule here, is linked from `docs/EPICS.md`, *Official and shared content*.
 
 Code: `bartlebot/shared/share_file.py` (the vendor's format, and the three kinds
 BartleBuddy shares), `bartlebot/content/share_export.py` (BartleBot's kinds, and following each
@@ -171,7 +171,7 @@ item's or in its history.
 ### Matching
 
 Every packed item is matched **by its id** against the receiver's copy of that id, using
-the content hashes and histories every item keeps (`docs/SHARED_CONTENT.md`, Stage 3).
+the content hashes and histories every item keeps (epic #173's Stage 3, #169).
 Nobody is ever asked for an id.
 
 | the incoming item | outcome | choices, default first |

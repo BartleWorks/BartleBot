@@ -5,7 +5,7 @@ replaces it. Run mode needs no copy, because what the user sets for a bot -- its
 values, its Bot Combat Strategies and which one is active -- lives in settings and in
 ``bot_strategies/``, never in the bot file. Editing the graph does, and this is that copy.
 
-A copy is a fork, not an override (``docs/SHARED_CONTENT.md``): a new id, so the Official
+A copy is a fork, not an override (``docs/EPICS.md``, *Official and shared content*): a new id, so the Official
 bot keeps its own, and :class:`~bartlebot.bot.schema.ForkedFrom` naming the bot it came
 from and that bot's content hash, so "the Official bot has changed since" can be told
 later. Unlike Save As, which deliberately takes none of it, the copy takes everything

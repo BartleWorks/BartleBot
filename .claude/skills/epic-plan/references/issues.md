@@ -1,4 +1,4 @@
-# Issues, the pointer doc, and the stage merge
+# Issues, the pointer, and the stage merge
 
 `docs/PROCESS.md` governs issues and the board. This file covers what a plan adds to it.
 
@@ -84,25 +84,18 @@ This uses the `merge` skill's template, with these specifics:
 The As built box and the merge message describe the same facts. Write the box first,
 then the message from it.
 
-## The pointer doc, `docs/<PLAN>.md`
+## The pointer: a section in `docs/EPICS.md`
 
-Write it in Stage 1, and rewrite it in its finished form at close-out.
-`docs/RUNTIME_CONTROL_FLOW.md` is the model. Its finished form:
+Write it in Stage 1, and rewrite it in its finished form at close-out. The file's opening
+already says the pages are private, how to read one, and that a complete page is frozen,
+so a section never repeats it. *Runtime control flow* is the model. Its finished form:
 
 ```markdown
-# <Plan name>
+## <Plan name>
 
-Epic #E: <the feature in one line>. **The plan is on one page:**
-<page url>
+Epic #E: <the feature in one line>. <page url>
 
-**All N stages landed by YYYY-MM-DD. The page is complete and no longer maintained, but
-it is still the record of the design.** It holds the goals, <what else>, every decision
-with the alternative it beat, and each stage's "As built" deviations. Read it when a
-design question comes up, but don't update it: a later fix is not added there. The page
-is private on claude.ai: open it signed in as the maintainer, or, from a Claude Code
-session, read it with the Artifact tool's `read` action.
-
-The stages landed in this order, each building only on the ones before:
+**Complete: all N stages landed by YYYY-MM-DD.**
 
 | stage | issue | what |
 |---|---|---|
@@ -113,14 +106,13 @@ The stages landed in this order, each building only on the ones before:
 After it, each needing a plan of its own: … (#x), … (#y). The stages' leftovers are
 #… to #….
 
-The rules that hold across every stage:
+The rules every stage kept:
 
 - **Rule in bold.** One-line reason.
 ```
 
-While the work is in progress, the same file says "The plan is on one page and is kept
-current while the stages land", and the table has a status column instead.
+While the work is in progress, the status line says "The page is kept current while the
+stages land", and the table has a status column.
 
-Add a row to `CLAUDE.md`'s "Where the rest lives" table, worded like the existing
-`docs/RUNTIME_CONTROL_FLOW.md` row. At close-out, change it to "complete and no longer
-maintained, but still the record of the design".
+Add the plan's name to the `docs/EPICS.md` row of `CLAUDE.md`'s "Where the rest lives"
+table, so the row keeps listing every epic it indexes.

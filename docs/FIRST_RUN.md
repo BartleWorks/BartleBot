@@ -3,7 +3,7 @@
 The first time BartleBot opens, it asks what a first run needs, one page at a time. Every
 page writes a real setting, the same one its Settings row writes, and the whole walk can
 be run again from **File › Set up BartleBot…**. The plan behind it is epic #215
-(`docs/FIRST_RUN_SETUP.md`).
+(`docs/EPICS.md`, *First-run setup*).
 
 The code is `bartlebot/gui/dialogs/first_run_dialog.py`; what a page stores lives in a
 Qt-free module, so BartleBuddy can ask the same question and write the same keys.

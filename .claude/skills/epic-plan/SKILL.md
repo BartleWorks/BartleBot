@@ -9,11 +9,11 @@ The last three epics ran the same way, and this skill is that way written down.
 The three plans, worth reading when unsure what "good" looks like (read them with the
 Artifact tool's `read` action, never a web fetch):
 
-| page | epic | pointer doc |
+| page | epic | its section in `docs/EPICS.md` |
 |---|---|---|
-| Runtime Flow Control: https://claude.ai/artifact/VnoJzdBGUjJw4a8gZG9U5M | #16 | `docs/RUNTIME_CONTROL_FLOW.md` |
-| Official and Shared Content: https://claude.ai/artifact/4A9XUEeoTXQAfohUHP3F1n | #173 | `docs/SHARED_CONTENT.md` |
-| Subgraph Calls: https://claude.ai/artifact/66pY2mPVrPYosopv1yaNNe | successor to #37 | `docs/SUBGRAPH_CALLS.md` |
+| Runtime Flow Control: https://claude.ai/artifact/VnoJzdBGUjJw4a8gZG9U5M | #16 | *Runtime control flow* |
+| Official and Shared Content: https://claude.ai/artifact/4A9XUEeoTXQAfohUHP3F1n | #173 | *Official and shared content* |
+| Subgraph Calls: https://claude.ai/artifact/66pY2mPVrPYosopv1yaNNe | successor to #37 | *Subgraph calls* |
 
 Runtime Flow Control is the most refined of the three, so the template follows it.
 **Never republish any of the three**: they are frozen records.
@@ -26,7 +26,7 @@ Runtime Flow Control is the most refined of the three, so the template follows i
 | **The epic issue** | type `Epic`; each stage is a linked sub-issue | closed by the last stage's merge |
 | **A stage issue** | restates its stage card, so work can start from the issue alone | closed by its stage's merge |
 | **A stage branch** | one per stage, named for it (`variables-engine`, `edge-assignments`) | merged with `--no-ff`, then deleted |
-| **`docs/<PLAN>.md`** | the pointer: the page's link, the stage-to-issue table, the rules every stage keeps | updated at the start and at the close |
+| **its section in `docs/EPICS.md`** | the pointer: the page's link, the stage-to-issue table, the feature doc, the rules every stage keeps | updated at the start and at the close |
 | **`docs/<FEATURE>.md`** | the feature as built: the doc that governs code | written by the stages, maintained afterwards |
 
 The page records why the feature is the way it is. The feature doc says how it works
@@ -72,8 +72,8 @@ body templates and the `gh` commands.
 - **Put the numbers on the page.** Add them to the eyebrow's issue range, the status
   strip, each stage card's Issue row, and a log entry: "Stage issues filed as
   sub-issues of #E: #a, #b, …". Republish.
-- **Write the pointer doc** `docs/<PLAN>.md` and its row in `CLAUDE.md`'s "Where the
-  rest lives" table. Both go in Stage 1's branch.
+- **Write the pointer**: the epic's section in `docs/EPICS.md`, and its name in that
+  file's row of `CLAUDE.md`'s "Where the rest lives" table. Both go in Stage 1's branch.
 
 ## Phase 3: Execute a stage
 
@@ -89,7 +89,7 @@ branch and merge it, so the stage's changes are committed to its branch as they 
 3. **Build in small commits on the branch.** Each item in Done when is a contract and
    gets a test. The docs named on the card's Docs line are written in this stage, not
    later. Commit as you go: every change made as part of the stage (code, tests, docs,
-   the pointer doc, a fix the gate or a review turned up) can and should be committed to
+   the pointer, a fix the gate or a review turned up) can and should be committed to
    the stage branch as it applies, without waiting to be asked again. Keep each commit to
    one coherent change, and never commit to `master` directly.
 4. **The gate is green at every merge.** Run `uv run pytest -n auto` and
@@ -135,9 +135,8 @@ After the last stage lands:
    is done, that the plan is complete and no longer maintained, and that the page
    stands as the record of the design. The final log entry is "The plan is complete."
    followed by every issue filed at close-out.
-4. **Rewrite the pointer doc in its finished form** (template in
-   [references/issues.md](references/issues.md)), and update its `CLAUDE.md` row to say
-   complete.
+4. **Rewrite the epic's section of `docs/EPICS.md` in its finished form** (template in
+   [references/issues.md](references/issues.md)).
 5. **Save a project memory**: the epic, its completion date, and "the page is a frozen
    record; never republish it". Then publish the page for the last time.
 

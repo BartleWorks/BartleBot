@@ -12,7 +12,7 @@ it into the user root on save, keyed by the same id — an override, not a fork.
 Deleting the user copy of a shipped id is "revert to default"; the shipped file
 itself is never touched by the app. Bots and templates are copied rather than linked,
 so they never override: a user file declaring a shipped one's id is ignored
-(``docs/SHARED_CONTENT.md``).
+(``docs/EPICS.md``, *Official and shared content*).
 
 The shared strategy library (player strategies, duel strategies and decks) has roots
 of its own, :func:`resolve_shared_roots`: its user root is the vendor directory, where

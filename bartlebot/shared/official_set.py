@@ -3,7 +3,7 @@
 Duel strategies, player strategies and decks are one library for every product by this
 vendor (:mod:`bartlebot.shared.strategy_library`). Each product ships the Official ones
 in its own install directory, pinned from one source, so with two products installed
-there are two shipped copies. The rule (``docs/SHARED_CONTENT.md``, and #27):
+there are two shipped copies. The rule (``docs/EPICS.md``, *Official and shared content*, and #27):
 
 - **The higher set version is used whole.** Items from two sets are never mixed,
   because a duel links player strategies from its own set.
