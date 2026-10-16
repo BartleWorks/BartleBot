@@ -25,6 +25,9 @@ This is SmartScreen, which warns about any program that is not code-signed and h
 downloaded by many people yet. Select **More info**, then **Run anyway**. It asks only
 once: updates are downloaded by BartleBot itself, and Windows does not warn about those.
 
+![SmartScreen's warning, with More info under its message](docs/images/install/smartscreen.png)
+![The same warning after More info, naming BartleBot-win-Setup.exe from an unknown publisher, with Run anyway](docs/images/install/smartscreen-more-info.png)
+
 ### Smart App Control
 
 Smart App Control is in Windows 11 only. If it is on, Windows blocks BartleBot every time it starts, not only when
