@@ -1,0 +1,65 @@
+name: Site
+
+# The download site (site/), built on every change to master and every pull request into
+# it, and published to GitHub Pages from master. docs/RELEASING.md, "The download site".
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  # Publishes master's site without a commit: the first time, once the repo is public.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One publish at a time, and a newer one never cancels a publish under way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # Only the site's group: the site needs nothing of the app, whose dependencies
+      # are Windows-only.
+      - name: Install Zensical
+        run: uv sync --locked --only-group site
+
+      # --strict fails the build on a warning: a link to a page or an anchor that is
+      # not there. A missing image is not a warning, so tests/test_site.py checks those.
+      - name: Build
+        run: uv run --no-sync zensical build --strict --clean -f site/zensical.toml
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/build
+
+  deploy:
+    needs: build
+    # GitHub Free serves Pages only from a public repository, so until it is one there
+    # is nothing to deploy to, and the build alone runs.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && !github.event.repository.private
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
