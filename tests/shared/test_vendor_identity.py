@@ -131,6 +131,7 @@ def test_the_shared_layer_has_no_stray_files():
         "first_run.py",
         "game_install.py",
         "json_update.py",
+        "keyring_backend.py",
         "launch_profiles.py",
         "official_set.py",
         "preferences.py",
