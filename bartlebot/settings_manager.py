@@ -24,6 +24,7 @@ from bartlebot.game.game_sizing import (
 from bartlebot.options import bot_options
 from bartlebot.paths import project_root
 from bartlebot.shared.account_store import AccountStore
+from bartlebot.shared.strategy_models import atomic_write
 from bartlebot.shared.vendor import PRODUCT, product_dir, vendor_dir
 
 logger = logging.getLogger(__name__)
@@ -416,8 +417,8 @@ class SettingsManager:
                 with open(self._path, encoding="utf-8") as fh:
                     on_disk = json.load(fh)
                 self._data = _deep_merge(_DEFAULTS, on_disk)
-            except Exception:
-                pass  # corrupt file → use defaults
+            except Exception as exc:
+                self._keep_unreadable(exc)
 
         # Validate structured sections; reset any that fail to their defaults.
         #
@@ -471,10 +472,29 @@ class SettingsManager:
         self._data.pop("accounts", None)
         self._data.pop("launch_profiles", None)
 
+    def _keep_unreadable(self, exc: Exception) -> None:
+        """Start from the defaults, keeping the unreadable file beside the new one and saying so.
+
+        The next save replaces settings.json, so without the copy a file the user could
+        have mended by hand would be gone, and without the warning nothing would say why
+        every setting went back to its default (#154).
+        """
+        kept = self._path.with_name(f"{self._path.name}.unreadable")
+        try:
+            shutil.copy2(self._path, kept)
+        except OSError:
+            kept = None
+        logger.warning(
+            "%s could not be read (%s); every setting starts from its default%s",
+            self._path.name,
+            exc,
+            f". The unreadable file is kept as {kept.name}" if kept else "",
+        )
+
     def save(self) -> None:
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self._path, "w", encoding="utf-8") as fh:
-            json.dump(self._data, fh, indent=2)
+        # Through a temporary file: a crash part-way through used to leave a truncated
+        # settings.json, which the next launch read as no settings at all (#154).
+        atomic_write(self._data, self._path)
 
     # ------------------------------------------------------------------
     # Generic accessors

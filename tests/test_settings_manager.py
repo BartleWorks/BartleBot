@@ -69,3 +69,42 @@ def test_layout_budget_can_judge_another_canvas_height():
 
     assert sm.layout_budget((1920, 1032), bottom_section=220)[1] == 1032 - 220 - 60
     assert sm.layout_budget((1920, 1032))[1] == 1032 - 500 - 60
+
+
+# -- the file itself (#154) -----------------------------------------------------------
+
+
+def test_a_save_that_fails_part_way_leaves_the_last_file_whole(monkeypatch):
+    from bartlebot.settings_manager import SettingsManager
+    from bartlebot.shared import strategy_models
+
+    sm = SettingsManager()
+    sm.save()
+    before = sm.settings_path.read_bytes()
+
+    def _dies_part_way(data, fh, **kwargs):
+        fh.write("{")
+        raise OSError("disk full")
+
+    monkeypatch.setattr(strategy_models.json, "dump", _dies_part_way)
+    sm.set("general", "theme", value="dark")
+    try:
+        sm.save()
+    except OSError:
+        pass
+
+    assert sm.settings_path.read_bytes() == before
+
+
+def test_an_unreadable_file_is_kept_and_reported(caplog):
+    from bartlebot.settings_manager import SettingsManager
+
+    path = SettingsManager().settings_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"general": {"theme": "da', encoding="utf-8")
+
+    SettingsManager()
+
+    kept = path.with_name("settings.json.unreadable")
+    assert kept.read_text(encoding="utf-8") == '{"general": {"theme": "da'
+    assert "could not be read" in caplog.text
