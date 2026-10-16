@@ -167,7 +167,10 @@ class ArtExtraction(ThemedMixin, QWidget):
         # A failed run hid it for its outcome; a retry reports its steps again.
         self._step.setText(STARTING)
         self._step.setVisible(True)
-        self._bar.setRange(0, 0)
+        # Empty, not busy: a stylesheet draws Qt's busy bar as a half-full chunk, which
+        # read as 50% done before the first step had counted anything.
+        self._bar.setRange(0, 1)
+        self._bar.setValue(0)
         self._task = loop.create_task(self._run(loop, self._cancel))
         return True
 

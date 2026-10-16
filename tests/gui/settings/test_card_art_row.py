@@ -93,6 +93,17 @@ async def test_cancel_stops_the_run_and_keeps_the_art_before_it(qapp, prefs, gam
     assert not card_art.art_dir().with_name("art.partial").exists()
 
 
+async def test_a_run_starts_with_an_empty_bar(qapp, prefs, game):
+    """Not Qt's busy bar, which the stylesheet draws half full before anything is counted."""
+    extraction = ArtExtraction(prefs)
+
+    assert extraction.start()
+
+    bar = extraction.bar
+    assert (bar.minimum(), bar.maximum(), bar.value()) == (0, 1, 0)
+    await extraction.task
+
+
 async def test_a_retry_after_a_failed_run_shows_its_steps_again(qapp, prefs, game, monkeypatch):
     """Setup's Back and Next tries a failed run again; its progress must not stay hidden."""
     real = art_extraction.extract_art
