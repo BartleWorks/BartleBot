@@ -42,10 +42,12 @@ from katsuba.wad import Archive
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
 from bartlebot.game.spell_schools import SCHOOL_ORDER, SCHOOLS_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
-DEFAULT_TYPES = Path(__file__).resolve().parent / "r800294_WizardDev.json"
+# The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
+DEFAULT_TYPES = newest_type_dump(TYPE_DUMP_DIR, Path(__file__).resolve().parent)
 SPELLS_GLOB = "Spells/**/*.xml"
 
 

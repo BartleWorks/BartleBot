@@ -19,7 +19,7 @@ WHERE THE ART COMES FROM
     in ``GUI/SummonedImages/`` -- nearly all in ``_Shared-WorldData.wad``, a dozen in
     ``Root.wad`` -- so this resolves by basename across both rather than by path.
     Reading the *named* field needs a real deserializer and the game's type list, the
-    newest ``tools/r<rev>_WizardDev.json`` (:func:`type_dump`): see the byte-scan
+    newest ``bartlebot/game/data/r<rev>_WizardDev.json`` (:func:`type_dump`): see the byte-scan
     failure described at the top of ``tools/dump_spell_names.py``.
 
     The textures are DXT3/DXT5 DDS, which Qt cannot read (its build has no dds
@@ -79,7 +79,6 @@ from bartlebot.game.card_art import (
 )
 from bartlebot.game.spell_schools import SCHOOL_ORDER
 from bartlebot.game.worlds import DUNGEON_WORLDS
-from bartlebot.paths import project_root
 from bartlebot.shared.game_install import find_install
 from bartlebot.shared.preferences import PreferenceStore
 
@@ -87,8 +86,11 @@ logger = logging.getLogger(__name__)
 
 #: Where the game keeps its archives, beneath the install folder ``find_install`` finds.
 GAME_DATA = ("Data", "GameData")
-#: The type list's file name in ``tools/``: ``r<revision>_WizardDev.json``.
+#: The type list's file name: ``r<revision>_WizardDev.json``.
 TYPE_DUMP_PATTERN = re.compile(r"r(\d+)_WizardDev\.json")
+#: Where the newest type dump ships: with the app's other data, since a run reads it.
+#: Older dumps stay in ``tools/``, the record of past layouts (``tools/CLAUDE.md``).
+TYPE_DUMP_DIR = Path(__file__).resolve().parent / "data"
 #: The sibling folders a run writes into, and the one it moves the art before it aside to.
 PARTIAL_SUFFIX = ".partial"
 OLD_SUFFIX = ".old"
@@ -152,20 +154,25 @@ def installed_game_data_dir(prefs: PreferenceStore | None = None) -> Path | None
     return game_data_dir(found.path) if found is not None else None
 
 
-def type_dump(root: Path | None = None) -> Path | None:
-    """The newest ``tools/r<rev>_WizardDev.json`` in BartleBot's folder, or None when there is none.
-
-    Type dumps are committed and never deleted (``tools/CLAUDE.md``), so the newest is
-    the one nearest the game's own; a field the game later moved is skipped rather than
-    misread (``skip_unknown_types``).
-    """
-    tools = (root if root is not None else project_root()) / "tools"
+def newest_type_dump(*folders: Path) -> Path | None:
+    """The ``r<rev>_WizardDev.json`` with the highest revision across *folders*, or None when there is none."""
     dumps = [
         (int(match.group(1)), path)
-        for path in tools.glob("r*_WizardDev.json")
+        for folder in folders
+        for path in Path(folder).glob("r*_WizardDev.json")
         if (match := TYPE_DUMP_PATTERN.fullmatch(path.name))
     ]
     return max(dumps)[1] if dumps else None
+
+
+def type_dump(folder: Path | None = None) -> Path | None:
+    """The newest type dump in *folder* (default :data:`TYPE_DUMP_DIR`), or None when there is none.
+
+    The newest is the one nearest the game's own; a field the game later moved is skipped
+    rather than misread (``skip_unknown_types``). It ships in the install directory with the
+    rest of ``game/data/``, and ``--self-check`` fails a build without it.
+    """
+    return newest_type_dump(folder if folder is not None else TYPE_DUMP_DIR)
 
 
 SPELLS_GLOB = "Spells/**/*.xml"
@@ -779,7 +786,7 @@ def extract_art(
     types_path = Path(types_path) if types_path is not None else type_dump()
     if types_path is None or not types_path.is_file():
         raise ExtractionError(
-            "The game's type list, tools/r<revision>_WizardDev.json, is missing from BartleBot's folder."
+            "The game's type list, game/data/r<revision>_WizardDev.json, is missing from BartleBot's folder."
         )
 
     if dry_run:

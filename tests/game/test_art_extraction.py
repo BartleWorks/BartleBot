@@ -23,6 +23,7 @@ from bartlebot.game.art_extraction import (
     ExtractionError,
     extract_art,
     installed_game_data_dir,
+    newest_type_dump,
     type_dump,
 )
 from bartlebot.game.card_art import INDEX_FILENAME
@@ -186,18 +187,28 @@ def test_it_reads_the_game_from_the_folder_the_app_launches_from(game, tmp_path)
 
 
 def test_the_newest_type_dump_is_used(tmp_path):
-    tools = tmp_path / "tools"
-    tools.mkdir()
     for name in ("r9_WizardDev.json", "r800294_WizardDev.json", "r81_WizardDev.json", "notes.json"):
-        (tools / name).write_text("{}", encoding="utf-8")
+        (tmp_path / name).write_text("{}", encoding="utf-8")
 
-    assert type_dump(tmp_path) == tools / "r800294_WizardDev.json"
+    assert type_dump(tmp_path) == tmp_path / "r800294_WizardDev.json"
     assert type_dump(tmp_path / "elsewhere") is None
 
 
+def test_the_newest_dump_wins_across_folders(tmp_path):
+    data, tools = tmp_path / "data", tmp_path / "tools"
+    data.mkdir()
+    tools.mkdir()
+    (data / "r800294_WizardDev.json").write_text("{}", encoding="utf-8")
+    (tools / "r700000_WizardDev.json").write_text("{}", encoding="utf-8")
+
+    assert newest_type_dump(data, tools) == data / "r800294_WizardDev.json"
+    assert newest_type_dump(tools) == tools / "r700000_WizardDev.json"
+    assert newest_type_dump() is None
+
+
 def test_bartlebots_own_folder_holds_a_type_dump():
-    """The app reads it from its install directory, so one has to ship there."""
+    """A run reads it from game/data/, which ships in the install directory."""
     found = type_dump()
 
     assert found is not None
-    assert found.parent == project_root() / "tools"
+    assert found.parent == project_root() / "bartlebot" / "game" / "data"
