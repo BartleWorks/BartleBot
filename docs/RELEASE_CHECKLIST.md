@@ -94,5 +94,6 @@ The one update that comes from GitHub itself, the way every user's does.
       and take setup's Quick path.
 - [ ] Close the app and start it from the Start Menu, with no BARTLEBOT_UPDATE_FEED: the
       popup offers <version>, with its notes and without the install page.
-- [ ] Install when I close BartleBot › close the app › start it again. The session log
-      header says <version>.
+- [ ] Install when I close BartleBot › close the app › start it again. No SmartScreen or
+      antivirus prompt appears at any point, as the README's install page says. The
+      session log header says <version>.

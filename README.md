@@ -8,13 +8,13 @@ fights in between. BartleBot is in public beta.
 <!-- install:start -->
 ## Installing BartleBot
 
-You need 64-bit Windows 11 and Wizard101. Windows 10 has not been tried.
+You need 64-bit Windows 10 or 11 and Wizard101.
 
 1. Download **BartleBot-win-Setup.exe** from the
    [latest release](https://github.com/The-World-Tree/BartleBot/releases/latest).
-2. Run it. It installs BartleBot for your Windows account only, so it never asks for an
-   administrator's password. Then it opens BartleBot's setup, which finds your game,
-   adds your accounts, and copies the game's art from your own install.
+2. Run it. It installs BartleBot for your Windows account only, and neither installing
+   nor running it needs an administrator. Then it opens BartleBot's setup, which finds
+   your game, adds your accounts, and copies the game's art from your own install.
 
 Windows will probably warn you about the download first, because BartleBot is not
 code-signed. What each warning means is below.
@@ -27,7 +27,7 @@ once: updates are downloaded by BartleBot itself, and Windows does not warn abou
 
 ### Smart App Control
 
-If Smart App Control is on, Windows blocks BartleBot every time it starts, not only when
+Smart App Control is in Windows 11 only. If it is on, Windows blocks BartleBot every time it starts, not only when
 you install it. It has no way to allow a single program, so **BartleBot only runs with
 Smart App Control turned off**, and it has to stay off. To turn it off, open **Windows
 Security**, then **App & browser control**, then **Smart App Control settings**, and

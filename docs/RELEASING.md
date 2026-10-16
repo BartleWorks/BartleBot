@@ -363,7 +363,10 @@ carries no Mark of the Web, so SmartScreen says nothing about it. To see what a 
 the checklist gives Setup.exe the mark a browser would: a `Zone.Identifier` stream naming
 the Internet zone (`ZoneId=3`), which is what SmartScreen reads. Once a release is
 published, the first install from it is a real browser download, which shows whether the
-two agree.
+two agree. An update carries no mark at all, since the app downloads it itself rather than
+a browser, which is why the README says Windows does not warn about one. Local feeds have
+borne that out, and the checklist's last section confirms it for an update fetched from
+GitHub.
 
 **What is tried in game** is every shipped item the release changed since the previous
 one: each Official bot, template, subgraph and strategy whose file differs from the
