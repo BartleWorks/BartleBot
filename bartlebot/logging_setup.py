@@ -14,6 +14,7 @@ overwhelming majority of them were noise of three specific kinds:
     ``RepeatCollapsingFilter`` keeps the first and counts the rest.
 """
 
+import asyncio
 import datetime
 import importlib.metadata
 import logging
@@ -155,18 +156,39 @@ class _GuiBridgeHandler(logging.Handler):
     def __init__(self) -> None:
         super().__init__()
         self._callbacks: list[Callable[[str, int], None]] = []
+        # The GUI thread's loop, taken when a callback is added, for a record logged from
+        # another thread. See emit.
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def add_callback(self, cb: Callable[[str, int], None]) -> None:
         self._callbacks.append(cb)
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
 
     def remove_callback(self, cb: Callable[[str, int], None]) -> None:
         self._callbacks = [c for c in self._callbacks if c is not cb]
 
     def emit(self, record: logging.LogRecord) -> None:
         msg = self.format(record)
+        if threading.current_thread() is threading.main_thread():
+            self._deliver(msg, record.levelno)
+            return
+        # A worker thread -- asyncio.to_thread's: the update check, an art extraction -- must
+        # never touch a widget, and the callbacks write the log panel. The line goes to the
+        # GUI thread's loop, or, with none, only to the session file (#154).
+        loop = self._loop
+        if loop is not None and not loop.is_closed():
+            try:
+                loop.call_soon_threadsafe(self._deliver, msg, record.levelno)
+            except RuntimeError:
+                pass  # the loop closed in between
+
+    def _deliver(self, msg: str, levelno: int) -> None:
         for cb in list(self._callbacks):
             try:
-                cb(msg, record.levelno)
+                cb(msg, levelno)
             except Exception:
                 pass  # never let GUI errors silence the logger
 

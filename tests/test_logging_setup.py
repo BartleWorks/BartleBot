@@ -7,8 +7,10 @@ a miscounted repeat, a mangled logger name.
 """
 
 import ast
+import asyncio
 import logging
 import os
+import threading
 from pathlib import Path
 
 import pytest
@@ -575,3 +577,36 @@ def test_a_threads_uncaught_exception_is_logged_too(hooks, caplog):
     worker.join()
 
     assert any(r.levelno == logging.CRITICAL and "worker" in r.getMessage() for r in caplog.records)
+
+
+# ---------------------------------------------------------------------------
+# A worker thread's line reaches the log panel on the GUI thread (#154)
+# ---------------------------------------------------------------------------
+
+
+def _bridge_and_seen():
+    bridge = _GuiBridgeHandler()
+    seen: list[tuple[str, bool]] = []
+    bridge.add_callback(lambda msg, _level: seen.append((msg, threading.current_thread() is threading.main_thread())))
+    return bridge, seen
+
+
+def _info(msg: str) -> logging.LogRecord:
+    return logging.LogRecord("bartlebot.x", logging.INFO, __file__, 1, msg, None, None)
+
+
+async def test_a_line_logged_from_a_worker_thread_is_delivered_on_the_gui_thread():
+    bridge, seen = _bridge_and_seen()
+
+    await asyncio.to_thread(bridge.handle, _info("from a worker"))
+    await asyncio.sleep(0)
+
+    assert seen == [("from a worker", True)]
+
+
+def test_a_line_logged_on_the_gui_thread_is_delivered_at_once():
+    bridge, seen = _bridge_and_seen()
+
+    bridge.handle(_info("from the GUI thread"))
+
+    assert seen == [("from the GUI thread", True)]
