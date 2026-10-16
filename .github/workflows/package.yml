@@ -5,6 +5,10 @@ name: Package
 # docs/RELEASING.md has why, and what each step answers.
 on:
   workflow_dispatch:
+  # Temporary, for Stage 1's spike (#235): a branch push runs it before the file is on
+  # master. Dropped before the branch merges.
+  push:
+    branches: [packaged-build]
 
 jobs:
   build:
