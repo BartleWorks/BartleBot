@@ -469,3 +469,14 @@ def test_a_typed_file_name_is_never_replaced_by_the_display_name(dialog):
     dialog.name_edit.setText("Medusa")
 
     assert dialog.file_edit.text() == "my-boss"
+
+
+def test_a_dialog_opened_after_an_extraction_wears_the_new_art(qapp, store, bots_dir):
+    """Built afresh on each open, so it needs no art_changed connection (#239)."""
+    from tests.extracted_art import write_extracted_art  # noqa: PLC0415
+
+    assert not NewBotDialog(starting_points(store), bots_dir).cards[1].has_icon
+
+    write_extracted_art(icons=["tag_gear"])
+
+    assert NewBotDialog(starting_points(store), bots_dir).cards[1].has_icon
