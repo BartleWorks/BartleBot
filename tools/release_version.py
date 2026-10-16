@@ -7,7 +7,9 @@ reads it through ``importlib.metadata``, from the metadata ``uv sync`` writes an
 ``tools/build_package.py`` bundles, and Velopack is given it as the package version. So a
 release tag must be that number with a ``v`` in front, the number must be SemVer 2 (which
 Velopack requires), and the metadata in this environment must say the same, or the app
-would report a version its release does not have.
+would report a version its release does not have. The version's notes,
+``release_notes/<version>.md``, must exist too, since they are the release's description
+and what the update popup shows.
 
 On success it prints the version alone, for the release workflow to read, and exits 0.
 Otherwise it prints every problem and exits 1 (``docs/RELEASING.md``, "The version").
@@ -24,6 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT = ROOT / "pyproject.toml"
+NOTES_DIR = ROOT / "release_notes"
 DIST = "bartlebot"
 
 #: SemVer 2.0.0's own pattern (semver.org), without build metadata, which Velopack ignores.
@@ -46,8 +49,16 @@ def installed_version() -> str | None:
         return None
 
 
-def problems(tag: str, project: str, installed: str | None) -> list[str]:
-    """Why ``tag`` cannot be released, in words; empty when it can."""
+def notes(version: str, notes_dir: Path = NOTES_DIR) -> str | None:
+    """``version``'s release notes, or None when it has no notes file."""
+    try:
+        return (notes_dir / f"{version}.md").read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+
+
+def problems(tag: str, project: str, installed: str | None, notes: str | None) -> list[str]:
+    """Why ``tag`` cannot be released, in words; empty when it can. ``notes`` is the version's notes file."""
     found = []
     if not SEMVER.fullmatch(project):
         found.append(f"pyproject.toml's version {project!r} is not SemVer 2 (MAJOR.MINOR.PATCH), which Velopack needs")
@@ -57,6 +68,10 @@ def problems(tag: str, project: str, installed: str | None) -> list[str]:
         found.append(f"no metadata for {DIST} in this environment: run uv sync")
     elif installed != project:
         found.append(f"this environment's metadata says {installed!r}, not {project!r}: run uv sync")
+    if notes is None:
+        found.append(f"release_notes/{project}.md is missing: write the release's notes before tagging it")
+    elif not notes.strip():
+        found.append(f"release_notes/{project}.md is empty: write the release's notes before tagging it")
     return found
 
 
@@ -66,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     project = project_version()
-    found = problems(args.tag, project, installed_version())
+    found = problems(args.tag, project, installed_version(), notes(project))
     for problem in found:
         print(problem, file=sys.stderr)
     if found:

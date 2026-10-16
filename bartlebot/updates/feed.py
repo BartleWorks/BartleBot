@@ -48,6 +48,11 @@ REPOSITORY = f"https://github.com/The-World-Tree/{PRODUCT}"
 #: Where an installed app looks: the assets of the latest published release. GitHub
 #: redirects each name to that release's asset, and a draft is never "latest".
 FEED_URL = f"{REPOSITORY}/releases/latest/download/"
+#: Where a release's notes stop being about the release. What follows is the README's
+#: install page, which the release's GitHub page shows someone arriving to install it
+#: (``tools/pack_release.py``), and which the popup leaves out, since whoever it is offered
+#: to has already installed. GitHub draws an HTML comment as nothing.
+INSTALL_NOTES_MARKER = "<!-- installing -->"
 #: Names another place to read the feed and its packages from, a URL or a local folder,
 #: for trying an update before anything is published (``docs/INSTALLER.md``). It changes
 #: where, never what is trusted: the feed must still verify against :data:`TRUSTED_KEYS`.
@@ -211,7 +216,7 @@ def parse(data: bytes) -> tuple[Asset, ...]:
                 file_name=str(a["FileName"]),
                 sha256=str(a.get("SHA256", "")),
                 size=int(a.get("Size", 0)),
-                notes=str(a.get("NotesMarkdown") or ""),
+                notes=str(a.get("NotesMarkdown") or "").split(INSTALL_NOTES_MARKER, 1)[0].rstrip(),
             )
             for a in listed
             if a.get("PackageId") == PRODUCT

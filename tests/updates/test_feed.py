@@ -186,6 +186,16 @@ def test_the_notes_are_the_feeds_markdown():
     assert latest.notes == "## Fixed\n\n- Foulgaze"
 
 
+def test_the_notes_stop_where_the_install_page_starts():
+    """Whoever is offered an update has installed already, so the popup leaves the install page out."""
+    data = json.loads(FEED)
+    data["Assets"][0]["NotesMarkdown"] = (
+        f"## Fixed\n\n- Foulgaze\n\n{feed.INSTALL_NOTES_MARKER}\n\n## Install\n\nSetup.exe"
+    )
+    (latest,) = [a for a in parse(json.dumps(data).encode()) if a.full and a.version == "1.2.0"]
+    assert latest.notes == "## Fixed\n\n- Foulgaze"
+
+
 def test_the_location_is_the_latest_release_unless_the_variable_names_another(monkeypatch, tmp_path):
     monkeypatch.delenv(feed.FEED_ENV_VAR, raising=False)
     assert feed.location() == "https://github.com/The-World-Tree/BartleBot/releases/latest/download/"
