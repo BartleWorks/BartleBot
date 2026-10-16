@@ -2008,7 +2008,7 @@ async def open_friend_profile(client, name: str):
         name,
     )
     if exact_name != name:
-        logger.debug("Resolved friend name %r to %r from the friends list", name, exact_name)
+        logger.debug("Resolved the friend's name to its spelling in the friends list")
 
     right_button = await _maybe_get_named_window(friends_window, "btnArrowDown")
     page_number = await _maybe_get_named_window(friends_window, "PageNumber")

@@ -70,6 +70,7 @@ def test_the_app_applies_it_at_startup_before_anything_asks_wizwalker(monkeypatc
     """Before the handler is made, and so before the window, the launcher or a client exists."""
     calls: list[str] = []
     monkeypatch.setattr(app_controller, "apply_install", lambda: calls.append("install"))
+    monkeypatch.setattr(app_controller, "apply_cache_dir", lambda: None)
     monkeypatch.setattr(app_controller, "install_app_icon", lambda _app: None)
     monkeypatch.setattr(AppController, "_apply_theme", lambda _self: None)
 

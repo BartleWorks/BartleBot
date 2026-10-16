@@ -121,8 +121,8 @@ everyone including CI. Tag it *before* bumping the pin:
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
 ```
 
-Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `a8811d0`
-(`bartlebot-pin-20261012`) and wizsprinter `716bf3d`
+Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `f5a613b`
+(`bartlebot-pin-20261016`, which adds `override_cache_folder` for #234) and wizsprinter `716bf3d`
 (`bartlebot-pin-20261015c`, on its `condition-attributes` branch, which names a combatant
 in the turn trace by its slot and refuses a condition attribute that can never be read,
 on top of `harmful-aura`, which adds the

@@ -21,7 +21,7 @@ from wizwalker.utils import (
     start_instance,
 )
 
-from bartlebot.clients.credentials import CredentialStore
+from bartlebot.clients.credentials import CredentialStore, account_label
 from bartlebot.clients.launch_tracker import LaunchStage
 from bartlebot.game.game_sizing import ui_size_for
 from bartlebot.nodes.timing import (
@@ -59,7 +59,7 @@ def _report(progress: ProgressFn | None, username: str, stage: LaunchStage) -> N
     try:
         progress(username, stage)
     except Exception:
-        logger.exception("Launch progress callback raised for '%s'", username)
+        logger.exception("Launch progress callback raised for '%s'", account_label(username))
 
 
 def _report_drive_outcome(progress: ProgressFn | None, username: str, handle: int) -> None:
@@ -80,7 +80,7 @@ def _report_drive_outcome(progress: ProgressFn | None, username: str, handle: in
     if handle in get_all_wizard_handles():
         _report(progress, username, LaunchStage.FAILED)
         return
-    logger.info("Launch: the window for '%s' was closed before it finished coming up", username)
+    logger.info("Launch: the window for '%s' was closed before it finished coming up", account_label(username))
 
 
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
@@ -509,7 +509,7 @@ async def launch_accounts(
         outcomes = await asyncio.gather(*(task for _u, _h, task in drives), return_exceptions=True)
         for (username, handle, _task), outcome in zip(drives, outcomes):
             if isinstance(outcome, BaseException):
-                logger.error("Auto-select drive for '%s' raised", username, exc_info=outcome)
+                logger.error("Auto-select drive for '%s' raised", account_label(username), exc_info=outcome)
                 _report_drive_outcome(progress, username, handle)
             elif not outcome:
                 _report_drive_outcome(progress, username, handle)

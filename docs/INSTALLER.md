@@ -41,6 +41,14 @@ anything written there would be lost.
   which `AppController` sets before the first stylesheet. **Never drop the organization
   name:** without it, Qt's cache is `%LocalAppData%\BartleBot\cache`, inside the install
   folder.
+- `%LocalAppData%\Bartleby\cache\wizwalker`: wizwalker's cache of what it reads from the
+  game's wads (`wad_cache.data`, `template_ids.json`, `langmap.json`), at the vendor level
+  because it describes the game rather than this product, and local because
+  `wad_cache.data` records this machine's game files. `AppController` points wizwalker at it
+  before the handler exists (`clients/wizwalker_cache.py`, #234); wizwalker's own default is
+  `%LocalAppData%\StarrFox\WizWalker\Cache`, after its original author. An older one left
+  there is neither moved nor deleted: it is rebuilt on demand, and other wizwalker tools
+  share it. The `tools/` scripts still use that default.
 
 ## Install
 

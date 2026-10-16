@@ -61,3 +61,15 @@ class CredentialStore:
         if alias:
             return alias
         return _censor(username)
+
+
+def account_label(username: str) -> str:
+    """The display name for *username*, its alias looked up in the account store.
+
+    What a log line or a tile calls an account. The username itself never goes in a log:
+    logs get pasted into bug reports, and a username is half of a login.
+    """
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    meta = next((a for a in SettingsManager.instance().accounts if a.get("username") == username), {})
+    return CredentialStore.display_name(username, meta.get("alias") or None)

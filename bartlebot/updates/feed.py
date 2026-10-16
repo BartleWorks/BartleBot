@@ -33,7 +33,7 @@ from pathlib import Path
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from bartlebot.shared.vendor import PRODUCT, VENDOR
+from bartlebot.shared.vendor import PRODUCT, local_vendor_dir
 from bartlebot.updates.keys import TRUSTED_KEYS
 
 logger = logging.getLogger(__name__)
@@ -141,8 +141,7 @@ def staging_dir() -> Path:
     Local rather than roaming, since a package is tens of megabytes, and never inside the
     install directory, which the update replaces.
     """
-    base = os.environ.get("LOCALAPPDATA") or Path.home()
-    return Path(base) / VENDOR / PRODUCT / "updates"
+    return local_vendor_dir() / PRODUCT / "updates"
 
 
 def clear_staging(folder: Path | None = None) -> None:

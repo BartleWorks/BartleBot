@@ -211,14 +211,13 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     to_zone: str = str(params.get("to_zone") or "").strip()
 
-    # 0. Resolve the target once, and say which level answered — never the name itself at
-    #    INFO, which is what a user pastes into an issue.
+    # 0. Resolve the target once, and say which level answered — never the name itself, at
+    #    any level: the session file keeps DEBUG too, and it is what a user pastes into an issue.
     target = resolve_target(clients, params, machine.get_option(OPTION_FRIEND_NAME, ""))
     if target.error:
         machine.log(f"FAILURE: {target.error}", logging.WARNING)
         return "FAILURE"
     machine.log(f"teleport_to_friend: target from {target.source}, to_zone={to_zone or '(not set)'!r}")
-    machine.log(f"Resolved target name: {target.name!r}", logging.DEBUG)
 
     if target.target_index is not None:
         return await _gather_at_hooked_player(machine, clients, target, to_zone)

@@ -8,7 +8,7 @@ from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
 from bartlebot.clients import account_identity, recovery_readiness, relog
-from bartlebot.clients.credentials import CredentialStore
+from bartlebot.clients.credentials import CredentialStore, account_label
 from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
 from bartlebot.clients.process_resources import gdi_object_count
 from bartlebot.clients.tile_slots import TileSlot, build_tile_slots
@@ -68,6 +68,11 @@ def _titled(clients, title: str):
         except Exception:
             pass
     return None
+
+
+def _slot_order_for_log(order: list[str | None]) -> str:
+    """A slot ordering as a log line can show it: each slot's label, never a username."""
+    return ", ".join(f"P{i + 1} {'(empty)' if u is None else repr(account_label(u))}" for i, u in enumerate(order))
 
 
 class ClientManager(QObject):
@@ -777,7 +782,7 @@ class ClientManager(QObject):
                     # what makes this line useful anyway.
                     logger.info(
                         "Learned a character for account '%s' (%d known)",
-                        username,
+                        account_label(username),
                         len(updated),
                     )
             except Exception:
@@ -850,7 +855,7 @@ class ClientManager(QObject):
                     logger.info(
                         "Learned the identity of account '%s' (user id %s) — clients adopted from "
                         "outside BartleBot can now be recognized as this account",
-                        known,
+                        account_label(known),
                         account_identity.mask(user_id),
                     )
                 continue
@@ -863,7 +868,7 @@ class ClientManager(QObject):
                     "Client hwnd=%d reports account '%s', which another live client is already "
                     "answering for — leaving it unidentified rather than guessing",
                     hwnd,
-                    username,
+                    account_label(username),
                 )
                 continue
 
@@ -873,7 +878,7 @@ class ClientManager(QObject):
             logger.info(
                 "Adopted client hwnd=%d as account '%s' by its user id (%s)",
                 hwnd,
-                username,
+                account_label(username),
                 account_identity.mask(user_id),
             )
 
@@ -954,7 +959,7 @@ class ClientManager(QObject):
             logger.info(
                 "Window hwnd=%d for account '%s' has closed — the account can be launched again",
                 hwnd,
-                username,
+                account_label(username),
             )
         # Both of these are keyed by window too, and a window that never carried an account
         # leaves an entry in them just the same.
@@ -997,13 +1002,13 @@ class ClientManager(QObject):
                         logger.info(
                             "Client at slot %d (account: %s) closed for a relog — bringing it back",
                             orig_pos,
-                            username,
+                            account_label(username),
                         )
                     else:
                         logger.warning(
                             "Client at slot %d (account: %s) disconnected — queuing recovery",
                             orig_pos,
-                            username,
+                            account_label(username),
                         )
             elif bot_running:
                 # Mapped to an account, but holding no slot — the other way a removal can
@@ -1012,7 +1017,7 @@ class ClientManager(QObject):
                     "Client hwnd=%d (account: %s) disconnected, but holds no slot in the client "
                     "ordering — recovery is being SKIPPED",
                     hwnd,
-                    username,
+                    account_label(username),
                 )
             self._hwnd_titles.pop(hwnd, None)
         if self._pending_recovery:
@@ -1085,10 +1090,12 @@ class ClientManager(QObject):
             self._sync_tiles()
         already_here = [u for u in usernames if u in active]
         if already_here:
-            logger.info("Ignoring launch for account(s) already running: %s", ", ".join(already_here))
+            logger.info(
+                "Ignoring launch for account(s) already running: %s", ", ".join(map(account_label, already_here))
+            )
         rejected = [u for u in wanted if u not in accepted]
         if rejected:
-            logger.info("Ignoring launch for account(s) already launching: %s", ", ".join(rejected))
+            logger.info("Ignoring launch for account(s) already launching: %s", ", ".join(map(account_label, rejected)))
         return accepted
 
     def end_launch(self, usernames: list[str]) -> None:
@@ -1196,7 +1203,9 @@ class ClientManager(QObject):
             return
         while self._client_order and self._client_order[-1] is None:
             self._client_order.pop()
-        logger.info("Released slot(s) for launch(es) that produced no window: %s", self._client_order)
+        logger.info(
+            "Released slot(s) for launch(es) that produced no window: %s", _slot_order_for_log(self._client_order)
+        )
 
     def reserve_slots(self, usernames: list[str]) -> None:
         """Pin the slot order for a batch of accounts about to be launched.
@@ -1235,7 +1244,7 @@ class ClientManager(QObject):
                 self._client_order[free] = username
             else:
                 self._client_order.append(username)
-        logger.info("Reserved slot order for launch: %s", self._client_order)
+        logger.info("Reserved slot order for launch: %s", _slot_order_for_log(self._client_order))
 
     def _place_account(self, username: str) -> None:
         """Give *username* its slot, honoring a recovery that is holding one for it.
