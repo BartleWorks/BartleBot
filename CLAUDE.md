@@ -110,8 +110,8 @@ read on purpose.
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |
-| `docs/RELEASING.md` | the packaged build: what is bundled and why, `--self-check` and each of its checks, the packager and why it won, what Velopack was shown to do, and `package.yml`; the one version number and how to bump it; `release.yml`, from a `v*` tag to a draft release, what `vpk pack` is told, and the pinned Velopack version |
-| `docs/INSTALLER.md` | what an install puts where and what the app writes elsewhere, install, update and uninstall, the hooks and their time limits, why a checkout never calls Velopack, the install key, the file types and what uninstall hands on, one app per user, and trying an install from a local folder |
+| `docs/RELEASING.md` | the packaged build: what is bundled and why, `--self-check` and each of its checks, the packager and why it won, what Velopack was shown to do, and `package.yml`; the one version number and how to bump it; `release.yml`'s three jobs, from a `v*` tag to a signed draft release, what `vpk pack` is told, and the pinned Velopack version; the signing key, where it is, its backup, and how to replace it |
+| `docs/INSTALLER.md` | what an install puts where and what the app writes elsewhere, install, update and uninstall, the hooks and their time limits, why a checkout never calls Velopack, the install key, the file types and what uninstall hands on, one app per user, the update check (when it runs, the feed's signature and the trusted keys, the popup once per version and never over a dialog or a run, its three choices), and trying an install or an update from a local folder |
 | `docs/PROCESS.md` | issues, labels, milestones, the backlog board |
 
 Landing a branch on `master` is the `merge` skill — the gate, the commit message

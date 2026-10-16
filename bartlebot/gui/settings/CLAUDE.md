@@ -179,6 +179,21 @@ It reads the game folder stored, not one the Game folder row shows but OK has no
 Its description is the text setup's Extract game art choice carries (`EXTRACT_DETAILS`), so
 the cost, about 35 MB in AppData, is said once.
 
+## The Updates row
+
+General's *Check for updates at startup* (`general_tab.py`), on by default: whether an
+installed build looks for a newer release once, after its window is up
+(`docs/INSTALLER.md`, *The update check*). It is `updates.check_at_startup` in
+`settings.json`, its own section beside `updates.last_offered`, the newest version the
+update popup has opened for, which no row shows. A `settings.json` key rather than a
+shared preference, since each product updates itself. It waits for OK like every other
+row, and is read only at startup, so it changes nothing until the next one.
+
+- **Off stops only the startup check.** Help › Check for Updates… looks whatever it says,
+  and the row's description says so. It is the user's way to look on their own terms.
+- It shows in a checkout too, where nothing ever checks: one form for both, and a
+  developer reading the row sees what a user does.
+
 ## The Bot tab
 
 Every row on it is the **app setting** level of the four-level resolution below,
