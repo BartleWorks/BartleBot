@@ -38,9 +38,9 @@ SUMMARY = "Where BartleBot starts Wizard101 from. {status}"
 NOT_FOUND = "Not found: choose the folder, or launching fails."
 CHOSEN = "Chosen by you."
 DETAILS = (
-    "Detected unless you choose one: the KingsIsle launcher's folder, its install record, then "
-    "every Steam library. Detect forgets the folder chosen and looks again. BartleBuddy launches "
-    "from the same folder."
+    "Detected unless you choose one: the KingsIsle launcher's folder, its install record, every "
+    "Steam library, then the game if it is running, whose folder is kept once found. Detect "
+    "forgets the folder chosen and looks again. BartleBuddy launches from the same folder."
 )
 
 
@@ -132,9 +132,12 @@ def apply_game_folder(prefs: PreferenceStore, opened: str | None, value: str | N
     """Write the row's *value* when it differs from the one the tab *opened* on. Whether anything was written.
 
     A folder that does not hold the game is not written: the row says so, and the folder
-    stored before stands.
+    stored before stands. Left on detected, a folder found only from the game running now
+    is stored all the same, as setup's page stores it, so the game closed still finds it.
     """
     if value == opened:
+        if value is None:
+            apply_install(prefs)
         return False
     if value is None:
         written = clear_install_dir(prefs)

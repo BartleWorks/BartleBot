@@ -159,6 +159,10 @@ agree; `docs/FIRST_RUN.md` ("The game folder") has where the folder is looked fo
   the game is never stored; the row says so in its line, in the error color.
 - **A write is handed to wizwalker at once** (`clients/install_location.apply_install`), so
   the next launch uses it without a restart.
+- **A folder found from the running game is stored on OK**, even left on detected: the
+  game is the last place looked, there only while it runs, so `apply_install` keeps what
+  it finds there. OK on an unchanged detected row runs it for that, and it never writes
+  over a folder stored, since a stored folder is looked at first.
 - It is on General rather than the Game tab because nothing about it is applied to a
   client as it starts: it is where the game is, which every launch and every read of the
   game's `Bin` files asks first.
