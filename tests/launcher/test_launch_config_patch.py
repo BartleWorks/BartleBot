@@ -51,6 +51,21 @@ def test_patch_skips_a_tag_the_file_does_not_have(config, caplog):
     assert "NotAThing" in caplog.text
 
 
+def test_a_write_that_fails_leaves_the_games_file_whole(config, monkeypatch):
+    """The game reads config.xml at every start; a half-written one would not parse (#154)."""
+    import os
+
+    def _refuse(*_args):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(os, "replace", _refuse)
+    with pytest.raises(OSError):
+        launch_profile._patch_xml_fields(config, {"WindowedX": "50"})
+
+    assert config.read_text(encoding="utf-8") == CONFIG_XML
+    assert [p.name for p in config.parent.iterdir()] == [config.name]
+
+
 def test_setting_on_forces_quick_friend_teleport_off():
     sm = _settings(disable_quick_friend_teleport=True)
     try:
