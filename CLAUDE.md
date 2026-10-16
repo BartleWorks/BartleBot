@@ -67,7 +67,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `clients/` | game clients at run time: the client and group managers, accounts, credentials, launch tracking, relog, porting, sightings, tile slots, process and window helpers |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
 | `launcher/` | auto-select, launch profiles, Remember Realm |
-| `packaging/` | the app as a packaged build: `--self-check` (`docs/RELEASING.md`) |
+| `packaging/` | the app as a packaged build: `--self-check`, and whether this process is one (`docs/RELEASING.md`) |
 | `shared/` | what every Bartleby product shares; imports nothing from the rest of `bartlebot` |
 | `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`, `title_bar/`) |
 

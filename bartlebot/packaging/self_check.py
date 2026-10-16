@@ -71,11 +71,14 @@ def _folder(root: Path, name: str) -> Path:
 
 
 def check_version(_root: Path) -> str:
-    """The version ``importlib.metadata`` reports, which share files and the updater read."""
+    """The version ``importlib.metadata`` reports, which share files and the updater read, and the build kind."""
+    from bartlebot.packaging.build_kind import build_kind  # noqa: PLC0415
+
     try:
-        return importlib.metadata.version("bartlebot")
+        version = importlib.metadata.version("bartlebot")
     except importlib.metadata.PackageNotFoundError as exc:
         raise CheckFailed("no package metadata for bartlebot, so the app cannot say its version") from exc
+    return f"{version}, {build_kind()}"
 
 
 def check_keyring(_root: Path) -> str:

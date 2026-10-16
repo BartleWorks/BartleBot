@@ -390,3 +390,27 @@ def test_the_session_file_has_the_turn_trace_only_when_asked(tmp_path, monkeypat
     assert ("round 2: the trace" in text) is record
     assert ("Combat decision trace on" in text) is record
     assert "a memory read" not in text
+
+
+def test_the_session_header_names_the_build_and_pillow_stays_quiet(tmp_path, monkeypatch):
+    """A pasted log says whether a build or a checkout wrote it, and art extraction adds no Pillow chatter."""
+    from bartlebot import logging_setup
+
+    root = logging.getLogger()
+    pil = logging.getLogger("PIL")
+    saved = (list(root.handlers), root.level, pil.level)
+    monkeypatch.setattr(logging_setup, "session_log_dir", lambda: tmp_path)
+    try:
+        logging_setup.configure_logging()
+        logging.getLogger("PIL.Image").debug("Importing DdsImagePlugin")
+    finally:
+        for added in [h for h in root.handlers if h not in saved[0]]:
+            root.removeHandler(added)
+            added.close()
+        root.setLevel(saved[1])
+        pil.setLevel(saved[2])
+
+    (session,) = tmp_path.glob("bartlebot_*.log")
+    text = session.read_text(encoding="utf-8")
+    assert "Build: checkout" in text
+    assert "DdsImagePlugin" not in text
