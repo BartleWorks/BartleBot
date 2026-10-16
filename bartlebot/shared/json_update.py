@@ -110,12 +110,27 @@ def _parse(data: bytes | None, path: Path) -> dict[str, Any]:
     try:
         record = json.loads(data.decode("utf-8"))
     except ValueError:
-        logger.warning("%s is not valid JSON; replacing it", path)
+        _keep_unreadable(path, data, "is not valid JSON")
         return {}
     if not isinstance(record, dict):
-        logger.warning("%s is not a JSON object; replacing it", path)
+        _keep_unreadable(path, data, "is not a JSON object")
         return {}
     return record
+
+
+def _keep_unreadable(path: Path, data: bytes, why: str) -> None:
+    """Copy a file about to be replaced as ``{}`` to ``<name>.unreadable``, and say so.
+
+    The file may be accounts.json, every account record the user has, and the copy is what
+    lets it be mended by hand rather than re-entered (#154).
+    """
+    kept = path.with_name(f"{path.name}.unreadable")
+    try:
+        kept.write_bytes(data)
+    except OSError:
+        logger.warning("%s %s; replacing it, and it could not be kept", path, why)
+        return
+    logger.warning("%s %s; replacing it, and keeping what it held as %s", path, why, kept.name)
 
 
 def _replace(path: Path, record: dict[str, Any]) -> None:
@@ -125,6 +140,9 @@ def _replace(path: Path, record: dict[str, Any]) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(record, fh, indent=2)
+            # On disk before the rename: without it a power cut can leave the new name on an empty file (#154).
+            fh.flush()
+            os.fsync(fh.fileno())
         os.replace(tmp_name, path)
     except BaseException:
         try:

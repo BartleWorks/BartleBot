@@ -576,6 +576,9 @@ def _atomic_write_bytes(data: bytes, path: Path) -> None:
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(data)
+            # On disk before the rename: without it a power cut can leave the new name on an empty file (#154).
+            f.flush()
+            os.fsync(f.fileno())
         os.replace(tmp, path)
     except Exception:
         Path(tmp).unlink(missing_ok=True)

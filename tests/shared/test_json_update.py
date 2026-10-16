@@ -134,5 +134,16 @@ def test_a_file_that_is_not_an_object_is_replaced(tmp_path):
     assert _read(path) == {"a": 1}
 
 
+def test_what_an_unreadable_file_held_is_kept_beside_it(tmp_path, caplog):
+    """It may be accounts.json: the copy is what lets it be mended rather than re-entered (#154)."""
+    path = tmp_path / "accounts.json"
+    path.write_bytes(b'{"accounts": [{"user')
+
+    update_json(path, lambda r: r.update(a=1))
+
+    assert (tmp_path / "accounts.json.unreadable").read_bytes() == b'{"accounts": [{"user'
+    assert "accounts.json.unreadable" in caplog.text
+
+
 def test_retry_count_is_bounded():
     assert json_update.UPDATE_RETRIES >= 2
