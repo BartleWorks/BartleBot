@@ -9,7 +9,8 @@ from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 sys.path.insert(0, str(project_root()))
 
-from tools.pack_release import PACK_ID, VELOPACK_VERSION, main, pack_command  # noqa: E402
+from bartlebot.gui.logo import LOGO_SVG  # noqa: E402
+from tools.pack_release import PACK_ID, SPLASH_PROGRESS_COLOR, VELOPACK_VERSION, main, pack_command  # noqa: E402
 
 RELEASE_YML = project_root() / ".github" / "workflows" / "release.yml"
 
@@ -30,6 +31,18 @@ def test_the_pack_names_the_product_its_publisher_and_its_exe(tmp_path):
     assert Path(_value(command, "--packDir")) == tmp_path / "dist" / "BartleBot"
     assert Path(_value(command, "--icon")) == tmp_path / "dist" / "bartlebot.ico"
     assert Path(_value(command, "--outputDir")) == tmp_path / "releases"
+
+
+def test_setup_shows_the_logo_while_it_installs(tmp_path):
+    command = pack_command("1.2.0", build=tmp_path / "dist")
+
+    assert Path(_value(command, "--splashImage")) == tmp_path / "dist" / "bartlebot-splash.png"
+
+
+def test_the_splash_progress_bar_is_a_color_from_the_logo(tmp_path):
+    """Velopack's default bar is #00FF00, which is in no part of the logo."""
+    assert _value(pack_command("1.2.0", build=tmp_path), "--splashProgressColor") == SPLASH_PROGRESS_COLOR
+    assert f'fill="{SPLASH_PROGRESS_COLOR}"' in LOGO_SVG.read_text(encoding="utf-8")
 
 
 def test_only_a_start_menu_shortcut_is_made(tmp_path):
@@ -54,6 +67,14 @@ def test_one_velopack_version_for_the_package_and_vpk():
 def test_a_missing_build_is_refused_before_vpk_runs(tmp_path, capsys):
     assert main(["1.2.0", "--vpk", "no-such-vpk", "--build", str(tmp_path)]) == 1
     assert "build_package.py" in capsys.readouterr().err
+
+
+def test_a_build_without_its_splash_is_refused_before_vpk_runs(tmp_path, capsys):
+    (tmp_path / "BartleBot").mkdir()
+    (tmp_path / "bartlebot.ico").touch()
+
+    assert main(["1.2.0", "--vpk", "no-such-vpk", "--build", str(tmp_path)]) == 1
+    assert "bartlebot-splash.png is missing" in capsys.readouterr().err
 
 
 def _steps() -> list[str]:

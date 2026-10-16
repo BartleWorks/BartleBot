@@ -25,6 +25,8 @@ size and file count, and the self-check's lines. The script exits non-zero when
 PyInstaller or the self-check fails. It also draws `dist/bartlebot.ico` from the logo's
 SVG (`tools/export_logo.py`'s `write_icon`) and gives it to the exe, so the Start Menu
 entry, the uninstall entry and Explorer show the logo rather than PyInstaller's icon.
+Beside it goes `dist/bartlebot-splash.png` (`write_splash`), the logo on its square at
+288 px, which only `vpk pack` reads: Setup.exe shows it while it installs.
 
 **A release is never built on a maintainer's machine.** CI builds every release from a
 tag. A local build is for working on the build itself. The rule is about what a binary
@@ -245,6 +247,8 @@ What `vpk pack` is told is in `tools/pack_release.py`, held there so a test can 
 | `--packTitle` | `PRODUCT` | the Start Menu entry's and the uninstall entry's name |
 | `--packAuthors` | `VENDOR` | the uninstall entry's publisher |
 | `--icon` | `dist/bartlebot.ico` | Setup.exe's icon |
+| `--splashImage` | `dist/bartlebot-splash.png` | the window Setup.exe shows while it installs, in place of Velopack's plain progress dialog. Velopack draws it borderless at its own size times the monitor's scaling, resampled, so above 100% the cells' edges soften a little; and it lays a 12 px bar, scaled the same, along its bottom edge. So it is the square, opaque to the corners, and 24 px cells leave 36 px of background under the tree for the bar |
+| `SPLASH_PROGRESS_COLOR` | `#22b14c` | that bar's color: the leaves' green. Velopack's default is `#00FF00` |
 | `SHORTCUTS` | `StartMenuRoot` | the Start Menu entry only; `vpk`'s default adds one on the Desktop |
 | `--noPortable` | | Setup.exe is the one way to install. A portable copy runs outside the install and the updater, and the plan leaves it out of scope |
 

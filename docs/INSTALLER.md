@@ -55,8 +55,10 @@ anything written there would be lost.
 Setup.exe needs no elevation, and asks for none. It extracts the app, makes the Start
 Menu entry, runs the install hook, writes the uninstall entry, and then starts the app,
 which opens into first-run setup (`docs/FIRST_RUN.md`). That setup is the interactive
-part of the install: Velopack shows no pages of its own, only a progress window for the
-few seconds it takes. `Setup.exe --silent` installs the same way but starts nothing.
+part of the install: Velopack shows no pages of its own, only the logo with a progress bar
+along its foot for the few seconds it takes (`docs/RELEASING.md`, `--splashImage`).
+`Setup.exe --silent` installs the same way but shows nothing and starts nothing. An update
+shows no splash.
 
 ## Update
 

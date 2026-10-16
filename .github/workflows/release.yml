@@ -58,7 +58,7 @@ jobs:
           version=$(uv run --no-sync python tools/release_version.py "$GITHUB_REF_NAME")
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # Builds dist/BartleBot and dist/bartlebot.ico, then runs the build's own
+      # Builds dist/BartleBot, dist/bartlebot.ico and dist/bartlebot-splash.png, then runs the build's own
       # --self-check, which fails this step on any missing file, module or plugin.
       - name: Build and self-check
         run: uv run --no-sync --group package python tools/build_package.py

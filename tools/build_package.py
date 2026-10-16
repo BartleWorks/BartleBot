@@ -100,13 +100,33 @@ def write_icon(dist: Path) -> Path:
     logo rather than PyInstaller's. ``release.yml`` hands the same file to ``vpk pack`` for
     Setup.exe.
     """
+    _app = _painter_app()  # noqa: F841 - QPainter needs one alive
+    from tools import export_logo  # noqa: PLC0415
+
+    return export_logo.write_icon(dist)
+
+
+def write_splash(dist: Path) -> Path:
+    """Draw ``bartlebot-splash.png`` into ``dist`` from the logo's SVG, and return its path.
+
+    The exe never reads it: ``release.yml`` hands it to ``vpk pack``, and Setup.exe shows
+    it while it installs.
+    """
+    _app = _painter_app()  # noqa: F841 - QPainter needs one alive
+    from tools import export_logo  # noqa: PLC0415
+
+    return export_logo.write_splash(dist)
+
+
+def _painter_app():
+    """The running ``QGuiApplication``, or a new offscreen one, for QPainter. The caller keeps it alive.
+
+    It also puts the project root on the path, for ``tools.export_logo``.
+    """
     sys.path.insert(0, str(ROOT))
     from PyQt6.QtGui import QGuiApplication  # noqa: PLC0415
 
-    from tools.export_logo import write_icon as write_logo_icon  # noqa: PLC0415
-
-    _app = QGuiApplication.instance() or QGuiApplication([NAME, "-platform", "offscreen"])  # noqa: F841 - QPainter needs one
-    return write_logo_icon(dist)
+    return QGuiApplication.instance() or QGuiApplication([NAME, "-platform", "offscreen"])
 
 
 def folder_size(folder: Path) -> tuple[int, int]:
@@ -133,6 +153,7 @@ def main(argv: list[str] | None = None) -> int:
     for folder in (dist / NAME, work):
         shutil.rmtree(folder, ignore_errors=True)
     command, exe = pyinstaller_command(dist, work, write_icon(dist))
+    write_splash(dist)
 
     started = time.perf_counter()
     built = subprocess.run(command, cwd=ROOT)

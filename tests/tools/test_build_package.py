@@ -19,6 +19,7 @@ from tools.build_package import (  # noqa: E402
     pyinstaller_command,
     strip_install_records,
     write_icon,
+    write_splash,
 )
 
 
@@ -83,3 +84,21 @@ def test_the_icon_is_the_logo_at_every_window_icon_size(qapp, tmp_path):
     assert icon == tmp_path / "bartlebot.ico"
     with Image.open(icon) as image:
         assert sorted(image.info["sizes"]) == sorted((size, size) for size in ICON_SIZES)
+
+
+def test_the_splash_is_the_logo_square_with_room_below_the_tree_for_the_bar(qapp, tmp_path):
+    """Velopack lays an opaque 12 px bar, scaled as the image is, along the splash's bottom edge."""
+    from PIL import Image
+
+    from tools.export_logo import SPLASH_SIZE
+
+    splash = write_splash(tmp_path)
+
+    assert splash == tmp_path / "bartlebot-splash.png"
+    with Image.open(splash) as image:
+        rgba = image.convert("RGBA")
+    assert rgba.size == (SPLASH_SIZE, SPLASH_SIZE)
+    assert rgba.getextrema()[3] == (255, 255), "the bar would float over a transparent corner"
+    background = rgba.getpixel((0, 0))
+    bar_rows = rgba.crop((0, SPLASH_SIZE - 12, SPLASH_SIZE, SPLASH_SIZE))
+    assert [color for _, color in bar_rows.getcolors()] == [background], "the bar would cover the tree"

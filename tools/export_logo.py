@@ -7,6 +7,8 @@ the files everything else wants, all from the same snapping:
   ``ICON_SIZES``, for the installer and the exe.
 * ``bartlebot-<size>.png``: the square with its background, one per icon size plus
   512 for the GitHub avatar and the Discord server icon.
+* ``bartlebot-splash.png``: the square at ``SPLASH_SIZE``, the window Setup.exe shows
+  while it installs.
 
 Nothing is written into the repo unless you name a path in it: the SVG is the
 tracked source, and these are regenerated from it whenever they are needed.
@@ -30,6 +32,12 @@ from bartlebot.gui.logo import ICON_SIZES, logo_image, tree_image
 #: Sizes for avatars and headers, written as PNG beside the icon sizes.
 AVATAR_SIZES = (512,)
 
+#: Setup.exe's splash, in pixels at 100% scaling. Velopack draws the image as it is,
+#: scaled by the monitor's scaling, and lays a 12 px progress bar (scaled the same) along
+#: its bottom edge. 24 px cells leave the tree a cell and a half of background below it,
+#: 36 px, so the bar never covers the tree.
+SPLASH_SIZE = 288
+
 
 def export(out_dir: Path) -> list[Path]:
     """Write the .ico and every PNG into *out_dir*; returns the paths written."""
@@ -41,6 +49,7 @@ def export(out_dir: Path) -> list[Path]:
             raise OSError(f"Could not write {path}")
         written.append(path)
     written.append(write_icon(out_dir))
+    written.append(write_splash(out_dir))
     return written
 
 
@@ -54,6 +63,19 @@ def write_icon(out_dir: Path) -> Path:
     largest = frames[-1]
     largest.save(ico, format="ICO", sizes=[f.size for f in frames], append_images=frames[:-1])
     return ico
+
+
+def write_splash(out_dir: Path) -> Path:
+    """Write ``bartlebot-splash.png`` into *out_dir* and return its path. ``tools/build_package.py`` uses it too.
+
+    The square, not the disc: Velopack's progress bar is opaque and runs the image's full
+    width, so on the disc's transparent corners it would float below the logo.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "bartlebot-splash.png"
+    if not logo_image(SPLASH_SIZE).save(str(path), "PNG"):
+        raise OSError(f"Could not write {path}")
+    return path
 
 
 def _pil(image) -> Image.Image:

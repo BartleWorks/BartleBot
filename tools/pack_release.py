@@ -35,6 +35,8 @@ VELOPACK_VERSION = "1.2.161"
 PACK_ID = PRODUCT
 #: The Start Menu entry and nothing else. ``vpk pack``'s default adds a Desktop shortcut.
 SHORTCUTS = "StartMenuRoot"
+#: The splash's progress bar: the logo's own leaf green, where Velopack's default is #00FF00.
+SPLASH_PROGRESS_COLOR = "#22b14c"
 DEFAULT_BUILD = ROOT / "dist"
 DEFAULT_OUT = ROOT / "releases"
 
@@ -58,6 +60,12 @@ def pack_command(version: str, vpk: str = "vpk", build: Path = DEFAULT_BUILD, ou
         VENDOR,
         "--icon",
         str(build / "bartlebot.ico"),
+        # Shown while Setup.exe installs. Without one, Velopack shows a plain progress
+        # dialog instead.
+        "--splashImage",
+        str(build / "bartlebot-splash.png"),
+        "--splashProgressColor",
+        SPLASH_PROGRESS_COLOR,
         "--shortcuts",
         SHORTCUTS,
         # A portable zip runs from wherever it is unpacked, outside the install and the
@@ -77,7 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     command = pack_command(args.version, args.vpk, args.build, args.out)
-    for required in (Path(command[command.index("--packDir") + 1]), Path(command[command.index("--icon") + 1])):
+    for flag in ("--packDir", "--icon", "--splashImage"):
+        required = Path(command[command.index(flag) + 1])
         if not required.exists():
             print(f"{required} is missing: run tools/build_package.py first", file=sys.stderr)
             return 1
