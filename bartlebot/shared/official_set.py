@@ -11,11 +11,19 @@ there are two shipped copies. The rule (``docs/EPICS.md``, *Official and shared 
   changes nothing. On a tie the running product's own copy is used.
 - **Uninstalling a product removes its key,** and the other falls back to its own set.
 
-Each installed product records itself under ``HKCU\\Software\\Bartleby\\<product>``
-(#27): :data:`INSTALL_DIR_VALUE` and :data:`SHARED_SET_VERSION_VALUE` are the two values
-read here. The shared set sits at the same place under every install directory as it
-does under this one, so another product's install directory is a shipped root exactly
-as ours is.
+Each set says its own version, in :data:`SET_FILE` beside it, and that file is the only
+place the version lives. It is raised whenever a shared Official item is added, changed
+or removed, and never lowered. Nothing leaves a set after 1.0.0, since a user's link to
+it would then point at nothing. Before 1.0.0 there are no users: version 6 removed two
+duels (#223), and version 8 retired a player strategy (#212). Version 8 also first
+shipped the decks.
+
+Each installed product records its install directory under
+``HKCU\\Software\\Bartleby\\<product>`` (:mod:`bartlebot.shared.install_key`). The
+shared set sits at the same place under every install directory as it does under this
+one, so another product's install directory is a shipped root exactly as ours is, and
+its version is read from its own :data:`SET_FILE`. The registry holds no version, so no
+update has to rewrite it.
 
 The registry is read through :class:`InstallRegistry`, so a test supplies the keys it
 wants and the suite never reads the machine it runs on.
@@ -23,29 +31,31 @@ wants and the suite never reads the machine it runs on.
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from bartlebot.shared.vendor import PRODUCT, VENDOR
+from bartlebot.shared import install_key
+from bartlebot.shared.strategy_library import LIBRARY_DIRNAME
+from bartlebot.shared.vendor import PRODUCT
 
 logger = logging.getLogger(__name__)
 
-#: The version of the shared Official set this build ships. Raised whenever a shared
-#: Official item is added, changed or removed; it is never lowered. Nothing leaves a set
-#: after 1.0.0, since a user's link to it would then point at nothing. Before 1.0.0 there
-#: are no users: version 6 removed two duels (#223), and version 8 retired a player strategy (#212).
-#: Version 8 also first shipped the decks.
-SHARED_SET_VERSION = 8
+#: Where a set says its version, under the root it ships in: ``{"version": 8}``.
+SET_FILE = Path(LIBRARY_DIRNAME) / "official_set.json"
 
-#: ``HKCU\Software\Bartleby``: one subkey per installed product.
-REGISTRY_KEY = rf"Software\{VENDOR}"
-#: The product's install directory (``REG_SZ``).
-INSTALL_DIR_VALUE = "InstallDir"
-#: The version of the shared Official set the product ships (``REG_DWORD``).
-SHARED_SET_VERSION_VALUE = "SharedSetVersion"
+
+def set_version(root: Path) -> int | None:
+    """The version of the shared set under ``root``, or ``None`` when it says none that can be read."""
+    try:
+        version = json.loads((Path(root) / SET_FILE).read_bytes())["version"]
+    except (OSError, ValueError, KeyError, TypeError):
+        logger.debug("No readable shared set version under %s", root, exc_info=True)
+        return None
+    return version if isinstance(version, int) and not isinstance(version, bool) else None
 
 
 @dataclass(frozen=True)
@@ -71,31 +81,21 @@ class NoRegistry:
 
 
 class WindowsRegistry:
-    """The install keys under ``HKCU\\Software\\Bartleby``. A key missing a value is skipped."""
+    """The install keys under ``HKCU\\Software\\Bartleby``, each with the version its directory ships.
+
+    A key whose directory is gone, or whose set says no version, is skipped.
+    """
 
     def install_keys(self) -> list[InstallKey]:
-        import winreg  # noqa: PLC0415 - Windows only
-
         keys: list[InstallKey] = []
-        try:
-            vendor = winreg.OpenKey(winreg.HKEY_CURRENT_USER, REGISTRY_KEY)
-        except OSError:
-            return keys
-        with vendor:
-            index = 0
-            while True:
-                try:
-                    product = winreg.EnumKey(vendor, index)
-                except OSError:
-                    break
-                index += 1
-                try:
-                    with winreg.OpenKey(vendor, product) as key:
-                        install_dir, _ = winreg.QueryValueEx(key, INSTALL_DIR_VALUE)
-                        version, _ = winreg.QueryValueEx(key, SHARED_SET_VERSION_VALUE)
-                    keys.append(InstallKey(product, Path(str(install_dir)), int(version)))
-                except (OSError, ValueError, TypeError):
-                    logger.debug("Skipping install key %s: a value is missing or unreadable", product, exc_info=True)
+        for record in install_key.read_all():
+            if not record.install_dir.is_dir():
+                logger.debug("Skipping install key %s: %s is not there", record.product, record.install_dir)
+                continue
+            version = set_version(record.install_dir)
+            if version is None:
+                continue
+            keys.append(InstallKey(record.product, record.install_dir, version))
         return keys
 
 
@@ -149,7 +149,7 @@ def shipped_root(own_root: Path, *, product: str = PRODUCT, reg: InstallRegistry
 
 def _choose(own_root: Path, product: str, reg: InstallRegistry) -> Path:
     global _reported
-    best_version, best_root, best_product = SHARED_SET_VERSION, own_root, product
+    best_version, best_root, best_product = set_version(own_root) or 0, own_root, product
     for key in reg.install_keys():
         if key.product == product or key.shared_set_version <= best_version:
             continue

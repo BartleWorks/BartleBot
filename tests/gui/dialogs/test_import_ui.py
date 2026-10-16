@@ -186,6 +186,9 @@ def test_the_file_menu_has_import_and_the_window_takes_drops(qapp):
 
 _IMPORT_METHODS = (
     "_import_from_arguments",
+    "listen_for_launches",
+    "_on_later_launch",
+    "_import_handed_over",
     "_import_dropped",
     "_import_share_file",
     "_import_blocked_by_run",
@@ -322,6 +325,46 @@ def test_files_named_at_launch_are_imported_and_nothing_else(harness, sender, tm
     assert imported == [str(path)]
 
 
+def test_files_a_later_launch_hands_over_are_imported_and_nothing_else(harness, sender, tmp_path):
+    bot, _ = _sender_setup(sender)
+    path = _send_bot(sender, tmp_path, bot)
+    imported: list[str] = []
+    harness._import_share_file = imported.append
+
+    harness._import_handed_over([str(tmp_path / "missing.bbot"), "--flag", str(path)])
+
+    assert imported == [str(path)]
+
+
+def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
+    qtbot, harness, sender, tmp_path, monkeypatch
+):
+    """Done when (#237): a double-click while the app runs imports in that app."""
+    from bartlebot.gui.single_instance import SingleInstance  # noqa: PLC0415
+
+    raised = []
+    monkeypatch.setattr("bartlebot.app_controller.raise_window", raised.append)
+    modal = [True]
+    monkeypatch.setattr(
+        "bartlebot.app_controller.QApplication.activeModalWidget", lambda: object() if modal[0] else None
+    )
+    monkeypatch.setattr("bartlebot.gui.single_instance.BUSY_RETRY_MS", 10)
+    bot, _ = _sender_setup(sender)
+    path = _send_bot(sender, tmp_path, bot)
+    imported: list[str] = []
+    harness._import_share_file = imported.append
+    instance = SingleInstance("unused")
+    harness.listen_for_launches(instance)
+
+    instance.arguments_received.emit([str(path)])
+
+    assert raised == [harness._window], "the window comes forward at once"
+    qtbot.wait(50)
+    assert imported == [], "not over an open dialog"
+    modal[0] = False
+    qtbot.waitUntil(lambda: imported == [str(path)], timeout=2000)
+
+
 def test_a_combat_strategy_for_the_open_bot_rebinds_the_combat_tab(harness, sender, receiver, tmp_path):
     bot = _bot()
     receiver_path = receiver.bot(bot)
@@ -354,7 +397,8 @@ def test_no_way_in_imports_while_a_bot_runs(harness, sender, receiver, tmp_path,
     harness._import_dropped([path, path])
     harness._app.arguments.return_value = ["bartlebot", path]
     harness._import_from_arguments()
+    harness._import_handed_over([path])
 
-    assert len(harness.warnings) == 4
+    assert len(harness.warnings) == 5
     assert all("Stop the running bot" in w for w in harness.warnings)
     assert receiver.files() == before

@@ -207,5 +207,5 @@ class _Keys:
 def test_the_default_shipped_root_is_the_newest_installed_set(monkeypatch, tmp_path):
     buddy = tmp_path / "BartleBuddy"
     buddy.mkdir()
-    official_set.set_registry(_Keys(InstallKey("BartleBuddy", buddy, official_set.SHARED_SET_VERSION + 1)))
+    official_set.set_registry(_Keys(InstallKey("BartleBuddy", buddy, official_set.set_version(project_root()) + 1)))
     assert resolve_shared_roots(None, None) == (buddy, vendor_dir())

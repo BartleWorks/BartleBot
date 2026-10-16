@@ -147,10 +147,18 @@ Templates aren't shared until after 1.0.0 (#165); File › Export… on a draft 
 ## Import
 
 **Ways in:** File › Import…, dropping a share file anywhere on the window, and a share
-file named on the command line, which is how a double-clicked file will arrive once the
-installer registers the types (#27). Handing a file to an app that is already running is
-#27's too. Import reads `main`, never the extension; the extension only decides which
-files a drop or the open dialog offers.
+file named on the command line. Import reads `main`, never the extension; the extension
+only decides which files a drop or the open dialog offers, and which program Windows
+starts for a double-click.
+
+**A double-click** starts the installed app with the file as its argument: the install
+hook registers all six types to it (`docs/INSTALLER.md`, *The file types*). With the app
+closed, it opens, and imports the file once the window is up and setup, if it asks, is
+answered. With the app open, the new launch hands the file to it and exits, so no second
+window opens (*One app per user*, in the same file): the running app comes to the front
+and imports the file once no dialog is open. Either way it is the same import as
+File › Import…, refused while a bot runs (#181). A checkout registers nothing, so a
+double-click never reaches one.
 
 ### Refused before anything is written
 

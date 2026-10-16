@@ -63,6 +63,7 @@ from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
+from bartlebot.gui.single_instance import LaunchQueue, SingleInstance, raise_window
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
@@ -170,6 +171,11 @@ def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str])
             live.append(canonical)
     recent = dict.fromkeys(zone_names.canonical_zone(z) for z in recent_zones)
     return live, live + [z for z in recent if z not in live]
+
+
+def _share_files(args: list[str]) -> list[str]:
+    """The arguments that name a share file that is there, in order."""
+    return [arg for arg in args if is_share_file(arg) and Path(arg).is_file()]
 
 
 class AppController(QObject):
@@ -1254,9 +1260,30 @@ class AppController(QObject):
 
     def _import_from_arguments(self) -> None:
         """Import each share file named on the command line: how a double-clicked file arrives (#27)."""
-        for arg in self._app.arguments()[1:]:
-            if is_share_file(arg) and Path(arg).is_file():
-                self._import_share_file(arg)
+        for path in _share_files(self._app.arguments()[1:]):
+            self._import_share_file(path)
+
+    def listen_for_launches(self, instance: SingleInstance) -> None:
+        """Take what later launches hand over: a double-click while the app runs arrives here (#27).
+
+        The window comes forward at once. The files wait for any modal dialog to close, so
+        an import's summary never opens over setup or over another import's.
+        """
+        self._launches = LaunchQueue(lambda: QApplication.activeModalWidget() is not None)
+        self._launches.ready.connect(self._import_handed_over)
+        instance.arguments_received.connect(self._on_later_launch)
+
+    def _on_later_launch(self, args: list[str]) -> None:
+        raise_window(self._window)
+        self._launches.put(args)
+
+    def _import_handed_over(self, args: list[str]) -> None:
+        """Each share file a later launch named, imported here as one named at this launch would be."""
+        paths = _share_files(args)
+        if not paths or self._import_blocked_by_run():
+            return
+        for path in paths:
+            self._import_share_file(path)
 
     def _import_dropped(self, paths: list[str]) -> None:
         """Files dropped on the window, imported one after another."""
