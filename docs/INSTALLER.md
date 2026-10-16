@@ -100,6 +100,10 @@ registry values and removes one folder of the app's own, and nothing else: on th
 while it did nothing, almost all of it the frozen interpreter starting, and the suite
 holds the three that write to a tenth of the 15 s limit.
 
+A hook never raises. Nothing it writes is needed for the app to start, and a hook that
+raised would fail the install, update or uninstall around it, so what fails is printed to
+stderr (logging is not set up yet) and the step goes on.
+
 `after_update` writes exactly what `after_install` did. The values are the same, since
 nothing in them changes with an update, so writing them again only mends a key or a type
 that something removed, and registers a share type a new release added.

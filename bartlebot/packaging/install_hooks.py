@@ -27,7 +27,9 @@ packaged build. So a checkout never writes the registry either.
 
 from __future__ import annotations
 
+import functools
 import sys
+import traceback
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -97,15 +99,36 @@ def remove_install() -> None:
     file_types.notify()
 
 
+def _never_raises(hook: Callable[[str], None]) -> Callable[[str], None]:
+    """*hook*, made to print what it raises instead of raising it (#154).
+
+    Everything a hook does is a registry entry or a spent download, none of which the app
+    needs to start, and a hook that raised would fail the install, update or uninstall
+    around it. Logging is not set up this early, so stderr is all there is to tell.
+    """
+
+    @functools.wraps(hook)
+    def guarded(version: str) -> None:
+        try:
+            hook(version)
+        except Exception:
+            traceback.print_exc()
+
+    return guarded
+
+
+@_never_raises
 def after_install(version: str) -> None:
     """The new install's first launch, before Velopack opens the app: record it, and register the types."""
     record_install()
 
 
+@_never_raises
 def before_update(version: str) -> None:
     """The installed version, just before Velopack replaces its folder. Nothing to do."""
 
 
+@_never_raises
 def after_update(version: str) -> None:
     """The new version, just after Velopack swapped its folder in: record it and register the types again.
 
@@ -117,6 +140,7 @@ def after_update(version: str) -> None:
     _clear_staged_update()
 
 
+@_never_raises
 def before_uninstall(version: str) -> None:
     """The installed version, just before Velopack deletes its folder: take the key, the types and any staged update away."""
     remove_install()

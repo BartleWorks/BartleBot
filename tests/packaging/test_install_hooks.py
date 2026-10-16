@@ -135,6 +135,22 @@ def test_install_writes_the_key_and_registers_all_six_types(machine):
     assert machine.notices == [1]
 
 
+@pytest.mark.parametrize("hook", [h for _method, h in install_hooks.HOOKS])
+def test_a_hook_that_fails_prints_why_and_never_fails_velopacks_step(monkeypatch, capsys, hook):
+    """A registry write that fails must not fail the install, update or uninstall around it (#154)."""
+
+    def _fails(*_args, **_kwargs):
+        raise OSError("the registry refused")
+
+    for name in ("record_install", "remove_install", "_clear_staged_update"):
+        monkeypatch.setattr(install_hooks, name, _fails)
+
+    hook("1.0.0")
+
+    if hook is not install_hooks.before_update:  # it does nothing, so nothing can fail
+        assert "the registry refused" in capsys.readouterr().err
+
+
 def test_update_writes_the_same_again(machine):
     install_hooks.after_install("1.0.0")
     install_key.delete(PRODUCT)  # something removed it
