@@ -18,7 +18,7 @@ dependencies = [
     "wizwalker",
     "wizsprinter",
     "vdf>=3.4",
-    # Card art extraction (bartlebot/game/art_extraction.py), from setup and Settings:
+    # Game art extraction (bartlebot/game/art_extraction.py), from setup and Settings:
     # katsuba reads the game's WADs and spell templates, and Pillow decodes their
     # DXT3/DXT5 textures to PNG, since Qt's build here has no dds plugin. Nothing else
     # reads a WAD at run time.

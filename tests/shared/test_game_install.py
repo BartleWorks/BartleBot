@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,8 @@ from bartlebot.shared.game_install import (
     find_install,
     is_install,
     parse_library_folders,
+    running_executables,
+    running_install,
     set_install_dir,
     steam_install,
     steam_libraries,
@@ -69,6 +72,7 @@ class _Places:
     launcher: Path
     uninstall: Path | None = None
     steam: Path | None = None
+    running: list[Path] = field(default_factory=list)
 
     def launcher_dir(self) -> Path:
         return self.launcher
@@ -78,6 +82,9 @@ class _Places:
 
     def steam_root(self) -> Path | None:
         return self.steam
+
+    def running_clients(self) -> list[Path]:
+        return list(self.running)
 
 
 def _install(folder: Path) -> Path:
@@ -215,6 +222,38 @@ def test_each_place_is_found_in_order(tmp_path, prefs, machine):
 
     machine.steam = None
     assert find_install(prefs, machine) is None
+
+
+def test_a_running_game_is_found_after_every_other_place(tmp_path, prefs, machine):
+    """Last, because it is there only while the game runs: an install every other place missed."""
+    elsewhere = _install(tmp_path / "Games" / "W101")
+    machine.running = [elsewhere / "Bin" / "WizardGraphicalClient.exe"]
+    assert find_install(prefs, machine).source is InstallSource.LAUNCHER
+
+    machine.launcher, machine.uninstall, machine.steam = tmp_path / "gone", None, None
+
+    assert find_install(prefs, machine) == FoundInstall(elsewhere, InstallSource.RUNNING)
+    assert detect_install(machine) == FoundInstall(elsewhere, InstallSource.RUNNING)
+    assert running_install(machine) == FoundInstall(elsewhere, InstallSource.RUNNING)
+
+
+def test_a_running_executable_outside_an_install_finds_nothing(tmp_path, prefs):
+    stray = tmp_path / "Copied" / "WizardGraphicalClient.exe"
+    stray.parent.mkdir(parents=True)
+    stray.write_bytes(b"")
+    where = _Places(tmp_path / "gone", running=[stray])
+
+    assert find_install(prefs, where) is None
+    assert running_install(where) is None
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="reads Windows' process list")
+def test_running_executables_reads_this_machines_processes():
+    """The suite's own interpreter is running, so it is found, by its full path."""
+    found = running_executables(Path(sys.executable).name)
+
+    assert Path(sys.executable).resolve() in [path.resolve() for path in found]
+    assert running_executables("no-such-program-anywhere.exe") == []
 
 
 def test_a_folder_without_the_client_is_never_found(tmp_path, prefs):

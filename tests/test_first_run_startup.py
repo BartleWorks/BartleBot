@@ -14,12 +14,13 @@ from types import SimpleNamespace
 import pytest
 from PyQt6.QtWidgets import QMenu, QWidget
 
+from bartlebot import app_controller
 from bartlebot.app_controller import AppController
 from bartlebot.gui.dialogs.first_run_dialog import (
     AccountsPage,
-    CardArtPage,
     CombatQuestionPage,
     FirstRunDialog,
+    GameArtPage,
     GameFolderPage,
     LaunchProfilePage,
     QuicksellPage,
@@ -66,7 +67,7 @@ def startup(qapp, monkeypatch, tmp_path):
 
     The game is installed where the KingsIsle launcher puts it, so the game folder page is
     answered, the Accounts page was answered with none, and the Quicksell, Realm and Safety
-    Delay and Card art pages were answered. ``state.answer`` is the combat answer to finish on; None
+    Delay and Game art pages were answered. ``state.answer`` is the combat answer to finish on; None
     closes the dialog on the combat page instead.
     """
     (tmp_path / "Wizard101" / "Bin").mkdir(parents=True)
@@ -159,6 +160,20 @@ def test_the_answer_recorded_by_the_other_product_keeps_it_closed(startup):
     assert startup.events == ["import"]
 
 
+def test_a_launch_with_nothing_to_ask_builds_no_page(startup, monkeypatch):
+    """Building the pages searches the registry and Steam and draws the account cards: not every launch."""
+    record_answer(PreferenceStore(_prefs().path.parent), None)
+
+    def refuse(_prefs):
+        raise AssertionError("setup's pages were built with nothing to ask")
+
+    monkeypatch.setattr(app_controller, "setup_pages", refuse)
+
+    startup.ns._after_window_shown()
+
+    assert startup.opened == []
+
+
 def test_a_team_default_chosen_elsewhere_keeps_it_closed(startup):
     _prefs().set(_TEAM, "00000000-0000-0000-0000-0000000000d1")
 
@@ -197,7 +212,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
         CombatQuestionPage,
         QuicksellPage,
         RealmAndDelayPage,
-        CardArtPage,
+        GameArtPage,
     ]
     assert _prefs().get(_TEAM) is None
     assert startup.events == ["first run", "refresh", "layout", "accounts"]

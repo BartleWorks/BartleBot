@@ -1,6 +1,6 @@
-"""Extract spell card art from the installed game into the local art cache, from the command line.
+"""Extract spell card art and the game's icons from the installed game into the local art cache, from the command line.
 
-The app does the same from setup's Card art page and Settings › General › Card art; this
+The app does the same from setup's Game art page and Settings › General › Game art; this
 is the command line over the one function all three call,
 ``bartlebot.game.art_extraction.extract_art``, which has the reasoning::
 
@@ -12,6 +12,10 @@ is the command line over the one function all three call,
 (``find_install``: the folder chosen in setup or Settings, the KingsIsle launcher's, or a
 Steam library's), and ``--types`` to the newest type dump in ``tools/``. The output goes to
 ``%APPDATA%/Bartleby/BartleBot/art``, outside the repo, and is never tracked.
+
+``--out`` is **replaced whole**, not written into: a run builds ``<out>.partial`` beside it
+and swaps it in, deleting the folder that was there, so anything else in it goes too.
+Point it only at a folder of its own.
 """
 
 from __future__ import annotations
@@ -57,7 +61,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--game-dir", type=Path, default=None, help="the game's Data/GameData directory")
     ap.add_argument("--types", type=Path, default=None, help="path to a wiztype types JSON dump")
-    ap.add_argument("--out", type=Path, default=None, help="where to write the cache (default: the art cache)")
+    ap.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="the folder to replace with the cache, deleting what is in it (default: the art cache)",
+    )
     ap.add_argument("--dry-run", action="store_true", help="report what would be written, write nothing")
     args = ap.parse_args(argv)
 

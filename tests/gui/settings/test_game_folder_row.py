@@ -135,6 +135,27 @@ def test_ok_without_a_change_leaves_a_folder_the_other_product_chose(qapp, launc
     assert _prefs().get(INSTALL_DIR_KEY) == str(theirs)
 
 
+class _Running(game_install.NoPlaces):
+    def __init__(self, folder: Path) -> None:
+        self.folder = folder
+
+    def running_clients(self) -> list[Path]:
+        return [self.folder / "Bin" / "WizardGraphicalClient.exe"]
+
+
+def test_a_folder_found_from_the_running_game_is_stored_on_ok(qapp, tmp_path, monkeypatch):
+    """Started after BartleBot opened, so startup did not store it; closed, nothing would find it again."""
+    running = _install(tmp_path / "Games" / "W101")
+    monkeypatch.setattr(game_install, "_places", _Running(running))
+    tab = GeneralTab()
+    assert _summary(tab) == SUMMARY.format(status="Found in the game running now.")
+
+    tab.apply()
+
+    assert _prefs().get(INSTALL_DIR_KEY) == str(running)
+    assert wizwalker_utils.get_wiz_install() == running.absolute()
+
+
 def test_the_page_and_the_row_read_and_write_the_same_key(qapp, tmp_path):
     """What setup stores, Settings shows; what Settings stores, setup opens on."""
     from_page = _install(tmp_path / "FromPage")

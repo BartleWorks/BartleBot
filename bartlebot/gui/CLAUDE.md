@@ -421,10 +421,10 @@ the launch cards' hover-revealed buttons use — but it only applies to a widget
 is still asked about.)
 
 
-## Card art is optional, and missing is the ordinary case
+## Game art is optional, and missing is the ordinary case
 
 Spell art is the game's own and is never in this repo: the app extracts it on the user's
-machine (`game/art_extraction.py`, from setup's last page or Settings › General › Card
+machine (`game/art_extraction.py`, from setup's last page or Settings › General › Game
 art), and `bartlebot/game/card_art.py` is the only thing that knows where it lands.
 **Every lookup can return `None`** — a user can turn the art off in Custom setup, an
 extraction can fail and setup still finishes, an install from before setup asked has none
@@ -1022,10 +1022,16 @@ again in Settings. The dialog opens on Quick or Custom (`ModePage`), then walks 
 that apply. The rules for a page:
 
 - **It is a `FirstRunPage`**, with a `heading`, `answered()`, `applies(mode)` and
-  `record() -> bool`, and joins `setup_pages`. What it stores lives in a Qt-free module, as
+  `record() -> bool`, and joins `setup_pages` and `SETUP_PAGE_TYPES`. What it stores lives in a Qt-free module, as
   `shared/first_run.py` does for the combat page, so the other product asks the same
   question and writes the same keys, and it writes through the function its Settings row
   uses.
+- **Its classmethod `asks_first_run(prefs)` answers for it before it is built**: whether it
+  is unanswered and applies under Quick, read from the stores alone, since every launch
+  asks it and building every page is slow. It must agree with `not answered() and
+  applies(SetupMode.QUICK)` on the page built;
+  `test_each_page_asks_a_first_run_as_its_answer_and_walk_say` checks each page across
+  several machine states, so a page that changes one changes the other.
 - **`answered()` is "the setting already exists"**, not a key of the dialog's own: an
   account, a found install, or the page's record key. A first run passes an answered page
   over; a rerun shows it on the current value.
@@ -1039,8 +1045,12 @@ that apply. The rules for a page:
   `ready_changed` when that may have changed; the dialog disables Next until it is true.
   The game folder page is ready only for a folder holding the client. A page that is
   always ready, as most are, leaves the default.
+- **A page with work running says so with `busy()`**, and the dialog disables Back and Next
+  until it ends, so the user can't change an earlier answer under it: Back to the Options
+  page could turn the art off under a run installing it. Escape and the close button
+  still leave. It emits `ready_changed` when that may have changed.
 - **A page with work running stops it in `stop()`**, which the dialog calls from `done()`
-  whenever setup closes, finished or not. The Card art page stops its extraction there;
+  whenever setup closes, finished or not. The Game art page stops its extraction there;
   the extractor removes what it wrote, and the page stays unanswered. A page's work runs
   in a task it owns, started from `enter()`, and only when a loop is running, so the tests
   that never await build the page without starting anything (`ArtExtraction.start`).

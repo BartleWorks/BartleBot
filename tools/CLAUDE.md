@@ -121,13 +121,14 @@ machine, which the repo cannot reach even by accident — and the app treats its
 the ordinary case rather than as a missing dependency.
 
 **The extractor is in the app** (#232): `bartlebot/game/art_extraction.py`, run from
-setup's Card art page and Settings › General › Card art. `tools/extract_card_art.py` is the
+setup's Game art page and Settings › General › Game art. `tools/extract_card_art.py` is the
 command line over the same `extract_art`, and still the quickest way to rerun it while
 developing. It reads the game from the folder the app launches from (`find_install`, so a
 Steam install too), and the type list from the newest `tools/r<rev>_WizardDev.json`, which
 ships in the install directory with the rest of `tools/`. A run writes into `art.partial`
 and swaps it in only once it finished, so a failed or cancelled run leaves the art before
-it. Its tests run on `tests/art_fixture.py`'s made-up install: real KIWAD archives (the
+it. So the tool's `--out` folder is **replaced whole**, not written into: whatever else is
+in it is deleted with the old art. Point it only at a folder of its own. Its tests run on `tests/art_fixture.py`'s made-up install: real KIWAD archives (the
 CRC is CRC-32 with no inversion) and spells serialized against a one-class type list, with
 tiny PNGs drawn there, so nothing of the game's is committed.
 

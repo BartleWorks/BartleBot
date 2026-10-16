@@ -16,10 +16,11 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and six methods.``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and seven methods. ``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
 belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
-recorded, and Next waits for it. ``record()`` writes its answer and says whether that
+recorded, and Next waits for it. ``busy()`` says work running holds the user on the page,
+and Back and Next both wait for it. ``record()`` writes its answer and says whether that
 reached disk. ``enter()``, a no-op by default, runs each time the dialog turns to the page,
 for a page that draws what an earlier page wrote. ``stop()``, also a no-op, runs when setup
 closes, for a page with work running.
@@ -47,7 +48,7 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, pyqtSignal
+from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -55,7 +56,6 @@ from PyQt6.QtWidgets import (
     QDialog,
     QDoubleSpinBox,
     QFormLayout,
-    QGridLayout,
     QLabel,
     QStackedWidget,
     QVBoxLayout,
@@ -65,12 +65,13 @@ from PyQt6.QtWidgets import (
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.clients.install_location import apply_install
+from bartlebot.game import card_art
 from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
-from bartlebot.gui.settings.card_art_row import ArtExtraction, extract_art_row
+from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row
 from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
 from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
@@ -94,7 +95,14 @@ from bartlebot.options.realm_delay_setup import realm_delay_answered, record_rea
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
-from bartlebot.shared.game_install import SOURCE_NAMES, find_install, is_install, set_install_dir
+from bartlebot.shared.game_install import (
+    SOURCE_NAMES,
+    InstallSource,
+    find_install,
+    is_install,
+    running_install,
+    set_install_dir,
+)
 from bartlebot.shared.launch_profiles import (
     EVERYONE,
     add_profile,
@@ -138,6 +146,18 @@ class FirstRunPage(QWidget):
     #: The question the page asks, shown above it.
     heading = ""
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        """Whether this page, unanswered and applying under Quick, opens a first run.
+
+        Asked before any page is built, at every launch, so it reads the stores and builds
+        no widget: building every page reads the registry and each Steam library, draws
+        the account cards and measures the screen. Always ``not answered() and
+        applies(SetupMode.QUICK)`` for the page as it would be built now, which
+        ``test_each_page_asks_a_first_run_as_its_answer_and_walk_say`` holds each page to.
+        """
+        return False
+
     def answered(self) -> bool:
         """Whether its setting already exists, so a first run need not ask."""
         return False
@@ -149,6 +169,14 @@ class FirstRunPage(QWidget):
     def ready(self) -> bool:
         """Whether the answer shown can be recorded. Next is disabled while it can't."""
         return True
+
+    def busy(self) -> bool:
+        """Whether work running holds the user on the page: Back and Next are disabled until it ends.
+
+        Escape and the close button still leave, and :meth:`stop` ends the work. Emit
+        ``ready_changed`` when this may have changed.
+        """
+        return False
 
     def enter(self) -> None:
         """Called each time the dialog turns to this page, by Next or Back.
@@ -164,12 +192,16 @@ class FirstRunPage(QWidget):
     def stop(self) -> None:
         """Called when setup closes, finished or not: a page with work running stops it.
 
-        The Card art page stops its extraction, which removes what it wrote.
+        The Game art page stops its extraction, which removes what it wrote.
         """
 
 
 class _CardsPage(FirstRunPage):
     """A page answered by picking one :class:`StartCard`, the recommended one first and selected.
+
+    The cards are stacked, each the page's full width, and each leads with a radio button:
+    two tiles side by side in a dialog taller than it is wide read as a gallery, not as one
+    question with two answers.
 
     A card selects itself on taking focus, so the selected one takes it on show: left to
     the focus chain, showing the dialog hands it to the first card, which changes the
@@ -182,19 +214,18 @@ class _CardsPage(FirstRunPage):
         self.column = QVBoxLayout(self)
         self.column.setContentsMargins(0, 0, 0, 0)
         self.column.setSpacing(12)
-        grid = QGridLayout()
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setSpacing(6)
-        self.column.addLayout(grid)
+        cards = QVBoxLayout()
+        cards.setContentsMargins(0, 0, 0, 0)
+        cards.setSpacing(6)
+        self.column.addLayout(cards)
 
         self._values = [value for value, *_ in choices]
         self._cards: list[StartCard] = []
-        for index, (value, name, blurb, recommended) in enumerate(choices):
-            card = StartCard(name, blurb, detail=RECOMMENDED_DETAIL if recommended else "")
+        for value, name, blurb, recommended in choices:
+            card = StartCard(name, blurb, detail=RECOMMENDED_DETAIL if recommended else "", radio=True)
             card.chosen.connect(lambda v=value: self._choose(v))
             self._cards.append(card)
-            grid.addWidget(card, 0, index)
-            grid.setColumnStretch(index, 1)
+            cards.addWidget(card)
         self._value: object | None = None
 
     @property
@@ -320,6 +351,10 @@ class CombatQuestionPage(_CardsPage):
     def select(self, tactic: BossTactic | None) -> None:
         self._choose(tactic)
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not combat_question_answered(prefs)
+
     def answered(self) -> bool:
         return combat_question_answered(self._prefs)
 
@@ -333,8 +368,16 @@ GAME_FOLDER_HEADING = "Where is Wizard101 installed?"
 GAME_FOLDER_INTRO = (
     "BartleBot starts the game from this folder, the one holding its Bin folder. The KingsIsle "
     "launcher installs it in C:\\ProgramData\\KingsIsle Entertainment\\Wizard101, and Steam in "
-    "steamapps\\common\\Wizard101 inside a Steam library."
+    "steamapps\\common\\Wizard101 inside a Steam library. Or start Wizard101 as you usually do, "
+    "and BartleBot finds the folder of the running game here on its own."
 )
+#: Under the field on a rerun with nothing found and nothing chosen: Next passes the page.
+GAME_FOLDER_UNSET = (
+    "Not found. Next leaves it unset, and launching fails until it is chosen, here or in "
+    "Settings › General › Game folder."
+)
+#: How often the page looks for a running game while nothing is found.
+RUNNING_GAME_POLL_MS = 2000
 
 
 class GameFolderPage(FirstRunPage):
@@ -342,14 +385,21 @@ class GameFolderPage(FirstRunPage):
 
     On a rerun it opens on the folder in use, and Next leaves a detected folder detected:
     only a folder the user changed to is stored, so an install that moves is still found.
-    Next is enabled only for a folder holding the client.
+    Next is enabled only for a folder holding the client, except on a rerun with nothing
+    found, where an empty field passes the page and writes nothing: the rerun is how the
+    other answers are changed, and a game on a drive that is gone must not hold them all.
+
+    While nothing is found and the field is empty, it looks for a running game every
+    :data:`RUNNING_GAME_POLL_MS`, so a user who starts Wizard101 has the folder filled in.
+    Next stores a folder found that way, since only a running game finds it again.
     """
 
     heading = GAME_FOLDER_HEADING
 
-    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
+    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None, *, rerun: bool = False) -> None:
         super().__init__(parent)
         self._prefs = prefs
+        self._rerun = rerun
         self._found = find_install(prefs)
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
@@ -367,6 +417,29 @@ class GameFolderPage(FirstRunPage):
             self._input.set_path(self._found.path)
         self._input.changed.connect(self._on_changed)
         self._on_changed()
+        self._poll = QTimer(self)
+        self._poll.setInterval(RUNNING_GAME_POLL_MS)
+        # Only while shown: the page waits in the dialog's stack the rest of the time.
+        self._poll.timeout.connect(lambda: self.isVisible() and self.look_for_running_game())
+        if self._found is None:
+            self._poll.start()
+
+    @property
+    def polling(self) -> bool:
+        """Whether the page is looking for a running game."""
+        return self._poll.isActive()
+
+    def look_for_running_game(self) -> bool:
+        """Fill the field from the game running now, while nothing is found and it is empty. Whether it did."""
+        if self._found is not None or self._input.path():
+            return False
+        running = running_install()
+        if running is None:
+            return False
+        self._found = running
+        self._poll.stop()
+        self._input.set_path(running.path)
+        return True
 
     @property
     def folder_input(self) -> GameFolderInput:
@@ -376,23 +449,39 @@ class GameFolderPage(FirstRunPage):
     def status_text(self) -> str:
         return self._status.text()
 
+    def _passes_unset(self) -> bool:
+        """A rerun with nothing found and nothing chosen: Next passes the page."""
+        return self._rerun and self._found is None and not self._input.path()
+
     def _on_changed(self) -> None:
         found_path = self._found.path if self._found is not None else None
         source = SOURCE_NAMES[self._found.source] if self._found is not None else ""
         text, problem = folder_status(self._input.path(), found_path, source)
+        if self._passes_unset():
+            text, problem = GAME_FOLDER_UNSET, True
         self._status.setText(text)
         self._status.set_color("error" if problem else "text_muted")
         self.ready_changed.emit()
+
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return find_install(prefs) is None
 
     def answered(self) -> bool:
         return self._found is not None
 
     def ready(self) -> bool:
-        return is_install(self._input.path())
+        return self._passes_unset() or is_install(self._input.path())
+
+    def stop(self) -> None:
+        self._poll.stop()
 
     def record(self) -> bool:
+        if self._passes_unset():
+            return True
         path = Path(self._input.path())
-        if self._found is not None and path == self._found.path:
+        # A running game's folder is stored: closed, nothing would find it again.
+        if self._found is not None and path == self._found.path and self._found.source is not InstallSource.RUNNING:
             return True
         if not set_install_dir(self._prefs, path):
             return False
@@ -477,6 +566,10 @@ class AccountsPage(FirstRunPage):
 
     def _on_reordered(self, order: list) -> None:
         self._changed(reorder_accounts(list(order)))
+
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not accounts_answered(prefs, SettingsManager.instance().account_store)
 
     def answered(self) -> bool:
         return accounts_answered(self._prefs, SettingsManager.instance().account_store)
@@ -643,6 +736,11 @@ class LaunchProfilePage(FirstRunPage):
         self._res_combo.setCurrentIndex(index)
         return True
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        store = cls._store()
+        return len(store.accounts) >= 2 and not launch_profile_answered(prefs, store)
+
     def applies(self, mode: SetupMode) -> bool:
         return len(self._store().accounts) >= 2
 
@@ -704,6 +802,10 @@ class QuicksellPage(FirstRunPage):
     def quicksell(self) -> QuicksellSettings:
         return self._quicksell
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not quicksell_answered(SettingsManager.instance())
+
     def answered(self) -> bool:
         return quicksell_answered(self._settings)
 
@@ -759,6 +861,10 @@ class RealmAndDelayPage(FirstRunPage):
     def delay_box(self) -> QDoubleSpinBox:
         return self._delay
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        return not realm_delay_answered(SettingsManager.instance())
+
     def answered(self) -> bool:
         return realm_delay_answered(self._settings)
 
@@ -771,12 +877,12 @@ class RealmAndDelayPage(FirstRunPage):
 OPTIONS_HEADING = "A few more choices"
 OPTIONS_INTRO = (
     "Quick setup turns all three on. Each has a cost, said under it. You can change them later: "
-    "card art on Settings › General, the other two on Settings › Bot."
+    "game art on Settings › General, the other two on Settings › Bot."
 )
 
 
 class OptionsPage(FirstRunPage):
-    """Custom setup only: Extract card art, Automatically group players and Refill potions, all on.
+    """Custom setup only: Extract game art, Automatically group players and Refill potions, all on.
 
     The last two are Settings › Bot's rows, from the same builder. Next writes all three
     through :func:`~bartlebot.options.custom_setup.record_options`. Under Quick the page is
@@ -803,7 +909,7 @@ class OptionsPage(FirstRunPage):
         form.finish(stretch=False)
         column.addWidget(form)
         column.addStretch()
-        # Whether the Card art page follows.
+        # Whether the Game art page follows.
         self._art.toggled.connect(lambda _on: self.walk_changed.emit())
 
     @property
@@ -822,6 +928,11 @@ class OptionsPage(FirstRunPage):
     def extract_art(self) -> bool:
         return self._art.isChecked()
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        # Custom only, so never: see needs_asking.
+        return False
+
     def applies(self, mode: SetupMode) -> bool:
         return mode is SetupMode.CUSTOM
 
@@ -837,36 +948,43 @@ class OptionsPage(FirstRunPage):
         )
 
 
-# -- card art -----------------------------------------------------------------------
+# -- game art -----------------------------------------------------------------------
 
-CARD_ART_HEADING = "Extracting the card art"
-CARD_ART_INTRO = (
+GAME_ART_HEADING = "Extracting the game art"
+GAME_ART_INTRO = (
     "BartleBot is copying the pictures of the spell cards, and the game's school, world and badge "
-    "icons, out of your game's files, to show them in its own lists. Finish is ready when it ends. "
+    "icons, out of your game's files, to show them in its own lists. Back and Finish wait for it to end. "
     "Closing setup stops it, keeping any art from before."
 )
 
 
-class CardArtPage(FirstRunPage):
-    """The last page whenever card art is on, as it is under Quick: the extraction, with its progress.
+class GameArtPage(FirstRunPage):
+    """The last page whenever game art is on, as it is under Quick, and none is extracted yet.
 
     Entered, it starts :func:`~bartlebot.game.art_extraction.extract_art` off the GUI
-    thread, in an :class:`~bartlebot.gui.settings.card_art_row.ArtExtraction`. Finish waits
+    thread, in an :class:`~bartlebot.gui.settings.game_art_row.ArtExtraction`. Finish waits
     for the run to end, worked or not: a failure says why, is logged, and setup ends as
     usual, since art is optional everywhere. Closing setup stops the run, which leaves
     nothing half written, and leaves the page unanswered.
+
+    Art already extracted keeps the page out of the walk, a rerun's too: extracting it
+    again is Settings › General › Game art's job, after a game patch. Whether there was
+    art is read once, when the page is built, so the page's own run finishing never takes
+    it out of the walk while it is shown. A user who turned the art off before has none,
+    so a rerun still offers it to them.
     """
 
-    heading = CARD_ART_HEADING
+    heading = GAME_ART_HEADING
 
     def __init__(self, options: OptionsPage, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._settings = SettingsManager.instance()
         self._options = options
+        self._had_art = card_art.is_available()
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(12)
-        intro = ThemedTextLabel(CARD_ART_INTRO, css=f"font-size: {THEME.font_small_px}px;")
+        intro = ThemedTextLabel(GAME_ART_INTRO, css=f"font-size: {THEME.font_small_px}px;")
         intro.setWordWrap(True)
         column.addWidget(intro)
         self._extraction = ArtExtraction(prefs)
@@ -878,7 +996,14 @@ class CardArtPage(FirstRunPage):
     def extraction(self) -> ArtExtraction:
         return self._extraction
 
+    @classmethod
+    def asks_first_run(cls, prefs: PreferenceStore) -> bool:
+        # Art on disk answers the page as well as taking it out of the walk.
+        return not art_answered(SettingsManager.instance())
+
     def applies(self, mode: SetupMode) -> bool:
+        if self._had_art:
+            return False
         return mode is SetupMode.QUICK or self._options.extract_art
 
     def answered(self) -> bool:
@@ -886,6 +1011,12 @@ class CardArtPage(FirstRunPage):
 
     def ready(self) -> bool:
         return self._extraction.ended
+
+    def busy(self) -> bool:
+        # Held here while it runs: Back to the Options page could turn the art off under a
+        # run that would install it anyway. Ended is set before ``finished`` is emitted,
+        # while the task is still finishing.
+        return self._extraction.running and not self._extraction.ended
 
     def enter(self) -> None:
         self._extraction.start()
@@ -897,23 +1028,43 @@ class CardArtPage(FirstRunPage):
         return record_art_answered(self._settings)
 
 
-def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
-    """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
+#: Every setup page after Quick or Custom, in the order shown: what :func:`setup_pages` builds.
+SETUP_PAGE_TYPES: tuple[type[FirstRunPage], ...] = (
+    GameFolderPage,
+    AccountsPage,
+    LaunchProfilePage,
+    CombatQuestionPage,
+    QuicksellPage,
+    RealmAndDelayPage,
+    OptionsPage,
+    GameArtPage,
+)
+
+
+def setup_pages(prefs: PreferenceStore, *, rerun: bool = False) -> list[FirstRunPage]:
+    """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``).
+
+    *rerun* for File › Set up BartleBot…, where the Game folder page lets a user with no
+    game found pass it.
+    """
     options = OptionsPage()
     return [
-        GameFolderPage(prefs),
+        GameFolderPage(prefs, rerun=rerun),
         AccountsPage(prefs),
         LaunchProfilePage(prefs),
         CombatQuestionPage(prefs),
         QuicksellPage(),
         RealmAndDelayPage(),
         options,
-        CardArtPage(options, prefs),
+        GameArtPage(options, prefs),
     ]
 
 
-def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
+def needs_asking(prefs: PreferenceStore) -> bool:
     """Whether a first run has anything to ask: a page unanswered that applies under Quick.
+
+    Asked of each page's type (:meth:`FirstRunPage.asks_first_run`), so no page is built
+    at a launch with nothing to ask.
 
     Quick is the walk a first run takes unless the user picks Custom. A page that applies
     only under Custom, the Options page, opens nothing on its own: its choices are the ones
@@ -923,7 +1074,7 @@ def needs_asking(pages: Sequence[FirstRunPage]) -> bool:
     walk when another page opens it, so choosing Custom, or adding accounts on the way,
     brings them in.
     """
-    return any(not page.answered() and page.applies(SetupMode.QUICK) for page in pages)
+    return any(page_type.asks_first_run(prefs) for page_type in SETUP_PAGE_TYPES)
 
 
 # -- the dialog ---------------------------------------------------------------------
@@ -1121,14 +1272,16 @@ class FirstRunDialog(QDialog):
         walk = self.walk
         index = walk.index(self.current)
         self._step.setText(STEP.format(n=index + 1, m=len(walk)))
+        busy = self.current.busy()
         self._back.setVisible(index > 0)
+        self._back.setEnabled(not busy)
         self._commit.setText(FINISH if index == len(walk) - 1 else NEXT)
-        self._commit.setEnabled(self.current.ready())
+        self._commit.setEnabled(self.current.ready() and not busy)
 
     def _advance(self) -> None:
         """Next or Finish: record the page shown, and move on only once that reached disk."""
         page = self.current
-        if not page.ready():
+        if page.busy() or not page.ready():
             return
         if not page.record():
             logger.warning("Could not save the setup answer to %r; the page stays open", page.heading)
@@ -1143,6 +1296,8 @@ class FirstRunDialog(QDialog):
             self._show(walk[index + 1])
 
     def _go_back(self) -> None:
+        if self.current.busy():
+            return
         walk = self.walk
         index = walk.index(self.current)
         if index > 0:

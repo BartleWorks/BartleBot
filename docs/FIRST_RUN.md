@@ -12,7 +12,9 @@ Qt-free module, so BartleBuddy can ask the same question and write the same keys
 
 1. **Quick or Custom.** Two cards, Quick first, recommended and selected. The choice is
    not stored: it only decides which pages follow. Custom adds the Options page, whose
-   three choices Quick leaves on without showing them.
+   three choices Quick leaves on without showing them. Like the combat question's, the
+   cards are stacked at the page's full width, each led by a radio button, so they read as
+   two answers to one question rather than a gallery (`_CardsPage`).
 2. **Every page after it that applies.** A page applies under the mode chosen and with
    what is set up so far.
 
@@ -25,14 +27,20 @@ included, so choosing Custom can change it.
 - **Next waits for a page that isn't ready.** A page's `ready()` says its answer can be
   recorded, and it emits `ready_changed` when that may have changed; Next is disabled
   until it is. The game folder page is the one that uses it.
+- **Back and Next wait for a page with work running.** A page's `busy()` holds the user on
+  it, and both are disabled until it ends. The Game art page is the one that uses it,
+  while the extraction runs.
 - **Back records nothing.**
 - **There is no Skip.** Escape and the close button reject and write nothing more. What
   was answered stays answered, and the next launch opens on the pages still unanswered.
 
 ## First run and rerun
 
-`AppController._offer_first_run` builds the pages (`setup_pages`) and opens the dialog
-when any page is unanswered. It runs from `_after_window_shown`, before a file named at
+`AppController._offer_first_run` asks `needs_asking` first, which reads each page's
+answer from the stores without building it (`FirstRunPage.asks_first_run`), and only then
+builds the pages (`setup_pages`) and opens the dialog. Building them searches the registry
+and every Steam library, draws the account cards and measures the screen, which a launch
+with nothing to ask should not pay for. It runs from `_after_window_shown`, before a file named at
 launch is imported, so the two modals never stack.
 
 - **A first run** walks the pages unanswered when the dialog opened. A page answered on
@@ -49,7 +57,7 @@ applies: a setup opened for it alone would end on Quick or Custom with nothing a
 open again every launch. It is still in the walk when another page opens setup and the
 user picks Custom.
 
-Closing setup, finished or not, calls each page's `stop()`, which is how the Card art
+Closing setup, finished or not, calls each page's `stop()`, which is how the Game art
 page stops an extraction that is running.
 
 After either, finished or closed, the Combat tab rereads its source, since the combat page
@@ -106,7 +114,7 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | What may bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
 | Where do you play, and how quick is your connection? | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
 | A few more choices (Custom only) | `setup.extract_art`, `auto_group_players` and `default_refill_potions`, all in BartleBot's `settings.json` (`general`), through `options/custom_setup.record_options`; the last two are the keys Settings › Bot's OK writes | `options_answered`: `setup.extract_art` is stored |
-| Extracting the card art (whenever card art is on, as under Quick) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, or art is already extracted |
+| Extracting the game art (whenever game art is on, as under Quick, and none is extracted) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, the Options page turned the art off, or art is already extracted |
 
 ### The combat question
 
@@ -134,6 +142,12 @@ Steam install was never found. `bartlebot/shared/game_install.py` looks further,
    `vdf` package. A library counts when it holds Wizard101's manifest,
    `steamapps/appmanifest_799960.acf`, and the game is in the `installdir` it names under
    `steamapps/common`.
+5. **The game running now**: the folder above `Bin` of each running
+   `WizardGraphicalClient.exe` (`running_executables`, a process snapshot read with
+   ctypes). Last, because it is there only while the game runs, but it finds an install
+   every other place missed: a user who can play has one somewhere. So `apply_install`
+   stores a folder found this way as the folder chosen, and the next launch finds it with
+   the game closed.
 
 A folder without the client is passed over for the next, so a stale choice or a library
 on a drive that is gone falls back rather than failing. At startup `AppController` calls
@@ -147,6 +161,17 @@ was found in, that the game is installed there, or that it isn't, naming the mis
 client. Next is enabled only for a folder holding it. On a rerun the page opens on the
 folder in use, and Next on a detected folder left as it was writes nothing, so a detected
 install that moves is still found.
+
+- **It watches for the game.** While nothing is found and the field is empty, the page
+  looks for a running game every 2 seconds, while it is shown (`look_for_running_game`),
+  and its intro says so: a user who starts Wizard101 the way they usually do has the
+  folder filled in, "Found in the game running now." A folder the user typed is never
+  replaced. Next stores the folder, since only a running game would find it again.
+- **A rerun with nothing found passes it.** There, an empty field enables Next, the line
+  says the folder stays unset and launching fails until it is chosen, and Next writes
+  nothing. The rerun is how every other answer is changed, and a game on a drive that is
+  gone must not hold them all. A folder typed that lacks the client is still refused. A
+  first run still needs the folder: without it the app has nothing to launch.
 
 The suite looks in no real place: `tests/conftest.py` puts `NoPlaces` in, so a game on the
 developer's machine can't decide which pages setup shows. A test that wants an install
@@ -267,8 +292,8 @@ be unset.
 Under Custom only, after Realm and Safety Delay: **A few more choices**, three check
 boxes, all on, each with a description of what it costs, every one shown.
 
-- **Extract card art**: the game's own pictures for spell cards, schools and worlds,
-  copied into AppData, about 35 MB, never shared. Off, there is no Card art page.
+- **Extract game art**: the game's own pictures for spell cards, schools, worlds and tags,
+  copied into AppData, about 35 MB, never shared. Off, there is no Game art page.
 - **Automatically group players**: Settings › Bot's row, which needs every account on the
   others' friends lists.
 - **Refill potions**: Settings › Bot's row, which spends gold.
@@ -276,19 +301,19 @@ boxes, all on, each with a description of what it costs, every one shown.
 The last two are built for both by `gui/settings/players_rows`, so the page and the tab
 say the same. Next writes all three through `options/custom_setup.record_options`:
 `setup.extract_art`, which is also the page's record, and the two Bot tab keys. Turning
-Extract card art off emits `walk_changed`, so the step count drops and Next becomes
+Extract game art off emits `walk_changed`, so the step count drops and Next becomes
 Finish.
 
 Quick writes none of the three. Grouping and refills stay as they are, which on a first
 run is their default, and the art is extracted: a rerun with Quick never turns a setting
 off that the user turned on in Settings, or the reverse.
 
-### Card art
+### Game art
 
-The last page whenever card art is on: always under Quick, and under Custom when Extract
-card art is checked. Entered, it runs `game/art_extraction.extract_art` in a worker thread
+The last page whenever game art is on and none is extracted yet: always under Quick, and
+under Custom when Extract game art is checked. Entered, it runs `game/art_extraction.extract_art` in a worker thread
 (`asyncio.to_thread`), from a task its `ArtExtraction` owns
-(`gui/settings/card_art_row.py`), and shows a progress bar and the step it is on, with a
+(`gui/settings/game_art_row.py`), and shows a progress bar and the step it is on, with a
 count where the step has one. Finish waits for the run to end.
 
 - **It reads the game** from the folder the app launches from
@@ -305,8 +330,17 @@ count where the step has one. Finish waits for the run to end.
   `art.partial` beside the art folder and swaps it in only once it finished, so a stopped
   run removes its partial folder and leaves the art before it, or none. The page stays
   unanswered, and the next first run asks it again.
-- **Back and Next again** keep a run going; one that failed is tried again.
+- **Back and Finish wait while it runs** (`FirstRunPage.busy`): Back to the Options page
+  could turn the art off under a run that would install it anyway. Escape and the close
+  button still leave, and stop it. Once a run has failed, Back and Next try it again.
 
-Art already extracted, by the tool or Settings, answers the page. Settings › General ›
-**Card art** runs the same extraction later, after a game patch adds spells
-(`bartlebot/gui/settings/CLAUDE.md`, "The Card art row").
+Art already extracted, by the tool or Settings, answers the page, and so does Extract game art
+turned off on the Options page: the page applies under Quick whatever Custom chose, so
+without it a user who turned the art off would have setup open on every launch.
+
+**Art already extracted keeps the page out of a rerun too**, under either mode: setup never
+extracts the art again. Settings › General › **Game art** does, after a game patch adds
+spells (`bartlebot/gui/settings/CLAUDE.md`, "The Game art row"). Whether there was art is
+read when the page is built, so its own run finishing never takes it out of the walk. A
+user who turned the art off has none, so a rerun under Quick still ends on the page, in
+case they changed their mind.

@@ -26,7 +26,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QFontMetrics, QIcon
 from PyQt6.QtWidgets import (
     QDialog,
     QFormLayout,
@@ -35,6 +35,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QRadioButton,
     QScrollArea,
     QStackedWidget,
     QVBoxLayout,
@@ -110,6 +111,11 @@ class StartCard(ThemedMixin, QFrame):
     The icon is extracted art (a tag's medallion) or, for the blank bot, one of the
     app's own glyphs. A card with neither is the same card without the picture: most
     installs have no extracted art.
+
+    With ``radio``, a radio button leads the card and is checked while it is selected,
+    for a page whose cards are the answers to one question, as setup's are: a gallery of
+    tiles does not say the choice is one of them, and a radio does. It only shows the
+    selection; clicks and focus go to the card, as on a card without one.
     """
 
     chosen = pyqtSignal()
@@ -125,6 +131,7 @@ class StartCard(ThemedMixin, QFrame):
         glyph: str = "",
         source: Origin | None = None,
         detail: str = "",
+        radio: bool = False,
         parent: QWidget | None = None,
     ) -> None:
         """``source`` is where a template comes from, shown as its Source pill (#149);
@@ -144,6 +151,16 @@ class StartCard(ThemedMixin, QFrame):
         row = QHBoxLayout(self)
         row.setContentsMargins(12, 10, 12, 10)
         row.setSpacing(10)
+        name_font = THEME.ui_font(THEME.font_body_px + 1, bold=True)
+        self._radio: QRadioButton | None = None
+        if radio:
+            self._radio = QRadioButton()
+            self._radio.setAutoExclusive(False)
+            self._radio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self._radio.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            # As tall as the name's line, so the indicator, drawn centered, sits level with it.
+            self._radio.setFixedHeight(QFontMetrics(name_font).height())
+            row.addWidget(self._radio, 0, Qt.AlignmentFlag.AlignTop)
         self._icon_view = ArtIconView(SECTION_ICON_PX)
         self._icon_view.set_icon(icon)
         row.addWidget(self._icon_view, 0, Qt.AlignmentFlag.AlignTop)
@@ -156,7 +173,7 @@ class StartCard(ThemedMixin, QFrame):
         text.setSpacing(2)
         row.addLayout(text, 1)
         self._name = QLabel(name)
-        self._name.setFont(THEME.ui_font(THEME.font_body_px + 1, bold=True))
+        self._name.setFont(name_font)
         self._source_pill: QLabel | None = None
         if source is None:
             text.addWidget(self._name)
@@ -211,9 +228,16 @@ class StartCard(ThemedMixin, QFrame):
     def has_icon(self) -> bool:
         return self._icon_view.icon() is not None
 
+    @property
+    def radio(self) -> QRadioButton | None:
+        """The radio button leading the card, or None on a card built without one."""
+        return self._radio
+
     def set_selected(self, on: bool) -> None:
         if on != self._selected:
             self._selected = on
+            if self._radio is not None:
+                self._radio.setChecked(on)
             self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:

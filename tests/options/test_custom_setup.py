@@ -1,4 +1,4 @@
-"""What Custom setup's Options page and the Card art page record (epic #215, Stage 7, #232).
+"""What Custom setup's Options page and the Game art page record (epic #215, Stage 7, #232).
 
 Checked against ``settings.json`` on disk, since a first run that closed after the page
 has to find the answer there next launch.
@@ -65,6 +65,18 @@ def test_record_art_answered_writes_its_key(sm):
 
     assert _general_on_disk(sm)[ART_ANSWERED_KEY] is True
     assert art_answered(sm)
+
+
+def test_turning_art_off_answers_the_art_page(sm):
+    record_options(sm, extract_art=False, auto_group=True, refill=True)
+
+    assert art_answered(sm)
+
+
+def test_turning_art_on_leaves_the_art_page_to_ask(sm):
+    record_options(sm, extract_art=True, auto_group=True, refill=True)
+
+    assert not art_answered(sm)
 
 
 def test_art_extracted_before_setup_answers_the_art_page(sm):

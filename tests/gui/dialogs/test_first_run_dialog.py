@@ -27,6 +27,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     COMBAT_HEADING,
     FINISH,
     GAME_FOLDER_HEADING,
+    GAME_FOLDER_UNSET,
     LAUNCH_PROFILE_HEADING,
     MODE_CARDS,
     MODE_HEADING,
@@ -38,12 +39,13 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     RECOMMENDED_DETAIL,
     SAVE_FAILED,
     SETTINGS_COMBAT,
+    SETUP_PAGE_TYPES,
     TACTIC_CARDS,
     AccountsPage,
-    CardArtPage,
     CombatQuestionPage,
     FirstRunDialog,
     FirstRunPage,
+    GameArtPage,
     GameFolderPage,
     LaunchProfilePage,
     ModePage,
@@ -51,6 +53,7 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     QuicksellPage,
     RealmAndDelayPage,
     SetupMode,
+    needs_asking,
     setup_pages,
 )
 from bartlebot.gui.settings import accounts_tab
@@ -61,6 +64,8 @@ from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.options import bot_options, option_values
+from bartlebot.options.custom_setup import ART_ANSWERED_KEY, EXTRACT_ART_KEY
+from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.options.quicksell_setup import SellFlags, current_flags, write_sell_flags
 from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
 from bartlebot.settings_manager import SettingsManager, default_for
@@ -397,6 +402,37 @@ def test_a_click_on_a_card_selects_it(qapp, prefs):
     assert [card.selected for card in page.cards] == [False, True]
 
 
+def test_each_card_leads_with_a_radio_checked_while_it_is_selected(qapp, prefs):
+    page = CombatQuestionPage(prefs)
+    assert [card.radio.isChecked() for card in page.cards] == [True, False]
+
+    QTest.mouseClick(page.card_for(BossTactic.EVERYONE_ATTACKS), Qt.MouseButton.LeftButton)
+    assert [card.radio.isChecked() for card in page.cards] == [False, True]
+
+    page.select(None)
+    assert [card.radio.isChecked() for card in page.cards] == [False, False]
+
+
+def test_a_cards_radio_leaves_clicks_and_focus_to_the_card(qapp):
+    """The card selects on a click or on focus; a radio taking either would bypass it."""
+    for card in ModePage().cards:
+        assert card.radio.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        assert card.radio.focusPolicy() == Qt.FocusPolicy.NoFocus
+
+
+def test_the_cards_are_stacked_each_the_pages_full_width(qapp):
+    dialog = FirstRunDialog([_Page("First?")])
+    dialog.show()
+    qapp.processEvents()
+
+    page = dialog.mode_page
+    first, second = page.cards
+    assert first.x() == second.x() == 0
+    assert first.width() == second.width() == page.width()
+    assert second.y() > first.geometry().bottom()
+    dialog.close()
+
+
 @pytest.mark.parametrize(
     ("tactic", "stored"),
     [(BossTactic.ONE_HITTER, None), (BossTactic.EVERYONE_ATTACKS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)],
@@ -454,8 +490,59 @@ def test_the_pages_are_in_the_plans_order(qapp, prefs):
         QuicksellPage,
         RealmAndDelayPage,
         OptionsPage,
-        CardArtPage,
+        GameArtPage,
     ]
+
+
+def test_the_page_types_are_the_pages_built(qapp, prefs):
+    assert [type(page) for page in setup_pages(prefs)] == list(SETUP_PAGE_TYPES)
+
+
+def _two_accounts() -> None:
+    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO)]
+
+
+def _everything_answered(prefs: PreferenceStore, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(game_install, "_places", _Launcher(_install(tmp_path / "Wizard101")))
+    _two_accounts()
+    settings = SettingsManager.instance()
+    settings.launch_profiles = [{"name": "Everyone", "accounts": [ONE, TWO]}]
+    prefs.set(ANSWERED_KEY, True)
+    settings.set_general(QUICKSELL_ANSWERED, True)
+    settings.set_general(REALM_DELAY_ANSWERED, True)
+    settings.set_general(ART_ANSWERED_KEY, True)
+
+
+#: Machine states the first-run check is asked in, each a function of (prefs, tmp_path, monkeypatch).
+_STATES = {
+    "fresh": lambda prefs, tmp_path, monkeypatch: None,
+    "one account": lambda prefs, tmp_path, monkeypatch: setattr(
+        SettingsManager.instance(), "accounts", [{"username": ONE, "alias": ""}]
+    ),
+    "two accounts": lambda prefs, tmp_path, monkeypatch: _two_accounts(),
+    "art turned off": lambda prefs, tmp_path, monkeypatch: SettingsManager.instance().set_general(
+        EXTRACT_ART_KEY, False
+    ),
+    "everything answered": _everything_answered,
+}
+
+
+@pytest.mark.parametrize("state", list(_STATES))
+def test_each_page_asks_a_first_run_as_its_answer_and_walk_say(qapp, prefs, tmp_path, monkeypatch, state):
+    """``asks_first_run`` reads the stores without building the page; it must agree with the page built."""
+    _STATES[state](prefs, tmp_path, monkeypatch)
+
+    for page in setup_pages(prefs):
+        built = not page.answered() and page.applies(SetupMode.QUICK)
+        assert type(page).asks_first_run(prefs) == built, type(page).__name__
+
+
+def test_a_first_run_is_needed_until_every_page_is_answered(qapp, prefs, tmp_path, monkeypatch):
+    assert needs_asking(prefs)
+
+    _everything_answered(prefs, tmp_path, monkeypatch)
+
+    assert not needs_asking(prefs)
 
 
 def test_the_dialog_needs_a_page(qapp):
@@ -680,6 +767,101 @@ def test_a_folder_changed_to_on_a_rerun_is_stored(qapp, prefs, tmp_path, monkeyp
     assert page.record()
     assert prefs.get(game_install.INSTALL_DIR_KEY) == str(other)
     assert GameFolderPage(prefs).folder_input.path() == str(other)
+
+
+class _Running(game_install.NoPlaces):
+    """A machine where the game is found only while it runs, from *folder*; None until it starts."""
+
+    def __init__(self, folder: Path | None = None) -> None:
+        self.folder = folder
+
+    def running_clients(self) -> list[Path]:
+        return [] if self.folder is None else [self.folder / "Bin" / "WizardGraphicalClient.exe"]
+
+
+def test_starting_the_game_fills_the_folder_in_and_next_stores_it(
+    qapp, prefs, tmp_path, monkeypatch, wizwalker_install
+):
+    """Found only while the game runs, so Next stores it: closed, nothing would find it again."""
+    machine = _Running()
+    monkeypatch.setattr(game_install, "_places", machine)
+    dialog = FirstRunDialog(setup_pages(prefs))
+    _next(dialog)
+    page = _folder_page(dialog)
+    assert page.polling
+    assert not page.look_for_running_game()
+    assert not dialog.commit_button.isEnabled()
+
+    machine.folder = _install(tmp_path / "Games" / "W101")
+
+    assert page.look_for_running_game()
+    assert page.folder_input.path() == str(machine.folder)
+    assert page.status_text == "Found in the game running now."
+    assert not page.polling
+    assert dialog.commit_button.isEnabled()
+    _next(dialog)
+    assert prefs.get(game_install.INSTALL_DIR_KEY) == str(machine.folder)
+    assert wizwalker_install.get_wiz_install() == machine.folder.absolute()
+
+
+def test_a_folder_the_user_typed_is_never_replaced_by_a_running_game(qapp, prefs, tmp_path, monkeypatch):
+    monkeypatch.setattr(game_install, "_places", _Running(_install(tmp_path / "Running")))
+    page = GameFolderPage(prefs)
+    page.folder_input.set_path(tmp_path / "Typed")
+
+    assert not page.look_for_running_game()
+    assert page.folder_input.path() == str(tmp_path / "Typed")
+
+
+def test_a_page_with_the_game_found_never_looks_for_it_running(qapp, prefs, tmp_path, monkeypatch):
+    monkeypatch.setattr(game_install, "_places", _Launcher(_install(tmp_path / "Wizard101")))
+
+    assert not GameFolderPage(prefs).polling
+
+
+def test_closing_setup_stops_looking_for_a_running_game(qapp, prefs):
+    dialog = FirstRunDialog(setup_pages(prefs))
+    page = _folder_page(dialog)
+    assert page.polling
+
+    dialog.reject()
+
+    assert not page.polling
+
+
+def test_a_rerun_with_nothing_found_passes_the_page_and_writes_nothing(qapp, prefs):
+    """The rerun is how the other answers are changed; a game on a drive that is gone must not hold them."""
+    dialog = FirstRunDialog(setup_pages(prefs, rerun=True), rerun=True)
+    _next(dialog)
+    page = _folder_page(dialog)
+    assert dialog.current is page
+
+    assert page.status_text == GAME_FOLDER_UNSET
+    assert dialog.commit_button.isEnabled()
+    _next(dialog)
+    assert dialog.current is not page
+    assert prefs.get(game_install.INSTALL_DIR_KEY) is None
+
+
+def test_a_rerun_still_refuses_a_folder_without_the_game(qapp, prefs, tmp_path):
+    dialog = FirstRunDialog(setup_pages(prefs, rerun=True), rerun=True)
+    _next(dialog)
+    page = _folder_page(dialog)
+    empty = tmp_path / "Empty"
+    empty.mkdir()
+
+    page.folder_input.set_path(empty)
+
+    assert page.status_text == FOLDER_MISSING
+    assert not dialog.commit_button.isEnabled()
+
+
+def test_a_first_run_with_nothing_found_still_needs_a_folder(qapp, prefs):
+    dialog = FirstRunDialog(setup_pages(prefs))
+    _next(dialog)
+
+    assert dialog.current is _folder_page(dialog)
+    assert not dialog.commit_button.isEnabled()
 
 
 # -- accounts (Stage 3) ---------------------------------------------------------------------
