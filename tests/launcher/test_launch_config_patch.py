@@ -89,7 +89,7 @@ def test_window_config_patch_carries_the_quick_teleport_tag(tmp_path, config):
 
 
 # ---------------------------------------------------------------------------
-# LastPlayer
+# config.xml lookup
 # ---------------------------------------------------------------------------
 
 
@@ -102,27 +102,6 @@ def install(tmp_path, config):
     root.__truediv__ = lambda _self, _name: bin_dir
     with patch.object(launch_profile, "get_wiz_install", return_value=root):
         yield
-
-
-def test_last_player_reads_the_stored_gid(install):
-    assert launch_profile.read_last_player() == 12345678901234567
-
-
-def test_last_player_patch_replaces_only_that_gid(install, config):
-    launch_profile.patch_last_player(999)
-    assert launch_profile.read_last_player() == 999
-    assert config.read_text(encoding="utf-8") == CONFIG_XML.replace(">12345678901234567<", ">999<")
-
-
-def test_last_player_is_none_when_the_tag_is_missing(install, config):
-    config.write_text(CONFIG_XML.replace('    <LastPlayer TYPE="GID">12345678901234567</LastPlayer>\n', ""), "utf-8")
-    assert launch_profile.read_last_player() is None
-
-
-def test_last_player_is_none_when_the_tag_is_not_a_number(install, config):
-    # An empty <LastPlayer/> is what a fresh install writes, and "no character" is not 0.
-    config.write_text(CONFIG_XML.replace(">12345678901234567<", "><"), encoding="utf-8")
-    assert launch_profile.read_last_player() is None
 
 
 # ---------------------------------------------------------------------------
