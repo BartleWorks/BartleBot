@@ -169,3 +169,34 @@ def test_the_title_shows_what_it_was_given(qapp):
     bar.set_title("BartleBot — farm.json")
 
     assert bar.title == "BartleBot — farm.json"
+
+
+# -- the update button (#27) ------------------------------------------------------------
+
+
+def test_the_update_button_is_hidden_until_an_update_is_put_off(qapp):
+    bar, _menu_bar = _bar()
+
+    assert bar.update_button.isHidden()
+
+
+def test_the_update_button_names_the_version_and_hides_again_for_none(qapp, parentless_shows):
+    bar, _menu_bar = _bar()
+
+    bar.set_update_text("Update 1.2.0")
+    assert not bar.update_button.isHidden()
+    assert bar.update_button.text() == "Update 1.2.0"
+    bar.set_update_text("")
+    assert bar.update_button.isHidden()
+    assert parentless_shows == []
+
+
+def test_the_update_button_takes_its_click_and_asks_for_the_popup(shown_bar, qtbot):
+    bar, _menu_bar = shown_bar
+    bar.set_update_text("Update 1.2.0")
+    qtbot.waitUntil(lambda: bar.update_button.isVisible())
+    center = bar.update_button.geometry().center()
+
+    assert bar.is_control_at(center)
+    with qtbot.waitSignal(bar.update_requested, timeout=1000):
+        qtbot.mouseClick(bar.update_button, Qt.MouseButton.LeftButton)

@@ -214,6 +214,14 @@ class MainWindow(QMainWindow):
         # the screen the window is on, both of which move while the menu is closed.
         self._launch_menu.aboutToShow.connect(self._rebuild_launch_menu)
 
+        # Help menu. Check for Updates runs the startup check on demand, whatever the
+        # setting; AppController enables it in an installed build only (gui/update_prompt.py).
+        help_menu = menu_bar.addMenu("Help")
+        help_menu.setToolTipsVisible(True)
+        self.action_check_updates = QAction("Check for Updates…", self)
+        self.action_check_updates.setEnabled(False)
+        help_menu.addAction(self.action_check_updates)
+
         self._build_title_bar(menu_bar)
 
     def _pane_actions(self) -> tuple[QAction, QAction, QAction, QAction]:

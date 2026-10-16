@@ -86,6 +86,7 @@ def startup(qapp, monkeypatch, tmp_path):
     for name in ("_after_window_shown", "_offer_first_run", "_rerun_setup", "_open_setup"):
         setattr(ns, name, getattr(AppController, name).__get__(ns))
     ns._import_from_arguments = lambda: state.events.append("import")
+    ns._updates = SimpleNamespace(check_at_startup=lambda: None)
 
     def answer(dialog: FirstRunDialog) -> int:
         state.events.append("first run")
@@ -129,6 +130,15 @@ def test_it_opens_on_a_first_run_with_the_combat_question(startup):
     assert len(startup.opened) == 1
     assert not startup.opened[0].rerun
     assert _walked(startup.opened[0]) == [CombatQuestionPage]
+
+
+def test_the_update_check_starts_before_setup_opens(startup):
+    """It opens nothing itself, so it runs while setup is answered (``gui/update_prompt.py``)."""
+    startup.ns._updates = SimpleNamespace(check_at_startup=lambda: startup.events.append("update check"))
+
+    startup.ns._after_window_shown()
+
+    assert startup.events[:2] == ["update check", "first run"]
 
 
 def test_it_opens_once_and_never_after_finish(startup):

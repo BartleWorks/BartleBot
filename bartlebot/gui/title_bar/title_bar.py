@@ -10,6 +10,10 @@ else (the logo, the title, the space between) is caption.
 The menu bar is the window's own ``QMenuBar``, moved here rather than rebuilt, so every
 action and its Alt mnemonic work as they did. Each layout toggle is bound to the View menu
 action that does the same thing, so the two can never disagree about what is showing.
+
+Left of the toggles sits the update button, hidden until an update has been put off with
+*Not now*: "Update 1.2.0" in accent text, which opens the update popup again
+(``gui/update_prompt.py``). It is a button, so it takes its click rather than dragging.
 """
 
 from __future__ import annotations
@@ -24,6 +28,7 @@ from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.title_bar.caption_button import CaptionButton, CaptionKind
 from bartlebot.gui.widgets.buttons.icon_button import IconButton
+from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
 
 #: The logo's side, and a layout toggle's, in logical pixels.
@@ -52,6 +57,8 @@ class TitleBar(ThemedMixin, QWidget):
     minimize_requested = pyqtSignal()
     maximize_requested = pyqtSignal()
     close_requested = pyqtSignal()
+    #: The update button was clicked.
+    update_requested = pyqtSignal()
 
     def __init__(self, menu_bar: QMenuBar, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -73,6 +80,12 @@ class TitleBar(ThemedMixin, QWidget):
         self._title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         row.addWidget(self._title, stretch=2)
         row.addStretch(1)
+        self._update = LinkButton("", font_size=THEME.font_body_px, parent=self)
+        self._update.setToolTip("See what is new, and install it")
+        self._update.setVisible(False)
+        self._update.clicked.connect(self.update_requested)
+        row.addWidget(self._update, alignment=Qt.AlignmentFlag.AlignVCenter)
+        row.addSpacing(10)
         self._toggle_row = QHBoxLayout()
         self._toggle_row.setSpacing(2)
         row.addLayout(self._toggle_row)
@@ -139,6 +152,15 @@ class TitleBar(ThemedMixin, QWidget):
 
     def set_title(self, text: str) -> None:
         self._title.setText(text)
+
+    @property
+    def update_button(self) -> LinkButton:
+        return self._update
+
+    def set_update_text(self, text: str) -> None:
+        """Show the update button with ``text``, or hide it for an empty one."""
+        self._update.setText(text)
+        self._update.setVisible(bool(text))
 
     def set_maximized(self, maximized: bool) -> None:
         """Swap the maximize glyph for the restore one while the window is maximized."""

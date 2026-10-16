@@ -64,6 +64,7 @@ from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
 from bartlebot.gui.single_instance import LaunchQueue, SingleInstance, raise_window
+from bartlebot.gui.update_prompt import UpdatePrompt
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
@@ -301,6 +302,7 @@ class AppController(QObject):
         self._share_drops = ShareFileDrops(self)
         self._share_drops.files_dropped.connect(self._import_dropped)
         self._app.installEventFilter(self._share_drops)
+        self._wire_updates()
         QTimer.singleShot(0, self._after_window_shown)
 
     def _restore_game_display_settings(self) -> None:
@@ -1219,15 +1221,48 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _after_window_shown(self) -> None:
-        """What waits for the window: the first-run questions, then a file named at launch.
+        """What waits for the window: the update check, the first-run questions, then a file named at launch.
 
         One callback rather than two timers, because each opens a modal dialog and a timer
         still pending fires inside the first one's ``exec()``, opening the second on top of it.
         A timer's callback is a synchronous slot, so ``exec()`` is safe here
         (``bartlebot/gui/CLAUDE.md``, qasync).
+
+        The update check goes first because it opens nothing itself: it runs in the
+        background while setup is answered, and its popup waits for every dialog here to
+        close (``gui/update_prompt.py``).
         """
+        self._updates.check_at_startup()
         self._offer_first_run()
         self._import_from_arguments()
+
+    def _wire_updates(self) -> None:
+        """The update check, its popup, the title bar's button and Help › Check for Updates… (#27)."""
+        self._updates = UpdatePrompt(
+            self._window,
+            busy=lambda: QApplication.activeModalWidget() is not None,
+            running=self._bot_busy,
+            # The window's own close, so the quit path unhooks every client first.
+            restart=self._window.close,
+            parent=self,
+        )
+        self._updates.button_changed.connect(self._window.title_bar.set_update_text)
+        self._window.title_bar.update_requested.connect(self._updates.open_offer)
+        action = self._window.action_check_updates
+        action.setEnabled(self._updates.can_check)
+        if not self._updates.can_check:
+            action.setToolTip("Only an installed BartleBot updates itself.")
+        action.triggered.connect(lambda: self._updates.check_now())
+
+    @property
+    def updates(self) -> UpdatePrompt:
+        return self._updates
+
+    def _bot_busy(self) -> bool:
+        """Whether a bot is starting or running: the update popup waits for it to stop."""
+        if self._current_machine is not None:
+            return True
+        return any(task is not None and not task.done() for task in (self._bot_task, self._run_probe))
 
     def _offer_first_run(self) -> None:
         """Open setup when any page is unanswered, here or in BartleBuddy (epic #215).
