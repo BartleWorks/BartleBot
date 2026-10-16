@@ -27,6 +27,9 @@ dependencies = [
     # Installs and updates a packaged build (docs/INSTALLER.md). Pinned, never floating:
     # vpk in release.yml is the same version, and a test holds the two together.
     "velopack==1.2.161",
+    # Verifies the update feed's Ed25519 signature (bartlebot/updates/feed.py), and signs
+    # it in release.yml (tools/sign_feed.py).
+    "cryptography>=44",
 ]
 
 [dependency-groups]

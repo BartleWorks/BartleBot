@@ -29,6 +29,7 @@ from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.preferences import PreferenceStore
 from bartlebot.shared.strategy_models import PlayerCombatStrategy
 from bartlebot.shared.vendor import vendor_dir
+from bartlebot.updates.feed import staging_dir
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 from tests.content.subgraphs.test_subgraph_store import _defn
 
@@ -47,6 +48,7 @@ def _default_write_paths() -> dict[str, Path]:
         "shared preferences": PreferenceStore().path,
         "session logs": session_log_dir(),
         "DSL check cache": dsl_check_cache.cache_path(),
+        "update staging": staging_dir(),
     }
 
 
