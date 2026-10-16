@@ -50,7 +50,7 @@ under the project root, and no reader needs to know it is frozen. The lists are 
 |---|---|---|
 | `DATA_DIRS` | `bots/`, `templates/`, `subgraphs/`, `strategies/`, `bartlebot/game/data/`, `bartlebot/gui/icons/` | the Official content, the game snapshots and the type dump, and the icons |
 | `DATA_FILES` | `bartlebot/gui/logo/bartlebot.svg` | the logo, drawn at every size from this one file |
-| `METADATA` | `bartlebot` | `importlib.metadata.version("bartlebot")` is how the app knows its version |
+| `METADATA` | `bartlebot`, `PyQt6`, `qasync`, `transitions`, `wizwalker` | `importlib.metadata.version("bartlebot")` is how the app knows its version, and the session log's header names it and the four libraries' (`logging_setup.HEADER_LIBRARIES`) |
 | `WHOLE_PACKAGES` | `katsuba` | `katsuba.op` and `katsuba.wad` are submodules its native extension registers when it loads. No file names them, so an import scan leaves the package out |
 
 `tools/` never ships: it is developer scripts. That is why the type dump art extraction

@@ -15,6 +15,7 @@ overwhelming majority of them were noise of three specific kinds:
 """
 
 import datetime
+import importlib.metadata
 import logging
 import logging.handlers
 import platform
@@ -26,6 +27,10 @@ from pathlib import Path
 #: reach the session file. Set it with ``logger.info(msg, extra=GUI_ONLY)`` on a
 #: message that restates something another logger has already written.
 GUI_ONLY = {"gui_only": True}
+
+#: Libraries whose versions the session header names, beside the app's own. A packaged
+#: build carries their metadata only because ``tools/build_package.py`` copies it.
+HEADER_LIBRARIES = ("PyQt6", "qasync", "transitions", "wizwalker")
 
 #: Third-party loggers whose DEBUG output is not actionable here. Every one of these
 #: is startup chatter about platforms we do not run on — keyring probing KWallet and
@@ -227,23 +232,27 @@ def configure_logging() -> None:
 
     logger = logging.getLogger(__name__)
     logger.info("=== BartleBot startup ===")
+    logger.info("Version: %s", _distribution_version("bartlebot"))
     logger.info("Python %s", sys.version.split()[0])
     logger.info("Platform: %s", platform.platform())
     from bartlebot.packaging.build_kind import build_kind  # noqa: PLC0415
 
     logger.info("Build: %s", build_kind())
-    for lib in ("PyQt6", "qasync", "transitions", "wizwalker"):
-        try:
-            import importlib.metadata
-
-            logger.info("%s==%s", lib, importlib.metadata.version(lib))
-        except Exception:
-            pass
+    for lib in HEADER_LIBRARIES:
+        logger.info("%s==%s", lib, _distribution_version(lib))
 
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 - read once the handlers exist
 
     if set_turn_trace(SettingsManager.instance().record_combat_decisions):
         logger.info("Combat decision trace on; each turn's choices are logged at DEBUG")
+
+
+def _distribution_version(name: str) -> str:
+    """The installed version of ``name``, or ``unknown``, said rather than left out, when no metadata is found."""
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return "unknown"
 
 
 def set_turn_trace(enabled: bool) -> bool:

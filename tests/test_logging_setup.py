@@ -393,8 +393,11 @@ def test_the_session_file_has_the_turn_trace_only_when_asked(tmp_path, monkeypat
     assert "a memory read" not in text
 
 
-def test_the_session_header_names_the_build_and_pillow_stays_quiet(tmp_path, monkeypatch):
-    """A pasted log says whether a build or a checkout wrote it, and art extraction adds no Pillow chatter."""
+def test_the_session_header_names_the_version_and_the_build_and_pillow_stays_quiet(tmp_path, monkeypatch):
+    """A pasted log says which version wrote it, and whether a build or a checkout did, and art extraction adds no
+    Pillow chatter."""
+    import importlib.metadata
+
     from bartlebot import logging_setup
 
     root = logging.getLogger()
@@ -413,8 +416,18 @@ def test_the_session_header_names_the_build_and_pillow_stays_quiet(tmp_path, mon
 
     (session,) = tmp_path.glob("bartlebot_*.log")
     text = session.read_text(encoding="utf-8")
+    assert f"Version: {importlib.metadata.version('bartlebot')}" in text
     assert "Build: checkout" in text
+    for lib in logging_setup.HEADER_LIBRARIES:
+        assert f"{lib}=={importlib.metadata.version(lib)}" in text
     assert "DdsImagePlugin" not in text
+
+
+def test_a_version_with_no_metadata_is_said_to_be_unknown():
+    """A build missing a library's metadata says so in the header, rather than leaving the line out unnoticed."""
+    from bartlebot.logging_setup import _distribution_version
+
+    assert _distribution_version("no-such-distribution-anywhere") == "unknown"
 
 
 # ---------------------------------------------------------------------------

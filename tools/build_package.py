@@ -38,8 +38,9 @@ DATA_DIRS = (
     "bartlebot/gui/icons",
 )
 DATA_FILES = ("bartlebot/gui/logo/bartlebot.svg",)
-#: Distributions whose metadata the app reads: ``importlib.metadata.version("bartlebot")``.
-METADATA = ("bartlebot",)
+#: Distributions whose metadata the app reads: ``importlib.metadata.version("bartlebot")``,
+#: and the libraries the session log's header names (``logging_setup.HEADER_LIBRARIES``).
+METADATA = ("bartlebot", "PyQt6", "qasync", "transitions", "wizwalker")
 #: Packages PyInstaller's import scan misses whole. katsuba's ``op`` and ``wad`` are
 #: submodules its native extension registers when it loads, so no file names them.
 WHOLE_PACKAGES = ("katsuba",)

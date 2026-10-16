@@ -5,6 +5,7 @@ import sys
 from bartlebot.game.art_extraction import TYPE_DUMP_DIR
 from bartlebot.gui.logo import LOGO_SVG
 from bartlebot.gui.theming.icon_utils import ICONS_DIR
+from bartlebot.logging_setup import HEADER_LIBRARIES
 from bartlebot.packaging.self_check import game_data_files
 from bartlebot.paths import project_root
 
@@ -48,6 +49,12 @@ def test_the_command_bundles_every_list(tmp_path):
         assert any(arg == name or arg.endswith(f"={name}") for arg in command), name
     assert str(ENTRY) in command
     assert exe.name == "BartleBot.exe"
+
+
+def test_every_version_the_session_header_names_is_bundled():
+    """Without its metadata a library's line in the header reads ``unknown`` in a build."""
+    assert "bartlebot" in METADATA
+    assert set(HEADER_LIBRARIES) <= set(METADATA)
 
 
 def test_install_records_are_stripped_and_metadata_kept(tmp_path):
