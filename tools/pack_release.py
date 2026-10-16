@@ -60,6 +60,9 @@ def pack_command(version: str, vpk: str = "vpk", build: Path = DEFAULT_BUILD, ou
         str(build / "bartlebot.ico"),
         "--shortcuts",
         SHORTCUTS,
+        # A portable zip runs from wherever it is unpacked, outside the install and the
+        # updater, so it is not made (the plan's Out of scope).
+        "--noPortable",
         "--outputDir",
         str(out),
     ]

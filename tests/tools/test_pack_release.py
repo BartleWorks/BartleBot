@@ -37,6 +37,11 @@ def test_only_a_start_menu_shortcut_is_made(tmp_path):
     assert _value(pack_command("1.2.0", build=tmp_path), "--shortcuts") == "StartMenuRoot"
 
 
+def test_no_portable_zip_is_made(tmp_path):
+    """Setup.exe is the one way to install: a portable copy never sees the updater."""
+    assert "--noPortable" in pack_command("1.2.0", build=tmp_path)
+
+
 def test_one_velopack_version_for_the_package_and_vpk():
     lock = tomllib.loads((project_root() / "uv.lock").read_text(encoding="utf-8"))
     (locked,) = [p["version"] for p in lock["package"] if p["name"] == "velopack"]
