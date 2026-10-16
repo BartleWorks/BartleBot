@@ -145,6 +145,11 @@ def staging_dir() -> Path:
     return Path(base) / VENDOR / PRODUCT / "updates"
 
 
+def clear_staging(folder: Path | None = None) -> None:
+    """Remove the staged feed and packages: spent once Velopack has applied them, or the app uninstalled."""
+    shutil.rmtree(folder or staging_dir(), ignore_errors=True)
+
+
 def _is_url(where: str) -> bool:
     return where.startswith(("https://", "http://"))
 

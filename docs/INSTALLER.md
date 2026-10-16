@@ -34,7 +34,8 @@ anything written there would be lost.
 - `%APPDATA%\Bartleby`: the settings, logs, autosaves, the user's own content, and what
   every product by the vendor shares (`shared/vendor.py`).
 - `%LocalAppData%\Bartleby\BartleBot\updates`: an update being downloaded, the verified
-  feed and its packages (*The update check*). Emptied at the start of every download.
+  feed and its packages (*The update check*). Emptied at the start of every download, and
+  removed by the update and uninstall hooks, since it is never the user's data.
 - `%LocalAppData%\Bartleby\BartleBot\cache`: Qt's cache, where the themed stylesheet
   icons are drawn (`icon_utils`). Qt names it from the organization and the application,
   which `AppController` sets before the first stylesheet. **Never drop the organization
@@ -79,13 +80,13 @@ app never starts. Any other launch returns from `run()` and starts as usual.
 |---|---|---|---|
 | `after_install` | after install, before the app is started | writes the install key, registers the six types | 30 s |
 | `before_update` | in the old version, before its folder is replaced | nothing | 15 s |
-| `after_update` | in the new version, after the swap | the same as `after_install` | 15 s |
-| `before_uninstall` | before the folder is removed | deletes the key and BartleBot's types, hands on or removes the shared ones | 30 s |
+| `after_update` | in the new version, after the swap | the same as `after_install`, and removes the staged update | 15 s |
+| `before_uninstall` | before the folder is removed | deletes the key and BartleBot's types, hands on or removes the shared ones, and removes any staged update | 30 s |
 
 Velopack kills a hook that runs past its limit, and the hook runs without a console or
 a window, so a hook may never show UI and never wait on anything. That is why
 `run_velopack()` comes before Qt, logging and the keyring backend. A hook writes a few
-registry values and nothing else: on the spike's machine the install hook took 0.6 s
+registry values and removes one folder of the app's own, and nothing else: on the spike's machine the install hook took 0.6 s
 while it did nothing, almost all of it the frozen interpreter starting, and the suite
 holds the three that write to a tenth of the 15 s limit.
 
