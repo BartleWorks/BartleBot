@@ -33,6 +33,9 @@ anything written there would be lost.
 
 - `%APPDATA%\Bartleby`: the settings, logs, autosaves, the user's own content, and what
   every product by the vendor shares (`shared/vendor.py`).
+- `%LocalAppData%\Bartleby\BartleBot\updates`: an update being downloaded, the verified
+  feed and its packages (*The update check*). Emptied at the start of every download, and
+  removed by the update and uninstall hooks, since it is never the user's data.
 - `%LocalAppData%\Bartleby\BartleBot\cache`: Qt's cache, where the themed stylesheet
   icons are drawn (`icon_utils`). Qt names it from the organization and the application,
   which `AppController` sets before the first stylesheet. **Never drop the organization
@@ -53,8 +56,8 @@ Velopack downloads a delta when the feed has one against the installed version, 
 full package when it doesn't. It checks each package against the SHA-256 in
 `releases.win.json`, and refuses one that differs. Then it replaces `current\` whole, so
 a file dropped from a release is gone afterwards. The before-update hook runs in the old
-version, and the after-update hook in the new one. When and how the app offers an update
-is epic #27's updater stage.
+version, and the after-update hook in the new one. When and how the app offers an update,
+and how it knows the feed is ours, is *The update check* below.
 
 ## Uninstall
 
@@ -77,13 +80,13 @@ app never starts. Any other launch returns from `run()` and starts as usual.
 |---|---|---|---|
 | `after_install` | after install, before the app is started | writes the install key, registers the six types | 30 s |
 | `before_update` | in the old version, before its folder is replaced | nothing | 15 s |
-| `after_update` | in the new version, after the swap | the same as `after_install` | 15 s |
-| `before_uninstall` | before the folder is removed | deletes the key and BartleBot's types, hands on or removes the shared ones | 30 s |
+| `after_update` | in the new version, after the swap | the same as `after_install`, and removes the staged update | 15 s |
+| `before_uninstall` | before the folder is removed | deletes the key and BartleBot's types, hands on or removes the shared ones, and removes any staged update | 30 s |
 
 Velopack kills a hook that runs past its limit, and the hook runs without a console or
 a window, so a hook may never show UI and never wait on anything. That is why
 `run_velopack()` comes before Qt, logging and the keyring backend. A hook writes a few
-registry values and nothing else: on the spike's machine the install hook took 0.6 s
+registry values and removes one folder of the app's own, and nothing else: on the spike's machine the install hook took 0.6 s
 while it did nothing, almost all of it the frozen interpreter starting, and the suite
 holds the three that write to a tenth of the 15 s limit.
 
@@ -180,6 +183,89 @@ CI's, shares the installed app's name.
 This keeps one *window* per user. It does not keep two processes off one game client: a
 checkout, BartleBuddy or another tool can still hook it. That is #233.
 
+## The update check
+
+An installed BartleBot looks for a newer release once, after its window is up, and offers
+it once. It never updates on its own, and never while a bot runs. A checkout never checks:
+only a build Velopack installed has anything to update, and `updates.check.installed()`
+asks for Velopack's manifest, `sq.version`, beside the exe.
+
+| piece | where |
+|---|---|
+| the check: is there a newer release, and getting it ready for Velopack | `bartlebot/updates/check.py` |
+| reading the feed, and its signature | `bartlebot/updates/feed.py` |
+| the keys a feed may be signed by | `bartlebot/updates/keys.py`, `TRUSTED_KEYS` |
+| when the popup opens, the title bar's button, Help › Check for Updates… | `bartlebot/gui/update_prompt.py` |
+| the popup | `bartlebot/gui/dialogs/update_dialog.py` |
+| the setting | Settings › General › Updates, `updates.check_at_startup` (`gui/settings/CLAUDE.md`) |
+
+### When it checks
+
+At startup, in a worker thread started before setup or a launch-time import opens, so the
+window never waits on the network, and only with "Check for updates at startup" on. It is
+on by default: a release is the only way a fixed Official bot reaches anyone. Help › Check
+for Updates… runs the same check whatever the setting says, and always answers: up to
+date, couldn't check, or an update refused. It is disabled in a checkout, with a tooltip
+saying why. Nothing checks again while the app stays open.
+
+**Being offline is ordinary.** A feed that cannot be read is logged at INFO, and the
+startup check shows nothing.
+
+### The signature
+
+Velopack checks every package against the SHA-256 in the feed, `releases.win.json`, and
+refuses one that differs. That protects the packages and not the feed: whoever could swap
+a package on the release could swap the feed beside it. So CI signs the feed with Ed25519
+into `releases.win.json.sig` (`docs/RELEASING.md`, *The signing key*), and the app reads
+both from the latest release, `releases/latest/download/`, and verifies the signature
+against every key in `TRUSTED_KEYS`. **A feed whose signature does not verify, or that has
+none, is logged as a WARNING and its update is never offered.**
+
+Velopack never fetches a feed itself. The verified bytes are written to
+`%LocalAppData%\Bartleby\BartleBot\updates`, and that folder is Velopack's source
+(`UpdateManager(<folder>)`), so the feed it checks each package against is the one that
+verified, never a second copy fetched a moment later. Velopack is asked what it needs from
+there: the deltas from the installed version when the feed lists them, or the full package.
+Only those are downloaded into the folder, from the same release. A delta that will not
+apply falls back to the full package, as Velopack itself would.
+
+The signature guards against a release asset swapped after the build, and a download
+changed on the way. It does not guard against whoever controls the GitHub organization,
+who could sign with the key CI holds: that was accepted when the key went into CI (epic
+#27's plan).
+
+**A key is replaced by a release.** `TRUSTED_KEYS` is a list, and any key in it will do.
+A release signed by the old key adds the new one, and every installed copy accepts it and
+takes the new list with the update. A later release can be signed by the new key, and one
+after that can drop the old. `docs/RELEASING.md` has the steps.
+
+### The popup
+
+**Once per version.** `updates.last_offered` in `settings.json` is the newest version the
+popup has opened for. A version newer than it opens the popup, and opening it records the
+version. A newer version opens the popup again.
+
+**Never over anything.** First-run setup, an import's summary and any other modal dialog
+hold it back, and so does a bot that is starting or running (`AppController._bot_busy`). It
+looks again every second (`RETRY_MS`) and opens once the app is free. Every dialog here
+opens from a timer's callback, never from inside the check's task (`bartlebot/gui/CLAUDE.md`,
+qasync).
+
+It shows the release's notes, from the feed's `NotesMarkdown`, or a link to the release
+page when the feed has none, and three choices:
+
+| choice | what happens |
+|---|---|
+| **Install when I close BartleBot** (Enter) | downloads the update now, with a bar, then `wait_exit_then_apply_updates(restart=False)`: Velopack's updater waits for the app to exit, however long that is, then replaces the install. A bot that is running carries on |
+| **Restart now** | downloads it, then `wait_exit_then_apply_updates(restart=True)`, and closes the window the usual way, through the quit gate, so every client is released and the game's display settings are put back before the swap. **Disabled while a bot runs**, since a restart would end it |
+| **Not now** (Escape) | closes the popup. The title bar keeps a quiet button, "Update 1.2.0", which opens it again. The next launch shows the button, not the popup, for the same version |
+
+`apply_updates_and_restart` is never called: it exits the process itself, past the quit
+path, leaving clients hooked. A download that fails says why in the popup and changes
+nothing, so either choice can be tried again. Once an update is waiting for the app to
+close, the button goes, and Help › Check for Updates… says it installs on close rather than
+handing Velopack the same update twice.
+
 ## Trying an install, an update and an uninstall
 
 The repo is private until 1.0.0, so a release's downloads need authentication, and an
@@ -200,3 +286,11 @@ check that `%LocalAppData%\BartleBot` does not already exist, and uninstall afte
 5. Uninstall with the uninstall entry's quiet command, `Update.exe --uninstall --silent`.
 
 Stage 2 of #27 did exactly this. Its As built box on the plan page has the numbers.
+
+**To try the app's own update check**, sign the second folder's feed and point the
+installed app at it. `BARTLEBOT_UPDATE_FEED` names another place to read the feed and its
+packages from, a URL or a folder (`updates/feed.py`). It changes where, never what is
+trusted, so the feed must still be signed by a key in `TRUSTED_KEYS`: sign it with
+`tools/sign_feed.py sign` and the key's backup, or build the first version with a
+throwaway key added to `TRUSTED_KEYS` in that build only, never committed. Start the
+installed 0.1.0 with the variable set, and the popup offers 0.1.1.

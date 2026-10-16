@@ -9,7 +9,8 @@ process, so the app never starts. Velopack kills a hook that runs too long
 never show a window. On every other launch ``run()`` returns and the app starts as usual.
 
 Install and update record the install and register the share file types; uninstall
-takes both away again (``docs/INSTALLER.md``):
+takes both away again (``docs/INSTALLER.md``). Update and uninstall also remove the
+update the app staged for Velopack, which is spent by then:
 
 - **The install key**, ``HKCU\\Software\\Bartleby\\BartleBot``, with the install directory
   and the exe (:mod:`bartlebot.shared.install_key`). An update writes the same values
@@ -109,14 +110,24 @@ def after_update(version: str) -> None:
     """The new version, just after Velopack swapped its folder in: record it and register the types again.
 
     Both are the same values as before. Writing them again mends a key or a type that
-    something removed, and picks up a share type a new release added.
+    something removed, and picks up a share type a new release added. The update the app
+    staged for Velopack is spent, so it goes (``docs/INSTALLER.md``, *The update check*).
     """
     record_install()
+    _clear_staged_update()
 
 
 def before_uninstall(version: str) -> None:
-    """The installed version, just before Velopack deletes its folder: take the key and the types away."""
+    """The installed version, just before Velopack deletes its folder: take the key, the types and any staged update away."""
     remove_install()
+    _clear_staged_update()
+
+
+def _clear_staged_update() -> None:
+    """The update check's download folder, which can hold a whole package and is never the user's data."""
+    from bartlebot.updates.feed import clear_staging  # noqa: PLC0415 - only a hook needs it
+
+    clear_staging()
 
 
 #: Each ``velopack.App`` registration method, and the hook it is given.

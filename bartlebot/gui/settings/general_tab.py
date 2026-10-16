@@ -1,4 +1,4 @@
-"""Settings tab: General (the game folder and game art, log, window layout, privacy, auto-save).
+"""Settings tab: General (the game folder and game art, updates, log, window layout, privacy, auto-save).
 
 The Bot section that used to sit at the bottom is :mod:`bartlebot.gui.settings.bot_tab`
 now. What is left is the app itself -- how it opens, what it keeps, what it shows --
@@ -48,6 +48,27 @@ class GeneralTab(SettingsForm):
         # An action rather than a value: it extracts the art again, for after a game patch.
         self._game_art_row, self._card_art_button = game_art_row(self._prefs)
         self.add_row(self._game_art_row)
+
+        # ------------------------------------------------------------------
+        # Updates section
+        # ------------------------------------------------------------------
+        self.add_heading("Updates")
+
+        self._check_updates_cb = QCheckBox()
+        self._check_updates_cb.setChecked(sm.check_for_updates_at_startup)
+        self._check_updates_row = self.add_row(
+            SettingRow(
+                "Check for updates at startup",
+                "Look for a new release each time BartleBot opens.",
+                self._check_updates_cb,
+                default=default_for("updates", "check_at_startup"),
+                details=(
+                    "Releases are how fixed and new Official bots reach you. A new one is offered once, and "
+                    "installs only when you say, never while a bot runs. Help › Check for Updates… looks "
+                    "whenever you ask, whatever this says."
+                ),
+            )
+        )
 
         # ------------------------------------------------------------------
         # Log section
@@ -259,6 +280,10 @@ class GeneralTab(SettingsForm):
     def game_art_row(self) -> SettingRow:
         return self._game_art_row
 
+    @property
+    def check_updates_row(self) -> SettingRow:
+        return self._check_updates_row
+
     def apply(self) -> None:
         if apply_game_folder(self._prefs, self._game_folder_opened, self._game_folder.value()):
             self._game_folder_opened = self._game_folder.value()
@@ -271,6 +296,7 @@ class GeneralTab(SettingsForm):
         sm.set_general("left_sidebar_width", self._left_sb.value())
         sm.set_general("right_sidebar_width", self._right_sb.value())
         sm.set_general("bottom_section_height", self._bottom_sb.value())
+        sm.check_for_updates_at_startup = self._check_updates_cb.isChecked()
         sm.streamer_mode = self._streamer_mode_cb.isChecked()
         sm.set_general("auto_save_enabled", self._autosave_cb.isChecked())
         sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())

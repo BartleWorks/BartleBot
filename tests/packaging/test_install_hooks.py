@@ -92,6 +92,8 @@ def machine(monkeypatch, tmp_path):
     shipped.mkdir(parents=True)
     monkeypatch.setattr(sys, "executable", str(root / "current" / "BartleBot.exe"))
     monkeypatch.setattr(install_hooks, "install_dir", lambda: shipped)
+    # The update check's staging folder is under it, so a hook never clears the machine's own.
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "LocalAppData"))
     yield SimpleNamespace(root=root, shipped=shipped, stub=root / "BartleBot.exe", notices=notices)
     install_key.delete_tree(winreg.HKEY_CURRENT_USER, scratch)
 
@@ -141,6 +143,25 @@ def test_update_writes_the_same_again(machine):
 
     assert install_key.read_all() == [InstallRecord(PRODUCT, machine.shipped, machine.stub)]
     assert set(_commands().values()) == {f'"{machine.stub}" "%1"'}
+
+
+def _staged_update():
+    from bartlebot.updates.feed import FEED_NAME, staging_dir  # noqa: PLC0415
+
+    staging_dir().mkdir(parents=True)
+    (staging_dir() / FEED_NAME).write_text("{}")
+    (staging_dir() / "BartleBot-1.0.1-full.nupkg").write_bytes(b"package")
+    return staging_dir()
+
+
+@pytest.mark.parametrize("hook", ["after_update", "before_uninstall"])
+def test_update_and_uninstall_remove_the_staged_update(machine, hook):
+    """It is spent once applied, can hold a whole package, and is never the user's data."""
+    staged = _staged_update()
+
+    getattr(install_hooks, hook)("1.0.1")
+
+    assert not staged.exists()
 
 
 def test_before_update_does_nothing(machine):

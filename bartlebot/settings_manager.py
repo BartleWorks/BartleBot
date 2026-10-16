@@ -118,11 +118,19 @@ class _AuthoringSettings(BaseModel):
     hotkeys: dict[str, str] = dict(DEFAULT_AUTHORING_HOTKEYS)
 
 
+class _UpdateSettings(BaseModel):
+    # Settings › General's "Check for updates at startup". An installed build only.
+    check_at_startup: bool = True
+    # The newest version the update popup has opened for, so it opens once per version.
+    last_offered: str | None = None
+
+
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
     "general": _GeneralSettings,
     "game_embed": _GameEmbedSettings,
     "canvas": _CanvasSettings,
     "authoring": _AuthoringSettings,
+    "updates": _UpdateSettings,
 }
 
 # ---------------------------------------------------------------------------
@@ -214,6 +222,11 @@ _DEFAULTS: dict[str, Any] = {
     "authoring": {
         "speed_multiplier": 5.0,
         "hotkeys": dict(DEFAULT_AUTHORING_HOTKEYS),
+    },
+    # The update check (docs/INSTALLER.md, "The update check"). See gui/update_prompt.py.
+    "updates": {
+        "check_at_startup": True,
+        "last_offered": None,
     },
     # accounts and launch_profiles are deliberately absent: they live one level up, in
     # the vendor-level store (shared.account_store), because a second product by this
@@ -697,6 +710,25 @@ class SettingsManager:
     @record_combat_decisions.setter
     def record_combat_decisions(self, value: bool) -> None:
         self.set_general("record_combat_decisions", bool(value))
+
+    @property
+    def check_for_updates_at_startup(self) -> bool:
+        """Whether an installed build looks for a newer release once, after its window is up."""
+        return bool(self.get("updates", "check_at_startup", default=True))
+
+    @check_for_updates_at_startup.setter
+    def check_for_updates_at_startup(self, value: bool) -> None:
+        self.set("updates", "check_at_startup", value=bool(value))
+
+    @property
+    def last_offered_update(self) -> str | None:
+        """The newest version the update popup has opened for, or None before the first."""
+        value = self.get("updates", "last_offered")
+        return value if isinstance(value, str) and value else None
+
+    @last_offered_update.setter
+    def last_offered_update(self, value: str | None) -> None:
+        self.set("updates", "last_offered", value=value)
 
     @property
     def default_friend_name(self) -> str:
