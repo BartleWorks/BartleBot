@@ -917,23 +917,28 @@ class BotMachine:
         from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL
 
         while not self._stop_flag.is_set():
-            safety_delay: float = self.get_option("Safety Delay", 3.0)
-            in_sequence = (time.monotonic() - self._ambient_dialog_last_seen) < safety_delay
-            await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL if in_sequence else node_helpers.POLL_INTERVAL)
-            if not self._resume_event.is_set():
-                continue
-            if not self.clients:
-                continue
-            results = await asyncio.gather(
-                *[node_helpers.advance_dialog_once(c) for c in self.clients],
-                return_exceptions=True,
-            )
-            for i, r in enumerate(results):
-                if r is True:
-                    self._ambient_dialog_last_seen = time.monotonic()
-                    self._log_machine(f"Ambient dialog dismissed on client {i}", logging.DEBUG)
-                elif isinstance(r, Exception):
-                    self._log_machine(f"Ambient dialog watcher error on client {i}: {r}", logging.DEBUG)
+            try:
+                safety_delay: float = self.get_option("Safety Delay", 3.0)
+                in_sequence = (time.monotonic() - self._ambient_dialog_last_seen) < safety_delay
+                await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL if in_sequence else node_helpers.POLL_INTERVAL)
+                if not self._resume_event.is_set():
+                    continue
+                if not self.clients:
+                    continue
+                results = await asyncio.gather(
+                    *[node_helpers.advance_dialog_once(c) for c in self.clients],
+                    return_exceptions=True,
+                )
+                for i, r in enumerate(results):
+                    if r is True:
+                        self._ambient_dialog_last_seen = time.monotonic()
+                        self._log_machine(f"Ambient dialog dismissed on client {i}", logging.DEBUG)
+                    elif isinstance(r, Exception):
+                        self._log_machine(f"Ambient dialog watcher error on client {i}: {r}", logging.DEBUG)
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Ambient dialog watcher failed; it carries on")
+                await asyncio.sleep(node_helpers.POLL_INTERVAL)
 
     async def _ambient_combat_watcher(self) -> None:
         """Background task: detect and handle unexpected combat on any client.
@@ -949,67 +954,72 @@ class BotMachine:
         from bartlebot.nodes.combat_runner import slots_in_battle
 
         while not self._stop_flag.is_set():
-            await asyncio.sleep(node_helpers.POLL_INTERVAL)
-            if not self._resume_event.is_set():
-                continue
-            clients = list(self.clients)
-            if not clients:
-                continue
-
-            # Skip while the FSM itself is running a handle_combat node.
             try:
-                state_def = self._state_map.get(self.state, {})
-            except AttributeError:
-                continue  # self.state not yet initialized
-            if state_def.get("node_type") == "handle_combat":
-                continue
+                await asyncio.sleep(node_helpers.POLL_INTERVAL)
+                if not self._resume_event.is_set():
+                    continue
+                clients = list(self.clients)
+                if not clients:
+                    continue
 
-            # Skip if a prior ambient combat session is still running.
-            if self._ambient_combat_lock.locked():
-                continue
+                # Skip while the FSM itself is running a handle_combat node.
+                try:
+                    state_def = self._state_map.get(self.state, {})
+                except AttributeError:
+                    continue  # self.state not yet initialized
+                if state_def.get("node_type") == "handle_combat":
+                    continue
 
-            in_battle_flags = await asyncio.gather(
-                *[c.in_battle() for c in clients],
-                return_exceptions=True,
-            )
-            # Track slots (indices into `clients`), not just the clients themselves —
-            # a client's index is its player slot, and combat DSL is resolved per slot.
-            battling_slots = slots_in_battle(in_battle_flags)
-            if not battling_slots:
-                continue
+                # Skip if a prior ambient combat session is still running.
+                if self._ambient_combat_lock.locked():
+                    continue
 
-            try:
-                async with self._ambient_combat_lock:
-                    # Re-check state after acquiring lock — FSM may have entered handle_combat
-                    # between the pre-lock check above and here (in_battle gather is an await point).
-                    try:
-                        if self._state_map.get(self.state, {}).get("node_type") == "handle_combat":
+                in_battle_flags = await asyncio.gather(
+                    *[c.in_battle() for c in clients],
+                    return_exceptions=True,
+                )
+                # Track slots (indices into `clients`), not just the clients themselves —
+                # a client's index is its player slot, and combat DSL is resolved per slot.
+                battling_slots = slots_in_battle(in_battle_flags)
+                if not battling_slots:
+                    continue
+
+                try:
+                    async with self._ambient_combat_lock:
+                        # Re-check state after acquiring lock — FSM may have entered handle_combat
+                        # between the pre-lock check above and here (in_battle gather is an await point).
+                        try:
+                            if self._state_map.get(self.state, {}).get("node_type") == "handle_combat":
+                                continue
+                        except AttributeError:
                             continue
-                    except AttributeError:
-                        continue
 
-                    # Pause only after confirming inside the lock that we need to handle combat,
-                    # so a spurious pause never happens if the FSM slipped into handle_combat
-                    # while we were awaiting in_battle_flags.
-                    may_move = False
-                    if self._resume_event.is_set():
-                        self._combat_auto_paused = True
-                        self.pause()
-                        self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
-                        may_move = await self._preempt_node()
+                        # Pause only after confirming inside the lock that we need to handle combat,
+                        # so a spurious pause never happens if the FSM slipped into handle_combat
+                        # while we were awaiting in_battle_flags.
+                        may_move = False
+                        if self._resume_event.is_set():
+                            self._combat_auto_paused = True
+                            self.pause()
+                            self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
+                            may_move = await self._preempt_node()
 
-                    end = await self._run_ambient_session(clients, battling_slots, may_move)
-                    if end is None:
-                        if may_move:
+                        end = await self._run_ambient_session(clients, battling_slots, may_move)
+                        if end is None:
+                            if may_move:
+                                self._recover_after_ambient()
+                            continue
+                        if may_move and end.recover and not self._stop_flag.is_set():
                             self._recover_after_ambient()
-                        continue
-                    if may_move and end.recover and not self._stop_flag.is_set():
-                        self._recover_after_ambient()
-            finally:
-                if self._combat_auto_paused:
-                    self._combat_auto_paused = False
-                    self.resume()
-                    self._log_machine("Ambient combat: FSM resumed", logging.INFO)
+                finally:
+                    if self._combat_auto_paused:
+                        self._combat_auto_paused = False
+                        self.resume()
+                        self._log_machine("Ambient combat: FSM resumed", logging.INFO)
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Ambient combat watcher failed; it carries on")
+                await asyncio.sleep(node_helpers.POLL_INTERVAL)
 
     async def _run_ambient_session(self, clients: list, battling_slots: list[int], may_move: bool):
         """Fight out the fights *battling_slots* are in, and count their flees. Hold the lock.
@@ -1100,28 +1110,33 @@ class BotMachine:
         from bartlebot.nodes.timing import COMBAT_AFK_POLL_INTERVAL
 
         while not self._stop_flag.is_set():
-            await asyncio.sleep(COMBAT_AFK_POLL_INTERVAL)
-            if self._stop_flag.is_set():
-                return  # stop() sets the resume event too, to free a parked loop
-            if not self._resume_event.is_set() and not self._combat_auto_paused:
-                continue
-            clients = list(self.clients)
-            if not clients:
-                continue
-            fled = await self._flee_idle_popups(clients)
-            if not fled:
-                continue
+            try:
+                await asyncio.sleep(COMBAT_AFK_POLL_INTERVAL)
+                if self._stop_flag.is_set():
+                    return  # stop() sets the resume event too, to free a parked loop
+                if not self._resume_event.is_set() and not self._combat_auto_paused:
+                    continue
+                clients = list(self.clients)
+                if not clients:
+                    continue
+                fled = await self._flee_idle_popups(clients)
+                if not fled:
+                    continue
 
-            session = self._ambient_session
-            if session is not None:
-                # The session fighting this one ends once its players are out of battle, and
-                # counts and recovers from a fled fight itself.
-                for client in fled:
-                    session.note_fled(client)
-                continue
-            if self.note_flee():
-                return
-            await self._recover_from_idle(", ".join(f"P{clients.index(c) + 1}" for c in fled))
+                session = self._ambient_session
+                if session is not None:
+                    # The session fighting this one ends once its players are out of battle, and
+                    # counts and recovers from a fled fight itself.
+                    for client in fled:
+                        session.note_fled(client)
+                    continue
+                if self.note_flee():
+                    return
+                await self._recover_from_idle(", ".join(f"P{clients.index(c) + 1}" for c in fled))
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Idle popup watcher failed; it carries on")
+                await asyncio.sleep(COMBAT_AFK_POLL_INTERVAL)
 
     async def _flee_idle_popups(self, clients: list) -> list:
         """Click Flee on every one of *clients* showing "You Are Idle". Returns those it fled."""
