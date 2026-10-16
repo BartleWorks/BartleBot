@@ -24,7 +24,7 @@ from bartlebot.gui.game_embed.card_columns import (
     CardColumn,
     refresh_column_fit,
 )
-from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile
+from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile, ScaledTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.theming.account_accent import account_color_keys
 from bartlebot.gui.theming.icon_utils import svg_icon
@@ -34,6 +34,7 @@ from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared import game_dpi
 
 logger = logging.getLogger(__name__)
 
@@ -415,6 +416,9 @@ class GameView(ThemedMixin, QWidget):
         if spec.is_pending:
             self._create_pending_tile(spec)
             return
+        if game_dpi.window_is_scaled(spec.hwnd):
+            self._hold_scaled_window(spec)
+            return
         tile = ClientTile(spec.hwnd, spec.label, parent=self)
         tile.set_wizard_name(self._wizard_name_for(spec.player))
         self._tiles[spec.slot] = tile
@@ -422,6 +426,22 @@ class GameView(ThemedMixin, QWidget):
         tile.show()
         self._remove_detached_tile(spec.slot)
         self._remove_pending_tile(spec.slot)
+
+    def _hold_scaled_window(self, spec: TileSlot) -> None:
+        """Leave a window Windows is scaling where it is, detached, and say why in its slot.
+
+        Embedded, it would not fit its tile and would show nothing (see ScaledTile). Held
+        as a detached window it still draws correctly, and every move and removal already
+        handles a detached slot.
+        """
+        logger.warning("Windows is scaling the game window in slot %d, so it is left unembedded", spec.slot)
+        self._remove_pending_tile(spec.slot)
+        self._remove_detached_tile(spec.slot)
+        self._detached_hwnds[spec.slot] = spec.hwnd
+        dtile = ScaledTile(spec.label, spec.hwnd, parent=self)
+        dtile.set_wizard_name(self._wizard_name_for(spec.player))
+        dtile.show()
+        self._detached_tiles[spec.slot] = dtile
 
     def _create_pending_tile(self, spec: TileSlot) -> None:
         """Put a busy tile in a slot whose account is launching but has no window yet."""
@@ -562,6 +582,9 @@ class GameView(ThemedMixin, QWidget):
 
     def reattach_client(self, client_idx: int) -> None:
         """Re-embed a single previously detached window."""
+        if isinstance(self._detached_tiles.get(client_idx), ScaledTile):
+            # Still scaled: nothing short of restarting the game changes that.
+            return
         hwnd = self._detached_hwnds.pop(client_idx, None)
         if hwnd is None:
             return
@@ -572,7 +595,7 @@ class GameView(ThemedMixin, QWidget):
         self._placeholder.setVisible(False)
         self._recompute_geometry()
         self._update_minimum_size()
-        self._set_embed_state(True)
+        self._set_embed_state(bool(self._tiles))
         self._update_overlay()
 
     @property
@@ -871,7 +894,8 @@ class GameView(ThemedMixin, QWidget):
             self._overlay_btn.setToolTip("Detach all windows")
             self._overlay_btn.setVisible(True)
             self._overlay_btn.raise_()
-        elif self._detached_tiles:
+        elif any(not isinstance(tile, ScaledTile) for tile in self._detached_tiles.values()):
+            # A scaled window cannot be reattached, so it alone offers no Re-attach all.
             self._overlay_btn.setIcon(svg_icon("attach", 22))
             self._overlay_btn.setToolTip("Re-attach all windows")
             self._overlay_btn.setVisible(True)

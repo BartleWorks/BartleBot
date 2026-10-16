@@ -32,13 +32,26 @@ physical pixels.
 That table also says the engine's `Resolution` is *physical* pixels, which is why
 `tile_size` divides it by the screen's scale factor — a 2048x1536 client is 1638x1229
 logical points of tile at 125%. It holds only because the client runs DPI-aware. The exe
-declares no `dpiAware` manifest entry and imports no `SetProcessDPIAware`, so what makes
-it aware on the machine this was measured on is the per-exe compatibility flag
-(`HKCU\...\AppCompatFlags\Layers` -> `HIGHDPIAWARE`, the "Override high DPI scaling
-behavior: Application" checkbox). Without it Windows virtualizes the process and the same
-2048x1536 request becomes a 2560x1920 physical window — bigger than the tile the fit
-arithmetic reserved, not smaller. Unverified on a machine without the flag; if tiles ever
-clip on a scaled display, this is the first thing to measure.
+declares no `dpiAware` manifest entry and imports no `SetProcessDPIAware`, so on its own
+Windows runs it unaware and stretches it: 2560x1440 asked for at 150% became a 3840x2160
+window, the whole of a 4K screen, and embedded it showed nothing. A fresh Windows account
+found it while testing 0.1.0; the machine the table was measured on had the per-exe
+compatibility flag set by hand (`HKCU\...\AppCompatFlags\Layers` -> `HIGHDPIAWARE`, the
+"Override high DPI scaling behavior: Application" checkbox).
+
+`shared/game_dpi.py` holds both ways to make it aware, and the rules:
+
+- **Every client the app starts is aware.** `launch_profile.start_instance` starts it with
+  `__COMPAT_LAYER=HIGHDPIAWARE` in its environment, which Windows applies to that process
+  alone. It replaces wizwalker's `start_instance`, which ran the same command in the
+  app's environment.
+- **The user's own setting is never written unasked.** The flag would make every start
+  aware, however started, but it also shrinks the game's interface when the user plays
+  outside the app.
+- **A scaled window is never embedded.** A game started some other way can still be
+  scaled, and nothing makes a running process aware. `GameView` holds such a window as
+  detached, where it draws correctly, and its slot shows a `ScaledTile`: why, and a button
+  that sets the flag for the next start.
 
 ## Resolution and UI size are one setting
 

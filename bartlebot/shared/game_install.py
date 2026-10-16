@@ -182,17 +182,11 @@ def running_executables(name: str) -> list[Path]:
         ]
 
     snap_processes = 0x2
-    query_limited = 0x1000
-    # Private, typed handles: windll's shared ones return c_int, which cuts a handle in half.
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = _kernel32()
     kernel32.CreateToolhelp32Snapshot.argtypes = [w.DWORD, w.DWORD]
     kernel32.CreateToolhelp32Snapshot.restype = w.HANDLE
     kernel32.Process32FirstW.argtypes = [w.HANDLE, ctypes.POINTER(ProcessEntry)]
     kernel32.Process32NextW.argtypes = [w.HANDLE, ctypes.POINTER(ProcessEntry)]
-    kernel32.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
-    kernel32.OpenProcess.restype = w.HANDLE
-    kernel32.QueryFullProcessImageNameW.argtypes = [w.HANDLE, w.DWORD, w.LPWSTR, ctypes.POINTER(w.DWORD)]
-    kernel32.CloseHandle.argtypes = [w.HANDLE]
 
     snapshot = kernel32.CreateToolhelp32Snapshot(snap_processes, 0)
     if not snapshot or snapshot == w.HANDLE(-1).value:
@@ -212,17 +206,52 @@ def running_executables(name: str) -> list[Path]:
 
     found: dict[str, Path] = {}
     for pid in pids:
-        handle = kernel32.OpenProcess(query_limited, False, pid)
-        if not handle:
-            continue
-        try:
-            size = w.DWORD(1024)
-            buffer = ctypes.create_unicode_buffer(size.value)
-            if kernel32.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
-                found.setdefault(buffer.value.casefold(), Path(buffer.value))
-        finally:
-            kernel32.CloseHandle(handle)
+        path = process_executable(pid)
+        if path is not None:
+            found.setdefault(str(path).casefold(), path)
     return list(found.values())
+
+
+def _kernel32():
+    """kernel32 with typed process functions, private to this module.
+
+    windll's shared one returns c_int, which cuts a handle in half.
+    """
+    import ctypes  # noqa: PLC0415 - Windows only
+    from ctypes import wintypes as w  # noqa: PLC0415
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
+    kernel32.OpenProcess.restype = w.HANDLE
+    kernel32.QueryFullProcessImageNameW.argtypes = [w.HANDLE, w.DWORD, w.LPWSTR, ctypes.POINTER(w.DWORD)]
+    kernel32.CloseHandle.argtypes = [w.HANDLE]
+    return kernel32
+
+
+def process_executable(pid: int) -> Path | None:
+    """The full path of process *pid*'s executable, or None when it cannot be read.
+
+    Opened with the least access that reads a path, so a process of another user or a
+    protected one is None rather than an error.
+    """
+    if sys.platform != "win32":
+        return None
+    import ctypes  # noqa: PLC0415 - Windows only
+    from ctypes import wintypes as w  # noqa: PLC0415
+
+    query_limited = 0x1000
+    kernel32 = _kernel32()
+    handle = kernel32.OpenProcess(query_limited, False, pid)
+    if not handle:
+        return None
+    try:
+        size = w.DWORD(1024)
+        buffer = ctypes.create_unicode_buffer(size.value)
+        if kernel32.QueryFullProcessImageNameW(handle, 0, buffer, ctypes.byref(size)):
+            return Path(buffer.value)
+        return None
+    finally:
+        kernel32.CloseHandle(handle)
 
 
 def install_of_client(executable: Path) -> Path:

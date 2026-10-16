@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes
+import logging
 import time
 
 from PyQt6.QtCore import QRect, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
 from bartlebot.game.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui import streamer_mode
@@ -16,7 +17,12 @@ from bartlebot.gui.game_embed.win32_window import EmbeddedWindow, is_click_notif
 from bartlebot.gui.theming.account_accent import TINT_ALPHA_PERCENT
 from bartlebot.gui.theming.icon_utils import svg_pixmap
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
+from bartlebot.shared import game_dpi
+
+logger = logging.getLogger(__name__)
 
 # FOCUS_BORDER and LABEL_RESERVE are imported rather than defined here: how much chrome
 # a tile wraps around its game window is a term in the screen-fit arithmetic as well as
@@ -27,6 +33,7 @@ __all__ = [
     "ClientTile",
     "DetachedTile",
     "PendingTile",
+    "ScaledTile",
     "launch_status_text",
     "pill_text",
     "tile_focus_color",
@@ -501,6 +508,82 @@ class DetachedTile(_WindowlessTile):
 
     def _on_icon_clicked(self) -> None:
         self.reattach_requested.emit()
+
+
+#: What a ScaledTile says, by what can still be done about it.
+SCALED_TEXT = "Windows is scaling this game, so it can't be embedded. Launch it from BartleBot to embed it."
+SCALED_FIXED_TEXT = "Restart this game to embed it."
+SCALED_FAILED_TEXT = "The setting couldn't be changed. The log says why."
+SCALED_BUTTON = "Turn Off Windows Scaling"
+SCALED_BUTTON_TIP = (
+    "Turns on “Override high DPI scaling behavior” for this game, as its Compatibility "
+    "settings would, so it embeds however it is started. Outside BartleBot, its interface "
+    "will look smaller on a scaled display."
+)
+
+
+class ScaledTile(DetachedTile):
+    """Placeholder for a game window Windows is scaling, which is left unembedded.
+
+    The client declares no DPI awareness, so a game started without our compatibility
+    layer is stretched by Windows on a scaled display, past the size its tile is laid out
+    for (``shared/game_dpi.py``). Embedded it does not fit, and shows nothing; left where
+    it is, it draws correctly. So it is held here as a detached window that cannot be
+    reattached, which is also why the pill has no attach icon.
+
+    Nothing can make a running game aware, so the tile offers the one setting that makes
+    every later start aware however it is started, and says so. Writing it is the user's
+    call: it changes how the game looks outside the app too.
+    """
+
+    _pill_icon = ""
+
+    def __init__(self, label: str, hwnd: int, parent=None) -> None:
+        super().__init__(label, parent)
+        self._exe = game_dpi.window_executable(hwnd)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, LABEL_RESERVE, 16, 16)
+        layout.addStretch(1)
+        self._text = ThemedTextLabel(parent=self)
+        self._text.setWordWrap(True)
+        self._text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._text)
+        self._button = ActionButton("gear", SCALED_BUTTON, style=ActionStyle.SECONDARY, fill=False, parent=self)
+        self._button.setToolTip(SCALED_BUTTON_TIP)
+        self._button.clicked.connect(self._turn_off_scaling)
+        layout.addWidget(self._button, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addStretch(1)
+        fixed = self._exe is not None and game_dpi.has_high_dpi_override(self._exe)
+        self._show_state(SCALED_FIXED_TEXT if fixed else SCALED_TEXT, offer=self._exe is not None and not fixed)
+
+    def _body_text(self) -> str:
+        # Said by the label instead, which wraps and sits above the button.
+        return ""
+
+    @property
+    def text(self) -> str:
+        """What the tile says now."""
+        return self._text.text()
+
+    @property
+    def offers_fix(self) -> bool:
+        """Whether the button that turns off Windows' scaling is there to press."""
+        return not self._button.isHidden()
+
+    def _show_state(self, text: str, *, offer: bool) -> None:
+        self._text.setText(text)
+        self._button.setVisible(offer)
+
+    def _turn_off_scaling(self) -> None:
+        if self._exe is None:
+            return
+        try:
+            game_dpi.set_high_dpi_override(self._exe)
+        except OSError:
+            logger.exception("Could not turn on the high-DPI override")
+            self._show_state(SCALED_FAILED_TEXT, offer=True)
+            return
+        self._show_state(SCALED_FIXED_TEXT, offer=False)
 
 
 def _body_font() -> QFont:

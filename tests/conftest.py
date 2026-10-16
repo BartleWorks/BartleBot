@@ -459,6 +459,10 @@ def isolated_settings(_appdata_root, monkeypatch):
     monkeypatch.setattr(install_key, "REGISTRY_KEY", UNGUARDED_REGISTRY_KEY)
     monkeypatch.setattr(file_types, "CLASSES_KEY", rf"{UNGUARDED_REGISTRY_KEY}\Classes")
     monkeypatch.setattr(file_types, "notify", lambda: None)
+    # Nor the game's compatibility settings, which the scaled-window tile can write.
+    from bartlebot.shared import game_dpi  # noqa: PLC0415
+
+    monkeypatch.setattr(game_dpi, "LAYERS_KEY", rf"{UNGUARDED_REGISTRY_KEY}\Layers")
     # Nor the game the developer has installed, which would decide whether setup asks
     # for a game folder (see shared.game_install).
     from bartlebot.shared import game_install  # noqa: PLC0415

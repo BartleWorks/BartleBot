@@ -20,6 +20,8 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
 - [ ] Bot library shows badges and tag icons as soon as the art is in, without a relaunch.
 - [ ] Self-check prints all passes and 0, in PowerShell:
       & "$env:LOCALAPPDATA\BartleBot\current\BartleBot.exe" --self-check | Out-Host; $LASTEXITCODE
+- [ ] With Windows' display scale above 100% (Settings › System › Display › Scale), a game
+      launched from BartleBot embeds and fills its tile.
 - [ ] An Official bot runs end to end in game (one this release changed, or a short one).
 - [ ] Session log header says "packaged (PyInstaller)" and <version>, and the log has no
       unexplained WARNING or ERROR. Logs: %APPDATA%\Bartleby\BartleBot\logs

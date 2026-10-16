@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import subprocess
 from collections.abc import Awaitable, Callable
 
 from wizwalker.utils import (
@@ -18,7 +19,6 @@ from wizwalker.utils import (
     instance_login,
     patch_open_browser,
     set_window_title,
-    start_instance,
 )
 
 from bartlebot.clients.credentials import CredentialStore, account_label
@@ -31,6 +31,8 @@ from bartlebot.nodes.timing import (
     jitter,
 )
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.game_dpi import launch_environment
+from bartlebot.shared.game_install import CLIENT
 
 logger = logging.getLogger(__name__)
 
@@ -312,6 +314,23 @@ def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
             **_ui_size_update(width, height),
             **_launch_config_updates(),
         },
+    )
+
+
+def start_instance() -> None:
+    """Start one game client at the login screen, DPI-aware.
+
+    wizwalker's ``start_instance`` runs the same command, but in this process's
+    environment, so on a scaled display Windows stretched the client past the size it was
+    launched at, and it never fit its tile. The compatibility layer in its environment
+    makes this one client aware without touching the user's own settings
+    (``shared/game_dpi.py``).
+    """
+    install = get_wiz_install()
+    subprocess.Popen(
+        [str(install / CLIENT), "-L", "login.us.wizard101.com", "12000"],
+        cwd=install / CLIENT.parent,
+        env=launch_environment(),
     )
 
 

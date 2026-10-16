@@ -683,6 +683,10 @@ undo by accident:
   (configured layout, not the panel minimums), and `minimum_window_size` runs the other
   way to keep the window and the splitters off the game. Both are kept; they are not
   alternatives.
+- **The game is DPI-aware only because we start it so.** It declares no awareness, so
+  Windows stretches it on a scaled display. Every launch goes through
+  `launch_profile.start_instance`, never wizwalker's, and a window that is scaled anyway
+  is held detached under a `ScaledTile`, never embedded (`shared/game_dpi.py`).
 - **The budget is the larger of the configured layout and the *live* game area.**
   Sidebar widths and the canvas height are startup seeds — nothing persists a splitter
   drag — so without the live term a user who makes room by dragging is still refused.

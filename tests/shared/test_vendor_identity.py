@@ -130,6 +130,7 @@ def test_the_shared_layer_has_no_stray_files():
         "content_hash.py",
         "file_types.py",
         "first_run.py",
+        "game_dpi.py",
         "game_install.py",
         "install_key.py",
         "json_update.py",
