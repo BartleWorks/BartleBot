@@ -140,6 +140,12 @@ Steam install was never found. `bartlebot/shared/game_install.py` looks further,
    `vdf` package. A library counts when it holds Wizard101's manifest,
    `steamapps/appmanifest_799960.acf`, and the game is in the `installdir` it names under
    `steamapps/common`.
+5. **The game running now**: the folder above `Bin` of each running
+   `WizardGraphicalClient.exe` (`running_executables`, a process snapshot read with
+   ctypes). Last, because it is there only while the game runs, but it finds an install
+   every other place missed: a user who can play has one somewhere. So `apply_install`
+   stores a folder found this way as the folder chosen, and the next launch finds it with
+   the game closed.
 
 A folder without the client is passed over for the next, so a stale choice or a library
 on a drive that is gone falls back rather than failing. At startup `AppController` calls
@@ -153,6 +159,17 @@ was found in, that the game is installed there, or that it isn't, naming the mis
 client. Next is enabled only for a folder holding it. On a rerun the page opens on the
 folder in use, and Next on a detected folder left as it was writes nothing, so a detected
 install that moves is still found.
+
+- **It watches for the game.** While nothing is found and the field is empty, the page
+  looks for a running game every 2 seconds, while it is shown (`look_for_running_game`),
+  and its intro says so: a user who starts Wizard101 the way they usually do has the
+  folder filled in, "Found in the game running now." A folder the user typed is never
+  replaced. Next stores the folder, since only a running game would find it again.
+- **A rerun with nothing found passes it.** There, an empty field enables Next, the line
+  says the folder stays unset and launching fails until it is chosen, and Next writes
+  nothing. The rerun is how every other answer is changed, and a game on a drive that is
+  gone must not hold them all. A folder typed that lacks the client is still refused. A
+  first run still needs the folder: without it the app has nothing to launch.
 
 The suite looks in no real place: `tests/conftest.py` puts `NoPlaces` in, so a game on the
 developer's machine can't decide which pages setup shows. A test that wants an install

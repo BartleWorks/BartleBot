@@ -1239,7 +1239,7 @@ class AppController(QObject):
 
     def _rerun_setup(self) -> None:
         """File › Set up BartleBot…: every page that applies, on the current values."""
-        self._open_setup(setup_pages(PreferenceStore()), rerun=True)
+        self._open_setup(setup_pages(PreferenceStore(), rerun=True), rerun=True)
 
     def _open_setup(self, pages: list[FirstRunPage], *, rerun: bool) -> None:
         dialog = FirstRunDialog(pages, rerun=rerun, parent=self._window)

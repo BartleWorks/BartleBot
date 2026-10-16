@@ -48,7 +48,7 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, pyqtSignal
+from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -96,7 +96,14 @@ from bartlebot.options.realm_delay_setup import realm_delay_answered, record_rea
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
-from bartlebot.shared.game_install import SOURCE_NAMES, find_install, is_install, set_install_dir
+from bartlebot.shared.game_install import (
+    SOURCE_NAMES,
+    InstallSource,
+    find_install,
+    is_install,
+    running_install,
+    set_install_dir,
+)
 from bartlebot.shared.launch_profiles import (
     EVERYONE,
     add_profile,
@@ -359,8 +366,16 @@ GAME_FOLDER_HEADING = "Where is Wizard101 installed?"
 GAME_FOLDER_INTRO = (
     "BartleBot starts the game from this folder, the one holding its Bin folder. The KingsIsle "
     "launcher installs it in C:\\ProgramData\\KingsIsle Entertainment\\Wizard101, and Steam in "
-    "steamapps\\common\\Wizard101 inside a Steam library."
+    "steamapps\\common\\Wizard101 inside a Steam library. Or start Wizard101 as you usually do, "
+    "and BartleBot finds the folder of the running game here on its own."
 )
+#: Under the field on a rerun with nothing found and nothing chosen: Next passes the page.
+GAME_FOLDER_UNSET = (
+    "Not found. Next leaves it unset, and launching fails until it is chosen, here or in "
+    "Settings › General › Game folder."
+)
+#: How often the page looks for a running game while nothing is found.
+RUNNING_GAME_POLL_MS = 2000
 
 
 class GameFolderPage(FirstRunPage):
@@ -368,14 +383,21 @@ class GameFolderPage(FirstRunPage):
 
     On a rerun it opens on the folder in use, and Next leaves a detected folder detected:
     only a folder the user changed to is stored, so an install that moves is still found.
-    Next is enabled only for a folder holding the client.
+    Next is enabled only for a folder holding the client, except on a rerun with nothing
+    found, where an empty field passes the page and writes nothing: the rerun is how the
+    other answers are changed, and a game on a drive that is gone must not hold them all.
+
+    While nothing is found and the field is empty, it looks for a running game every
+    :data:`RUNNING_GAME_POLL_MS`, so a user who starts Wizard101 has the folder filled in.
+    Next stores a folder found that way, since only a running game finds it again.
     """
 
     heading = GAME_FOLDER_HEADING
 
-    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None) -> None:
+    def __init__(self, prefs: PreferenceStore, parent: QWidget | None = None, *, rerun: bool = False) -> None:
         super().__init__(parent)
         self._prefs = prefs
+        self._rerun = rerun
         self._found = find_install(prefs)
         column = QVBoxLayout(self)
         column.setContentsMargins(0, 0, 0, 0)
@@ -393,6 +415,29 @@ class GameFolderPage(FirstRunPage):
             self._input.set_path(self._found.path)
         self._input.changed.connect(self._on_changed)
         self._on_changed()
+        self._poll = QTimer(self)
+        self._poll.setInterval(RUNNING_GAME_POLL_MS)
+        # Only while shown: the page waits in the dialog's stack the rest of the time.
+        self._poll.timeout.connect(lambda: self.isVisible() and self.look_for_running_game())
+        if self._found is None:
+            self._poll.start()
+
+    @property
+    def polling(self) -> bool:
+        """Whether the page is looking for a running game."""
+        return self._poll.isActive()
+
+    def look_for_running_game(self) -> bool:
+        """Fill the field from the game running now, while nothing is found and it is empty. Whether it did."""
+        if self._found is not None or self._input.path():
+            return False
+        running = running_install()
+        if running is None:
+            return False
+        self._found = running
+        self._poll.stop()
+        self._input.set_path(running.path)
+        return True
 
     @property
     def folder_input(self) -> GameFolderInput:
@@ -402,10 +447,16 @@ class GameFolderPage(FirstRunPage):
     def status_text(self) -> str:
         return self._status.text()
 
+    def _passes_unset(self) -> bool:
+        """A rerun with nothing found and nothing chosen: Next passes the page."""
+        return self._rerun and self._found is None and not self._input.path()
+
     def _on_changed(self) -> None:
         found_path = self._found.path if self._found is not None else None
         source = SOURCE_NAMES[self._found.source] if self._found is not None else ""
         text, problem = folder_status(self._input.path(), found_path, source)
+        if self._passes_unset():
+            text, problem = GAME_FOLDER_UNSET, True
         self._status.setText(text)
         self._status.set_color("error" if problem else "text_muted")
         self.ready_changed.emit()
@@ -418,11 +469,17 @@ class GameFolderPage(FirstRunPage):
         return self._found is not None
 
     def ready(self) -> bool:
-        return is_install(self._input.path())
+        return self._passes_unset() or is_install(self._input.path())
+
+    def stop(self) -> None:
+        self._poll.stop()
 
     def record(self) -> bool:
+        if self._passes_unset():
+            return True
         path = Path(self._input.path())
-        if self._found is not None and path == self._found.path:
+        # A running game's folder is stored: closed, nothing would find it again.
+        if self._found is not None and path == self._found.path and self._found.source is not InstallSource.RUNNING:
             return True
         if not set_install_dir(self._prefs, path):
             return False
@@ -982,11 +1039,15 @@ SETUP_PAGE_TYPES: tuple[type[FirstRunPage], ...] = (
 )
 
 
-def setup_pages(prefs: PreferenceStore) -> list[FirstRunPage]:
-    """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``)."""
+def setup_pages(prefs: PreferenceStore, *, rerun: bool = False) -> list[FirstRunPage]:
+    """Every setup page after Quick or Custom, in the order shown (``docs/FIRST_RUN.md``).
+
+    *rerun* for File › Set up BartleBot…, where the Game folder page lets a user with no
+    game found pass it.
+    """
     options = OptionsPage()
     return [
-        GameFolderPage(prefs),
+        GameFolderPage(prefs, rerun=rerun),
         AccountsPage(prefs),
         LaunchProfilePage(prefs),
         CombatQuestionPage(prefs),
