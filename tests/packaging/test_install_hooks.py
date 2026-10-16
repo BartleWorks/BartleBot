@@ -74,9 +74,7 @@ def test_each_hook_returns_without_doing_anything(hook):
 
 
 def _run(code: str) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, timeout=60, cwd=project_root()
-    )
+    return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60, cwd=project_root())
 
 
 def test_a_checkout_does_not_even_import_velopack():
