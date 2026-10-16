@@ -402,6 +402,37 @@ def test_a_click_on_a_card_selects_it(qapp, prefs):
     assert [card.selected for card in page.cards] == [False, True]
 
 
+def test_each_card_leads_with_a_radio_checked_while_it_is_selected(qapp, prefs):
+    page = CombatQuestionPage(prefs)
+    assert [card.radio.isChecked() for card in page.cards] == [True, False]
+
+    QTest.mouseClick(page.card_for(BossTactic.EVERYONE_ATTACKS), Qt.MouseButton.LeftButton)
+    assert [card.radio.isChecked() for card in page.cards] == [False, True]
+
+    page.select(None)
+    assert [card.radio.isChecked() for card in page.cards] == [False, False]
+
+
+def test_a_cards_radio_leaves_clicks_and_focus_to_the_card(qapp):
+    """The card selects on a click or on focus; a radio taking either would bypass it."""
+    for card in ModePage().cards:
+        assert card.radio.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        assert card.radio.focusPolicy() == Qt.FocusPolicy.NoFocus
+
+
+def test_the_cards_are_stacked_each_the_pages_full_width(qapp):
+    dialog = FirstRunDialog([_Page("First?")])
+    dialog.show()
+    qapp.processEvents()
+
+    page = dialog.mode_page
+    first, second = page.cards
+    assert first.x() == second.x() == 0
+    assert first.width() == second.width() == page.width()
+    assert second.y() > first.geometry().bottom()
+    dialog.close()
+
+
 @pytest.mark.parametrize(
     ("tactic", "stored"),
     [(BossTactic.ONE_HITTER, None), (BossTactic.EVERYONE_ATTACKS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)],

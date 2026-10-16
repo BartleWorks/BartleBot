@@ -56,7 +56,6 @@ from PyQt6.QtWidgets import (
     QDialog,
     QDoubleSpinBox,
     QFormLayout,
-    QGridLayout,
     QLabel,
     QStackedWidget,
     QVBoxLayout,
@@ -200,6 +199,10 @@ class FirstRunPage(QWidget):
 class _CardsPage(FirstRunPage):
     """A page answered by picking one :class:`StartCard`, the recommended one first and selected.
 
+    The cards are stacked, each the page's full width, and each leads with a radio button:
+    two tiles side by side in a dialog taller than it is wide read as a gallery, not as one
+    question with two answers.
+
     A card selects itself on taking focus, so the selected one takes it on show: left to
     the focus chain, showing the dialog hands it to the first card, which changes the
     answer. With none selected the page itself takes it, for the same reason.
@@ -211,19 +214,18 @@ class _CardsPage(FirstRunPage):
         self.column = QVBoxLayout(self)
         self.column.setContentsMargins(0, 0, 0, 0)
         self.column.setSpacing(12)
-        grid = QGridLayout()
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setSpacing(6)
-        self.column.addLayout(grid)
+        cards = QVBoxLayout()
+        cards.setContentsMargins(0, 0, 0, 0)
+        cards.setSpacing(6)
+        self.column.addLayout(cards)
 
         self._values = [value for value, *_ in choices]
         self._cards: list[StartCard] = []
-        for index, (value, name, blurb, recommended) in enumerate(choices):
-            card = StartCard(name, blurb, detail=RECOMMENDED_DETAIL if recommended else "")
+        for value, name, blurb, recommended in choices:
+            card = StartCard(name, blurb, detail=RECOMMENDED_DETAIL if recommended else "", radio=True)
             card.chosen.connect(lambda v=value: self._choose(v))
             self._cards.append(card)
-            grid.addWidget(card, 0, index)
-            grid.setColumnStretch(index, 1)
+            cards.addWidget(card)
         self._value: object | None = None
 
     @property

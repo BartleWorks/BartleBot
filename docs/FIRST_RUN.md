@@ -12,7 +12,9 @@ Qt-free module, so BartleBuddy can ask the same question and write the same keys
 
 1. **Quick or Custom.** Two cards, Quick first, recommended and selected. The choice is
    not stored: it only decides which pages follow. Custom adds the Options page, whose
-   three choices Quick leaves on without showing them.
+   three choices Quick leaves on without showing them. Like the combat question's, the
+   cards are stacked at the page's full width, each led by a radio button, so they read as
+   two answers to one question rather than a gallery (`_CardsPage`).
 2. **Every page after it that applies.** A page applies under the mode chosen and with
    what is set up so far.
 
