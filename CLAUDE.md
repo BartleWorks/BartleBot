@@ -68,6 +68,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
 | `launcher/` | auto-select, launch profiles, Remember Realm |
 | `packaging/` | the app as a packaged build: `--self-check`, whether this process is one, and Velopack's install hooks, which write the install key and the file types (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
+| `updates/` | the update check: the feed, its signature and the trusted keys, and staging an update for Velopack (`docs/INSTALLER.md`) |
 | `shared/` | what every Bartleby product shares; imports nothing from the rest of `bartlebot` |
 | `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`, `title_bar/`) |
 
