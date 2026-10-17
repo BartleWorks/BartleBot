@@ -138,6 +138,8 @@ class BotMachine:
         self._resume_event.set()  # not paused by default
         # Who is holding the FSM paused; _resume_event is set exactly when this is empty. See PauseHold.
         self._holds: set[PauseHold] = set()
+        # Windows handed to crash recovery since the run last resumed. See _await_dead_client.
+        self._lost_hwnds: set[int] = set()
         # Set by the run loop once it has actually reached its paused wait. pause() only
         # clears _resume_event, which says a pause was *asked for*, not that the node that
         # was running has finished -- see wait_until_parked.
@@ -725,7 +727,7 @@ class BotMachine:
             clients_ref=lambda: self.clients,
             stop_flag=self._stop_flag,
             on_pause=functools.partial(self.pause, PauseHold.RECOVERY),
-            on_client_disconnected=self._on_client_disconnected,
+            on_client_disconnected=self._client_lost,
             on_restricted_zone=self._handle_restricted_zone,
             on_loading=self.forget_sightings,
         )
@@ -734,6 +736,7 @@ class BotMachine:
         _run_start = time.monotonic()
         self._running = True
         self._run_task = asyncio.current_task()
+        self._lost_hwnds.clear()
         self._reset_variables()
         self._variable_only_streak.clear()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
@@ -771,6 +774,7 @@ class BotMachine:
                 self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
+                node_clients = list(self.clients)
                 self._current_node_task = asyncio.create_task(node_fn(self, self.clients, state_def.get("params", {})))
                 try:
                     self.last_result = await self._current_node_task
@@ -802,15 +806,18 @@ class BotMachine:
                     # a dead game process and need the same recovery path.
                     # ExceptionalTimeout wraps a memory-read poll that timed out — same root
                     # cause when WizWalker's internal timeout fires before ClientClosedError.
+                    # Both can also come from a live client, so the death is confirmed before
+                    # the run waits on a recovery: see _await_dead_client.
                     logger.warning(
                         "%s in state %s — client may have died, pausing for recovery",
                         type(exc).__name__,
                         self._fmt_state(state_id),
                     )
-                    self._no_match_count = 0
-                    self._consecutive_same_state_count = 0
-                    self.pause(PauseHold.RECOVERY)
-                    continue
+                    if await self._await_dead_client(node_clients):
+                        self._no_match_count = 0
+                        self._consecutive_same_state_count = 0
+                        continue
+                    self.last_result = "FAILURE"
                 except Exception:
                     logger.exception("Node execution failed in state %s", self._fmt_state(state_id))
                     self.last_result = "FAILURE"
@@ -930,6 +937,47 @@ class BotMachine:
                     await t
                 except asyncio.CancelledError:
                     pass
+
+    def _client_lost(self, hwnd: int) -> None:
+        """The health monitor's word that *hwnd* has been handed to crash recovery. Passed on to the callback."""
+        self._lost_hwnds.add(hwnd)
+        if self._on_client_disconnected:
+            try:
+                self._on_client_disconnected(hwnd)
+            except Exception:
+                logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
+
+    def _a_client_is_lost(self, clients: list) -> bool:
+        """Whether any of *clients* has left the client list, or been handed to crash recovery."""
+        return any(c not in self.clients or c.window_handle in self._lost_hwnds for c in clients)
+
+    async def _await_dead_client(self, clients: list) -> bool:
+        """Hold the run for recovery after a dead-client error, once a client is shown to be gone.
+
+        True when one of *clients*, the node's, is gone, or the run stopped: the loop then parks
+        without counting the tick, and recovery resumes it. False when every one of them is still
+        there after DEAD_CLIENT_CONFIRM_TIMEOUT: the error came from a live client, a window
+        torn down mid-read in a zone change or a lagging one, and nothing is coming to resume the
+        run, so the hold is released and the caller counts the node's FAILURE. Parked on such an
+        error, a run used to sit paused for good.
+
+        Holds the run paused while it waits, so neither combat watcher acts on a dying client.
+        """
+        from bartlebot.nodes.timing import DEAD_CLIENT_CONFIRM_TIMEOUT, POLL_INTERVAL
+
+        self.pause(PauseHold.RECOVERY)
+        deadline = time.monotonic() + DEAD_CLIENT_CONFIRM_TIMEOUT
+        while not self._stop_flag.is_set() and not self._a_client_is_lost(clients):
+            if time.monotonic() >= deadline:
+                self.resume(PauseHold.RECOVERY)
+                self._log_machine(
+                    f"Every client is still running {DEAD_CLIENT_CONFIRM_TIMEOUT:.0f}s after the error;"
+                    " counting it as the node's FAILURE",
+                    logging.WARNING,
+                )
+                return False
+            await asyncio.sleep(POLL_INTERVAL)
+        return True
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: advance any open dialog on all clients, declining side quests.
@@ -1402,6 +1450,7 @@ class BotMachine:
             self._holds.discard(hold)
         if self._holds:
             return
+        self._lost_hwnds.clear()  # recovered, or given up on: either way not waited for again
         if self._health_monitor is not None:
             self._health_monitor.clear_flagged()  # allow re-detection after client recovery
         # A preemption whose node finished before the cancel landed is never consumed by the
@@ -1464,6 +1513,7 @@ class BotMachine:
             )
             return False
         monitor.recover(client, reason)
+        self._lost_hwnds.add(hwnd)
         return True
 
     def force_state(self, state_id: str, reason: str | None = None) -> None:
