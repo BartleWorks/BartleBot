@@ -16,7 +16,7 @@ import pytest
 
 import bartlebot.bot.client_health_monitor as health_module
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
-from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.machine import BotMachine, PauseHold
 
 # ---------------------------------------------------------------------------
 # Shared config and helpers
@@ -150,6 +150,42 @@ async def test_is_paused_reflects_state():
     machine.pause()
     assert machine.is_paused
     machine.resume()
+    assert not machine.is_paused
+
+
+def test_a_party_resuming_its_own_hold_leaves_the_others_in_place():
+    """The end of a fight must not resume a bot the user, or crash recovery, paused during it."""
+    machine = make_machine(lambda *_: None)
+    machine.pause(PauseHold.AMBIENT)
+    machine.pause(PauseHold.RECOVERY)
+    machine.resume(PauseHold.AMBIENT)
+    assert machine.is_paused
+    machine.resume(PauseHold.RECOVERY)
+    assert not machine.is_paused
+
+
+def test_releasing_a_hold_never_taken_resumes_nothing():
+    machine = make_machine(lambda *_: None)
+    machine.pause()
+    machine.resume(PauseHold.RELOG)
+    assert machine.is_paused
+
+
+def test_the_users_resume_lifts_every_hold():
+    """How a bot left paused by a recovery that cannot finish is set going again."""
+    machine = make_machine(lambda *_: None)
+    machine.pause(PauseHold.RECOVERY)
+    machine.pause(PauseHold.AMBIENT)
+    machine.resume()
+    assert not machine.is_paused
+
+
+def test_a_stop_lifts_every_hold():
+    machine = make_machine(lambda *_: None)
+    machine.pause(PauseHold.RECOVERY)
+    machine.stop()
+    assert not machine.is_paused
+    machine.resume(PauseHold.USER)  # nothing left to release
     assert not machine.is_paused
 
 

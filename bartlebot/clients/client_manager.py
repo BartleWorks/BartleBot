@@ -7,6 +7,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
+from bartlebot.bot.machine import PauseHold
 from bartlebot.clients import account_identity, recovery_readiness, relog
 from bartlebot.clients.credentials import CredentialStore, account_label
 from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
@@ -1015,7 +1016,7 @@ class ClientManager(QObject):
             # Pause immediately to prevent FAILURE results from accumulating before
             # recovery resumes the machine. Idempotent if already paused.
             if bot_running:
-                machine.pause()
+                machine.pause(PauseHold.RECOVERY)
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
                 self._recovery_task = asyncio.create_task(self._run_recovery_queue())
@@ -1402,7 +1403,8 @@ class ClientManager(QObject):
                 recovery_state = self._get_recovery_state()
                 if recovery_state:
                     machine.force_state(recovery_state)
-                    machine.resume()
+                    # Recovery's own hold only: a pause the user asked for meanwhile stands.
+                    machine.resume(PauseHold.RECOVERY)
                     logger.info("All clients recovered — FSM resuming at %r", recovery_state)
                 else:
                     # Unreachable via a loaded bot: BotConfig requires recovery_state and
@@ -1764,21 +1766,21 @@ class ClientManager(QObject):
 
         self._relog_in_progress = True
         try:
-            machine.pause()
+            machine.pause(PauseHold.RELOG)
             if not await machine.wait_until_parked(RELOG_PARK_TIMEOUT):
                 logger.warning(
                     "Skipping %s relog — the bot did not reach a node boundary within %.0fs",
                     reason,
                     RELOG_PARK_TIMEOUT,
                 )
-                machine.resume()
+                machine.resume(PauseHold.RELOG)
                 return False
             if machine.is_ambient_combat_active:
                 # Parked is not idle: the ambient watcher runs alongside the run loop and
                 # can be mid-fight on every client. Try again next tick rather than closing
                 # a client out of a duel.
                 logger.info("Deferring %s relog — ambient combat is still being handled", reason)
-                machine.resume()
+                machine.resume(PauseHold.RELOG)
                 return False
 
             hwnds = [c.window_handle for c in targets]
@@ -1798,6 +1800,14 @@ class ClientManager(QObject):
             for client, result in zip(targets, results):
                 if isinstance(result, BaseException):
                     logger.error("Closing client hwnd=%d for a relog raised", client.window_handle, exc_info=result)
+            if len(survivors) < len(targets):
+                # Recovery brings the closed ones back and resumes on its own hold. Taken here
+                # rather than left to the removal, which the client loop only notices on its
+                # next poll, so the bot is never free to run in between.
+                machine.pause(PauseHold.RECOVERY)
+            # Released either way: with nothing closed there is nothing for recovery to do, and
+            # the bot carries on with the fleet it has.
+            machine.resume(PauseHold.RELOG)
             if survivors:
                 # Some of the fleet is already gone and these will not die. Recovery brings
                 # back what it can; saying so is what stops the log reading as though the

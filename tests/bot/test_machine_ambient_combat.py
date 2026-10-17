@@ -19,7 +19,7 @@ import pytest
 from wizwalker import XYZ
 
 from bartlebot.bot import ambient_combat
-from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.machine import BotMachine, PauseHold
 from bartlebot.nodes import combat_runner, node_helpers
 from bartlebot.nodes.combat_and_healing import collect_wisps
 from tests.conftest import FakeClient, FakeEntity, see_each_other
@@ -790,6 +790,35 @@ async def test_a_helper_that_never_got_in_goes_home(fast, combat, monkeypatch):
     assert combat.fights.fought() == [fighter]
     assert _teleports(helper)[0] == (moved_to.x, moved_to.y, moved_to.z)
     assert _teleports(helper)[-1] == (2000.0, 0.0, 0.0)
+
+
+@pytest.mark.parametrize("hold", [PauseHold.USER, PauseHold.RECOVERY])
+async def test_a_pause_taken_during_the_fight_outlasts_it(fast, combat, caplog, hold):
+    """The watcher gives back its own pause and no other.
+
+    Resuming outright overrode a Pause pressed mid-fight, and ran nodes on a short team while
+    crash recovery was still relaunching a client that died in the fight.
+    """
+    fighter = _client()
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter], config=_config(), node_registry={})
+    release = asyncio.Event()
+    combat.fights.hold[fighter] = release
+
+    task = asyncio.create_task(machine._ambient_combat_watcher())
+    await _until(lambda: combat.fights.started)
+    machine.pause(hold)
+    with caplog.at_level(logging.INFO):
+        release.set()
+        await _until(lambda: not machine.is_ambient_combat_active and combat.poll_drops.await_count >= 1)
+        await asyncio.sleep(0.02)
+    still_paused = machine.is_paused
+    machine.stop()
+    await asyncio.wait_for(task, timeout=2.0)
+
+    assert still_paused
+    assert f"the FSM stays paused (held for {hold})" in caplog.text
+    assert "FSM resumed" not in caplog.text
 
 
 # ---------------------------------------------------------------------------

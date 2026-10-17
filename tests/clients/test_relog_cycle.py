@@ -11,10 +11,11 @@ Real ClientManager methods are bound to a minimal harness, the same trick
 
 import asyncio
 import logging
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
+from bartlebot.bot.machine import PauseHold
 from bartlebot.clients.client_manager import ClientManager
 
 
@@ -136,15 +137,29 @@ class TestQuietPoint:
     async def test_waits_for_a_node_boundary_before_closing_anything(self, harness):
         with _closes_cleanly():
             assert await harness.relog_clients(harness._clients, reason="scheduled") is True
-        harness._machine.pause.assert_called_once()
+        assert harness._machine.pause.call_args_list[0] == call(PauseHold.RELOG)
         harness._machine.wait_until_parked.assert_awaited_once()
+
+    async def test_a_completed_relog_hands_its_hold_to_recovery(self, harness):
+        """Recovery resumes the bot once the clients are back; it must not run in between."""
+        with _closes_cleanly():
+            assert await harness.relog_clients(harness._clients, reason="scheduled") is True
+        holds = [c for c in harness._machine.mock_calls if c[0] in ("pause", "resume")]
+        assert holds == [call.pause(PauseHold.RELOG), call.pause(PauseHold.RECOVERY), call.resume(PauseHold.RELOG)]
+
+    async def test_a_relog_that_closes_nothing_gives_the_bot_back(self, harness, caplog):
+        """Nothing closed means nothing for recovery to resume, which left the bot paused for good."""
+        with patch("bartlebot.clients.client_manager.force_close_client", AsyncMock(return_value=False)):
+            assert await harness.relog_clients(harness._clients, reason="scheduled") is False
+        harness._machine.pause.assert_called_once_with(PauseHold.RELOG)
+        harness._machine.resume.assert_called_once_with(PauseHold.RELOG)
 
     async def test_gives_up_and_resumes_when_the_bot_never_parks(self, harness, caplog):
         harness._machine.wait_until_parked = AsyncMock(return_value=False)
         with _closes_cleanly() as close, caplog.at_level(logging.WARNING):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is False
         close.assert_not_awaited()
-        harness._machine.resume.assert_called_once()  # the run must not be left paused
+        harness._machine.resume.assert_called_once_with(PauseHold.RELOG)  # the run must not be left paused
         assert "did not reach a node boundary" in caplog.text
 
     async def test_defers_while_ambient_combat_is_being_handled_without_touching_the_pause(self, harness):
@@ -173,7 +188,7 @@ class TestQuietPoint:
         with _closes_cleanly() as close, caplog.at_level(logging.INFO):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is False
         close.assert_not_awaited()
-        harness._machine.resume.assert_called_once()  # the relog's own pause, given back
+        harness._machine.resume.assert_called_once_with(PauseHold.RELOG)  # the relog's own pause, given back
         assert "ambient combat" in caplog.text
 
 
