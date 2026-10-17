@@ -1394,8 +1394,11 @@ class ClientManager(QObject):
             # node is competing for the mouse, and before the state jump so the bot resumes
             # with the group already restored. The fight comes first: the pause keeps every
             # combat watcher off, and the survey would open the social window over the cards.
-            if self._machine is not None:
-                await self._machine.settle_fights()
+            if self._machine is None or self._machine.is_stopped:
+                # A slot that could not be relaunched stopped the run. Regrouping now would
+                # open the social window on clients the user has just been handed back.
+                return
+            await self._machine.settle_fights()
             await self._regroup_after_recovery()
 
             machine = self._machine
