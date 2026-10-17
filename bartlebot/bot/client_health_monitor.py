@@ -330,17 +330,21 @@ class ClientHealthMonitor:
         """
         while not self._stop_flag.is_set():
             await asyncio.sleep(POLL_INTERVAL)
-            for client in list(self._clients_ref()):
-                hwnd = client.window_handle
-                if hwnd in self._flagged:
-                    continue
-                try:
-                    modal_visible = await self._is_disconnect_modal_visible(client)
-                except Exception:
-                    continue
-                if not modal_visible:
-                    continue
-                self.recover(client, "shows a disconnect modal")
+            try:
+                for client in list(self._clients_ref()):
+                    hwnd = client.window_handle
+                    if hwnd in self._flagged:
+                        continue
+                    try:
+                        modal_visible = await self._is_disconnect_modal_visible(client)
+                    except Exception:
+                        continue
+                    if not modal_visible:
+                        continue
+                    self.recover(client, "shows a disconnect modal")
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Disconnect dialog watcher failed; it carries on")
 
     @staticmethod
     async def _is_disconnect_modal_visible(client) -> bool:
@@ -382,11 +386,15 @@ class ClientHealthMonitor:
         streaks: dict[int, _LinkStreak] = {}
         while not self._stop_flag.is_set():
             await asyncio.sleep(NETWORK_LINK_POLL_INTERVAL)
-            clients = list(self._clients_ref())
-            for gone in streaks.keys() - {c.window_handle for c in clients}:
-                del streaks[gone]
-            for client in clients:
-                await self._check_network_link(client, streaks, time.monotonic())
+            try:
+                clients = list(self._clients_ref())
+                for gone in streaks.keys() - {c.window_handle for c in clients}:
+                    del streaks[gone]
+                for client in clients:
+                    await self._check_network_link(client, streaks, time.monotonic())
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Network link watcher failed; it carries on")
 
     async def _check_network_link(self, client, streaks: dict[int, _LinkStreak], now: float) -> None:
         """Advance one client's network-icon streak by one poll, recovering it if due.
@@ -447,32 +455,36 @@ class ClientHealthMonitor:
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(_CLIENT_STATUS_CHECK_INTERVAL)
-            for client in list(self._clients_ref()):
-                hwnd = client.window_handle
-                if hwnd in self._flagged:
-                    continue
-                try:
-                    await client.zone_name()
-                    fail_counts[hwnd] = 0
-                except Exception:
-                    fail_counts[hwnd] = fail_counts.get(hwnd, 0) + 1
-                    logger.debug(
-                        "Client status check failed for hwnd=%d (%d/%d)",
-                        hwnd,
-                        fail_counts[hwnd],
-                        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD,
-                    )
-                    if fail_counts[hwnd] >= _CLIENT_STATUS_CHECK_FAIL_THRESHOLD:
-                        logger.warning(
-                            "Client hwnd=%d unresponsive after %d checks — pausing and notifying",
+            try:
+                for client in list(self._clients_ref()):
+                    hwnd = client.window_handle
+                    if hwnd in self._flagged:
+                        continue
+                    try:
+                        await client.zone_name()
+                        fail_counts[hwnd] = 0
+                    except Exception:
+                        fail_counts[hwnd] = fail_counts.get(hwnd, 0) + 1
+                        logger.debug(
+                            "Client status check failed for hwnd=%d (%d/%d)",
                             hwnd,
                             fail_counts[hwnd],
+                            _CLIENT_STATUS_CHECK_FAIL_THRESHOLD,
                         )
-                        # Counted afresh once unflagged: a client a relog suspended and
-                        # handed back must fail the whole threshold again, not one check (#154).
-                        fail_counts[hwnd] = 0
-                        self._flagged.add(hwnd)
-                        self._fire_disconnected(hwnd)
+                        if fail_counts[hwnd] >= _CLIENT_STATUS_CHECK_FAIL_THRESHOLD:
+                            logger.warning(
+                                "Client hwnd=%d unresponsive after %d checks — pausing and notifying",
+                                hwnd,
+                                fail_counts[hwnd],
+                            )
+                            # Counted afresh once unflagged: a client a relog suspended and
+                            # handed back must fail the whole threshold again, not one check (#154).
+                            fail_counts[hwnd] = 0
+                            self._flagged.add(hwnd)
+                            self._fire_disconnected(hwnd)
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Client status watcher failed; it carries on")
 
     async def _restriction_for(self, client) -> restricted_zones.Restriction | None:
         """Return the restriction in force for *client*, or None. See ``restriction_for``."""
@@ -492,17 +504,21 @@ class ClientHealthMonitor:
         """
         while not self._stop_flag.is_set():
             await asyncio.sleep(_RESTRICTED_ZONE_CHECK_INTERVAL)
-            for client in list(self._clients_ref()):
-                try:
-                    hit = await self._restriction_for(client)
-                except Exception:
-                    logger.debug("Restricted-zone check failed for hwnd=%s", getattr(client, "window_handle", "?"))
-                    continue
-                if hit is None:
-                    continue
-                logger.critical("Restricted zone detected: %s — stopping the bot", hit.describe())
-                self._fire_restricted_zone(hit)
-                return
+            try:
+                for client in list(self._clients_ref()):
+                    try:
+                        hit = await self._restriction_for(client)
+                    except Exception:
+                        logger.debug("Restricted-zone check failed for hwnd=%s", getattr(client, "window_handle", "?"))
+                        continue
+                    if hit is None:
+                        continue
+                    logger.critical("Restricted zone detected: %s — stopping the bot", hit.describe())
+                    self._fire_restricted_zone(hit)
+                    return
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Restricted-zone watcher failed; it carries on")
 
     def _fire_restricted_zone(self, hit: restricted_zones.Restriction) -> None:
         """Invoke the restricted-zone callback, guarded like every other callback here."""
@@ -524,33 +540,37 @@ class ClientHealthMonitor:
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(POLL_INTERVAL)
-            for client in list(self._clients_ref()):
-                hwnd = client.window_handle
-                try:
-                    is_loading = await client.is_loading()
-                except Exception:
-                    self._note_loading(client)
-                    loading_since.pop(hwnd, None)
-                    continue  # let _client_status_watcher handle dead clients
-                if is_loading:
-                    self._note_loading(client)
-                if hwnd in self._flagged:
-                    loading_since.pop(hwnd, None)
-                    continue
+            try:
+                for client in list(self._clients_ref()):
+                    hwnd = client.window_handle
+                    try:
+                        is_loading = await client.is_loading()
+                    except Exception:
+                        self._note_loading(client)
+                        loading_since.pop(hwnd, None)
+                        continue  # let _client_status_watcher handle dead clients
+                    if is_loading:
+                        self._note_loading(client)
+                    if hwnd in self._flagged:
+                        loading_since.pop(hwnd, None)
+                        continue
 
-                if is_loading:
-                    now = time.monotonic()
-                    start = loading_since.setdefault(hwnd, now)
-                    elapsed = now - start
-                    if elapsed >= LOADING_SCREEN_TIMEOUT:
-                        logger.warning(
-                            "Client hwnd=%d stuck in loading screen for %.0fs — "
-                            "treating as crash and triggering recovery",
-                            hwnd,
-                            elapsed,
-                        )
-                        loading_since.pop(hwnd)
-                        self._flagged.add(hwnd)
-                        self._fire_disconnected(hwnd)
-                else:
-                    loading_since.pop(hwnd, None)
+                    if is_loading:
+                        now = time.monotonic()
+                        start = loading_since.setdefault(hwnd, now)
+                        elapsed = now - start
+                        if elapsed >= LOADING_SCREEN_TIMEOUT:
+                            logger.warning(
+                                "Client hwnd=%d stuck in loading screen for %.0fs — "
+                                "treating as crash and triggering recovery",
+                                hwnd,
+                                elapsed,
+                            )
+                            loading_since.pop(hwnd)
+                            self._flagged.add(hwnd)
+                            self._fire_disconnected(hwnd)
+                    else:
+                        loading_since.pop(hwnd, None)
+            except Exception:
+                # One bad pass must not end the watcher for the rest of the run (#154).
+                logger.exception("Loading screen watcher failed; it carries on")
