@@ -789,11 +789,13 @@ class BotMachine:
                 try:
                     self.last_result = await self._current_node_task
                 except asyncio.CancelledError:
+                    if asyncio.current_task().cancelling():
+                        raise  # run() itself was cancelled from outside
                     if self._stop_flag.is_set():
                         # Our deferred_cancel fired after the grace period elapsed.
                         self._log_machine("Node forcibly cancelled after grace period.", logging.WARNING)
                         break
-                    if self._preempted and not asyncio.current_task().cancelling():
+                    if self._preempted:
                         # The ambient combat watcher took the node's clients for a fight.
                         # No result and no transition: park, and on resume run this state
                         # again from the start. The counters are left alone.
@@ -804,8 +806,15 @@ class BotMachine:
                             logging.INFO,
                         )
                         continue
-                    # run() was cancelled from outside — propagate.
-                    raise
+                    # Nobody cancelled the node: a CancelledError escaped from inside it, such as
+                    # an await on a task something else cancelled. Taken for run()'s own
+                    # cancellation, it ended the run with no reason given.
+                    logger.error(
+                        "Node in state %s ended with a cancellation nothing asked for; counting it as a FAILURE",
+                        self._fmt_state(state_id),
+                        exc_info=True,
+                    )
+                    self.last_result = "FAILURE"
                 except (ClientClosedError, ExceptionalTimeout, MemoryReadError) as exc:
                     # A client process has died. Pause immediately rather than treating
                     # this as a normal FAILURE — prevents the no-match / idle counters
