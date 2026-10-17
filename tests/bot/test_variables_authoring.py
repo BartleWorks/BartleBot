@@ -98,24 +98,24 @@ def test_every_comparison_offered_is_one_validation_accepts():
 
 
 def test_an_edge_without_a_condition_has_no_text():
-    assert variables.describe_guard(TransitionModel(trigger="t", source="a", dest="b")) is None
+    assert variables.describe_guard(TransitionModel(trigger="advance", source="a", dest="b")) is None
 
 
 def test_flat_rows_read_joined_by_their_operator():
     t = TransitionModel(
-        trigger="t", source="a", dest="b", flags=[FlagCondition(option="Fast", negate=True), _is("swords", 2)]
+        trigger="advance", source="a", dest="b", flags=[FlagCondition(option="Fast", negate=True), _is("swords", 2)]
     )
     assert variables.describe_guard(t) == "NOT Fast AND swords == 2"
 
 
 def test_groups_are_bracketed_only_when_there_are_several():
     one = TransitionModel(
-        trigger="t", source="a", dest="b", flag_groups=[FlagGroup(flags=[_is("swords", 1), _is("stage", "Sun")])]
+        trigger="advance", source="a", dest="b", flag_groups=[FlagGroup(flags=[_is("swords", 1), _is("stage", "Sun")])]
     )
     assert variables.describe_guard(one) == "swords == 1 AND stage == Sun"
 
     two = TransitionModel(
-        trigger="t",
+        trigger="advance",
         source="a",
         dest="b",
         flag_groups=[
@@ -129,7 +129,7 @@ def test_groups_are_bracketed_only_when_there_are_several():
 
 def test_the_groups_win_over_stale_flat_rows_as_they_do_at_run_time():
     t = TransitionModel(
-        trigger="t",
+        trigger="advance",
         source="a",
         dest="b",
         flags=[FlagCondition(option="Stale")],

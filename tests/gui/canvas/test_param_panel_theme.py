@@ -250,7 +250,7 @@ def test_the_connection_rows_are_rebuilt_after_a_switch(qapp, theme):
     panel = _panel(theme)
     state = StateModel(id="a", node_type="wait")
     other = StateModel(id="b", node_type="wait")
-    edge = TransitionModel(trigger="t", source="a", dest="b", when="SUCCESS")
+    edge = TransitionModel(trigger="advance", source="a", dest="b", when="SUCCESS")
     panel.show_state(state, [state, other], [edge])
     light_accent = THEME.accent
     assert any(light_accent in w.styleSheet() for w in _conn_labels(panel))
