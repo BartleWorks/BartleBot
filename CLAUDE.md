@@ -264,9 +264,10 @@ recent kept, plus a bridge handler for the in-app log widget.
 
 - Pass `logging.WARNING`, the int constant, not `"WARNING"`.
 - `machine.log()` is the node-facing API and files the record under the running
-  node; the machine's own bookkeeping uses `self._log_machine()`. The two are not
-  interchangeable — the ambient watchers run concurrently with whatever node is
-  executing, so a watcher using `log()` files under a node it has nothing to do with.
+  node when the node's own task, or one it started, makes the call, and under the
+  machine anywhere else, so the ambient watchers and what they share with
+  `handle_combat` can use it. The machine's own bookkeeping uses `self._log_machine()`,
+  which never names a node.
 - Never log the same event twice. A widget restating what another logger already
   wrote passes `extra=GUI_ONLY`, which keeps it out of the session file.
 - **Never log a wizard name, or its `m_nameKeys`.** Logs get pasted into bug

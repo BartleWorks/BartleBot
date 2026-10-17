@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import enum
 import functools
 import logging
@@ -44,6 +45,11 @@ _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 # (the watcher leaves its fights alone entirely); relog is itself the recovery, and waits out a
 # fight before logging anyone out (#203).
 NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
+
+# The node type a log() call is filed under: set in the running node's own task, and so in
+# every task it starts, and nowhere else. A field on the machine said only that some node was
+# running, so a watcher logging beside it was filed under that node. See log().
+_NODE_TYPE: contextvars.ContextVar[str | None] = contextvars.ContextVar("bartlebot_node_type", default=None)
 
 
 class VariableWriteRefused(RuntimeError):
@@ -172,8 +178,6 @@ class BotMachine:
         # Which clients have been seen sharing a zone, realm and instance. Keeps only the
         # latest check until run() starts the loading watcher that says when one goes stale.
         self._together = sightings.TogetherRecord(retain=False)
-        # Which node's log() calls are currently being attributed. See log().
-        self._current_node_type: str | None = None
         # Run bookkeeping, for the summary logged when run() returns.
         self._pass_count: int = 0
         self._states_executed: int = 0
@@ -458,12 +462,15 @@ class BotMachine:
         "everything quicksell did" a grep and lets the log widget filter by node.
 
         Outside a node's execution — the run loop's own bookkeeping — there is no node
-        to name, and the machine's logger is the honest answer.
+        to name, and the machine's logger is the honest answer. So is it for the ambient
+        watchers, and for the session and helpers they share with handle_combat: they run
+        beside whatever node is executing, and are filed under it only when the call is made
+        from the node's own task, or one it started (_NODE_TYPE).
         """
         logging.getLogger(self._node_logger_name()).log(level, msg)
 
     def _node_logger_name(self) -> str:
-        node_type = self._current_node_type
+        node_type = _NODE_TYPE.get()
         return f"bartlebot.node.{node_type}" if node_type else logger.name
 
     def _log_machine(self, msg: str, level: int = logging.INFO) -> None:
@@ -472,9 +479,8 @@ class BotMachine:
         Same signature as log() so the two read alike at the call site, but this one
         always lands on bartlebot.bot.machine. The run loop's own bookkeeping belongs
         there, and for the ambient watchers it is the only correct answer: they run
-        concurrently with whatever node is executing, so attributing them to
-        _current_node_type would file a watcher's message under a node that had
-        nothing to do with it.
+        concurrently with whatever node is executing, so attributing them to it would
+        file a watcher's message under a node that had nothing to do with it.
         """
         logger.log(level, msg)
 
@@ -769,13 +775,17 @@ class BotMachine:
                 if not self._rerunning:
                     self._note_pass(state_id)
                 self._rerunning = False
-                self._current_node_type = node_type
                 self._states_executed += 1
                 self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
                 node_clients = list(self.clients)
-                self._current_node_task = asyncio.create_task(node_fn(self, self.clients, state_def.get("params", {})))
+                # The node's own context, which every task it starts copies: log() files under it.
+                context = contextvars.copy_context()
+                context.run(_NODE_TYPE.set, node_type)
+                self._current_node_task = asyncio.create_task(
+                    node_fn(self, self.clients, state_def.get("params", {})), context=context
+                )
                 try:
                     self.last_result = await self._current_node_task
                 except asyncio.CancelledError:
@@ -823,7 +833,6 @@ class BotMachine:
                     self.last_result = "FAILURE"
                 finally:
                     self._current_node_task = None
-                    self._current_node_type = None
                 self._results_seen[self.last_result or "NONE"] += 1
                 _duration = time.monotonic() - _tick_start
                 self._log_machine(
@@ -922,7 +931,6 @@ class BotMachine:
         finally:
             self._running = False
             self._run_task = None
-            self._current_node_type = None
             self._log_run_summary(time.monotonic() - _run_start)
             watcher.cancel()
             combat_watcher.cancel()

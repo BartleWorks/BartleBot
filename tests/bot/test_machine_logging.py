@@ -6,6 +6,7 @@ five-hour log something to navigate by. Both are invisible to every other test â
 a run can be perfectly correct and still produce a log nobody can read.
 """
 
+import asyncio
 import logging
 
 import pytest
@@ -86,6 +87,51 @@ async def test_two_nodes_are_two_loggers(logs):
 
     assert _from(logs, "bartlebot.node.walk") == ["walking"]
     assert _from(logs, "bartlebot.node.fight") == ["fighting"]
+
+
+async def test_a_task_the_node_starts_logs_as_the_node(logs):
+    """A node's game code runs once per client in tasks of its own; their lines are still the node's."""
+
+    async def walk(machine, clients, params):
+        await asyncio.gather(*(asyncio.create_task(_say(machine, f"client {i}")) for i in range(2)))
+        machine.stop()
+        return "SUCCESS"
+
+    async def fight(machine, clients, params):
+        return "SUCCESS"
+
+    await _machine(walk, fight).run()
+
+    assert sorted(_from(logs, "bartlebot.node.walk")) == ["client 0", "client 1"]
+
+
+async def test_a_watcher_logging_while_a_node_runs_is_not_filed_under_it(logs):
+    """The ambient session logs through machine.log, and runs beside a node it could not cancel."""
+    node_running = asyncio.Event()
+    release = asyncio.Event()
+
+    async def walk(machine, clients, params):
+        node_running.set()
+        await release.wait()
+        machine.stop()
+        return "SUCCESS"
+
+    async def fight(machine, clients, params):
+        return "SUCCESS"
+
+    machine = _machine(walk, fight)
+    run = asyncio.create_task(machine.run())
+    await asyncio.wait_for(node_running.wait(), 1.0)
+    await asyncio.create_task(_say(machine, "from a watcher"))
+    release.set()
+    await asyncio.wait_for(run, 1.0)
+
+    assert "from a watcher" in _from(logs, "bartlebot.bot.machine")
+    assert "from a watcher" not in _from(logs, "bartlebot.node.walk")
+
+
+async def _say(machine, message: str) -> None:
+    machine.log(message)
 
 
 async def test_the_machines_own_bookkeeping_stays_on_the_machine_logger(logs):

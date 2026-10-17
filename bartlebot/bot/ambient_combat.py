@@ -137,7 +137,8 @@ class AmbientSession:
         return "is" if len(clients) == 1 else "are"
 
     def _log(self, message: str, level: int = logging.INFO) -> None:
-        # The loop has parked, so machine.log files under the machine rather than a node.
+        # The session runs in the watcher's task, so machine.log files it under the machine, never
+        # under a node still running beside it when may_move is False.
         self.machine.log(f"Ambient combat: {message}", level)
 
     # ------------------------------------------------------------------ the session
