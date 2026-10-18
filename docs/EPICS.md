@@ -228,7 +228,7 @@ The rules every stage kept:
 Epic #27: a packaged build, a per-user Velopack install, a signed update feed, and the
 first release. https://claude.ai/artifact/BNNKxZLiNZ4Pd9kcV8fdGd
 
-**In progress; the page is kept current while stages land.**
+**Complete: all seven stages landed by 2026-10-18.**
 
 | stage | issue | what |
 |---|---|---|
@@ -237,13 +237,21 @@ first release. https://claude.ai/artifact/BNNKxZLiNZ4Pd9kcV8fdGd
 | 3 | #237 | install key, file types and single instance |
 | 4 | #238 | updater: the signed feed, the startup check, one popup per version |
 | 5 | #239 | art appears at once: one `art_changed` signal, every art surface redraws |
-| 6 | #240 | first release: the checklist, the install page, an update through GitHub; split into 6.1 and 6.2, which waits for Stage 7 and a public repo |
-| 7 | #248 | download site: a Zensical site with a landing page, the download button and the install page; lands between 6.1 and 6.2 |
+| 6 | #240 | first release: the release notes, the checklist, the repo public, the `release` environment, and the `v0.1.0` tag; in two parts, 6.1 and 6.2 |
+| 7 | #248 | download site: a Zensical site with a landing page, the download button and the install page; landed between 6.1 and 6.2 |
 
-`docs/RELEASING.md` is the build and the release as built, and "The download site" is
-Stage 7.
+`docs/RELEASING.md` is the build and the release as built: the self-check, `release.yml`,
+the release notes, the download site, testing a draft and the signing key.
+`docs/INSTALLER.md` is what an install does on the user's machine: the hooks, the install
+key, the file types, single instance and the update check. `docs/RELEASE_CHECKLIST.md`
+is the procedure each release follows.
 
-The rules every stage keeps:
+After it, each needing a plan of its own: refusing a release that removes shipped content
+(#166) and `.bbtemplate` share files (#165). The stages' leftover is #250, publishing
+0.1.0 and the first update fetched from GitHub. Filed before the plan and left out of
+it: #233 (one process per game client) and #234 (wizwalker's cache under `Bartleby`).
+
+The rules every stage kept:
 
 - **A checkout run never changes.** No Velopack, no registry writes and no update check
   outside an installed build.
@@ -254,3 +262,5 @@ The rules every stage keeps:
 - **Install, update and uninstall never touch `%APPDATA%\Bartleby`.**
 - **No update is applied while a bot runs,** and one whose signature does not verify is
   never offered.
+- **The signing key is read by one job, in an environment only `v*` tags reach.** Whoever
+  owns the org owns the key, and a branch or a pull request never sees it.
