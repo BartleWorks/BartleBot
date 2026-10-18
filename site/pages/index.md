@@ -17,11 +17,10 @@ hide:
 <div class="bb-feature bb-feature--wide" markdown>
 <div markdown>
 
-## Every bot is a graph you can read
+## Build bots by drawing them
 
-A bot is a chain of steps: enter the dungeon, defeat the boss, collect the wisps. Every
-step ends in success or failure, and its edges say what happens next, so a bot knows what
-to do when a step goes wrong.
+Create bots on the node-based canvas by choosing steps from a library of actions. Every step has a success path and a failure path, so
+you can see, and choose, what happens when something goes wrong.
 
 </div>
 
@@ -32,11 +31,9 @@ to do when a step goes wrong.
 <div class="bb-feature" markdown>
 <div markdown>
 
-## Start from a template
+## Start from a template, not a blank canvas
 
-New Bot starts from a template: farm a boss, a whole dungeon, a housing gauntlet, a mob in
-the open world, reagents or spellements. Official templates are tested in game, and when
-one improves, the bots made from it are offered the update.
+Skip the setup and go straight to the important part with BartleBot templates. Templates handle the skeleton of a bot for a variety of common use cases, so all you need to do to create a new bot is record the unique steps. Official templates are tested in game, and when one improves, any bots you've created from the template can opt in and receive the updates too.
 
 </div>
 
@@ -49,9 +46,9 @@ one improves, the bots made from it are offered the update.
 
 ## Combat that fits the fight
 
-Every fight runs a duel strategy: the order your wizards join in, and what each of them
-casts. BartleBot ships defaults for solo and team fights, and for bosses that cheat when
-a blade or a Feint is cast. Change any of them and BartleBot keeps your own copy.
+Decide who casts what, and in what order, for any fight. The defaults cover solo and
+team fights, as well as common cheating boss scenarios. Change any of them and BartleBot
+keeps your edits in your own copy.
 
 </div>
 
@@ -62,10 +59,9 @@ a blade or a Feint is cast. Change any of them and BartleBot keeps your own copy
 <div class="bb-feature" markdown>
 <div markdown>
 
-## Keep what you want, sell the rest
+## Sell the junk, keep the good stuff
 
-Quicksell sells the drops you don't want as part of the run. Check the ones to keep and
-the rest are sold. Each bot comes with its own keep list, and you can change it.
+Quicksell clears out the drops you don't want, so you never run out of backpack and bank space. Each bot lists its possible drops, so you can pick the drops you want to keep at the click of a button and sell the rest.
 
 </div>
 
