@@ -461,12 +461,22 @@ in `bartlebot/updates/keys.py`'s `TRUSTED_KEYS`. Its private half is the
 `FEED_SIGNING_KEY` Actions secret, which only `release.yml`'s `sign` job reads, and a
 maintainer's backup. **It never goes in the repo, a log, an issue or a plan page.**
 
-**Where the secret is.** Until the repo is public it is a repository secret: GitHub Free
-gives a private repository no environment rules, and while it is private only the org's
-members can push a tag. When the repo goes public, with the first beta release (#240), it
-moves into a `release` environment that only `v*` tags may deploy to, the `sign` job gains
-`environment: release`, and the repository secret is deleted. Whoever owns the org owns
-the key that way, so handing the project over needs nothing beyond the org.
+**Where the secret is.** In the `release` environment, which only `v*` tags may deploy
+to, and which the `sign` job names (`environment: release`). A push to a branch or a pull
+request cannot reach it, even one that edits the workflow. Whoever owns the org owns the
+key that way, so handing the project over needs nothing beyond the org. Until the repo was
+public it was a repository secret, since GitHub Free gives a private repository no
+environments; it moved when the repo went public, with the first beta release (#240):
+
+```bash
+gh api -X PUT repos/BartleWorks/BartleBot/environments/release \
+  -F "deployment_branch_policy[protected_branches]=false" \
+  -F "deployment_branch_policy[custom_branch_policies]=true"
+gh api -X POST repos/BartleWorks/BartleBot/environments/release/deployment-branch-policies \
+  -f name="v*" -f type=tag
+gh secret set FEED_SIGNING_KEY --env release < <the backed-up key file>
+gh secret delete FEED_SIGNING_KEY
+```
 
 **The key is backed up before the first release**, somewhere outside GitHub that its
 owner controls, such as a password manager. A secret cannot be read back out of GitHub,
