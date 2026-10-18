@@ -10,7 +10,7 @@ BartleBot is available for 64-bit Windows 10 or 11, and requires an existing Wiz
 
 ## Common Issues
 
-BartleBot isn't officially registered and code-signed, and it interacts with Wizard101 by reading and writing memory. Because of this, downloading and running BartleBot can often cause Windows or an antivirus program to flag it. Below are some common issues that users may encouter while downloading, installing, and running BartleBot.
+BartleBot isn't officially registered and code-signed, and it interacts with Wizard101 by reading and writing memory. Because of this, downloading and running BartleBot can often cause Windows or an antivirus program to flag it. Below are some common issues that users may encounter while downloading, installing, and running BartleBot.
 
 ### SmartScreen: "Windows protected your PC"
 
