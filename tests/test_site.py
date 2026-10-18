@@ -55,6 +55,16 @@ def test_the_download_button_fetches_setup_from_the_latest_published_release():
     )
 
 
+def test_the_install_page_has_the_download_button_from_the_template_not_the_markdown():
+    """The page is also every release's notes, so the button is drawn by overrides/main.html."""
+    main = (SITE / CONFIG["theme"]["custom_dir"] / "main.html").read_text(encoding="utf-8")
+    nav = {page.removesuffix(".md") + "/" for entry in CONFIG["nav"] for page in entry.values()}
+
+    assert 'page.url == "install/"' in main
+    assert 'href="{{ config.extra.download_url }}"' in main
+    assert "install/" in nav
+
+
 def test_the_landing_page_is_drawn_by_the_home_template():
     """A template a page names but the theme cannot find is no error to a strict build."""
     assert re.search(r"^template: (.+)$", _page("index.md"), re.M)[1] == HOME.name

@@ -1,0 +1,28 @@
+{#-
+  Every page but the landing page (home.html extends this, then the theme's base). The
+  install page gets the download button under its title. It is not in install.md, which is
+  also every release's notes and so stays markdown GitHub draws; the link is the one the
+  landing page's button uses.
+-#}
+{% extends "base.html" %}
+
+{% block content %}
+  {% if page.url == "install/" and "</h1>" in page.content %}
+    {% include "partials/actions.html" %}
+    {% set button %}
+      <p class="bb-download">
+        <a class="md-button md-button--primary" href="{{ config.extra.download_url }}">
+          {% include ".icons/lucide/download.svg" %}
+          Download for Windows
+        </a>
+      </p>
+    {% endset %}
+    {{ page.content | replace("</h1>", "</h1>" ~ button) | safe }}
+    {% include "partials/tags.html" %}
+    {% include "partials/source-file.html" %}
+    {% include "partials/feedback.html" %}
+    {% include "partials/comments.html" %}
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}

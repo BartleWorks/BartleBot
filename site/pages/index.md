@@ -46,9 +46,7 @@ Skip the setup and go straight to the important part with BartleBot templates. T
 
 ## Combat that fits the fight
 
-Decide who casts what, and in what order, for any fight. The defaults cover solo and
-team fights, as well as common cheating boss scenarios. Change any of them and BartleBot
-keeps your edits in your own copy.
+Decide who casts what, and in what order, for any fight. The defaults cover solo and team fights, as well as common cheating boss scenarios. Change any of them and BartleBot keeps your edits in your own copy.
 
 </div>
 

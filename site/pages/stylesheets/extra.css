@@ -30,6 +30,20 @@
   }
 }
 
+/* The download button under the install page's title (overrides/main.html): the landing
+   page's button without its hero sizing, so it has the icon's spacing and nothing else. */
+.md-typeset .bb-download .md-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.bb-download svg {
+  width: 1.15em;
+  height: 1.15em;
+  fill: none;
+  stroke: currentcolor;
+}
+
 /* The landing page (overrides/home.html). The theme's header is the page's own color, not
    the brand's, so the hero is too: a glow of the logo's blue and leaf green behind it, and
    a faint grid that echoes the logo's pixels. 1rem is 20px here: the theme sets html to
