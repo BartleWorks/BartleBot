@@ -206,7 +206,7 @@ class StateModel(BaseModel):
     id: str
     node_type: str
     label: str | None = None
-    position: dict | None = None  # {"x": float, "y": float} — GUI canvas layout only
+    position: dict | None = None  # {"x": float, "y": float}, the node's top-left — GUI canvas layout only
     params: dict = Field(default_factory=dict)
     notes: str | None = None  # User-authored documentation shown in the Properties sidebar
     # Return values that deliberately end the run, mapped to the reason shown to the

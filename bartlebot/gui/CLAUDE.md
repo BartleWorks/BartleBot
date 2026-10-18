@@ -791,6 +791,21 @@ and search. An instance's member is never edited from a bot: its values come fro
 instance's inputs, set on the call node's page, and anything else is the definition's,
 edited in its own document. A collapsed region's members are edited by stepping in.
 
+## A position is a node's top-left, and every first port is PORT_Y0 below it
+
+A stored position (`StateModel.position`, an instance's `anchor`) and an item's `pos()`
+are both its top-left corner, whatever its height, and the grid snaps that corner to
+multiples of `(GRID_W, GRID_H)`. Every shape -- plain node, call node, collapsed region,
+Entry/Exit pill -- puts its first port on each side `PORT_Y0` below its top, and each
+later one `PORT_PITCH` further down (`node_item.py`), so level tops mean level wires
+whatever the heights. A collapsed node's port rows sit under its title and above its
+sub-line for that reason. Snapping by the center, as the grid once did, lifted a taller
+node's ports by half its extra height.
+
+Every rule that places a node uses the same corner: the snap, `stored_position` /
+`drawn_position`, `find_empty_grid_cell`, `free_position_near`, the fold. One that used
+another point put every insert a row above its neighbors (#85).
+
 ## Stored positions are the expanded layout: go through the fold
 
 Collapsing a region moves nothing. `canvas/fold.py`'s `FoldMap` hides the grid columns

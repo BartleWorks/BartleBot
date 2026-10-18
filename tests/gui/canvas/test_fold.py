@@ -61,20 +61,20 @@ def _over_a_node(height: float) -> FoldMap:
 
 
 def test_a_one_or_two_port_collapsed_node_over_a_node_hides_every_row_between():
-    assert _over_a_node(72.0).hidden_rows == (1, 2)
-    assert _over_a_node(92.0).hidden_rows == (1, 2)  # 9px clear of the node below
-    assert _over_a_node(92.0).to_display(0.0, 3 * H) == (0.0, H)
+    assert _over_a_node(70.0).hidden_rows == (1, 2)
+    assert _over_a_node(87.0).hidden_rows == (1, 2)  # 3px clear of the node below
+    assert _over_a_node(87.0).to_display(0.0, 3 * H) == (0.0, H)
 
 
 def test_a_three_port_collapsed_node_over_a_node_keeps_the_row_it_needs():
-    """112px over a 70px node one row down would overlap it by a pixel, so one row stays."""
-    fold = _over_a_node(112.0)
+    """107px tall, with the next node's top one row (90px) below its own, would overlap it, so one row stays."""
+    fold = _over_a_node(107.0)
     assert len(fold.hidden_rows) == 1
     assert fold.to_display(0.0, 3 * H) == (0.0, 2 * H)
 
 
 def test_a_tall_node_keeps_only_as_many_rows_as_it_needs():
-    fold = _fold([Span(2, 2, 0, 3)], [(W, 0.0, 170.0), (W, 3 * H, 70.0)])  # needs 120 apart: one row of three
+    fold = _fold([Span(2, 2, 0, 3)], [(W, 0.0, 170.0), (W, 3 * H, 70.0)])  # needs 170 apart: one row of three
     assert fold.hidden_rows == (1,)
 
 

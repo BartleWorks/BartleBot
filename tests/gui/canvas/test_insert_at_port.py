@@ -343,20 +343,18 @@ def test_the_new_state_appears_on_the_canvas(canvas):
 
 
 def test_the_stored_position_matches_where_the_node_is_drawn(canvas):
-    """A stored y is the node's center, as _flush_positions writes it and setup reads it.
+    """A stored position is the node's top-left, as _flush_positions writes it and setup reads it.
 
-    Storing the item's top-left instead put a node saved before anything flushed it
-    back half a node higher than it was drawn.
+    An insert that stored any other point of it put a node saved before anything
+    flushed it back somewhere other than where it was drawn.
     """
-    from bartlebot.gui.canvas.node_item import NODE_H
-
     c = canvas()
 
     new_id = c.scene.insert_state_at_input_port("target", "sleep")
 
     state = next(s for s in c.config.states if s.id == new_id)
     item = c.scene.node_items[new_id]
-    assert (state.position["x"], state.position["y"]) == (item.pos().x(), item.pos().y() + NODE_H / 2)
+    assert (state.position["x"], state.position["y"]) == (item.pos().x(), item.pos().y())
 
 
 def test_inserting_at_an_unknown_state_is_refused(canvas):
@@ -551,8 +549,8 @@ def test_a_port_insert_and_the_move_it_makes_are_one_undo_step(canvas):
 
 
 def test_placement_lands_on_the_same_grid_the_bots_use(canvas):
-    """The shipped library's nodes sit with their left edge on GRID_W and center on GRID_H multiples."""
-    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H
+    """The shipped library's nodes sit with their top-left corner on GRID_W and GRID_H multiples."""
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
 
     c = canvas(_grid_config())
 
@@ -560,7 +558,7 @@ def test_placement_lands_on_the_same_grid_the_bots_use(canvas):
 
     p = c.scene.node_items[new_id].pos()
     assert p.x() % GRID_W == pytest.approx(0)
-    assert (p.y() + NODE_H / 2) % GRID_H == pytest.approx(0)
+    assert p.y() % GRID_H == pytest.approx(0)
 
 
 def test_an_output_insert_lands_in_its_sources_row(canvas):
@@ -590,14 +588,14 @@ def test_free_position_near_snaps_an_already_clear_seed_to_the_grid(canvas):
     """Empty space still gets grid-aligned, so an insert never lands off-grid."""
     from PyQt6.QtCore import QPointF
 
-    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
 
     c = canvas(_grid_config())
 
     got = c.scene.free_position_near(QPointF(-4400.0, -4505.0), x_dir=-1)
 
     assert got.x() % GRID_W == pytest.approx(0)
-    assert (got.y() + NODE_H / 2) % GRID_H == pytest.approx(0)
+    assert got.y() % GRID_H == pytest.approx(0)
     assert abs(got.x() - (-4400.0)) <= GRID_W / 2
     assert abs(got.y() - (-4505.0)) <= GRID_H / 2
 
