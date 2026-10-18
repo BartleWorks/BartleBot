@@ -21,6 +21,8 @@ from tools.pack_release import INSTALL_PAGE, SETUP_NAME  # noqa: E402
 SITE = project_root() / "site"
 CONFIG = tomllib.loads((SITE / "zensical.toml").read_text(encoding="utf-8"))["project"]
 PAGES = SITE / CONFIG["docs_dir"]
+#: The landing page's template, which draws its hero and its download button.
+HOME = SITE / CONFIG["theme"]["custom_dir"] / "home.html"
 WORKFLOW = project_root() / ".github" / "workflows" / "site.yml"
 #: A markdown image whose target is a file beside the page, not a URL.
 _LOCAL_IMAGE = re.compile(r"!\[[^\]]*\]\((?!https?://)([^)\s]+)\)")
@@ -47,7 +49,24 @@ def test_the_install_page_is_markdown_github_draws():
 
 def test_the_download_button_fetches_setup_from_the_latest_published_release():
     """The same redirect the updater reads its feed through: never a draft, never a pre-release."""
-    assert f"]({FEED_URL}{SETUP_NAME}){{ .md-button .md-button--primary }}" in _page("index.md")
+    assert CONFIG["extra"]["download_url"] == f"{FEED_URL}{SETUP_NAME}"
+    assert 'class="md-button md-button--primary" href="{{ config.extra.download_url }}"' in HOME.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_the_landing_page_is_drawn_by_the_home_template():
+    """A template a page names but the theme cannot find is no error to a strict build."""
+    assert re.search(r"^template: (.+)$", _page("index.md"), re.M)[1] == HOME.name
+
+
+def test_the_home_templates_links_are_pages_of_the_site():
+    """A strict build checks the links in markdown, never those in a template."""
+    nav = {page.removesuffix(".md") + "/" for entry in CONFIG["nav"] for page in entry.values()}
+    linked = re.findall(r"\{\{ '([^']+)' \| url \}\}", HOME.read_text(encoding="utf-8"))
+
+    assert linked
+    assert [link for link in linked if link not in nav] == []
 
 
 def test_the_install_page_names_the_file_the_button_downloads():

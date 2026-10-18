@@ -29,3 +29,213 @@
     width: calc(50% - 0.4em);
   }
 }
+
+/* The landing page (overrides/home.html). The theme's header is the page's own color, not
+   the brand's, so the hero is too: a glow of the logo's blue and leaf green behind it, and
+   a faint grid that echoes the logo's pixels. 1rem is 20px here: the theme sets html to
+   125%. */
+.bb-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(32rem 20rem at 80% 45%, #4488cc33, transparent 70%),
+    radial-gradient(20rem 14rem at 90% 80%, #22b14c1f, transparent 70%);
+  border-bottom: 0.05rem solid var(--md-default-fg-color--lightest);
+}
+.bb-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--md-default-fg-color--lightest) 1px, transparent 1px),
+    linear-gradient(90deg, var(--md-default-fg-color--lightest) 1px, transparent 1px);
+  background-size: 1.6rem 1.6rem;
+  mask-image: radial-gradient(ellipse 60% 80% at 75% 50%, #000, transparent);
+  pointer-events: none;
+}
+.bb-hero__inner {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  padding: 2.4rem 0.8rem 2.8rem;
+}
+.bb-hero__text {
+  /* The typeset class gives the buttons and links their look; the hero sets its own sizes. */
+  font-size: 0.8rem;
+}
+.bb-hero__badge {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-typeset-a-color);
+  background: var(--md-accent-fg-color--transparent);
+  border: 0.05rem solid currentcolor;
+  border-radius: 1rem;
+}
+.md-typeset .bb-hero__title {
+  margin: 0;
+  font-size: clamp(2.2rem, 7vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+.bb-hero__tagline {
+  max-width: 24em;
+  margin: 0.8rem 0 1.6rem;
+  font-size: 1.15rem;
+  line-height: 1.4;
+  color: var(--md-default-fg-color--light);
+}
+.bb-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.md-typeset .bb-hero__actions .md-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.75em 1.6em;
+  font-size: 0.8rem;
+}
+.md-typeset .bb-hero__actions .md-button:not(.md-button--primary) {
+  color: var(--md-default-fg-color);
+  box-shadow: inset 0 0 0 0.05rem var(--md-default-fg-color--lighter);
+}
+.md-typeset .bb-hero__actions .md-button--primary {
+  box-shadow: 0 0.4rem 1.2rem #2e6ca859;
+}
+.bb-hero__actions svg {
+  width: 1.15em;
+  height: 1.15em;
+  fill: none;
+  stroke: currentcolor;
+}
+.bb-hero__note {
+  max-width: 34em;
+  margin: 1.2rem 0 0;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--md-default-fg-color--light);
+}
+.bb-hero__art {
+  display: none;
+}
+.bb-hero__art img {
+  display: block;
+  width: 100%;
+  max-width: 13rem;
+  height: auto;
+  /* The logo is 12 pixels square: drawn large, it keeps its hard edges. */
+  image-rendering: pixelated;
+  border-radius: 1rem;
+  box-shadow:
+    0 1.2rem 3rem #4488cc4d,
+    0 0 0 0.05rem var(--md-default-fg-color--lightest);
+}
+@media screen and (min-width: 45em) {
+  .bb-hero__inner {
+    grid-template-columns: 3fr 2fr;
+    align-items: center;
+    padding: 4rem 1.2rem 4.4rem;
+  }
+  .bb-hero__art {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* Below the hero, the page's markdown: a list is a grid of cards, and a bold run at the
+   start of an item is its card's heading, marked with one of the logo's leaf pixels. */
+.bb-home > h2 {
+  margin-top: 2.4em;
+  text-align: center;
+}
+.md-typeset .bb-home > ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 0.8rem;
+  margin: 1.6rem 0 2rem;
+  list-style: none;
+}
+.md-typeset .bb-home > ul > li {
+  margin: 0;
+  padding: 1.1rem 1.2rem;
+  line-height: 1.6;
+  color: var(--md-default-fg-color--light);
+  background: var(--md-default-fg-color--lightest);
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.6rem;
+  transition: border-color 125ms, transform 125ms;
+}
+.md-typeset .bb-home > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+  transform: translateY(-0.1rem);
+}
+.md-typeset .bb-home > ul > li > strong:first-child {
+  display: block;
+  margin-bottom: 0.4em;
+  font-size: 1.1em;
+  color: var(--md-default-fg-color);
+}
+.md-typeset .bb-home > ul > li > strong:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.55em;
+  vertical-align: 0.1em;
+  background: #22b14c;
+}
+
+/* Screenshots of the app: framed like a window floating over the page. */
+.md-typeset .bb-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.6rem;
+  box-shadow:
+    0 1.2rem 3rem #00000040,
+    0 0 0 0.05rem var(--md-default-fg-color--lightest);
+}
+
+/* A feature told beside its screenshot: one under the other on a narrow screen. */
+.bb-feature {
+  display: grid;
+  gap: 1.2rem 2rem;
+  align-items: center;
+  margin: 3rem 0;
+}
+.md-typeset .bb-feature h2 {
+  margin-top: 0;
+}
+@media screen and (min-width: 60em) {
+  .bb-feature {
+    grid-template-columns: 2fr 3fr;
+  }
+}
+/* A wide screenshot sits under its words, not beside them. */
+@media screen and (min-width: 60em) {
+  .bb-feature--wide {
+    grid-template-columns: 1fr;
+  }
+  .bb-feature--wide > div {
+    max-width: 36rem;
+  }
+  /* Every other feature puts its screenshot first, so the page zigzags. */
+  .bb-feature--flip {
+    grid-template-columns: 3fr 2fr;
+  }
+  .bb-feature--flip > :first-child {
+    order: 1;
+  }
+}
+/* A small screenshot keeps near its own size rather than stretching. */
+.md-typeset .bb-shot--narrow {
+  max-width: 22rem;
+  margin: 0 auto;
+}

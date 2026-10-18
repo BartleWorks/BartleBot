@@ -337,7 +337,16 @@ uv run --group site zensical serve -f site/zensical.toml   # preview at localhos
 uv run --group site zensical build --strict -f site/zensical.toml   # into site/build/
 ```
 
-**The download button** links `releases/latest/download/BartleBot-win-Setup.exe`
+**The landing page** is drawn by `site/overrides/home.html`, which `index.md` names in its
+front matter (`template: home.html`). The template holds the hero: the title, the download
+button, the link to the install page and what is said beside them. The page's words stay
+in `index.md`: the hero's `tagline` in its front matter, and below the hero its own
+markdown, where a list is drawn as a grid of cards and a bold run at the start of an item
+is that card's heading (`stylesheets/extra.css`). A strict build checks no link in a
+template, so `test_the_home_templates_links_are_pages_of_the_site` does.
+
+**The download button** links `releases/latest/download/BartleBot-win-Setup.exe`, set
+once as `download_url` under `[project.extra]` in `zensical.toml`
 (`feed.FEED_URL` and `pack_release.SETUP_NAME`): the same redirect the updater reads its
 feed through, which names the newest published release and never a draft or a
 pre-release. So the site never changes for a release, and the button fetches each one as

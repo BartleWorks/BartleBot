@@ -43,7 +43,7 @@ VELOPACK_VERSION = "1.2.161"
 #: is matched to an install by it, so it never changes.
 PACK_ID = PRODUCT
 #: The installer ``vpk pack`` writes, named for the pack id. The download site's button
-#: links to it in whichever release is the latest (``site/pages/index.md``).
+#: links to it in whichever release is the latest (``site/zensical.toml``'s ``download_url``).
 SETUP_NAME = f"{PACK_ID}-win-Setup.exe"
 #: A Desktop shortcut and the Start Menu entry, so the app is found without knowing where
 #: ``%LocalAppData%`` is. This is ``vpk pack``'s own default, spelled out so it never drifts.

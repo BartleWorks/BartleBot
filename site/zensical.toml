@@ -6,6 +6,9 @@
 # pages/install.md is also the second half of every release's notes
 # (tools/pack_release.py), so it stays in markdown GitHub can draw: none of the
 # admonitions, attribute lists or icons the landing page uses (tests/test_site.py).
+#
+# The landing page is drawn by overrides/home.html, which index.md names in its front
+# matter: the hero and the download button are there, and the page's words in index.md.
 
 [project]
 site_name = "BartleBot"
@@ -25,6 +28,7 @@ nav = [
 
 [project.theme]
 language = "en"
+custom_dir = "overrides"
 logo = "assets/bartlebot.svg"
 favicon = "assets/bartlebot.svg"
 # The system's fonts, rather than the theme's from Google Fonts, so a visit sends nothing
@@ -60,6 +64,11 @@ primary = "custom"
 accent = "custom"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to system preference"
+
+[project.extra]
+# The download button's link: the newest published release's installer, never a draft or a
+# pre-release, so the site never changes for a release (tests/test_site.py).
+download_url = "https://github.com/BartleWorks/BartleBot/releases/latest/download/BartleBot-win-Setup.exe"
 
 [project.markdown_extensions]
 admonition = {}

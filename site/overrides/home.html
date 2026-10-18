@@ -1,0 +1,43 @@
+{#-
+  The landing page (pages/index.md picks it with `template: home.html`): a hero the full
+  width of the window, then the page's own markdown, whose lists are drawn as cards
+  (stylesheets/extra.css). The page's words stay in index.md, its tagline among them;
+  only what is said beside the download button is here.
+-#}
+{% extends "main.html" %}
+
+{% block hero %}
+  <section class="bb-hero">
+    <div class="md-grid bb-hero__inner">
+      <div class="bb-hero__text md-typeset">
+        <p class="bb-hero__badge">Public beta</p>
+        <h1 class="bb-hero__title">{{ config.site_name }}</h1>
+        <p class="bb-hero__tagline">{{ page.meta.tagline }}</p>
+        <div class="bb-hero__actions">
+          <a class="md-button md-button--primary" href="{{ config.extra.download_url }}">
+            {% include ".icons/lucide/download.svg" %}
+            Download for Windows
+          </a>
+          <a class="md-button" href="{{ 'install/' | url }}">
+            Installing BartleBot
+            {% include ".icons/lucide/arrow-right.svg" %}
+          </a>
+        </div>
+        <p class="bb-hero__note">
+          Available for 64-bit Windows 10 and 11. If you receive a warning after downloading
+          or running the installer, please see
+          <a href="{{ 'install/' | url }}">Installing BartleBot</a> for more information.
+        </p>
+      </div>
+      <div class="bb-hero__art" aria-hidden="true">
+        <img src="{{ config.theme.logo | url }}" alt="" width="256" height="256">
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="bb-home">
+    {{ page.content }}
+  </div>
+{% endblock %}
