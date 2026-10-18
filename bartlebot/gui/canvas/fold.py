@@ -62,7 +62,7 @@ class FoldMap:
         return math.floor(x / self.col_w)
 
     def row_of(self, y: float) -> int:
-        """The row a center ``y`` lies in; rows are centered on multiples of ``row_h``."""
+        """The row a top ``y`` lies in: the nearest multiple of ``row_h``, where a snapped top sits."""
         return math.floor(y / self.row_h + 0.5)
 
     # -- building ------------------------------------------------------
@@ -91,8 +91,8 @@ class FoldMap:
         top-left cell. Nothing hidden is ever occupied, so no drawn item is lost.
 
         Rows are hidden top to bottom, each only if it leaves every pair of nodes
-        in one column -- the only nodes a body can reach -- at least as far apart as
-        their heights need, or as they already were if the author put them closer.
+        in one column -- the only nodes a body can reach -- with the upper one's
+        height between their tops, or as much as they had if the author put them closer.
         Which rows between two nodes are hidden does not matter, only how many.
         """
         base = cls(col_w, row_h)
@@ -106,6 +106,7 @@ class FoldMap:
             candidates.update(r for r in range(span.row0 + 1, span.row1 + 1) if r not in used_rows)
 
         # (upper row, lower row, distance apart, distance they need) per pair in a column.
+        # Positions are tops, so the pair needs the upper node's height between them.
         by_col: dict[int, list[tuple[float, float]]] = {}
         for x, y, height in occupied:
             by_col.setdefault(base.col_of(x), []).append((y, height))
@@ -113,9 +114,9 @@ class FoldMap:
         for column in by_col.values():
             column.sort()
             for i, (y0, h0) in enumerate(column):
-                for y1, h1 in column[i + 1 :]:
+                for y1, _h1 in column[i + 1 :]:
                     gap = y1 - y0
-                    pairs.append((base.row_of(y0), base.row_of(y1), gap, min(gap, (h0 + h1) / 2)))
+                    pairs.append((base.row_of(y0), base.row_of(y1), gap, min(gap, h0)))
         hidden_between = [0] * len(pairs)
         rows: list[int] = []
         for r in sorted(candidates):
@@ -147,7 +148,7 @@ class FoldMap:
 
 @dataclass(frozen=True)
 class Placed:
-    """One drawn item, for :func:`settle_move`. Positions are ``(left x, center y)``, as stored."""
+    """One drawn item, for :func:`settle_move`. Positions are ``(left x, top y)``, as stored."""
 
     key: str
     stored: tuple[float, float] | None

@@ -255,16 +255,28 @@ def test_a_new_subgraph_node_follows_the_definitions_defaults(canvas):
 # ---------------------------------------------------------------------------
 
 
-def test_snapping_centers_a_call_node_on_the_grid_row(canvas):
+def test_snapping_puts_a_call_nodes_top_on_the_grid_row(canvas):
+    """By its top-left corner, as every node snaps, however tall it is."""
     from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H  # noqa: PLC0415
 
     node = canvas.scene.node_items[REGION]
     assert node.body_height > NODE_H  # or this proves nothing
     node.set_snap_enabled(True)
-    # Center 17px below row 3: a snap by NODE_H/2 would land it a row out.
-    node.setPos(QPointF(GRID_W * 2 + 30, GRID_H * 3 + 17 - node.body_height / 2))
-    assert node.pos().x() == GRID_W * 2
-    assert node.pos().y() + node.body_height / 2 == pytest.approx(GRID_H * 3)
+    # Its center is past the middle of the next row, which a snap by the center would pick.
+    node.setPos(QPointF(GRID_W * 2 + 30, GRID_H * 3 + 30))
+    assert node.pos() == QPointF(GRID_W * 2, GRID_H * 3)
+
+
+def test_a_snapped_call_node_and_a_plain_node_in_one_row_have_level_first_ports(canvas):
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W  # noqa: PLC0415
+
+    call = canvas.scene.node_items[REGION]
+    plain = next(n for n in canvas.scene.node_items.values() if not isinstance(n, CallNodeItem))
+    for n in (call, plain):
+        n.set_snap_enabled(True)
+    call.setPos(QPointF(GRID_W * 4 + 12, GRID_H * 2 - 20))
+    plain.setPos(QPointF(GRID_W * 5 - 9, GRID_H * 2 + 25))
+    assert call.port_in().y() == plain.port_in().y() == call.port_out_for(call.returns[0]).y()
 
 
 def test_role_badges_paint_inside_the_bounding_rect(canvas):

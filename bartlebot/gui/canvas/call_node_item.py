@@ -34,7 +34,9 @@ from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.canvas.node_item import (
     NODE_H,
     NODE_W,
+    PORT_PITCH,
     PORT_R,
+    PORT_Y0,
     NodeItem,
     _badge_initial,
     _badge_recovery,
@@ -43,9 +45,16 @@ from bartlebot.gui.canvas.node_item import (
 )
 from bartlebot.gui.theming.theme import THEME
 
-_HEADER_H = 46  # title and sub-line
-_ROW_H = 20  # one port row
-_FOOT_PAD = 6
+# The title runs along the top, the port rows follow it -- the first centered on
+# PORT_Y0, as every node's first port is -- and the sub-line comes last, under the
+# rows, the way a plain node puts its type under its name.
+_TITLE_TOP = 3
+_TITLE_H = 22
+_ROW_H = PORT_PITCH  # one port row
+_ROWS_TOP = PORT_Y0 - _ROW_H / 2  # = 25, where the first row starts
+_SUB_GAP = 1  # between the last row and the sub-line
+_SUB_H = 16
+_FOOT_PAD = 5
 _BAR_INSET = 10  # the double side bars sit this far in from each edge
 _CALL_RADIUS = 4
 _GLYPH = 14  # link badge size
@@ -138,8 +147,13 @@ class FoldedNodeItem(NodeItem):
 
     @property
     def _height(self) -> int:
-        rows = max(len(self._entries), len(self._returns), 1)
-        return max(NODE_H, _HEADER_H + rows * _ROW_H + _FOOT_PAD)
+        return max(NODE_H, int(self._subline_top() + _SUB_H + _FOOT_PAD))
+
+    def _rows(self) -> int:
+        return max(len(self._entries), len(self._returns), 1)
+
+    def _subline_top(self) -> float:
+        return _ROWS_TOP + self._rows() * _ROW_H + _SUB_GAP
 
     def _node_rect(self) -> QRectF:
         return QRectF(0, 0, NODE_W, self._height)
@@ -153,7 +167,7 @@ class FoldedNodeItem(NodeItem):
         return self.scenePos() + QPointF(NODE_W / 2, self._height / 2)
 
     def _row_y(self, idx: int) -> float:
-        return _HEADER_H + (idx + 0.5) * _ROW_H
+        return PORT_Y0 + idx * _ROW_H
 
     def _port_y(self, idx: int) -> float:
         return self._row_y(idx)
@@ -167,10 +181,10 @@ class FoldedNodeItem(NodeItem):
     def port_in_at(self, port: str | None) -> QPointF:
         ids = [pid for pid, _ in self._entries]
         idx = ids.index(port) if port in ids else 0
-        return self.scenePos() + QPointF(0, self._row_y(idx) if ids else self._height / 2)
+        return self.scenePos() + QPointF(0, self._row_y(idx) if ids else PORT_Y0)
 
     def port_out(self) -> QPointF:
-        return self.scenePos() + QPointF(NODE_W, self._height / 2)
+        return self.scenePos() + QPointF(NODE_W, PORT_Y0)
 
     # -- state ---------------------------------------------------------
 
@@ -311,7 +325,7 @@ class FoldedNodeItem(NodeItem):
         fm = painter.fontMetrics()
         glyph_room = _GLYPH + 6
         painter.drawText(
-            QRectF(inner_l, 4, inner_r - inner_l - glyph_room, 22),
+            QRectF(inner_l, _TITLE_TOP, inner_r - inner_l - glyph_room, _TITLE_H),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             fm.elidedText(title, Qt.TextElideMode.ElideRight, int(inner_r - inner_l - glyph_room)),
         )
@@ -319,7 +333,7 @@ class FoldedNodeItem(NodeItem):
         painter.setPen(QColor(THEME.text) if self._active else THEME.qcolor("text_muted"))
         fm2 = painter.fontMetrics()
         painter.drawText(
-            QRectF(inner_l, 24, inner_r - inner_l, 16),
+            QRectF(inner_l, self._subline_top(), inner_r - inner_l, _SUB_H),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             fm2.elidedText(self._subline, Qt.TextElideMode.ElideRight, int(inner_r - inner_l)),
         )
@@ -539,7 +553,7 @@ class PortNodeItem(NodeItem):
     def hoverMoveEvent(self, event) -> None:
         pos = event.pos()
         x = float(NODE_W) if self._is_entry else 0.0
-        near = math.hypot(pos.x() - x, pos.y() - NODE_H / 2) <= _PORT_HIT_R
+        near = math.hypot(pos.x() - x, pos.y() - PORT_Y0) <= _PORT_HIT_R
         self.setCursor(Qt.CursorShape.CrossCursor if near else Qt.CursorShape.SizeAllCursor)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
@@ -578,4 +592,4 @@ class PortNodeItem(NodeItem):
             painter.setPen(QPen(port.darker(130), 1.5))
             painter.setBrush(QBrush(THEME.qcolor("node_fill")))
             x = float(NODE_W) if self._is_entry else 0.0
-            painter.drawEllipse(QPointF(x, NODE_H / 2), PORT_R, PORT_R)
+            painter.drawEllipse(QPointF(x, PORT_Y0), PORT_R, PORT_R)

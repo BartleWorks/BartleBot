@@ -86,6 +86,7 @@ from bartlebot.gui.canvas.node_item import (
     NODE_W,
     PORT_MARK_RECOVERY,
     PORT_MARK_STOP,
+    PORT_Y0,
     NodeItem,
     set_scene_rect_and_repaint,
 )
@@ -750,7 +751,7 @@ class EditScene(QGraphicsScene):
                 painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
                 y += GRID_H
         else:
-            # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
+            # Dots sit at (GRID_W*i, GRID_H*j) — the top-left corners nodes snap to.
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(grid_color))
             dot_r = 2.0
@@ -815,7 +816,7 @@ class EditScene(QGraphicsScene):
 
         states = config.states
         sources = {self.display_id(t.source) for t in config.transitions}
-        # (item, stored left x, stored center y) for everything placed through the fold.
+        # (item, stored left x, stored top y) for everything placed through the fold.
         placed: list[tuple[NodeItem, float, float]] = []
         for i, state in enumerate(states):
             if state.id in self._call_of:
@@ -827,7 +828,7 @@ class EditScene(QGraphicsScene):
                 placed.append((node, float(pos.get("x", 0)), float(pos.get("y", 0))))
             else:
                 total_w = (len(states) - 1) * _AUTO_SPACING
-                node.setPos(i * _AUTO_SPACING - total_w / 2 - NODE_W / 2, -NODE_H / 2)
+                node.setPos(i * _AUTO_SPACING - total_w / 2 - NODE_W / 2, 0)
             self.addItem(node)
             self._node_items[state.id] = node
         for region in folded:
@@ -838,8 +839,7 @@ class EditScene(QGraphicsScene):
             self._node_items[region.id] = node
         self._fold = self._build_fold(placed, folded)
         for node, x, y in placed:
-            dx, dy = self._fold.to_display(x, y)
-            node.setPos(dx, dy - node.body_height / 2)
+            node.setPos(*self._fold.to_display(x, y))
 
         # Pre-compute shared bridge_y for same-destination backward-edge groups.
         # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
@@ -1046,15 +1046,18 @@ class EditScene(QGraphicsScene):
         """How stored positions map to where they are drawn; the identity when nothing is collapsed."""
         return self._fold
 
-    def stored_position(self, top_left: QPointF, body_height: float = NODE_H) -> dict:
-        """The ``StateModel.position`` an item drawn with its top-left at ``top_left`` stands for."""
-        x, y = self._fold.to_stored(top_left.x(), top_left.y() + body_height / 2)
+    def stored_position(self, top_left: QPointF) -> dict:
+        """The ``StateModel.position`` an item drawn with its top-left at ``top_left`` stands for.
+
+        A stored position is the item's top-left too, whatever its height, so the two
+        differ only by the fold.
+        """
+        x, y = self._fold.to_stored(top_left.x(), top_left.y())
         return {"x": x, "y": y}
 
-    def drawn_position(self, position: dict, body_height: float = NODE_H) -> QPointF:
+    def drawn_position(self, position: dict) -> QPointF:
         """Where an item whose stored position is ``position`` has its top-left drawn."""
-        x, y = self._fold.to_display(float(position["x"]), float(position["y"]))
-        return QPointF(x, y - body_height / 2)
+        return QPointF(*self._fold.to_display(float(position["x"]), float(position["y"])))
 
     def free_position(self, position: dict) -> dict:
         """Where a node wanting stored ``position`` can go: there, or the nearest empty grid cell.
@@ -1515,7 +1518,7 @@ class EditScene(QGraphicsScene):
         """Place a new instance of ``subgraph_id`` with its call node at ``pos``. Returns the region id.
 
         ``pos`` is the item position the other insert paths use (top-left of a node),
-        so the anchor is stored in the model convention: left edge, vertical center.
+        and the anchor is stored the same way, as every position is.
         Inputs start unset, following the definition's defaults. With ``into_region`` the members also
         join that (plain) region.
 
@@ -1809,17 +1812,17 @@ class EditScene(QGraphicsScene):
         occupied: set[tuple[int, int]] = set()
         for item in self._node_items.values():
             p = item.pos()
-            occupied.add((round(p.x() / GRID_W), round((p.y() + NODE_H / 2) / GRID_H)))
+            occupied.add((round(p.x() / GRID_W), round(p.y() / GRID_H)))
 
         # Grid cell whose center is nearest to viewport_center
         start_cx = round((viewport_center.x() - NODE_W / 2) / GRID_W)
-        start_cy = round(viewport_center.y() / GRID_H)
+        start_cy = round((viewport_center.y() - NODE_H / 2) / GRID_H)
 
         for radius in range(31):
             for dx, dy in _spiral_ring(radius):
                 cell = (start_cx + dx, start_cy + dy)
                 if cell not in occupied:
-                    return QPointF(cell[0] * GRID_W, cell[1] * GRID_H - NODE_H / 2)
+                    return QPointF(cell[0] * GRID_W, cell[1] * GRID_H)
 
         return QPointF(viewport_center.x() - NODE_W / 2, viewport_center.y() - NODE_H / 2)
 
@@ -2070,7 +2073,7 @@ class EditScene(QGraphicsScene):
         self._pre_edit("New Exit Port")
         self._in_structural_edit = True
         try:
-            pid = self.add_port_node(SUBGRAPH_EXIT, QPointF(scene_pos.x(), scene_pos.y() - NODE_H / 2))
+            pid = self.add_port_node(SUBGRAPH_EXIT, QPointF(scene_pos.x(), scene_pos.y() - PORT_Y0))
             node = self._node_items.get(pid) if pid else None
             if node is not None:
                 self._create_transition(src, node, when)
@@ -2638,8 +2641,7 @@ class EditScene(QGraphicsScene):
             return
         self._fold = fold
         for node, x, y in placed:
-            dx, dy = fold.to_display(x, y)
-            node.setPos(dx, dy - node.body_height / 2)
+            node.setPos(*fold.to_display(x, y))
         self.note_node_moved()  # a node without ItemSendsGeometryChanges never reports its own move
         self._update_scene_rect()
 
@@ -2675,7 +2677,7 @@ class EditScene(QGraphicsScene):
         states_data, transitions_data, regions_data = self._clipboard
 
         # Determine (offset_x, offset_y) to apply to every pasted node's stored position.
-        # Clipboard positions: p["x"] = node left edge, p["y"] = node center y (StateModel convention).
+        # Clipboard positions are top-left corners (StateModel convention).
         # A copied instance is placed by its anchor -- its call node -- not by its members.
         # Everything here is in stored positions; the cursor and the items are drawn
         # through the fold, and are mapped back before they are compared.
@@ -2698,18 +2700,19 @@ class EditScene(QGraphicsScene):
                     centroid_x = sum(p["x"] for p in positions) / len(positions)
                     centroid_y = sum(p["y"] for p in positions) / len(positions)
                     offset_x = cursor_x - centroid_x
-                    offset_y = cursor_y - centroid_y
+                    # Half a node up, so the pasted nodes straddle the cursor rather than hang below it.
+                    offset_y = cursor_y - NODE_H / 2 - centroid_y
 
             if not cursor_in_vp:
                 # Fallback: start one grid row below the source nodes, preserving X.
                 offset_y = GRID_H
 
             # Shift offset_y downward until no pasted node collides with an existing one.
-            # Grid cell key: (col based on left edge, row based on center y) — same as snap formula.
+            # Grid cell key: (col of the left edge, row of the top edge) — same as the snap.
             occupied = {
                 (round(p["x"] / GRID_W), round(p["y"] / GRID_H))
                 for item in self._node_items.values()
-                if (p := self.stored_position(item.pos(), item.body_height))
+                if (p := self.stored_position(item.pos()))
             }
             # A collapsed region's members are out of sight but not out of the layout:
             # a node pasted onto one would sit on it once the region is expanded.
@@ -3346,17 +3349,17 @@ class EditScene(QGraphicsScene):
         Overlap is tested against the nodes' actual rectangles rather than which grid
         cell they round to; cell-occupancy alone still left 7% overlapping.
 
-        *seed* and the result are an item's top-left, as ``setPos`` takes it. Rows are
-        snapped so the node's *center* sits on a whole multiple of GRID_H, because a
-        stored position's y is the center and that is where the shipped bots put every
-        one of their nodes -- the same rows ``find_empty_grid_cell`` returns. Snapping
-        the top edge instead put every insert one row above its neighbors (#85).
+        *seed* and the result are an item's top-left, as ``setPos`` takes it and as a
+        position is stored, snapped to whole multiples of the grid -- the same cells
+        ``find_empty_grid_cell`` returns and dragging snaps to. Every rule that places a
+        node has to agree on which point of it is on the grid: one that disagreed put
+        every insert a row above its neighbors (#85).
         """
         boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height) for n in self._node_items.values()]
         cell_x = round(seed.x() / GRID_W)
-        cell_y = round((seed.y() + NODE_H / 2) / GRID_H)
+        cell_y = round(seed.y() / GRID_H)
         for dx, dy in _placement_candidates(x_dir):
-            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H - NODE_H / 2)
+            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H)
             if not any(QRectF(pos.x(), pos.y(), NODE_W, NODE_H).intersects(b) for b in boxes):
                 return pos
         return seed
@@ -3367,9 +3370,8 @@ class EditScene(QGraphicsScene):
         Shared by every insert path. The caller owns the undo snapshot and all the
         transition wiring; this only brings the state into existence.
 
-        *pos* is the item's top-left; the stored y is its center, as ``_flush_positions``
-        writes it and ``setup`` reads it. Storing the top-left put a node saved before
-        anything flushed it back half a node higher than it was drawn.
+        *pos* is the item's top-left, which is what is stored, as ``_flush_positions``
+        writes it and ``setup`` reads it.
         """
         new_id = self.mint_state_id(st.id for st in self._config.states)
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
@@ -3481,7 +3483,7 @@ class EditScene(QGraphicsScene):
         try:
             # The next column, on the port's row: there when it is free, else there all
             # the same, with that column and the rest moved over to make it so.
-            after = self._grid_cell(QPointF(source.pos().x() + GRID_W, port.y() - NODE_H / 2))
+            after = self._grid_cell(QPointF(source.pos().x() + GRID_W, port.y() - PORT_Y0))
             pos = after if self._cell_is_free(after) else self._open_column_at(after)
             new_id, new_node = self._spawn_state(node_type, pos)
             for t in outgoing:
@@ -3568,7 +3570,7 @@ class EditScene(QGraphicsScene):
     @staticmethod
     def _grid_cell(seed: QPointF) -> QPointF:
         """The grid cell *seed* is in, as an item's top-left: the snap ``free_position_near`` starts from."""
-        return QPointF(round(seed.x() / GRID_W) * GRID_W, round((seed.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2)
+        return QPointF(round(seed.x() / GRID_W) * GRID_W, round(seed.y() / GRID_H) * GRID_H)
 
     def _cell_is_free(self, pos: QPointF) -> bool:
         """Whether a node put at *pos* would overlap none of the nodes drawn."""
@@ -3657,7 +3659,7 @@ class EditScene(QGraphicsScene):
         """``node`` as ``settle_move`` reads it: where it is stored, and where it was dropped if it moved."""
         top_left = node.scenePos()
         if stored is not None:
-            drawn = self.drawn_position(stored, node.body_height)
+            drawn = self.drawn_position(stored)
             if abs(drawn.x() - top_left.x()) < 1e-3 and abs(drawn.y() - top_left.y()) < 1e-3:
                 return Placed(key, (float(stored["x"]), float(stored["y"])), node.body_height, span)
         return Placed(
@@ -3665,7 +3667,7 @@ class EditScene(QGraphicsScene):
             None if stored is None else (float(stored["x"]), float(stored["y"])),
             node.body_height,
             span,
-            (top_left.x(), top_left.y() + node.body_height / 2),
+            (top_left.x(), top_left.y()),
         )
 
     @property

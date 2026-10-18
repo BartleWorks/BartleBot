@@ -28,6 +28,11 @@ NODE_W = NODE_INFO_W + NODE_PORT_W  # = 300, full node width
 NODE_H = 70  # node height — always fixed regardless of return count
 NODE_RADIUS = 12
 PORT_R = 6  # radius of connection-port circles
+# Every node's first port, on either side, sits PORT_Y0 below its top, and each port
+# after it PORT_PITCH further down. Shared by every node shape so that two nodes
+# whose tops are level have their first ports level too, whatever their heights.
+PORT_Y0 = NODE_H / 2  # = 35
+PORT_PITCH = 20
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 _BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal)
 _BADGE_GAP = 4  # gap between adjacent badge circles
@@ -97,8 +102,9 @@ def _recovery_badge_renderer() -> QSvgRenderer:
     return _RECOVERY_RENDERER
 
 
-# Grid constants — shared with EditScene for drawBackground and migration script.
-# Padding values define the gap between adjacent node edges on the grid.
+# Grid constants — shared with EditScene for drawBackground.
+# Padding values define the gap between adjacent node edges on the grid. A node
+# snaps by its top-left corner to multiples of (GRID_W, GRID_H).
 NODE_GRID_PAD_W = 140  # horizontal gap between adjacent node right/left edges
 NODE_GRID_PAD_H = 20  # vertical gap between adjacent node bottom/top edges
 GRID_W = NODE_W + NODE_GRID_PAD_W  # = 440
@@ -362,7 +368,7 @@ class NodeItem(QGraphicsItem):
 
     def port_in(self) -> QPointF:
         """Scene-coordinate input port — left edge of info section (x=0)."""
-        return self.scenePos() + QPointF(0, NODE_H / 2)
+        return self.scenePos() + QPointF(0, PORT_Y0)
 
     def input_ports(self) -> list[str | None]:
         """The named input ports an edge can land on; ``[None]`` for the one plain one."""
@@ -373,13 +379,19 @@ class NodeItem(QGraphicsItem):
         return self.port_in()
 
     def port_out(self) -> QPointF:
-        """Scene-coordinate output port (center-edge fallback when no named returns)."""
-        return self.scenePos() + QPointF(NODE_W, NODE_H / 2)
+        """Scene-coordinate output port (the first port's row when no named returns)."""
+        return self.scenePos() + QPointF(NODE_W, PORT_Y0)
+
+    def _port_pitch(self) -> float:
+        """The distance between two named output ports: PORT_PITCH, closer only if NODE_H could not hold them."""
+        n = len(self._returns)
+        if n <= 1:
+            return PORT_PITCH
+        return min(PORT_PITCH, (NODE_H - PORT_Y0 - PORT_R) / (n - 1))
 
     def _port_y(self, idx: int) -> float:
-        """Y coordinate (local) for the idx-th named output port, evenly distributed over NODE_H."""
-        n = len(self._returns)
-        return (idx + 0.5) * NODE_H / n
+        """Y coordinate (local) for the idx-th named output port: the first level with the input port."""
+        return PORT_Y0 + idx * self._port_pitch()
 
     def port_out_for(self, return_name: str | None) -> QPointF:
         """Scene-coordinate output port for the given return value name.
@@ -579,12 +591,11 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
-            # The grid row is the body's vertical center, as the anchor is: a call node
-            # is taller than NODE_H, so its own height has to be used here too.
-            half = self.body_height / 2
+            # The top-left corner snaps, whatever the node's height: every shape puts
+            # its first port PORT_Y0 below its top, so level tops mean level ports.
             return QPointF(
                 round(value.x() / GRID_W) * GRID_W,
-                round((value.y() + half) / GRID_H) * GRID_H - half,
+                round(value.y() / GRID_H) * GRID_H,
             )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             for edge in list(self._edges):
@@ -655,7 +666,7 @@ class NodeItem(QGraphicsItem):
                     near_port = True
                     break
         else:
-            if math.hypot(pos.x() - float(NODE_INFO_W), pos.y() - NODE_H / 2) <= _PORT_HIT_R:
+            if math.hypot(pos.x() - float(NODE_INFO_W), pos.y() - PORT_Y0) <= _PORT_HIT_R:
                 near_port = True
         self.setCursor(Qt.CursorShape.CrossCursor if near_port else Qt.CursorShape.SizeAllCursor)
         super().hoverMoveEvent(event)
@@ -768,8 +779,7 @@ class NodeItem(QGraphicsItem):
             painter.drawText(QRectF(8, 47, sub_w, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
 
             if self._returns:
-                n = len(self._returns)
-                row_h = NODE_H / n
+                row_h = self._port_pitch()
 
                 # Vertical divider between info and port sections
                 painter.setPen(QPen(border, 0.5))
@@ -806,7 +816,7 @@ class NodeItem(QGraphicsItem):
                 if self._interactive:
                     painter.setPen(QPen(_port_color(), 1.5))
                     painter.setBrush(QBrush(_port_color()))
-                    painter.drawEllipse(QPointF(float(NODE_INFO_W), NODE_H / 2), PORT_R, PORT_R)
+                    painter.drawEllipse(QPointF(float(NODE_INFO_W), PORT_Y0), PORT_R, PORT_R)
 
             # Structural-role badges: small circles overlapping the top-left corner of the node
             badges: list[tuple[QColor, QSvgRenderer | str]] = []
@@ -837,4 +847,4 @@ class NodeItem(QGraphicsItem):
             if self._interactive:
                 painter.setPen(QPen(_port_color(), 1.5))
                 painter.setBrush(QBrush(_port_color()))
-                painter.drawEllipse(QPointF(0.0, NODE_H / 2), PORT_R, PORT_R)
+                painter.drawEllipse(QPointF(0.0, PORT_Y0), PORT_R, PORT_R)
