@@ -1108,7 +1108,7 @@
       "label": "Recall to the entrance",
       "position": {
         "x": 8800.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {
         "zone": "",
@@ -1868,5 +1868,8 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "dc53df30f417b7da4e0cbac0a87e98b7549af004798904055ce45bbbbf219fb0"
+  ]
 }
