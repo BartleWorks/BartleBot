@@ -1,4 +1,7 @@
 import asyncio
+import contextvars
+import enum
+import functools
 import logging
 import re
 import time
@@ -43,9 +46,35 @@ _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 # fight before logging anyone out (#203).
 NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
 
+# The node type a log() call is filed under: set in the running node's own task, and so in
+# every task it starts, and nowhere else. A field on the machine said only that some node was
+# running, so a watcher logging beside it was filed under that node. See log().
+_NODE_TYPE: contextvars.ContextVar[str | None] = contextvars.ContextVar("bartlebot_node_type", default=None)
+
 
 class VariableWriteRefused(RuntimeError):
     """A variable write from a task that may not make one: anything but the running node's and the run loop's."""
+
+
+class PauseHold(enum.StrEnum):
+    """Who is holding the FSM paused. It runs only while nobody is.
+
+    Each party that pauses releases only its own hold, so the end of an ambient fight cannot
+    resume a bot the user paused during it, or one crash recovery is relaunching a client for.
+    The user's Resume is the exception: it lifts every hold, as it always has, which is how a
+    bot left paused by a recovery that cannot finish is set going again.
+    """
+
+    USER = "user"
+    """The Pause button."""
+    RECOVERY = "recovery"
+    """A client died, or is being relaunched. Crash recovery releases it once every client is back."""
+    RELOG = "relog"
+    """A relog waiting for a node boundary. Handed to RECOVERY once its clients are closed."""
+    AMBIENT = "ambient"
+    """The ambient combat watcher, for the length of a fight."""
+    IDLE = "idle"
+    """The idle-popup watcher, while it cancels the running node and sends the bot to recovery."""
 
 
 class BotMachine:
@@ -113,12 +142,15 @@ class BotMachine:
         self._drop_poll: asyncio.Task | None = None
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
+        # Who is holding the FSM paused; _resume_event is set exactly when this is empty. See PauseHold.
+        self._holds: set[PauseHold] = set()
+        # Windows handed to crash recovery since the run last resumed. See _await_dead_client.
+        self._lost_hwnds: set[int] = set()
         # Set by the run loop once it has actually reached its paused wait. pause() only
         # clears _resume_event, which says a pause was *asked for*, not that the node that
         # was running has finished -- see wait_until_parked.
         self._parked = asyncio.Event()
         self._ambient_combat_lock = asyncio.Lock()
-        self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
         # The ambient combat session in progress, so the idle watcher can tell it of a flee.
         self._ambient_session = None
         # Set when the ambient combat watcher cancels the running node to take over a fight.
@@ -146,8 +178,6 @@ class BotMachine:
         # Which clients have been seen sharing a zone, realm and instance. Keeps only the
         # latest check until run() starts the loading watcher that says when one goes stale.
         self._together = sightings.TogetherRecord(retain=False)
-        # Which node's log() calls are currently being attributed. See log().
-        self._current_node_type: str | None = None
         # Run bookkeeping, for the summary logged when run() returns.
         self._pass_count: int = 0
         self._states_executed: int = 0
@@ -432,12 +462,15 @@ class BotMachine:
         "everything quicksell did" a grep and lets the log widget filter by node.
 
         Outside a node's execution — the run loop's own bookkeeping — there is no node
-        to name, and the machine's logger is the honest answer.
+        to name, and the machine's logger is the honest answer. So is it for the ambient
+        watchers, and for the session and helpers they share with handle_combat: they run
+        beside whatever node is executing, and are filed under it only when the call is made
+        from the node's own task, or one it started (_NODE_TYPE).
         """
         logging.getLogger(self._node_logger_name()).log(level, msg)
 
     def _node_logger_name(self) -> str:
-        node_type = self._current_node_type
+        node_type = _NODE_TYPE.get()
         return f"bartlebot.node.{node_type}" if node_type else logger.name
 
     def _log_machine(self, msg: str, level: int = logging.INFO) -> None:
@@ -446,9 +479,8 @@ class BotMachine:
         Same signature as log() so the two read alike at the call site, but this one
         always lands on bartlebot.bot.machine. The run loop's own bookkeeping belongs
         there, and for the ambient watchers it is the only correct answer: they run
-        concurrently with whatever node is executing, so attributing them to
-        _current_node_type would file a watcher's message under a node that had
-        nothing to do with it.
+        concurrently with whatever node is executing, so attributing them to it would
+        file a watcher's message under a node that had nothing to do with it.
         """
         logger.log(level, msg)
 
@@ -700,8 +732,8 @@ class BotMachine:
         self._health_monitor = ClientHealthMonitor(
             clients_ref=lambda: self.clients,
             stop_flag=self._stop_flag,
-            on_pause=self.pause,
-            on_client_disconnected=self._on_client_disconnected,
+            on_pause=functools.partial(self.pause, PauseHold.RECOVERY),
+            on_client_disconnected=self._client_lost,
             on_restricted_zone=self._handle_restricted_zone,
             on_loading=self.forget_sightings,
         )
@@ -710,6 +742,7 @@ class BotMachine:
         _run_start = time.monotonic()
         self._running = True
         self._run_task = asyncio.current_task()
+        self._lost_hwnds.clear()
         self._reset_variables()
         self._variable_only_streak.clear()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
@@ -742,20 +775,27 @@ class BotMachine:
                 if not self._rerunning:
                     self._note_pass(state_id)
                 self._rerunning = False
-                self._current_node_type = node_type
                 self._states_executed += 1
                 self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
-                self._current_node_task = asyncio.create_task(node_fn(self, self.clients, state_def.get("params", {})))
+                node_clients = list(self.clients)
+                # The node's own context, which every task it starts copies: log() files under it.
+                context = contextvars.copy_context()
+                context.run(_NODE_TYPE.set, node_type)
+                self._current_node_task = asyncio.create_task(
+                    node_fn(self, self.clients, state_def.get("params", {})), context=context
+                )
                 try:
                     self.last_result = await self._current_node_task
                 except asyncio.CancelledError:
+                    if asyncio.current_task().cancelling():
+                        raise  # run() itself was cancelled from outside
                     if self._stop_flag.is_set():
                         # Our deferred_cancel fired after the grace period elapsed.
                         self._log_machine("Node forcibly cancelled after grace period.", logging.WARNING)
                         break
-                    if self._preempted and not asyncio.current_task().cancelling():
+                    if self._preempted:
                         # The ambient combat watcher took the node's clients for a fight.
                         # No result and no transition: park, and on resume run this state
                         # again from the start. The counters are left alone.
@@ -766,8 +806,15 @@ class BotMachine:
                             logging.INFO,
                         )
                         continue
-                    # run() was cancelled from outside — propagate.
-                    raise
+                    # Nobody cancelled the node: a CancelledError escaped from inside it, such as
+                    # an await on a task something else cancelled. Taken for run()'s own
+                    # cancellation, it ended the run with no reason given.
+                    logger.error(
+                        "Node in state %s ended with a cancellation nothing asked for; counting it as a FAILURE",
+                        self._fmt_state(state_id),
+                        exc_info=True,
+                    )
+                    self.last_result = "FAILURE"
                 except (ClientClosedError, ExceptionalTimeout, MemoryReadError) as exc:
                     # A client process has died. Pause immediately rather than treating
                     # this as a normal FAILURE — prevents the no-match / idle counters
@@ -778,21 +825,23 @@ class BotMachine:
                     # a dead game process and need the same recovery path.
                     # ExceptionalTimeout wraps a memory-read poll that timed out — same root
                     # cause when WizWalker's internal timeout fires before ClientClosedError.
+                    # Both can also come from a live client, so the death is confirmed before
+                    # the run waits on a recovery: see _await_dead_client.
                     logger.warning(
                         "%s in state %s — client may have died, pausing for recovery",
                         type(exc).__name__,
                         self._fmt_state(state_id),
                     )
-                    self._no_match_count = 0
-                    self._consecutive_same_state_count = 0
-                    self.pause()
-                    continue
+                    if await self._await_dead_client(node_clients):
+                        self._no_match_count = 0
+                        self._consecutive_same_state_count = 0
+                        continue
+                    self.last_result = "FAILURE"
                 except Exception:
                     logger.exception("Node execution failed in state %s", self._fmt_state(state_id))
                     self.last_result = "FAILURE"
                 finally:
                     self._current_node_task = None
-                    self._current_node_type = None
                 self._results_seen[self.last_result or "NONE"] += 1
                 _duration = time.monotonic() - _tick_start
                 self._log_machine(
@@ -891,7 +940,6 @@ class BotMachine:
         finally:
             self._running = False
             self._run_task = None
-            self._current_node_type = None
             self._log_run_summary(time.monotonic() - _run_start)
             watcher.cancel()
             combat_watcher.cancel()
@@ -906,6 +954,47 @@ class BotMachine:
                     await t
                 except asyncio.CancelledError:
                     pass
+
+    def _client_lost(self, hwnd: int) -> None:
+        """The health monitor's word that *hwnd* has been handed to crash recovery. Passed on to the callback."""
+        self._lost_hwnds.add(hwnd)
+        if self._on_client_disconnected:
+            try:
+                self._on_client_disconnected(hwnd)
+            except Exception:
+                logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
+
+    def _a_client_is_lost(self, clients: list) -> bool:
+        """Whether any of *clients* has left the client list, or been handed to crash recovery."""
+        return any(c not in self.clients or c.window_handle in self._lost_hwnds for c in clients)
+
+    async def _await_dead_client(self, clients: list) -> bool:
+        """Hold the run for recovery after a dead-client error, once a client is shown to be gone.
+
+        True when one of *clients*, the node's, is gone, or the run stopped: the loop then parks
+        without counting the tick, and recovery resumes it. False when every one of them is still
+        there after DEAD_CLIENT_CONFIRM_TIMEOUT: the error came from a live client, a window
+        torn down mid-read in a zone change or a lagging one, and nothing is coming to resume the
+        run, so the hold is released and the caller counts the node's FAILURE. Parked on such an
+        error, a run used to sit paused for good.
+
+        Holds the run paused while it waits, so neither combat watcher acts on a dying client.
+        """
+        from bartlebot.nodes.timing import DEAD_CLIENT_CONFIRM_TIMEOUT, POLL_INTERVAL
+
+        self.pause(PauseHold.RECOVERY)
+        deadline = time.monotonic() + DEAD_CLIENT_CONFIRM_TIMEOUT
+        while not self._stop_flag.is_set() and not self._a_client_is_lost(clients):
+            if time.monotonic() >= deadline:
+                self.resume(PauseHold.RECOVERY)
+                self._log_machine(
+                    f"Every client is still running {DEAD_CLIENT_CONFIRM_TIMEOUT:.0f}s after the error;"
+                    " counting it as the node's FAILURE",
+                    logging.WARNING,
+                )
+                return False
+            await asyncio.sleep(POLL_INTERVAL)
+        return True
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: advance any open dialog on all clients, declining side quests.
@@ -1000,8 +1089,7 @@ class BotMachine:
                         # while we were awaiting in_battle_flags.
                         may_move = False
                         if self._resume_event.is_set():
-                            self._combat_auto_paused = True
-                            self.pause()
+                            self.pause(PauseHold.AMBIENT)
                             self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
                             may_move = await self._preempt_node()
 
@@ -1013,10 +1101,17 @@ class BotMachine:
                         if may_move and end.recover and not self._stop_flag.is_set():
                             self._recover_after_ambient()
                 finally:
-                    if self._combat_auto_paused:
-                        self._combat_auto_paused = False
-                        self.resume()
-                        self._log_machine("Ambient combat: FSM resumed", logging.INFO)
+                    if PauseHold.AMBIENT in self._holds:
+                        # Only the watcher's own hold: a pause the user or crash recovery asked
+                        # for during the fight outlasts it.
+                        self.resume(PauseHold.AMBIENT)
+                        if self.is_paused:
+                            self._log_machine(
+                                f"Ambient combat: over; the FSM stays paused ({self._describe_holds()})",
+                                logging.INFO,
+                            )
+                        else:
+                            self._log_machine("Ambient combat: FSM resumed", logging.INFO)
             except Exception:
                 # One bad pass must not end the watcher for the rest of the run (#154).
                 logger.exception("Ambient combat watcher failed; it carries on")
@@ -1115,7 +1210,7 @@ class BotMachine:
                 await asyncio.sleep(COMBAT_AFK_POLL_INTERVAL)
                 if self._stop_flag.is_set():
                     return  # stop() sets the resume event too, to free a parked loop
-                if not self._resume_event.is_set() and not self._combat_auto_paused:
+                if self._holds and PauseHold.AMBIENT not in self._holds:
                     continue
                 clients = list(self.clients)
                 if not clients:
@@ -1180,15 +1275,12 @@ class BotMachine:
             if self._state_map.get(self.state, {}).get("node_type") == "relog":
                 self._log_machine(f"Idle popup: {players} fled; the relog under way is the recovery", logging.INFO)
                 return
-            was_running = self._resume_event.is_set()
-            if was_running:
-                self.pause()
+            self.pause(PauseHold.IDLE)
             try:
                 if await self._preempt_node(spare=frozenset({"relog"})):
                     self._recover(f"Idle popup: {players} fled a fight nothing was fighting")
             finally:
-                if was_running:
-                    self.resume()
+                self.resume(PauseHold.IDLE)
 
     def note_flee(self) -> bool:
         """Count one fled fight toward the flee limit. True when this one stopped the bot.
@@ -1329,6 +1421,7 @@ class BotMachine:
         if not self._stop_flag.is_set():
             self._log_machine("Bot stopped.", logging.INFO)
         self._stop_flag.set()
+        self._holds.clear()
         self._parked.clear()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
         # Schedule hard cancellation as a fallback if the node doesn't exit cooperatively.
@@ -1352,16 +1445,29 @@ class BotMachine:
             logger.warning("Grace period elapsed; forcibly cancelling running node task")
             task.cancel()
 
-    def pause(self) -> None:
-        """Suspend the FSM after the current node finishes.
+    def pause(self, hold: PauseHold = PauseHold.USER) -> None:
+        """Suspend the FSM after the current node finishes, on *hold*'s account.
 
         Returns immediately. The loop has not necessarily parked yet -- await
-        wait_until_parked for that.
+        wait_until_parked for that. It stays paused until *hold*, and every other hold
+        taken meanwhile, has been released. See PauseHold.
         """
+        self._holds.add(hold)
         self._resume_event.clear()
 
-    def resume(self) -> None:
-        """Resume a paused FSM."""
+    def resume(self, hold: PauseHold = PauseHold.USER) -> None:
+        """Release *hold*, and resume the FSM if no other hold remains.
+
+        The user's resume (the default) releases every hold. Any other releases only its own,
+        so a party resuming the pause it took never runs a bot someone else paused meanwhile.
+        """
+        if hold is PauseHold.USER:
+            self._holds.clear()
+        else:
+            self._holds.discard(hold)
+        if self._holds:
+            return
+        self._lost_hwnds.clear()  # recovered, or given up on: either way not waited for again
         if self._health_monitor is not None:
             self._health_monitor.clear_flagged()  # allow re-detection after client recovery
         # A preemption whose node finished before the cancel landed is never consumed by the
@@ -1369,6 +1475,10 @@ class BotMachine:
         self._preempted = False
         self._parked.clear()
         self._resume_event.set()
+
+    def _describe_holds(self) -> str:
+        """Who is holding the FSM paused, for a log line: "held for recovery, user"."""
+        return "held for " + ", ".join(sorted(self._holds))
 
     def resume_health_checks_for(self, hwnds: Iterable[int]) -> None:
         """Undo suspend_health_checks_for, one client at a time.
@@ -1420,6 +1530,7 @@ class BotMachine:
             )
             return False
         monitor.recover(client, reason)
+        self._lost_hwnds.add(hwnd)
         return True
 
     def force_state(self, state_id: str, reason: str | None = None) -> None:

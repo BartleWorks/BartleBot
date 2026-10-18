@@ -168,7 +168,10 @@ class FlagGroup(BaseModel):
 
 
 class TransitionModel(BaseModel):
-    trigger: str
+    # The run loop fires only "advance". Any other trigger made the edge's state raise from
+    # advance(), outside the node's try, which ended the run; a bot from a share file or a
+    # hand edit is refused when it loads instead.
+    trigger: Literal["advance"]
     source: str
     dest: str
     # Expected return value from the source node (e.g. "SUCCESS", "FAILURE").

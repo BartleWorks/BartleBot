@@ -68,7 +68,7 @@ REGION = "9f59026b"
 
 
 def _t(src: str, dst: str, when: str | None = "SUCCESS") -> TransitionModel:
-    return TransitionModel(trigger="next", source=src, dest=dst, when=when)
+    return TransitionModel(trigger="advance", source=src, dest=dst, when=when)
 
 
 def _entry(pid: str, label: str, x: float = -440.0, y: float = 0.0) -> StateModel:

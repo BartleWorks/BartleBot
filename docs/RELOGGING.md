@@ -48,6 +48,9 @@ What must not be broken:
   this fell through to its recovery state (the Relog node itself), hit the retry limit and
   stopped, so nothing relaunched the client stuck loading. The dead-client branch parks
   without counting. The abandoned client stays flagged until recovery's `resume()`.
+  It parks at once only because `abandon_client` told it the client is gone: the same
+  errors from a client nobody handed over are waited on for `DEAD_CLIENT_CONFIRM_TIMEOUT`,
+  for the client to leave the list, and are the node's FAILURE if it never does.
 - **Close, never unhook.** Killing the process sidesteps `HookHandler._rewrite_autobot`'s
   fixed 0.5 s sleep, which is a hazard on exactly the lagging clients this exists for.
 - **Recover the fleet as one batch, not a client at a time.** A relog closes every

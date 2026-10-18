@@ -25,7 +25,9 @@ def _bot() -> BotConfig:
             StateModel(id=sid, node_type="sleep", position={"x": 440.0 * i, "y": 0.0}, params={"duration": 1.0})
             for i, sid in enumerate(ids)
         ],
-        transitions=[TransitionModel(trigger="next", source=a, dest=b, when="SUCCESS") for a, b in zip(ids, ids[1:])],
+        transitions=[
+            TransitionModel(trigger="advance", source=a, dest=b, when="SUCCESS") for a, b in zip(ids, ids[1:])
+        ],
         regions=[RegionModel(id="r1", label="Middle", members=["b", "c"], color=2)],
     )
 

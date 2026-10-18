@@ -89,6 +89,14 @@ def test_transition_when_is_preserved():
     assert config.transitions[0].when == "SUCCESS"
 
 
+@pytest.mark.parametrize("trigger", ["next", "stop", ""])
+def test_a_trigger_the_run_loop_never_fires_is_refused(trigger):
+    """The run loop fires only advance; an edge on any other trigger used to end the run mid-way."""
+    data = {**VALID_DATA, "transitions": [{"trigger": trigger, "source": "state_a", "dest": "state_b"}]}
+    with pytest.raises(ValidationError):
+        BotConfig.model_validate(data)
+
+
 # ---------------------------------------------------------------------------
 # Required field validation
 # ---------------------------------------------------------------------------

@@ -11,7 +11,7 @@ def _state(sid="a", stops=None):
 
 
 def _t(src, dest, when=None):
-    return TransitionModel(trigger=f"{src}_{dest}", source=src, dest=dest, when=when)
+    return TransitionModel(trigger="advance", source=src, dest=dest, when=when)
 
 
 ZONE = ParamField(key="from_zone", type="zone", label="From Zone", required=True, default="")

@@ -167,14 +167,37 @@ async def test_recovery_queue_settles_fights_then_regroups_before_jumping_to_rec
     harness._recovery_in_progress = True
     harness._get_recovery_state = lambda: "start"
     harness._machine.force_state = MagicMock(side_effect=lambda s: calls.append("force_state"))
-    harness._machine.resume = MagicMock(side_effect=lambda: calls.append("resume"))
+    harness._machine.resume = MagicMock(side_effect=lambda hold: calls.append(f"resume {hold}"))
     harness._machine.settle_fights = AsyncMock(side_effect=lambda: calls.append("settle"))
     harness._regroup_after_recovery = AsyncMock(side_effect=lambda: calls.append("regroup"))
     harness._settle_recovery_batch = AsyncMock()
 
     await ClientManager._run_recovery_queue(harness)
 
-    assert calls == ["settle", "regroup", "force_state", "resume"]
+    assert calls == ["settle", "regroup", "force_state", "resume recovery"]
+
+
+async def test_a_recovery_that_stopped_the_run_leaves_the_clients_alone(settings):
+    """A slot that could not be relaunched stops the run; a regroup after it opened the social
+    window on clients the user had just been handed back."""
+    harness = RegroupHarness(_clients())
+    harness._pending_recovery = {0: "acct"}
+    harness._recovery_in_progress = True
+    harness._settle_recovery_batch = AsyncMock()
+    harness._regroup_after_recovery = AsyncMock()
+
+    async def _reconnect(_batch):
+        harness._machine.is_stopped = True  # as _recovery_target does with no stored password
+
+    harness._reconnect_clients = _reconnect
+
+    await ClientManager._run_recovery_queue(harness)
+
+    harness._machine.settle_fights.assert_not_awaited()
+    harness._regroup_after_recovery.assert_not_awaited()
+    harness._machine.force_state.assert_not_called()
+    harness._machine.resume.assert_not_called()
+    assert harness._recovery_in_progress is False
 
 
 async def test_a_recovery_regroup_updates_the_group_routes_in_the_runs_port_map(settings):

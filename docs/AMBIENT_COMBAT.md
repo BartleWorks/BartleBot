@@ -143,6 +143,10 @@ the navigation map, or a failed teleport, goes straight to recovery: the relog t
   bot's `recovery_state`, then resume.
 - **An exception in the session** also goes to recovery. The resume is in a `finally`: without it,
   one unreadable strategy leaves the run paused for good.
+- **The resume gives back only the watcher's own pause** (`PauseHold.AMBIENT`). A Pause pressed
+  during the fight, or crash recovery's for a client that died in it, outlasts the fight, and the
+  log says who is still holding the bot. Resuming outright once ran nodes on a short team while a
+  dead client was still being relaunched.
 - **A bot with no `recovery_state`** runs the interrupted state again, with a WARNING.
 - **A fight that did not end after a flee was called for** goes to recovery without moving anyone:
   a player still in battle cannot be moved.

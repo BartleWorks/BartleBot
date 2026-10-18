@@ -31,7 +31,7 @@ from bartlebot.gui.canvas.call_node_item import CollapsedRegionItem
 
 
 def _t(src: str, dst: str, when: str | None = "SUCCESS") -> TransitionModel:
-    return TransitionModel(trigger="next", source=src, dest=dst, when=when)
+    return TransitionModel(trigger="advance", source=src, dest=dst, when=when)
 
 
 def _s(sid: str, x: float, y: float = 0.0, label: str | None = None, node_type: str = "sleep") -> StateModel:

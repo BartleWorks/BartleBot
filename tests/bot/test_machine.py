@@ -16,7 +16,7 @@ import pytest
 
 import bartlebot.bot.client_health_monitor as health_module
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
-from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.machine import BotMachine, PauseHold
 
 # ---------------------------------------------------------------------------
 # Shared config and helpers
@@ -151,6 +151,82 @@ async def test_is_paused_reflects_state():
     assert machine.is_paused
     machine.resume()
     assert not machine.is_paused
+
+
+def test_a_party_resuming_its_own_hold_leaves_the_others_in_place():
+    """The end of a fight must not resume a bot the user, or crash recovery, paused during it."""
+    machine = make_machine(lambda *_: None)
+    machine.pause(PauseHold.AMBIENT)
+    machine.pause(PauseHold.RECOVERY)
+    machine.resume(PauseHold.AMBIENT)
+    assert machine.is_paused
+    machine.resume(PauseHold.RECOVERY)
+    assert not machine.is_paused
+
+
+def test_releasing_a_hold_never_taken_resumes_nothing():
+    machine = make_machine(lambda *_: None)
+    machine.pause()
+    machine.resume(PauseHold.RELOG)
+    assert machine.is_paused
+
+
+def test_the_users_resume_lifts_every_hold():
+    """How a bot left paused by a recovery that cannot finish is set going again."""
+    machine = make_machine(lambda *_: None)
+    machine.pause(PauseHold.RECOVERY)
+    machine.pause(PauseHold.AMBIENT)
+    machine.resume()
+    assert not machine.is_paused
+
+
+def test_a_stop_lifts_every_hold():
+    machine = make_machine(lambda *_: None)
+    machine.pause(PauseHold.RECOVERY)
+    machine.stop()
+    assert not machine.is_paused
+    machine.resume(PauseHold.USER)  # nothing left to release
+    assert not machine.is_paused
+
+
+async def test_a_cancellation_escaping_a_node_is_its_failure(caplog):
+    """Nobody cancelled the node or the run: it awaited something cancelled under it. That used to
+    be taken for run() being cancelled from outside, and ended the run with no reason given."""
+    results = []
+
+    async def node(machine, clients, params):
+        if not results:
+            results.append("cancelled")
+            cancelled = asyncio.get_running_loop().create_future()
+            cancelled.cancel()
+            await cancelled
+        machine.stop()
+        return "SUCCESS"
+
+    transitions = []
+    machine = make_machine(node, on_transition=lambda prev, result, nxt: transitions.append((prev, result, nxt)))
+    with caplog.at_level(logging.ERROR):
+        await asyncio.wait_for(machine.run(), timeout=1.0)
+
+    assert transitions[0] == ("state_a", "FAILURE", "state_a")  # routed like any failure
+    assert "cancellation nothing asked for" in caplog.text
+
+
+async def test_cancelling_the_run_after_a_stop_still_cancels_it():
+    """A stop alone ends the loop; a cancel of run() itself must reach its caller, stop or no stop."""
+    started = asyncio.Event()
+
+    async def node(machine, clients, params):
+        started.set()
+        await asyncio.sleep(30)
+
+    machine = make_machine(node, stop_grace_period=30.0)
+    task = asyncio.create_task(machine.run())
+    await asyncio.wait_for(started.wait(), timeout=1.0)
+    machine.stop()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await asyncio.wait_for(task, timeout=1.0)
 
 
 async def test_pause_before_run_suspends_loop():

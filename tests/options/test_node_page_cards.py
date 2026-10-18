@@ -17,7 +17,7 @@ from bartlebot.options.option_groups import summary_text
 
 
 def _t(src, dest, when=None):
-    return TransitionModel(trigger=f"{src}_{dest}_{when}", source=src, dest=dest, when=when)
+    return TransitionModel(trigger="advance", source=src, dest=dest, when=when)
 
 
 def _panel(qapp, state=None, *, initial="hub", recovery="hub", states=None, transitions=None) -> _ParamPanel:

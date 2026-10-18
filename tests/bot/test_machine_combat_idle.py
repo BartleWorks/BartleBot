@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.machine import BotMachine, PauseHold
 from bartlebot.nodes import node_helpers, timing
 from bartlebot.nodes.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
 from tests.conftest import FakeClient
@@ -180,8 +180,7 @@ async def test_a_flee_in_an_ambient_session_is_left_to_the_session(popups):
     idle = machine.clients[0]
     session = MagicMock()
     machine._ambient_session = session
-    machine._combat_auto_paused = True
-    machine.pause()
+    machine.pause(PauseHold.AMBIENT)
     popups.up.add(idle)
 
     watcher = asyncio.create_task(machine._combat_idle_watcher())

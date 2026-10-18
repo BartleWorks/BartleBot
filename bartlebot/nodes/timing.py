@@ -631,6 +631,13 @@ AMBIENT_FLEE_WINDOW = 600.0
 # watcher fought it. Fight, flee, recovery, fight never trips the same-state or no-match
 # limits, because the states keep changing.
 
+DEAD_CLIENT_CONFIRM_TIMEOUT = 45.0
+# Seconds the run loop waits, after a node fails with a dead-client error, for proof that a
+# client has gone: it drops out of the client list, or the health monitor hands it to crash
+# recovery. Past it the error is counted as the node's FAILURE, so a memory read that failed
+# on a live client cannot leave the run paused with nothing coming to resume it. Covers the
+# monitor's slowest verdict, three 5s status checks on a hung client, plus the close after.
+
 PREEMPT_PARK_TIMEOUT = 5.0
 # Seconds the ambient combat watcher waits for a node it cancelled to unwind and the run
 # loop to park. A cancel lands at the node's next await, so this is normally a moment; past

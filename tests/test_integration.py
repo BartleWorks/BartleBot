@@ -645,28 +645,21 @@ async def test_stop_while_machine_is_paused_with_real_config():
     assert machine.is_stopped
 
 
-@pytest.mark.parametrize(
+_DEAD_CLIENT_ERRORS = pytest.mark.parametrize(
     "error",
     [ClientClosedError(), MemoryReadError(299), ExceptionalTimeout("memory poll timed out")],
     ids=["client-closed", "memory-read", "exceptional-timeout"],
 )
-async def test_a_dead_client_pauses_the_run_instead_of_failing_the_node(error):
-    """A node that hits a dead client pauses the FSM for recovery rather than returning FAILURE.
 
-    Treated as a FAILURE, the retry and no-match counters would run out before the client
-    loop noticed the removal. So the node runs once, the machine parks with no transition
-    fired, and stop() still unblocks that parked wait.
 
-    ClientClosedError takes no arguments. This test used to construct it with a message,
-    which raised TypeError instead -- so it passed through the generic FAILURE branch and
-    never reached the one it was named for.
-    """
-    calls = 0
-    transitions_seen: list[tuple] = []
+def _dead_client_machine(error, client, transitions_seen: list, before_raise=None) -> tuple[BotMachine, list[int]]:
+    """A machine with *client* whose one node raises *error*, retrying itself on FAILURE."""
+    calls = [0]
 
     async def error_node(machine, clients, params):
-        nonlocal calls
-        calls += 1
+        calls[0] += 1
+        if before_raise is not None:
+            before_raise(machine)
         raise error
 
     config = BotConfig(
@@ -683,24 +676,83 @@ async def test_a_dead_client_pauses_the_run_instead_of_failing_the_node(error):
             TransitionModel(trigger="advance", source="state_a", dest="state_a", when="FAILURE"),
         ],
     )
-    mc = config.to_machine_config()
     machine = BotMachine(
-        clients=[],
-        config=mc,
+        clients=[client],
+        config=config.to_machine_config(),
         node_registry={"error_node": error_node},
         bot_config=config,
         on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
     )
+    return machine, calls
+
+
+@_DEAD_CLIENT_ERRORS
+async def test_a_dead_client_pauses_the_run_instead_of_failing_the_node(error):
+    """A node that hits a dead client pauses the FSM for recovery rather than returning FAILURE.
+
+    Treated as a FAILURE, the retry and no-match counters would run out before the client
+    loop noticed the removal. So the node runs once, the machine parks with no transition
+    fired once the client loop drops the dead client, and stop() still unblocks that wait.
+
+    ClientClosedError takes no arguments. This test used to construct it with a message,
+    which raised TypeError instead -- so it passed through the generic FAILURE branch and
+    never reached the one it was named for.
+    """
+    transitions_seen: list[tuple] = []
+    machine, calls = _dead_client_machine(error, FakeClient(), transitions_seen)
 
     task = asyncio.create_task(machine.run())
+    for _ in range(100):
+        if machine.is_paused:
+            break
+        await asyncio.sleep(0.01)
+    machine.set_clients([])  # the client loop noticing the process is gone
     assert await machine.wait_until_parked(1.0), "the machine should pause itself, not retry the node"
     machine.stop()
     await asyncio.wait_for(task, timeout=1.0)
 
-    assert calls == 1
+    assert calls[0] == 1
     assert transitions_seen == []
     assert machine.is_stopped
     assert machine.state == "state_a"
+
+
+@_DEAD_CLIENT_ERRORS
+async def test_the_same_error_from_a_live_client_is_the_nodes_failure(error, monkeypatch, caplog):
+    """No client gone means no recovery coming to resume the run: parked, it sat paused for good."""
+    from bartlebot.nodes import timing
+
+    monkeypatch.setattr(timing, "DEAD_CLIENT_CONFIRM_TIMEOUT", 0.05)
+    transitions_seen: list[tuple] = []
+    machine, calls = _dead_client_machine(error, FakeClient(), transitions_seen)
+
+    task = asyncio.create_task(machine.run())
+    for _ in range(200):
+        if transitions_seen:
+            break
+        await asyncio.sleep(0.01)
+    machine.stop()
+    await asyncio.wait_for(task, timeout=2.0)
+
+    assert transitions_seen[0] == ("state_a", "FAILURE", "state_a")
+    assert calls[0] >= 1
+    assert "counting it as the node's FAILURE" in caplog.text
+
+
+@_DEAD_CLIENT_ERRORS
+async def test_a_client_handed_to_recovery_needs_no_wait(error, monkeypatch):
+    """The health monitor saying it is recovering the client is proof enough: park at once."""
+    from bartlebot.nodes import timing
+
+    monkeypatch.setattr(timing, "DEAD_CLIENT_CONFIRM_TIMEOUT", 60.0)
+    client = FakeClient()
+    # As ClientHealthMonitor._fire_disconnected does, and abandon_client after it.
+    machine, _calls = _dead_client_machine(error, client, [], lambda m: m._client_lost(client.window_handle))
+
+    task = asyncio.create_task(machine.run())
+    assert await machine.wait_until_parked(1.0)
+    machine.stop()
+    await asyncio.wait_for(task, timeout=1.0)
 
 
 # ---------------------------------------------------------------------------
