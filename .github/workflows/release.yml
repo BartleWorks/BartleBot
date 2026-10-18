@@ -115,12 +115,11 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # The one job that reads FEED_SIGNING_KEY. Until the repo is public it is a repository
-  # secret, since GitHub Free gives a private repo no environment rules; then it moves into
-  # a `release` environment only v* tags may deploy to (docs/RELEASING.md, "The signing
-  # key").
+  # The one job that reads FEED_SIGNING_KEY, a secret of the `release` environment, which
+  # only v* tags may deploy to (docs/RELEASING.md, "The signing key").
   sign:
     needs: build
+    environment: release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

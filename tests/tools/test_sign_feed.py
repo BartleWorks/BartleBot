@@ -105,6 +105,13 @@ def test_only_the_signing_job_can_read_the_key():
     assert "write" not in jobs["sign"], "the job holding the key never gets a token that can write"
 
 
+def test_the_signing_job_runs_in_the_release_environment():
+    jobs = _jobs()
+
+    assert "environment: release" in jobs["sign"], "the key is a secret of the release environment"
+    assert [name for name, text in jobs.items() if "environment:" in text] == ["sign"]
+
+
 def test_the_signing_job_signs_then_checks_against_the_apps_keys():
     sign_job = _jobs()["sign"]
 
