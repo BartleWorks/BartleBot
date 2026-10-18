@@ -121,9 +121,14 @@ everyone including CI. Tag it *before* bumping the pin:
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
 ```
 
-Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `f5a613b`
-(`bartlebot-pin-20261016`, which adds `override_cache_folder` for #234) and wizsprinter `716bf3d`
-(`bartlebot-pin-20261015c`, on its `condition-attributes` branch, which names a combatant
+Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `4af3353`
+(`bartlebot-pin-20261018`, a review's fixes: polls that never yielded the event loop, the
+mouseless hook's user32 writes and its 200 ms re-parse, a dead client's leaked process
+handle, unbounded reads and broken string writes, and fewer reads per UI search, on top of
+`override_cache_folder` for #234) and wizsprinter `e82212b`
+(`bartlebot-pin-20261018`, on its `review-fixes` branch, which bounds the draw and discard
+waits, reads the combatants once a round and builds the config parser once, on top of
+`condition-attributes`, which names a combatant
 in the turn trace by its slot and refuses a condition attribute that can never be read,
 on top of `harmful-aura`, which adds the
 `harmful_aura` and `stronger` template keywords, on top of `turn-trace`, which logs each turn's decisions

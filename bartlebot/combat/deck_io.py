@@ -1566,8 +1566,8 @@ def archmastery_menu_is_open(rects: list) -> bool:
     """
     if len(rects) < 2:
         return False
-    # Rectangle.__iter__ yields (x1, x2, y1, y2) -- not the (x1, y1, x2, y2)
-    # order the name suggests -- so read the attributes rather than unpacking.
+    # Read the attributes rather than unpacking: Rectangle.__iter__ yielded
+    # (x1, x2, y1, y2) until wizwalker 4af3353, and the names say what they are.
     spread = max(
         max(r.x1 for r in rects) - min(r.x1 for r in rects),
         max(r.y1 for r in rects) - min(r.y1 for r in rects),
@@ -1891,8 +1891,8 @@ async def deck_page_open(client):
 
     No mouse handler is taken.  ``send_key`` is a plain ``SendMessageW`` to the
     window handle and the mouseless hook only governs cursor position, so wrapping
-    the keypress the way ``open_deck_page`` does buys nothing and costs ~180 ms of
-    hook activate/deactivate.
+    the keypress the way ``open_deck_page`` does buys nothing and costs a hook
+    activate/deactivate: patching the game's ``GetCursorPos`` and putting it back.
 
     A page found already open is closed and reopened first.  Opening the deck page
     always lands on the deck itself — wizwalker's own ``close_deck_page`` notes
@@ -2198,8 +2198,9 @@ async def apply_deck(
 
         # One mouse_handler for the whole write. Each `async with client.mouse_handler`
         # inside DeckBuilder would otherwise activate and unhook MouselessCursorMoveHook
-        # on its own — ~180 ms a time, four times per open/close cycle. The handler is
-        # ref-counted precisely so an outer hold collapses those into one.
+        # on its own, patching the game's GetCursorPos and putting it back, four times
+        # per open/close cycle. The handler is ref-counted precisely so an outer hold
+        # collapses those into one.
         async with client.mouse_handler, DeckBuilder(client) as db:
             # open_deck_page() has just clicked the "Deck" tab, so we are on the
             # deck page — but it never records that, leaving _on_deck_page at the

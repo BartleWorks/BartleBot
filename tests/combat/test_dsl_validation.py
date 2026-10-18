@@ -87,9 +87,8 @@ def test_validation_does_not_mutate_the_input():
 
 
 def test_lark_grammar_is_compiled_only_once():
-    """CombatConfigProvider.parse_config() builds a fresh Lark (~77 ms) on every call
-    and _run_combat makes one provider per client per fight, so the grammar must be
-    compiled once and shared."""
+    """Compiling the grammar costs ~77 ms and _run_combat makes one provider per client
+    per fight, so it must be compiled once and shared."""
     import lark
 
     real_lark = lark.Lark

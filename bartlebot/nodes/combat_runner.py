@@ -137,13 +137,14 @@ def resolve_combat(
 def _lark_parser():
     """Build the wizsprinter combat grammar parser once and reuse it.
 
-    ``CombatConfigProvider.parse_config()`` rebuilds a ``Lark`` instance on every
-    call (~77 ms), and ``_run_combat`` constructs a provider per client per fight,
-    so that cost lands squarely in the hot path.  Lark parsers are reusable across
-    ``parse()`` calls, and one shared instance is safe across threads too: the GUI's
-    background checks (``gui/combat_strategies/dsl_checks.py``) parse on a worker while
-    the event loop may parse a fight's DSL. lark's Earley parser sets its state when it
-    is built and keeps each parse's in locals.
+    Building one compiles the grammar (~77 ms). ``validate_dsl`` parses with it
+    directly, and ``_run_combat``'s provider, one per client per fight, does too.
+    wizsprinter's own ``parse_config()`` built a new one on every call until
+    e82212b, which is why this exists; it is still the one both share.  Lark parsers
+    are reusable across ``parse()`` calls, and one shared instance is safe across
+    threads too: the GUI's background checks (``gui/combat_strategies/dsl_checks.py``)
+    parse on a worker while the event loop may parse a fight's DSL. lark's Earley
+    parser sets its state when it is built and keeps each parse's in locals.
     """
     from lark import Lark  # noqa: PLC0415
     from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415

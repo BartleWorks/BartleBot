@@ -1156,8 +1156,8 @@ async def test_deck_page_open_closes_even_when_the_body_raises(monkeypatch):
 
 
 async def test_deck_page_open_takes_no_mouse_handler(monkeypatch):
-    """send_key is a plain window message; the mouseless hook costs ~180ms and
-    governs only cursor position."""
+    """send_key is a plain window message; the mouseless hook patches the game's
+    GetCursorPos and governs only cursor position."""
     state = _PageState(open_now=False)
     monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
     client = _page_client(state)
@@ -1269,8 +1269,8 @@ async def test_apply_deck_does_not_fast_check_an_empty_deck(fake_deck_builder, m
 
 async def test_apply_deck_holds_one_mouse_handler_for_the_whole_write(fake_deck_builder):
     """Each `async with client.mouse_handler` inside DeckBuilder re-hooks
-    MouselessCursorMoveHook at ~180ms a time; an outer hold collapses them via the
-    handler's own ref counting."""
+    MouselessCursorMoveHook; an outer hold collapses them via the handler's own ref
+    counting."""
     client = FakeClient()
     await apply_deck(client, DeckData(normal={"Tempest": 4}))
 
@@ -2805,9 +2805,10 @@ async def test_log_lines_carry_the_slot_of_the_apply_they_belong_to(caplog):
 class FakeRect:
     """Stands in for wizwalker's Rectangle.
 
-    Deliberately does *not* implement __iter__: the real one yields
-    (x1, x2, y1, y2), not the (x1, y1, x2, y2) the name suggests, and code that
-    unpacks it is wrong. Leaving it out here keeps that mistake a test failure.
+    Deliberately does *not* implement __iter__: the real one yielded
+    (x1, x2, y1, y2) until wizwalker 4af3353, not the (x1, y1, x2, y2) the name
+    suggests, so the code here reads the attributes. Leaving it out keeps any
+    unpacking a test failure.
     """
 
     def __init__(self, x1, y1, x2, y2):
