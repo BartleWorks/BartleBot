@@ -6786,7 +6786,7 @@
           "from": "Krokotopia/KT_Hub",
           "to": "G14_SB/SB_Z01_KimbaalungVillage",
           "interact_xyz": {"x": -10616.38, "y": 1719.07, "z": 3341.55},
-          "reset_xyz": {"x": -10597.25, "y": 1952.62, "z": 3341.55},
+          "reset_xyz": {"x": -10532.92, "y": 2256.33, "z": 3341.55},
           "verified": true,
           "source": "recorded"
         }
