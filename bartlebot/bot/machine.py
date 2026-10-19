@@ -6,7 +6,7 @@ import logging
 import re
 import time
 from collections import Counter, deque
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
@@ -1117,15 +1117,31 @@ class BotMachine:
                 logger.exception("Ambient combat watcher failed; it carries on")
                 await asyncio.sleep(node_helpers.POLL_INTERVAL)
 
-    async def _run_ambient_session(self, clients: list, battling_slots: list[int], may_move: bool):
+    async def _run_ambient_session(
+        self,
+        clients: list,
+        battling_slots: list[int],
+        may_move: bool,
+        *,
+        rejoining: Sequence = (),
+        node_strategy: bool | None = None,
+    ):
         """Fight out the fights *battling_slots* are in, and count their flees. Hold the lock.
 
+        *rejoining* and *node_strategy* are crash recovery's: see :meth:`settle_fights`.
         Returns the session's SessionEnd, or None when the session raised.
         """
         from bartlebot.bot import ambient_combat
 
         self._log_machine(f"Ambient combat detected on client(s) {battling_slots} — handling", logging.WARNING)
-        session = ambient_combat.AmbientSession(self, clients, [clients[i] for i in battling_slots], may_move=may_move)
+        session = ambient_combat.AmbientSession(
+            self,
+            clients,
+            [clients[i] for i in battling_slots],
+            may_move=may_move,
+            rejoining=list(rejoining),
+            node_strategy=node_strategy,
+        )
         self._ambient_session = session
         try:
             end = await session.run()
@@ -1139,7 +1155,7 @@ class BotMachine:
                 break
         return end
 
-    async def settle_fights(self) -> None:
+    async def settle_fights(self, rejoining: Sequence = ()) -> list:
         """End every fight our players are in, for a caller holding the FSM paused (#203).
 
         Crash recovery is the caller. It keeps the FSM paused while it relaunches a client,
@@ -1150,27 +1166,58 @@ class BotMachine:
         Idle" by fleeing, as the idle watcher would, and then fights whatever is left the way
         the ambient combat watcher does.
 
-        No node is running, so the session may move players. Where they end up does not matter:
-        the caller sends the bot to its recovery state either way. Never raises.
+        A pause does not stop a node, so a handle_combat node whose fight a client crashed out
+        of is still fighting it with everyone else. It is cancelled here, relog alone being
+        spared, so the session is the only thing casting for those players, and the session
+        fights on with that node's strategy rather than the ambient default.
+
+        *rejoining* are the players recovery relaunched. Each tries to get back into the fight,
+        as any helper does. If one cannot (a dungeon that refuses the port, typically), the
+        session stops fighting and the players still in it are returned, for recovery to log
+        out so the whole team starts again together. Otherwise the result is empty.
+
+        Where anyone ends up does not matter: the caller sends the bot to its recovery state
+        either way. Never raises.
         """
         from bartlebot.nodes.combat_runner import slots_in_battle
 
         if self._stop_flag.is_set():
-            return
+            return []
         async with self._ambient_combat_lock:
             clients = list(self.clients)
             if not clients:
-                return
+                return []
             try:
                 fled = await self._flee_idle_popups(clients)
                 if fled and self.note_flee():
-                    return
+                    return []
                 flags = await asyncio.gather(*[c.in_battle() for c in clients], return_exceptions=True)
                 battling_slots = slots_in_battle(flags)
-                if battling_slots and not self._stop_flag.is_set():
-                    await self._run_ambient_session(clients, battling_slots, may_move=True)
+                if not battling_slots or self._stop_flag.is_set():
+                    return []
+                node_strategy = self._running_fight_strategy()
+                may_move = await self._preempt_node(spare=frozenset({"relog"}))
+                end = await self._run_ambient_session(
+                    clients,
+                    battling_slots,
+                    may_move,
+                    rejoining=[c for c in rejoining if c in clients],
+                    node_strategy=node_strategy,
+                )
+                return end.log_out if end is not None else []
             except Exception:
                 logger.exception("Settling fights after recovery raised")
+                return []
+
+    def _running_fight_strategy(self) -> bool | None:
+        """The ``use_default_strategy`` of the handle_combat node still running, or None if none is."""
+        task = self._current_node_task
+        if task is None or task.done():
+            return None
+        state_def = self._state_map.get(self.state, {})
+        if state_def.get("node_type") != "handle_combat":
+            return None
+        return state_def.get("params", {}).get("use_default_strategy", True)
 
     def _recover_after_ambient(self) -> None:
         """Send the FSM to its recovery state: the players are not where the interrupted state left them."""

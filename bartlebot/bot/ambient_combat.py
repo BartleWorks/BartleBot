@@ -28,6 +28,10 @@ running node and waits for the loop to park. Everything after that is here:
 The session ends with the FSM told whether everyone is back in the zone it started in. If so
 the interrupted state runs again; if not, the bot goes to its recovery state.
 
+Crash recovery runs one too, once the crashed client is back (``BotMachine.settle_fights``). The
+relaunched players are helpers like any other, but one that cannot get into the fight ends the
+session at once: the players still in it are handed back for recovery to log out.
+
 Players are named by number in every log line, never by name.
 """
 
@@ -79,6 +83,9 @@ class SessionEnd:
     """How many fights were fled; each counts toward the flee limit."""
     recover: bool = False
     """Someone is not in the zone it started in, or had to be sent to the hub: go to recovery."""
+    log_out: list = field(default_factory=list)
+    """The players still in a fight a relaunched player could not get back into, for crash
+    recovery to log out. Empty outside crash recovery."""
 
 
 @dataclass
@@ -97,18 +104,29 @@ class AmbientSession:
     *may_move* is False when the watcher could not get the node out of the way (relog, which
     is never cancelled, or a node that would not stop): the session then fights for whoever is
     in battle and moves nobody, as the watcher did before #116.
+
+    Crash recovery's session (``BotMachine.settle_fights``) sets the last two. *rejoining* are
+    the players it relaunched: if one of them cannot get into the fight, the session stops
+    fighting and hands back the players still in it, in ``SessionEnd.log_out``.
+    *node_strategy*, when the fight is a handle_combat node's, is that node's
+    ``use_default_strategy``, and the session fights with the node's strategy.
+
+    A stopped bot ends the session at its next poll, and nobody is moved afterwards.
     """
 
     machine: object
     clients: list
     fighters: list
     may_move: bool = True
+    rejoining: list = field(default_factory=list)
+    node_strategy: bool | None = None
     helpers: dict = field(default_factory=dict)  # helper -> the fighter it helps
     starts: dict = field(default_factory=dict)  # helper -> _Start
     start_zones: dict = field(default_factory=dict)  # client -> zone at detection
     participants: list = field(default_factory=list)  # every client that fought, in order seen
     joined_at: dict = field(default_factory=dict)  # helper -> when it read in battle
     force_recovery: bool = False
+    log_out: list = field(default_factory=list)  # set once a rejoining player is stranded
     idle_fled: set = field(default_factory=set)  # player numbers fled from the idle popup
     clock: Callable[[], float] = time.monotonic
 
@@ -145,9 +163,15 @@ class AmbientSession:
 
     async def run(self) -> SessionEnd:
         machine, clients = self.machine, self.clients
-        dsls, _order, source, _level = combat_runner.resolve_combat(
-            machine, use_default_strategy=True, num_clients=len(clients), ambient=True
-        )
+        if self.node_strategy is None:
+            resolved = combat_runner.resolve_combat(
+                machine, use_default_strategy=True, num_clients=len(clients), ambient=True
+            )
+        else:
+            resolved = combat_runner.resolve_combat(
+                machine, use_default_strategy=self.node_strategy, num_clients=len(clients)
+            )
+        dsls, _order, source, _level = resolved
         self._log(f"DSL source={source!r}", logging.DEBUG)
 
         zones = await asyncio.gather(*(_zone(c) for c in clients))
@@ -179,6 +203,10 @@ class AmbientSession:
             self._log(f"error on P{number}: {exc}", logging.DEBUG)
         if fight.end is combat_runner.FightEnd.STUCK:
             self._log("the fight did not end after a flee was called for", logging.WARNING)
+        if machine.is_stopped:
+            return SessionEnd(fight)  # the user has the clients now: nobody moves
+        if self.log_out:
+            return SessionEnd(fight, recover=True, log_out=list(self.log_out))
 
         if self.participants:
             # In the background, so the FSM resumes as soon as the fight is over.
@@ -288,8 +316,19 @@ class AmbientSession:
     async def _fight(self, run, centers, dsls: list[str], holds: dict, joins: dict) -> None:
         """Start each client's combat once it is in battle, until no one is and every task is done."""
         while True:
+            if self.machine.is_stopped:
+                return
             flags = await asyncio.gather(*(c.in_battle() for c in self.clients), return_exceptions=True)
             in_battle = [c for c, flag in zip(self.clients, flags) if flag is True]
+            stranded = self._stranded(in_battle, joins) if in_battle else []
+            if stranded:
+                self.log_out = in_battle
+                self._log(
+                    f"{self._names(stranded)} could not get back into the fight; {self._names(in_battle)}"
+                    " log out so the team starts again together",
+                    logging.WARNING,
+                )
+                return
             for client in in_battle:
                 if run.fighting(client):
                     continue
@@ -306,6 +345,19 @@ class AmbientSession:
             if not in_battle and not run.busy and all(task.done() for task in joins.values()):
                 return
             await asyncio.sleep(POLL_INTERVAL)
+
+    def _stranded(self, in_battle: list, joins: dict) -> list:
+        """Every rejoining player out of the fight with no way left in: never a helper, or its join gave up."""
+        stranded = []
+        for client in self.rejoining:
+            if client in in_battle:
+                continue
+            task = joins.get(client)
+            if task is None:
+                stranded.append(client)
+            elif task.done() and (task.cancelled() or task.exception() is not None or not task.result()):
+                stranded.append(client)
+        return stranded
 
     async def _released(self, fighter, hold: _Hold, joins: dict) -> bool:
         """Whether *fighter* may start casting: its helpers are all settled, or the hold ran out."""
