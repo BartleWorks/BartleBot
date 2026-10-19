@@ -403,42 +403,45 @@ async def run(machine, clients: list, params: dict) -> str:
         indices = [i for i in indices if i not in fresh]
         targets = [clients[i] for i in indices]
 
-    if targets:
-        if not await _fights_over(machine, clients, "logging anyone out"):
-            machine.log(f"FAILURE: the fight was still going after {RELOG_FIGHT_TIMEOUT:.0f}s", logging.WARNING)
-            return "FAILURE"
+    if not targets:
+        # Nobody logs out, so the group is as recovery left it: re-forming it would only open the
+        # social window on every player for nothing.
+        machine.log("SUCCESS: every player had just logged in; nobody relogged")
+        return "SUCCESS"
 
-        machine.log(f"relog: logging player(s) {[i + 1 for i in indices]} out and back in")
+    if not await _fights_over(machine, clients, "logging anyone out"):
+        machine.log(f"FAILURE: the fight was still going after {RELOG_FIGHT_TIMEOUT:.0f}s", logging.WARNING)
+        return "FAILURE"
 
-        hwnds = [c.window_handle for c in targets]
-        machine.suspend_health_checks_for(hwnds)
-        results: list = []
-        try:
-            results = await asyncio.gather(
-                *[log_out_and_in(machine, c) for c in targets],
-                return_exceptions=True,
-            )
-        finally:
-            # Always, including on a failure: leaving the watchers off for the rest of the run
-            # would mean a real crash on one of these clients goes unnoticed. Except for a
-            # player handed to recovery, where the flag is what stops a watcher recovering it
-            # a second time.
-            abandoned = [i for i, r in zip(indices, results) if r == ABANDONED]
-            machine.resume_health_checks_for([clients[i].window_handle for i in indices if i not in abandoned])
+    machine.log(f"relog: logging player(s) {[i + 1 for i in indices]} out and back in")
 
-        for position, result in zip(indices, results):
-            if isinstance(result, Exception):
-                machine.log(f"relog: player {position + 1} raised during the relog: {result}", logging.WARNING)
+    hwnds = [c.window_handle for c in targets]
+    machine.suspend_health_checks_for(hwnds)
+    results: list = []
+    try:
+        results = await asyncio.gather(
+            *[log_out_and_in(machine, c) for c in targets],
+            return_exceptions=True,
+        )
+    finally:
+        # Always, including on a failure: leaving the watchers off for the rest of the run
+        # would mean a real crash on one of these clients goes unnoticed. Except for a
+        # player handed to recovery, where the flag is what stops a watcher recovering it
+        # a second time.
+        abandoned = [i for i, r in zip(indices, results) if r == ABANDONED]
+        machine.resume_health_checks_for([clients[i].window_handle for i in indices if i not in abandoned])
 
-        if abandoned:
-            machine.log(
-                f"relog: player(s) {[i + 1 for i in abandoned]} being relaunched — the bot resumes after recovery"
-            )
-            raise ClientClosedError()
+    for position, result in zip(indices, results):
+        if isinstance(result, Exception):
+            machine.log(f"relog: player {position + 1} raised during the relog: {result}", logging.WARNING)
 
-        if not all(r == BACK for r in results):
-            machine.log("FAILURE: not every player logged back in", logging.WARNING)
-            return "FAILURE"
+    if abandoned:
+        machine.log(f"relog: player(s) {[i + 1 for i in abandoned]} being relaunched — the bot resumes after recovery")
+        raise ClientClosedError()
+
+    if not all(r == BACK for r in results):
+        machine.log("FAILURE: not every player logged back in", logging.WARNING)
+        return "FAILURE"
 
     await _regroup(machine, clients)
     machine.log(f"SUCCESS: {len(targets)} player(s) relogged")

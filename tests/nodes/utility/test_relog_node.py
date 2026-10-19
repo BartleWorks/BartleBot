@@ -632,3 +632,19 @@ class TestFreshLogins:
         (client,), _ = games({"reaches_char_select": False})
         assert await relog_node.log_out_and_in(machine, client) == relog_node.FAILED
         assert not machine.is_freshly_logged_in(client)
+
+    async def test_nobody_relogged_leaves_the_group_recovery_formed_alone(self, machine, games, monkeypatch):
+        """Recovery regrouped the team it logged in; with nobody logged out, regrouping again only costs time."""
+        clients, _ = games({}, {})
+        settings = type("S", (), {"auto_group_players": True})()
+        monkeypatch.setattr(relog_node.SettingsManager, "instance", staticmethod(lambda: settings))
+        formed: list = []
+
+        async def _form(cs, names, **kwargs):
+            formed.append(cs)
+
+        monkeypatch.setattr(relog_node.group_manager, "form_group", _form)
+        machine.note_logged_in([c.window_handle for c in clients])
+
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert formed == []
