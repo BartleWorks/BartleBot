@@ -8,6 +8,7 @@ selection, the self-styling recursion trap) are not extractable.
 import pytest
 from PyQt6.QtCore import QEvent, QRect, QSize, Qt
 from PyQt6.QtTest import QTest
+from PyQt6.QtWidgets import QWidget
 
 import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.theming.theme import THEME
@@ -767,3 +768,13 @@ def test_shrinking_does_not_depend_on_the_screen_being_1080p():
     uhd = QRect(0, 0, 3840, 2160)
 
     assert popup_height(QRect(600, 700, 90, 24), 420, uhd) == 420
+
+
+def test_an_embedded_picker_is_a_child_widget_not_a_popup_window(qapp):
+    """For a question a dialog has to have answered (#272): no click-outside dismissal."""
+    host = QWidget()
+    popup = PickerPopup("Fights", [("", [PickerRow(key="a", label="A")])], parent=host, embedded=True)
+    plain = PickerPopup("Fights", [("", [PickerRow(key="a", label="A")])], parent=host)
+
+    assert popup.windowType() == Qt.WindowType.Widget
+    assert plain.windowType() == Qt.WindowType.Popup

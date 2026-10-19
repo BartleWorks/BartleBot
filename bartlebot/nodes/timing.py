@@ -190,6 +190,12 @@ PLAYER_COLOR_REFRESH_INTERVAL = 1.0
 # nothing announces it, so the tab polls; the ask is a dict lookup per client and the
 # widgets repaint only when the answer changed.
 
+CARD_HIGHLIGHT_DURATION = 1.5
+# Seconds a card just added stays outlined in the accent (``CardFrame.highlight``), so
+# the user sees where it landed: the Combat tab's add flow ends in two dialogs, and the
+# card appears behind them (#272). Long enough to find after the dialog closes, short
+# enough not to read as a selection.
+
 CLIENT_DETECT_INTERVAL = 1.0
 # Seconds between ClientManager detection cycles: notice new game windows, rebuild the
 # slot ordering, re-read wizard names. Hook activation no longer happens inline here, so

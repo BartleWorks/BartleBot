@@ -103,7 +103,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import NamedTuple
 
-from PyQt6.QtCore import QPoint, Qt, pyqtSignal
+from PyQt6.QtCore import QPoint, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
@@ -122,6 +122,7 @@ from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.buttons.icon_button import IconButton
 from bartlebot.gui.widgets.layout.drag_reorder import MOVE_DOWN_KEYS, MOVE_UP_KEYS, add_move_actions
+from bartlebot.nodes.timing import CARD_HIGHLIGHT_DURATION
 
 _FACE_BTN_SIZE = 22
 
@@ -397,6 +398,10 @@ class CardFrame(ThemedMixin, QWidget):
         # ``_make_face_icon_button``. Held only so the launch screen's hover reveals them.
         self._extra_face_btns: list[IconButton] = []
         self._dragging = False
+        # Lit for a moment after the card was added, so the user sees where it landed --
+        # see ``highlight``. A styling state like ``_hovered``.
+        self._highlighted = False
+        self._highlight_timer: QTimer | None = None
         self._shadow: QGraphicsDropShadowEffect | None = None
         # Where the left button went down, and whether it has traveled since. A card
         # activates on release and only if the pointer stayed put, so that the drag its
@@ -591,6 +596,30 @@ class CardFrame(ThemedMixin, QWidget):
             self._grip.set_held(dragging)
         self.refresh_theme_styles()
 
+    def highlight(self) -> None:
+        """Draw the card lit, as under the pointer, for ``CARD_HIGHLIGHT_DURATION``.
+
+        For a card that has just appeared somewhere the user was not looking: the Combat
+        tab's add flow ends in a dialog, and its card is made behind it (#272). The hover
+        look rather than a palette of its own, so it reads as "this one" and not as a state
+        the card is in. The timer is the card's own, so it dies with a card a rebuild discards.
+        """
+        if self._highlight_timer is None:
+            self._highlight_timer = QTimer(self)
+            self._highlight_timer.setSingleShot(True)
+            self._highlight_timer.timeout.connect(self._end_highlight)
+        self._highlighted = True
+        self.refresh_theme_styles()
+        self._highlight_timer.start(int(CARD_HIGHLIGHT_DURATION * 1000))
+
+    @property
+    def is_highlighted(self) -> bool:
+        return self._highlighted
+
+    def _end_highlight(self) -> None:
+        self._highlighted = False
+        self.refresh_theme_styles()
+
     # ------------------------------------------------------------------
     # The theme pass
     # ------------------------------------------------------------------
@@ -610,7 +639,7 @@ class CardFrame(ThemedMixin, QWidget):
             # not say it: in MEMBER mode the highlight would promise an activation that
             # never comes. Nothing is lost by staying quiet there, the chrome being pinned
             # open.
-            lit = self._hovered and self.has_body_verb
+            lit = (self._hovered and self.has_body_verb) or self._highlighted
             self._apply_frame_palette(
                 THEME.node_fill if lit else THEME.surface,
                 THEME.accent if lit else THEME.border,

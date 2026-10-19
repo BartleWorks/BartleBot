@@ -16,6 +16,11 @@ Being a popup *window* also puts it outside the sidebar's widget tree, so the
 native-window transient-parent bug that ``menu_utils`` exists to work around does
 not apply here.
 
+It can also be built ``embedded``, as an ordinary child widget with the same header,
+search and rows, for a question that has to be answered rather than dismissed: the
+Combat tab's fights step, where a click elsewhere used to drop the card being added
+(#272). The dialog around it then owns Esc and the commit.
+
 ``PickerRow.description`` is supported but optional, and the tag picker does not
 use it: a second line of muted text under every name doubled the row height, made
 the heights ragged, and read as an underline once the list was scrolling. Rows are
@@ -622,8 +627,10 @@ class PickerPopup(QWidget):
         width: int = POPUP_WIDTH,
         broad: bool = False,
         section_icon: Callable[[str], QIcon | None] | None = None,
+        embedded: bool = False,
     ) -> None:
-        super().__init__(parent, Qt.WindowType.Popup)
+        """*embedded* builds it as a child widget for a dialog's layout rather than a popup window."""
+        super().__init__(parent, Qt.WindowType.Widget if embedded else Qt.WindowType.Popup)
         # Resolves a section title to an emblem, or to None -- which is the ordinary
         # answer, and the only one on an install that has extracted no art.
         self._section_icon = section_icon
@@ -700,6 +707,10 @@ class PickerPopup(QWidget):
     def selection(self) -> list[str]:
         """Selected keys, in the order the sections declare them."""
         return [k for k in self._order if k in self._selected]
+
+    def focus_search(self) -> None:
+        """Put focus in the filter box, where the keyboard drives the list -- for an embedded one."""
+        self._search.setFocus()
 
     def popup_at(self, anchor: QWidget) -> None:
         """Show under *anchor*, edges flush, flipping above or across it if it will not fit."""
