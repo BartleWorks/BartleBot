@@ -1931,6 +1931,7 @@ class CombatTab(QWidget):
         panel.set_player_colors(*self._player_colors)
         panel.pick_requested.connect(partial(self._on_pick_duel, panel))
         panel.edit_requested.connect(partial(self._on_edit_strategy, panel))
+        panel.remove_requested.connect(partial(self._on_remove_card, panel))
         return panel
 
     # ------------------------------------------------------------------
@@ -2051,6 +2052,38 @@ class CombatTab(QWidget):
         self._regroup_bindings()
         self._rebuild_state_assignments()
         self._save_bcs()
+
+    def _on_remove_card(self, panel: StrategyPanel) -> None:
+        """The ✕ on a specialized card: give its fights back to the default card (#273).
+
+        The same act as unchecking every fight in its "Fights…" popup, which was the only
+        way to do it and which no tester found. Asked first, since putting the card back
+        is the add-card, a strategy and every fight again. The strategy itself is kept --
+        only the card goes -- and the question says so. A card still waiting for its
+        first fights is just dropped: there is nothing on it to lose.
+        """
+        if not self._editable:
+            return
+        binding = panel.binding
+        if panel is self._pending_panel:
+            self._pending_panel = None
+            self._strategies_layout.removeWidget(panel)
+            panel.deleteLater()
+            return
+        if binding is None or self._config is None:
+            return
+        fights = panel.titles()
+        named = f"'{fights[0]}'" if len(fights) == 1 else f"these {len(fights)} fights"
+        answer = QMessageBox.question(
+            self,
+            "Remove Duel Combat Strategy",
+            f"Stop using '{self._describe_binding_of(binding)}' for {named}?\n\n"
+            "They will use the default strategy above. The strategy itself is kept.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self._on_membership_changed(binding, [])
 
     def _on_strategies_reordered(self, order: list[int]) -> None:
         """A drag of the specialized cards has settled: keep the order, and save it.

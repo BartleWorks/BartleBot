@@ -69,8 +69,10 @@ from bartlebot.gui.sidebar.strategy_panel import (
     EDIT_STRATEGY,
     LOCKED,
     MISSING_LABEL,
+    REMOVE,
     STATE_INHERIT_LABEL,
     STATE_INHERIT_META,
+    PanelRole,
     StrategyPanel,
 )
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow
@@ -352,6 +354,35 @@ def test_membership_is_reported_when_the_popup_closes_not_per_toggle(qapp):
 
     panel._fights_btn.committed.emit(["s1", "s2"])
     assert seen == [["s1", "s2"]]
+
+
+def test_a_specialized_card_offers_remove_on_its_face_and_last_in_its_menu(qapp):
+    """#273: unchecking every fight was the only way to remove one, and no tester found it."""
+    panel = _configured_panel()
+
+    assert panel.action_button(REMOVE) is not None
+    assert _verb_labels(panel)[-1] == REMOVE
+
+
+def test_the_default_card_offers_no_remove(qapp):
+    """There is nowhere for its fights to go."""
+    panel = StrategyPanel(role=PanelRole.DEFAULT)
+    panel.load(_DefaultBinding(BotCombatStrategy(name="B", bot_id="bot-1")), [], [])
+
+    assert panel.action_button(REMOVE) is None
+    assert REMOVE not in _verb_labels(panel)
+
+
+def test_remove_asks_the_tab_and_locks_with_the_rest(qapp):
+    panel = _configured_panel()
+    seen: list[bool] = []
+    panel.remove_requested.connect(lambda: seen.append(True))
+
+    panel.action_button(REMOVE).click()
+    panel.set_editable(False)
+
+    assert seen == [True]
+    assert not panel.action_button(REMOVE).isEnabled()
 
 
 # ---------------------------------------------------------------------------
@@ -1443,6 +1474,53 @@ def test_unchecking_the_last_fight_leaves_the_strategy_unused(qapp, store):
     assert tab._group_panels() == []
     assert _default_fights(tab) == ["A", "B"]
     assert store_mod.load_bot_strategy(bcs.id).state_assignments == []
+
+
+def test_removing_a_card_gives_its_fights_back_to_the_default_card(qapp, store):
+    """#273. The strategy itself is kept: only the card goes."""
+    dcs = _saved_dcs()
+    bcs = _linked_bcs(dcs.id, ["state_1", "state_2"])
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+
+    with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes) as asked:
+        tab._group_panels()[0].action_button(REMOVE).click()
+
+    assert "these 2 fights" in asked.call_args.args[2]
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B"]
+    assert store_mod.load_bot_strategy(bcs.id).state_assignments == []
+    assert store_mod.load_duel_strategy(dcs.id) is not None
+
+
+def test_declining_the_remove_leaves_the_card(qapp, store):
+    dcs = _saved_dcs()
+    bcs = _linked_bcs(dcs.id, ["state_1"])
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+    panel = tab._state_panels["state_1"]
+
+    with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.No):
+        panel.action_button(REMOVE).click()
+
+    assert tab._state_panels["state_1"] is panel
+    assert _default_fights(tab) == ["B"]
+    assert store_mod.load_bot_strategy(bcs.id).state_assignments[0].state_ids == ["state_1"]
+
+
+def test_removing_a_card_still_waiting_for_its_fights_asks_nothing(qapp, store):
+    """It has nothing on it to lose, so it is dropped as closing its popup empty would."""
+    dcs = _saved_dcs()
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    _add_strategy(tab, dcs.id)
+    pending = tab._pending_panel
+
+    with patch.object(QMessageBox, "question") as asked:
+        pending.remove_requested.emit()
+    pending.membership_changed.emit(["state_1"])
+
+    asked.assert_not_called()
+    assert tab._pending_panel is None
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B"]
 
 
 def test_membership_edits_are_saved_immediately(qapp, store):

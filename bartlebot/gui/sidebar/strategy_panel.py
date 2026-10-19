@@ -107,7 +107,8 @@ the specialized cards alone and nothing can be dragged above it.
 VERBS
 -----
 
-Two on the face, everything in the right-click menu, per ``card_frame.py``:
+Two on the face, three on a specialized card, everything in the right-click menu, per
+``card_frame.py``:
 
 - **Change…** is also the *body* verb. The card is the active configuration and the
   card is how you replace it, so the whole frame is the pick affordance rather than a
@@ -118,6 +119,12 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
   giving a card a strategy of its own (#118).
 - **Applies to…** is in the menu, and opens the same popup the pill row's own button
   does -- the menu is the keyboard route to a verb, not a second way of performing it.
+- **Remove** (the ✕) is on a specialized card only, and gives its fights back to the
+  default card. It was missing, and unchecking every fight in "Fights…" was the only way
+  to do it, which no tester found (#273). A ✕ and not a trash can: the strategy itself is
+  kept, in the library or the Bot Combat Strategy, and only the card goes -- trash on
+  this tab means a file is deleted. The default card has none, there being nowhere for
+  its fights to go.
 
 None of them are implemented here. Each ``run`` is a signal the Combat tab wires, which
 is what keeps *which dialog opens* out of the card -- the thing the edit-dialog work
@@ -203,6 +210,7 @@ LOCKED = "Locked while the bot is running"
 CHANGE = "Change…"
 EDIT_STRATEGY = "Edit…"
 APPLIES_TO = "Applies to…"
+REMOVE = "Remove"
 
 #: How many player assignments a duel config can carry, and so how many caption lines a
 #: card builds once and hides down to. Four, because a Wizard101 team is four wizards --
@@ -282,6 +290,8 @@ class StrategyPanel(CardFrame):
     #: ``DEFAULT`` role only: one of this card's fight pills was clicked, so that fight
     #: wants a Duel Combat Strategy of its own.
     fight_pick_requested = pyqtSignal(str)  # state_id
+    #: ``SPECIALIZED`` role only: the ✕ -- give this card's fights back to the default card.
+    remove_requested = pyqtSignal()
 
     def __init__(
         self,
@@ -843,11 +853,22 @@ class StrategyPanel(CardFrame):
     # ------------------------------------------------------------------
 
     def _face_verbs(self) -> list[CardVerb]:
-        """The two verbs that get a button, in header order. Fixed for the card's life."""
-        return [
+        """The verbs that get a button, in header order. Fixed for the card's life, as its role is."""
+        verbs = [
             CardVerb(CHANGE, "search", "Pick a different Duel Combat Strategy", self.pick_requested.emit, on_face=True),
             CardVerb(EDIT_STRATEGY, "pencil", self._edit_tooltip(), self.edit_requested.emit, on_face=True),
         ]
+        if self._role is PanelRole.SPECIALIZED:
+            verbs.append(
+                CardVerb(
+                    REMOVE,
+                    "dismiss",
+                    "Remove this card: its fights go back to the default strategy above",
+                    self.remove_requested.emit,
+                    on_face=True,
+                )
+            )
+        return verbs
 
     def _edit_tooltip(self) -> str:
         if self.linked_id is not None:
@@ -863,7 +884,7 @@ class StrategyPanel(CardFrame):
         Rebuilt per click, so it names only what applies. The two face buttons are built
         from ``_face_verbs`` instead; see ``_build``.
         """
-        verbs = self._face_verbs()
+        verbs = [verb for verb in self._face_verbs() if verb.label != REMOVE]
         if self._membership_allowed() and self._fights_btn is not None:
             # Opens the same popup the pill row's button does, rather than a second
             # membership surface of its own -- the menu is the keyboard route to a verb,
@@ -871,6 +892,8 @@ class StrategyPanel(CardFrame):
             verbs.append(
                 CardVerb(APPLIES_TO, "attach", "Choose which fights use this strategy", self._fights_btn.click)
             )
+        # Last, as a menu's destructive entry is.
+        verbs += [verb for verb in self._face_verbs() if verb.label == REMOVE]
         return verbs
 
     def _refuses_activation(self) -> bool:
