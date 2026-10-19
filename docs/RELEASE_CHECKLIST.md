@@ -10,6 +10,8 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
       gh release download v<version> --dir C:/Users/Public/BartleBot/<version>
 - [ ] Previous release downloaded (skip for the first release):
       gh release download v<previous> --dir C:/Users/Public/BartleBot/<previous>
+- [ ] The draft's feed verifies against its signature, from the repo:
+      uv run python tools/sign_feed.py verify C:/Users/Public/BartleBot/<version>/releases.win.json
 - [ ] Velopack's advisories name nothing in the pinned version:
       https://github.com/velopack/velopack/security/advisories
 - [ ] The draft's description is release_notes/<version>.md, then the Installing footer,
@@ -87,6 +89,9 @@ bartlebot/packaging/, gui/update_prompt.py or the Velopack pin.
 - [ ] gh release edit v<version> --draft=false
       It is the latest release, and not a pre-release:
       gh release view --json tagName,isPrerelease
+- [ ] The published release offers an update to <previous>, from the repo; this prints
+      Status.OFFERED (skip for the first release):
+      uv run python -c "from bartlebot.updates.check import check; print(check(current='<previous>').status)"
 - [ ] The site's button fetches this Setup.exe. Select Download BartleBot on
       https://bartleworks.github.io/BartleBot/, then in PowerShell this prints True:
       (Get-FileHash "$HOME\Downloads\BartleBot-win-Setup.exe").Hash -eq (Get-FileHash C:\Users\Public\BartleBot\<version>\BartleBot-win-Setup.exe).Hash

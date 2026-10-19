@@ -128,6 +128,25 @@ def test_publishing_checks_the_feed_it_uploads_and_attaches_the_signature_after_
     assert "releases.win.json.sig" in publish[publish.index("gh release upload") :]
 
 
+def test_the_signed_feed_replaces_the_one_vpk_uploads():
+    """vpk uploads a feed listing only this release's packages, which the signature does not cover."""
+    publish = _jobs()["publish"]
+    upload = publish[publish.index("gh release upload") :].split("\n\n", 1)[0]
+
+    assert "releases/releases.win.json " in upload and "releases/releases.win.json.sig" in upload
+    assert "--clobber" in upload
+
+
+def test_the_last_step_checks_the_feed_on_the_draft_itself():
+    """What an installed app reads is what is on the release, so that is what is verified last."""
+    publish = _jobs()["publish"]
+    last = publish.rstrip().rsplit("- name:", 1)[1]
+
+    assert "gh release download" in last and "releases.win.json.sig" in last
+    assert last.index("gh release download") < last.index("sign_feed.py verify drafted/releases.win.json")
+    assert publish.index("gh release upload") < publish.index("gh release download")
+
+
 def test_the_signing_job_installs_the_locked_cryptography():
     lock = tomllib.loads((project_root() / "uv.lock").read_text(encoding="utf-8"))
     (locked,) = [p["version"] for p in lock["package"] if p["name"] == "cryptography"]

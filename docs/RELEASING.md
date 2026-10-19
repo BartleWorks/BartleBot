@@ -244,8 +244,15 @@ the key; `sign`, on `ubuntu-latest`, reads only the feed; and `publish`, on
    feed and the signature, so the feed uploaded is byte for byte the one signed.
 8. **Create the draft**: `vpk upload github`, without `--publish`, creates a draft
    release on the tag with every asset.
-9. **Attach the signature**: `gh release upload`, since `vpk` uploads only what it
-   packed.
+9. **Attach the signed feed and its signature**: `gh release upload --clobber`. `vpk`
+   uploads only what it packed, and the feed it uploads is not the one it was given: it
+   writes one listing only this release's packages. The first release had nothing else to
+   list, so its feed came through unchanged; 0.2.0's lost 0.1.0's entry, the signature no
+   longer matched, and every 0.1.0 install refused the update until the signed feed was
+   uploaded by hand. So the signed feed replaces vpk's.
+10. **Check the draft's own feed**: `gh release download` fetches the feed and the
+    signature back from the draft and `verify` checks them, since what an installed app
+    reads is what is on the release, not what was checked before the upload.
 
 **CI never publishes.** What ships is Official, and Official means tested in game, which
 CI cannot do. A maintainer installs from the draft, tests, and publishes it (*Testing a
@@ -449,6 +456,14 @@ version packed locally.
 users take, and it fetches whatever GitHub calls the latest release, so it is the check
 that publishing made this one the latest. Comparing the download's hash with the draft's
 Setup.exe says it fetched this version rather than the one before.
+
+**The feed is checked on the draft, and again once published.** The workflow's last step
+verifies the draft's own feed, and the checklist verifies the copy it downloads, then asks
+the published release whether it offers an update to the previous version, with the same
+`check` an installed app runs. The first two catch a feed changed after it was signed; the
+last catches anything else that keeps the update from being offered. 0.2.0 shipped with a
+feed its signature did not cover, and sections 3 and 6, the updates, were the steps that
+would have shown it: they are the ones never to skip.
 
 **A step that fails** leaves the draft unpublished: fix the problem, and release a new
 version.

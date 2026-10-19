@@ -203,8 +203,23 @@ jobs:
           --repoUrl "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --token "$GH_TOKEN" --outputDir releases
           --tag "$GITHUB_REF_NAME" --releaseName "BartleBot ${{ needs.build.outputs.version }}"
 
-      # vpk uploads only what it packed, so the signature is added to the draft after it.
-      - name: Attach the feed's signature
+      # vpk uploads a feed of its own, not the one it was given: it lists only this
+      # release's packages, so from the second release on it drops the previous one's
+      # and no longer matches the signature (0.2.0 shipped that way). So the signed feed
+      # replaces it, and the signature goes up beside it.
+      - name: Attach the signed feed and its signature
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" releases/releases.win.json.sig --repo "$GITHUB_REPOSITORY"
+        run: >
+          gh release upload "$GITHUB_REF_NAME" releases/releases.win.json releases/releases.win.json.sig
+          --clobber --repo "$GITHUB_REPOSITORY"
+
+      # What an installed app will read is what is on the release, so that is what is
+      # checked last: any upload that changed the feed fails the run here.
+      - name: Check the draft's own feed against its signature
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir drafted \
+            --pattern releases.win.json --pattern releases.win.json.sig
+          uv run --no-project --with "cryptography==$CRYPTOGRAPHY_VERSION" python tools/sign_feed.py verify drafted/releases.win.json
