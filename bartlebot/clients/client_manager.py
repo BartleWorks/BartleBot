@@ -1724,6 +1724,10 @@ class ClientManager(QObject):
             # Restore the slot so the next _client_loop rebuild puts the client back in
             # order. machine.clients is kept in sync by _client_loop automatically.
             self._client_order[target.orig_pos] = target.username
+            client = self.client_titled(target.title)
+            if client is not None:
+                # Just logged in: a recovery state of Relog has nothing to do for it.
+                machine.note_logged_in([client.window_handle])
 
     def _warn_awaiting_manual_login(self, targets: list["_RecoveryTarget"]) -> None:
         """Say once, for the whole batch, that these windows are waiting to be logged in.

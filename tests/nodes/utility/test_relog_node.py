@@ -599,3 +599,36 @@ class TestFights:
 
         assert await relog_node.run(machine, clients, {}) == "SUCCESS"
         assert any("continues ungrouped" in msg for msg, _ in machine.logs)
+
+
+class TestFreshLogins:
+    """A player just logged in, by recovery or a relog, has nothing left for a relog to do."""
+
+    async def test_a_freshly_logged_in_player_is_skipped_and_the_rest_relogged(self, machine, games):
+        clients, (fresh, stale) = games({}, {})
+        machine.note_logged_in([clients[0].window_handle])
+
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+
+        assert fresh.clicks == []
+        assert stale.clicks[-1] == SETTINGS_QUIT_BUTTON_PATH
+        assert any("not relogging them" in msg for msg, _ in machine.logs)
+
+    async def test_a_team_recovery_just_logged_in_is_not_logged_out_again(self, machine, games):
+        clients, made = games({}, {}, {}, {})
+        machine.note_logged_in([c.window_handle for c in clients])
+
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+
+        assert all(game.clicks == [] and game.plays == 0 for game in made)
+        assert machine.health_checks_suspended == set()
+
+    async def test_a_player_back_from_a_relog_is_fresh(self, machine, games):
+        (client,), _ = games({})
+        assert await relog_node.log_out_and_in(machine, client) == relog_node.BACK
+        assert machine.is_freshly_logged_in(client)
+
+    async def test_a_player_still_in_the_world_after_a_failed_relog_is_not_fresh(self, machine, games):
+        (client,), _ = games({"reaches_char_select": False})
+        assert await relog_node.log_out_and_in(machine, client) == relog_node.FAILED
+        assert not machine.is_freshly_logged_in(client)

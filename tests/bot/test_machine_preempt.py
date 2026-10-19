@@ -199,3 +199,34 @@ async def test_an_ambient_fight_cancels_the_node_then_runs_it_again(monkeypatch)
     assert fights == [(1, True)]
     assert node.runs == 2
     assert transitions[0] == ("a", "SUCCESS", "b")
+
+
+# ---------------------------------------------------------------------------
+# Fresh logins: a relog node spares a player nothing has moved since its login
+# ---------------------------------------------------------------------------
+
+
+async def test_a_relog_node_sees_a_fresh_login_and_any_other_node_forgets_it():
+    from types import SimpleNamespace
+
+    player = SimpleNamespace(window_handle=5)
+    seen: dict[str, bool] = {}
+
+    async def relog_node(machine, *_args):
+        seen["relog"] = machine.is_freshly_logged_in(player)
+        return "SUCCESS"
+
+    async def next_node(machine, *_args):
+        seen["next"] = machine.is_freshly_logged_in(player)
+        return "SUCCESS"
+
+    machine = BotMachine(clients=[], config=_config("relog"), node_registry={"relog": relog_node, "done": next_node})
+    machine.pause()
+    task = asyncio.create_task(machine.run())
+    await asyncio.sleep(0)  # a run starts with no fresh logins; this one is held, as recovery holds it
+    machine.note_logged_in([5])
+    machine.resume()
+    await _until(lambda: "next" in seen)
+    await _finish(machine, task)
+
+    assert seen == {"relog": True, "next": False}

@@ -784,6 +784,8 @@ class TestReconnectClients:
 
         assert harness._client_order[0] == "user1"
         machine.stop.assert_not_called()
+        # Just logged in, so a Relog recovery state leaves it alone.
+        machine.note_logged_in.assert_called_once_with([999])
 
     async def test_client_timeout_stops_machine_and_leaves_slot_empty(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()

@@ -1019,3 +1019,39 @@ async def test_settle_fights_cancels_the_combat_node_still_fighting_and_uses_its
     assert combat.fights.fought() == [fighter]
     machine.stop()
     await asyncio.wait_for(run, timeout=2.0)
+
+
+async def test_a_session_handing_players_back_for_a_logout_keeps_the_relaunched_player_fresh(fast, combat):
+    """Nobody moved: the relaunched player is still where its login left it, and a Relog recovery state spares it."""
+    fighter, relaunched = _client(x=0.0), _client(x=3000.0)
+    see_each_other(fighter)
+    see_each_other(relaunched)
+    relaunched.zone_name.return_value = "Outside the dungeon"
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter, relaunched], config=_config(), node_registry={})
+    machine.pause(PauseHold.RECOVERY)
+    machine.note_logged_in([relaunched.window_handle])
+
+    assert await machine.settle_fights([relaunched]) == [fighter]
+
+    assert machine.is_freshly_logged_in(relaunched)
+
+
+async def test_a_session_that_fights_forgets_its_players_fresh_logins(fast, combat, monkeypatch):
+    """A player that fought, or ported in to help, may be inside an instance now."""
+    fighter, helper = _client(x=0.0), _client(x=3000.0)
+    see_each_other(fighter)
+    see_each_other(helper)
+    helper.zone_name.return_value = "Elsewhere"
+    fighter.in_battle.return_value = True
+    _join_on_teleport(helper)
+    machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
+    machine.port_map = MagicMock()
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", _ports(machine, fighter))
+    machine.pause(PauseHold.RECOVERY)
+    machine.note_logged_in([fighter.window_handle, helper.window_handle])
+
+    assert await machine.settle_fights([helper]) == []
+
+    assert not machine.is_freshly_logged_in(fighter)
+    assert not machine.is_freshly_logged_in(helper)

@@ -146,6 +146,8 @@ class BotMachine:
         self._holds: set[PauseHold] = set()
         # Windows handed to crash recovery since the run last resumed. See _await_dead_client.
         self._lost_hwnds: set[int] = set()
+        # Windows back in the world from a login that nothing has moved since. See note_logged_in.
+        self._fresh_logins: set[int] = set()
         # Set by the run loop once it has actually reached its paused wait. pause() only
         # clears _resume_event, which says a pause was *asked for*, not that the node that
         # was running has finished -- see wait_until_parked.
@@ -743,6 +745,7 @@ class BotMachine:
         self._running = True
         self._run_task = asyncio.current_task()
         self._lost_hwnds.clear()
+        self._fresh_logins.clear()
         self._reset_variables()
         self._variable_only_streak.clear()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
@@ -770,6 +773,10 @@ class BotMachine:
                         logger.exception("on_state_change callback raised in state %s", self._fmt_state(state_id))
 
                 node_type = state_def["node_type"]
+                if node_type != "relog":
+                    # Any other node may take a player into an instance, so a login no longer
+                    # says where anyone is. See note_logged_in.
+                    self._fresh_logins.clear()
                 if self._note_variable_only_step(state_id, node_type):
                     break
                 if not self._rerunning:
@@ -964,6 +971,24 @@ class BotMachine:
             except Exception:
                 logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
 
+    def note_logged_in(self, hwnds: Iterable[int]) -> None:
+        """Record that these players have just come back into the world from a login.
+
+        A relaunch, recovery's Esc → Quit and the relog node all say so. A login leaves a player
+        outside any instance, on a fresh session, which is everything a relog is for, so until
+        the player is moved the relog node skips it (``is_freshly_logged_in``). That is what
+        stops a recovery state of Relog, which nearly every shipped bot has, logging out a team
+        recovery has just logged in.
+
+        Moved means the run loop has started any node but relog, or an ambient session has had
+        the player fight or help. Both forget the record.
+        """
+        self._fresh_logins.update(hwnds)
+
+    def is_freshly_logged_in(self, client) -> bool:
+        """Whether *client* is back from a login and nothing has moved it since. See note_logged_in."""
+        return client.window_handle in self._fresh_logins
+
     def _a_client_is_lost(self, clients: list) -> bool:
         """Whether any of *clients* has left the client list, or been handed to crash recovery."""
         return any(c not in self.clients or c.window_handle in self._lost_hwnds for c in clients)
@@ -1143,6 +1168,7 @@ class BotMachine:
             node_strategy=node_strategy,
         )
         self._ambient_session = session
+        end = None
         try:
             end = await session.run()
         except Exception:
@@ -1150,6 +1176,11 @@ class BotMachine:
             return None
         finally:
             self._ambient_session = None
+            if end is None or not end.log_out:
+                # They fought, or went to help: no longer where their login left them. A session
+                # that hands players back for a logout stopped before anyone moved, and the
+                # relaunched player it waited for is still fresh.
+                self._fresh_logins.difference_update(c.window_handle for c in [*session.participants, *session.helpers])
         for _ in range(end.fled):
             if self.note_flee():
                 break

@@ -72,6 +72,13 @@ What must not be broken:
   back where it stood before entering. The timer fires at a moment nobody chose, so it goes
   through recovery like a crash. The node runs where its author put it and advances
   normally; that caveat belongs in its help text, not in engine machinery.
+- **The node skips a player that has just logged in.** Nearly every shipped bot's recovery
+  state is the Sync players subgraph, which starts with this node. So every scheduled relog
+  and every crash recovery ended with the whole team logged out a second time, seconds after
+  logging in. A relaunch, crash recovery's Esc → Quit and the node itself each call
+  `machine.note_logged_in`. Until the run loop starts any other node, or an ambient session
+  has the player fight or help, `is_freshly_logged_in` is true and the node leaves that player
+  alone: the login has already left it outside any instance, on a fresh session.
 
 Policy lives in `bartlebot/clients/relog.py` (`relog_due`, `gdi_relog_due`) as pure functions, so
 it is testable without a clock, a client, or Qt -- `client_refresh_interval()` is the

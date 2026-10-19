@@ -283,6 +283,13 @@ class FakeMachine:
         self.health_checks_suspended.difference_update(hwnds)
         self.health_checks_resumed.update(hwnds)
 
+    def note_logged_in(self, hwnds) -> None:
+        """Mirror BotMachine: these players are back from a login and nothing has moved them."""
+        self.fresh_logins = {*getattr(self, "fresh_logins", set()), *hwnds}
+
+    def is_freshly_logged_in(self, client) -> bool:
+        return client.window_handle in getattr(self, "fresh_logins", set())
+
     def abandon_client(self, client, reason: str) -> bool:
         """Record a handover to crash recovery. Real BotMachine kills the client, or stops the run."""
         self.abandoned.append((client, reason))
