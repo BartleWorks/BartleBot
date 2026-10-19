@@ -40,7 +40,9 @@ design around a guess: ask.
   up. Flee (the center button) flees with no confirmation; Return (the right one) puts the player
   back to choosing cards.
 - **Logging out in battle** works through Esc → Quit, but not while "You Are Idle" is up, and
-  not through the spellbook, which will not open in battle (the relog node's route). A player
+  not through the spellbook, which will not open in battle (the relog node's route). Esc opens
+  the spellbook's own settings page at any point in a fight, so Quit is the same
+  `SETTINGS_QUIT_BUTTON_PATH`; then come a loading screen and character select. A player
   that logs back in beside a mob is pulled into a fight on arrival.
 
 ## Getting the node out of the way
@@ -59,7 +61,8 @@ is already fighting, and re-checks that once it holds its lock, since the FSM ca
 - **Why wait for the park.** Once parked, nothing the node started is still running, and
   `machine.log()` files under the machine rather than the cancelled node, so the node helpers the
   session reuses log correctly without being told how.
-- **Never cancelled:** `handle_combat` and `relog` (`machine.NEVER_PREEMPTED`). Relog is itself the
+- **Never cancelled by the watcher:** `handle_combat` and `relog` (`machine.NEVER_PREEMPTED`). Crash
+  recovery is the exception: it cancels `handle_combat` too (see "A client that crashes mid-fight"). Relog is itself the
   recovery, and it waits for every player to be out of battle before logging anyone out, and again
   before re-forming the group, so the session fights alongside it rather than against it. For those, and for a node that does not park within
   `PREEMPT_PARK_TIMEOUT`, the session runs with `may_move=False`: it fights for whoever is in battle
@@ -192,8 +195,33 @@ in the middle of, and the hub is always safe.
 off: a fight under way at the crash, or one the relaunched client logs back into, goes unanswered
 for the whole recovery. So once every client is back, and before the group is re-formed,
 `ClientManager` calls `BotMachine.settle_fights`. It flees every idle popup, then runs a session
-for anyone still in battle, with `may_move=True` since no node is running. The bot goes to its
-recovery state afterwards either way.
+for anyone still in battle. The bot goes to its recovery state afterwards either way.
+
+## A client that crashes mid-fight
+
+- **The node is cancelled, handle_combat included.** A pause does not stop a node, and
+  `run_fight` carries on when one player's combat raises, so a `handle_combat` node whose fight a
+  client crashed out of is still fighting it with everyone else when recovery settles. Left
+  running, it and the session both cast for the same players, from two strategies. That lost a
+  boss fight once. `settle_fights` cancels whatever node is running, sparing only relog, and the
+  session fights with that node's own strategy rather than the ambient default.
+- **The relaunched player tries to get back in**, as any helper does: by teleport if it is known
+  to share the fight's realm, else by port.
+- **If it cannot, everyone still in the fight logs out.** That is usually a dungeon that refuses
+  the port, with the relaunched player standing at its entrance. The session stops fighting at
+  once and hands those players back (`SessionEnd.log_out`). Recovery logs them all out at once
+  with Esc → Quit (`relog.log_out_and_in(..., in_battle=True)`), which takes seconds and closes
+  nothing. A player that never gets past Quit is still in the fight. It is closed instead, the way
+  a relog closes it, and the next pass of the queue relaunches it. A player past Quit that cannot
+  finish has already been handed to crash recovery by the relog code, as the relog node does.
+  Logging out inside a dungeon puts a character back at its entrance, so the whole team comes back
+  together there and the bot resumes at its recovery state. This happens once per recovery: the
+  second settle fights whatever it finds.
+- **A player recovery could not log back in is never logged out.** If any of them has a recovery
+  gap (no account, no stored password), nobody is closed, and the fight goes on without the
+  relaunched player.
+- **Stop ends it.** A session stops casting at its next poll once the bot is stopped, and moves
+  nobody afterwards. Recovery skips the regroup too, since the clients are the user's again.
 
 ## Pitfalls
 

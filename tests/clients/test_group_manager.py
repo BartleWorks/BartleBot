@@ -1297,6 +1297,28 @@ async def test_no_wizard_name_is_logged(ui, caplog, setup):
         assert name not in text
 
 
+async def test_a_callers_log_takes_the_lines_instead_of_this_modules_logger(ui, caplog):
+    """The relog node passes machine.log, and every grouping line reached the session file twice."""
+    a, b, c = (ui.make_client(n) for n in _NAMES)
+    callback: list[str] = []
+
+    with caplog.at_level(logging.DEBUG, logger=gm.logger.name):
+        await _run_with(ui, lambda: gm.form_group([a, b, c], list(_NAMES), log=lambda m, _l: callback.append(m)))
+
+    assert any("Rebuilding group" in line for line in callback)
+    both = set(callback) & {r.getMessage() for r in caplog.records if r.name == gm.logger.name}
+    assert both == set()
+
+
+async def test_without_a_callers_log_the_lines_go_to_this_modules_logger(ui, caplog):
+    a, b, c = (ui.make_client(n) for n in _NAMES)
+
+    with caplog.at_level(logging.DEBUG, logger=gm.logger.name):
+        await _run_with(ui, lambda: gm.form_group([a, b, c], list(_NAMES)))
+
+    assert any("Rebuilding group" in r.getMessage() for r in caplog.records if r.name == gm.logger.name)
+
+
 async def test_a_friends_list_miss_does_not_log_the_name_it_searched_for(ui, caplog):
     """The friends-list helpers quote the name in their ValueError, so it is not passed on."""
     leader = ui.make_client("Alice Ashblade")

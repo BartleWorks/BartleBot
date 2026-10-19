@@ -36,12 +36,14 @@ class RegroupHarness:
 
     _regroup_after_recovery = ClientManager._regroup_after_recovery
     _refresh_group_routes = ClientManager._refresh_group_routes
+    _clients_of = ClientManager._clients_of
 
     def __init__(self, clients: list) -> None:
         self._clients = clients
+        self._hwnd_account_map: dict[int, str] = {}
         self._machine = MagicMock()
         self._machine.is_stopped = False
-        self._machine.settle_fights = AsyncMock()
+        self._machine.settle_fights = AsyncMock(return_value=[])
 
 
 @pytest.fixture
@@ -168,7 +170,7 @@ async def test_recovery_queue_settles_fights_then_regroups_before_jumping_to_rec
     harness._get_recovery_state = lambda: "start"
     harness._machine.force_state = MagicMock(side_effect=lambda s: calls.append("force_state"))
     harness._machine.resume = MagicMock(side_effect=lambda hold: calls.append(f"resume {hold}"))
-    harness._machine.settle_fights = AsyncMock(side_effect=lambda: calls.append("settle"))
+    harness._machine.settle_fights = AsyncMock(side_effect=lambda _rejoining: calls.append("settle"))
     harness._regroup_after_recovery = AsyncMock(side_effect=lambda: calls.append("regroup"))
     harness._settle_recovery_batch = AsyncMock()
 

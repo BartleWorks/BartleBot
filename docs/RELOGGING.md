@@ -16,6 +16,7 @@ Two mechanisms, and they are not interchangeable:
 |---|---|---|---|
 | **hard** | `ClientManager.relog_clients()` -> `force_close_client` -> the ordinary crash-recovery chain | the slowdown, and GDI | the watch loop: a timer and the GDI ceiling |
 | **soft** | the `relog` node: spellbook -> Preferences -> `QuitButton` -> character select -> Play | the slowdown only | a bot, wherever its author put the node |
+| **soft, in battle** | `relog.log_out_and_in(..., in_battle=True)`: Esc -> the same `QuitButton` -> character select -> Play, the hard way as its fallback | the slowdown only | crash recovery, for a team in a fight a relaunched player could not rejoin (`docs/AMBIENT_COMBAT.md`) |
 
 The soft path never closes the process, so hooks, embedding and the account session all
 survive and it costs seconds rather than minutes -- but it cannot help a client too wedged
@@ -71,6 +72,13 @@ What must not be broken:
   back where it stood before entering. The timer fires at a moment nobody chose, so it goes
   through recovery like a crash. The node runs where its author put it and advances
   normally; that caveat belongs in its help text, not in engine machinery.
+- **The node skips a player that has just logged in.** Nearly every shipped bot's recovery
+  state is the Sync players subgraph, which starts with this node. So every scheduled relog
+  and every crash recovery ended with the whole team logged out a second time, seconds after
+  logging in. A relaunch, crash recovery's Esc → Quit and the node itself each call
+  `machine.note_logged_in`. Until the run loop starts any other node, or an ambient session
+  has the player fight or help, `is_freshly_logged_in` is true and the node leaves that player
+  alone: the login has already left it outside any instance, on a fresh session.
 
 Policy lives in `bartlebot/clients/relog.py` (`relog_due`, `gdi_relog_due`) as pure functions, so
 it is testable without a clock, a client, or Qt -- `client_refresh_interval()` is the

@@ -380,3 +380,35 @@ async def test_one_player_raising_does_not_stop_the_others(monkeypatch):
     assert result.end is FightEnd.FINISHED
     assert finished == ["ok"]
     assert [(n, str(e)) for n, e in result.errors] == [(1, "lost the duel window")]
+
+
+async def test_a_run_cancelled_before_its_result_leaves_no_unretrieved_error(monkeypatch):
+    """Crash recovery cancels the node whose player died; the dead player's error was logged as an ERROR."""
+    import gc
+
+    unretrieved: list[dict] = []
+    loop = asyncio.get_running_loop()
+    previous = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: unretrieved.append(context))
+
+    async def fight(_client, dsl, _watch, number=None):
+        if dsl == "dead":
+            raise RuntimeError("Dynamic object DynamicClientDuelManager passed 0 base address.")
+        await asyncio.sleep(10)
+
+    monkeypatch.setattr(combat_runner, "_run_combat", fight)
+    try:
+        fighting = asyncio.create_task(
+            run_fight([_client(11), _client(22)], ["dead", "alive"], [1, 2], time_limit=None, log=_Log())
+        )
+        await asyncio.sleep(0.01)
+        fighting.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await fighting
+        del fighting
+        gc.collect()
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(previous)
+
+    assert unretrieved == []

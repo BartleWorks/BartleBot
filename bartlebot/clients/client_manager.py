@@ -1373,32 +1373,47 @@ class ClientManager(QObject):
         """
         try:
             await self._settle_recovery_batch()
-            while self._pending_recovery:
-                batch = dict(self._pending_recovery)
-                try:
-                    await self._reconnect_clients(batch)
-                except Exception:
-                    logger.exception(
-                        "Unhandled error recovering slot(s) %s — stopping bot",
-                        ", ".join(str(pos) for pos in sorted(batch)),
-                    )
-                    self._pending_recovery.clear()
-                    if self._machine:
-                        self._machine.stop()
-                    return
-                for orig_pos in batch:
-                    self._pending_recovery.pop(orig_pos, None)
+            relaunched: set[str] = set()
+            logged_out = False
+            while True:
+                while self._pending_recovery:
+                    batch = dict(self._pending_recovery)
+                    try:
+                        await self._reconnect_clients(batch)
+                    except Exception:
+                        logger.exception(
+                            "Unhandled error recovering slot(s) %s — stopping bot",
+                            ", ".join(str(pos) for pos in sorted(batch)),
+                        )
+                        self._pending_recovery.clear()
+                        if self._machine:
+                            self._machine.stop()
+                        return
+                    for orig_pos in batch:
+                        self._pending_recovery.pop(orig_pos, None)
+                    relaunched.update(batch.values())
 
-            # All pending clients are back in-game — settle any fight, regroup, then jump to
-            # recovery state and resume. Grouping happens while the FSM is still paused so no
-            # node is competing for the mouse, and before the state jump so the bot resumes
-            # with the group already restored. The fight comes first: the pause keeps every
-            # combat watcher off, and the survey would open the social window over the cards.
+                # All pending clients are back in-game — settle any fight, regroup, then jump to
+                # recovery state and resume. Grouping happens while the FSM is still paused so no
+                # node is competing for the mouse, and before the state jump so the bot resumes
+                # with the group already restored. The fight comes first: the pause keeps every
+                # combat watcher off, and the survey would open the social window over the cards.
+                if self._machine is None or self._machine.is_stopped:
+                    # A slot that could not be relaunched stopped the run. Regrouping now would
+                    # open the social window on clients the user has just been handed back.
+                    return
+                # A relaunched player that cannot get back into its fight has the rest logged
+                # out, and they come back through the loop above. Once only: the second
+                # settle fights whatever it finds, as any other would.
+                rejoining = [] if logged_out else self._clients_of(relaunched)
+                leaving = await self._machine.settle_fights(rejoining)
+                if not leaving or not await self._log_out_for_recovery(leaving):
+                    break
+                logged_out = True
+
             if self._machine is None or self._machine.is_stopped:
-                # A slot that could not be relaunched stopped the run. Regrouping now would
-                # open the social window on clients the user has just been handed back.
+                # Stopped during the fight: the clients are the user's now (the same reason).
                 return
-            await self._machine.settle_fights()
             await self._regroup_after_recovery()
 
             machine = self._machine
@@ -1439,6 +1454,91 @@ class ClientManager(QObject):
             await asyncio.sleep(CLIENT_DETECT_INTERVAL)
         # The last process to die is still one poll away from being noticed missing.
         await asyncio.sleep(CLIENT_DETECT_INTERVAL * 2)
+
+    def _clients_of(self, usernames: set[str]) -> list:
+        """The live clients logged in to *usernames*' accounts."""
+        return [c for c in self._clients if self._hwnd_account_map.get(c.window_handle) in usernames]
+
+    async def _log_out_for_recovery(self, clients: list) -> bool:
+        """Log *clients* out, so the whole team starts again beside the player recovery relaunched.
+
+        For the players left fighting a fight a relaunched player could not get back into,
+        usually a dungeon that refuses the port. Fighting on a player short loses fights a
+        strategy was written for a full team, and logging out inside a dungeon puts a character
+        back at its entrance, where the relaunched player already is.
+
+        Esc → Quit first, every player at once (``relog.log_out_and_in``): seconds, and the client
+        is never closed, so it comes back in the world with nothing to relaunch. A player that
+        never got past Quit is still in the fight, and is closed instead, the way a relog closes
+        it: the log files the removal as a relog, and the next pass of the queue relaunches it.
+        One that got past Quit but could not finish has been handed to crash recovery by the
+        relog already. The queue is waited on until every closed player is in it, so they come
+        back as one batch.
+
+        False, logging nobody out, when any of them could not be relaunched should it come to
+        that: the fight goes on without the relaunched player rather than the run stopping a
+        team short.
+        """
+        from bartlebot.nodes.utility import relog as relog_node  # noqa: PLC0415
+
+        machine = self._machine
+        for client in clients:
+            gap = self.recovery_gap_for(client.window_handle)
+            if gap:
+                logger.warning(
+                    "Leaving the fight to the players in it — hwnd=%d could not be brought back after logging out: %s",
+                    client.window_handle,
+                    gap,
+                )
+                return False
+
+        machine.suspend_health_checks_for([c.window_handle for c in clients])
+        logger.info("Logging out %d player(s) so the whole team starts again together", len(clients))
+        outcomes = await asyncio.gather(
+            *[relog_node.log_out_and_in(machine, c, in_battle=True) for c in clients],
+            return_exceptions=True,
+        )
+        back = [c for c, outcome in zip(clients, outcomes) if outcome == relog_node.BACK]
+        abandoned = [c for c, outcome in zip(clients, outcomes) if outcome == relog_node.ABANDONED]
+        stuck = [c for c in clients if c not in back and c not in abandoned]
+        # An abandoned player stays flagged until recovery's resume(), as the relog node leaves it.
+        machine.resume_health_checks_for([c.window_handle for c in back])
+        if back:
+            logger.info("%d player(s) logged out of the fight and back in", len(back))
+
+        closed = await self._close_for_recovery(stuck) if stuck else []
+        queued = {self._hwnd_account_map[c.window_handle] for c in [*abandoned, *closed]}
+        if not back and not queued:
+            return False
+
+        # A closed window is only noticed missing on the next _client_loop poll.
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + RECOVERY_BATCH_SETTLE
+        while not queued <= set(self._pending_recovery.values()) and loop.time() < deadline:
+            await asyncio.sleep(CLIENT_DETECT_INTERVAL)
+        return True
+
+    async def _close_for_recovery(self, clients: list) -> list:
+        """Close the players Esc → Quit could not log out, as a relog closes them. Returns the ones that closed.
+
+        One that will not close is still in the fight, and gets its health checks back.
+        """
+        logger.warning("%d player(s) could not log out from the game's menu — closing them instead", len(clients))
+        hwnds = [c.window_handle for c in clients]
+        self._relogging_hwnds.update(hwnds)
+        results = await asyncio.gather(
+            *[force_close_client(c.window_handle, pid=c.process_id) for c in clients],
+            return_exceptions=True,
+        )
+        survivors = [c for c, ok in zip(clients, results) if ok is not True]
+        if survivors:
+            logger.error(
+                "Client(s) %s would not close; they stay in the fight",
+                ", ".join(f"hwnd={c.window_handle}" for c in survivors),
+            )
+            self._relogging_hwnds.difference_update(c.window_handle for c in survivors)
+            self._machine.resume_health_checks_for([c.window_handle for c in survivors])
+        return [c for c in clients if c not in survivors]
 
     async def _regroup_after_recovery(self) -> None:
         """Rebuild the in-game group after a recovery, if the user has that enabled.
@@ -1624,6 +1724,10 @@ class ClientManager(QObject):
             # Restore the slot so the next _client_loop rebuild puts the client back in
             # order. machine.clients is kept in sync by _client_loop automatically.
             self._client_order[target.orig_pos] = target.username
+            client = self.client_titled(target.title)
+            if client is not None:
+                # Just logged in: a recovery state of Relog has nothing to do for it.
+                machine.note_logged_in([client.window_handle])
 
     def _warn_awaiting_manual_login(self, targets: list["_RecoveryTarget"]) -> None:
         """Say once, for the whole batch, that these windows are waiting to be logged in.
