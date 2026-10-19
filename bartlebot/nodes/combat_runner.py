@@ -746,6 +746,18 @@ def _watched_combat_class():
     return _WatchedCombat
 
 
+def _mark_retrieved(task: asyncio.Task) -> None:
+    """Mark a finished combat task's exception as seen. :meth:`CombatRun.result` still reports it.
+
+    One player's combat raising leaves the others fighting, and its error is read once they are
+    done. A run cancelled first never gets there: crash recovery cancels the handle_combat node
+    whose player died, and asyncio then reported that player's dead-client read as "Task exception
+    was never retrieved", an ERROR with a traceback for a crash recovery had already handled.
+    """
+    if not task.cancelled():
+        task.exception()
+
+
 class CombatRun:
     """Every combat task of one fight session, sharing one FightWatch.
 
@@ -773,6 +785,7 @@ class CombatRun:
         if self.fighting(client):
             return False
         task = asyncio.create_task(_run_combat(client, dsl, self.watch, number=self._numbers[client]))
+        task.add_done_callback(_mark_retrieved)
         self._live[client] = task
         self._tasks.append((self._numbers[client], task))
         return True
