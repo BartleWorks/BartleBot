@@ -4,7 +4,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import QEvent, QMargins, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter, QVBoxLayout, QWidget
 
@@ -16,7 +16,7 @@ from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.gui.title_bar.bottom_edge import BottomEdge, bottom_rule_shown, edge_color
-from bartlebot.gui.title_bar.native_frame import NativeFrame, maximized_overhang
+from bartlebot.gui.title_bar.native_frame import NativeFrame
 from bartlebot.gui.title_bar.title_bar import TitleBar
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
@@ -502,47 +502,21 @@ class MainWindow(QMainWindow):
         kind = event.type()
         if kind == QEvent.Type.WindowStateChange:
             self._title_bar.set_maximized(self.isMaximized())
-        if kind in (QEvent.Type.WindowStateChange, QEvent.Type.ActivationChange, QEvent.Type.StyleChange):
+        if kind in (QEvent.Type.WindowStateChange, QEvent.Type.StyleChange):
             self._sync_window_edge()
-        if kind == QEvent.Type.WindowStateChange:
-            self._fit_to_work_area()
-
-    def resizeEvent(self, event) -> None:  # noqa: N802
-        super().resizeEvent(event)
-        self._fit_to_work_area()
-
-    def moveEvent(self, event) -> None:  # noqa: N802
-        super().moveEvent(event)
-        self._fit_to_work_area()
 
     def _sync_window_edge(self) -> None:
         """Where the window ends, drawn once: Windows' border, or else our bottom rule (#271).
 
-        Both are drawn in ``edge_color``, so the edge changes with the window's activity
-        and not with who draws it. A theme switch arrives here as the ``StyleChange``
+        Both are drawn in ``edge_color``. A theme switch arrives here as the ``StyleChange``
         ``QApplication.setStyleSheet`` sends every widget.
         """
         if not self.isVisible():
             return
-        drawn = self._frame.set_border_color(edge_color(self.isActiveWindow()))
+        drawn = self._frame.set_border_color(edge_color())
         self._bottom_edge.setVisible(
             bottom_rule_shown(maximized=self.isMaximized(), full_screen=self.isFullScreen(), border_drawn=drawn)
         )
-        self._bottom_edge.update()
-
-    def _fit_to_work_area(self) -> None:
-        """Pull the window's contents in off the screen's edges while it is maximized (#271).
-
-        See ``maximized_overhang``: without this the bottom rule sits under the taskbar.
-        Called on the state change, the resize and the move, each of which can arrive first:
-        maximizing resizes before it moves, and measured at the new size and the old
-        position, the overhang was the restored window's offset -- 825px of margin.
-        """
-        screen = self.screen()
-        if self.isMaximized() and screen is not None:
-            self.setContentsMargins(maximized_overhang(self.geometry(), screen.availableGeometry()))
-        else:
-            self.setContentsMargins(QMargins())
 
     @property
     def bottom_edge(self) -> BottomEdge:

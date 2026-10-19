@@ -13,7 +13,7 @@ import ctypes.wintypes as wt
 import sys
 
 import pytest
-from PyQt6.QtCore import QMargins, QPoint, QRect
+from PyQt6.QtCore import QPoint
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QMenuBar
 
@@ -26,7 +26,6 @@ from bartlebot.gui.title_bar.native_frame import (
     WM_NCHITTEST,
     colorref,
     is_native_frame_supported,
-    maximized_overhang,
     title_bar_hit,
 )
 
@@ -80,26 +79,6 @@ def test_a_maximized_window_has_no_resize_band():
 
 def test_a_colorref_puts_blue_in_the_high_byte():
     assert colorref(QColor(0x44, 0x88, 0xCC)) == 0x00CC8844
-
-
-def test_the_overhang_is_what_runs_past_each_side_of_the_work_area():
-    """The numbers measured on a 4K screen at 125% (see the module docstring)."""
-    geometry = QRect(-2, 0, 3075, 1682)
-    available = QRect(0, 0, 3072, 1680)
-
-    assert maximized_overhang(geometry, available) == QMargins(2, 0, 1, 2)
-
-
-def test_a_window_inside_the_work_area_has_no_overhang():
-    assert maximized_overhang(QRect(100, 50, 800, 600), QRect(0, 0, 3072, 1680)) == QMargins()
-
-
-def test_the_overhang_is_measured_against_the_work_area_s_own_origin():
-    """A second screen to the right, with its taskbar on top: its work area starts mid-desktop."""
-    geometry = QRect(3070, 38, 1925, 1044)
-    available = QRect(3072, 40, 1920, 1040)
-
-    assert maximized_overhang(geometry, available) == QMargins(2, 2, 3, 2)
 
 
 # ---------------------------------------------------------------------------
@@ -159,25 +138,43 @@ def test_a_restored_window_resizes_from_its_top_edge(window, qtbot):
     assert _ask_windows(window, bar, QPoint(bar.width() // 2, 0)) == HTTOP
 
 
+class _MONITORINFO(ctypes.Structure):
+    _fields_ = [("cbSize", wt.DWORD), ("rcMonitor", wt.RECT), ("rcWork", wt.RECT), ("dwFlags", wt.DWORD)]
+
+
+def _client_and_work_area(window) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
+    """The window's client area and its monitor's work area, both on screen, in physical pixels."""
+    hwnd = int(window.winId())
+    client = wt.RECT()
+    _user32.GetClientRect(hwnd, ctypes.byref(client))
+    origin = wt.POINT(0, 0)
+    _user32.ClientToScreen(hwnd, ctypes.byref(origin))
+    _user32.MonitorFromWindow.restype = wt.HMONITOR
+    info = _MONITORINFO(cbSize=ctypes.sizeof(_MONITORINFO))
+    _user32.GetMonitorInfoW(_user32.MonitorFromWindow(hwnd, 2), ctypes.byref(info))
+    work = info.rcWork
+    return (
+        (origin.x, origin.y, origin.x + client.right, origin.y + client.bottom),
+        (work.left, work.top, work.right, work.bottom),
+    )
+
+
 def test_the_window_always_has_one_bottom_edge(window, qtbot):
-    """#271. Maximized, Windows draws no border, so the rule shows -- and inside the work
-    area, not under the taskbar. Restored, Windows draws the border in our color, so the
-    rule goes, except where there is no border color to set (before Windows 11, build
-    22000, which includes CI's Server 2022)."""
+    """#271. Maximized, the client area is the work area exactly, so the rule sits on the
+    taskbar rather than under it, and shows, since Windows draws no border. Restored,
+    Windows draws the border in our color, so the rule goes, except where there is no
+    border color to set (before Windows 11, build 22000, which includes CI's Server 2022)."""
     window.showMaximized()
     qtbot.waitUntil(window.isMaximized)
-    available = window.screen().availableGeometry()
-    qtbot.waitUntil(lambda: window.contentsMargins() == maximized_overhang(window.geometry(), available))
-    edge = window.bottom_edge
+    client, work = _client_and_work_area(window)
 
-    assert edge.isVisible()
-    assert edge.mapToGlobal(QPoint(0, edge.height())).y() <= available.y() + available.height()
+    assert client == work
+    assert window.bottom_edge.isVisible()
 
     window.showNormal()
     qtbot.waitUntil(lambda: not window.isMaximized())
 
-    assert window.contentsMargins() == QMargins()
-    assert edge.isVisible() == (sys.getwindowsversion().build < 22000)
+    assert window.bottom_edge.isVisible() == (sys.getwindowsversion().build < 22000)
 
 
 def test_the_window_is_left_a_whole_window(window):

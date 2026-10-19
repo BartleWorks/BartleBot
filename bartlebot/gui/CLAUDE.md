@@ -160,11 +160,12 @@ docstring has each one and the spike that found it. The rules:
   toggle and the menu's check mark go stale: `show_game_view`, `show_bot_canvas`, or
   `_sync_pane_actions` after changing several at once, as Maximize Game View does.
 - **The window's edge is drawn once, and never by a status bar** (#271). Windows' 1px border
-  wears `edge_color` (`title_bar/bottom_edge.py`): the accent while active, `border` while
-  not. Where Windows draws none (maximized, full screen, before Windows 11), `BottomEdge`
-  draws the bottom one in the same color. Maximized, the client area runs a pixel or two
-  past the work area, so `MainWindow` takes `maximized_overhang` off as contents margins on
-  every state change, resize *and* move, or the rule sits under the taskbar.
+  wears `edge_color` (`title_bar/bottom_edge.py`), which is `border`. Where Windows draws
+  none (maximized, full screen, before Windows 11), `BottomEdge` draws the bottom one as a
+  splitter handle is drawn, so it reads as one more divider. Maximized, `NativeFrame`
+  answers `WM_NCCALCSIZE` with the monitor's work area: Qt's own answer runs a physical
+  pixel past it, which put the rule under the taskbar, and a logical-pixel inset to make up
+  for it left a dark row between the rule and the taskbar's line.
 - **Probing it from another process needs per-monitor DPI awareness.** A DPI-unaware sender
   has the coordinates it sends scaled by the display scale, so at 125% every answer lands
   1.25x inside where it should, and a posted click misses the window. Call

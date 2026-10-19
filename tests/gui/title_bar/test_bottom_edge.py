@@ -26,10 +26,18 @@ def test_the_rule_shows_wherever_windows_draws_no_border(maximized, full_screen,
     assert bottom_rule_shown(maximized=maximized, full_screen=full_screen, border_drawn=border_drawn) is shown
 
 
-def test_the_edge_wears_the_accent_while_the_window_is_active():
-    assert edge_color(True) == THEME.qcolor("accent")
-    assert edge_color(False) == THEME.qcolor("border")
+def test_the_edge_is_drawn_in_the_color_of_the_dividers_between_panes(qapp):
+    assert edge_color() == THEME.qcolor("border")
+    assert f"background: {THEME.border}" in _rule(THEME.global_stylesheet(), "QSplitter::handle {")
 
 
-def test_the_rule_is_as_tall_as_the_floor_arithmetic_counts(qapp):
+def test_the_rule_is_as_thick_as_a_divider_and_as_the_floor_arithmetic_counts(qapp):
+    """One line, uniform with the rest of the app: the splitter handles' 2px."""
     assert BottomEdge().height() == BOTTOM_EDGE_PX
+    assert f"height: {BOTTOM_EDGE_PX}px" in _rule(THEME.global_stylesheet(), "QSplitter::handle:vertical {")
+
+
+def _rule(sheet: str, selector: str) -> str:
+    """The body of the stylesheet rule opened by *selector*."""
+    start = sheet.index(selector) + len(selector)
+    return sheet[start : sheet.index("}", start)]

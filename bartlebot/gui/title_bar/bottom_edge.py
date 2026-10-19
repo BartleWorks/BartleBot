@@ -8,7 +8,8 @@ exactly one bottom edge and never two.
 
 A maximized or full-screen window has no border at all, and Windows 10 has no border
 color to set. A rule rather than a status bar, because vertical space is what this app
-is shortest of: one pixel says where the window ends as well as twenty-two would.
+is shortest of. It is drawn as the splitter handles between the panes are, in ``border``
+and as thick, so the window's edge reads as one more divider.
 """
 
 from __future__ import annotations
@@ -25,20 +26,17 @@ def bottom_rule_shown(*, maximized: bool, full_screen: bool, border_drawn: bool)
     return maximized or full_screen or not border_drawn
 
 
-def edge_color(active: bool) -> QColor:
-    """The window's edge, whoever draws it: the accent while active, ``border`` while not.
+def edge_color() -> QColor:
+    """The window's edge, whoever draws it: ``border``, the color of the dividers between panes.
 
-    Windows' own "accent color on borders" does the same. Plain ``border`` was tried for
-    both and lost: against the near-black taskbar it read no better than Windows' gray.
+    The accent while the window was active was tried first, and was louder than an edge
+    needs to be.
     """
-    return THEME.qcolor("accent" if active else "border")
+    return THEME.qcolor("border")
 
 
 class BottomEdge(QWidget):
-    """A full-width line in :func:`edge_color`, read at paint time so a theme switch needs nothing.
-
-    The window repaints it when it is activated or deactivated (``MainWindow._sync_window_edge``).
-    """
+    """A full-width line in :func:`edge_color`, read at paint time so a theme switch needs nothing."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -47,5 +45,5 @@ class BottomEdge(QWidget):
 
     def paintEvent(self, _event) -> None:  # noqa: N802 - Qt override
         painter = QPainter(self)
-        painter.fillRect(self.rect(), edge_color(self.isActiveWindow()))
+        painter.fillRect(self.rect(), edge_color())
         painter.end()
