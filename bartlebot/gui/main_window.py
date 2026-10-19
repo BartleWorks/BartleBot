@@ -4,9 +4,9 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QMargins, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence
-from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
+from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter, QVBoxLayout, QWidget
 
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.game.game_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
@@ -15,7 +15,8 @@ from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
-from bartlebot.gui.title_bar.native_frame import NativeFrame
+from bartlebot.gui.title_bar.bottom_edge import BottomEdge, bottom_rule_shown, edge_color
+from bartlebot.gui.title_bar.native_frame import NativeFrame, maximized_overhang
 from bartlebot.gui.title_bar.title_bar import TitleBar
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
@@ -407,7 +408,15 @@ class MainWindow(QMainWindow):
         self._outer_splitter.setStretchFactor(0, 1)
         self._outer_splitter.setSizes([600, bot_h])
 
-        self.setCentralWidget(self._outer_splitter)
+        # The panes, then the window's bottom edge where Windows draws none (#271).
+        central = QWidget()
+        column = QVBoxLayout(central)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(0)
+        column.addWidget(self._outer_splitter)
+        self._bottom_edge = BottomEdge()
+        column.addWidget(self._bottom_edge)
+        self.setCentralWidget(central)
 
         # Show GameViewPanel immediately (placeholder shown when no clients)
         self._game_view_visible: bool = True
@@ -483,14 +492,62 @@ class MainWindow(QMainWindow):
         """
         super().showEvent(event)
         self._frame.on_shown()
+        self._sync_window_edge()
         if self._startup_sizes_pending:
             self._startup_sizes_pending = False
             self._apply_configured_splitter_sizes()
 
     def changeEvent(self, event) -> None:  # noqa: N802
         super().changeEvent(event)
-        if event.type() == QEvent.Type.WindowStateChange:
+        kind = event.type()
+        if kind == QEvent.Type.WindowStateChange:
             self._title_bar.set_maximized(self.isMaximized())
+        if kind in (QEvent.Type.WindowStateChange, QEvent.Type.ActivationChange, QEvent.Type.StyleChange):
+            self._sync_window_edge()
+        if kind == QEvent.Type.WindowStateChange:
+            self._fit_to_work_area()
+
+    def resizeEvent(self, event) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        self._fit_to_work_area()
+
+    def moveEvent(self, event) -> None:  # noqa: N802
+        super().moveEvent(event)
+        self._fit_to_work_area()
+
+    def _sync_window_edge(self) -> None:
+        """Where the window ends, drawn once: Windows' border, or else our bottom rule (#271).
+
+        Both are drawn in ``edge_color``, so the edge changes with the window's activity
+        and not with who draws it. A theme switch arrives here as the ``StyleChange``
+        ``QApplication.setStyleSheet`` sends every widget.
+        """
+        if not self.isVisible():
+            return
+        drawn = self._frame.set_border_color(edge_color(self.isActiveWindow()))
+        self._bottom_edge.setVisible(
+            bottom_rule_shown(maximized=self.isMaximized(), full_screen=self.isFullScreen(), border_drawn=drawn)
+        )
+        self._bottom_edge.update()
+
+    def _fit_to_work_area(self) -> None:
+        """Pull the window's contents in off the screen's edges while it is maximized (#271).
+
+        See ``maximized_overhang``: without this the bottom rule sits under the taskbar.
+        Called on the state change, the resize and the move, each of which can arrive first:
+        maximizing resizes before it moves, and measured at the new size and the old
+        position, the overhang was the restored window's offset -- 825px of margin.
+        """
+        screen = self.screen()
+        if self.isMaximized() and screen is not None:
+            self.setContentsMargins(maximized_overhang(self.geometry(), screen.availableGeometry()))
+        else:
+            self.setContentsMargins(QMargins())
+
+    @property
+    def bottom_edge(self) -> BottomEdge:
+        """The rule along the window's bottom, shown where Windows draws no border."""
+        return self._bottom_edge
 
     def nativeEvent(self, event_type, message):  # noqa: N802
         # Hit testing and the caption's system menu: see gui/title_bar/native_frame.py.

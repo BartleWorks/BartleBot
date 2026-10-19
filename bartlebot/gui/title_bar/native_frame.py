@@ -35,6 +35,21 @@ on every hit test it handles. With no caption of its own to draw it shows nothin
 costs a full-width paint and is a native child window sitting over ours, which is how #126
 took every click on the canvas. :meth:`NativeFrame.hide_overlays` hides it.
 
+**The border.** Windows 11 draws a 1px border round the window in a gray that all but
+vanishes against a dark desktop, and a tester took the window for one cut off at the
+bottom (#271). :meth:`NativeFrame.set_border_color` paints it in a theme color through
+``DWMWA_BORDER_COLOR``. Windows draws no border on a maximized window, and Windows 10 has
+no such attribute, so ``BottomEdge`` (``title_bar/bottom_edge.py``) draws the bottom one
+itself whenever this one is not there.
+
+**The maximized overhang.** Maximized, the client area Qt computes runs past the work
+area: at 125% on a 4K screen it spans 0..1682 logical pixels high against a work area of
+1680, and 3075 wide from -2 against 3072, so the window's last rows sit under the
+taskbar -- measured with ``GetClientRect`` against the work area, about a physical pixel
+on each side, rounded up by Qt's logical geometry. That hid the bottom rule outright.
+``maximized_overhang`` measures it, and ``MainWindow`` takes it off as contents margins
+while maximized.
+
 All of it is Windows-only and switched on only on the ``windows`` platform plugin, so a
 test run on another one builds the same window with Qt's ordinary frame.
 """
@@ -46,8 +61,8 @@ import ctypes.wintypes as wt
 import logging
 import sys
 
-from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtCore import QMargins, QPoint, QRect, Qt
+from PyQt6.QtGui import QColor, QGuiApplication
 from PyQt6.QtWidgets import QMainWindow
 
 logger = logging.getLogger(__name__)
@@ -89,6 +104,9 @@ _TPM_RIGHTBUTTON = 0x2
 _TPM_RETURNCMD = 0x100
 
 _OVERLAY_CLASS = "_q_titlebar"
+
+#: Windows 11 (build 22000) and later; Windows 10 answers ``E_INVALIDARG``.
+_DWMWA_BORDER_COLOR = 34
 
 FRAME_FLAGS = (
     Qt.WindowType.Window
@@ -134,6 +152,26 @@ def _lparam_point(lparam: int) -> tuple[int, int]:
     return ctypes.c_short(lparam & 0xFFFF).value, ctypes.c_short((lparam >> 16) & 0xFFFF).value
 
 
+def maximized_overhang(geometry: QRect, available: QRect) -> QMargins:
+    """How far a maximized window's client area runs past the screen's work area, per side.
+
+    Both in logical pixels, global. Clamped at zero: a side inside the work area needs
+    nothing, and a window maximized on another screen than *available*'s is not ours to
+    measure.
+    """
+    return QMargins(
+        max(0, available.x() - geometry.x()),
+        max(0, available.y() - geometry.y()),
+        max(0, (geometry.x() + geometry.width()) - (available.x() + available.width())),
+        max(0, (geometry.y() + geometry.height()) - (available.y() + available.height())),
+    )
+
+
+def colorref(color: QColor) -> int:
+    """*color* as a Win32 ``COLORREF``, which is ``0x00BBGGRR``: blue in the high byte."""
+    return color.red() | (color.green() << 8) | (color.blue() << 16)
+
+
 def is_native_frame_supported() -> bool:
     """Whether the window is a real Win32 window this module can manage."""
     return sys.platform == "win32" and QGuiApplication.platformName() == "windows"
@@ -159,6 +197,9 @@ class NativeFrame:
         self._user32.DefWindowProcW.restype = ctypes.c_ssize_t
         self._user32.DefWindowProcW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
         self._user32.TrackPopupMenu.restype = ctypes.c_int
+        self._dwmapi = ctypes.WinDLL("dwmapi")
+        self._dwmapi.DwmSetWindowAttribute.restype = ctypes.c_long
+        self._dwmapi.DwmSetWindowAttribute.argtypes = [wt.HWND, wt.DWORD, ctypes.c_void_p, wt.DWORD]
         window.setWindowFlags(FRAME_FLAGS)
         window.setAttribute(Qt.WidgetAttribute.WA_ContentsMarginsRespectsSafeArea, False)
 
@@ -247,6 +288,20 @@ class NativeFrame:
             return
         self._user32.SetWindowLongW(hwnd, _GWL_STYLE, style | _RESTORED_STYLES)
         self._user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, _SWP_FRAMECHANGED_ONLY)
+
+    def set_border_color(self, color: QColor) -> bool:
+        """Draw the window's 1px border in *color*. Whether Windows took it.
+
+        False off the native frame and on Windows 10, which have no border to color.
+        Windows keeps the color, through maximizing and back, until it is set again.
+        """
+        if not self._active:
+            return False
+        value = wt.DWORD(colorref(color))
+        result = self._dwmapi.DwmSetWindowAttribute(
+            int(self._window.winId()), _DWMWA_BORDER_COLOR, ctypes.byref(value), ctypes.sizeof(value)
+        )
+        return result == 0
 
     def hide_overlays(self) -> None:
         """Hide the ``_q_titlebar`` child window Qt draws its own caption into."""

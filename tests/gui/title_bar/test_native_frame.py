@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes as wt
+import sys
 
 import pytest
-from PyQt6.QtCore import QPoint
+from PyQt6.QtCore import QMargins, QPoint, QRect
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QMenuBar
 
 from bartlebot.gui.title_bar.native_frame import (
@@ -22,7 +24,9 @@ from bartlebot.gui.title_bar.native_frame import (
     HTTOPLEFT,
     HTTOPRIGHT,
     WM_NCHITTEST,
+    colorref,
     is_native_frame_supported,
+    maximized_overhang,
     title_bar_hit,
 )
 
@@ -72,6 +76,30 @@ def test_a_maximized_window_has_no_resize_band():
     """The top of the screen is where a pointer flung at the close button lands."""
     assert _hit((_WIDTH - 10, 0), maximized=True, over_control=True) == HTCLIENT
     assert _hit((0, 0), maximized=True) == HTCAPTION
+
+
+def test_a_colorref_puts_blue_in_the_high_byte():
+    assert colorref(QColor(0x44, 0x88, 0xCC)) == 0x00CC8844
+
+
+def test_the_overhang_is_what_runs_past_each_side_of_the_work_area():
+    """The numbers measured on a 4K screen at 125% (see the module docstring)."""
+    geometry = QRect(-2, 0, 3075, 1682)
+    available = QRect(0, 0, 3072, 1680)
+
+    assert maximized_overhang(geometry, available) == QMargins(2, 0, 1, 2)
+
+
+def test_a_window_inside_the_work_area_has_no_overhang():
+    assert maximized_overhang(QRect(100, 50, 800, 600), QRect(0, 0, 3072, 1680)) == QMargins()
+
+
+def test_the_overhang_is_measured_against_the_work_area_s_own_origin():
+    """A second screen to the right, with its taskbar on top: its work area starts mid-desktop."""
+    geometry = QRect(3070, 38, 1925, 1044)
+    available = QRect(3072, 40, 1920, 1040)
+
+    assert maximized_overhang(geometry, available) == QMargins(2, 2, 3, 2)
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +157,27 @@ def test_a_restored_window_resizes_from_its_top_edge(window, qtbot):
     bar = window.title_bar
 
     assert _ask_windows(window, bar, QPoint(bar.width() // 2, 0)) == HTTOP
+
+
+def test_the_window_always_has_one_bottom_edge(window, qtbot):
+    """#271. Maximized, Windows draws no border, so the rule shows -- and inside the work
+    area, not under the taskbar. Restored, Windows draws the border in our color, so the
+    rule goes, except where there is no border color to set (before Windows 11, build
+    22000, which includes CI's Server 2022)."""
+    window.showMaximized()
+    qtbot.waitUntil(window.isMaximized)
+    available = window.screen().availableGeometry()
+    qtbot.waitUntil(lambda: window.contentsMargins() == maximized_overhang(window.geometry(), available))
+    edge = window.bottom_edge
+
+    assert edge.isVisible()
+    assert edge.mapToGlobal(QPoint(0, edge.height())).y() <= available.y() + available.height()
+
+    window.showNormal()
+    qtbot.waitUntil(lambda: not window.isMaximized())
+
+    assert window.contentsMargins() == QMargins()
+    assert edge.isVisible() == (sys.getwindowsversion().build < 22000)
 
 
 def test_the_window_is_left_a_whole_window(window):

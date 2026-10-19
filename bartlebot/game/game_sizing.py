@@ -71,6 +71,11 @@ LABEL_RESERVE = FOCUS_BORDER + LABEL_GAP + LABEL_PILL_H + 4  # = 39; keeps the p
 # (gui/title_bar), so there is no native caption above it to count -- this is all of it.
 TITLE_BAR_PX = 35
 
+# The rule along the window's bottom (gui/title_bar/bottom_edge.py). Shown only where
+# Windows draws no border there, but counted always: a floor one pixel too high costs
+# nothing, and one too low is a floor the window has and the arithmetic does not.
+BOTTOM_EDGE_PX = 1
+
 # What screen_budget takes off the screen's height for everything that is neither the game
 # area nor the bot canvas. An estimate rather than a sum: it was the menu bar plus a status
 # bar once, and the title bar that replaced both is smaller, but moving it re-tiers the
@@ -507,7 +512,7 @@ def required_window_size(
     right = right_sidebar if right_sidebar is not None else RIGHT_SIDEBAR_MIN_WIDTH
     left = left_sidebar if left_sidebar is not None else LEFT_SIDEBAR_MIN_WIDTH
     width = left + right + game_w + 2 * SPLITTER_HANDLE_PX
-    height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + TITLE_BAR_PX + SPLITTER_HANDLE_PX
+    height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + TITLE_BAR_PX + BOTTOM_EDGE_PX + SPLITTER_HANDLE_PX
     return width, height
 
 
