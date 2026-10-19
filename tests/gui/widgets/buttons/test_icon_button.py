@@ -179,3 +179,14 @@ def test_it_draws_no_frame_of_its_own(qapp):
     assert "background: transparent;" in style
     assert "border: none;" in style
     assert THEME.surface_disabled in style  # the hover, which is where the shape comes from
+
+
+def test_the_pointer_cursor_shows_only_while_enabled(qapp):
+    from PyQt6.QtCore import Qt
+
+    btn = IconButton("close", tooltip="Close")
+    assert btn.cursor().shape() == Qt.CursorShape.PointingHandCursor
+    btn.setEnabled(False)
+    assert btn.cursor().shape() == Qt.CursorShape.ArrowCursor
+    btn.setEnabled(True)
+    assert btn.cursor().shape() == Qt.CursorShape.PointingHandCursor

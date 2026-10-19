@@ -795,7 +795,19 @@ class CardFrame(ThemedMixin, QWidget):
                 menu.addAction(svg_icon(verb.icon, size=14), verb.label) if verb.icon else menu.addAction(verb.label)
             )
             action.triggered.connect(verb.run)
+            reason = self._verb_block_reason(verb)
+            if reason is not None:
+                action.setEnabled(False)
+                action.setToolTip(reason)
         return menu
+
+    def _verb_block_reason(self, verb: CardVerb) -> str | None:
+        """Why *verb* cannot run now, or None. A blocked verb is grayed in the menu, with this as its tooltip.
+
+        The face buttons are enabled and disabled by their cards; the menu is built afresh
+        from ``_verbs()`` and would otherwise offer what the face refuses.
+        """
+        return None
 
     def contextMenuEvent(self, event) -> None:
         """Right-click: every verb this card has, including the ones not on its face.

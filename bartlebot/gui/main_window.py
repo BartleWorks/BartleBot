@@ -42,6 +42,18 @@ def _splitter_sizes(total: int, fixed: list[int], flexible: int) -> list[int]:
     return sizes
 
 
+def validation_report(errors: list[str], warnings: list[str]) -> tuple[str, str]:
+    """The title and body of the Validate Bot message: every problem, or "No problems found"."""
+    if not errors and not warnings:
+        return "Validate Bot", "No problems found."
+    parts = []
+    if errors:
+        parts.append("Errors:\n" + "\n".join(f"• {line}" for line in errors))
+    if warnings:
+        parts.append("Warnings:\n" + "\n".join(f"• {line}" for line in warnings))
+    return "Validate Bot", "\n\n".join(parts)
+
+
 class MainWindow(QMainWindow):
     # Emitted when a recent-file menu entry is clicked (passes the file path)
     open_recent_requested = pyqtSignal(str)
@@ -406,6 +418,7 @@ class MainWindow(QMainWindow):
         # Wire Run menu
         self.action_run_pause.triggered.connect(lambda: self.bot_canvas._run_pause_btn.click())
         self.action_stop_bot.triggered.connect(lambda: self.bot_canvas.stop_button.click())
+        self.action_validate_bot.triggered.connect(self._on_validate_bot)
 
     def _apply_minimum_size(self) -> None:
         """Declare the floor the panes below are built to honor.
@@ -636,6 +649,14 @@ class MainWindow(QMainWindow):
             self._top_splitter.setSizes(self._pre_maximize_sizes.get("top", [300, 800, 300]))
             self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, BOTCANVAS_DEFAULT_HEIGHT]))
         self._sync_pane_actions()
+
+    def _on_validate_bot(self) -> None:
+        """Report what validation found, or that it found nothing: a silent click reads as broken (#257)."""
+        errors = self.bot_canvas.validation_errors()
+        warnings = self.bot_canvas.validation_warnings()
+        title, text = validation_report(errors, warnings)
+        show = QMessageBox.information if not errors else QMessageBox.warning
+        self._tell_later(show, title, text)
 
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
         # The dot, the status word and the clock live in Bar B now; the only part of

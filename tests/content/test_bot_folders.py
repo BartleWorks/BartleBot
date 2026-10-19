@@ -66,6 +66,20 @@ def test_every_folder_is_kept_by_git():
     assert missing == []
 
 
+def test_no_bot_sits_loose_at_the_top_of_the_library():
+    """A file beside the folders ships as Official content and shows in every user's list
+    (#253: the three test bots did). Test bots belong in ``tests/`` fixtures."""
+    loose = [p.name for p in BOTS.iterdir() if p.is_file() and p.name != ".gitkeep"]
+
+    assert loose == []
+
+
+def test_no_shipped_bot_is_named_test():
+    named = [str(p.relative_to(BOTS)) for p in BOTS.rglob("*.json") if p.stem.startswith("test_")]
+
+    assert named == []
+
+
 def test_the_category_folders_are_numbered_and_the_rest_are_not():
     for folder in _folders():
         if folder_slug(folder.name) in UNBADGED_FOLDERS:

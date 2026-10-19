@@ -854,6 +854,9 @@ class StrategyPanel(CardFrame):
             return "Edit this strategy, or make one of this bot's own for these fights"
         return "Make a strategy of this bot's own for these fights"
 
+    def _verb_block_reason(self, verb: CardVerb) -> str | None:
+        return None if self._editable else LOCKED
+
     def _verbs(self) -> list[CardVerb]:
         """Everything this card can do *right now* -- what the right-click menu offers.
 

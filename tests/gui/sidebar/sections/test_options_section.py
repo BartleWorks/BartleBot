@@ -38,6 +38,7 @@ from bartlebot.bot.schema import (
 )
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
+from bartlebot.gui.sidebar.strategy_panel import LOCKED
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.inputs.option_widgets import (
     OPTION_TYPES,
@@ -137,6 +138,37 @@ def test_editing_a_value_writes_an_override_and_not_the_declaration(qapp, settin
 
     assert settings.get_option_override("test-bot", "repeat") is False
     assert config.options[0].default is True
+
+
+def test_values_are_held_while_a_bot_runs_and_come_back_after(qapp, settings):
+    settings.set_option_override("test-bot", "repeat", False)
+    config = _config([_repeat(default=True), BotOptionModel(name="Passes", type="int", default=1)])
+    section = OptionValuesSection(settings=settings)
+    section.set_config(config)
+
+    section.set_locked(True)
+
+    for name in ("repeat", "Passes"):
+        chrome = section._chrome[name]
+        assert not chrome.body.isEnabled()
+        assert chrome.outer.toolTip() == LOCKED
+    assert not section._chrome["repeat"].revert_btn.isEnabled()
+    assert section._chrome["repeat"].revert_btn.toolTip() == LOCKED
+
+    section.set_locked(False)
+
+    assert all(chrome.body.isEnabled() for chrome in section._chrome.values())
+    assert section._chrome["repeat"].revert_btn.isEnabled()
+    assert section._chrome["Passes"].outer.toolTip() == ""
+
+
+def test_a_rebuild_while_locked_stays_locked(qapp, settings):
+    section = OptionValuesSection(settings=settings)
+    section.set_locked(True)
+
+    section.set_config(_config([_repeat(default=True)]))
+
+    assert not section._chrome["repeat"].body.isEnabled()
 
 
 def test_a_bot_file_is_untouched_by_a_value_edit(qapp, settings):
