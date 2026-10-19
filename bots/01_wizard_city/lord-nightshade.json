@@ -1252,7 +1252,7 @@
     {
       "id": "t_4",
       "node_type": "handle_combat",
-      "label": "Defeat boss",
+      "label": "Defeat Lord Nightshade",
       "position": {
         "x": 3960.0,
         "y": 0.0
@@ -1260,7 +1260,7 @@
       "params": {
         "enemy": "Wraith-WCBoss-L05",
         "wiki_page": "Creature:Lord Nightshade",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
@@ -1476,5 +1476,8 @@
   "template": {
     "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
     "version": 1
-  }
+  },
+  "history": [
+    "accda9c2438d8779e67187bf88e97e6e9b4254b8ad6203b46caa016458ab67dc"
+  ]
 }
