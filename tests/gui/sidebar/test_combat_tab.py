@@ -36,6 +36,8 @@ from bartlebot.combat.combat_resolution import (
 from bartlebot.combat.combat_warnings import exposed_combat_states
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import DialogMode
+from bartlebot.gui.dialogs.choose_fights_dialog import TITLE as ADD_FLOW_TITLE
+from bartlebot.gui.dialogs.choose_fights_dialog import FightsAnswer
 from bartlebot.gui.sidebar.combat_tab import (
     _APPLY_DECK,
     _CHANGE_BCS,
@@ -82,6 +84,8 @@ from bartlebot.shared.combat_defaults import (
     PREFERENCE_KEYS,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
     SHIPPED_TEAM_DUEL_ID,
+    DefaultDuel,
+    DefaultSource,
     TeamSize,
 )
 from bartlebot.shared.preferences import PreferenceStore
@@ -1251,68 +1255,127 @@ def test_the_default_card_is_drawn_above_the_cards_that_except_it(qapp, store):
 # ---------------------------------------------------------------------------
 
 
-def _add_strategy(tab: CombatTab, dcs_id: str | None) -> None:
-    """Run the add-card's first dialog, stubbed, and stop before its popup opens.
+def _add_strategy(
+    tab: CombatTab,
+    dcs_id: str | None,
+    fights: list[str] | None = None,
+    answer: FightsAnswer = FightsAnswer.ADD,
+    *,
+    create: bool = False,
+    run=None,
+):
+    """Run the add flow with both of its dialogs stubbed; return the two mocks.
 
-    ``open_fights_popup`` is patched out rather than allowed to fire: the real one is
-    deferred a turn by a QTimer, so an event loop turn in some later test would open a
-    live popup window belonging to a tab that test never made.
+    Step 1 accepts *dcs_id* (or cancels on None, or runs *run* as its ``exec``); step 2
+    answers *answer* with *fights* checked.
     """
     with (
         patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
-        patch.object(StrategyPanel, "open_fights_popup"),
+        patch("bartlebot.gui.sidebar.combat_tab.ChooseFightsDialog") as MockFights,
     ):
-        MockDlg.return_value.exec.return_value = dcs_id is not None
+        if run is not None:
+            MockDlg.return_value.exec.side_effect = run
+        else:
+            MockDlg.return_value.exec.return_value = dcs_id is not None
         MockDlg.return_value.selected_id.return_value = dcs_id
-        tab._on_add_existing()
+        MockDlg.return_value.selected_was_created.return_value = run is not None
+        MockFights.return_value.answer = answer
+        MockFights.return_value.selection.return_value = list(fights or [])
+        (tab._on_add_created if create else tab._on_add_existing)()
+    return MockDlg, MockFights
 
 
 def test_adding_a_strategy_asks_for_its_fights_straight_away(qapp, store):
-    """The two dialogs are chained. A card with no fights forms no group, so it would
-    draw nothing on the next rebuild and be pruned on the next save -- it cannot be left
-    on screen for the user to fill in later, because nothing would bring it back."""
+    """The two dialogs are chained, and the second says it is the second (#272)."""
+    dcs = _saved_dcs("Boss Burn")
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    _dlg, fights = _add_strategy(tab, dcs.id, answer=FightsAnswer.CANCEL)
+
+    step = fights.call_args.args[0]
+    assert (step.number, step.total) == (2, 2)
+    assert "Boss Burn" in step.heading
+    sections = fights.call_args.args[1]
+    assert [row.key for _title, rows in sections for row in rows] == ["state_1", "state_2"]
+
+
+def test_step_one_says_it_is_step_one_and_where_it_goes_next(qapp, store):
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A"))
+
+    dlg, _fights = _add_strategy(tab, None)
+
+    flow = dlg.call_args.kwargs["flow"]
+    assert flow.title == ADD_FLOW_TITLE
+    assert (flow.step.number, flow.step.total) == (1, 2)
+    assert flow.commit_text == "Next: choose fights"
+    assert dlg.call_args.kwargs["mode"] is DialogMode.PICK
+    assert dlg.call_args.kwargs["allow_none"] is False
+
+
+def test_no_card_exists_while_the_fights_are_being_chosen(qapp, store):
+    """A card on screen is a card in the file, and one with no fights would be neither."""
     dcs = _saved_dcs()
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    seen = []
 
     with (
         patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
-        patch.object(StrategyPanel, "open_fights_popup") as mock_popup,
+        patch("bartlebot.gui.sidebar.combat_tab.ChooseFightsDialog") as MockFights,
     ):
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
+        MockDlg.return_value.selected_was_created.return_value = False
+        MockFights.return_value.exec.side_effect = lambda: seen.append(list(tab._group_panels()))
+        MockFights.return_value.answer = FightsAnswer.ADD
+        MockFights.return_value.selection.return_value = ["state_1"]
         tab._on_add_existing()
-        # The popup is deferred a turn: it positions itself against the button's place on
-        # screen, which the layout has not given the card just inserted above it.
-        qapp.processEvents()
 
-    assert tab._pending_panel is not None
-    assert mock_popup.called
+    assert seen == [[]]
+    assert [p.titles() for p in tab._group_panels()] == [["A"]]
 
 
 def test_a_cancelled_add_makes_no_card(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
 
-    _add_strategy(tab, None)
+    _dlg, fights = _add_strategy(tab, None)
 
-    assert tab._pending_panel is None
+    fights.assert_not_called()
     assert tab._group_panels() == []
     assert _default_fights(tab) == ["A", "B"]
 
 
-def test_a_strategy_added_with_no_fights_leaves_no_card(qapp, store):
-    """Closing the fights popup without choosing any undoes the add outright, rather
-    than leaving a card that governs nothing and would vanish on the next save anyway."""
+def test_cancelling_the_fights_leaves_no_card(qapp, store):
     dcs = _saved_dcs()
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
-    _add_strategy(tab, dcs.id)
-    panel = tab._pending_panel
 
-    panel.membership_changed.emit([])
+    _add_strategy(tab, dcs.id, ["state_1"], answer=FightsAnswer.CANCEL)
 
-    assert tab._pending_panel is None
     assert tab._group_panels() == []
     assert _default_fights(tab) == ["A", "B"]
     assert store_mod.load_bot_strategy(tab._bcs.id).state_assignments == []
+
+
+def test_back_returns_to_the_strategy_with_it_still_chosen(qapp, store):
+    """Back is step 1 again on the same strategy, then on to step 2 as before."""
+    first, second = _saved_dcs("First"), _saved_dcs("Second")
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    answers = iter([FightsAnswer.BACK, FightsAnswer.ADD])
+
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.ChooseFightsDialog") as MockFights,
+    ):
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.side_effect = [first.id] * 2 + [second.id] * 3
+        MockDlg.return_value.selected_was_created.return_value = False
+        MockFights.return_value.exec.side_effect = lambda: setattr(MockFights.return_value, "answer", next(answers))
+        MockFights.return_value.selection.return_value = ["state_2"]
+        tab._on_add_existing()
+
+    assert [c.kwargs["current_id"] for c in MockDlg.call_args_list] == [None, first.id]
+    assert MockFights.call_count == 2
+    saved = store_mod.load_bot_strategy(tab._bcs.id)
+    assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [(["state_2"], second.id)]
 
 
 def test_a_strategy_added_with_fights_takes_them_off_the_default_card(qapp, store):
@@ -1320,13 +1383,11 @@ def test_a_strategy_added_with_fights_takes_them_off_the_default_card(qapp, stor
     card, so the ones chosen here leave the default card's pills."""
     dcs = _saved_dcs()
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B", "C"))
-    _add_strategy(tab, dcs.id)
 
-    tab._pending_panel.membership_changed.emit(["state_1", "state_3"])
+    _add_strategy(tab, dcs.id, ["state_1", "state_3"])
 
     assert [p.titles() for p in tab._group_panels()] == [["A", "C"]]
     assert _default_fights(tab) == ["B"]
-    assert tab._pending_panel is None
 
 
 def test_adding_a_strategy_the_bot_already_uses_lands_on_that_card(qapp, store):
@@ -1334,9 +1395,8 @@ def test_adding_a_strategy_the_bot_already_uses_lands_on_that_card(qapp, store):
     card already names has to join it rather than draw a second card beside it."""
     dcs = _saved_dcs()
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B", "C"))
-    _add_strategy(tab, dcs.id)
 
-    tab._pending_panel.membership_changed.emit(["state_3"])
+    _add_strategy(tab, dcs.id, ["state_3"])
 
     assert [p.titles() for p in tab._group_panels()] == [["A", "C"]]
     assert _default_fights(tab) == ["B"]
@@ -1345,12 +1405,23 @@ def test_adding_a_strategy_the_bot_already_uses_lands_on_that_card(qapp, store):
 def test_the_add_flow_saves_what_it_committed(qapp, store):
     dcs = _saved_dcs()
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
-    _add_strategy(tab, dcs.id)
 
-    tab._pending_panel.membership_changed.emit(["state_1"])
+    _add_strategy(tab, dcs.id, ["state_1"])
 
     saved = store_mod.load_bot_strategy(tab._bcs.id)
     assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [(["state_1"], dcs.id)]
+
+
+def test_the_card_added_is_lit_so_the_user_sees_where_it_landed(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"):
+        _add_strategy(tab, dcs.id, ["state_2"])
+
+    [panel] = tab._group_panels()
+    assert panel.is_highlighted
+    assert not tab._default_panel.is_highlighted
 
 
 def test_the_default_card_survives_a_rebuild(qapp, store):
@@ -1504,23 +1575,6 @@ def test_declining_the_remove_leaves_the_card(qapp, store):
     assert tab._state_panels["state_1"] is panel
     assert _default_fights(tab) == ["B"]
     assert store_mod.load_bot_strategy(bcs.id).state_assignments[0].state_ids == ["state_1"]
-
-
-def test_removing_a_card_still_waiting_for_its_fights_asks_nothing(qapp, store):
-    """It has nothing on it to lose, so it is dropped as closing its popup empty would."""
-    dcs = _saved_dcs()
-    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
-    _add_strategy(tab, dcs.id)
-    pending = tab._pending_panel
-
-    with patch.object(QMessageBox, "question") as asked:
-        pending.remove_requested.emit()
-    pending.membership_changed.emit(["state_1"])
-
-    asked.assert_not_called()
-    assert tab._pending_panel is None
-    assert tab._group_panels() == []
-    assert _default_fights(tab) == ["A", "B"]
 
 
 def test_membership_edits_are_saved_immediately(qapp, store):
@@ -2282,22 +2336,6 @@ def test_strategy_cards_are_not_dragged_while_the_bot_runs(qapp, store):
     assert panels[0].grip.toolTip() == LOCKED
 
 
-def test_a_card_still_choosing_its_fights_cannot_be_dragged(qapp, store):
-    tab, _bcs = _three_strategy_tab(qapp)
-    dcs = _saved_dcs("Pending")
-
-    with (
-        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
-        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
-    ):
-        MockDlg.return_value.exec.return_value = True
-        MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_add_existing()
-
-    assert not tab._pending_panel.grip.isEnabled()
-    assert tab._pending_panel not in tab._strategy_drag.cards
-
-
 def _deck_tab(qapp) -> tuple[CombatTab, BotCombatStrategy]:
     bcs = BotCombatStrategy(
         name="BCS",
@@ -2529,20 +2567,12 @@ def test_a_strategy_made_in_the_dialog_survives_a_pick_on_the_default_card(qapp,
 
 
 def test_a_strategy_made_in_the_dialog_survives_the_add_card(qapp, store):
-    """The add flow reloads before it makes the pending card, not after."""
+    """The add flow reloads after step 1 and before it makes the card, not after."""
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _multi_config("A", "B"))
     made, run = _dialog_that_makes_an_own_duel(bcs.id)
 
-    with (
-        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
-        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
-    ):
-        MockDlg.return_value.exec.side_effect = run
-        MockDlg.return_value.selected_id.return_value = made.id
-        tab._on_add_existing()
-    pending = tab._pending_panel
-    pending.membership_changed.emit(["state_2"])
+    _add_strategy(tab, made.id, ["state_2"], run=run)
 
     saved = store_mod.load_bot_strategy(bcs.id)
     assert [d.id for d in saved.duel_strategies] == [made.id]
@@ -2575,17 +2605,54 @@ def test_the_add_card_offers_choosing_or_creating(qapp, store):
     ]
 
 
-def test_creating_from_the_add_card_opens_the_bot_strategy_editor_with_nothing_selected(qapp, store):
-    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+def test_creating_from_the_add_card_opens_the_editor_on_a_copy_of_the_default(qapp, store):
+    """The default card's strategy is the starting point: "like the default, but…"."""
+    base = _saved_dcs("Team Base")
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1", default_strategy_id=base.id)
     tab = _tab_for(bcs, _multi_config("A", "B"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
-        MockDlg.return_value.exec.return_value = False
-        tab._on_add_created()
+    dlg, _fights = _add_strategy(tab, None, create=True)
 
-    kwargs = MockDlg.call_args.kwargs
+    kwargs = dlg.call_args.kwargs
     assert kwargs["mode"] is DialogMode.BOT_STRATEGY
     assert kwargs["current_id"] is None
+    assert kwargs["start_new"] is True
+    assert kwargs["start_from"] == base.id
+    assert "'Team Base'" in kwargs["flow"].step.note
+
+
+def _answers(*duels: DuelCombatStrategy) -> list[DefaultDuel]:
+    """What ``defaults_in_use`` returns: Solo then Team, each the shipped default."""
+    sizes = [TeamSize.SOLO, TeamSize.TEAM] if len(duels) == 2 else [TeamSize.TEAM]
+    return [DefaultDuel(size, d, DefaultSource.SHIPPED) for size, d in zip(sizes, duels)]
+
+
+def test_with_no_bot_default_the_copy_is_of_the_default_in_use(qapp, store, monkeypatch):
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A"))
+    tab.set_client_count(3)
+    team = DuelCombatStrategy(name="Team")
+    asked = []
+    monkeypatch.setattr(
+        "bartlebot.gui.sidebar.combat_tab.defaults_in_use", lambda clients: asked.append(clients) or _answers(team)
+    )
+
+    dlg, _fights = _add_strategy(tab, None, create=True)
+
+    assert dlg.call_args.kwargs["start_from"] == team.id
+    assert asked[-1] == 3
+
+
+def test_with_two_defaults_in_play_the_new_strategy_starts_empty(qapp, store, monkeypatch):
+    """Nobody connected: Solo and Team both answer, and copying either would be a guess."""
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A"))
+    tab.set_client_count(0)
+    solo, team = DuelCombatStrategy(name="Solo"), DuelCombatStrategy(name="Team")
+    monkeypatch.setattr("bartlebot.gui.sidebar.combat_tab.defaults_in_use", lambda _clients: _answers(solo, team))
+
+    dlg, _fights = _add_strategy(tab, None, create=True)
+
+    assert dlg.call_args.kwargs["start_from"] is None
+    assert "copy" not in dlg.call_args.kwargs["flow"].step.note
 
 
 def _made_in_the_editor(bcs_id: str, name: str = "Made Here"):
@@ -2606,39 +2673,27 @@ def test_a_strategy_created_from_the_add_card_is_linked_and_given_its_fights(qap
     tab = _tab_for(bcs, _multi_config("A", "B"))
     made, run = _made_in_the_editor(bcs.id)
 
-    with (
-        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
-        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
-    ):
-        MockDlg.return_value.exec.side_effect = run
-        MockDlg.return_value.selected_id.return_value = made.id
-        tab._on_add_created()
-    tab._pending_panel.membership_changed.emit(["state_1", "state_2"])
+    _dlg, fights = _add_strategy(tab, made.id, ["state_1", "state_2"], create=True, run=run)
 
     saved = store_mod.load_bot_strategy(bcs.id)
     assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [
         (["state_1", "state_2"], made.id)
     ]
+    # Step 2 says a strategy made in step 1 is kept whatever it answers.
+    assert "saved with this bot's strategies" in fights.call_args.args[0].note
 
 
-def test_closing_the_fights_popup_empty_drops_the_card_but_keeps_the_strategy(qapp, store):
+def test_cancelling_the_fights_drops_the_card_but_keeps_the_strategy(qapp, store):
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _multi_config("A", "B"))
     made, run = _made_in_the_editor(bcs.id)
 
-    with (
-        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
-        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
-    ):
-        MockDlg.return_value.exec.side_effect = run
-        MockDlg.return_value.selected_id.return_value = made.id
-        tab._on_add_created()
-    tab._pending_panel.membership_changed.emit([])
+    _add_strategy(tab, made.id, ["state_1"], answer=FightsAnswer.CANCEL, create=True, run=run)
 
     saved = store_mod.load_bot_strategy(bcs.id)
     assert saved.state_assignments == []
     assert [d.id for d in saved.duel_strategies] == [made.id]
-    assert tab._pending_panel is None
+    assert tab._group_panels() == []
 
 
 def test_the_pencil_on_the_built_in_default_links_a_strategy_made_for_it(qapp, store):

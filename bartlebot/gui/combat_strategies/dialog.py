@@ -53,6 +53,17 @@ freely, written only by ``commit()``. Nothing below this dialog decides when a
 file is written any more. See that module for why dirtiness is derived rather
 than reported.
 
+ONE STEP OF A FLOW (#272)
+-------------------------
+
+The Combat tab's add-card chains this dialog into a second, which asks for the fights.
+Opened that way it is handed a :class:`FlowStep`: a title saying what is being done, a
+"Step 1 of 2" heading over the tabs, and a commit naming where it goes next. Opened to
+make a new strategy (``start_new``), it opens on one rather than an empty pane: a copy of
+``start_from`` under New's name, or New's own entry, selected with its name ready to type
+over. That starting entry is forgotten at Save if another was chosen and it was never
+touched, so looking around does not leave an unused copy behind.
+
 TWO PLACES A STRATEGY CAN LIVE (#118)
 -------------------------------------
 
@@ -86,7 +97,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from enum import Enum
 
 from PyQt6.QtCore import QEvent, QObject, QSize, Qt, pyqtSignal
@@ -143,6 +154,7 @@ from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyl
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.labels.elided_label import apply_muted_color
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
+from bartlebot.gui.widgets.labels.step_heading import Step, StepHeading
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
@@ -189,6 +201,17 @@ NEW_NAMES = {
     StrategyKind.PLAYER: "New Player Strategy",
     StrategyKind.DECK: "New Deck Preset",
 }
+
+
+@dataclass(frozen=True)
+class FlowStep:
+    """This dialog as one step of a longer flow (#272): its title, its heading, and its commit."""
+
+    title: str
+    step: Step
+    commit_text: str
+    commit_icon: str = "arrow_right"
+
 
 #: Pick mode's way to choose no strategy, and what it says it does. Callers name the level
 #: below their own; these are for one that doesn't.
@@ -1160,7 +1183,30 @@ class _KindPage(QWidget):
     # -- create / duplicate / remove / move -----------------------------
 
     def _on_new(self) -> None:
-        made = self._ws.create(self._kind, NEW_NAMES[self._kind], in_bot_strategy=self.creates_in_bot_strategy)
+        self._show_made(
+            self._ws.create(self._kind, NEW_NAMES[self._kind], in_bot_strategy=self.creates_in_bot_strategy)
+        )
+
+    def start_new(self, copy_of: str | None = None):
+        """Open on a new entry rather than an empty pane, and return it (#272).
+
+        A copy of *copy_of* when it is here, under New's name and with no description,
+        since both described the original: it is a new strategy that starts from that
+        one's setup. Otherwise New's own entry. None where nothing can be made, in Pick.
+        """
+        if not self._editable:
+            return None
+        source = self._ws.get(self._kind, copy_of)
+        if source is None:
+            made = self._ws.create(self._kind, NEW_NAMES[self._kind], in_bot_strategy=self.creates_in_bot_strategy)
+        else:
+            made = self._ws.duplicate(self._kind, source.id, in_bot_strategy=self.creates_in_bot_strategy)
+            made.name = self._ws.unique_name(self._kind, NEW_NAMES[self._kind])
+            made.description = ""
+        self._show_made(made)
+        return made
+
+    def _show_made(self, made) -> None:
         self._selected_id = made.id
         self.rebuild_list()
         self.select(made.id)
@@ -1215,12 +1261,8 @@ class _KindPage(QWidget):
         # In the Bot Combat Strategy editor a copy always lands in it, a library entry's
         # included: that is how one fight gets something slightly different (#118).
         copy = self._ws.duplicate(self._kind, self._selected_id, in_bot_strategy=self.creates_in_bot_strategy)
-        if copy is None:
-            return
-        self._selected_id = copy.id
-        self.rebuild_list()
-        self.select(copy.id)
-        self.structure_changed.emit()
+        if copy is not None:
+            self._show_made(copy)
 
     def _on_delete(self) -> None:
         entry = self._ws.get(self._kind, self._selected_id)
@@ -1349,9 +1391,16 @@ class CombatStrategyDialog(QDialog):
         *,
         none_tooltip: str = NONE_TOOLTIP,
         team_size: int | None = None,
+        flow: FlowStep | None = None,
+        start_new: bool = False,
+        start_from: str | None = None,
     ):
         """*team_size* opens the Duel tab filtered to the duels a team of that size can run,
-        as a chip the user can remove (Settings › Combat's Solo and Team cards)."""
+        as a chip the user can remove (Settings › Combat's Solo and Team cards).
+
+        *flow* makes the dialog one step of a longer flow, and *start_new* opens it on a new
+        entry of *kind*, a copy of *start_from* when that is given (#272; the module
+        docstring has both). *start_new* does nothing in Pick, which makes nothing."""
         super().__init__(parent)
         self._ws = ws
         self._mode = mode
@@ -1366,7 +1415,14 @@ class CombatStrategyDialog(QDialog):
         self._selected_id: str | None = current_id
         self._selected_was_created = False
         self._used_none = False
-        self.setWindowTitle("Pick a Combat Strategy" if mode is DialogMode.PICK else "Combat Strategies")
+        self._flow = flow
+        # The entry start_new opened on, and how it looked then: see _drop_unused_starter.
+        self._starter: tuple[str, dict] | None = None
+        self._focus_name_on_show = False
+        if flow is not None:
+            self.setWindowTitle(flow.title)
+        else:
+            self.setWindowTitle("Pick a Combat Strategy" if mode is DialogMode.PICK else "Combat Strategies")
         self.setMinimumSize(880, 560)
         # Wider than the minimum so the card sidebar isn't fighting the detail
         # pane for space by default — see issue #44 — and wide enough that a card
@@ -1375,6 +1431,9 @@ class CombatStrategyDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
+        self._step_heading = StepHeading(flow.step, self) if flow is not None else None
+        if self._step_heading is not None:
+            layout.addWidget(self._step_heading)
 
         # The This bot section is for the ways in from the Combat tab, and only when a bot
         # is loaded. The library view never shows it (#118).
@@ -1415,6 +1474,11 @@ class CombatStrategyDialog(QDialog):
         if team_size is not None and StrategyKind.DUEL in self._pages:
             self._pages[StrategyKind.DUEL].filter_bar.set_team_size(team_size)
         start.select(current_id)
+        if start_new and kind in self._pages:
+            made = self._pages[kind].start_new(start_from)
+            if made is not None:
+                self._starter = (made.id, made.model_dump())
+                self._focus_name_on_show = True
 
         layout.addLayout(self._build_buttons())
 
@@ -1423,6 +1487,15 @@ class CombatStrategyDialog(QDialog):
     @property
     def mode(self) -> DialogMode:
         return self._mode
+
+    @property
+    def step_heading(self) -> StepHeading | None:
+        """The "Step N of M" heading a flow gave this dialog, or None."""
+        return self._step_heading
+
+    @property
+    def commit_button(self) -> ActionButton:
+        return self._commit_btn
 
     def tab_kinds(self) -> list[StrategyKind]:
         """The kinds this dialog has a tab for, in tab order."""
@@ -1448,9 +1521,14 @@ class CombatStrategyDialog(QDialog):
             extras.append(self._none_btn)
         # Both spellings of the same act: commit the working set. Use also
         # returns the selection — see the module docstring.
+        if self._flow is not None:
+            commit_text, commit_icon = self._flow.commit_text, self._flow.commit_icon
+        else:
+            commit_text, commit_icon = ("Use this" if self._mode is DialogMode.PICK else "Save"), "checkmark"
         footer = dialog_footer(
             self,
-            commit_text="Use this" if self._mode is DialogMode.PICK else "Save",
+            commit_text=commit_text,
+            commit_icon=commit_icon,
             on_commit=self._on_commit,
             extras=extras,
         )
@@ -1483,8 +1561,38 @@ class CombatStrategyDialog(QDialog):
                 self._selected_id = page.selected_id()
         self._commit_and_accept()
 
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        super().showEvent(event)
+        if self._focus_name_on_show:
+            # On show, not in the constructor: a hidden window's focus does not stick.
+            self._focus_name_on_show = False
+            name = self._pages[self._pick_kind].about.name_edit
+            name.setFocus()
+            name.selectAll()
+
+    def _drop_unused_starter(self, *, even_selected: bool = False) -> None:
+        """Forget the entry ``start_new`` opened on, if it was never touched and not chosen.
+
+        Otherwise looking around before choosing an existing strategy would save an unused
+        copy into the Bot Combat Strategy, one more entry the user never asked for. Cancel
+        forgets it *even_selected*, before asking whether anything will be lost: the dialog
+        made it, not the user, so it is not a change of theirs to warn about.
+        """
+        if self._starter is None:
+            return
+        uuid, as_made = self._starter
+        entry = self._ws.get(self._pick_kind, uuid)
+        chosen = uuid == self._selected_id and not even_selected
+        if entry is None or chosen or entry.model_dump() != as_made:
+            return
+        self._starter = None
+        self._ws.remove(self._pick_kind, uuid)
+        # Redrawn in case the dialog stays open, as it does when a write fails.
+        self._pages[self._pick_kind].rebuild_list()
+
     def _commit_and_accept(self) -> None:
         if self._mode is not DialogMode.PICK:
+            self._drop_unused_starter()
             uses = self._ws.shared_uses(self._bot_name)
             if uses and not self._confirm_shared_edits(uses):
                 return
@@ -1679,6 +1787,7 @@ class CombatStrategyDialog(QDialog):
         of Cancel. The prompt exists only because the count is the one thing the
         user cannot see from the cards.
         """
+        self._drop_unused_starter(even_selected=True)
         if self._ws.is_dirty:
             # A Bot Combat Strategy made here with nothing in it yet is still one change to lose.
             total = self._ws.changes().total or 1

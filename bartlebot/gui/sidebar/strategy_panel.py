@@ -657,16 +657,6 @@ class StrategyPanel(CardFrame):
         """Just the labels, in order -- what a reader sees on the pill row."""
         return [label for _state_id, label in self._fights]
 
-    def open_fights_popup(self) -> None:
-        """Open the membership popup as a click on the "Fights…" button would.
-
-        The add flow's second half: a card created for a freshly picked strategy has no
-        fights yet, and this is what asks for them without the user having to find the
-        button on a card that appeared under the pointer a moment ago.
-        """
-        if self._fights_btn is not None:
-            self._fights_btn.click()
-
     def set_fight_options(self, sections: list[Section], selected: list[str]) -> None:
         """The fights this strategy *could* cover, and the ones it does.
 
