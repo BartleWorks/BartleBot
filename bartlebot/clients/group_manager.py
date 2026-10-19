@@ -608,9 +608,12 @@ async def form_group(
     """
 
     def _log(msg: str, level: int = logging.INFO) -> None:
-        logger.log(level, msg)
+        # One or the other, never both: a node's machine.log files the line under the node,
+        # and writing it here as well put every grouping line in the session log twice.
         if log is not None:
             log(msg, level)
+        else:
+            logger.log(level, msg)
 
     if len(clients) < 2:
         return GroupResult(success=True, reason="fewer than two clients connected")
