@@ -243,9 +243,10 @@ can cast wins:
 5. The same buffs without `stacks`, in the same order. A buff that won't add to the next
    hit still stays up for the one after, which a two-hit Challenge Mode fight wants.
 6. `any<global>`.
-7. `any<harmful_aura & inc_damage & stronger> @ boss`: a negative aura such as Attenuate
+7. A prism (#274): `any<prism & aoe>`, then `any<prism & !aoe> @ boss`.
+8. `any<harmful_aura & inc_damage & stronger> @ boss`: a negative aura such as Attenuate
    (+20% incoming damage, four rounds), the last buff before a pass.
-8. `pass`, which banks pips.
+9. `pass`, which banks pips.
 
 So a support attacks only where no buff for P1 can be standing: round 1 of a team mob
 fight, and once P1 is dead. When P1 dies with the boss far from dead, the fight is lost
@@ -264,6 +265,12 @@ from the state at the start of the round; the duplicate stays up for the next hi
   Feint is cast even onto one already up.
 - **The Feint line takes the best single trap**, `!aoe` keeping Mass Hex below the blade.
   With no Feint in hand it takes a school trap, ahead of the blade.
+- **A prism is cast late and ungated.** It turns the damage the enemy takes into its
+  school, which pays only when that school beats the enemy's, and the DSL can't read an
+  enemy's school (its attributes are health, level, `is_boss` and the like). So it sits
+  below every buff P1's hit uses, and a mass prism is cast anywhere, a single one only at
+  the boss. A support spends a prism when nothing better can cast, and never ahead of a
+  trap, blade or global. Adding a school attribute to wizsprinter would let a line gate it.
 - **A support's own positive aura never helps P1.** Amplify or Frenzy lands on its caster
   and raises only the caster's hits, so no buff support casts one. A negative aura on the
   boss does help: unlike a trap, a hit doesn't use it up. A participant holds one aura,
@@ -295,7 +302,7 @@ cast wins:
    `any<aura & out_heal>` (Mend). Its own aura protects it or strengthens its heals, so
    unlike a damage aura it is worth casting.
 5. Default Support's ladder from its round-1 AoE on: the P1-dead attack, the buffs, the
-   global, the negative aura and `pass`.
+   global, the prism, the negative aura and `pass`.
 
 Protecting whichever teammate is lowest instead would need a health condition per slot,
 which makes the DSL unreadable. `tests/strategies/test_guardian.py` walks it through its

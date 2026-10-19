@@ -142,6 +142,8 @@ TYPHOON_ATTENUATE = _spell(
     (E.modify_incoming_damage, T.enemy_single, 35, 4),
     pips=2,
 )
+FIRE_PRISM = _spell("Fire Prism", 2601, (E.modify_incoming_damage_type, T.enemy_single, 0), pips=1)
+MASS_FIRE_PRISM = _spell("Mass Fire Prism", 2602, (E.modify_incoming_damage_type, T.enemy_team, 0), pips=2)
 TOWER_SHIELD = _spell("Tower Shield", 2501, (E.modify_incoming_damage, T.friendly_single, -50))
 WYLDFIRE = _spell("Wyldfire", 2301, (E.modify_outgoing_damage, T.target_global, 25), pips=2)
 SHADOW_SHRIKE = _spell("Shadow Shrike", 2401, (E.shadow_self, T.self, 0))

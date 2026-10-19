@@ -1,7 +1,7 @@
 {
   "id": "0c0f0554-df96-440d-837e-21ca2004198e",
   "name": "Default No-Blades Support",
-  "dsl": "?(deck.remaining >= 2) potent @ spell(any<trap>) & potent @ spell(any<trap>) | ?(ally(last).health == 0) any<damage & aoe>[any<mod_damage>] | ?(ally(last).health == 0) any<damage>[any<mod_damage>] @ enemy | \"Feint Mass - Amulet\" | any<trap & !aoe & stacks>[potent] @ boss | any<trap & aoe & stacks> | any<trap & !aoe>[potent] @ boss | any<trap & aoe> | any<global> | any<harmful_aura & inc_damage & stronger> @ boss | pass",
+  "dsl": "?(deck.remaining >= 2) potent @ spell(any<trap>) & potent @ spell(any<trap>) | ?(ally(last).health == 0) any<damage & aoe>[any<mod_damage>] | ?(ally(last).health == 0) any<damage>[any<mod_damage>] @ enemy | \"Feint Mass - Amulet\" | any<trap & !aoe & stacks>[potent] @ boss | any<trap & aoe & stacks> | any<trap & !aoe>[potent] @ boss | any<trap & aoe> | any<global> | any<prism & aoe> | any<prism & !aoe> @ boss | any<harmful_aura & inc_damage & stronger> @ boss | pass",
   "description": "P2–P4 of Default Team Boss Duel (No Blades). Never casts or enchants a blade to avoid boss cheats. Buffs with Mass Feint, Feint on the boss and traps, stacking ones first, then a global and a negative aura such as Attenuate on the boss. Attacks only once P1 is dead.",
   "tags": [
     "Support"
