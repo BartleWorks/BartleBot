@@ -70,9 +70,11 @@ def prime_last_mouse_event(view: QGraphicsView) -> None:
 class GraphView(QGraphicsView):
     """Zoomable, pannable QGraphicsView.
 
-    interactive=False (default): read-only, left-drag pans.
-    interactive=True: items are selectable/movable, middle-mouse pans,
-                      left-drag produces a rubber-band selection rect.
+    interactive=False (default): read-only.
+    interactive=True: items are selectable/movable, left-drag produces a rubber-band
+                      selection rect.
+
+    Either way a middle-button drag pans, and so does Space + left-drag.
     """
 
     view_changed = pyqtSignal()  # emitted after zoom so overlays can repaint
@@ -84,6 +86,7 @@ class GraphView(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self._user_zoomed = False
         self._pan_origin: QPointF | None = None
+        self._pan_button: Qt.MouseButton | None = None
         self._space_held: bool = False
         self._fitting: bool = False
         self._primed_mouse: bool = False
@@ -249,7 +252,7 @@ class GraphView(QGraphicsView):
 
     @property
     def panning(self) -> bool:
-        """Whether a Space + left-drag pan is under way."""
+        """Whether a pan is under way, by Space + left-drag or by a middle-button drag."""
         return self._pan_origin is not None
 
     # Space + left-drag panning
@@ -281,9 +284,17 @@ class GraphView(QGraphicsView):
         super().focusOutEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        if self._space_held and event.button() == Qt.MouseButton.LeftButton:
+        button = event.button()
+        pans = button == Qt.MouseButton.MiddleButton or (self._space_held and button == Qt.MouseButton.LeftButton)
+        if pans and self._pan_origin is None:
             self._pan_origin = event.position()
+            self._pan_button = button
             self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+            return
+        if pans:
+            # A second pan button while one is held: swallow it, so it neither starts a
+            # rubber band nor reaches an item under the pointer.
             event.accept()
             return
         super().mousePressEvent(event)
@@ -299,8 +310,9 @@ class GraphView(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton and self._pan_origin is not None:
+        if self._pan_origin is not None and event.button() == self._pan_button:
             self._pan_origin = None
+            self._pan_button = None
             if self._space_held:
                 self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
             else:
