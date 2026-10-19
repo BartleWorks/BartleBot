@@ -181,6 +181,11 @@ async def press_character_select_play(hwnd: int) -> None:
     await _press(hwnd, _VK_RETURN)
 
 
+async def press_escape(hwnd: int) -> None:
+    """Press Esc in the game. In battle it opens the settings page, the one way to Quit there."""
+    await _press(hwnd, _VK_ESCAPE)
+
+
 async def at_character_select(client) -> bool:
     """Whether the character-select screen is up.
 

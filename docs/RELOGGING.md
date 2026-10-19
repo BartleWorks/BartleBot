@@ -16,6 +16,7 @@ Two mechanisms, and they are not interchangeable:
 |---|---|---|---|
 | **hard** | `ClientManager.relog_clients()` -> `force_close_client` -> the ordinary crash-recovery chain | the slowdown, and GDI | the watch loop: a timer and the GDI ceiling |
 | **soft** | the `relog` node: spellbook -> Preferences -> `QuitButton` -> character select -> Play | the slowdown only | a bot, wherever its author put the node |
+| **soft, in battle** | `relog.log_out_and_in(..., in_battle=True)`: Esc -> the same `QuitButton` -> character select -> Play, the hard way as its fallback | the slowdown only | crash recovery, for a team in a fight a relaunched player could not rejoin (`docs/AMBIENT_COMBAT.md`) |
 
 The soft path never closes the process, so hooks, embedding and the account session all
 survive and it costs seconds rather than minutes -- but it cannot help a client too wedged

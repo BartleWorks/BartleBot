@@ -29,8 +29,10 @@ the bot can carry on from — typically just before it travels somewhere — rat
 middle of a dungeon run.
 
 **Never mid-fight (#203).** This node reaches Quit through the spellbook, which will not open in
-battle. (Esc → Quit does log a player out of a fight, but not while "You Are Idle" is up.) Logging
-out of a fight is not wanted anyway: a player that logs back in beside a mob is pulled straight
+battle. Esc opens the same settings page there, and ``log_out_and_in(..., in_battle=True)`` takes
+that route for crash recovery, which logs a team out of a fight a relaunched player could not get
+back into (not while "You Are Idle" is up, which blocks Esc). Logging out of a fight is not wanted
+from this node, though: a player that logs back in beside a mob is pulled straight
 into one, and the group survey that follows opens the social window on every player while the
 fight goes on unanswered, until the game asks "You Are Idle". So the node waits for every player
 to be out of battle before it logs anyone out, and again before it re-forms the group. The
@@ -71,11 +73,12 @@ logger = logging.getLogger(__name__)
 # one tab that hides the Quit button. Two is already paranoid: a fresh open shows it.
 _MENU_ATTEMPTS = 2
 
-# How one player's relog ended. ABANDONED is a player past Quit that could not finish and
-# is now in crash recovery's hands.
-_BACK = "back"
-_FAILED = "failed"
-_ABANDONED = "abandoned"
+# How one player's relog ended, as log_out_and_in returns it. BACK is in the world again;
+# FAILED is still in the world where it started, having never got past Quit; ABANDONED is a
+# player past Quit that could not finish and is now in crash recovery's hands.
+BACK = "back"
+FAILED = "failed"
+ABANDONED = "abandoned"
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -167,6 +170,25 @@ async def _open_settings_page(machine, client) -> bool:
     return False
 
 
+async def _open_settings_page_in_battle(machine, client) -> bool:
+    """Open the settings page with Esc, the one way to it in battle: the spellbook will not open there.
+
+    Esc opens the same page the spellbook's Preferences tab does, Quit button included, at any
+    point in a fight. Pressed again only if the first press showed nothing, since a second press
+    on an open page closes it. Not while "You Are Idle" is up, which blocks it.
+    """
+    for _attempt in range(_MENU_ATTEMPTS):
+        await auto_select.press_escape(client.window_handle)
+        if await node_helpers.poll_until(
+            lambda: node_helpers.is_visible_by_path(client, SETTINGS_QUIT_BUTTON_PATH),
+            TRIGGER_TIMEOUT,
+            POLL_INTERVAL,
+        ):
+            return True
+    machine.log("relog: Esc did not open the settings page", logging.WARNING)
+    return False
+
+
 async def _back_in_world(client) -> bool:
     """Whether this client has finished loading in and is readable again.
 
@@ -190,16 +212,26 @@ def _abandon(machine, client, reason: str) -> str:
     node tester's.
     """
     if machine.abandon_client(client, reason):
-        return _ABANDONED
+        return ABANDONED
     if not machine.is_stopped:
         machine.log(f"relog: player {reason}", logging.WARNING)
-    return _FAILED
+    return FAILED
 
 
-async def _relog_one(machine, client) -> str:
-    """Take one client out to character select and back into the world."""
-    if not await _open_settings_page(machine, client):
-        return _FAILED
+async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
+    """Take one client out to character select and back into the world: BACK, FAILED or ABANDONED.
+
+    *in_battle* reaches Quit with Esc rather than the spellbook, which will not open in battle.
+    Crash recovery uses it to log players out of a fight a relaunched player could not get back
+    into. The caller holds health checks off for *client* throughout, as :func:`run` does.
+    """
+    opened = (
+        await _open_settings_page_in_battle(machine, client)
+        if in_battle
+        else await _open_settings_page(machine, client)
+    )
+    if not opened:
+        return FAILED
 
     await node_helpers.click_by_path(client, SETTINGS_QUIT_BUTTON_PATH)
 
@@ -223,7 +255,7 @@ async def _relog_one(machine, client) -> str:
                 "relog: character select never appeared after Quit — the player is still in the world",
                 logging.WARNING,
             )
-            return _FAILED
+            return FAILED
         return _abandon(
             machine,
             client,
@@ -231,7 +263,7 @@ async def _relog_one(machine, client) -> str:
         )
     if refusal:
         machine.log(f"relog: the game refused the logout — {dialog_captions.describe(refusal)}", logging.WARNING)
-        return _FAILED
+        return FAILED
 
     machine.log("relog: at character select — playing the same character back in", logging.DEBUG)
 
@@ -248,7 +280,7 @@ async def _relog_one(machine, client) -> str:
     loading_since: float | None = None
     while (now := loop.time()) < deadline:
         if await _back_in_world(client):
-            return _BACK
+            return BACK
         if await auto_select.at_character_select(client):
             loading_since = None
             await auto_select.press_character_select_play(client.window_handle)
@@ -364,7 +396,7 @@ async def run(machine, clients: list, params: dict) -> str:
     results: list = []
     try:
         results = await asyncio.gather(
-            *[_relog_one(machine, c) for c in targets],
+            *[log_out_and_in(machine, c) for c in targets],
             return_exceptions=True,
         )
     finally:
@@ -372,7 +404,7 @@ async def run(machine, clients: list, params: dict) -> str:
         # would mean a real crash on one of these clients goes unnoticed. Except for a
         # player handed to recovery, where the flag is what stops a watcher recovering it
         # a second time.
-        abandoned = [i for i, r in zip(indices, results) if r == _ABANDONED]
+        abandoned = [i for i, r in zip(indices, results) if r == ABANDONED]
         machine.resume_health_checks_for([clients[i].window_handle for i in indices if i not in abandoned])
 
     for position, result in zip(indices, results):
@@ -383,7 +415,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(f"relog: player(s) {[i + 1 for i in abandoned]} being relaunched — the bot resumes after recovery")
         raise ClientClosedError()
 
-    if not all(r == _BACK for r in results):
+    if not all(r == BACK for r in results):
         machine.log("FAILURE: not every player logged back in", logging.WARNING)
         return "FAILURE"
 

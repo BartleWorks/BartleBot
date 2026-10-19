@@ -65,6 +65,7 @@ class RecoveryHarness:
     _regroup_after_recovery = ClientManager._regroup_after_recovery
     _clients_of = ClientManager._clients_of
     _log_out_for_recovery = ClientManager._log_out_for_recovery
+    _close_for_recovery = ClientManager._close_for_recovery
     recovery_gap_for = ClientManager.recovery_gap_for
     _recovery_gap = ClientManager._recovery_gap
     # _reconnect_clients drives each relaunched window in through these, the same path
@@ -563,39 +564,104 @@ class TestLogOutStrandedFighters:
         machine.force_state.assert_not_called()
         machine.resume.assert_not_called()
 
-    async def test_log_out_closes_the_fighters_as_a_relog_and_waits_until_they_are_queued(
-        self, harness: RecoveryHarness
-    ) -> None:
-        fighter = _live(200, "user2", harness)
+    @staticmethod
+    def _outcomes(harness: RecoveryHarness, by_hwnd: dict[int, str]):
+        """Stands in for relog.log_out_and_in. An abandoned player is queued, as recovery would."""
+        from bartlebot.nodes.utility import relog as relog_node
+
+        async def _log_out_and_in(_machine, client, *, in_battle=False):
+            assert in_battle, "only Esc reaches Quit in a fight"
+            outcome = by_hwnd[client.window_handle]
+            if outcome == relog_node.ABANDONED:
+                username = harness._hwnd_account_map[client.window_handle]
+                asyncio.get_running_loop().call_later(0.01, harness._pending_recovery.__setitem__, 9, username)
+            return outcome
+
+        return patch.object(relog_node, "log_out_and_in", side_effect=_log_out_and_in)
+
+    async def test_esc_quit_logs_the_fighters_out_without_closing_anything(self, harness: RecoveryHarness) -> None:
+        """Seconds rather than a relaunch: the clients stay open, and nothing is queued."""
+        first, second = _live(200, "user2", harness), _live(300, "user3", harness)
+        harness._machine = _make_machine()
+        harness.recovery_gap_for = lambda hwnd: None
+
+        with (
+            self._outcomes(harness, {200: "back", 300: "back"}),
+            patch("bartlebot.clients.client_manager.force_close_client", new_callable=AsyncMock) as close,
+        ):
+            assert await harness._log_out_for_recovery([first, second]) is True
+
+        close.assert_not_awaited()
+        harness._machine.suspend_health_checks_for.assert_called_once_with([200, 300])
+        harness._machine.resume_health_checks_for.assert_called_once_with([200, 300])
+        assert harness._pending_recovery == {}
+
+    async def test_a_player_esc_quit_could_not_log_out_is_closed_and_waited_for(self, harness: RecoveryHarness) -> None:
+        good, stuck = _live(200, "user2", harness), _live(300, "user3", harness)
         harness._machine = _make_machine()
         harness.recovery_gap_for = lambda hwnd: None
 
         async def _close(hwnd, pid=None):
-            asyncio.get_running_loop().call_later(0.01, harness._pending_recovery.__setitem__, 1, "user2")
+            asyncio.get_running_loop().call_later(0.01, harness._pending_recovery.__setitem__, 2, "user3")
             return True
 
         with (
+            self._outcomes(harness, {200: "back", 300: "failed"}),
             patch("bartlebot.clients.client_manager.force_close_client", side_effect=_close) as close,
             patch("bartlebot.clients.client_manager.CLIENT_DETECT_INTERVAL", 0.001),
         ):
-            assert await harness._log_out_for_recovery([fighter]) is True
+            assert await harness._log_out_for_recovery([good, stuck]) is True
 
-        close.assert_awaited_once_with(200, pid=201)
-        harness._machine.suspend_health_checks_for.assert_called_once_with([200])
-        assert 200 in harness._relogging_hwnds
-        assert harness._pending_recovery == {1: "user2"}
+        close.assert_awaited_once_with(300, pid=301)
+        assert harness._relogging_hwnds == {300}
+        harness._machine.resume_health_checks_for.assert_called_once_with([200])
+        assert harness._pending_recovery == {2: "user3"}
 
-    async def test_log_out_closes_nobody_when_one_could_not_come_back(self, harness: RecoveryHarness) -> None:
+    async def test_a_player_abandoned_past_quit_is_waited_for_not_closed(self, harness: RecoveryHarness) -> None:
+        """The relog has handed it to crash recovery already, which closes it; health checks stay off."""
+        lost = _live(200, "user2", harness)
+        harness._machine = _make_machine()
+        harness.recovery_gap_for = lambda hwnd: None
+
+        with (
+            self._outcomes(harness, {200: "abandoned"}),
+            patch("bartlebot.clients.client_manager.force_close_client", new_callable=AsyncMock) as close,
+            patch("bartlebot.clients.client_manager.CLIENT_DETECT_INTERVAL", 0.001),
+        ):
+            assert await harness._log_out_for_recovery([lost]) is True
+
+        close.assert_not_awaited()
+        harness._machine.resume_health_checks_for.assert_called_once_with([])
+        assert harness._pending_recovery == {9: "user2"}
+
+    async def test_nobody_out_when_esc_quit_and_closing_both_fail(self, harness: RecoveryHarness) -> None:
+        stuck = _live(200, "user2", harness)
+        harness._machine = _make_machine()
+        harness.recovery_gap_for = lambda hwnd: None
+
+        with (
+            self._outcomes(harness, {200: "failed"}),
+            patch("bartlebot.clients.client_manager.force_close_client", new_callable=AsyncMock, return_value=False),
+        ):
+            assert await harness._log_out_for_recovery([stuck]) is False
+
+        assert harness._relogging_hwnds == set()
+        harness._machine.resume_health_checks_for.assert_called_with([200])
+
+    async def test_log_out_touches_nobody_when_one_could_not_come_back(self, harness: RecoveryHarness) -> None:
         """Logging out a player recovery cannot log back in would stop the run a team short."""
         first, second = _live(200, "user2", harness), _live(300, "user3", harness)
         harness._machine = _make_machine()
         harness.recovery_gap_for = lambda hwnd: "no stored password" if hwnd == 300 else None
 
-        with patch("bartlebot.clients.client_manager.force_close_client", new_callable=AsyncMock) as close:
+        with (
+            self._outcomes(harness, {}) as log_out,
+            patch("bartlebot.clients.client_manager.force_close_client", new_callable=AsyncMock) as close,
+        ):
             assert await harness._log_out_for_recovery([first, second]) is False
 
+        log_out.assert_not_called()
         close.assert_not_awaited()
-        assert harness._relogging_hwnds == set()
 
 
 # ---------------------------------------------------------------------------

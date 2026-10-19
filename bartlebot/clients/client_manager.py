@@ -1460,20 +1460,27 @@ class ClientManager(QObject):
         return [c for c in self._clients if self._hwnd_account_map.get(c.window_handle) in usernames]
 
     async def _log_out_for_recovery(self, clients: list) -> bool:
-        """Close *clients* so the recovery under way brings them back beside the player it relaunched.
+        """Log *clients* out, so the whole team starts again beside the player recovery relaunched.
 
         For the players left fighting a fight a relaunched player could not get back into,
         usually a dungeon that refuses the port. Fighting on a player short loses fights a
         strategy was written for a full team, and logging out inside a dungeon puts a character
         back at its entrance, where the relaunched player already is.
 
-        Closed the way a relog closes them: the log files the removal as a relog rather than a
-        disconnect, and the health monitor leaves them alone. Then waited on until the client
-        loop has queued every one, so the queue relaunches them as one batch.
+        Esc → Quit first, every player at once (``relog.log_out_and_in``): seconds, and the client
+        is never closed, so it comes back in the world with nothing to relaunch. A player that
+        never got past Quit is still in the fight, and is closed instead, the way a relog closes
+        it: the log files the removal as a relog, and the next pass of the queue relaunches it.
+        One that got past Quit but could not finish has been handed to crash recovery by the
+        relog already. The queue is waited on until every closed player is in it, so they come
+        back as one batch.
 
-        False, closing nothing, when any of them could not be brought back: the fight goes on
-        without the relaunched player rather than the run stopping a team short.
+        False, logging nobody out, when any of them could not be relaunched should it come to
+        that: the fight goes on without the relaunched player rather than the run stopping a
+        team short.
         """
+        from bartlebot.nodes.utility import relog as relog_node  # noqa: PLC0415
+
         machine = self._machine
         for client in clients:
             gap = self.recovery_gap_for(client.window_handle)
@@ -1485,11 +1492,40 @@ class ClientManager(QObject):
                 )
                 return False
 
-        hwnds = [c.window_handle for c in clients]
-        usernames = {self._hwnd_account_map[h] for h in hwnds}
-        machine.suspend_health_checks_for(hwnds)
-        self._relogging_hwnds.update(hwnds)
+        machine.suspend_health_checks_for([c.window_handle for c in clients])
         logger.info("Logging out %d player(s) so the whole team starts again together", len(clients))
+        outcomes = await asyncio.gather(
+            *[relog_node.log_out_and_in(machine, c, in_battle=True) for c in clients],
+            return_exceptions=True,
+        )
+        back = [c for c, outcome in zip(clients, outcomes) if outcome == relog_node.BACK]
+        abandoned = [c for c, outcome in zip(clients, outcomes) if outcome == relog_node.ABANDONED]
+        stuck = [c for c in clients if c not in back and c not in abandoned]
+        # An abandoned player stays flagged until recovery's resume(), as the relog node leaves it.
+        machine.resume_health_checks_for([c.window_handle for c in back])
+        if back:
+            logger.info("%d player(s) logged out of the fight and back in", len(back))
+
+        closed = await self._close_for_recovery(stuck) if stuck else []
+        queued = {self._hwnd_account_map[c.window_handle] for c in [*abandoned, *closed]}
+        if not back and not queued:
+            return False
+
+        # A closed window is only noticed missing on the next _client_loop poll.
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + RECOVERY_BATCH_SETTLE
+        while not queued <= set(self._pending_recovery.values()) and loop.time() < deadline:
+            await asyncio.sleep(CLIENT_DETECT_INTERVAL)
+        return True
+
+    async def _close_for_recovery(self, clients: list) -> list:
+        """Close the players Esc → Quit could not log out, as a relog closes them. Returns the ones that closed.
+
+        One that will not close is still in the fight, and gets its health checks back.
+        """
+        logger.warning("%d player(s) could not log out from the game's menu — closing them instead", len(clients))
+        hwnds = [c.window_handle for c in clients]
+        self._relogging_hwnds.update(hwnds)
         results = await asyncio.gather(
             *[force_close_client(c.window_handle, pid=c.process_id) for c in clients],
             return_exceptions=True,
@@ -1500,16 +1536,9 @@ class ClientManager(QObject):
                 "Client(s) %s would not close; they stay in the fight",
                 ", ".join(f"hwnd={c.window_handle}" for c in survivors),
             )
-            usernames -= {self._hwnd_account_map.get(c.window_handle) for c in survivors}
-        if not usernames:
-            return False
-
-        # A closed window is only noticed missing on the next _client_loop poll.
-        loop = asyncio.get_event_loop()
-        deadline = loop.time() + RECOVERY_BATCH_SETTLE
-        while not usernames <= set(self._pending_recovery.values()) and loop.time() < deadline:
-            await asyncio.sleep(CLIENT_DETECT_INTERVAL)
-        return True
+            self._relogging_hwnds.difference_update(c.window_handle for c in survivors)
+            self._machine.resume_health_checks_for([c.window_handle for c in survivors])
+        return [c for c in clients if c not in survivors]
 
     async def _regroup_after_recovery(self) -> None:
         """Rebuild the in-game group after a recovery, if the user has that enabled.

@@ -62,7 +62,10 @@ class FakeGame:
         crashes_loading: bool = False,
         ignores_play_for: float = 0.0,
         load_seconds: float | None = None,
+        escape_opens: bool = True,
     ):
+        self.escape_opens = escape_opens
+        self.escapes = 0
         self.load_seconds = load_seconds
         self._loading_from = 0.0
         self.screen = "world"
@@ -135,6 +138,14 @@ class FakeGame:
         elif path == MESSAGE_BOX_RIGHT and self.screen == "dialog":
             self.screen = "settings"
 
+    def press_escape(self) -> None:
+        """Esc opens the settings page from the world, in battle or not, and closes it again."""
+        self.escapes += 1
+        if self.screen == "world" and self.escape_opens:
+            self.screen = "settings"
+        elif self.screen == "settings":
+            self.screen = "world"
+
     def press_play(self) -> None:
         self.plays += 1
         if self.screen != "char_select":
@@ -182,6 +193,9 @@ def games(monkeypatch):
     async def _press_play(hwnd):
         registry[hwnd].press_play()
 
+    async def _press_escape(hwnd):
+        registry[hwnd].press_escape()
+
     async def _text(client, path):
         return registry[client.window_handle].text(list(path))
 
@@ -193,6 +207,7 @@ def games(monkeypatch):
     monkeypatch.setattr(nh, "get_text_by_path", _text)
     monkeypatch.setattr(auto_select, "at_character_select", _at_char_select)
     monkeypatch.setattr(auto_select, "press_character_select_play", _press_play)
+    monkeypatch.setattr(auto_select, "press_escape", _press_escape)
     # Cadences, never ceilings — the fakes count polls, not seconds.
     monkeypatch.setattr(relog_node, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(relog_node, "TRIGGER_TIMEOUT", 0.2)
@@ -322,6 +337,35 @@ class TestFailurePaths:
         monkeypatch.setattr(nh, "is_visible_by_path", _never_visible)
         assert await relog_node.run(machine, clients, {}) == "FAILURE"
         assert any("spellbook did not open" in msg for msg, _ in machine.logs)
+
+
+class TestInBattle:
+    """Crash recovery logs a team out of a fight with Esc: the spellbook will not open in battle."""
+
+    async def test_esc_opens_the_settings_page_and_the_player_comes_back(self, machine, games):
+        (client,), (game,) = games({})
+        assert await relog_node.log_out_and_in(machine, client, in_battle=True) == relog_node.BACK
+        assert game.escapes == 1
+        assert game.clicks == [SETTINGS_QUIT_BUTTON_PATH]  # never the spellbook
+        assert game.screen == "world"
+
+    async def test_the_dungeon_warning_is_confirmed_on_this_route_too(self, machine, games):
+        (client,), (game,) = games({"quit_dialog": (DUNGEON_LOGOUT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.log_out_and_in(machine, client, in_battle=True) == relog_node.BACK
+        assert MESSAGE_BOX_CENTER in game.clicks
+
+    async def test_esc_that_opens_nothing_fails_with_the_player_still_in_the_world(self, machine, games):
+        (client,), (game,) = games({"escape_opens": False})
+        assert await relog_node.log_out_and_in(machine, client, in_battle=True) == relog_node.FAILED
+        assert game.escapes == 2  # pressed again only once the first showed nothing
+        assert game.clicks == []
+        assert machine.abandoned == []
+
+    async def test_past_quit_a_stuck_load_is_still_handed_to_recovery(self, machine, games):
+        machine.recovers = True
+        (client,), (_game,) = games({"hangs_loading": True})
+        assert await relog_node.log_out_and_in(machine, client, in_battle=True) == relog_node.ABANDONED
+        assert machine.abandoned
 
 
 class TestPastQuit:

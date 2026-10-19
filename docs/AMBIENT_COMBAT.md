@@ -40,7 +40,9 @@ design around a guess: ask.
   up. Flee (the center button) flees with no confirmation; Return (the right one) puts the player
   back to choosing cards.
 - **Logging out in battle** works through Esc → Quit, but not while "You Are Idle" is up, and
-  not through the spellbook, which will not open in battle (the relog node's route). A player
+  not through the spellbook, which will not open in battle (the relog node's route). Esc opens
+  the spellbook's own settings page at any point in a fight, so Quit is the same
+  `SETTINGS_QUIT_BUTTON_PATH`; then come a loading screen and character select. A player
   that logs back in beside a mob is pulled into a fight on arrival.
 
 ## Getting the node out of the way
@@ -207,11 +209,14 @@ for anyone still in battle. The bot goes to its recovery state afterwards either
   to share the fight's realm, else by port.
 - **If it cannot, everyone still in the fight logs out.** That is usually a dungeon that refuses
   the port, with the relaunched player standing at its entrance. The session stops fighting at
-  once and hands those players back (`SessionEnd.log_out`). Recovery closes them the way a relog
-  does, so the log calls it a relog and the health monitor leaves them alone. The next pass of the
-  queue relaunches them as one batch. Logging out inside a dungeon puts a character back at its
-  entrance, so the whole team comes back together there and the bot resumes at its recovery
-  state. This happens once per recovery: the second settle fights whatever it finds.
+  once and hands those players back (`SessionEnd.log_out`). Recovery logs them all out at once
+  with Esc → Quit (`relog.log_out_and_in(..., in_battle=True)`), which takes seconds and closes
+  nothing. A player that never gets past Quit is still in the fight. It is closed instead, the way
+  a relog closes it, and the next pass of the queue relaunches it. A player past Quit that cannot
+  finish has already been handed to crash recovery by the relog code, as the relog node does.
+  Logging out inside a dungeon puts a character back at its entrance, so the whole team comes back
+  together there and the bot resumes at its recovery state. This happens once per recovery: the
+  second settle fights whatever it finds.
 - **A player recovery could not log back in is never logged out.** If any of them has a recovery
   gap (no account, no stored password), nobody is closed, and the fight goes on without the
   relaunched player.
