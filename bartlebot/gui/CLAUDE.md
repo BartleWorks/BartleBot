@@ -1205,6 +1205,11 @@ everything after it. It never asks for typed text. A rebuild runs inside a combo
 signal, so the old rows are `takeWidget()`-ed and `deleteLater()`-ed, never replaced by
 `setWidget`, which deletes them at once.
 
+**A bot card's menu has Export… and Delete Bot…** (#268). Delete is grayed out with the reason on an
+Official bot, and refused while the bot is open. Nothing links a bot, a fork included (`forked_from` is
+provenance only), so the confirmation names no other bot; it counts the Bot Combat Strategies that go with it,
+and the option values, accepted sales and active pick keyed on its id go too (`content/bot_delete.py`).
+
 **An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
 way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,
 and the controller offers Make my own copy (`gui/dialogs/make_copy_dialog.py`). A new way into
