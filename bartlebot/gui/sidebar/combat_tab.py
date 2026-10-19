@@ -134,7 +134,15 @@ from bartlebot.content import bot_roots
 from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
-from bartlebot.gui.combat_strategies.dialog import NONE_LABEL, NONE_TOOLTIP, CombatStrategyDialog, DialogMode
+from bartlebot.gui.combat_strategies.dialog import (
+    NONE_LABEL,
+    NONE_TOOLTIP,
+    CombatStrategyDialog,
+    DialogMode,
+    FlowStep,
+)
+from bartlebot.gui.dialogs.choose_fights_dialog import TITLE as ADD_FLOW_TITLE
+from bartlebot.gui.dialogs.choose_fights_dialog import ChooseFightsDialog, FightsAnswer
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -161,6 +169,7 @@ from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
+from bartlebot.gui.widgets.labels.step_heading import Step
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
@@ -197,6 +206,16 @@ _ADD_STRATEGY = "Add another duel strategy"
 #: the Bot Combat Strategy banner already does, two cards up.
 _ADD_EXISTING = "Select existing duel strategy…"
 _ADD_CREATED = "Create new duel strategy…"
+#: The add flow's two steps (#272): the strategy, then its fights. Each heads itself "Step N
+#: of 2", and the first one's commit says where it goes next.
+_ADD_NEXT = "Next: choose fights"
+_PICK_HEADING = "Choose the duel strategy"
+_MAKE_HEADING = "Make the duel strategy"
+_STEP_ONE_NEXT = "Next, you'll choose the fights that use it."
+_COPY_NOTE = "It starts as a copy of the default, '{name}'. " + _STEP_ONE_NEXT
+_FIGHTS_HEADING = "Which fights use '{name}'?"
+_FIGHTS_NOTE = "Each fight you check moves to it from the strategy it uses now."
+_KEPT_NOTE = " '{name}' is saved with this bot's strategies either way."
 
 #: Verb labels for the Bot Combat Strategy banner, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
@@ -1151,10 +1170,6 @@ class CombatTab(QWidget):
         # dropped if it never ends up linked)
         self._state_bindings: dict[str, StateAssignment] = {}
         self._state_panels: dict[str, StrategyPanel] = {}
-        # A card made by the add-card and not yet given any fights. It exists only so the
-        # membership popup has something to anchor to, and it is dropped unsaved if that
-        # popup closes with nothing chosen — see ``_on_add_strategy``.
-        self._pending_panel: StrategyPanel | None = None
         # The specialized cards' order, top to bottom: the user's, set by dragging, and
         # kept on disk as the order of ``state_assignments``. Identity, not equality --
         # two unlinked placeholders compare equal. See ``_set_bindings``.
@@ -1192,6 +1207,8 @@ class CombatTab(QWidget):
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         # Sections fold and decks come and go, each of which can tip the tab into scrolling.
         reserve_scrollbar_gutter(scroll_area)
+        # Kept to bring a card the add flow made into view (``_show_added``).
+        self._scroll_area = scroll_area
 
         content = QWidget()
         self._content_layout = QVBoxLayout(content)
@@ -1484,8 +1501,6 @@ class CombatTab(QWidget):
         self._default_panel.set_player_colors(keys, labels)
         for panel in self._group_panels():
             panel.set_player_colors(keys, labels)
-        if self._pending_panel is not None:
-            self._pending_panel.set_player_colors(keys, labels)
 
     def _player_color_keys(self) -> tuple[list[int | None], list[str]]:
         """A palette slot and a display name per player slot, both possibly empty.
@@ -1640,6 +1655,9 @@ class CombatTab(QWidget):
         allow_none: bool = True,
         none_label: str = NONE_LABEL,
         none_tooltip: str = NONE_TOOLTIP,
+        flow: FlowStep | None = None,
+        start_new: bool = False,
+        start_from: str | None = None,
     ) -> CombatStrategyDialog | None:
         """Run the combat strategy dialog. Returns it if accepted, else None.
 
@@ -1660,6 +1678,8 @@ class CombatTab(QWidget):
 
         The library view — **File → Combat Strategies**, the default *mode* — gets no Bot
         Combat Strategy at all, even with a bot loaded: it shows and edits the library alone.
+
+        *flow*, *start_new* and *start_from* are the add flow's (#272), passed through.
         """
         library_only = mode is DialogMode.LIBRARY or self._config is None
         ws = StrategyWorkingSet.from_store(
@@ -1680,6 +1700,9 @@ class CombatTab(QWidget):
             bot_name=self._bot_name_lookup(),
             deck_link=self._deck_link,
             parent=self,
+            flow=flow,
+            start_new=start_new,
+            start_from=start_from,
         )
         accepted = bool(dlg.exec())
         if not accepted:
@@ -1870,8 +1893,6 @@ class CombatTab(QWidget):
             if widget is not None and widget not in (self._default_panel, self._add_card):
                 widget.deleteLater()
         self._state_panels.clear()
-        # Any half-made card was just deleted with the rest.
-        self._pending_panel = None
 
         self._strategies_section.setVisible(self._bcs is not None)
         # First, and always: everything below it is an exception to it.
@@ -1889,7 +1910,6 @@ class CombatTab(QWidget):
 
         for group in configured:
             panel = self._make_group_panel(group.assignment, exposed, group.states)
-            panel.membership_changed.connect(partial(self._on_membership_changed, group.assignment))
             self._strategies_layout.addWidget(panel)
             # Keyed per state, so every fight in a group resolves to its panel.
             for state in group.states:
@@ -1908,13 +1928,7 @@ class CombatTab(QWidget):
     def _make_group_panel(
         self, assignment: StateAssignment, exposed: list[StateModel], states: list[StateModel]
     ) -> StrategyPanel:
-        """One specialized card, wired to everything but its membership.
-
-        Membership is left to the caller because the two callers want different things
-        from it: a rebuilt card commits straight through ``_on_membership_changed``,
-        while a card the add-card just made has to be dropped again if its popup closes
-        empty.
-        """
+        """One specialized card, wired to the tab."""
         panel = StrategyPanel(
             STATE_INHERIT_LABEL,
             STATE_INHERIT_META,
@@ -1931,6 +1945,8 @@ class CombatTab(QWidget):
         panel.set_player_colors(*self._player_colors)
         panel.pick_requested.connect(partial(self._on_pick_duel, panel))
         panel.edit_requested.connect(partial(self._on_edit_strategy, panel))
+        panel.remove_requested.connect(partial(self._on_remove_card, panel))
+        panel.membership_changed.connect(partial(self._on_membership_changed, assignment))
         return panel
 
     # ------------------------------------------------------------------
@@ -1972,20 +1988,21 @@ class CombatTab(QWidget):
 
         A menu of two, because the strategy can already exist or be made for these fights
         (#118): **Select existing duel strategy…** opens the picker, and **Create new duel
-        strategy…** opens the Bot Combat Strategy editor with nothing selected, so New and
-        Duplicate are both there. GitHub's sub-issues are the shape, "Create sub-issue"
-        beside "Add existing issue"; so is the assignment card's own menu, which mixes
-        picking a Player Strategy with "Custom DSL…".
+        strategy…** opens the Bot Combat Strategy editor on a new strategy. GitHub's
+        sub-issues are the shape, "Create sub-issue" beside "Add existing issue"; so is the
+        assignment card's own menu, which mixes picking a Player Strategy with "Custom DSL…".
 
-        Either way it is two dialogs, chained, and the chaining is what keeps the
-        invariant that a card on screen is a card in the file. A ``StateAssignment`` with
-        no ``fights`` forms no group, so it would draw no card on the next rebuild, and
-        ``_prune_orphans`` drops it outright on the next save: an empty card cannot be left
-        lying about for the user to fill in later, because nothing would bring it back. So
-        the strategy comes first, the card is made, its own membership popup opens on it
-        immediately, and the card is dropped again if that popup closes with nothing
-        chosen. A strategy made for it is kept regardless: it is in the Bot Combat Strategy, and Save
-        put it there.
+        Either way it is two dialogs, chained, and each says so (#272): "Step 1 of 2" heads
+        the strategy dialog, whose commit is **Next: choose fights**, and "Step 2 of 2" the
+        fights dialog, with **Add**, **Back** and **Cancel**. The first testers could not
+        tell they were in the middle of anything: the strategy dialog named no purpose, and
+        the fights were asked in a popup on a card that had just appeared, which a click
+        elsewhere dismissed, dropping the card without a word.
+
+        No card exists until the fights are chosen. A ``StateAssignment`` with no ``fights``
+        forms no group, so a card on screen must be a card in the file, and the card is made
+        only on Add, then lit so the user sees where it landed. A strategy made for it is
+        kept regardless: it is in the Bot Combat Strategy, and step 1 saved it there.
 
         The pill route on the default card is the other way in, and stays the shorter one
         for a single fight. This is the one that pays when several fights are to share.
@@ -2000,57 +2017,136 @@ class CombatTab(QWidget):
 
     def _on_add_existing(self) -> None:
         """The add-card's first item: pick a strategy that already exists."""
-        if self._config is None or self._bcs is None or not self._editable:
-            return
-        # No "none" option: picking nothing here would make a card that says nothing,
-        # which is what the default card already is.
-        dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PICK, allow_none=False)
-        if dlg is not None and dlg.selected_id():
-            self._start_pending_card(dlg.selected_id())
+        self._run_add_flow(create=False)
 
     def _on_add_created(self) -> None:
-        """The add-card's second item: make a strategy for these fights, in the Bot Combat Strategy.
+        """The add-card's second item: make a strategy for these fights, in the Bot Combat Strategy."""
+        self._run_add_flow(create=True)
 
-        Its editor opens with nothing selected. On Save, the new card takes
-        whatever is selected — made there, or not — and goes on to its fights.
-        """
+    def _run_add_flow(self, *, create: bool) -> None:
+        """Step 1, the strategy; step 2, its fights; Back from 2 returns to 1 on the same strategy."""
         if self._config is None or self._bcs is None or not self._editable:
             return
-        dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.BOT_STRATEGY)
-        if dlg is not None and dlg.selected_id():
-            self._start_pending_card(dlg.selected_id())
+        chosen: str | None = None
+        made: set[str] = set()
+        while True:
+            dlg = self._add_flow_strategy_step(create, chosen)
+            if dlg is None or not dlg.selected_id():
+                return
+            chosen = dlg.selected_id()
+            if dlg.selected_was_created():
+                made.add(chosen)
+            answer, fights = self._add_flow_fights_step(chosen, chosen in made)
+            if answer is FightsAnswer.BACK:
+                continue
+            if answer is FightsAnswer.ADD and fights:
+                self._add_card_for(chosen, fights)
+            return
 
-    def _start_pending_card(self, chosen: str) -> None:
-        """Make the add flow's card for *chosen*, and ask for its fights."""
+    def _add_flow_strategy_step(self, create: bool, current_id: str | None) -> CombatStrategyDialog | None:
+        """Step 1. Making one opens on a new strategy the first time, and on it again after Back."""
+        if not create:
+            flow = FlowStep(ADD_FLOW_TITLE, Step(1, 2, _PICK_HEADING, _STEP_ONE_NEXT), _ADD_NEXT)
+            # No "none" option: picking nothing here would make a card that says nothing,
+            # which is what the default card already is.
+            return self.open_combat_dialog(
+                kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=current_id, allow_none=False, flow=flow
+            )
+        source = self._starter_source() if current_id is None else None
+        note = _COPY_NOTE.format(name=source.name) if source is not None else _STEP_ONE_NEXT
+        flow = FlowStep(ADD_FLOW_TITLE, Step(1, 2, _MAKE_HEADING, note), _ADD_NEXT)
+        return self.open_combat_dialog(
+            kind=StrategyKind.DUEL,
+            mode=DialogMode.BOT_STRATEGY,
+            current_id=current_id,
+            flow=flow,
+            start_new=current_id is None,
+            start_from=source.id if source is not None else None,
+        )
+
+    def _starter_source(self) -> DuelCombatStrategy | None:
+        """What a strategy made by the add flow starts as a copy of: the default card's.
+
+        The Bot Combat Strategy's own default when it has one, else the Solo or Team default
+        that answers for the clients connected. None when that is two different duels (with
+        nobody connected), or none can be read: the new strategy then starts empty.
+        """
+        if self._bcs is None:
+            return None
+        if self._bcs.default_strategy_id:
+            return self._lookup().duel(self._bcs.default_strategy_id)
+        try:
+            answers = defaults_in_use(self._clients)
+        except Exception:
+            logger.exception("Could not work out which default a new duel strategy should start from")
+            return None
+        duels = {a.duel.id: a.duel for a in answers if a.duel is not None}
+        return next(iter(duels.values())) if len(duels) == 1 else None
+
+    def _add_flow_fights_step(self, chosen: str, made: bool) -> tuple[FightsAnswer, list[str]]:
+        """Step 2: ask which fights use *chosen*. *made* says it was made in step 1, and is kept either way."""
+        dcs = self._lookup().duel(chosen)
+        name = dcs.name if dcs is not None else MISSING_LABEL
+        note = _FIGHTS_NOTE + (_KEPT_NOTE.format(name=name) if made else "")
+        exposed = exposed_combat_states(self._config) if self._config is not None else []
+        dlg = ChooseFightsDialog(
+            Step(2, 2, _FIGHTS_HEADING.format(name=name), note), self._fight_sections(exposed), parent=self
+        )
+        dlg.exec()
+        return dlg.answer, dlg.selection()
+
+    def _add_card_for(self, chosen: str, fights: list[str]) -> None:
+        """The add flow's last act: these fights now use *chosen*, saved, and the card shown."""
         if self._config is None:
             return
-        exposed = exposed_combat_states(self._config)
         assignment = StateAssignment(duel_combat_strategy_id=chosen)
-        panel = self._make_group_panel(assignment, exposed, [])
-        panel.membership_changed.connect(partial(self._on_pending_membership, assignment, panel))
-        # Where the rebuild would have put it: above the add-card, below the rest.
-        self._strategies_layout.insertWidget(self._strategies_layout.count() - 1, panel)
-        self._pending_panel = panel
-        # Not a card in the order until it has fights: see ``_on_pending_membership``.
-        panel.grip.set_locked(True, "Choose this strategy's fights first")
-        # Deferred a turn: the popup positions itself against the button's place on
-        # screen, which the layout has not given it yet on the card inserted just above.
-        QTimer.singleShot(0, panel.open_fights_popup)
-
-    def _on_pending_membership(self, assignment: StateAssignment, panel: StrategyPanel, chosen_ids: list) -> None:
-        """Commit the add flow, or undo it — see ``_on_add_strategy``."""
-        if self._pending_panel is not panel:
-            return
-        self._pending_panel = None
-        if not chosen_ids or self._config is None:
-            self._strategies_layout.removeWidget(panel)
-            panel.deleteLater()
-            return
-        # Moves each chosen fight out of whatever holds it, the default card included.
-        apply_membership(self._state_bindings, assignment, list(chosen_ids))
+        # Moves each chosen fight out of whatever holds it, the default card included, and
+        # joins a card already naming *chosen* rather than drawing a second one beside it.
+        apply_membership(self._state_bindings, assignment, list(fights))
         self._regroup_bindings()
         self._rebuild_state_assignments()
         self._save_bcs()
+        self._show_added(fights[0])
+
+    def _show_added(self, state_id: str) -> None:
+        """Bring the card holding *state_id* into view and light it, so the user sees where it landed."""
+        panel = self._state_panels.get(state_id)
+        if panel is None:
+            return
+        # Deferred a turn: the card was made this turn, and has no place in the layout yet.
+        QTimer.singleShot(0, partial(self._scroll_to_card, panel))
+        panel.highlight()
+
+    def _scroll_to_card(self, panel: StrategyPanel) -> None:
+        # Only a card still on the tab: anything in the turn between may have rebuilt them.
+        if panel in self._group_panels():
+            self._scroll_area.ensureWidgetVisible(panel)
+
+    def _on_remove_card(self, panel: StrategyPanel) -> None:
+        """The ✕ on a specialized card: give its fights back to the default card (#273).
+
+        The same act as unchecking every fight in its "Fights…" popup, which was the only
+        way to do it and which no tester found. Asked first, since putting the card back
+        is the add-card, a strategy and every fight again. The strategy itself is kept --
+        only the card goes -- and the question says so.
+        """
+        if not self._editable:
+            return
+        binding = panel.binding
+        if binding is None or self._config is None:
+            return
+        fights = panel.titles()
+        named = f"'{fights[0]}'" if len(fights) == 1 else f"these {len(fights)} fights"
+        answer = QMessageBox.question(
+            self,
+            "Remove Duel Combat Strategy",
+            f"Stop using '{self._describe_binding_of(binding)}' for {named}?\n\n"
+            "They will use the default strategy above. The strategy itself is kept.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self._on_membership_changed(binding, [])
 
     def _on_strategies_reordered(self, order: list[int]) -> None:
         """A drag of the specialized cards has settled: keep the order, and save it.

@@ -26,7 +26,9 @@ from tests.strategies.fight import (
     EPIC,
     FAIRY,
     FEINT,
+    FIRE_PRISM,
     MASS_FEINT,
+    MASS_FIRE_PRISM,
     MASS_HEX,
     POTENT_TRAP,
     SHARPENED_BLADE,
@@ -220,6 +222,34 @@ async def test_a_buff_support_never_heals(support_id: str, health: int):
 @pytest.mark.parametrize("support_id", SUPPORT_IDS)
 async def test_a_buff_support_never_shields(support_id: str):
     assert (await cast(shipped_dsl(support_id), as_p2(TOWER_SHIELD, SIRENS))).passed
+
+
+# ---------------------------------------------------------------------------
+# Prisms (#274)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_casts_a_prism_on_the_boss(support_id: str):
+    assert await cast(shipped_dsl(support_id), as_p2(FIRE_PRISM, SIRENS)) == Turn("Fire Prism", "Boss")
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_casts_a_mass_prism_in_a_mob_fight(support_id: str):
+    fight = as_p2(MASS_FIRE_PRISM, SIRENS, enemies=[MOB, MOB])
+
+    assert (await cast(shipped_dsl(support_id), fight)).card == "Mass Fire Prism"
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_casts_a_prism_after_the_global_and_before_attenuate(support_id: str):
+    assert (await cast(shipped_dsl(support_id), as_p2(FIRE_PRISM, WYLDFIRE))).card == "Wyldfire"
+    assert (await cast(shipped_dsl(support_id), as_p2(ATTENUATE, FIRE_PRISM))).card == "Fire Prism"
+
+
+@pytest.mark.parametrize("support_id", SUPPORT_IDS)
+async def test_a_support_casts_a_trap_before_a_prism(support_id: str):
+    assert (await cast(shipped_dsl(support_id), as_p2(FIRE_PRISM, STORM_TRAP))).card == "Storm Trap"
 
 
 # ---------------------------------------------------------------------------
