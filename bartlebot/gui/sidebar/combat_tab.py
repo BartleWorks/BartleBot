@@ -232,6 +232,8 @@ _NO_DECK = "No deck saved"
 _IMPORT_ALL = "Import all"
 _APPLY_ALL = "Apply all"
 _DECK_BUSY = "Working on a deck — wait for it to finish"
+#: Why every deck verb waits while the bot has no Bot Combat Strategy: decks are stored in one.
+_NO_STRATEGY_TIP = "Create a Bot Combat Strategy first — decks are saved in it"
 
 
 class _DeckCard(CardFrame):
@@ -269,6 +271,7 @@ class _DeckCard(CardFrame):
         self._slot = slot
         self._deck: DeckData | None = None
         self._editable = True
+        self._has_strategy = True
         self._has_client = False
         # A deck import or apply is running somewhere in the section. Every deck verb waits
         # for it, because two jobs on one client drive the same deck window at once.
@@ -409,6 +412,11 @@ class _DeckCard(CardFrame):
         self._editable = editable
         self._reapply_verb_states()
 
+    def set_has_strategy(self, has_strategy: bool) -> None:
+        """Whether the bot has a Bot Combat Strategy to hold the deck. Without one every verb waits."""
+        self._has_strategy = has_strategy
+        self._reapply_verb_states()
+
     def set_has_client(self, has_client: bool) -> None:
         """Whether a game client is hooked for this slot -- what Import and Apply need."""
         self._has_client = has_client
@@ -512,6 +520,8 @@ class _DeckCard(CardFrame):
         """
         if not self._editable:
             return LOCKED
+        if not self._has_strategy:
+            return _NO_STRATEGY_TIP
         if self._busy:
             return _DECK_BUSY
         if not self._has_client:
@@ -521,6 +531,8 @@ class _DeckCard(CardFrame):
     def _apply_tooltip(self) -> str:
         if not self._editable:
             return LOCKED
+        if not self._has_strategy:
+            return _NO_STRATEGY_TIP
         if self._busy:
             return _DECK_BUSY
         if not self._has_client:
@@ -530,7 +542,7 @@ class _DeckCard(CardFrame):
         return "Push the saved deck to this game client now"
 
     def _reapply_verb_states(self) -> None:
-        ready = self._editable and self._has_client and not self._busy
+        ready = self._editable and self._has_strategy and self._has_client and not self._busy
         for label, enabled, tooltip in (
             (_IMPORT_DECK, ready, self._import_tooltip()),
             (_APPLY_DECK, ready and self.has_deck, self._apply_tooltip()),
@@ -543,6 +555,16 @@ class _DeckCard(CardFrame):
         self.setToolTip("" if self._editable else LOCKED)
         if self.grip is not None:
             self.grip.set_locked(not self._editable or self._busy, LOCKED if not self._editable else _DECK_BUSY)
+
+    def _verb_block_reason(self, verb: CardVerb) -> str | None:
+        """The menu's verbs write the Bot Combat Strategy, so they wait as the face's do."""
+        if not self._editable:
+            return LOCKED
+        if not self._has_strategy:
+            return _NO_STRATEGY_TIP
+        if self._busy and verb.label in (_IMPORT_DECK, _APPLY_DECK):
+            return _DECK_BUSY
+        return None
 
     def _refuses_activation(self) -> bool:
         """Nothing to unfold on a slot with no deck, so the body has no verb there."""
@@ -592,6 +614,7 @@ class _PlayerDecksSection(SidebarSection):
         self._cards: list[_DeckCard] = []
         self._client_count = 0
         self._editable = True
+        self._has_strategy = True
         self._busy = False
 
         all_row = QHBoxLayout()
@@ -688,6 +711,13 @@ class _PlayerDecksSection(SidebarSection):
             card.set_editable(editable)
         self._reapply_all_states()
 
+    def set_has_strategy(self, has_strategy: bool) -> None:
+        """Whether the bot has a Bot Combat Strategy for the decks to live in."""
+        self._has_strategy = has_strategy
+        for card in self._cards:
+            card.set_has_strategy(has_strategy)
+        self._reapply_all_states()
+
     def set_client_count(self, count: int) -> None:
         self._client_count = count
         for card in self._cards:
@@ -707,10 +737,12 @@ class _PlayerDecksSection(SidebarSection):
         Apply all needs a saved deck in at least one *hooked* slot: a deck saved for P4
         with two clients hooked has nowhere to go, and the controller skips it.
         """
-        ready = self._editable and not self._busy and self._client_count > 0
+        ready = self._editable and self._has_strategy and not self._busy and self._client_count > 0
         any_deck = any(card.has_deck for card in self._cards if card.slot <= self._client_count)
         if not self._editable:
             import_tip = apply_tip = LOCKED
+        elif not self._has_strategy:
+            import_tip = apply_tip = _NO_STRATEGY_TIP
         elif self._busy:
             import_tip = apply_tip = _DECK_BUSY
         elif self._client_count == 0:
@@ -1059,6 +1091,9 @@ class _BotStrategyBanner(CardFrame):
                 self.defaults_requested.emit,
             ),
         ]
+
+    def _verb_block_reason(self, verb: CardVerb) -> str | None:
+        return None if self._editable else LOCKED
 
     def _refuses_activation(self) -> bool:
         """A body click picks, and there is nothing to pick between until one exists."""
@@ -1708,6 +1743,7 @@ class CombatTab(QWidget):
 
     def _refresh_deck_summaries(self) -> None:
         decks = self._bcs.player_decks if self._bcs else {}
+        self._decks_section.set_has_strategy(self._bcs is not None)
         self._decks_section.refresh(decks)
 
     def _on_save_deck_to_library(self, slot: int) -> None:

@@ -51,6 +51,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     _NEW_BCS,
     _NO_DECK,
     _NO_STRATEGY_LABEL,
+    _NO_STRATEGY_TIP,
     _RENAME_BCS,
     CombatTab,
     _BotStrategyBanner,
@@ -1770,6 +1771,37 @@ def test_the_all_buttons_name_the_run_lock(qapp):
     assert not section.import_all_button.isEnabled()
     assert not section.apply_all_button.isEnabled()
     assert section.import_all_button.toolTip() == LOCKED
+
+
+def test_every_deck_verb_waits_with_no_bot_combat_strategy(qapp):
+    section = _PlayerDecksSection()
+    section.set_client_count(2)
+    section.refresh({1: DeckData(normal={"Card": 1})})
+    section.set_has_strategy(False)
+
+    assert not section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert section.import_all_button.toolTip() == _NO_STRATEGY_TIP
+    card = section.card(1)
+    for label in (_IMPORT_DECK, _APPLY_DECK):
+        assert not card.action_button(label).isEnabled()
+        assert card.action_button(label).toolTip() == _NO_STRATEGY_TIP
+    assert all(card._verb_block_reason(verb) == _NO_STRATEGY_TIP for verb in card._verbs())
+
+    section.set_has_strategy(True)
+    assert section.import_all_button.isEnabled()
+    assert all(card._verb_block_reason(verb) is None for verb in card._verbs())
+
+
+def test_a_locked_card_grays_its_menu_verbs_too(qapp):
+    card = _DeckCard(1)
+    card.set_deck(DeckData(normal={"Card": 1}))
+    card.set_editable(False)
+
+    assert all(card._verb_block_reason(verb) == LOCKED for verb in card._verbs())
+    menu = card._build_verbs_menu()
+    assert menu is not None
+    assert not any(action.isEnabled() for action in menu.actions() if not action.isSeparator())
 
 
 def test_the_all_buttons_reach_the_tab(qapp):
