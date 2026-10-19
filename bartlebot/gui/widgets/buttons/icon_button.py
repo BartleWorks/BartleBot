@@ -116,6 +116,7 @@ class IconButton(ThemedMixin, QPushButton):
     def setEnabled(self, enabled: bool) -> None:  # noqa: N802 - Qt override
         was = self.isEnabled()
         super().setEnabled(enabled)
+        self.setCursor(Qt.CursorShape.PointingHandCursor if enabled else Qt.CursorShape.ArrowCursor)
         if enabled != was:
             self.refresh_theme_styles()
 

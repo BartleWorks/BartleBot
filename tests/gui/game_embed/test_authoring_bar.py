@@ -75,3 +75,17 @@ def test_a_divider_sits_between_each_group_and_nowhere_else(qapp):
     within = left(groups[1][1]) - right(groups[1][0])
     across = left(groups[1][0]) - right(groups[0][-1])
     assert across > within
+
+
+def test_a_disabled_button_says_why_and_every_button_has_a_tooltip(qapp):
+    bar = AuthoringBar()
+    for action in AuthoringAction:
+        if action in bar._buttons:
+            assert bar.button(action).toolTip()
+    # No clients: everything is disabled, and says what is needed.
+    assert "Unavailable" in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
+    assert "two" in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
+    bar.set_state(speed_on=False, combat_on=False, busy=False, run_active=True, clients=2, hotkeys={})
+    assert "bot is running" in bar.button(AuthoringAction.TOGGLE_SPEED).toolTip()
+    bar.set_state(speed_on=False, combat_on=False, busy=False, run_active=False, clients=2, hotkeys={})
+    assert "Unavailable" not in bar.button(AuthoringAction.XYZ_SYNC).toolTip()

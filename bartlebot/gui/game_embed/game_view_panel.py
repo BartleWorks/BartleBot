@@ -95,6 +95,15 @@ def authoring_enabled(action: AuthoringAction, *, clients: int, run_active: bool
     return clients >= 1
 
 
+def authoring_disabled_reason(action: AuthoringAction, *, run_active: bool, busy: bool) -> str:
+    """Why *action*'s button is disabled, for its tooltip. Only asked of a disabled button."""
+    if run_active:
+        return "a bot is running"
+    if action in (AuthoringAction.XYZ_SYNC, AuthoringAction.TP_TO_FOCUSED):
+        return "another move is in progress" if busy else "needs at least two connected clients"
+    return "needs a connected client"
+
+
 class AuthoringBar(ThemedMixin, QWidget):
     """The authoring utilities as icon buttons, in the middle of Bar A (#81, #85).
 
@@ -170,8 +179,12 @@ class AuthoringBar(ThemedMixin, QWidget):
         for action, btn in self._buttons.items():
             is_on = on.get(action, False)
             btn.set_tint(IconTint.ACCENT if is_on else IconTint.DEFAULT)
-            btn.setEnabled(is_on or authoring_enabled(action, clients=clients, run_active=run_active, busy=busy))
-            btn.setToolTip(authoring_tooltip(action, hotkeys.get(action.value, ""), on=is_on))
+            enabled = is_on or authoring_enabled(action, clients=clients, run_active=run_active, busy=busy)
+            btn.setEnabled(enabled)
+            tip = authoring_tooltip(action, hotkeys.get(action.value, ""), on=is_on)
+            if not enabled:
+                tip = f"{tip}\n(Unavailable: {authoring_disabled_reason(action, run_active=run_active, busy=busy)})"
+            btn.setToolTip(tip)
 
 
 def _side_policy() -> QSizePolicy:
