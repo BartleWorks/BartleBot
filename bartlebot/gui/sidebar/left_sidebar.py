@@ -385,8 +385,9 @@ class LeftSidebar(QTabWidget):
         # structure — it simply is not one of the tabs Edit mode offers.
 
     def set_bot_running(self, running: bool) -> None:
-        """Lock the combat tab while the bot is actively running, and start or end the run's variable values."""
+        """Lock the combat tab and the option values while the bot is actively running, and start or end the run's variable values."""
         self.combat_tab.set_editable(not running)
+        self.option_values.set_locked(running)
         if running:
             self.variable_values.run_started()
         else:

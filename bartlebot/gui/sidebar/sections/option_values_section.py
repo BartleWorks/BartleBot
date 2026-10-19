@@ -75,6 +75,7 @@ from bartlebot.gui.sidebar.option_gutter import (
     keep_slot_when_hidden,
 )
 from bartlebot.gui.sidebar.sidebar_section import HeadingAction, SidebarSection, field_label
+from bartlebot.gui.sidebar.strategy_panel import LOCKED
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.toggle_switch import ToggleSwitch
 from bartlebot.gui.widgets.inputs.option_widgets import (
@@ -202,6 +203,8 @@ class OptionValuesSection(SidebarSection):
         self._group_of: dict[str, str] = {}
         self._option_specs: dict | None = None
         self._get_clients: Callable[[], list] = lambda: []
+        # A bot is running: values are read at run start, so an edit now would do nothing.
+        self._locked = False
         self._show_descriptions = self._read_show_descriptions()
 
         outer = QVBoxLayout()
@@ -259,6 +262,34 @@ class OptionValuesSection(SidebarSection):
         is gated on the canvas being in Edit mode.  The controls that are gated —
         add, edit, delete a declaration — live in ``OptionsSection``.
         """
+
+    def set_locked(self, locked: bool) -> None:
+        """Hold every value while a bot runs, with the reason as each row's tooltip.
+
+        Not ``set_editable``, which is the canvas's Edit mode: a run reads most options
+        once, at its start, so a mid-run change would give no sign that it did nothing.
+        The description switches and the app-settings link stay live, since they edit
+        nothing.
+        """
+        if locked == self._locked:
+            return
+        self._locked = locked
+        self._apply_lock()
+
+    @property
+    def locked(self) -> bool:
+        return self._locked
+
+    def _apply_lock(self) -> None:
+        for name, header in self._headers.items():
+            header.widget.setEnabled(not self._locked)
+            self._refresh_row(name)
+        for name, chrome in self._chrome.items():
+            chrome.body.setEnabled(not self._locked)
+            chrome.outer.setToolTip(LOCKED if self._locked else "")
+            self._refresh_row(name)
+        for name in {chrome.gate for chrome in self._chrome.values() if chrome.gate}:
+            self._refresh_children_of(name)
 
     @property
     def option_widgets(self) -> dict[str, QWidget]:
@@ -419,6 +450,8 @@ class OptionValuesSection(SidebarSection):
             self._refresh_children_of(name)
         self._folds.set_cards(self._cards)
         self._push_keep_list_context()
+        if self._locked:
+            self._apply_lock()
 
     def _build_card(self, group: option_groups.OptionGroup, connected: int) -> OptionCard:
         """One group's card: its header switch, if it has one, then its rows."""
@@ -710,8 +743,11 @@ class OptionValuesSection(SidebarSection):
         active = bool(resolution.value) if resolution is not None else True
         for child in self._children_of(name):
             chrome = self._chrome[child]
-            chrome.body.setEnabled(active)
-            chrome.outer.setToolTip("" if active else f"{name} is off, so this has no effect.")
+            chrome.body.setEnabled(active and not self._locked)
+            if self._locked:
+                chrome.outer.setToolTip(LOCKED)
+            else:
+                chrome.outer.setToolTip("" if active else f"{name} is off, so this has no effect.")
 
     def _refresh_row(self, name: str) -> None:
         """Re-mark one option from its current resolution, touching no other row."""
@@ -734,9 +770,13 @@ class OptionValuesSection(SidebarSection):
         # one fact -- "this value is yours" -- said twice, and adjacent they read as
         # one affordance rather than two marks to correlate across a row.
         chrome.bar.set_active(overridden)
-        chrome.revert_btn.setEnabled(overridden)
+        chrome.revert_btn.setEnabled(overridden and not self._locked)
         chrome.revert_btn.setToolTip(
-            self._reset_tooltip(name) if overridden else "Already the value this option resolves to"
+            LOCKED
+            if self._locked
+            else self._reset_tooltip(name)
+            if overridden
+            else "Already the value this option resolves to"
         )
         chrome.caption.setText(resolution.source)
 
