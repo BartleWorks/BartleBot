@@ -8,11 +8,11 @@ the previous release's full package is already there, which is what the download
 there, ``vpk pack`` writes a delta against it as well. ``releases.win.json`` is the feed
 an installed app reads to find updates.
 
-The release notes are ``release_notes/<version>.md`` followed by the download site's
-install page, with its links made absolute at the release's tag. ``vpk pack`` puts them in the
-package, the feed carries them to the update popup, and ``vpk upload github`` makes them
-the release's description, which is the page someone arriving to install it reads. The
-popup leaves the install page out (``bartlebot.updates.feed.INSTALL_NOTES_MARKER``).
+The release notes are ``release_notes/<version>.md``, with its links made absolute at the
+release's tag, followed by a short footer naming the file to run and linking the download
+site's install page. ``vpk pack`` puts them in the package, the feed carries them to the
+update popup, and ``vpk upload github`` makes them the release's description. The popup
+leaves the footer out (``bartlebot.updates.feed.INSTALL_NOTES_MARKER``).
 
 A release is never packed on a maintainer's machine, for the reason a release is never
 built on one (``docs/RELEASING.md``). Packing a local build into a scratch folder, to try
@@ -54,18 +54,21 @@ DEFAULT_BUILD = ROOT / "dist"
 DEFAULT_OUT = ROOT / "releases"
 #: One file per version, ``<version>.md``, written before the version is tagged.
 NOTES_DIR = ROOT / "release_notes"
-#: The download site's install page, which every release's notes carry after their own,
-#: as a path in the repository: its relative links are resolved against it.
-INSTALL_PAGE_PATH = "site/pages/install.md"
-INSTALL_PAGE = ROOT / INSTALL_PAGE_PATH
+#: The download site's install page, which every release's footer links. It covers
+#: SmartScreen, Smart App Control and antivirus, so the release page does not repeat them.
+INSTALL_URL = "https://bartleworks.github.io/BartleBot/install/"
+#: What follows every release's own notes on its GitHub page, for someone who arrives there
+#: to install it rather than through the site.
+INSTALL_FOOTER = (
+    f"**Installing:** download **{SETUP_NAME}** below and run it. Windows may warn about it "
+    f"the first time; the [install guide]({INSTALL_URL}) shows what to do."
+)
 #: Where the composed notes are written, in the build folder, for ``vpk pack`` to read.
 NOTES_NAME = "release-notes.md"
 
 #: A markdown link or image whose target is relative to the file it is in: neither
 #: ``http(s):`` nor ``mailto:``.
 _RELATIVE_LINK = re.compile(r"(!?)\[([^\]]*)\]\((?!https?://|mailto:)([^)\s]+)\)")
-#: An ATX heading that can still be made one level lower.
-_HEADING = re.compile(r"#{1,5} ")
 
 
 def notes_path(version: str, notes_dir: Path = NOTES_DIR) -> Path:
@@ -73,26 +76,7 @@ def notes_path(version: str, notes_dir: Path = NOTES_DIR) -> Path:
     return notes_dir / f"{version}.md"
 
 
-def install_page(page: str) -> str:
-    """The site's install page as a release's notes carry it: every heading one level lower.
-
-    In a release's description the page follows the version's own notes, so its title is a
-    section of the description rather than a second title. A line in a fenced code block
-    is left alone.
-    """
-    lines, fenced = [], False
-    for line in page.strip().splitlines():
-        if line.lstrip().startswith(("```", "~~~")):
-            fenced = not fenced
-        elif not fenced and _HEADING.match(line):
-            line = f"#{line}"
-        lines.append(line)
-    if not lines:
-        raise ValueError(f"{INSTALL_PAGE_PATH} is empty")
-    return "\n".join(lines)
-
-
-def absolute_links(markdown: str, tag: str, source: str = INSTALL_PAGE_PATH) -> str:
+def absolute_links(markdown: str, tag: str, source: str) -> str:
     """``markdown`` with every relative link pointing at the repository at ``tag``.
 
     ``source`` is the file ``markdown`` came from, as a path in the repository, and its
@@ -114,13 +98,11 @@ def absolute_links(markdown: str, tag: str, source: str = INSTALL_PAGE_PATH) -> 
     return _RELATIVE_LINK.sub(absolute, markdown)
 
 
-def release_notes(version: str, notes_dir: Path = NOTES_DIR, page: Path = INSTALL_PAGE) -> str:
-    """``version``'s notes, then :data:`INSTALL_NOTES_MARKER`, then the site's install page."""
-    tag = f"v{version}"
+def release_notes(version: str, notes_dir: Path = NOTES_DIR) -> str:
+    """``version``'s notes, then :data:`INSTALL_NOTES_MARKER`, then :data:`INSTALL_FOOTER`."""
     own = notes_path(version, notes_dir).read_text(encoding="utf-8").strip()
-    own = absolute_links(own, tag, f"{NOTES_DIR.name}/{version}.md")
-    install = absolute_links(install_page(page.read_text(encoding="utf-8")), tag)
-    return f"{own}\n\n{INSTALL_NOTES_MARKER}\n\n{install}\n"
+    own = absolute_links(own, f"v{version}", f"{NOTES_DIR.name}/{version}.md")
+    return f"{own}\n\n{INSTALL_NOTES_MARKER}\n\n{INSTALL_FOOTER}\n"
 
 
 def pack_command(version: str, vpk: str = "vpk", build: Path = DEFAULT_BUILD, out: Path = DEFAULT_OUT) -> list[str]:
@@ -178,8 +160,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{required} is missing: run tools/build_package.py first", file=sys.stderr)
             return 1
     try:
-        notes = release_notes(args.version, NOTES_DIR, INSTALL_PAGE)
-    except (OSError, ValueError) as exc:
+        notes = release_notes(args.version, NOTES_DIR)
+    except OSError as exc:
         print(f"no release notes: {exc}", file=sys.stderr)
         return 1
     (args.build / NOTES_NAME).write_text(notes, encoding="utf-8")

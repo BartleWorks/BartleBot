@@ -12,8 +12,8 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
       gh release download v<previous> --dir C:/Users/Public/BartleBot/<previous>
 - [ ] Velopack's advisories name nothing in the pinned version:
       https://github.com/velopack/velopack/security/advisories
-- [ ] The draft's description is release_notes/<version>.md, then the install page, and
-      its links and images load: gh release view v<version> --web
+- [ ] The draft's description is release_notes/<version>.md, then the Installing footer,
+      and its links and images load: gh release view v<version> --web
 - [ ] The shipped items to try in game are listed, in your own account (for the first
       release, every one):
       git diff --stat v<previous> v<version> -- bots templates subgraphs strategies
@@ -98,7 +98,7 @@ The one update that comes from GitHub itself, the way every user's does.
 - [ ] Reset the test account as in 3, run Setup.exe from C:\Users\Public\BartleBot\<previous>,
       and take setup's Quick path.
 - [ ] Close the app and start it from the Start Menu, with no BARTLEBOT_UPDATE_FEED: the
-      popup offers <version>, with its notes and without the install page.
+      popup offers <version>, with its notes and without the Installing footer.
 - [ ] Install when I close BartleBot › close the app › start it again. No SmartScreen or
       antivirus prompt appears at any point, as the site's install page says. The
       session log header says <version>.

@@ -3,9 +3,8 @@
 #
 #     uv run --group site zensical serve -f site/zensical.toml
 #
-# pages/install.md is also the second half of every release's notes
-# (tools/pack_release.py), so it stays in markdown GitHub can draw: none of the
-# admonitions, attribute lists or icons the landing page uses (tests/test_site.py).
+# pages/install.md is the page every release's notes link (tools/pack_release.py's
+# INSTALL_URL), so it keeps its name.
 #
 # The landing page is drawn by overrides/home.html, which index.md names in its front
 # matter: the hero and the download button are there, and the page's words in index.md.

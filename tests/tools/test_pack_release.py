@@ -6,8 +6,6 @@ import sys
 import tomllib
 from pathlib import Path
 
-import pytest
-
 from bartlebot.paths import project_root
 from bartlebot.shared.vendor import PRODUCT, VENDOR
 
@@ -17,12 +15,13 @@ from bartlebot.gui.logo import LOGO_SVG  # noqa: E402
 from bartlebot.updates.feed import INSTALL_NOTES_MARKER, REPOSITORY, parse  # noqa: E402
 from tools import pack_release  # noqa: E402
 from tools.pack_release import (  # noqa: E402
+    INSTALL_FOOTER,
+    INSTALL_URL,
     NOTES_NAME,
     PACK_ID,
+    SETUP_NAME,
     SPLASH_PROGRESS_COLOR,
     VELOPACK_VERSION,
-    absolute_links,
-    install_page,
     main,
     pack_command,
     release_notes,
@@ -128,77 +127,45 @@ def test_the_release_is_left_as_a_draft():
     assert "--publish" not in upload
 
 
-PAGE = """# Install
+NOTES = """![SmartScreen](images/smartscreen.png)
 
-![SmartScreen](images/install/smartscreen.png)
-
-See [where your data lives](../../docs/INSTALLER.md), [the next part](#uninstall) and [Microsoft](https://microsoft.com).
-
-## Uninstall
-
-```powershell
-# Not a heading
-```
+See [where your data lives](../docs/INSTALLER.md), [the next part](#fixed) and [Microsoft](https://microsoft.com).
 """
 
 
-def _notes_and_page(tmp_path, own="Fixed Foulgaze."):
+def _notes(tmp_path, own="Fixed Foulgaze."):
     notes_dir = tmp_path / "release_notes"
     notes_dir.mkdir()
     (notes_dir / "1.2.0.md").write_text(own, encoding="utf-8")
-    page = tmp_path / "install.md"
-    page.write_text(PAGE, encoding="utf-8")
-    return notes_dir, page
+    return notes_dir
 
 
 def test_the_pack_is_given_the_composed_notes(tmp_path):
     assert Path(_value(pack_command("1.2.0", build=tmp_path), "--releaseNotes")) == tmp_path / NOTES_NAME
 
 
-def test_the_install_page_is_a_section_of_the_notes():
-    """Its title follows the version's own notes, so every heading is one level lower."""
-    page = install_page(PAGE)
-
-    assert page.startswith("## Install\n") and "\n### Uninstall\n" in page
-    assert "\n# Not a heading\n" in page
-
-
-def test_an_empty_install_page_is_refused():
-    with pytest.raises(ValueError, match="empty"):
-        install_page("\n")
-
-
-def test_links_are_made_absolute_at_the_tag():
-    """A path relative to the page leads nowhere on the release page or in the popup."""
-    page = absolute_links(install_page(PAGE), "v1.2.0")
+def test_links_in_the_versions_own_notes_are_made_absolute_at_the_tag(tmp_path):
+    """A path relative to the notes file leads nowhere on the release page or in the popup."""
+    own = release_notes("1.2.0", _notes(tmp_path, own=NOTES)).split(INSTALL_NOTES_MARKER)[0]
     repo = "https://github.com/BartleWorks/BartleBot"
 
-    assert f"![SmartScreen]({repo}/raw/v1.2.0/site/pages/images/install/smartscreen.png)" in page
-    assert f"[where your data lives]({repo}/blob/v1.2.0/docs/INSTALLER.md)" in page
-    assert f"[the next part]({repo}/blob/v1.2.0/site/pages/install.md#uninstall)" in page
-    assert "[Microsoft](https://microsoft.com)" in page
+    assert f"![SmartScreen]({repo}/raw/v1.2.0/release_notes/images/smartscreen.png)" in own
+    assert f"[where your data lives]({repo}/blob/v1.2.0/docs/INSTALLER.md)" in own
+    assert f"[the next part]({repo}/blob/v1.2.0/release_notes/1.2.0.md#fixed)" in own
+    assert "[Microsoft](https://microsoft.com)" in own
 
 
-def test_a_link_in_the_versions_own_notes_is_relative_to_its_file(tmp_path):
-    notes_dir, page = _notes_and_page(tmp_path, own="See [the checklist](../docs/RELEASE_CHECKLIST.md).")
+def test_the_notes_are_the_versions_own_then_a_footer_linking_the_install_page(tmp_path):
+    """The release page is the changelog; the install steps stay on the site, not in every release."""
+    notes = release_notes("1.2.0", _notes(tmp_path))
 
-    own = release_notes("1.2.0", notes_dir, page).split(INSTALL_NOTES_MARKER)[0]
-
-    assert "(https://github.com/BartleWorks/BartleBot/blob/v1.2.0/docs/RELEASE_CHECKLIST.md)" in own
-
-
-def test_the_notes_are_the_versions_own_then_the_install_page(tmp_path):
-    notes_dir, page = _notes_and_page(tmp_path)
-
-    notes = release_notes("1.2.0", notes_dir, page)
-
-    own, install = notes.split(INSTALL_NOTES_MARKER)
+    own, footer = notes.split(INSTALL_NOTES_MARKER)
     assert own.strip() == "Fixed Foulgaze."
-    assert install.strip().startswith("## Install") and "/raw/v1.2.0/" in install
+    assert footer.strip() == INSTALL_FOOTER
+    assert f"**{SETUP_NAME}**" in INSTALL_FOOTER and f"]({INSTALL_URL})" in INSTALL_FOOTER
 
 
-def test_the_popup_shows_the_versions_own_notes_and_not_the_install_page(tmp_path):
-    notes_dir, page = _notes_and_page(tmp_path)
+def test_the_popup_shows_the_versions_own_notes_and_not_the_footer(tmp_path):
     feed = {
         "Assets": [
             {
@@ -206,7 +173,7 @@ def test_the_popup_shows_the_versions_own_notes_and_not_the_install_page(tmp_pat
                 "Version": "1.2.0",
                 "Type": "Full",
                 "FileName": "x.nupkg",
-                "NotesMarkdown": release_notes("1.2.0", notes_dir, page),
+                "NotesMarkdown": release_notes("1.2.0", _notes(tmp_path)),
             }
         ]
     }
@@ -225,22 +192,18 @@ def test_a_version_without_notes_is_refused_before_vpk_runs(tmp_path, capsys, mo
     assert "no release notes" in capsys.readouterr().err
 
 
-def test_the_checkouts_version_has_notes_and_the_site_an_install_page():
+def test_the_checkouts_version_has_notes():
     """What a tag of the checkout's version would pack, so a missing piece fails here first."""
-    version = project_version()
+    own = release_notes(project_version()).split(INSTALL_NOTES_MARKER)[0]
 
-    notes = release_notes(version)
-
-    page = notes.split(INSTALL_NOTES_MARKER)[1]
-    assert page.strip().startswith("## ") and not RELATIVE.search(page)
+    assert own.strip() and not RELATIVE.search(own)
 
 
 def test_everything_the_release_notes_link_in_the_repository_is_there():
-    """A file the install page links at the tag that is not in the repository is a broken
-    image or a 404 on the release page, which no build would notice."""
+    """A file the notes link at the tag that is not in the repository is a broken image or a
+    404 on the release page, which no build would notice."""
     at_tag = re.compile(rf"\({re.escape(REPOSITORY)}/(?:raw|blob)/v[^/]+/([^)#]+)")
 
     linked = at_tag.findall(release_notes(project_version()))
 
-    assert linked, "the install page links nothing in the repository, not even its screenshots"
     assert [path for path in linked if not (project_root() / path).is_file()] == []

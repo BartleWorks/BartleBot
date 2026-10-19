@@ -281,7 +281,7 @@ What `vpk pack` is told is in `tools/pack_release.py`, held there so a test can 
 | `SPLASH_PROGRESS_COLOR` | `#22b14c` | that bar's color: the leaves' green. Velopack's default is `#00FF00` |
 | `SHORTCUTS` | `Desktop,StartMenuRoot` | a Desktop shortcut and the Start Menu entry, so the app is found without knowing where `%LocalAppData%` is. It is `vpk`'s default, spelled out so a change to that default changes nothing here |
 | `--noPortable` | | Setup.exe is the one way to install. A portable copy runs outside the install and the updater, and the plan leaves it out of scope |
-| `--releaseNotes` | `dist/release-notes.md` | the version's notes and the install page, composed by `release_notes` (*The release notes*, below): the release's description, and the popup's notes |
+| `--releaseNotes` | `dist/release-notes.md` | the version's notes and the Installing footer, composed by `release_notes` (*The release notes*, below): the release's description, and the popup's notes |
 
 **Velopack is pinned at one version, `VELOPACK_VERSION`: 1.2.161,** for the `velopack`
 package in `pyproject.toml` and for `vpk` in `release.yml` alike. The Stage 1 spike
@@ -299,31 +299,31 @@ headings, since the popup draws a markdown heading larger than its own.
 
 `tools/pack_release.py` composes what `vpk pack --releaseNotes` is given, into
 `dist/release-notes.md`: the version's notes, then the line `INSTALL_NOTES_MARKER`
-(`<!-- installing -->`, in `bartlebot/updates/feed.py`), then the download site's install
-page, `site/pages/install.md` (`INSTALL_PAGE`), with every heading one level lower so its
-title is a section of the notes (`install_page`). Links are made absolute at the release's
-tag (`absolute_links`): `raw/<tag>/` for an image and `blob/<tag>/` for a link, each
-resolved against the file it is in, since a relative path leads nowhere on a release page,
-and the tag keeps an old release's notes showing what that release shipped.
+(`<!-- installing -->`, in `bartlebot/updates/feed.py`), then `INSTALL_FOOTER`: one
+paragraph naming the file to run and linking the download site's install page
+(`INSTALL_URL`). Links in the version's notes are made absolute at the release's tag
+(`absolute_links`): `raw/<tag>/` for an image and `blob/<tag>/` for a link, resolved
+against the notes file, since a relative path leads nowhere on a release page, and the tag
+keeps an old release's notes showing what that release shipped.
 
 Those notes go two places:
 
 - **The release's description.** `vpk upload github` makes the package's notes the body
   of the draft it creates (Velopack 1.2.161, `_GitRelease.cs`), so nothing in
   `release.yml` writes one. Someone who reaches BartleBot through GitHub rather than the
-  site lands on the release page, which is why it carries the install page too.
+  site lands on the release page, which is why it ends with the footer.
 - **The update popup**, through the feed's `NotesMarkdown`. `feed.parse` cuts the notes at
   the marker, since whoever is offered an update has installed already. GitHub draws the
   marker, an HTML comment, as nothing.
 
-So the site holds the one copy of the install page, and every release carries the version
-of it that was true when it was built. GitHub draws it there, not Zensical, so the page
-stays plain markdown: no admonitions, attribute lists or icons, which
-`test_the_install_page_is_markdown_github_draws` holds it to.
-`test_the_checkouts_version_has_notes_and_the_site_an_install_page` fails a checkout
-whose version has no notes, or whose site lost its install page, before a tag would, and
-`test_everything_the_release_notes_link_in_the_repository_is_there` one whose page links a
-screenshot that is not there.
+The release page is a changelog, as most apps' are, so the install steps are not copied
+into it. Through 0.1.0 it carried the whole install page, which made every release page
+mostly the same long text with the changes at the top. The site holds the one copy now,
+and `test_the_install_url_the_release_notes_link_is_the_sites_install_page` keeps the
+footer's link on it. `test_the_checkouts_version_has_notes` fails a checkout whose version
+has no notes before a tag would, and
+`test_everything_the_release_notes_link_in_the_repository_is_there` one whose notes link a
+file that is not there.
 
 ## The download site
 

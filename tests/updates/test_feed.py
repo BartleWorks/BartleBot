@@ -186,8 +186,8 @@ def test_the_notes_are_the_feeds_markdown():
     assert latest.notes == "## Fixed\n\n- Foulgaze"
 
 
-def test_the_notes_stop_where_the_install_page_starts():
-    """Whoever is offered an update has installed already, so the popup leaves the install page out."""
+def test_the_notes_stop_where_the_install_footer_starts():
+    """Whoever is offered an update has installed already, so the popup leaves the install footer out."""
     data = json.loads(FEED)
     data["Assets"][0]["NotesMarkdown"] = (
         f"## Fixed\n\n- Foulgaze\n\n{feed.INSTALL_NOTES_MARKER}\n\n## Install\n\nSetup.exe"

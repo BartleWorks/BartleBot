@@ -2,7 +2,7 @@
 
 The build itself is .github/workflows/site.yml's, with --strict. These cover what a
 strict build does not: images, the download button, and the install page every release's
-notes carry, which GitHub draws rather than Zensical.
+notes link.
 """
 
 import re
@@ -16,35 +16,30 @@ from bartlebot.updates.feed import FEED_URL, REPOSITORY
 
 sys.path.insert(0, str(project_root()))
 
-from tools.pack_release import INSTALL_PAGE, SETUP_NAME  # noqa: E402
+from tools.pack_release import INSTALL_URL, SETUP_NAME  # noqa: E402
 
 SITE = project_root() / "site"
 CONFIG = tomllib.loads((SITE / "zensical.toml").read_text(encoding="utf-8"))["project"]
 PAGES = SITE / CONFIG["docs_dir"]
+#: The install page, which every release's notes link (``INSTALL_URL``).
+INSTALL_PAGE = PAGES / "install.md"
 #: The landing page's template, which draws its hero and its download button.
 HOME = SITE / CONFIG["theme"]["custom_dir"] / "home.html"
 WORKFLOW = project_root() / ".github" / "workflows" / "site.yml"
 #: A markdown image whose target is a file beside the page, not a URL.
 _LOCAL_IMAGE = re.compile(r"!\[[^\]]*\]\((?!https?://)([^)\s]+)\)")
-#: What Zensical draws and GitHub shows as text: admonitions, collapsible blocks, tabs,
-#: attribute lists, icon shortcodes, and front matter.
-_SITE_ONLY = re.compile(r"^(!!!|\?\?\?|===)|\{\s*[.:#]|\{\s*\w+=|:(material|lucide|fontawesome|octicons)-|\A---", re.M)
 
 
 def _page(name: str) -> str:
     return (PAGES / name).read_text(encoding="utf-8")
 
 
-def test_the_install_page_pack_release_reads_is_a_page_of_the_site():
+def test_the_install_url_the_release_notes_link_is_the_sites_install_page():
     nav = [page for entry in CONFIG["nav"] for page in entry.values()]
 
     assert INSTALL_PAGE.is_file()
     assert INSTALL_PAGE.relative_to(PAGES).as_posix() in nav
-
-
-def test_the_install_page_is_markdown_github_draws():
-    """It is also the second half of every release's description, which GitHub draws."""
-    assert _SITE_ONLY.findall(INSTALL_PAGE.read_text(encoding="utf-8")) == []
+    assert INSTALL_URL == f"{CONFIG['site_url']}{INSTALL_PAGE.stem}/"
 
 
 def test_the_download_button_fetches_setup_from_the_latest_published_release():
@@ -56,7 +51,7 @@ def test_the_download_button_fetches_setup_from_the_latest_published_release():
 
 
 def test_the_install_page_has_the_download_button_from_the_template_not_the_markdown():
-    """The page is also every release's notes, so the button is drawn by overrides/main.html."""
+    """overrides/main.html draws the button above the install page, so the markdown never carries one."""
     main = (SITE / CONFIG["theme"]["custom_dir"] / "main.html").read_text(encoding="utf-8")
     nav = {page.removesuffix(".md") + "/" for entry in CONFIG["nav"] for page in entry.values()}
 
