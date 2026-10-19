@@ -159,6 +159,13 @@ docstring has each one and the spike that found it. The rules:
 - **A pane shown or hidden in code goes through its View action**, or the title bar's
   toggle and the menu's check mark go stale: `show_game_view`, `show_bot_canvas`, or
   `_sync_pane_actions` after changing several at once, as Maximize Game View does.
+- **The window's edge is drawn once, and never by a status bar** (#271). Windows' 1px border
+  wears `edge_color` (`title_bar/bottom_edge.py`), which is `border`. Where Windows draws
+  none (maximized, full screen, before Windows 11), `BottomEdge` draws the bottom one as a
+  splitter handle is drawn, so it reads as one more divider. Maximized, `NativeFrame`
+  answers `WM_NCCALCSIZE` with the monitor's work area: Qt's own answer runs a physical
+  pixel past it, which put the rule under the taskbar, and a logical-pixel inset to make up
+  for it left a dark row between the rule and the taskbar's line.
 - **Probing it from another process needs per-monitor DPI awareness.** A DPI-unaware sender
   has the coordinates it sends scaled by the display scale, so at 125% every answer lands
   1.25x inside where it should, and a posted click misses the window. Call
@@ -1204,6 +1211,11 @@ so changing one row's choice re-matches the whole file: a copy rewrites the link
 everything after it. It never asks for typed text. A rebuild runs inside a combo's own
 signal, so the old rows are `takeWidget()`-ed and `deleteLater()`-ed, never replaced by
 `setWidget`, which deletes them at once.
+
+**A bot card's menu has Export… and Delete Bot…** (#268). Delete is grayed out with the reason on an
+Official bot, and refused while the bot is open. Nothing links a bot, a fork included (`forked_from` is
+provenance only), so the confirmation names no other bot; it counts the Bot Combat Strategies that go with it,
+and the option values, accepted sales and active pick keyed on its id go too (`content/bot_delete.py`).
 
 **An Official bot is read-only.** `BotCanvas.set_read_only` keeps it in Run mode: every
 way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` instead,

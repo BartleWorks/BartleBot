@@ -75,6 +75,7 @@ class ControllerHarness:
             "_save_definition_as",
             "_revert_definition",
             "_delete_subgraph",
+            "_delete_bot",
             "_rename_subgraph",
             "_bots_linking",
             "_open_definition_ids",

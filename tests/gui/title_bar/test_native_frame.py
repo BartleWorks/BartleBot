@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes as wt
+import sys
 
 import pytest
 from PyQt6.QtCore import QPoint
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QMenuBar
 
 from bartlebot.gui.title_bar.native_frame import (
@@ -22,6 +24,7 @@ from bartlebot.gui.title_bar.native_frame import (
     HTTOPLEFT,
     HTTOPRIGHT,
     WM_NCHITTEST,
+    colorref,
     is_native_frame_supported,
     title_bar_hit,
 )
@@ -72,6 +75,10 @@ def test_a_maximized_window_has_no_resize_band():
     """The top of the screen is where a pointer flung at the close button lands."""
     assert _hit((_WIDTH - 10, 0), maximized=True, over_control=True) == HTCLIENT
     assert _hit((0, 0), maximized=True) == HTCAPTION
+
+
+def test_a_colorref_puts_blue_in_the_high_byte():
+    assert colorref(QColor(0x44, 0x88, 0xCC)) == 0x00CC8844
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +136,45 @@ def test_a_restored_window_resizes_from_its_top_edge(window, qtbot):
     bar = window.title_bar
 
     assert _ask_windows(window, bar, QPoint(bar.width() // 2, 0)) == HTTOP
+
+
+class _MONITORINFO(ctypes.Structure):
+    _fields_ = [("cbSize", wt.DWORD), ("rcMonitor", wt.RECT), ("rcWork", wt.RECT), ("dwFlags", wt.DWORD)]
+
+
+def _client_and_work_area(window) -> tuple[tuple[int, int, int, int], tuple[int, int, int, int]]:
+    """The window's client area and its monitor's work area, both on screen, in physical pixels."""
+    hwnd = int(window.winId())
+    client = wt.RECT()
+    _user32.GetClientRect(hwnd, ctypes.byref(client))
+    origin = wt.POINT(0, 0)
+    _user32.ClientToScreen(hwnd, ctypes.byref(origin))
+    _user32.MonitorFromWindow.restype = wt.HMONITOR
+    info = _MONITORINFO(cbSize=ctypes.sizeof(_MONITORINFO))
+    _user32.GetMonitorInfoW(_user32.MonitorFromWindow(hwnd, 2), ctypes.byref(info))
+    work = info.rcWork
+    return (
+        (origin.x, origin.y, origin.x + client.right, origin.y + client.bottom),
+        (work.left, work.top, work.right, work.bottom),
+    )
+
+
+def test_the_window_always_has_one_bottom_edge(window, qtbot):
+    """#271. Maximized, the client area is the work area exactly, so the rule sits on the
+    taskbar rather than under it, and shows, since Windows draws no border. Restored,
+    Windows draws the border in our color, so the rule goes, except where there is no
+    border color to set (before Windows 11, build 22000, which includes CI's Server 2022)."""
+    window.showMaximized()
+    qtbot.waitUntil(window.isMaximized)
+    client, work = _client_and_work_area(window)
+
+    assert client == work
+    assert window.bottom_edge.isVisible()
+
+    window.showNormal()
+    qtbot.waitUntil(lambda: not window.isMaximized())
+
+    assert window.bottom_edge.isVisible() == (sys.getwindowsversion().build < 22000)
 
 
 def test_the_window_is_left_a_whole_window(window):

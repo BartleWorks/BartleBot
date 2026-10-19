@@ -151,6 +151,8 @@ _BUILT_IN_SUBGRAPH_TIP = "Official subgraphs can't be deleted. Open one and Save
 #: Why an Official subgraph's Rename is grayed out: its name is the shipped file's (#160).
 #: A library card's right-click, for a bot or a subgraph (#170).
 EXPORT_TEXT = "Export…"
+#: Why Delete Bot is grayed out on an Official bot: it ships in the install directory, so it would come back (#268).
+_BUILT_IN_BOT_TIP = "Official bots can't be deleted. Make your own copy to have one you can remove."
 _BUILT_IN_RENAME_TIP = "Official subgraphs can't be renamed. Open one and Save as… to make a copy of your own."
 
 #: The Edit button's tooltip, and what it says on an Official bot, which it offers to copy (#149).
@@ -730,7 +732,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     """Bot library panel shown in BotCanvas when no bot file is open.
 
     Two-panel layout: left category list (Recent, All, then the folders under bots/),
-    right scrollable bot cards. Search bar filters across all categories.
+    right scrollable bot cards. The search and the tag filters narrow the selected row,
+    which the search field names in a scope pill (#269).
 
     Each category row carries its *key* in ``Qt.UserRole`` -- the folder name, or one of
     the two sentinels below -- and the caption is only what it shows. The caption used to
@@ -748,6 +751,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     rename_subgraph_requested = pyqtSignal(str)
     #: (bot file path): a bot card's Export… (#170). The controller gathers and writes the file.
     export_bot_requested = pyqtSignal(str)
+    #: (bot file path): a bot card's Delete Bot… (#268). The controller asks, deletes and re-lists.
+    delete_bot_requested = pyqtSignal(str)
     #: (subgraph id): a Subgraphs card's Export….
     export_subgraph_requested = pyqtSignal(str)
 
@@ -857,6 +862,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # anchored there, and narrowing the window shortens it instead of colliding.
         self._search = SearchLineEdit(self._BOT_SEARCH)
         self._search.setClearButtonEnabled(True)
+        self._search.scope_removed.connect(self.search_every_folder)
         top_layout.addWidget(self._search, 1)
 
         self._sep = QFrame()
@@ -931,9 +937,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._cat_list.currentRowChanged.connect(self._on_category_row_changed)
 
         # Both are rebuilt on filter changes and absent much of the time, but have to
-        # follow a theme switch whenever they exist.
+        # follow a theme switch whenever they exist. The empty hint is a box holding its
+        # line and, when other folders have matches, the button that widens to them.
         self._clear_btn: ActionButton | None = None
-        self._empty_hint: QLabel | None = None
+        self._empty_hint: QWidget | None = None
+        self._empty_label: QLabel | None = None
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
@@ -963,8 +971,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         set_style_sheet(self._cards_area, f"background: {THEME.bg};")
         set_style_sheet(self._cards_container, f"background: {THEME.bg};")
 
-        if self._empty_hint is not None:
-            set_style_sheet(self._empty_hint, f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
+        if self._empty_label is not None:
+            set_style_sheet(self._empty_label, f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
     # ------------------------------------------------------------------
     # Public API
@@ -1072,7 +1080,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # always changes it and the currentRowChanged connection builds the cards --
         # calling _on_category_row_changed by hand as well built every card twice, the
         # first set torn down again before anything could paint it.
-        keys = [self._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._cat_list.count())]
+        keys = self._row_keys()
         if keys:
             self._cat_list.setCurrentRow(keys.index(kept) if kept in keys else 0)
         else:
@@ -1101,9 +1109,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                     break
         if meta is None:
             return False
-        keys = [self._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._cat_list.count())]
-        if key in keys:
-            self._cat_list.setCurrentRow(keys.index(key))
+        self._select_row(key)
         card = self._cards.get(meta.path)
         if card is None:
             return False
@@ -1115,6 +1121,23 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     def selected_card(self) -> "_BotCard | None":
         """The card :meth:`reveal` selected, while it is listed. For the tests."""
         return next((c for c in self._cards.values() if c.selected and c.isVisibleTo(self)), None)
+
+    def search_every_folder(self) -> None:
+        """Widen the search to the whole library: select All, keeping the query and the filters.
+
+        What removing the search field's scope pill does, and the empty list's Search all
+        folders button (#269).
+        """
+        self._select_row(self._ALL_KEY)
+
+    def _row_keys(self) -> list:
+        return [self._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._cat_list.count())]
+
+    def _select_row(self, key: str) -> None:
+        """Select the category row keyed *key*, when it is listed."""
+        keys = self._row_keys()
+        if key in keys:
+            self._cat_list.setCurrentRow(keys.index(key))
 
     def current_folder(self) -> str | None:
         """The library folder the selected category row stands for, by its name on disk.
@@ -1274,6 +1297,36 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             picker.setVisible(not subgraphs)
         self._category_picker.setVisible(subgraphs)
         self._search.setPlaceholderText(self._SUBGRAPH_SEARCH if subgraphs else self._BOT_SEARCH)
+        self._show_scope()
+
+    def _scope_caption(self) -> str | None:
+        """The selected row's caption when it narrows the library, else ``None`` (All, or nothing listed)."""
+        item = self._cat_list.currentItem()
+        if item is None or item.data(Qt.ItemDataRole.UserRole) == self._ALL_KEY:
+            return None
+        return item.text()
+
+    def _show_scope(self) -> None:
+        """Name the selected row in the search field, so a search never hides where it looks (#269).
+
+        Shown whenever a row narrows the library, typed into or not: it is there before
+        anyone's eyes reach the field, and the text never jumps aside on the first
+        keystroke. All has no pill, since it hides nothing. The Subgraphs row's cannot be
+        removed: All is the bots, so there is no wider list of subgraphs to widen to.
+        """
+        caption = self._scope_caption()
+        if caption is None:
+            self._search.set_scope(None)
+        elif self._in_subgraphs_folder():
+            self._search.set_scope(
+                caption, removable=False, tooltip="Searching subgraphs. Select any other row to search bots."
+            )
+        else:
+            self._search.set_scope(
+                caption,
+                tooltip=f"Searching {caption} only. Click, or press Backspace at the start of the search,"
+                " to search every folder.",
+            )
 
     def _on_category_row_changed(self, row: int) -> None:
         """Switch category, keeping the filters.
@@ -1316,12 +1369,16 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             tags, group_of = set(self._selected_categories()), subgraph_tag_group
         else:
             tags, group_of = self._selected_tags(), tag_group
-        results, matched_drops = filter_bot_metas(
-            self._category_metas(), self._search.text(), tags, set(self._source_picker.tags()), group_of
-        )
-        self._show_cards(results, matched_drops)
+        query, sources = self._search.text(), set(self._source_picker.tags())
+        results, matched_drops = filter_bot_metas(self._category_metas(), query, tags, sources, group_of)
+        # Nothing here, but the row narrows the library: say whether the rest of it has
+        # matches, which is the case a scoped search makes look like a missing bot.
+        elsewhere = 0
+        if not results and self._search.scope_removable:
+            elsewhere = len(filter_bot_metas(self._all_metas, query, tags, sources, group_of)[0])
+        self._show_cards(results, matched_drops, elsewhere=elsewhere)
 
-    def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
+    def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None, *, elsewhere: int = 0) -> None:
         layout = self._cards_layout
         # Take every widget out, keeping the trailing stretch (last item). Cards are
         # only hidden -- self._cards keeps them for the next filter -- and the empty
@@ -1333,17 +1390,32 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 w.hide()
                 if w is self._empty_hint:
                     w.deleteLater()
-        self._empty_hint = None
+        self._empty_hint = self._empty_label = None
 
         if not metas:
             # "All" is always in the list now, so its presence no longer distinguishes
             # "nothing matched" from "the library is empty". The metas do.
             if self._in_subgraphs_folder():
                 text = "No subgraphs match these filters."
+            elif elsewhere:
+                # Named, and counted: an empty folder alone read as "this bot doesn't
+                # exist" (#269). The way out sits under the reason for taking it.
+                others = "1 other bot does" if elsewhere == 1 else f"{elsewhere} other bots do"
+                text = f"No bots in {self._scope_caption()} match these filters, but {others}."
             else:
                 text = "No bots match these filters." if self._all_metas else "No bots found in bots/ directory."
-            self._empty_hint = hint = QLabel(text)
-            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._empty_hint = hint = QWidget()
+            hint_layout = QVBoxLayout(hint)
+            hint_layout.setContentsMargins(0, 0, 0, 0)
+            hint_layout.setSpacing(8)
+            self._empty_label = label = QLabel(text)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setWordWrap(True)
+            hint_layout.addWidget(label)
+            if elsewhere:
+                widen = ActionButton("search", "Search all folders", fill=False)
+                widen.clicked.connect(self.search_every_folder)
+                hint_layout.addWidget(widen, 0, Qt.AlignmentFlag.AlignHCenter)
             layout.insertWidget(0, hint)
             self.refresh_theme_styles()
             return
@@ -1403,7 +1475,14 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     def bot_menu(self, path: Path) -> QMenu:
         """The menu a bot card shows on a right-click. Public so a test can read it."""
         menu = popup_menu(self)
+        menu.setToolTipsVisible(True)
         menu.addAction(EXPORT_TEXT).triggered.connect(lambda: self.export_bot_requested.emit(str(path)))
+        menu.addSeparator()
+        delete = menu.addAction("Delete Bot…")
+        if bot_roots.is_shipped(path):
+            delete.setEnabled(False)
+            delete.setToolTip(_BUILT_IN_BOT_TIP)
+        delete.triggered.connect(lambda: self.delete_bot_requested.emit(str(path)))
         return menu
 
     def _show_bot_menu(self, card: QWidget, path: Path, pos) -> None:
@@ -1537,6 +1616,8 @@ class BotCanvas(QWidget):
     rename_subgraph_requested = pyqtSignal(str)
     # A library card's Export… (#170): a bot file's path, or a subgraph's id.
     export_bot_requested = pyqtSignal(str)
+    # A library card's Delete Bot… (#268): a bot file's path.
+    delete_bot_requested = pyqtSignal(str)
     export_subgraph_requested = pyqtSignal(str)
     # A definition document's way out, and its save: (then go back).
     definition_back_requested = pyqtSignal()
@@ -1934,6 +2015,7 @@ class BotCanvas(QWidget):
         self._placeholder.delete_subgraph_requested.connect(self.delete_subgraph_requested)
         self._placeholder.rename_subgraph_requested.connect(self.rename_subgraph_requested)
         self._placeholder.export_bot_requested.connect(self.export_bot_requested)
+        self._placeholder.delete_bot_requested.connect(self.delete_bot_requested)
         self._placeholder.export_subgraph_requested.connect(self.export_subgraph_requested)
         self._placeholder.show()
         # Bar B is the *bot's* header, so with no bot there is nothing for it to say
@@ -2282,6 +2364,7 @@ class BotCanvas(QWidget):
         panel.delete_subgraph_requested.connect(self.delete_subgraph_requested)
         panel.rename_subgraph_requested.connect(self.rename_subgraph_requested)
         panel.export_bot_requested.connect(self.export_bot_requested)
+        panel.delete_bot_requested.connect(self.delete_bot_requested)
         panel.export_subgraph_requested.connect(self.export_subgraph_requested)
         panel.new_bot_requested.connect(dlg.reject)
         panel.new_bot_requested.connect(self.new_bot_requested)

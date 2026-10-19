@@ -1136,6 +1136,17 @@ class SettingsManager:
         self.set("bot_option_overrides", value=overrides)
         self.save()
 
+    def forget_bot(self, bot_id: str) -> None:
+        """Drop everything stored against a bot's id: its option values, accepted sales and active strategy.
+
+        For a bot deleted from the library (#268), whose id nothing can reach again.
+        """
+        for key in ("bot_option_overrides", "accepted_quicksell_sales", "active_bot_strategies"):
+            mapping = dict(self.get(key) or {})
+            if mapping.pop(bot_id, None) is not None:
+                self.set(key, value=mapping)
+        self.save()
+
     # There is deliberately no prune_option_overrides() analogue of
     # prune_active_strategies. A strategy id names a file that can genuinely
     # vanish; an option name is composed from whichever nodes are in the graph

@@ -29,7 +29,7 @@ from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_r
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
 from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.combat.flee_marks import FleeMarks
-from bartlebot.content import bot_fork, bot_roots, new_bot, share_export, share_import
+from bartlebot.content import bot_delete, bot_fork, bot_roots, new_bot, share_export, share_import
 from bartlebot.content.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.content.store_roots import DEV_ENV_VAR, Origin, dev_mode, pill_text
 from bartlebot.content.subgraphs.subgraph_signature import signature_changes
@@ -393,6 +393,7 @@ class AppController(QObject):
         w.bot_canvas.delete_subgraph_requested.connect(lambda sid: self._delete_subgraph(sid))
         w.bot_canvas.rename_subgraph_requested.connect(lambda sid: self._rename_subgraph(sid))
         w.bot_canvas.export_bot_requested.connect(lambda path: self._export_bot(path))
+        w.bot_canvas.delete_bot_requested.connect(lambda path: self._delete_bot(path))
         w.bot_canvas.export_subgraph_requested.connect(lambda sid: self._export_subgraph(sid))
         w.bot_canvas.document_back_requested.connect(self._back_to_document)
         w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
@@ -2025,6 +2026,53 @@ class AppController(QObject):
             canvas.set_compose_report(report)
         return True
 
+    def _delete_bot(self, path: str) -> bool:
+        """Delete a bot from its card in the library. False when refused, cancelled or it failed.
+
+        The user's own bots only: an Official one ships in the install directory and would
+        be back with the next launch. Nothing links a bot, so no other bot is affected,
+        a fork included (:mod:`bartlebot.content.bot_delete`); the confirmation names the
+        Bot Combat Strategies that go with it, as they are the user's work. Refused while
+        the bot is open, since the document would save it back.
+        """
+        title = "Delete Bot"
+        if bot_roots.is_shipped(path):
+            return False
+        try:
+            plan = bot_delete.plan_deletion(path)
+        except Exception as e:
+            QMessageBox.critical(self._window, title, f"The bot could not be read:\n\n{e}")
+            return False
+        if self._last_save_path is not None and _same_file(self._last_save_path, path):
+            QMessageBox.information(self._window, title, f"'{plan.name}' is open. Close it first, then delete it.")
+            return False
+        text = f"Delete the bot '{plan.name}'?"
+        if n := len(plan.strategy_ids):
+            text += f"\n\nIts {n} Bot Combat Strateg{'ies' if n != 1 else 'y'} will be deleted with it."
+        text += "\n\nThis can't be undone."
+        reply = QMessageBox.question(
+            self._window,
+            title,
+            text,
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if reply != QMessageBox.StandardButton.Ok:
+            return False
+        settings = SettingsManager.instance()
+        try:
+            bot_delete.delete_bot(plan, settings)
+        except OSError as exc:
+            QMessageBox.critical(self._window, title, f"Could not delete '{plan.name}':\n\n{exc}")
+            return False
+        # A recovery file holds edits to a bot that is no longer there to take them. Autosaves
+        # are named by file stem, so one the open document is writing under is left alone.
+        if self._loaded_config is None or self._autosave_stem() != Path(path).stem:
+            self._delete_autosave(path)
+        self._window.update_recent_menu(settings.recent_bot_files)
+        self._window.bot_canvas.refresh_subgraph_listing()
+        return True
+
     def _rename_subgraph(self, subgraph_id: str) -> bool:
         """Rename a definition, and edit its description, from its card in the library. False when refused or cancelled.
 
@@ -3629,6 +3677,14 @@ class AppController(QObject):
                     c["autosave_path"].unlink()
                 except OSError:
                     pass
+
+
+def _same_file(a: str | Path, b: str | Path) -> bool:
+    """Whether two paths name one file, however each was spelled."""
+    try:
+        return Path(a).resolve() == Path(b).resolve()
+    except OSError:
+        return Path(a) == Path(b)
 
 
 def _world_folder(path: str | Path | None) -> str | None:

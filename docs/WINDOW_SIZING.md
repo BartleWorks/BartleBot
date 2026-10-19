@@ -356,11 +356,13 @@ So every term in it has to be a size the corresponding pane will really go down 
 ```
 width  = left_sidebar_floor() + right_sidebar_floor() + game_w + 2*SPLITTER_HANDLE_PX
 height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + TITLE_BAR_PX
-         + SPLITTER_HANDLE_PX
+         + BOTTOM_EDGE_PX + SPLITTER_HANDLE_PX
 ```
 
 where `game_w, game_h` is `required_game_area` — the tiles' own chrome included, which the
-old sum left out.
+old sum left out. `BOTTOM_EDGE_PX` is the rule under the panes (#271), as thick as a
+splitter handle, counted even while it is hidden, since a restored window on Windows 11
+has Windows' border instead.
 
 A pane that lets its *content* set its floor breaks the claim silently. Both sidebars used
 to, and the widest thing either can hold is not in it at construction: the tab sets are
