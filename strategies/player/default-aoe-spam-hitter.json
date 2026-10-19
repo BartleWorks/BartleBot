@@ -1,7 +1,7 @@
 {
   "id": "00e1cec3-4947-4033-949b-a6d32c7b9885",
   "name": "Default AoE Spam Hitter",
-  "dsl": "any<damage & aoe>[any<mod_damage>]",
+  "dsl": "?(deck.remaining >= 2) any<mod_damage> @ spell(any<damage & aoe>) & any<mod_damage> @ spell(any<damage & aoe>) | any<damage & aoe>[any<mod_damage>]",
   "description": "Just spams enchanted AoE damage attacks. Best used on high-level wizards farming low-level content, or in large teams where fast kills are easy.",
   "tags": [
     "Hitter"
