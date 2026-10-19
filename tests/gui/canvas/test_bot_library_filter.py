@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import QLabel
 import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, _read_bot_meta, filter_bot_metas
 from bartlebot.gui.theming.theme import THEME
+from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.pickers.tag_picker import group_accent
 
 
@@ -425,6 +426,96 @@ def test_loose_files_are_listed_as_other(qapp, library):
     panel.refresh()
 
     assert _rows(panel)[-1] == (panel._OTHER_KEY, panel._OTHER)
+
+
+# ---------------------------------------------------------------------------
+# The search names its folder (#269)
+#
+# Testers searched one folder for a bot in another, and took the empty list as
+# proof the bot did not exist.
+# ---------------------------------------------------------------------------
+
+
+def _select_key(panel: _BotLibraryPanel, key: str) -> None:
+    panel._cat_list.setCurrentRow([k for k, _ in _rows(panel)].index(key))
+
+
+def test_all_searches_everything_so_names_no_scope(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, panel._ALL_KEY)
+
+    assert panel._search.scope_text is None
+
+
+def test_a_folder_names_itself_in_the_search_field_before_anything_is_typed(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, "04_mooshu")
+
+    assert panel._search.text() == ""
+    assert panel._search.scope_text == "MooShu"
+    assert panel._search.scope_removable
+
+
+def test_removing_the_scope_searches_every_folder_keeping_the_query(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, "04_mooshu")
+    panel._search.setText("graveyard")
+
+    panel._search.scope_removed.emit()
+
+    assert panel._cat_list.currentItem().data(Qt.ItemDataRole.UserRole) == panel._ALL_KEY
+    assert panel._search.text() == "graveyard"
+    assert panel._search.scope_text is None
+    assert [card._meta.name for card in _cards(panel)] == ["Graveyard"]
+
+
+def test_an_empty_folder_says_how_many_other_bots_match_and_offers_them(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, "04_mooshu")
+
+    panel._search.setText("graveyard")
+
+    assert panel._empty_label.text() == "No bots in MooShu match these filters, but 1 other bot does."
+    (widen,) = panel._empty_hint.findChildren(ActionButton)
+    widen.click()
+    assert panel._cat_list.currentItem().data(Qt.ItemDataRole.UserRole) == panel._ALL_KEY
+    assert [card._meta.name for card in _cards(panel)] == ["Graveyard"]
+
+
+def test_the_count_is_plural_past_one(qapp, library):
+    _write_bot(library / "31_four_dungeons", "Mine Shaft")
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, "04_mooshu")
+
+    panel._search.setText("mine")
+
+    assert panel._empty_label.text().endswith("but 2 other bots do.")
+
+
+def test_nothing_anywhere_offers_no_wider_search(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, "04_mooshu")
+
+    panel._search.setText("no bot is called this")
+
+    assert panel._empty_label.text() == "No bots match these filters."
+    assert panel._empty_hint.findChildren(ActionButton) == []
+
+
+def test_all_with_no_match_offers_no_wider_search(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    _select_key(panel, panel._ALL_KEY)
+
+    panel._search.setText("no bot is called this")
+
+    assert panel._empty_hint.findChildren(ActionButton) == []
 
 
 # ---------------------------------------------------------------------------

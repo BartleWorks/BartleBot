@@ -241,6 +241,14 @@ def test_the_subgraphs_folder_offers_category_in_place_of_the_bot_tags(panel):
     assert "subgraphs" in panel._search.placeholderText()
 
 
+def test_the_subgraphs_folder_names_itself_but_cannot_be_widened(panel):
+    """All is the bots, so there is no wider list of subgraphs to search (#269)."""
+    _select(panel, "Subgraphs")
+
+    assert panel._search.scope_text == "Subgraphs"
+    assert not panel._search.scope_removable
+
+
 def test_the_subgraphs_folder_filters_by_category_and_source(panel):
     _select(panel, "Subgraphs")
     assert _names(panel) == ["Fight loop", "Plain", "Sync players"]
