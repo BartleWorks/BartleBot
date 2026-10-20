@@ -1383,10 +1383,11 @@ def test_the_quicksell_page_opens_on_the_stored_settings(qapp):
     assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [True, False, True, False]
 
 
-def test_a_fresh_install_shows_the_defaults(qapp):
+def test_a_fresh_install_opens_on_quicksell_off(qapp):
+    """Off by default (#262), and the rest on their defaults for when the user turns it on."""
     page = QuicksellPage()
 
-    assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [True, True, False, False]
+    assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [False, True, False, False]
 
 
 def test_the_quicksell_group_on_the_page_does_not_fold(qapp):

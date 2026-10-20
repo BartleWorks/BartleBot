@@ -245,8 +245,10 @@ More profiles, and every edit after, are in Settings › Game, under Launch Prof
 The page shows Settings › Bot's quicksell rows, built by the same
 `gui/settings/quicksell_group.QuicksellSettings`: **Enable Quicksell**, heading **Sell
 Pets**, **Sell Socket Wrenches**, **Sell Skeleton Keys** and **Always keep**, on the stored
-values, which on a first run are the defaults (sell drops and pets, keep wrenches and
-keys). Turning Enable Quicksell off grays the rest, as on the tab. Each row has its revert
+values, which on a first run are the defaults: Enable Quicksell off, and under it sell
+drops and pets, keep wrenches and keys. Quicksell is off by default (#262) because it sells
+anything not locked, and a player who never locks their items would lose them on their
+first run. So the page opens with the rest grayed, as on the tab, and the user turns it on. Each row has its revert
 arrow, and every description is shown, with no Show · Hide descriptions and no `?` to fold
 one (`SettingsForm(always_describe=True)`): on a first run each is part of the question.
 The group never folds on the page (`foldable=False`), so every row is shown whatever the
@@ -254,9 +256,10 @@ user folded in Settings. Sell Socket Wrenches and Sell Skeleton Keys say what th
 quicksell: when off, it keeps any item with "Socket Wrench", or "Skeleton Key", in its
 name.
 
-Above the rows, a line says what the explanation before each run used to: bots sell what
-dropped except what these settings keep, an item locked in the game is never sold, with
-where Backpack Item Lock is turned on, and that these are the Settings › Bot rows a bot's
+Above the rows, a line says quicksell is off until the user turns it on, then what the
+explanation before each run used to: with it on, bots sell what dropped except what these
+settings keep, an item locked in the game is always kept, with where Backpack Item Lock is
+turned on, and that these are the Settings › Bot rows a bot's
 Options can change for that bot. The tab's **Show Quicksell explanation before each run**
 row is not on the page, since Next turns it off.
 
@@ -267,8 +270,8 @@ declares beyond these settings is still flagged once per bot by the safety check
 (`docs/BOT_OPTIONS.md`, "Beside the levels").
 
 A user with any quicksell setting already off its default is not asked on a first run:
-they changed it in Settings › Bot, or turned the explanation off under it, so they have
-decided. The page is BartleBot's alone, so its key is in `settings.json`, not in the
+they changed it in Settings › Bot (turning Enable Quicksell on among them), or turned the
+explanation off under it, so they have decided. The page is BartleBot's alone, so its key is in `settings.json`, not in the
 shared `preferences.json`.
 
 ### Realm and Safety Delay

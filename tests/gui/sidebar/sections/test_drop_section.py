@@ -15,6 +15,12 @@ from bartlebot.nodes.utility import quicksell
 from bartlebot.settings_manager import SettingsManager
 
 
+@pytest.fixture(autouse=True)
+def _quicksell_on():
+    """Quicksell is off by default (#262); these are about a bot that sells."""
+    SettingsManager.instance().set_general("default_quicksell_enabled", True)
+
+
 @pytest.fixture
 def section(qapp):
     widget = DropSection()

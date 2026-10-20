@@ -365,7 +365,7 @@ def test_an_unanswered_option_falls_back_to_its_floor():
     # Nothing pure may go and read the settings, so these are the floor rather than
     # the answer: the four levels above them are get_option's business.
     params = resolve_options(_answers({}))
-    assert params["enabled"] is True
+    assert params["enabled"] is False
     assert params["keep_list"] == []
     for key, floor in SELL_FLAG_DEFAULTS.items():
         assert params[key] is floor
@@ -375,7 +375,10 @@ def test_a_value_of_the_wrong_type_falls_back_rather_than_being_believed():
     # An override written under an older declaration, or a stub answering everything
     # with a number. Either way the fallback must be the floor, never the more
     # destructive reading of a truthy value.
-    params = resolve_options(_answers(dict.fromkeys(SELL_FLAG_OPTIONS.values(), 1) | {OPTION_KEEP_LIST: "Amber"}))
+    params = resolve_options(
+        _answers(dict.fromkeys([OPTION_ENABLED, *SELL_FLAG_OPTIONS.values()], 1) | {OPTION_KEEP_LIST: "Amber"})
+    )
+    assert params["enabled"] is False
     assert params["sell_pets"] is True
     assert params["sell_socket_wrenches"] is False
     assert params["keep_list"] == []

@@ -56,7 +56,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_pets: bool = True
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
-    default_quicksell_enabled: bool = True
+    default_quicksell_enabled: bool = False
     quicksell_keep_list: list[str] = []
     show_quicksell_explanation: bool = True
     default_apply_archmastery: bool = False
@@ -176,7 +176,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_pets": True,
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
-        "default_quicksell_enabled": True,
+        "default_quicksell_enabled": False,
         # Not a level of any option's resolution, unlike the four above: every bot
         # applies it on top of its own keep list. See quicksell.user_keep_list.
         "quicksell_keep_list": [],

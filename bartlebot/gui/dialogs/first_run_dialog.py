@@ -781,13 +781,14 @@ class LaunchProfilePage(FirstRunPage):
 # -- quicksell ----------------------------------------------------------------------
 
 QUICKSELL_HEADING = "What may bots sell?"
-#: Above the rows: what the explanation before each run used to say, which this page
-#: turns off, and where the same rows are later.
+#: Above the rows: that quicksell starts off (#262), what turning it on sells, which is
+#: what the explanation before each run used to say and this page turns off, and where
+#: the same rows are later.
 QUICKSELL_INTRO = (
-    "When a backpack is full, bots sell what dropped, except what these settings keep. An item you "
-    "lock in the game is never sold: turn on Backpack Item Lock, under Options › Gameplay Options 2, "
-    "to lock one. These are the Quicksell settings in Settings › Bot, and a bot's own Options can "
-    "change them for that bot."
+    "Quicksell is off until you turn it on. With it on, when a backpack is full, bots sell what "
+    "dropped, except what these settings keep. An item you lock in the game is always kept: turn on "
+    "Backpack Item Lock, under Options › Gameplay Options 2, to lock one. These are the Quicksell "
+    "settings in Settings › Bot, and a bot's own Options can change them for that bot."
 )
 
 

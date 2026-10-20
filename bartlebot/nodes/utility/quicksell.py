@@ -114,7 +114,8 @@ NODE_SPEC = NodeSpec(
             heads_group=True,
             type="bool",
             # Null: the author has no opinion, so the app setting answers. Quicksell
-            # is on by default, which is what every bot did before it could be off.
+            # is off by default (#262): a player who never locks their items would
+            # otherwise lose them on a first run.
             default=None,
             description=(
                 "Whether this bot sells anything at all. Turn it off to farm without selling: the "
@@ -304,7 +305,8 @@ def resolve_options(get_option, user_keep_list=()) -> dict:
     lookup in the editor.  Its answer is checked rather than trusted: an override
     written under an older type, or a stub that answers everything with a number,
     must not turn a bool into "sell everything".  A value of the wrong shape falls
-    back to the floor in ``SELL_FLAG_DEFAULTS``, never to something more destructive.
+    back to the floor -- off for Enable Quicksell, ``SELL_FLAG_DEFAULTS`` for the
+    flags -- never to something more destructive.
 
     *user_keep_list* is the user's own list from Settings -> Bot, read by the caller
     with :func:`user_keep_list`.  It is kept apart as ``"user_keep_list"`` rather than
@@ -313,9 +315,9 @@ def resolve_options(get_option, user_keep_list=()) -> dict:
     whose picker they touched.
     """
     keep_list = get_option(OPTION_KEEP_LIST, [])
-    enabled = get_option(OPTION_ENABLED, True)
+    enabled = get_option(OPTION_ENABLED, False)
     values: dict = {
-        "enabled": enabled if isinstance(enabled, bool) else True,
+        "enabled": enabled if isinstance(enabled, bool) else False,
         "keep_list": [str(k) for k in keep_list] if isinstance(keep_list, list) else [],
         "user_keep_list": [str(k) for k in user_keep_list],
     }

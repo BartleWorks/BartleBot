@@ -133,6 +133,11 @@ switch is one answer for the whole app. What the explanation asks (lock what you
 keep it on a list) is the same for every bot, and a per-bot answer would ask the same
 question eighty times.
 
+**Quicksell is off by default** (#262). `default_quicksell_enabled` is `False`: quicksell
+sells anything the user has not locked, and a player who never locks their items would
+lose them on a first run. Setup's Quicksell page opens on off and says what turning it on
+sells. The node's own floor, for a value of the wrong shape, is off too.
+
 **Answering setup's Quicksell page turns the explanation off too** (#230). The page
 says the same things above the Bot tab's own quicksell rows (the sell switches and the
 Always keep list, the game's item lock, and where to change them later), so an

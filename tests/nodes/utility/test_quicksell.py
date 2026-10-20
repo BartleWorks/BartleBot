@@ -24,9 +24,11 @@ def _machine(**options) -> FakeMachine:
     Quicksell reads bot options rather than params now, so a test says what the
     *bot* is set to do rather than what one node's params hold. The keyword
     arguments are the internal keys the pure helpers speak; this maps them across.
+    Quicksell is on unless a test says otherwise, since it is off by default (#262)
+    and a node that sells nothing has nothing to test.
     """
     answers: dict = {}
-    for key, value in options.items():
+    for key, value in ({"enabled": True} | options).items():
         if key == "keep_list":
             answers[qs.OPTION_KEEP_LIST] = value
         elif key == "enabled":
@@ -603,9 +605,9 @@ def test_a_users_keep_list_replaces_the_authors_rather_than_adding_to_it():
     assert qs.resolve_options_for(config)["keep_list"] == ["Onyx"]
 
 
-def test_enable_quicksell_defaults_to_on():
-    """Every bot sold before this option existed, and none of them opted in."""
-    assert qs.resolve_options_for(_bot())["enabled"] is True
+def test_enable_quicksell_defaults_to_off():
+    """A player who never locks their items would lose them on a first run (#262)."""
+    assert qs.resolve_options_for(_bot())["enabled"] is False
 
 
 # --- the user's own keep list (#34) -------------------------------------------------

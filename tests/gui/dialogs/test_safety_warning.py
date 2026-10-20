@@ -19,6 +19,12 @@ from bartlebot.settings_manager import SettingsManager
 from tests.conftest import FakeClient
 
 
+@pytest.fixture(autouse=True)
+def _quicksell_on():
+    """Quicksell is off by default (#262); these are about a bot that sells."""
+    SettingsManager.instance().set_general("default_quicksell_enabled", True)
+
+
 def _config(*states: dict, options: list[dict] | None = None) -> BotConfig:
     """Build a minimal valid BotConfig containing the given state dicts.
 

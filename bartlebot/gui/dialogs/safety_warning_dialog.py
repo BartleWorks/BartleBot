@@ -104,7 +104,7 @@ def _quicksell_enabled(config) -> bool:
     Resolved the way ``run()`` resolves it, through ``resolve_options_for`` rather
     than by reading the option here: the option's node default is null, so its
     resolved *value* is ``None`` when no level answers, and only the node's own
-    coercion knows that means on. Two readings of "off" would eventually disagree,
+    coercion knows that means off. Two readings of "off" would eventually disagree,
     and this one decides whether the user is warned about a sale.
     """
     return bool(quicksell.resolve_options_for(config)["enabled"])
