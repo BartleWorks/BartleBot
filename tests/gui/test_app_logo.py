@@ -30,7 +30,7 @@ from bartlebot.gui.logo import (
 )
 from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
 
-BACKGROUND = QColor("#4488cc").rgba()
+BACKGROUND = QColor("#1d3a8a").rgba()
 TREE = {QColor(c).rgba() for c in ("#22b14c", "#b97a57", "#7092be", "#3f48cc")}
 PALETTE = TREE | {BACKGROUND}
 TRANSPARENT = QColor(0, 0, 0, 0).rgba()
