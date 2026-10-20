@@ -65,9 +65,17 @@ migration for it.>
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 ```
 
+**The merge message closes the issues, not you.** Every issue the branch finishes
+gets a closing keyword line in the message, and nothing else closes it: no
+`gh issue close`, no clicking Close in the browser. GitHub closes each one when the
+merge is pushed, and the closure then links to the merge commit that did it, which
+a hand-closed issue does not. Hand-closing is only for an issue the branch did not
+finish (say why in a comment), never for one it did.
+
 One `Closes #N` line per issue — comma-separated keywords do not chain reliably,
 and the keywords only fire on a push to the default branch, which a direct merge
-to `master` is. No issue? Drop the line and say why in the summary.
+to `master` is. So the issues stay open until the push; do not close them while
+waiting. No issue? Drop the line and say why in the summary.
 
 ## Before you merge
 
