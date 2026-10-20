@@ -113,7 +113,8 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Enters a dungeon via its sigil. Handles prompt detection, "
-        "dungeon warning confirmation, and player zone desynchronization. "
+        "dungeon warning confirmation, and player zone desynchronization, and fails if a player "
+        "outside the team entered with them. "
         "Tick Offers Challenge Mode if this dungeon has it: that gives the user a Challenge Mode "
         "bot option, and when they turn it on the sigil is toggled before entering. "
         "Tick Offers Team-Up to give the user a Team-Up bot option, which enters through the "
@@ -128,7 +129,8 @@ NODE_SPEC = NodeSpec(
             "never appeared after retries, Challenge Mode was requested but the sigil "
             "could not be toggled into it, the Team-Up confirmation window never opened, "
             "timed out waiting for the zone change or for the queue to match, "
-            "or not all players reached dungeon_zone.",
+            "not all players reached dungeon_zone, or a player outside the team entered "
+            "with them (never checked through Team-Up, which brings strangers in on purpose).",
         ),
     ],
     required_bot_options=[
@@ -384,10 +386,12 @@ async def run(machine, clients: list, params: dict) -> str:
       4. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
       5. Player Realms: Together -- confirm by sight that everyone is in one instance, and port
          anyone who is not to the leader. FAILURE if that port fails (Team-Up's instances).
+      6. Unless through Team-Up: FAILURE if any client has a player loaded who is not ours.
 
     FAILURE: clients not in from_zone; entrance prompt never appeared; Challenge Mode
     requested but the sigil could not be toggled into it; the Team-Up window never opened;
-    the zone change or the queue timed out; not all clients reached dungeon_zone.
+    the zone change or the queue timed out; not all clients reached dungeon_zone; a
+    stranger entered with them.
     """
     from_zone: str = params["from_zone"]
     dungeon_zone: str = params["dungeon_zone"]
@@ -460,6 +464,17 @@ async def run(machine, clients: list, params: dict) -> str:
         if outcome is node_helpers.TogetherOutcome.FAILED:
             machine.log("FAILURE: the players entered separate instances of the dungeon", logging.WARNING)
             return "FAILURE"
+
+    # 6. Anyone who pressed X on the sigil in our countdown came in with us, and an instance
+    #    holds nobody else, so any player here who is not ours is a stranger (#279). Team-Up
+    #    brings strangers in on purpose. Unrouted, FAILURE falls through to recovery, a relog in
+    #    every shipped bot, and a relog from inside puts everyone back where they stood before.
+    if not team_up and (strangers := await node_helpers.count_strangers(clients)):
+        machine.log(
+            f"FAILURE: {strangers} player(s) outside the team entered the dungeon with it",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     machine.log(f"SUCCESS: all clients in {dungeon_zone!r}")
     return "SUCCESS"

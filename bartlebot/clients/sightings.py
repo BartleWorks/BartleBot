@@ -11,6 +11,8 @@ This module is the pure half, so the rules are testable without a game:
 * :class:`Sightings` is one check over every client, with the groups it proves.
 * :class:`TogetherRecord` remembers which groups have been seen together, until one of
   their members passes through a loading screen -- the only way a realm can change.
+* :func:`count_strangers` counts the players loaded who are not ours, for a place only the
+  team should be.
 
 ``node_helpers.read_sightings`` takes the readings from the game. ``BotMachine`` owns the
 record for a run.
@@ -163,6 +165,21 @@ def choose_leader(check: Sightings) -> int:
     """
     largest = max(check.groups(), key=lambda group: (len(group), -group[0]))
     return largest[0]
+
+
+def count_strangers(team: Sequence[int | None], players_seen: Iterable[frozenset[int] | None]) -> int:
+    """How many players some client has loaded who are not on the team (#279).
+
+    *team* is every client's own global id, *players_seen* the ids of the players each client
+    has loaded, None where they could not be read. Only an answer that could refuse something
+    needs to be sure, so anything unreadable counts nobody: an unreadable list sees no one,
+    and with any of the team's own ids unread, that teammate would read as a stranger in the
+    others' lists, so nobody is counted at all.
+    """
+    if any(gid is None for gid in team):
+        return 0
+    seen = frozenset().union(*(players for players in players_seen if players is not None))
+    return len(seen - set(team))
 
 
 class TogetherRecord:

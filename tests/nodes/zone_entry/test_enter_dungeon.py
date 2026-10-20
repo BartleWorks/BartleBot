@@ -15,7 +15,7 @@ from bartlebot.nodes.paths import (
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
 )
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeGidEntity, FakeMachine
 
 
 async def _center_button_visible(_client, path):
@@ -757,6 +757,60 @@ async def test_players_left_in_separate_instances_fail():
     result, _ensure, _reach, _enter = await _run_checks(
         [nh.TogetherOutcome.ALREADY, nh.TogetherOutcome.FAILED], all_seen=False
     )
+    assert result == "FAILURE"
+
+
+# ---------------------------------------------------------------------------
+# Strangers (#279)
+#
+# An instance holds only the players who pressed X in one countdown, so anyone loaded there
+# who is not ours came in with the team. The node fails, and recovery takes the team out.
+# ---------------------------------------------------------------------------
+
+
+def _stranger_in_the_dungeon(client: FakeClient) -> None:
+    client.get_base_entity_list = AsyncMock(return_value=[FakeGidEntity(client.gid), FakeGidEntity(7)])
+
+
+async def test_a_stranger_who_entered_with_the_team_fails_the_node():
+    client = _happy_client()
+    _stranger_in_the_dungeon(client)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
+        result = await ed.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+
+
+async def test_a_stranger_through_team_up_is_expected():
+    client = _happy_client()
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
+        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
+        patch.object(nh, "count_strangers", new=AsyncMock(return_value=1)) as count,
+    ):
+        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
+
+    assert result == "SUCCESS"
+    count.assert_not_awaited()
+
+
+async def test_a_sigil_offering_team_up_entered_normally_is_still_checked():
+    client = _happy_client()
+    _stranger_in_the_dungeon(client)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
+        result = await ed.run(FakeMachine(), [client], _TEAMUP_PARAMS)
+
     assert result == "FAILURE"
 
 

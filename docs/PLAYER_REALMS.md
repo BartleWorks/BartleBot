@@ -42,6 +42,20 @@ keeps each player's realm, so the zone-entry nodes call `note_realm_peers` just 
 straggler recovery reads that (a context variable, like `straggler_recovery`). The hub button and a
 recall to a mark are assumed to keep realms too; neither is verified.
 
+### Strangers
+
+The same entity lists show players who are not ours (#279). A player is an entity made from the
+same template as the client's own character; NPCs, mobs, pets and wisps have templates of their
+own. `node_helpers.count_strangers` counts the players any client has loaded whose global id is
+not one of the team's. A read that fails counts nobody, so a bad read never refuses a place.
+
+`enter_dungeon` checks once everyone is at the entrance, and fails if anyone is there, so the
+run falls through to recovery. An instance holds only the players who pressed X on the sigil
+within one countdown, so a stranger inside came in with the team, while one merely standing on
+the sigil never matters; that is why the check is made inside and not before. There is no
+option: a stranger breaks a bot's fights. Team-Up is the exception, since it brings strangers
+in on purpose, and the check is skipped only when the run actually queued.
+
 ## Wanting: the Player Realms option
 
 **A node param says where the players go; this option says how they are arranged.** No node param

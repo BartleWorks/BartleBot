@@ -1609,6 +1609,41 @@ async def read_sightings(clients: list, machine=None) -> sightings.Sightings:
     return result
 
 
+async def _player_gids(client) -> frozenset[int] | None:
+    """The global ids of the players *client* has loaded, itself included, or None if unreadable.
+
+    A player is an entity made from the same template as the client's own character. NPCs,
+    mobs, pets and wisps each have templates of their own, so no template name is spelled
+    out here, and none has to be right.
+    """
+    player_template = await _or_none(client.client_object.object_name())
+    if not player_template:
+        return None
+    try:
+        entities = await client.get_base_entity_list()
+    except Exception:
+        logger.debug("Could not read a client's entity list", exc_info=True)
+        return None
+    names = await asyncio.gather(*(_or_none(e.object_name()) for e in entities))
+    players = [e for e, name in zip(entities, names) if name == player_template]
+    gids = await asyncio.gather(*(_or_none(e.global_id_full()) for e in players))
+    return frozenset(g for g in gids if g is not None)
+
+
+async def count_strangers(clients: list) -> int:
+    """How many players outside *clients* any of them has loaded. See :func:`sightings.count_strangers`.
+
+    For a place only the team should be, such as a dungeon instance it has just entered (#279).
+    Every client is read, since a Separate bot's players need not share an instance. Never
+    raises, and a read that fails counts nobody.
+    """
+    team, seen = await asyncio.gather(
+        asyncio.gather(*(_or_none(c.client_object.global_id_full()) for c in clients)),
+        asyncio.gather(*(_player_gids(c) for c in clients)),
+    )
+    return sightings.count_strangers(team, seen)
+
+
 class PortToFriendResult(NamedTuple):
     """Outcome of port_clients()'s wait for every port to start.
 

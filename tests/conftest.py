@@ -151,6 +151,7 @@ class FakeClient:
         # what node tests written before realm checks assume. see_each_other() splits them.
         self.gid = FakeClient._next_handle * 1000 + 1
         self.client_object.global_id_full = AsyncMock(return_value=self.gid)
+        self.client_object.object_name = AsyncMock(return_value=FAKE_PLAYER_TEMPLATE)
         self.get_base_entity_list = AsyncMock(side_effect=_everyone_in_this_test)
         _clients_in_this_test.append(self)
 
@@ -168,11 +169,20 @@ class FakeEntity:
         self.object_template = AsyncMock(return_value=template)
 
 
-class FakeGidEntity:
-    """An entity-list entry that is only a global id: another player, as a client sees it."""
+#: The template every player is made from, a FakeClient's own character included. The real
+#: name is not needed: the code compares an entity's template with the client's own.
+FAKE_PLAYER_TEMPLATE = "Player Object"
 
-    def __init__(self, gid: int):
+
+class FakeGidEntity:
+    """An entity-list entry that is only a global id: another player, as a client sees it.
+
+    *template* other than the player's makes it an NPC or a mob instead.
+    """
+
+    def __init__(self, gid: int, template: str = FAKE_PLAYER_TEMPLATE):
         self.global_id_full = AsyncMock(return_value=gid)
+        self.object_name = AsyncMock(return_value=template)
 
 
 def prompt_at(client: "FakeClient", *points, initially: bool = False) -> None:

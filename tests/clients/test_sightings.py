@@ -12,9 +12,17 @@ from wizwalker import XYZ
 import bartlebot.bot.client_health_monitor as health_module
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.machine import BotMachine
-from bartlebot.clients.sightings import SIGHT_RANGE, Reading, Sight, Sightings, TogetherRecord, classify
+from bartlebot.clients.sightings import (
+    SIGHT_RANGE,
+    Reading,
+    Sight,
+    Sightings,
+    TogetherRecord,
+    classify,
+    count_strangers,
+)
 from bartlebot.nodes import node_helpers
-from tests.conftest import FakeClient, FakeMachine, see_each_other
+from tests.conftest import FakeClient, FakeGidEntity, FakeMachine, see_each_other
 
 HERE = XYZ(0.0, 0.0, 0.0)
 NEAR = XYZ(SIGHT_RANGE - 1.0, 0.0, 0.0)
@@ -228,6 +236,51 @@ async def test_far_apart_and_unseen_reads_unknown():
     b.body.position = AsyncMock(return_value=FAR)
     result = await node_helpers.read_sightings([a, b])
     assert result.pair(0, 1) is Sight.UNKNOWN
+
+
+# ---------------------------------------------------------------------------
+# count_strangers (#279)
+# ---------------------------------------------------------------------------
+
+
+def test_only_the_team_loaded_is_no_strangers():
+    assert count_strangers([1, 2], [frozenset({1, 2}), frozenset({1, 2})]) == 0
+
+
+def test_a_player_any_client_has_loaded_counts_once():
+    assert count_strangers([1, 2], [frozenset({1, 2, 9}), frozenset({2, 9, 8})]) == 2
+
+
+def test_an_unreadable_list_counts_nobody():
+    assert count_strangers([1, 2], [None, frozenset({1, 2})]) == 0
+
+
+def test_an_unread_team_id_counts_nobody_rather_than_the_teammate():
+    assert count_strangers([1, None], [frozenset({1, 2}), frozenset({1, 2})]) == 0
+
+
+async def test_fake_clients_in_one_test_are_no_strangers_to_each_other():
+    assert await node_helpers.count_strangers([FakeClient(), FakeClient()]) == 0
+
+
+async def test_a_player_loaded_who_is_not_ours_is_a_stranger():
+    a, b = FakeClient(), FakeClient()
+    a.get_base_entity_list = AsyncMock(return_value=[FakeGidEntity(a.gid), FakeGidEntity(b.gid), FakeGidEntity(7)])
+    assert await node_helpers.count_strangers([a, b]) == 1
+
+
+async def test_an_npc_is_no_stranger():
+    a = FakeClient()
+    a.get_base_entity_list = AsyncMock(return_value=[FakeGidEntity(a.gid), FakeGidEntity(7, template="WC-NPC01")])
+    assert await node_helpers.count_strangers([a]) == 0
+
+
+async def test_a_failing_read_counts_nobody_rather_than_raising():
+    a, b = FakeClient(), FakeClient()
+    a.get_base_entity_list = AsyncMock(return_value=[FakeGidEntity(7)])
+    a.client_object.object_name.side_effect = RuntimeError("unreadable")
+    b.get_base_entity_list.side_effect = RuntimeError("list race")
+    assert await node_helpers.count_strangers([a, b]) == 0
 
 
 # ---------------------------------------------------------------------------
