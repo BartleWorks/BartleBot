@@ -59,6 +59,23 @@ def test_the_add_card_lines_up_with_the_cards_above_it(qapp):
     column.close()
 
 
+def test_a_scroll_bar_takes_its_width_from_the_gutter_not_the_cards(qapp):
+    """It narrows the viewport, and taking the whole gutter out of what was left put the
+    cards a bar's width short of the rule, off center under it."""
+    column = CardColumn("Launch Profiles", "hint", "Add launch profile")
+    column.set_cards([ProfileCard({"name": f"Profile {i}", "accounts": ["someone@example.com"]}, []) for i in range(8)])
+    column.resize(400, 250)
+    column.show()
+    qapp.processEvents()
+    (rule,) = [f for f in column.findChildren(QFrame) if f.frameShape() == QFrame.Shape.HLine]
+    bar = column.scroll_area.verticalScrollBar()
+
+    assert bar.isVisible(), "the column has to overflow for this to test anything"
+    assert _span(column.cards[0].frame, column) == _span(rule, column)
+    assert _span(bar, column)[0] >= _span(rule, column)[1], "the bar sits in the right gutter"
+    column.close()
+
+
 def test_an_untitled_column_keeps_its_full_width(qapp):
     """No rule to line up with, so no right gutter narrowing the cards: the Players tab's
     column is in a sidebar."""

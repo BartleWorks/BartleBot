@@ -45,7 +45,7 @@ engine its cards on every ``set_cards`` and passes ``reordered`` straight on.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
     QScrollArea,
@@ -305,9 +305,10 @@ class CardColumn(QWidget):
         self._area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         container = QWidget()
         rows = QVBoxLayout(container)
-        # The right side's matching gutter: the cards carry the left one themselves, so
-        # their frames end where the rule does.
+        # The right side's matching gutter, set by ``_fit_right_gutter``: the cards carry
+        # the left one themselves, so their frames end where the rule does.
         rows.setContentsMargins(0, 0, self._inset, 0)
+        self._area.verticalScrollBar().installEventFilter(self)
         rows.setSpacing(4)
         rows.addStretch()
         self._area.setWidget(container)
@@ -413,6 +414,27 @@ class CardColumn(QWidget):
 
     def _rows_layout(self):
         return self._area.widget().layout()
+
+    def eventFilter(self, obj, event) -> bool:
+        """Refit the right gutter whenever the scroll bar comes or goes."""
+        if obj is self._area.verticalScrollBar() and event.type() in (QEvent.Type.Show, QEvent.Type.Hide):
+            self._fit_right_gutter()
+        return super().eventFilter(obj, event)
+
+    def _fit_right_gutter(self) -> None:
+        """Let a visible scroll bar take its width out of the right gutter, not the cards.
+
+        The bar narrows the viewport the cards are laid out in. With the full gutter still
+        taken out of what is left, the cards ended a bar's width short of the rule and
+        sat off center under it. So the gutter shrinks by the bar's width while it shows,
+        and the bar sits in the gutter instead. That keeps the cards one width whether
+        the bar is shown or not -- which matters beyond looks: a card that wrapped
+        differently at a new width could change the column's height, and with it whether
+        the bar is needed at all.
+        """
+        bar = self._area.verticalScrollBar()
+        taken = 0 if bar.isHidden() else bar.sizeHint().width()
+        self._rows_layout().setContentsMargins(0, 0, max(0, self._inset - taken), 0)
 
     def _add_row(self, card: QWidget) -> None:
         # Expanding across, so a card fills the column; height-for-width down, so the
