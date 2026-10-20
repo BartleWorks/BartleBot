@@ -3,13 +3,14 @@
 ``IconButton`` is the half of the button vocabulary ``ActionButton`` is not: a fixed
 square with a glyph and no label. What is worth testing is therefore the boundary
 between them — that this one does *not* expand and does honor the size its caller
-asked for — plus the two things it owns, the toggle glyph and the tint.
+asked for — plus the three things it owns, the toggle glyph, the tint and the badge.
 """
 
 from dataclasses import replace
 
 import pytest
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 import bartlebot.gui.theming.theme as theme_mod
@@ -180,6 +181,48 @@ def test_it_draws_no_frame_of_its_own(qapp):
     assert "background: transparent;" in style
     assert "border: none;" in style
     assert THEME.surface_disabled in style  # the hover, which is where the shape comes from
+
+
+# ---------------------------------------------------------------------------
+# The badge
+# ---------------------------------------------------------------------------
+
+
+def _dot_pixel(button: IconButton) -> str:
+    """The rendered button's color at the center of where the badge goes: the glyph's top-right corner."""
+    center = button._badge_rect().center()
+    image = button.grab().toImage()
+    # In device pixels: the suite's app runs at a ratio of 1.25.
+    ratio = image.devicePixelRatio()
+    return image.pixelColor(int(center.x() * ratio), int(center.y() * ratio)).name()
+
+
+def test_the_badge_is_an_accent_dot_in_the_glyphs_top_right_corner(qapp, theme):
+    """#267: Save's unsaved changes, as an editor's tab shows them."""
+    theme(LIGHT)
+    button = IconButton("save_done", tooltip="Save", size=24, icon_size=16)
+    assert not button.has_badge
+    assert _dot_pixel(button) != QColor(THEME.accent).name()
+
+    button.set_badge(True)
+
+    assert button.has_badge
+    assert _dot_pixel(button) == QColor(THEME.accent).name()
+    rect = button._badge_rect()
+    assert rect.right() == 20 and rect.top() == 4, "inside the glyph's square, at its corner"
+
+
+def test_the_badge_goes_again(qapp, theme):
+    """A save that worked is shown by the dot going: one that stayed would say it had not."""
+    theme(LIGHT)
+    button = IconButton("save_done", tooltip="Save", size=24, icon_size=16)
+    without = _dot_pixel(button)
+
+    button.set_badge(True)
+    button.set_badge(False)
+
+    assert not button.has_badge
+    assert _dot_pixel(button) == without
 
 
 def test_the_pointer_cursor_shows_only_while_enabled(qapp):
