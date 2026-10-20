@@ -1,0 +1,847 @@
+{
+  "id": "621f3ca3-7382-4685-8653-ca293118c12e",
+  "name": "Tomugawa the Evil",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Ape Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Banshee",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blemished Damage Sapphire +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished PIP Opal +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blended Wool Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Blended Wool Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Blood Bat",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boots of Niceties",
+      "category": "Boots"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cloak",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Cloak of Humor",
+      "category": "Robes"
+    },
+    {
+      "name": "Cloak of Rhyming",
+      "category": "Robes"
+    },
+    {
+      "name": "Cloud Stage Set",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Crunch Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cyclops",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cyclops Minion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dark Sprite",
+      "category": "Spellements"
+    },
+    {
+      "name": "Deathblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deck of the Lotus",
+      "category": "Decks"
+    },
+    {
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Earth Walker",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Enfused Tanto of the Sea",
+      "category": "Athames"
+    },
+    {
+      "name": "Euphonic Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Evil Vestment of Disillusion",
+      "category": "Robes"
+    },
+    {
+      "name": "Fire Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flawed Defense Amethyst +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Footwraps of Anthems",
+      "category": "Boots"
+    },
+    {
+      "name": "Gallant Shroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Garment of Dilemma",
+      "category": "Robes"
+    },
+    {
+      "name": "Garment of Watchfulness",
+      "category": "Robes"
+    },
+    {
+      "name": "Garments of Explanation",
+      "category": "Robes"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Spellements"
+    },
+    {
+      "name": "Golden Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Squash",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hat of the Nimble",
+      "category": "Hats"
+    },
+    {
+      "name": "Headwraps of Resonance",
+      "category": "Hats"
+    },
+    {
+      "name": "Heedful Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Helm of Sandcastles",
+      "category": "Hats"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Imp",
+      "category": "Spellements"
+    },
+    {
+      "name": "Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Kraken",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Large Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leprechaun",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Long Lantern",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lunar Tablet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Meticulous Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "MooShu Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nature's Wrath",
+      "category": "Spellements"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Paper Lantern Stand",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Prayer Tablet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Profound Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Ring of the Naturewalker",
+      "category": "Rings"
+    },
+    {
+      "name": "Robes of the Triad",
+      "category": "Robes"
+    },
+    {
+      "name": "Sandals of Sympathy",
+      "category": "Boots"
+    },
+    {
+      "name": "Scarab",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Seraph",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shoes of the Whim",
+      "category": "Boots"
+    },
+    {
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Slippers of the Opus",
+      "category": "Boots"
+    },
+    {
+      "name": "Slippers of Yodels",
+      "category": "Boots"
+    },
+    {
+      "name": "Spectral Blast",
+      "category": "Spellements"
+    },
+    {
+      "name": "Square Root",
+      "category": "Snacks"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tomugawa's Kind Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Tomugawa's Onyx Blade",
+      "category": "Wands"
+    },
+    {
+      "name": "Tomugawa's Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Tomugawa's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Tormented Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Troll",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tunic of Preoccupation",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of Soul-Searching",
+      "category": "Robes"
+    },
+    {
+      "name": "Vampire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Vestment of Tribulations",
+      "category": "Robes"
+    },
+    {
+      "name": "Vexing Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "War Oni's Disillusioned Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Warbled Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Tomugawa's Onyx Blade"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Tomugawa the Evil",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Wraith-MSBoss-L49",
+        "wiki_page": "Creature:Tomugawa the Evil",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Death/Interiors/MS_Death1_T5_SpiritWorld",
+        "to_zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+        "xyz": {
+          "x": 29.01,
+          "y": -621.65,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 1.75,
+          "y": 145.79,
+          "z": 0.0
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "interact",
+      "label": "Interact with Candle",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+        "interact_xyz": {
+          "x": 789.94,
+          "y": 9512.45,
+          "z": -1292.3
+        },
+        "reset_xyz": {
+          "x": 807.96,
+          "y": 10125.1,
+          "z": -1292.3
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "interact",
+      "label": "Interact with Candle",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+        "interact_xyz": {
+          "x": -857.83,
+          "y": 9271.76,
+          "z": -1292.3
+        },
+        "reset_xyz": {
+          "x": -470.81,
+          "y": 8893.83,
+          "z": -1292.3
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Interact with Candle",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+        "interact_xyz": {
+          "x": -546.87,
+          "y": 10557.62,
+          "z": -1292.3
+        },
+        "reset_xyz": {
+          "x": -951.59,
+          "y": 10212.92,
+          "z": -1292.3
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone_via_object",
+      "label": "Enter Spirit World Portal",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+        "to_zone": "MooShu/MS_Death/Interiors/MS_Death1_T5_SpiritWorld",
+        "interact_xyz": {
+          "x": -48.83,
+          "y": 9798.99,
+          "z": -1292.3
+        },
+        "reset_xyz": {
+          "x": 368.63,
+          "y": 10388.19,
+          "z": -1292.3
+        },
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/Interiors/MS_Death1_T5_SpiritWorld",
+        "xyz": {
+          "x": 0.0,
+          "y": 4314.0,
+          "z": 0.0
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "MooShu/MS_Death/MS_Death_Zone1_BurialGround"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  },
+  "history": [
+    "22c66f78edaaa87f28418722696382f7b79b8ea7d76dcdd653ae382cf4397ef1",
+    "1034e1476f323627a2b30990abf08bbd37290a38608deb8f89bd155e10c6d877",
+    "14002d7e513a86a31c54ca45ec30881211a3bfe6e90d486b3581fcb4ee1695d6"
+  ]
+}
