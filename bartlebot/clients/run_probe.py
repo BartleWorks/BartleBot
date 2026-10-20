@@ -55,9 +55,9 @@ async def probe_before_run(clients: list, scaling_players) -> RunProbe:
 def refusal_text(fighting: list[int]) -> str:
     """The dialog's text when *fighting* (1-based player numbers) are in a fight."""
     if len(fighting) == 1:
-        who, verb, pronoun = f"P{fighting[0]}", "is", "it"
+        who, verb, pronoun = f"Player {fighting[0]}", "is", "it"
     else:
-        who, verb, pronoun = f"{', '.join(f'P{n}' for n in fighting[:-1])} and P{fighting[-1]}", "are", "them"
+        who, verb, pronoun = f"Players {', '.join(str(n) for n in fighting[:-1])} and {fighting[-1]}", "are", "them"
     return (
         f"{who} {verb} in a fight. Finish or flee {pronoun}, then start the bot again.\n\n"
         "Before the first node runs, BartleBot applies decks and forms the group, and neither "

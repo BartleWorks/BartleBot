@@ -2678,13 +2678,13 @@ class AppController(QObject):
 
         lines = self._deck_apply_lines(report)
         if not report.applied:
-            title = f"Deck for P{slot} not applied"
+            title = f"Deck for Player {slot} not applied"
             body = "None of the saved deck's cards are in this wizard's spellbook, so the current deck was left alone."
             self._show_deck_notice(title, f"{body}\n\n" + "\n".join(lines), warn=True)
             return
 
         self._show_deck_notice(
-            f"Deck applied for P{slot}, with changes",
+            f"Deck applied for Player {slot}, with changes",
             "\n".join(lines),
             warn=bool(report.skipped or report.archmastery_failed),
         )
@@ -2706,10 +2706,10 @@ class AppController(QObject):
             if isinstance(report, str) or report.is_clean:
                 continue
             if report.applied:
-                heading = f"P{slot}: applied, with changes"
+                heading = f"Player {slot}: applied, with changes"
                 warn = warn or bool(report.skipped or report.archmastery_failed)
             else:
-                heading = f"P{slot}: not applied — none of the saved deck's cards are in this wizard's spellbook"
+                heading = f"Player {slot}: not applied — none of the saved deck's cards are in this wizard's spellbook"
                 warn = True
                 all_applied = False
             body = [f"    {line}" if line else "" for line in self._deck_apply_lines(report)]
@@ -2782,7 +2782,7 @@ class AppController(QObject):
 
     @staticmethod
     def _deck_failure_lines(action: str, failures: dict[int, str]) -> str:
-        return "\n".join(f"Deck {action} for P{slot} {reason}." for slot, reason in sorted(failures.items()))
+        return "\n".join(f"Deck {action} for Player {slot} {reason}." for slot, reason in sorted(failures.items()))
 
     def _show_deck_notice(self, title: str, body: str, *, warn: bool) -> None:
         """Show a deck dialog *after* the calling task has finished.

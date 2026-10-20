@@ -303,7 +303,7 @@ COMBAT_HEADING = "How should your team take on bosses?"
 TACTIC_CARDS: dict[BossTactic, tuple[str, str]] = {
     BossTactic.ONE_HITTER: (
         "One hitter, the others support",
-        "P1 attacks. While a boss is up, the others blade P1 and trap and feint the boss, and P1 "
+        "Player 1 attacks. While a boss is up, the others blade Player 1 and trap and feint the boss, and Player 1 "
         "casts last. In fights with no boss, everyone attacks.",
     ),
     BossTactic.EVERYONE_ATTACKS: (

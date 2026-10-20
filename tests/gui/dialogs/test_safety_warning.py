@@ -578,7 +578,7 @@ def test_hooked_player_target_is_shown_read_only():
         wizard_names.clear_cache()
 
     assert warning[0].editable_setting is None
-    assert any(v == "P2 — Luke SkullHunter" for _, v in warning[0].details)
+    assert any(v == "Player 2 — Luke SkullHunter" for _, v in warning[0].details)
 
 
 def test_hooked_player_target_says_so_when_the_name_is_not_known_yet():
@@ -698,7 +698,7 @@ def test_an_elixir_already_active_warns_and_names_the_players():
     warning = level_scaling_warning([1, 3])
 
     assert "cannot tell one elixir from another" in warning.message
-    assert warning.details == [("Elixir already active", "P1, P3")]
+    assert warning.details == [("Elixir already active", "Player 1, Player 3")]
 
 
 def test_no_elixir_active_does_not_warn():
@@ -710,4 +710,4 @@ def test_the_elixir_warning_joins_the_other_safety_warnings():
 
     assert collect_safety_warnings(config) == []
     warnings = collect_safety_warnings(config, [FakeClient()], [1])
-    assert [w.details for w in warnings] == [[("Elixir already active", "P1")]]
+    assert [w.details for w in warnings] == [[("Elixir already active", "Player 1")]]

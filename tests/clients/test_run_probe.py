@@ -54,9 +54,9 @@ async def test_unreadable_clients_and_a_failed_elixir_read_refuse_nothing(elixir
 @pytest.mark.parametrize(
     ("fighting", "opening"),
     [
-        ([2], "P2 is in a fight. Finish or flee it,"),
-        ([1, 3], "P1 and P3 are in a fight. Finish or flee them,"),
-        ([1, 2, 4], "P1, P2 and P4 are in a fight. Finish or flee them,"),
+        ([2], "Player 2 is in a fight. Finish or flee it,"),
+        ([1, 3], "Players 1 and 3 are in a fight. Finish or flee them,"),
+        ([1, 2, 4], "Players 1, 2 and 4 are in a fight. Finish or flee them,"),
     ],
 )
 def test_the_refusal_names_every_player_in_a_fight(fighting, opening):

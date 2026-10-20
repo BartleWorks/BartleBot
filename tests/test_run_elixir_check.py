@@ -95,7 +95,7 @@ async def test_an_elixir_already_active_warns_before_the_run_and_accepting_start
     await controller.settle()
 
     assert read.await_args.args[1] == [1, 2]
-    assert [w.details for w in dialogs.warnings[0]] == [[("Elixir already active", "P2")]]
+    assert [w.details for w in dialogs.warnings[0]] == [[("Elixir already active", "Player 2")]]
     assert controller.started == 1
 
 
@@ -191,7 +191,7 @@ async def test_a_player_in_a_fight_refuses_the_run(dialogs, refusals, monkeypatc
 
     assert controller.started == 0
     assert refusals.in_task == [False]
-    assert refusals.texts[0].startswith("P2 is in a fight.")
+    assert refusals.texts[0].startswith("Player 2 is in a fight.")
     assert dialogs.warnings == []  # refused before any question is asked
     read.assert_not_awaited()
 

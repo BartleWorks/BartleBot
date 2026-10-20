@@ -1817,7 +1817,7 @@ def test_apply_deck_tooltip_names_the_missing_client(qapp):
 
     button = tab._decks_section.card(1).action_button(_APPLY_DECK)
     assert not button.isEnabled()
-    assert "No game client connected for P1" in button.toolTip()
+    assert "No game client connected for Player 1" in button.toolTip()
 
 
 def test_apply_deck_tooltip_names_the_missing_deck_when_a_client_is_present(qapp):
@@ -1826,7 +1826,7 @@ def test_apply_deck_tooltip_names_the_missing_deck_when_a_client_is_present(qapp
 
     button = tab._decks_section.card(1).action_button(_APPLY_DECK)
     assert not button.isEnabled()
-    assert "No deck saved for P1" in button.toolTip()
+    assert "No deck saved for Player 1" in button.toolTip()
 
 
 def test_deck_tooltips_name_the_run_lock(qapp):

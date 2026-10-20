@@ -241,7 +241,7 @@ class AssignmentCard(CardFrame):
         details.addLayout(school_row)
 
         self._note_edit = QLineEdit(self._details)
-        self._note_edit.setPlaceholderText('Note (optional) — e.g. "P2 passes to bank pips for round 3"')
+        self._note_edit.setPlaceholderText('Note (optional) — e.g. "Player 2 passes to bank pips for round 3"')
         self._note_edit.setText(self._assignment.note)
         self._note_edit.textChanged.connect(self._on_note_changed)
         details.addWidget(self._note_edit)
