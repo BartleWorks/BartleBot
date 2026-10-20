@@ -133,6 +133,14 @@ made every child of the canvas's view native, and a native `ViewFrame` took ever
 click on the canvas (#126). A widget that has to draw over the tiles asks for its own
 native window with `WA_NativeWindow`, as `GameView`'s overlay button does.
 
+**A native widget sets a cursor of its own** (#258). With none, its window borrows its
+parent window's, which can be a pointing hand left by a widget the pointer is nowhere
+near. `ClientTile` gives itself and its ancestors an arrow through
+`give_native_ancestors_a_cursor` (`gui/native_widgets.py`, which has the mechanism), and
+the overlay button sets its own pointer. For the same reason a disabled button unsets its
+cursor rather than setting an arrow, and none calls `setCursor` when nothing changed, as
+`IconButton.setEnabled` shows.
+
 The helper swaps the menu onto its top-level window on `aboutToShow` and hands it back
 on `aboutToHide`. The swap cannot happen at construction: a menu built in a widget's
 `__init__` has no window yet, and `window()` would return the widget itself.

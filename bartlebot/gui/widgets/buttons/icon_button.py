@@ -88,6 +88,9 @@ class IconButton(ThemedMixin, QPushButton):
         self.setFlat(True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Whether the pointer is set, held here because unsetCursor() leaves WA_SetCursor
+        # alone on a widget with no parent yet.
+        self._pointer = True
         if checked_icon_name is not None:
             self.setCheckable(True)
             self.toggled.connect(self._on_toggled)
@@ -116,7 +119,16 @@ class IconButton(ThemedMixin, QPushButton):
     def setEnabled(self, enabled: bool) -> None:  # noqa: N802 - Qt override
         was = self.isEnabled()
         super().setEnabled(enabled)
-        self.setCursor(Qt.CursorShape.PointingHandCursor if enabled else Qt.CursorShape.ArrowCursor)
+        # A pointer while enabled, and no cursor of its own while disabled, so the parent's
+        # shows: Qt clears a native window's cursor over a disabled widget that has one, and
+        # the window then borrows its parent window's, which can be stale (#258). Only on a
+        # change, since every setCursor call writes to the window, pointer over it or not.
+        if enabled != self._pointer:
+            self._pointer = enabled
+            if enabled:
+                self.setCursor(Qt.CursorShape.PointingHandCursor)
+            else:
+                self.unsetCursor()
         if enabled != was:
             self.refresh_theme_styles()
 

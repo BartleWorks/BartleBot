@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget
 from bartlebot.game.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui import streamer_mode
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow, is_click_notification
+from bartlebot.gui.native_widgets import give_native_ancestors_a_cursor
 from bartlebot.gui.theming.account_accent import TINT_ALPHA_PERCENT
 from bartlebot.gui.theming.icon_utils import svg_pixmap
 from bartlebot.gui.theming.theme import THEME
@@ -171,6 +172,9 @@ class ClientTile(QWidget):
         self._game_w, self._game_h = self._window.game_size
 
         self._window.embed(int(self.winId()))
+        # winId() made this tile and every ancestor native, each with a cursor of its own
+        # to keep, or the pointer shows whichever one a parent window last held (#258).
+        give_native_ancestors_a_cursor(self)
         self._reposition()
 
     # ------------------------------------------------------------------
