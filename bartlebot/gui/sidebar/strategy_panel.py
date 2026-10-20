@@ -302,9 +302,8 @@ class StrategyPanel(CardFrame):
     ) -> None:
         # MANAGE, not MEMBER: the body *is* a verb here -- clicking the card changes the
         # strategy -- so it takes the pointing-hand cursor and the hover highlight that
-        # promise it. MANAGE is also what pins the face buttons open, which is right on a
-        # sidebar that exists to be read: hiding the verbs behind hover on a surface whose
-        # job is to run them is backwards (see ``pins_chrome``).
+        # promise it. A click runs the verb at once in MANAGE, where LAUNCH would only
+        # select the card (see ``CardFrame.selects_on_click``).
         super().__init__(parent, mode=CardMode.MANAGE)
         # Drawn on every bot load, so its DSL is not parsed here: checked off the GUI
         # thread, and the card redrawn if it turns out not to parse.

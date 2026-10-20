@@ -424,7 +424,7 @@ geometry all internally consistent about the wrong answer, which is why it reads
 arithmetic bug rather than a visibility one. `DragReorder._begin_drag` is the case:
 the placeholder standing in for a lifted card has to be `show()`n by hand, after the
 parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and is what
-the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
+the launch cards' hover-revealed grip uses — but it only applies to a widget the layout
 is still asked about.)
 
 
@@ -686,7 +686,8 @@ undo by accident:
   launch is **disabled with the reason, never hidden**. `bartlebot/gui/screen_fit.py` is
   the one place that asks; the surfaces that must agree are `ProfileCard`/`AccountCard`,
   the Launch menu, `LauncherPopup`, and both resolution combos (`accounts_tab.py` and
-  `profile_editor.py`). Disabled where a click would *launch* it, though: the same cards
+  `profile_editor.py`). Disabled where it would *launch*, though (the Quick Launch
+  screen, where a click selects and the Launch button or a double-click launches): the same cards
   draw the Game settings tab and the profile editor, where a click edits or does nothing
   at all and the refusal is a note instead. That is the card's `CardMode` and the
   `refuses_when_unfit` that reads it, never a fresh test of the fit result.

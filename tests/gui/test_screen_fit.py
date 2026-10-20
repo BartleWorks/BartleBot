@@ -149,28 +149,33 @@ def _click(widget):
     )
 
 
-def test_an_unavailable_profile_card_will_not_launch_when_clicked(qapp):
-    """The whole card is the target, so it has to swallow its own clicks."""
+def test_an_unavailable_profile_card_will_not_launch(qapp):
+    """The whole card is the target, so it has to refuse its own activation -- while still
+    taking the click that selects it, so the launch screen can say why it is refused."""
     card = ProfileCard(_profile(["a", "b"]), [])
     fired: list[str] = []
+    picked: list[int] = []
     card.launch_profile_requested.connect(fired.append)
+    card.picked.connect(lambda: picked.append(1))
 
     card.set_unavailable("needs more room")
     _click(card)
+    assert card.activate() is False
     assert fired == []
+    assert picked == [1]
 
     card.set_unavailable(None)
-    _click(card)
+    assert card.activate() is True
     assert fired == ["Team"]
 
 
-def test_an_unavailable_account_card_will_not_launch_when_clicked(qapp):
+def test_an_unavailable_account_card_will_not_launch(qapp):
     card = AccountCard({"username": "u@example.test", "alias": "Alice"}, [])
     fired: list[tuple] = []
     card.launch_account_requested.connect(lambda u, d: fired.append((u, d)))
 
     card.set_unavailable("needs more room")
-    _click(card)
+    assert card.activate() is False
     assert fired == []
 
 

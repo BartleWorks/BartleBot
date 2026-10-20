@@ -4,6 +4,7 @@ The cards are QWidgets and need a QApplication, so what is tested here is the te
 build — extracted as plain functions for exactly that reason, per CLAUDE.md.
 """
 
+from bartlebot.game.game_sizing import FitProblem
 from bartlebot.gui.game_embed import launch_cards
 from bartlebot.gui.theming import account_accent
 from bartlebot.settings_manager import SettingsManager
@@ -206,3 +207,17 @@ def test_profile_summary_counts_clients():
 def test_profile_summary_flags_a_profile_that_cannot_launch():
     assert "cannot launch" in launch_cards.profile_summary({})
     assert "cannot launch" in launch_cards.profile_summary({"accounts": []})
+
+
+def test_the_launch_note_names_the_numbers_not_the_advice():
+    """The advice is in the column banner and the button's tooltip already."""
+    problem = FitProblem(resolution=(1280, 720), client_count=2, need=(2600, 760), available=(1900, 1000))
+
+    note = launch_cards.launch_note_for(problem)
+
+    assert note == "Doesn't fit: needs 2600×760, and 1900×1000 is available"
+
+
+def test_the_launch_note_passes_a_plain_reason_through_and_is_empty_without_one():
+    assert launch_cards.launch_note_for("needs more room") == "needs more room"
+    assert launch_cards.launch_note_for(None) == ""

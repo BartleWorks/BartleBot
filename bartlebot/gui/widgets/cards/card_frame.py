@@ -16,15 +16,27 @@ would reopen it one level down.
 
 CLICK MODEL
 
-The whole card is the primary verb. That keeps a one-click launch on the Quick Launch
-screen and a one-click open in the Game tab; the alternative -- select, then press a
-button -- would put a second click in front of the app's most common action.
+What a click on the card body does depends on what the body's verb costs. In the Game tab
+it opens the editor, which costs nothing to back out of, so the whole card is the verb and
+one click runs it.
+
+On the Quick Launch screen the verb is *launch*, which starts game clients that take a
+minute to come up and have to be closed by hand. The card was one-click there too, and
+testers launched by mistake while reaching for the Edit pencil on the same card (#266).
+So a click there only *selects* (``picked``), and the screen's Launch button launches
+what is selected. A double-click launches directly, as a shortcut. Its first click is
+still the selecting one, so learning the shortcut costs nothing. This is the launcher
+pattern (Prism, VirtualBox, PuTTY): pick an entry, then press the button that names it.
+It is a second click only when the selection is wrong, because the screen preselects the
+last launch. A confirmation popup was the alternative, and was rejected: users learn to
+click straight through one.
 
 Activation is on *release*, and only for a pointer that stayed put. A card that activated
 on press launched four game clients on the first pixel of any wobble, and a press-and-
 sweep across the face of a card -- what someone who has not found the grip yet will try --
 has to end in nothing rather than in an activation on whichever card the pointer came to
-rest over.
+rest over. A selection follows the same rule, so the two gestures cannot disagree about
+which card was clicked.
 
 Nothing on a card should be a form control. A combo box on a surface that activates on
 click is a hole in the hit target, and one that would have to swallow its own clicks to be
@@ -67,13 +79,19 @@ card is on -- and three of the four things a card varies by are read off it:
   open. That third value is one a boolean could not hold, and it is why a MEMBER card also
   drops the pointing-hand cursor and the hover highlight: both are promises that clicking
   works.
-- ``pins_chrome`` -- whether the grip and the face buttons are pinned open or revealed on
-  hover. Hover is right where the card's job is to be picked out by name; the other two
-  surfaces exist to run the verbs, and hiding them there is backwards.
-- ``refuses_when_unfit`` -- whether a card that will not fit goes gray and stops taking
-  clicks. True only on the launch screen, where a click starts what does not fit.
-  Elsewhere it is **noted, not grayed**: graying out the row the user came here to fix is
-  hostile. The refusal itself is ``_LaunchCard``'s; this is only which surface honors it.
+- ``selects_on_click`` -- whether a click selects and a double-click activates, rather
+  than a click activating. True only on the launch screen; see the click model above.
+- ``pins_grip`` -- whether the drag handle is pinned open or revealed on hover. Hover is
+  right on the launch screen, where the cards' job is to be picked out by name and a column
+  of dots beside every one competes with it; the other two surfaces exist to rearrange and
+  run things, and hiding the handle there is backwards. The face *buttons* are pinned
+  everywhere: a pencil that appeared under the pointer on the way in was a target that
+  moved as the user aimed at it, on a card whose body launched (#266).
+- ``refuses_when_unfit`` -- whether a card that will not fit goes gray and refuses its
+  activation. True only on the launch screen, where activating starts what does not fit.
+  It can still be selected there, so the screen can say why Launch is off. Elsewhere it
+  is **noted, not grayed**: graying out the row the user came here to fix is hostile. The
+  refusal itself is ``_LaunchCard``'s; this is only which surface honors it.
 - ``_verbs()`` -- the list below.
 
 VERBS ARE DATA
@@ -87,8 +105,8 @@ hardcoded parallel copy of half this list, which is why removing one meant editi
 layout.
 
 Destructive verbs stay off the face wherever the body click is destructive-adjacent: a
-trash 22px from a body that starts a game client is a mis-click that costs a stored
-credential. Everything is in the right-click menu either way -- that is the keyboard and
+trash 22px from a body whose double-click starts a game client is a mis-click that costs
+a stored credential. Everything is in the right-click menu either way -- that is the keyboard and
 the discoverability route, and it is what lets a verb stay off the face without becoming
 hard to reach.
 
@@ -184,13 +202,14 @@ class CardMode(Enum):
     surface that exists. Two booleans would describe four surfaces, two of which do not.
     """
 
-    #: The Quick Launch screen. A body click launches, the chrome is revealed on hover,
-    #: and a card that will not fit goes gray and refuses its clicks.
+    #: The Quick Launch screen. A body click selects and a double-click launches, the
+    #: grip is revealed on hover, and a card that will not fit goes gray and refuses to
+    #: launch.
     LAUNCH = "launch"
-    #: The Game settings tab. A body click edits, the chrome is pinned open, and a card
+    #: The Game settings tab. A body click edits, the grip is pinned open, and a card
     #: that will not fit is noted rather than grayed.
     MANAGE = "manage"
-    #: A card whose body is not a button. The chrome is pinned open and nothing refuses,
+    #: A card whose body is not a button. The grip is pinned open and nothing refuses,
     #: exactly as in MANAGE, and the body has no verb at all -- so no pointing-hand cursor,
     #: no hover highlight and no ``activated``. Two surfaces mean it: a row in a launch
     #: profile being assembled, whose verbs are the grip and the cross; and a player card
@@ -224,10 +243,10 @@ class GripHandle(ThemedMixin, QWidget):
 
     The whole card used to be the drag source, which worked and told nobody. Nothing on
     the card said it could be dragged, and nothing could be made to say it: the cursor is
-    the usual announcement, and a card whose primary verb is *launch* cannot wear an open
-    hand over its whole face without advertising the wrong gesture. So the announcement
-    got somewhere to live. Over the grip the cursor opens, and everywhere else on the card
-    it stays the pointing hand that means "this activates".
+    the usual announcement, and a card whose body is clicked cannot wear an open hand over
+    its whole face without advertising the wrong gesture. So the announcement got
+    somewhere to live. Over the grip the cursor opens, and everywhere else on the card it
+    stays the pointing hand that means "click here".
 
     That is also why the grip is now the *only* drag source rather than a hint at a card
     that drags everywhere. A cursor that changes on one twelve-pixel square of a widget
@@ -365,6 +384,10 @@ class CardFrame(ThemedMixin, QWidget):
     # for the gesture rather than for either verb, since one signal carrying "launch" to a
     # slot that edits is the kind of thing that reads fine and misleads for a year.
     activated = pyqtSignal()
+    # The card body was clicked on a surface where a click selects (``selects_on_click``).
+    # A request rather than a change of state: the selection is the surface's, since
+    # only it knows which card held it before, and it answers with ``set_selected``.
+    picked = pyqtSignal()
 
     def __init__(self, parent=None, *, mode: CardMode = CardMode.LAUNCH) -> None:
         super().__init__(parent)
@@ -394,19 +417,22 @@ class CardFrame(ThemedMixin, QWidget):
         # A card's optional face button for verbs the face alone does not show -- see
         # ``_make_kebab_button``. None on every card that has not asked for one.
         self._kebab_btn: QToolButton | None = None
-        # Face buttons a subclass placed itself rather than drawing from a verb -- see
-        # ``_make_face_icon_button``. Held only so the launch screen's hover reveals them.
-        self._extra_face_btns: list[IconButton] = []
         self._dragging = False
         # Lit for a moment after the card was added, so the user sees where it landed --
         # see ``highlight``. A styling state like ``_hovered``.
         self._highlighted = False
         self._highlight_timer: QTimer | None = None
+        # The surface's selection, drawn filled -- see ``set_selected``. A styling state
+        # like ``_hovered``, and one only a surface where a click selects ever sets.
+        self._selected = False
         self._shadow: QGraphicsDropShadowEffect | None = None
         # Where the left button went down, and whether it has traveled since. A card
         # activates on release and only if the pointer stayed put, so that the drag its
         # column turns a press-and-move into cannot also activate what it was reordering.
         self._press_pos: QPoint | None = None
+        # Whether that press was the second of a double-click, which activates where a
+        # single click only selects.
+        self._double_press = False
         # The keyboard route to a reorder, handed over by the list's ``DragReorder``: a
         # move and the test for whether one is possible. None on a card in no ordered list.
         self._reorder: tuple[Callable[[int], object], Callable[[int], bool]] | None = None
@@ -427,21 +453,31 @@ class CardFrame(ThemedMixin, QWidget):
 
     @property
     def refuses_when_unfit(self) -> bool:
-        """Whether a card that cannot be used goes gray and stops taking clicks.
+        """Whether a card that cannot be used goes gray and refuses to activate.
 
-        True on the launch screen, where a click starts what does not fit. False on the
+        True on the launch screen, where activating starts what does not fit. False on the
         other two, where the same card is a thing being edited or a row being assembled,
         and the refusal is a note above and beneath it rather than a state it is put into.
         """
         return self._mode is CardMode.LAUNCH
 
     @property
-    def pins_chrome(self) -> bool:
-        """Whether the grip and the face buttons stay visible instead of awaiting hover.
+    def selects_on_click(self) -> bool:
+        """Whether a body click selects the card, leaving activation to a double-click.
+
+        True only on the launch screen, whose body verb starts game clients -- see the
+        click model in the module docstring.
+        """
+        return self._mode is CardMode.LAUNCH
+
+    @property
+    def pins_grip(self) -> bool:
+        """Whether the drag handle stays visible instead of awaiting hover.
 
         False only on the launch screen, whose job is to let a name be picked out: a
-        button drawn permanently on every card competes with the name there, and there is
-        nothing for it to compete with on a surface that exists to run the verbs.
+        column of dots beside every card competes with the names there, and there is
+        nothing for it to compete with on a surface that exists to rearrange things. The
+        face buttons are not asked: they are pinned on every surface (the module docstring).
         """
         return self._mode is not CardMode.LAUNCH
 
@@ -504,14 +540,14 @@ class CardFrame(ThemedMixin, QWidget):
     def _make_grip(self, what: str) -> GripHandle:
         """This card's drag handle, named after what a drag would reorder.
 
-        Revealed and hidden with the face buttons, and pinned open on the surfaces they
-        are pinned open on -- ``pins_chrome`` is one answer for both. It is the same
-        judgement: on the launch screen the card's job is to be picked out by name and
-        everything else defers to that, while the Game tab and the profile editor exist to
-        do things to the card, so the things you can do to it are on its face.
+        Revealed on hover on the launch screen and pinned open elsewhere -- see
+        ``pins_grip``. The face buttons used to share that answer, and stopped (#266): a
+        handle appearing under the pointer is harmless, since a press on it moves nothing
+        until it drags, but a pencil appearing beside a body that launched was a target
+        the user missed into the launch.
         """
         self._grip = GripHandle(f"Drag to reorder {what}", self)
-        self._grip.setVisible(self.pins_chrome)
+        self._grip.setVisible(self.pins_grip)
         return self._grip
 
     @property
@@ -620,6 +656,23 @@ class CardFrame(ThemedMixin, QWidget):
         self._highlighted = False
         self.refresh_theme_styles()
 
+    @property
+    def is_selected(self) -> bool:
+        return self._selected
+
+    def set_selected(self, selected: bool) -> None:
+        """Draw the card as the surface's selection, or stop.
+
+        Filled as well as outlined, where hover is outlined alone: hover is the card a
+        click would take and the fill is the one taken, the same two looks the New Bot
+        gallery's cards use. Set by the surface, never by the card's own click -- see
+        ``picked``.
+        """
+        if selected == self._selected:
+            return
+        self._selected = selected
+        self.refresh_theme_styles()
+
     # ------------------------------------------------------------------
     # The theme pass
     # ------------------------------------------------------------------
@@ -640,10 +693,11 @@ class CardFrame(ThemedMixin, QWidget):
             # never comes. Nothing is lost by staying quiet there, the chrome being pinned
             # open.
             lit = (self._hovered and self.has_body_verb) or self._highlighted
-            self._apply_frame_palette(
-                THEME.node_fill if lit else THEME.surface,
-                THEME.accent if lit else THEME.border,
-            )
+            if self._selected:
+                fill = THEME.node_fill_selected
+            else:
+                fill = THEME.node_fill if lit else THEME.surface
+            self._apply_frame_palette(fill, THEME.accent if lit or self._selected else THEME.border)
             self._restyle_content()
         self._restyle_action_icons()
 
@@ -749,21 +803,13 @@ class CardFrame(ThemedMixin, QWidget):
         consumes its own clicks. The whole card is a hit target, and a painted-on icon
         would activate the thing the user was trying to do something else to.
 
-        Revealed on hover on the launch screen, because it is secondary to launching: a
-        button drawn permanently on every card competes with the name for attention, on
-        the one screen whose job is to let you pick a name. Hover-only is not the whole
-        answer to reaching it — that is what ``contextMenuEvent`` below is for, which is
-        also the route for anyone not using a mouse.
+        Always drawn, on every surface. It was revealed on hover on the launch screen, to
+        keep the names uncluttered, and that is what testers mis-clicked on (#266): the
+        pencil appeared under the pointer as it arrived, so the user aimed at a target that
+        had not been there a moment before, on a card whose body launched.
 
-        Pinned open wherever the card is the thing being worked on rather than launched:
-        there is nothing for the icons to compete with on those surfaces, and hiding the
-        verbs behind hover on a surface that exists to run them is backwards. It is also
-        what lets those surfaces carry a trash, or a cross, on the face at all.
-
-        The button's space is held while it is hidden, or revealing it on hover would
-        resize the card under the pointer -- which can move the card out from under it,
-        hiding the button again, resizing back: the whole card jitters as long as the
-        pointer sits near its edge.
+        The button's space is held while a subclass hides it -- a verb offered only in
+        some states -- so that showing it again does not resize the card under the pointer.
         """
         button = QToolButton(self)
         button.setFixedSize(_FACE_BTN_SIZE, _FACE_BTN_SIZE)
@@ -774,7 +820,6 @@ class CardFrame(ThemedMixin, QWidget):
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setToolTip(verb.tooltip)
         button.clicked.connect(verb.run)
-        button.setVisible(self.pins_chrome)
         self._action_btns.append((button, verb))
         return button
 
@@ -842,12 +887,12 @@ class CardFrame(ThemedMixin, QWidget):
         """Right-click: every verb this card has, including the ones not on its face.
 
         This is where a destructive verb lives on a surface whose body click is itself
-        costly. On the launch screen the card body starts a game client, and a trash icon
-        22px from it is a mis-click that costs a stored credential and a character roster
-        -- so the destructive verb is the one that takes a deliberate second gesture. It is
-        also the keyboard route to a verb that has no button at all.
+        costly. On the launch screen a double-click on the card body starts a game client,
+        and a trash icon 22px from it is a mis-click that costs a stored credential and a
+        character roster -- so the destructive verb is the one that takes a deliberate
+        second gesture. It is also the keyboard route to a verb that has no button at all.
 
-        Offered on a card that is refusing its clicks too, for the same reason the pencil
+        Offered on a card that is refusing to launch too, for the same reason the pencil
         is: editing the thing -- lowering its resolution, dropping an account -- is exactly
         what the grayed card is telling the user to do.
         """
@@ -883,7 +928,6 @@ class CardFrame(ThemedMixin, QWidget):
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setToolTip(tooltip)
         button.setIcon(svg_icon("more_vert", size=14))
-        button.setVisible(self.pins_chrome)
         button.clicked.connect(lambda: self._open_verbs_menu(button))
         self._kebab_btn = button
         return button
@@ -898,15 +942,13 @@ class CardFrame(ThemedMixin, QWidget):
         swaps glyphs through ``set_icon_name``, so there is nothing here for
         ``_restyle_action_icons`` to keep in step.
 
-        Sized, revealed and held while hidden exactly as the verb buttons are, so it sits
-        in the same row as them without a seam.
+        Sized and held while hidden exactly as the verb buttons are, so it sits in the
+        same row as them without a seam.
         """
         button = IconButton(icon_name, tooltip=tooltip, size=_FACE_BTN_SIZE, icon_size=14, parent=self)
         policy = button.sizePolicy()
         policy.setRetainSizeWhenHidden(True)
         button.setSizePolicy(policy)
-        button.setVisible(self.pins_chrome)
-        self._extra_face_btns.append(button)
         return button
 
     def _open_verbs_menu(self, anchor: QWidget) -> None:
@@ -920,30 +962,34 @@ class CardFrame(ThemedMixin, QWidget):
     # Hover and activation
     # ------------------------------------------------------------------
 
-    def _set_actions_visible(self, visible: bool) -> None:
-        """Show or hide the grip and the face buttons — a no-op where they are pinned open."""
-        if self.pins_chrome:
-            return
-        for button, _verb in self._action_btns:
-            button.setVisible(visible)
-        if self._kebab_btn is not None:
-            self._kebab_btn.setVisible(visible)
-        for button in self._extra_face_btns:
-            button.setVisible(visible)
-        if self._grip is not None:
+    def _set_grip_visible(self, visible: bool) -> None:
+        """Show or hide the drag handle -- a no-op where it is pinned open."""
+        if not self.pins_grip and self._grip is not None:
             self._grip.setVisible(visible)
 
     def enterEvent(self, event) -> None:
         self._hovered = True
-        self._set_actions_visible(True)
+        self._set_grip_visible(True)
         self.refresh_theme_styles()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self._hovered = False
-        self._set_actions_visible(False)
+        self._set_grip_visible(False)
         self.refresh_theme_styles()
         super().leaveEvent(event)
+
+    def activate(self) -> bool:
+        """Run the body verb, as a click (or, where a click selects, a double-click) would.
+
+        Public because the launch screen's Launch button and its Enter key launch the
+        selected card through here, so that the refusal a click meets is the refusal they
+        meet too. Returns whether anything was emitted.
+        """
+        if not self.has_body_verb or self._refuses_activation():
+            return False
+        self.activated.emit()
+        return True
 
     def mousePressEvent(self, event) -> None:
         """Remember where the press landed. Activation waits for the release."""
@@ -952,10 +998,25 @@ class CardFrame(ThemedMixin, QWidget):
             # between the press and the release, so a local origin measures the distance
             # against a card that has since slid out from under the pointer.
             self._press_pos = event.globalPosition().toPoint()
+            self._double_press = False
         super().mousePressEvent(event)
 
+    def mouseDoubleClickEvent(self, event) -> None:
+        """The second press of a double-click: where a click selects, this one activates.
+
+        Treated as a press -- the activation still waits for its release, under the same
+        stayed-put test -- and only marked as the second. Elsewhere it is passed on, and
+        Qt's default turns it into an ordinary press, as it always has.
+        """
+        if self.selects_on_click and event.button() == Qt.MouseButton.LeftButton:
+            self._press_pos = event.globalPosition().toPoint()
+            self._double_press = True
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
+
     def mouseReleaseEvent(self, event) -> None:
-        """Activate, if the pointer never left the card and never really moved.
+        """Activate or select, if the pointer never left the card and never really moved.
 
         On release rather than on press, and only for a pointer that stayed put. Reorders
         start on the grip now (``GripHandle``), so the body no longer competes with a
@@ -966,9 +1027,14 @@ class CardFrame(ThemedMixin, QWidget):
         wobble, launching four game clients on a hand that had not decided yet. Qt's own
         buttons activate on release for the same reason.
 
-        The whole card is the hit target, so a refusing one has to swallow its own clicks:
-        there is no QPushButton here whose disabled state would do it. That is what
-        ``_refuses_activation`` answers, and a surface where a body click *fixes* the
+        Where a click selects (``selects_on_click``) a single click asks for the selection
+        and only the second click of a double-click activates. A selection is never
+        refused: a card that will not fit can still be picked out, so the surface can say
+        why it will not launch.
+
+        The whole card is the hit target, so a refusing one has to swallow its own
+        activation: there is no QPushButton here whose disabled state would do it. That is
+        what ``_refuses_activation`` answers, and a surface where a body click *fixes* the
         problem — the Game tab, where it edits — does not refuse.
 
         The *frame* is the hit target rather than this widget's whole rectangle, which
@@ -982,20 +1048,24 @@ class CardFrame(ThemedMixin, QWidget):
         up by accident on the one surface where a body click is meant to do nothing.
         """
         pressed = self._press_pos
+        double = self._double_press
         self._press_pos = None
+        self._double_press = False
         if (
             event.button() == Qt.MouseButton.LeftButton
             and pressed is not None
             and self.has_body_verb
-            and not self._refuses_activation()
             and self.frame.geometry().contains(event.position().toPoint())
             and (event.globalPosition().toPoint() - pressed).manhattanLength() < QApplication.startDragDistance()
         ):
-            self.activated.emit()
+            if self.selects_on_click and not double:
+                self.picked.emit()
+            else:
+                self.activate()
         super().mouseReleaseEvent(event)
 
     def _refuses_activation(self) -> bool:
-        """Whether a body click is currently being swallowed. Subclasses that refuse override.
+        """Whether the body verb is currently refused. Subclasses that refuse override.
 
         False here: a bare frame has nothing to refuse *for*. ``_LaunchCard`` returns True
         for a card that cannot fit on a surface whose ``refuses_when_unfit`` is set.

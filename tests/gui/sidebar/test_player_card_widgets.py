@@ -578,7 +578,7 @@ def test_the_body_of_a_player_card_is_not_a_button(qapp, section):
 
     assert activated == []
     assert not card.has_body_verb
-    assert card.pins_chrome and not card.refuses_when_unfit
+    assert card.pins_grip and not card.refuses_when_unfit
     assert host
 
 

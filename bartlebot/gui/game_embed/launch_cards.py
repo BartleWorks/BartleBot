@@ -26,8 +26,9 @@ REFUSING A CARD THAT WILL NOT FIT
 ``set_unavailable`` grays a card and says why, rather than dropping it from the list. A
 profile that silently vanishes leaves the user hunting for it with nothing on screen
 saying what happened. Whether a surface honors that refusal is ``refuses_when_unfit`` --
-the launch screen does, because a click there starts what does not fit; the Game tab does
-not, because a click there is the user going to fix it.
+the launch screen does, because activating a card there starts what does not fit; the
+Game tab does not, because a click there is the user going to fix it. A refused card can
+still be selected on the launch screen, and the Launch button says why it is off.
 
 THREE SURFACES, ONE CARD
 
@@ -51,9 +52,9 @@ one list a surface's buttons and its right-click menu are both built from. Which
 this file's two cards offer, on which surface, and what decides it:
 
 - **Delete is menu-only on the launch screen.** A trash there would sit 22px from a body
-  that starts a game client, and a mis-click costs a stored credential and a character
-  roster. The Game tab does put it on the face, which is safe for exactly the reason it is
-  not safe here: a body click there edits.
+  whose double-click starts a game client, and a mis-click costs a stored credential and a
+  character roster. The Game tab does put it on the face, which is safe for exactly the
+  reason it is not safe here: a body click there edits.
 - **The editor's verb is a dismiss cross, and it is on the face.** It takes the account
   out of the profile being edited -- not the account itself -- so the rule above does not
   reach it: a mis-click costs one re-tick in the account picker, and in that mode there is
@@ -325,6 +326,21 @@ def _tooltip_for(reason: FitProblem | str | None) -> str:
     return reason.sentence if isinstance(reason, FitProblem) else reason
 
 
+def launch_note_for(reason: FitProblem | str | None) -> str:
+    """The line under the launch screen's Launch button while the selected card cannot launch.
+
+    Short, because the advice is already on screen: in the column's banner, and in the
+    button's tooltip. What this line adds is that the *button* is off because of that,
+    rather than for some reason of its own.
+    """
+    if reason is None:
+        return ""
+    if isinstance(reason, FitProblem):
+        need, available = reason.need, reason.available
+        return f"Doesn't fit: needs {need[0]}×{need[1]}, and {available[0]}×{available[1]} is available"
+    return reason
+
+
 # ---------------------------------------------------------------------------
 # Widgets
 # ---------------------------------------------------------------------------
@@ -382,7 +398,8 @@ class _LaunchCard(CardFrame):
             return
         self._unavailable = reason
         refuses = bool(reason) and self.refuses_when_unfit
-        clickable = self.has_body_verb and not refuses
+        # A refused card on the launch screen still takes a click, which selects it.
+        clickable = self.has_body_verb and (self.selects_on_click or not refuses)
         self.setCursor(Qt.CursorShape.PointingHandCursor if clickable else Qt.CursorShape.ArrowCursor)
         self.setToolTip(_tooltip_for(reason))
         if self._quiet_lbl is not None:
@@ -413,6 +430,26 @@ class _LaunchCard(CardFrame):
         return self._unavailable
 
     @property
+    def refusal_text(self) -> str:
+        """Why this card will not launch, as one sentence with its advice, or "" if it will.
+
+        Only while the surface honors the refusal: in the Game tab the card is noted, not
+        refused. What the card's tooltip says, read back by the launch screen to put under
+        its Launch button.
+        """
+        return _tooltip_for(self._unavailable) if self._refuses_activation() else ""
+
+    @property
+    def launch_key(self) -> tuple[str, str]:
+        """What this card launches, as a ``recent_launches`` entry: its type and its id."""
+        raise NotImplementedError
+
+    @property
+    def launch_label(self) -> str:
+        """The name the Launch button says it will launch."""
+        raise NotImplementedError
+
+    @property
     def quiet_text(self) -> str:
         """What the card's quiet line currently reads — its summary, or the refusal."""
         return "" if self._quiet_lbl is None else self._quiet_lbl.text()
@@ -428,12 +465,12 @@ class _LaunchCard(CardFrame):
         return "" if self._detail_lbl is None else self._detail_lbl.text()
 
     def _refuses_activation(self) -> bool:
-        """A card that cannot launch swallows its own clicks, where its surface refuses.
+        """A card that cannot launch refuses to, where its surface refuses.
 
         The whole card is the hit target, so there is no QPushButton here whose disabled
-        state would do it. A card in the Game tab does not refuse, because what its click
-        does there is edit — which is exactly what an unfittable card wants the user to go
-        and do.
+        state would do it. It still selects, so the launch screen can say why. A card in
+        the Game tab does not refuse, because what its click does there is edit — which is
+        exactly what an unfittable card wants the user to go and do.
         """
         return self._unavailable is not None and self.refuses_when_unfit
 
@@ -469,8 +506,11 @@ class _LaunchCard(CardFrame):
 
         Fill and text both move, because either alone reads as enabled — the same finding
         as the app-wide disabled palette (tests/gui/theming/test_disabled_affordance.py).
+        A selected one keeps the accent outline, since the fill that marks a selection is
+        the one this palette replaces.
         """
-        self._apply_frame_palette(THEME.surface_disabled, THEME.border, extra="")
+        border = THEME.accent if self.is_selected else THEME.border
+        self._apply_frame_palette(THEME.surface_disabled, border, extra="")
         if self._name_lbl is not None:
             self._name_lbl.setStyleSheet(f"color: {THEME.text_disabled}; background: transparent;")
         for lbl in (self._detail_lbl, self._quiet_lbl):
@@ -585,6 +625,14 @@ class AccountCard(_LaunchCard):
         """The account palette slot this card is striped with, and its pills outlined in."""
         return self._stripe_key
 
+    @property
+    def launch_key(self) -> tuple[str, str]:
+        return ("account", self._username)
+
+    @property
+    def launch_label(self) -> str:
+        return self._display_name
+
     def _refusal_line(self, reason: FitProblem | str | None) -> str:
         """Nothing: an account card's refusal belongs to its column, numbers included.
 
@@ -644,8 +692,8 @@ class AccountCard(_LaunchCard):
         Delete reaches the *face* only in the Game tab. It is the harshest verb this card
         has, taking a password out of the Credential Manager and a character roster off
         disk, neither of which comes back by adding the account again -- so on the launch
-        screen, where it would sit 22px from a body that starts a game client, it stays on
-        the right-click menu.
+        screen, where it would sit 22px from a body whose double-click starts a game
+        client, it stays on the right-click menu.
 
         Remove is the whole verb list in MEMBER mode, and it is on the face, because it is
         not that button: it takes this account out of the profile being edited and costs
@@ -742,6 +790,14 @@ class ProfileCard(_LaunchCard):
         accounts and the resolution to ask about.
         """
         return self._profile
+
+    @property
+    def launch_key(self) -> tuple[str, str]:
+        return ("profile", self._name)
+
+    @property
+    def launch_label(self) -> str:
+        return self._name
 
     def _build(self) -> None:
         layout = self._build_frame("launch profiles")

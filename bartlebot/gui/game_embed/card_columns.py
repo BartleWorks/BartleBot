@@ -28,9 +28,9 @@ one place where it cannot be fixed on one surface and left broken on the other.
 
 THE TWO SURFACES ARE STILL DIFFERENT
 
-Same cards, two verbs. A body click launches on the launch screen and edits in the tab,
-and a card that will not fit is grayed and refuses its clicks there but is only *noted*
-in the tab -- graying out the row the user came here to fix is hostile, and the tab is
+Same cards, two verbs. A body click selects on the launch screen, where a double-click or
+the Launch button launches, and edits in the tab. A card that will not fit is grayed and
+refuses to launch there but is only *noted* in the tab -- graying out the row the user came here to fix is hostile, and the tab is
 where they fix it. Both of those are the card's own flags (see ``launch_cards``); what
 this module varies is the banner's "Change resolution" link, which the tab omits because
 the combo box it would point at is already on screen above the columns.
@@ -77,7 +77,7 @@ from bartlebot.settings_manager import SettingsManager
 # "Wizard101", because testers read a bare "account" as one made with BartleBot (#261).
 ACCOUNTS_TITLE = "Wizard101 Accounts"
 ADD_ACCOUNT = "Add Wizard101 account"
-EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one and it launches from here in a click."
+EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one to launch it from here."
 EMPTY_PROFILES_HINT = "A launch profile starts several accounts at once, in the order you give them."
 
 

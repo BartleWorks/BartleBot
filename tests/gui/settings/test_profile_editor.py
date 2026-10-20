@@ -160,7 +160,7 @@ def test_a_member_cards_body_does_nothing(qapp, screen, stored):
 
     assert card.has_body_verb is False
     assert card.cursor().shape() == Qt.CursorShape.ArrowCursor
-    assert card.pins_chrome is True
+    assert card.pins_grip is True
     assert card.refuses_when_unfit is False
 
 
