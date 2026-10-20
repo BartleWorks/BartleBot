@@ -1,4 +1,4 @@
-/* The logo's blue, #4488cc, darkened until white on it reads at 5.5:1, for the header
+/* The app's accent blue, #4488cc, darkened until white on it reads at 5.5:1, for the header
    accents, the download button and links. Dark mode keeps the button and lightens links,
    which sit on the dark page instead. */
 :root {
@@ -45,7 +45,7 @@
 }
 
 /* The landing page (overrides/home.html). The theme's header is the page's own color, not
-   the brand's, so the hero is too: a glow of the logo's blue and leaf green behind it, and
+   the brand's, so the hero is too: a glow of the accent blue and the logo's leaf green behind it, and
    a faint grid that echoes the logo's pixels. 1rem is 20px here: the theme sets html to
    125%. */
 .bb-hero {

@@ -16,7 +16,9 @@ import pytest
 from bartlebot.clients.tile_slots import TileSlot
 from bartlebot.game.game_sizing import required_game_area
 from bartlebot.gui import screen_fit
+from bartlebot.gui.game_embed import game_view as game_view_module
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
+from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
@@ -290,3 +292,24 @@ def test_enter_launches_the_selection(quick_launch):
     screen.launch_selected()
 
     assert launched == ["Solo"]
+
+
+# ---------------------------------------------------------------------------
+# The name and version over the logo
+# ---------------------------------------------------------------------------
+
+
+def test_the_launch_screen_names_the_app_and_this_builds_version_over_the_logo(quick_launch, monkeypatch):
+    monkeypatch.setattr(game_view_module, "current_version", lambda: "1.2.3")
+    screen = quick_launch()
+    screen.show()
+
+    labels = {label.text(): label for label in screen.findChildren(ThemedTextLabel)}
+    name, version = labels["BartleBot"], labels["v1.2.3"]
+    logo = screen.findChild(LogoDisc)
+
+    def top(widget) -> int:
+        return widget.mapTo(screen, widget.rect().topLeft()).y()
+
+    assert top(name) < top(version) < top(logo)
+    screen.close()
