@@ -527,7 +527,9 @@ class _DeckCard(CardFrame):
             # Off the face: the body click one icon away unfolds a card list, and a trash
             # beside it is the mis-click card_frame.py keeps destructive verbs out of.
             verbs.append(
-                CardVerb(_CLEAR_DECK, "trash", f"Forget the saved deck for Player {self._slot}", self.clear_requested.emit)
+                CardVerb(
+                    _CLEAR_DECK, "trash", f"Forget the saved deck for Player {self._slot}", self.clear_requested.emit
+                )
             )
         return verbs
 
