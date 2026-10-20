@@ -53,6 +53,8 @@ from PyQt6.QtWidgets import (
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.game_embed.card_columns import (
+    ACCOUNTS_TITLE,
+    ADD_ACCOUNT,
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
     CardColumn,
@@ -253,7 +255,7 @@ class _AccountDialog(QDialog):
         parent=None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Account")
+        self.setWindowTitle("Wizard101 Account")
         self.setMinimumWidth(300)
 
         form = QFormLayout()
@@ -732,7 +734,7 @@ class AccountsTab(QWidget):
 
         # No "Change resolution" link on either banner: the combo it would point at is
         # forty pixels above them.
-        self._accounts_col = CardColumn("Accounts", EMPTY_ACCOUNTS_HINT, "Add account", show_settings_link=False)
+        self._accounts_col = CardColumn(ACCOUNTS_TITLE, EMPTY_ACCOUNTS_HINT, ADD_ACCOUNT, show_settings_link=False)
         self._accounts_col.add_requested.connect(self._on_add)
         self._accounts_col.reordered.connect(self._on_accounts_reordered)
         columns.addWidget(self._accounts_col, 1)

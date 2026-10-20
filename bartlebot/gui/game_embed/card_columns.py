@@ -28,9 +28,9 @@ one place where it cannot be fixed on one surface and left broken on the other.
 
 THE TWO SURFACES ARE STILL DIFFERENT
 
-Same cards, two verbs. A body click launches on the launch screen and edits in the tab,
-and a card that will not fit is grayed and refuses its clicks there but is only *noted*
-in the tab -- graying out the row the user came here to fix is hostile, and the tab is
+Same cards, two verbs. A body click selects on the launch screen, where a double-click or
+the Launch button launches, and edits in the tab. A card that will not fit is grayed and
+refuses to launch there but is only *noted* in the tab -- graying out the row the user came here to fix is hostile, and the tab is
 where they fix it. Both of those are the card's own flags (see ``launch_cards``); what
 this module varies is the banner's "Change resolution" link, which the tab omits because
 the combo box it would point at is already on screen above the columns.
@@ -45,7 +45,7 @@ engine its cards on every ``set_cards`` and passes ``reordered`` straight on.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
     QScrollArea,
@@ -59,6 +59,7 @@ from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
     AUTOSCROLL_MARGIN,
@@ -74,7 +75,10 @@ from bartlebot.settings_manager import SettingsManager
 # user does not yet know what a launch profile *is*, so one line of what the thing is
 # stays, and only while the column is empty. Once there are cards, they are the
 # explanation.
-EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one and it launches from here in a click."
+# "Wizard101", because testers read a bare "account" as one made with BartleBot (#261).
+ACCOUNTS_TITLE = "Wizard101 Accounts"
+ADD_ACCOUNT = "Add Wizard101 account"
+EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one to launch it from here."
 EMPTY_PROFILES_HINT = "A launch profile starts several accounts at once, in the order you give them."
 
 
@@ -236,6 +240,19 @@ class CardColumn(QWidget):
         super().__init__(parent)
         self._empty_hint = empty_hint
         self._add_text = add_text
+        # How far the heading, the rule and the banner sit in from each side, and the
+        # cards from the right. A card's frame starts a grip's gutter in from the column's
+        # left edge, because the grip sits beside the frame; with the rule spanning the
+        # full width, every card looked narrower than its column. Insetting the rule to the
+        # frames puts the grips outside the column as drawn, and the matching gutter on the
+        # right keeps that column centered where it was. The grips cannot leave the
+        # column's *widget*: the scroll area clips what is outside it, and a grip that was
+        # not the card's own child would hide itself as the pointer left the card for it
+        # (see ``GripHandle``).
+        #
+        # Only under a heading: an untitled column draws no rule to line up with, and the
+        # right gutter would only narrow its cards -- the Players tab's, in a sidebar.
+        self._inset = GRIP_GUTTER if title else 0
         # The Add card at the foot, when this column has one. Not one of ``cards`` -- it
         # is the column's terminator, not an entry in the ordered list.
         self._add_card: QWidget | None = None
@@ -254,6 +271,13 @@ class CardColumn(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
+        # Everything above the cards, inset by the grip's gutter on both sides. See
+        # ``_inset``.
+        top = QVBoxLayout()
+        top.setContentsMargins(self._inset, 0, self._inset, 0)
+        top.setSpacing(layout.spacing())
+        layout.addLayout(top)
+
         # An empty *title* draws no heading and no rule, rather than an empty bold label
         # above a line that then reads as a stray divider. That is for a column whose
         # surface already names it: the Players tab's own label says "Players", and a
@@ -264,16 +288,16 @@ class CardColumn(QWidget):
             font.setBold(True)
             header.setFont(font)
             header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(header)
+            top.addWidget(header)
 
             rule = QFrame()
             rule.setFrameShape(QFrame.Shape.HLine)
             rule.setFrameShadow(QFrame.Shadow.Sunken)
-            layout.addWidget(rule)
+            top.addWidget(rule)
 
         self._banner = _FitBanner(show_link=show_settings_link)
         self._banner.settings_requested.connect(self.settings_requested)
-        layout.addWidget(self._banner)
+        top.addWidget(self._banner)
 
         self._area = QScrollArea()
         self._area.setWidgetResizable(True)
@@ -281,7 +305,10 @@ class CardColumn(QWidget):
         self._area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         container = QWidget()
         rows = QVBoxLayout(container)
-        rows.setContentsMargins(0, 0, 0, 0)
+        # The right side's matching gutter, set by ``_fit_right_gutter``: the cards carry
+        # the left one themselves, so their frames end where the rule does.
+        rows.setContentsMargins(0, 0, self._inset, 0)
+        self._area.verticalScrollBar().installEventFilter(self)
         rows.setSpacing(4)
         rows.addStretch()
         self._area.setWidget(container)
@@ -370,6 +397,9 @@ class CardColumn(QWidget):
             hint = ThemedTextLabel(self._empty_hint, css=f"font-size: {THEME.font_small_px}px;")
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            # Centered under the Add card's frame, which starts a gutter in, not under
+            # the row, which the right gutter has already ended a gutter early.
+            hint.setContentsMargins(self._inset, 0, 0, 0)
             layout.addWidget(hint)
 
         layout.addStretch()
@@ -384,6 +414,32 @@ class CardColumn(QWidget):
 
     def _rows_layout(self):
         return self._area.widget().layout()
+
+    def eventFilter(self, obj, event) -> bool:
+        """Refit the right gutter whenever the scroll bar comes or goes."""
+        if obj is self._area.verticalScrollBar() and event.type() in (QEvent.Type.Show, QEvent.Type.Hide):
+            self._fit_right_gutter()
+        return super().eventFilter(obj, event)
+
+    def _fit_right_gutter(self) -> None:
+        """Let a visible scroll bar take its width out of the right gutter, not the cards.
+
+        The bar narrows the viewport the cards are laid out in. With the full gutter still
+        taken out of what is left, the cards ended a bar's width short of the rule and
+        sat off center under it. So the gutter shrinks by the bar's width while it shows,
+        and the bar sits in the gutter instead. That keeps the cards one width whether
+        the bar is shown or not -- which matters beyond looks: a card that wrapped
+        differently at a new width could change the column's height, and with it whether
+        the bar is needed at all.
+
+        Asked with ``isVisibleTo`` the scroll area, never ``isHidden``: Qt hides a
+        container the bar sits in rather than the bar, so once a column had overflowed
+        even once, its bar went on reporting itself shown and the column kept giving up
+        the bar's width with no bar there.
+        """
+        bar = self._area.verticalScrollBar()
+        taken = bar.sizeHint().width() if bar.isVisibleTo(self._area) else 0
+        self._rows_layout().setContentsMargins(0, 0, max(0, self._inset - taken), 0)
 
     def _add_row(self, card: QWidget) -> None:
         # Expanding across, so a card fills the column; height-for-width down, so the

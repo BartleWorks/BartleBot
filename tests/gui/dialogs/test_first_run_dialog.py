@@ -89,6 +89,12 @@ def prefs(tmp_path: Path) -> PreferenceStore:
     return PreferenceStore(tmp_path / "vendor")
 
 
+@pytest.fixture
+def team() -> None:
+    """Two accounts: the combat question is in the walk only for a team (#264)."""
+    _two_accounts()
+
+
 @pytest.fixture(autouse=True)
 def screen(monkeypatch):
     """Pin the screen the Launch profile page fits its resolution to, so it is not the runner's."""
@@ -160,7 +166,7 @@ def test_the_dialog_opens_on_quick_or_custom_with_a_step_count(qapp):
     assert not dialog.back_button.isVisibleTo(dialog)
 
 
-def test_the_mode_is_not_stored(qapp, prefs):
+def test_the_mode_is_not_stored(qapp, prefs, team):
     dialog = FirstRunDialog([CombatQuestionPage(prefs)])
     dialog.mode_page.select(SetupMode.CUSTOM)
 
@@ -258,7 +264,7 @@ def test_a_rerun_shows_every_page_that_applies(qapp):
     assert _headings(dialog) == [MODE_HEADING, "Answered?", "Open?"]
 
 
-def test_a_rerun_opens_the_combat_page_on_the_stored_answer(qapp, prefs):
+def test_a_rerun_opens_the_combat_page_on_the_stored_answer(qapp, prefs, team):
     prefs.set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
     prefs.set(ANSWERED_KEY, True)
     page = CombatQuestionPage(prefs)
@@ -327,7 +333,7 @@ def test_the_failure_goes_once_the_page_is_left(qapp):
     assert not dialog.error_shown
 
 
-def test_a_failed_combat_write_keeps_the_question_unanswered(qapp, prefs, monkeypatch):
+def test_a_failed_combat_write_keeps_the_question_unanswered(qapp, prefs, team, monkeypatch):
     monkeypatch.setattr(PreferenceStore, "set", lambda self, key, value: False)
     page = CombatQuestionPage(prefs)
     dialog = FirstRunDialog([page])
@@ -369,7 +375,7 @@ def test_the_stored_answer_is_the_one_selected(qapp, prefs):
     assert [card.selected for card in page.cards] == [False, True]
 
 
-def test_showing_the_page_keeps_the_stored_answer_selected(qapp, prefs):
+def test_showing_the_page_keeps_the_stored_answer_selected(qapp, prefs, team):
     """A card selects itself on taking focus; the first card must not take it on show."""
     prefs.set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
     page = CombatQuestionPage(prefs)
@@ -437,7 +443,7 @@ def test_the_cards_are_stacked_each_the_pages_full_width(qapp):
     ("tactic", "stored"),
     [(BossTactic.ONE_HITTER, None), (BossTactic.EVERYONE_ATTACKS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)],
 )
-def test_next_stores_the_answer_and_settings_combat_shows_it(qapp, prefs, tactic, stored):
+def test_next_stores_the_answer_and_settings_combat_shows_it(qapp, prefs, team, tactic, stored):
     page = CombatQuestionPage(prefs)
     dialog = FirstRunDialog([page])
     _next(dialog)
@@ -454,7 +460,7 @@ def test_next_stores_the_answer_and_settings_combat_shows_it(qapp, prefs, tactic
     assert card.strategy_card._name_lbl.text() == expected
 
 
-def test_a_rerun_on_a_duel_neither_answer_names_selects_none_and_keeps_it(qapp, prefs):
+def test_a_rerun_on_a_duel_neither_answer_names_selects_none_and_keeps_it(qapp, prefs, team):
     """Settings › Combat chose it; Next on the page with no card taken leaves it alone."""
     prefs.set(_TEAM, _CUSTOM_DUEL)
     page = CombatQuestionPage(prefs)
@@ -469,6 +475,62 @@ def test_a_rerun_on_a_duel_neither_answer_names_selects_none_and_keeps_it(qapp, 
     assert dialog.result() == QDialog.DialogCode.Accepted
     assert _record(prefs)[_TEAM] == _CUSTOM_DUEL
     dialog.close()
+
+
+def _one_account() -> None:
+    SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}]
+
+
+def test_with_one_account_the_combat_question_is_not_in_the_walk(qapp, prefs):
+    _one_account()
+    page = CombatQuestionPage(prefs)
+
+    assert page not in FirstRunDialog([_Page("First?"), page]).walk
+
+
+def test_a_second_account_added_on_the_way_brings_the_combat_question_in(qapp, prefs):
+    _one_account()
+    page = CombatQuestionPage(prefs)
+    dialog = FirstRunDialog([_Page("First?"), page])
+
+    _two_accounts()
+    dialog.mode_page.walk_changed.emit()
+
+    assert page in dialog.walk
+    assert dialog.step_text == "Step 1 of 3"
+
+
+def test_finish_with_one_account_records_the_question_on_the_stored_default(qapp, prefs):
+    """So a second account added later doesn't open setup for it alone."""
+    _one_account()
+    prefs.set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    dialog = FirstRunDialog([_Page("First?"), CombatQuestionPage(prefs)])
+
+    _next(dialog, 2)
+
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert combat_question_answered(prefs)
+    assert _record(prefs)[_TEAM] == SHIPPED_EVERYONE_ATTACKS_DUEL_ID
+    _two_accounts()
+    assert not CombatQuestionPage.asks_first_run(prefs)
+
+
+def test_closing_setup_with_one_account_leaves_the_question_unanswered(qapp, prefs):
+    _one_account()
+    dialog = FirstRunDialog([_Page("First?"), CombatQuestionPage(prefs)])
+    _next(dialog)
+
+    dialog.reject()
+
+    assert ANSWERED_KEY not in _record(prefs)
+
+
+def test_one_account_with_only_the_combat_question_open_needs_no_setup(qapp, prefs, tmp_path, monkeypatch):
+    _everything_answered(prefs, tmp_path, monkeypatch)
+    _one_account()
+    prefs.set(ANSWERED_KEY, False)
+
+    assert not needs_asking(prefs)
 
 
 def test_a_user_who_answered_in_209_is_not_asked_again(qapp, prefs):
@@ -550,13 +612,13 @@ def test_the_dialog_needs_a_page(qapp):
         FirstRunDialog([])
 
 
-def test_building_the_dialog_never_shows_a_parentless_widget(qapp, prefs, parentless_shows):
+def test_building_the_dialog_never_shows_a_parentless_widget(qapp, prefs, team, parentless_shows):
     FirstRunDialog([CombatQuestionPage(prefs)])
 
     assert parentless_shows == []
 
 
-def test_the_suite_refuses_to_open_it_modally(qapp, prefs):
+def test_the_suite_refuses_to_open_it_modally(qapp, prefs, team):
     """So a test that ever builds an ``AppController`` fails, rather than hanging on it."""
     dialog = FirstRunDialog([CombatQuestionPage(prefs)])
 
@@ -564,7 +626,7 @@ def test_the_suite_refuses_to_open_it_modally(qapp, prefs):
         dialog.exec()
 
 
-def test_the_heading_follows_the_page(qapp, prefs):
+def test_the_heading_follows_the_page(qapp, prefs, team):
     dialog = FirstRunDialog([CombatQuestionPage(prefs)])
     _next(dialog)
 
@@ -1321,10 +1383,11 @@ def test_the_quicksell_page_opens_on_the_stored_settings(qapp):
     assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [True, False, True, False]
 
 
-def test_a_fresh_install_shows_the_defaults(qapp):
+def test_a_fresh_install_opens_on_quicksell_off(qapp):
+    """Off by default (#262), and the rest on their defaults for when the user turns it on."""
     page = QuicksellPage()
 
-    assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [True, True, False, False]
+    assert [_row(page, title).control.isChecked() for title in _SWITCHES] == [False, True, False, False]
 
 
 def test_the_quicksell_group_on_the_page_does_not_fold(qapp):

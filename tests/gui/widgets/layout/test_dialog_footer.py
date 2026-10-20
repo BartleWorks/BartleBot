@@ -250,10 +250,10 @@ def _new_bot_dialog():
 
 
 def _first_run_dialog():
-    from bartlebot.gui.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog
-    from bartlebot.shared.preferences import PreferenceStore
+    from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, RealmAndDelayPage
 
-    return FirstRunDialog([CombatQuestionPage(PreferenceStore())])
+    # A page every user is asked: the combat question is only a team's.
+    return FirstRunDialog([RealmAndDelayPage()])
 
 
 def _variable_dialog():

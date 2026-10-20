@@ -9,6 +9,9 @@ and :meth:`PlayerRealmsChoice.block_separate` is how a row says so: the Separate
 out and its tooltip names the nodes responsible. A value that already says Separate -- an
 override from before the node was added -- stays shown rather than being rewritten behind
 the user's back; the run refuses to start on it, and picking Together clears it.
+
+A user with one player has nothing to arrange (#264), and :meth:`PlayerRealmsChoice.set_no_team`
+grays both radios, each saying why. The value shown is left as it is.
 """
 
 from __future__ import annotations
@@ -32,6 +35,10 @@ class PlayerRealmsChoice(QWidget):
         self._group.addButton(self._together)
         self._group.addButton(self._separate)
         self._group.buttonClicked.connect(lambda _btn: self.changed.emit())
+        #: Why Separate is not on offer in this bot, or "".
+        self._separate_reason = ""
+        #: Why neither is on offer to this user, or "".
+        self._no_team_reason = ""
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -57,12 +64,28 @@ class PlayerRealmsChoice(QWidget):
 
     def block_separate(self, reason: str) -> None:
         """Gray out Separate, saying why. An empty *reason* offers it again."""
-        self._separate.setEnabled(not reason)
-        self._separate.setToolTip(reason)
+        self._separate_reason = reason
+        self._apply()
 
     def separate_blocked(self) -> bool:
-        return not self._separate.isEnabled()
+        """Whether this bot cannot be Separate: a merging node, not the user's lack of a team."""
+        return bool(self._separate_reason)
 
     def blocked_reason(self) -> str:
-        """Why Separate is grayed out, or "" while it is offered."""
-        return self._separate.toolTip() if self.separate_blocked() else ""
+        """Why Separate is grayed out for this bot, or "" while it is offered."""
+        return self._separate_reason
+
+    def set_no_team(self, reason: str) -> None:
+        """Gray out both choices, saying why. An empty *reason* offers them again."""
+        self._no_team_reason = reason
+        self._apply()
+
+    def no_team(self) -> bool:
+        return bool(self._no_team_reason)
+
+    def _apply(self) -> None:
+        # No team says more than a merging node: with one player, neither choice does anything.
+        self._together.setEnabled(not self._no_team_reason)
+        self._together.setToolTip(self._no_team_reason)
+        self._separate.setEnabled(not (self._no_team_reason or self._separate_reason))
+        self._separate.setToolTip(self._no_team_reason or self._separate_reason)

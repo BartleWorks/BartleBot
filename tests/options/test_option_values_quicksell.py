@@ -40,7 +40,10 @@ from bartlebot.settings_manager import SettingsManager
 @pytest.fixture
 def settings(tmp_path, monkeypatch):
     monkeypatch.setattr(sm_mod, "_appdata_dir", lambda: tmp_path)
-    return SettingsManager()
+    settings = SettingsManager()
+    # Quicksell is off by default (#262); these are about a bot that sells.
+    settings.set_general("default_quicksell_enabled", True)
+    return settings
 
 
 _DROPS = [

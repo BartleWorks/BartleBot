@@ -793,7 +793,7 @@ class MainWindow(QMainWindow):
 
         self._launch_menu.addSeparator()
 
-        manage_action = QAction("Manage Accounts…", self)
+        manage_action = QAction("Manage Wizard101 Accounts…", self)
         manage_action.triggered.connect(lambda: self._open_settings(tab_name="game"))
         self._launch_menu.addAction(manage_action)
 
@@ -908,6 +908,8 @@ class MainWindow(QMainWindow):
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
         self._game_view_panel.refresh_launch_lists()
+        # Player Realms is grayed for a user with one account.
+        self.left_sidebar.refresh_player_availability()
 
     def catch_up_with_accounts(self) -> None:
         """Bring the app back in line with accounts and profiles another surface changed.
@@ -1030,6 +1032,8 @@ class MainWindow(QMainWindow):
             # only repaints when its name or label changes — neither did.
             self._game_view_panel.repaint_tile_labels()
         self._game_view_panel.refresh_launch_lists()
+        # Accounts are written as they are edited, so a cancelled dialog may have changed them too.
+        self.left_sidebar.refresh_player_availability()
 
     def _open_launcher(self) -> None:
         from bartlebot.gui.launcher_popup import LauncherPopup

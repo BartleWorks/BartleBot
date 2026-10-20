@@ -187,34 +187,37 @@ def test_a_sweep_across_a_card_body_neither_reorders_nor_launches(qapp):
     """
     host, column = _column(qapp)
     launched: list[tuple] = []
+    picked: list[int] = []
     seen: list[list] = []
     column.reordered.connect(seen.append)
     for card in column.cards:
         card.launch_account_requested.connect(lambda u, d: launched.append((u, d)))
+        card.picked.connect(lambda: picked.append(1))
 
     card = column.cards[0]
     _drag(qapp, column, card, _row_height(column), target=card)
 
     assert seen == [], "the body must not reorder — the grip is the only drag source"
     assert launched == [], "and a sweep is still not a click"
+    assert picked == [], "not even the click that selects"
     assert column.cards[0] is card
     assert host
 
 
-def test_a_click_that_never_moves_still_launches(qapp):
+def test_a_click_that_never_moves_still_selects(qapp):
     """The other half of the same rule: waiting for the release must not cost the click.
 
-    Aimed at the body, which is where a launch comes from. The grip is not a button and a
-    click on it launches nothing — see ``test_card_drag_feedback.py``.
+    Aimed at the body, which is where a selection comes from. The grip is not a button and
+    a click on it selects nothing — see ``test_card_drag_feedback.py``.
     """
     host, column = _column(qapp)
-    launched: list[tuple] = []
+    picked: list[int] = []
     card = column.cards[0]
-    card.launch_account_requested.connect(lambda u, d: launched.append((u, d)))
+    card.picked.connect(lambda: picked.append(1))
 
     _drag(qapp, column, card, 0, target=card)
 
-    assert launched == [("one@example.com", "One")]
+    assert picked == [1]
     assert host
 
 

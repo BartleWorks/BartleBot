@@ -36,7 +36,7 @@ MENU_GAP = 2
 
 
 class AddCard(ThemedMixin, QWidget):
-    """The card at the foot of a collection: "Add account", "Add profile".
+    """The card at the foot of a collection: "Add Wizard101 account", "Add profile".
 
     A fresh install opened on two columns reading "(No accounts)" and "(No profiles)",
     and nothing on either said what to do about that -- the only way forward was to

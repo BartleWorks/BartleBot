@@ -449,7 +449,7 @@ class DuelConfigEditor(QWidget):
         room = len(self._cards) < max_p
         self._add_card.setVisible(self._editable and room)
         self._add_card.setToolTip(
-            f"Every player slot (P1–P{max_p}) already has a strategy — raise Max players, or remove one first"
+            f"Every player slot (Player 1–Player {max_p}) already has a strategy — raise Max players, or remove one first"
             if not room
             else "Give a set of players their own combat strategy in this duel"
         )

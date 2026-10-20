@@ -505,7 +505,7 @@ def test_something_added_refreshes_the_menu_and_the_cards(monkeypatch, slot):
 
     getattr(MainWindow, slot)(stub)
 
-    assert calls == ["menu", "minimum", "cards"]
+    assert calls == ["menu", "minimum", "cards", "players"]
 
 
 @pytest.mark.parametrize("slot", ["_add_account", "_add_launch_profile"])
@@ -517,4 +517,4 @@ def test_a_cancelled_add_still_re_judges_the_cards(monkeypatch, slot):
 
     getattr(MainWindow, slot)(stub)
 
-    assert calls == ["cards"]
+    assert calls == ["cards", "players"]

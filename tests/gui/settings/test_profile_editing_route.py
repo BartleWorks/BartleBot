@@ -180,7 +180,7 @@ def test_a_saved_profile_refreshes_the_menu_and_the_cards(monkeypatch):
 
     MainWindow._edit_launch_profile(stub, "Farm Team")
 
-    assert calls == ["menu", "minimum", "cards"]
+    assert calls == ["menu", "minimum", "cards", "players"]
 
 
 def test_a_cancelled_edit_still_re_judges_the_cards(monkeypatch):
@@ -195,7 +195,7 @@ def test_a_cancelled_edit_still_re_judges_the_cards(monkeypatch):
 
     MainWindow._edit_launch_profile(stub, "Farm Team")
 
-    assert calls == ["cards"]
+    assert calls == ["cards", "players"]
 
 
 def test_the_gear_no_longer_has_a_route_through_the_settings_dialog():

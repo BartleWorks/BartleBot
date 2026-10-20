@@ -527,7 +527,9 @@ class _DeckCard(CardFrame):
             # Off the face: the body click one icon away unfolds a card list, and a trash
             # beside it is the mis-click card_frame.py keeps destructive verbs out of.
             verbs.append(
-                CardVerb(_CLEAR_DECK, "trash", f"Forget the saved deck for P{self._slot}", self.clear_requested.emit)
+                CardVerb(
+                    _CLEAR_DECK, "trash", f"Forget the saved deck for Player {self._slot}", self.clear_requested.emit
+                )
             )
         return verbs
 
@@ -544,7 +546,7 @@ class _DeckCard(CardFrame):
         if self._busy:
             return _DECK_BUSY
         if not self._has_client:
-            return f"No game client connected for P{self._slot}"
+            return f"No game client connected for Player {self._slot}"
         return "Snapshot the deck from this game client"
 
     def _apply_tooltip(self) -> str:
@@ -555,9 +557,9 @@ class _DeckCard(CardFrame):
         if self._busy:
             return _DECK_BUSY
         if not self._has_client:
-            return f"No game client connected for P{self._slot}"
+            return f"No game client connected for Player {self._slot}"
         if not self.has_deck:
-            return f"No deck saved for P{self._slot} — use Import first"
+            return f"No deck saved for Player {self._slot} — use Import first"
         return "Push the saved deck to this game client now"
 
     def _reapply_verb_states(self) -> None:
@@ -1777,7 +1779,7 @@ class CombatTab(QWidget):
             return
         deck = self._bcs.player_decks.get(slot)
         if deck is None or deck.is_empty():
-            QMessageBox.information(self, "No deck", f"No deck is saved for P{slot}.")
+            QMessageBox.information(self, "No deck", f"No deck is saved for Player {slot}.")
             return
         name, ok = QInputDialog.getText(self, "Save to Deck Library", "Preset name:")
         if not ok or not name.strip():
@@ -1821,7 +1823,7 @@ class CombatTab(QWidget):
         ans = QMessageBox.question(
             self,
             "Clear Deck",
-            f"Clear the saved deck for P{slot}?",
+            f"Clear the saved deck for Player {slot}?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if ans != QMessageBox.StandardButton.Yes:

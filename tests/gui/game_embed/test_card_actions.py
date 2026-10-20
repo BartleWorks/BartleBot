@@ -418,7 +418,7 @@ def test_a_written_action_refreshes_the_menu_and_the_cards(monkeypatch, slot, fu
 
     getattr(MainWindow, slot)(stub, *args)
 
-    assert calls == ["menu", "minimum", "cards"]
+    assert calls == ["menu", "minimum", "cards", "players"]
 
 
 def test_catching_up_after_setup_refreshes_the_menu_and_the_cards():
@@ -429,7 +429,7 @@ def test_catching_up_after_setup_refreshes_the_menu_and_the_cards():
 
     MainWindow.catch_up_with_accounts(stub)
 
-    assert calls == ["menu", "minimum", "cards"]
+    assert calls == ["menu", "minimum", "cards", "players"]
 
 
 @pytest.mark.parametrize(
@@ -451,4 +451,4 @@ def test_a_refused_action_still_re_judges_the_cards(monkeypatch, slot, function,
 
     getattr(MainWindow, slot)(stub, *args)
 
-    assert calls == ["cards"]
+    assert calls == ["cards", "players"]

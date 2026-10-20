@@ -104,7 +104,7 @@ def _quicksell_enabled(config) -> bool:
     Resolved the way ``run()`` resolves it, through ``resolve_options_for`` rather
     than by reading the option here: the option's node default is null, so its
     resolved *value* is ``None`` when no level answers, and only the node's own
-    coercion knows that means on. Two readings of "off" would eventually disagree,
+    coercion knows that means off. Two readings of "off" would eventually disagree,
     and this one decides whether the user is warned about a sale.
     """
     return bool(quicksell.resolve_options_for(config)["enabled"])
@@ -224,7 +224,9 @@ def _teleport_to_friend_details(config, states, clients) -> tuple[list[tuple[str
         if state.params.get("target_hooked_player", False):
             slot = int(state.params.get("target_player") or 0)
             label = f"{prefix}Target Player"
-            details.append((label, f"P{slot} — {target.name}" if target.name else f"P{slot} — {target.error}"))
+            details.append(
+                (label, f"Player {slot} — {target.name}" if target.name else f"Player {slot} — {target.error}")
+            )
         else:
             details.append((f"{prefix}Friend Name", target.name or f"({target.error})"))
             if target.source == "the Friend Name option" and not outranks_app_setting:
@@ -326,7 +328,7 @@ def level_scaling_warning(elixir_players: Sequence[int]) -> SafetyWarning | None
     """
     if not elixir_players:
         return None
-    who = ", ".join(f"P{n}" for n in elixir_players)
+    who = ", ".join(f"Player {n}" for n in elixir_players)
     return SafetyWarning(
         message=(
             "A level scaling player already has an elixir active. The bot cannot tell one elixir from "

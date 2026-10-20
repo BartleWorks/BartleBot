@@ -33,9 +33,9 @@ def _general_on_disk(sm: SettingsManager) -> dict:
     return json.loads(sm.settings_path.read_text(encoding="utf-8"))["general"]
 
 
-def test_the_defaults_sell_drops_and_pets_and_keep_wrenches_and_keys():
+def test_the_defaults_leave_quicksell_off_and_once_on_sell_drops_and_pets_and_keep_wrenches_and_keys():
     assert DEFAULT_FLAGS == SellFlags(
-        enabled=True, sell_pets=True, sell_socket_wrenches=False, sell_skeleton_keys=False
+        enabled=False, sell_pets=True, sell_socket_wrenches=False, sell_skeleton_keys=False
     )
 
 
@@ -88,14 +88,14 @@ def test_the_key_answers_the_page(sm):
 @pytest.mark.parametrize(
     "change",
     [
-        lambda sm: write_sell_flags(sm, SellFlags(False, True, False, False)),
-        lambda sm: write_sell_flags(sm, SellFlags(True, False, False, False)),
-        lambda sm: write_sell_flags(sm, SellFlags(True, True, True, False)),
-        lambda sm: write_sell_flags(sm, SellFlags(True, True, False, True)),
+        lambda sm: write_sell_flags(sm, SellFlags(True, True, False, False)),
+        lambda sm: write_sell_flags(sm, SellFlags(False, False, False, False)),
+        lambda sm: write_sell_flags(sm, SellFlags(False, True, True, False)),
+        lambda sm: write_sell_flags(sm, SellFlags(False, True, False, True)),
         lambda sm: write_keep_list(sm, ["Amber"]),
         lambda sm: setattr(sm, "show_quicksell_explanation", False),
     ],
-    ids=["off", "keep-pets", "sell-wrenches", "sell-keys", "keep-list", "explanation-off"],
+    ids=["on", "keep-pets", "sell-wrenches", "sell-keys", "keep-list", "explanation-off"],
 )
 def test_a_quicksell_setting_off_its_default_answers_the_page(sm, change):
     change(sm)

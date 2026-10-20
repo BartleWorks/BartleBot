@@ -7,6 +7,7 @@ import ctypes
 import logging
 
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -19,17 +20,20 @@ from PyQt6.QtWidgets import (
 from bartlebot.clients.tile_slots import TileKey, TileSlot, plan_tile_changes
 from bartlebot.game.game_sizing import grid_for, required_game_area
 from bartlebot.gui.game_embed.card_columns import (
+    ACCOUNTS_TITLE,
+    ADD_ACCOUNT,
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
     CardColumn,
     refresh_column_fit,
 )
 from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile, ScaledTile
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, launch_note_for
 from bartlebot.gui.theming.account_accent import account_color_keys
 from bartlebot.gui.theming.icon_utils import svg_icon
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.theming.themed import ThemedMixin
+from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
@@ -45,18 +49,41 @@ _OVERLAY_BTN_MARGIN = 4
 
 _LOGO_SIZE = 160  # diameter of the logo disc
 
+# How wide "Launch <name>" may draw before the name is elided, and how wide the line under
+# the button wraps at. The center column is as wide as either card column, and a long
+# profile name must not push it wider.
+_LAUNCH_LABEL_WIDTH = 220
+_LAUNCH_NOTE_WIDTH = 240
+
 
 class _GamePlaceholder(QWidget):
     """Placeholder shown in GameView when no clients are embedded.
 
     Three-column layout:
-        [Accounts column] | [Logo + settings link] | [Launch Profiles column]
+        [Accounts column] | [Logo + Launch + settings link] | [Launch Profiles column]
 
     The two outer columns are ``CardColumn``s -- the same widget the Game settings tab is
     built from, so the surface that launches an account and the surface that edits one
     draw it identically. Everything a column does, the drag that reorders it
     included, lives there; this class supplies the cards and decides what a click on one
     means.
+
+    SELECT, THEN LAUNCH
+
+    A click on a card selects it and the Launch button launches the selection (#266);
+    ``card_frame.py``'s click model has why. Five things make that cheap:
+
+    - **One selection across both columns.** Two would leave "what does Launch do?" with
+      two answers.
+    - **The last launch is preselected**, read from ``recent_launches``, so a returning
+      user launches in one click -- the button -- as they did when the card was the button.
+    - **The button names what it launches**, so a selection the user did not notice is
+      caught before it costs anything.
+    - **A double-click on a card, or Enter, launches** without reaching for the button.
+      The arrow keys move the selection: up and down within a column, left and right
+      across.
+    - **A card that will not fit can be selected**, and the button then says why it is off,
+      rather than the card ignoring the click.
     """
 
     launch_account_requested = pyqtSignal(str, str)
@@ -80,7 +107,14 @@ class _GamePlaceholder(QWidget):
         super().__init__(parent)
         # Set before _build_ui: the constructor's own refresh() reads it.
         self._roster_source = None
+        # The selected card's ``launch_key``, held as a key rather than as the card: every
+        # refresh replaces the cards, and the selection has to survive that.
+        self._selected_key: tuple[str, str] | None = None
+        # So a click on the blank space between the columns takes focus from wherever it
+        # was, and the arrow keys and Enter then reach the shortcuts below.
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self._build_ui()
+        self._build_shortcuts()
         self.refresh()
 
     # ------------------------------------------------------------------
@@ -108,7 +142,7 @@ class _GamePlaceholder(QWidget):
         outer.addLayout(body, stretch=1)
 
         # -- Left: Accounts --------------------------------------------
-        self._accounts_col = CardColumn("Accounts", EMPTY_ACCOUNTS_HINT, "Add account")
+        self._accounts_col = CardColumn(ACCOUNTS_TITLE, EMPTY_ACCOUNTS_HINT, ADD_ACCOUNT)
         self._accounts_col.add_requested.connect(self.add_account_requested)
         self._accounts_col.reordered.connect(self.reorder_accounts_requested)
         self._accounts_col.settings_requested.connect(self.manage_accounts_requested)
@@ -129,6 +163,22 @@ class _GamePlaceholder(QWidget):
         logo_wrapper.addStretch()
         center.addLayout(logo_wrapper)
 
+        center.addSpacing(16)
+        self._launch_btn = ActionButton("play", "Launch", style=ActionStyle.PRIMARY, fill=False)
+        self._launch_btn.clicked.connect(self.launch_selected)
+        center.addWidget(self._launch_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # What the button cannot say on its face: that nothing is selected yet, or why the
+        # selection will not launch.
+        self._launch_note = ThemedTextLabel("", css=f"font-size: {THEME.font_small_px}px;")
+        self._launch_note.setWordWrap(True)
+        self._launch_note.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        # A fixed width, and the height it needs at that width set as its minimum on every
+        # change of text (``_set_launch_note``). Height-for-width does not survive the trip
+        # through the body's nested box layouts, so left to them the label got one line's
+        # height and drew a two-line note cut off mid-sentence.
+        self._launch_note.setFixedWidth(_LAUNCH_NOTE_WIDTH)
+        center.addWidget(self._launch_note, alignment=Qt.AlignmentFlag.AlignHCenter)
+
         center.addStretch(1)
 
         self._manage_btn = LinkButton("Game settings")
@@ -144,9 +194,55 @@ class _GamePlaceholder(QWidget):
         self._profiles_col.settings_requested.connect(self.manage_accounts_requested)
         body.addWidget(self._profiles_col, stretch=1)
 
+    def _build_shortcuts(self) -> None:
+        """Enter launches the selection; the arrow keys move it.
+
+        Shortcuts on this widget rather than a key handler, because the focus is usually
+        on a card, inside a scroll area whose own key handler would take the arrows to
+        scroll with. Scoped to this widget and its children, so they do nothing while
+        the keyboard is anywhere else in the window.
+        """
+        keys = [
+            (Qt.Key.Key_Return, self.launch_selected),
+            (Qt.Key.Key_Enter, self.launch_selected),
+            (Qt.Key.Key_Up, lambda: self.move_selection(-1)),
+            (Qt.Key.Key_Down, lambda: self.move_selection(1)),
+            (Qt.Key.Key_Left, lambda: self.select_in_column(0)),
+            (Qt.Key.Key_Right, lambda: self.select_in_column(1)),
+        ]
+        for key, slot in keys:
+            shortcut = QShortcut(QKeySequence(key), self)
+            shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+            shortcut.activated.connect(slot)
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    @property
+    def launch_button(self) -> ActionButton:
+        return self._launch_btn
+
+    @property
+    def launch_note(self) -> str:
+        """What the line under the Launch button says -- "" while it is hidden."""
+        return self._launch_note.text() if not self._launch_note.isHidden() else ""
+
+    @property
+    def selected_card(self) -> AccountCard | ProfileCard | None:
+        """The card the Launch button would launch, or None."""
+        return next((card for card in self._launch_cards() if card.launch_key == self._selected_key), None)
+
+    def select(self, card: AccountCard | ProfileCard | None) -> None:
+        """Make *card* the selection, in whichever column it is, or clear it."""
+        self._selected_key = None if card is None else card.launch_key
+        self._show_selection()
+
+    def launch_selected(self) -> None:
+        """Launch the selected card, as the Launch button does. Nothing if it cannot."""
+        card = self.selected_card
+        if card is not None:
+            card.activate()
 
     @property
     def accounts_column(self) -> CardColumn:
@@ -185,6 +281,7 @@ class _GamePlaceholder(QWidget):
         account_cards: list[QWidget] = []
         for account in accounts:
             card = AccountCard(account, self._characters_for(account.get("username", "")), accounts)
+            card.picked.connect(lambda c=card: self.select(c))
             card.launch_account_requested.connect(self.launch_account_requested)
             card.edit_account_requested.connect(self.edit_account_requested)
             card.delete_account_requested.connect(self.delete_account_requested)
@@ -194,6 +291,7 @@ class _GamePlaceholder(QWidget):
         profile_cards: list[QWidget] = []
         for profile in sm.launch_profiles:
             card = ProfileCard(profile, accounts)
+            card.picked.connect(lambda c=card: self.select(c))
             card.launch_profile_requested.connect(self.launch_profile_requested)
             card.edit_profile_requested.connect(self.edit_profile_requested)
             card.duplicate_profile_requested.connect(self.duplicate_profile_requested)
@@ -201,11 +299,28 @@ class _GamePlaceholder(QWidget):
             profile_cards.append(card)
         self._profiles_col.set_cards(profile_cards)
 
+        # The selection outlives the cards it was made on. When its card is gone -- deleted,
+        # renamed, or never there on a first build -- the most recent launch that is still
+        # on screen takes its place.
+        keys = {card.launch_key for card in self._launch_cards()}
+        if self._selected_key not in keys:
+            recent = (
+                (entry.get("type"), entry.get("id"))
+                for entry in sm.recent_launches
+                if (entry.get("type"), entry.get("id")) in keys
+            )
+            self._selected_key = next(recent, None)
+
         self.refresh_fit()
 
     def refresh_fit(self) -> None:
-        """Re-judge every card against the game area as it is now -- see refresh_column_fit."""
+        """Re-judge every card against the game area as it is now -- see refresh_column_fit.
+
+        The Launch button is re-judged with them: the selected card can go from fitting to
+        not fitting on a splitter drag, and the button has to follow it.
+        """
         refresh_column_fit(self._accounts_col, self._profiles_col, self, self.game_area_size)
+        self._show_selection()
 
     @property
     def game_area_size(self) -> tuple[int, int]:
@@ -236,6 +351,90 @@ class _GamePlaceholder(QWidget):
         """
         super().showEvent(event)
         self.refresh()
+
+    def _launch_cards(self) -> list[AccountCard | ProfileCard]:
+        """Every card on the screen, accounts first, in the order they are drawn."""
+        return [*self._accounts_col.cards, *self._profiles_col.cards]
+
+    def _show_selection(self) -> None:
+        """Draw the selection on its card and say on the Launch button what it launches."""
+        selected = None
+        for card in self._launch_cards():
+            card.set_selected(card.launch_key == self._selected_key)
+            if card.is_selected:
+                selected = card
+
+        if selected is None:
+            self._launch_btn.setText("Launch")
+            self._launch_btn.setEnabled(False)
+            self._launch_btn.setToolTip("")
+            note = "Select an account or a launch profile to launch it" if self._launch_cards() else ""
+            self._set_launch_note(note, "text_muted")
+            return
+
+        label = selected.launch_label
+        text = self._launch_btn.fontMetrics().elidedText(
+            f"Launch {label}", Qt.TextElideMode.ElideRight, _LAUNCH_LABEL_WIDTH
+        )
+        self._launch_btn.setText(text)
+        refusal = selected.refusal_text
+        self._launch_btn.setEnabled(not refusal)
+        self._launch_btn.setToolTip(refusal or f"Launch {label} (Enter, or double-click its card)")
+        self._set_launch_note(launch_note_for(selected.unavailable_reason) if refusal else "", "warning")
+
+    def _set_launch_note(self, text: str, color: str) -> None:
+        self._launch_note.setText(text)
+        self._launch_note.setMinimumHeight(self._launch_note.heightForWidth(_LAUNCH_NOTE_WIDTH) if text else 0)
+        self._launch_note.set_color(color)
+        self._launch_note.setVisible(bool(text))
+
+    def move_selection(self, step: int) -> None:
+        """Move the selection *step* cards up or down its column, stopping at the ends.
+
+        With nothing selected, the first card on the screen is the one taken.
+        """
+        columns = self._columns()
+        where = self._selected_position(columns)
+        if where is None:
+            first = next((cards[0] for cards in columns if cards), None)
+            self._select_from_keyboard(first)
+            return
+        column, row = where
+        cards = columns[column]
+        self._select_from_keyboard(cards[max(0, min(len(cards) - 1, row + step))])
+
+    def select_in_column(self, column: int) -> None:
+        """Move the selection to column *column*, at the same row or the last one above it."""
+        columns = self._columns()
+        cards = columns[column]
+        if not cards:
+            return
+        where = self._selected_position(columns)
+        row = 0 if where is None else where[1]
+        self._select_from_keyboard(cards[min(row, len(cards) - 1)])
+
+    def _columns(self) -> list[list]:
+        return [self._accounts_col.cards, self._profiles_col.cards]
+
+    def _selected_position(self, columns: list[list]) -> tuple[int, int] | None:
+        for column, cards in enumerate(columns):
+            for row, card in enumerate(cards):
+                if card.launch_key == self._selected_key:
+                    return column, row
+        return None
+
+    def _select_from_keyboard(self, card) -> None:
+        """Select *card* from the keyboard: scrolled into view, and given the focus.
+
+        The focus moves with it so that Alt+Up and Alt+Down, which reorder the card that
+        has the focus, act on the card the user can see is selected.
+        """
+        if card is None:
+            return
+        self.select(card)
+        column = self._accounts_col if card in self._accounts_col.cards else self._profiles_col
+        column.scroll_area.ensureWidgetVisible(card)
+        card.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _characters_for(self, username: str) -> list[dict]:
         """The known characters for *username*, or none if no source has been supplied."""

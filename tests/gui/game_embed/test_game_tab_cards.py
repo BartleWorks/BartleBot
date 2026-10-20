@@ -188,7 +188,11 @@ def test_a_card_that_would_not_fit_is_noted_and_still_editable(qapp, screen, pop
 
 
 def test_the_same_card_on_the_launch_screen_still_refuses(qapp, screen, populated):
-    """The other half: nothing here may loosen the launch screen's own refusal."""
+    """The other half: nothing here may loosen the launch screen's own refusal.
+
+    The click still lands, and selects: the launch screen says why its Launch button is
+    off rather than leaving the card to ignore the pointer, so the cursor still promises
+    that clicking does something."""
     screen(_TINY)
     SettingsManager.instance().game_resolution = (1280, 720)
     card = ProfileCard(PROFILES[0], ACCOUNTS)
@@ -199,8 +203,9 @@ def test_the_same_card_on_the_launch_screen_still_refuses(qapp, screen, populate
     _click(card)
 
     assert card.refuses_when_unfit is True
+    assert card.activate() is False
     assert launched == []
-    assert card.cursor().shape() == Qt.CursorShape.ArrowCursor
+    assert card.cursor().shape() == Qt.CursorShape.PointingHandCursor
 
 
 # ---------------------------------------------------------------------------
@@ -228,8 +233,9 @@ def test_the_cards_carry_their_verbs_openly_here(qapp, screen, populated, column
 
 
 def test_the_launch_screens_cards_keep_the_trash_off_their_faces(qapp):
-    """A trash icon 22px from a body that starts a game client is a mis-click that costs
-    a stored credential and a character roster. It stays on the right-click menu there."""
+    """A trash icon 22px from a body whose double-click starts a game client is a
+    mis-click that costs a stored credential and a character roster. It stays on the
+    right-click menu there."""
     card = ProfileCard(PROFILES[0], ACCOUNTS)
 
     assert card.action_button("Delete") is None

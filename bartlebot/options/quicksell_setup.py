@@ -53,7 +53,8 @@ _KEYS = {
     "sell_skeleton_keys": SELL_SKELETON_KEYS_KEY,
 }
 
-#: What a fresh install holds: sell drops and pets, keep wrenches and keys.
+#: What a fresh install holds: quicksell off (#262), and once turned on, sell drops and
+#: pets and keep wrenches and keys.
 DEFAULT_FLAGS = SellFlags(**{field: bool(default_for("general", key)) for field, key in _KEYS.items()})
 
 

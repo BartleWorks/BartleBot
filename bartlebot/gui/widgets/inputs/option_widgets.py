@@ -256,6 +256,20 @@ def block_separate_if_merging(widget: QWidget, config) -> None:
     widget.block_separate(player_realms.blocked_reason(blockers) if blockers else "")
 
 
+def gray_without_players(widget: QWidget, team: bool, connected: int) -> None:
+    """Gray out a Player Realms control for a user with one player, saying why (#264).
+
+    *team* is whether there are two or more accounts, *connected* the games hooked now.
+    A no-op for any other control. Option Values calls it and Options does not: an author
+    with one account still writes the choice for users with a team.
+    """
+    if not hasattr(widget, "set_no_team"):
+        return
+    from bartlebot.options import player_realms  # noqa: PLC0415
+
+    widget.set_no_team("" if player_realms.has_players(team, connected) else player_realms.NO_TEAM_REASON)
+
+
 def set_widget_value(widget: QWidget, value: Any) -> None:
     """Show *value* in *widget*, coercing a value of the wrong shape rather than raising.
 

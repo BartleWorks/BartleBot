@@ -535,7 +535,8 @@ The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 `gui/settings/profile_editor.py`, which share `mark_unfittable_resolutions`.
 
 The cards themselves are drawn on three surfaces, and only one of them refuses. The Quick
-Launch screen grays an unfittable card and swallows its clicks; the Game settings tab and
+Launch screen grays an unfittable card and refuses to launch it: a click still selects it,
+and the screen's Launch button is then disabled with the reason under it. The Game settings tab and
 the profile editor show the same card at full contrast with the banner above it, because
 a click there edits — or, in the editor, does nothing at all — and editing is what the
 refusal is asking for. That split is the card's `CardMode`, and `refuses_when_unfit` is

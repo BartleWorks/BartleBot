@@ -156,7 +156,7 @@ async def test_one_slot_failing_still_saves_the_others_and_reports_it(strategy, 
     assert set(strategy.saves[0]) == {1}
     [(title, body, warn)] = harness.notices
     assert title == "Deck import failed"
-    assert "P2 failed" in body and "P3 timed out" in body
+    assert "Player 2 failed" in body and "Player 3 timed out" in body
     assert warn
 
 
@@ -224,7 +224,7 @@ async def test_single_slot_import_failure_is_reported(strategy, client_decks):
 
     assert strategy.saves == []
     [(title, body, _warn)] = harness.notices
-    assert title == "Deck import failed" and "P1 timed out" in body
+    assert title == "Deck import failed" and "Player 1 timed out" in body
 
 
 # ---------------------------------------------------------------------------
@@ -273,10 +273,10 @@ async def test_apply_all_combines_every_slot_into_one_notice(strategy, apply_res
 
     [(title, body, warn)] = harness.notices
     assert title == "Some decks were not applied"
-    assert "P1: applied, with changes" in body
+    assert "Player 1: applied, with changes" in body
     assert "Storm Lord" in body
-    assert "P3: not applied" in body
-    assert "P2" not in body
+    assert "Player 3: not applied" in body
+    assert "Player 2" not in body
     assert warn
 
 
@@ -302,8 +302,8 @@ async def test_apply_all_reports_a_failed_slot_alongside_the_others(strategy, ap
 
     [(title, body, warn)] = harness.notices
     assert title == "Some decks were not applied"
-    assert "Deck apply for P1 timed out." in body
-    assert "Deck apply for P2 failed" in body
+    assert "Deck apply for Player 1 timed out." in body
+    assert "Deck apply for Player 2 failed" in body
     assert "deck window may be left open" in body
     assert warn
 
@@ -324,7 +324,7 @@ async def test_single_slot_apply_still_reports_on_its_own(strategy, apply_result
     await harness._apply_deck_for_slot(1)
 
     [(title, body, _warn)] = harness.notices
-    assert title == "Deck applied for P1, with changes"
+    assert title == "Deck applied for Player 1, with changes"
     assert "(1 of 2)" in body
 
 

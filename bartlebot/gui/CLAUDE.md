@@ -686,7 +686,8 @@ undo by accident:
   launch is **disabled with the reason, never hidden**. `bartlebot/gui/screen_fit.py` is
   the one place that asks; the surfaces that must agree are `ProfileCard`/`AccountCard`,
   the Launch menu, `LauncherPopup`, and both resolution combos (`accounts_tab.py` and
-  `profile_editor.py`). Disabled where a click would *launch* it, though: the same cards
+  `profile_editor.py`). Disabled where it would *launch*, though (the Quick Launch
+  screen, where a click selects and the Launch button or a double-click launches): the same cards
   draw the Game settings tab and the profile editor, where a click edits or does nothing
   at all and the refusal is a note instead. That is the card's `CardMode` and the
   `refuses_when_unfit` that reads it, never a fresh test of the fit result.

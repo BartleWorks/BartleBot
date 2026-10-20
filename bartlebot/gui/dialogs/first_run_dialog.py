@@ -16,14 +16,16 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and seven methods. ``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and eight methods. ``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
 belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
 recorded, and Next waits for it. ``busy()`` says work running holds the user on the page,
 and Back and Next both wait for it. ``record()`` writes its answer and says whether that
 reached disk. ``enter()``, a no-op by default, runs each time the dialog turns to the page,
 for a page that draws what an earlier page wrote. ``stop()``, also a no-op, runs when setup
-closes, for a page with work running.
+closes, for a page with work running. ``record_passed_over()``, also a no-op, runs on
+Finish for a page asked but left out of the walk, which is how the combat question records
+itself for a user with one account.
 
 The dialog opens on :class:`ModePage`, Quick or Custom, which is not stored: it only
 decides which pages follow. **There is no Skip.** Next records the page shown and moves on
@@ -68,7 +70,7 @@ from bartlebot.clients.install_location import apply_install
 from bartlebot.game import card_art
 from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
-from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.card_columns import ADD_ACCOUNT, CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row
@@ -93,7 +95,7 @@ from bartlebot.options.custom_setup import (
 from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
 from bartlebot.options.realm_delay_setup import realm_delay_answered, record_realm_delay, setup_realm
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
-from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
+from bartlebot.shared.account_setup import accounts_answered, has_team, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
 from bartlebot.shared.game_install import (
     SOURCE_NAMES,
@@ -189,6 +191,14 @@ class FirstRunPage(QWidget):
         """Store this page's answer. Whether it reached disk."""
         raise NotImplementedError
 
+    def record_passed_over(self) -> bool:
+        """Called on Finish for a page asked but not in the walk. Whether what it wrote reached disk.
+
+        A no-op by default. The combat question, passed over for want of a team, records
+        itself answered, so a second account added later doesn't open setup for it.
+        """
+        return True
+
     def stop(self) -> None:
         """Called when setup closes, finished or not: a page with work running stops it.
 
@@ -256,7 +266,7 @@ class _CardsPage(FirstRunPage):
 
 # -- Quick or Custom ------------------------------------------------------------
 
-MODE_HEADING = "How would you like to set up BartleBot?"
+MODE_HEADING = "Select setup mode"
 #: Each mode's card: its name, and what it asks.
 MODE_CARDS: dict[SetupMode, tuple[str, str]] = {
     SetupMode.QUICK: (
@@ -298,12 +308,12 @@ class ModePage(_CardsPage):
 
 # -- the combat question ------------------------------------------------------------
 
-COMBAT_HEADING = "How should your team take on bosses?"
+COMBAT_HEADING = "Select a team strategy for boss fights"
 #: Each answer's card: its name, and what it does in a fight.
 TACTIC_CARDS: dict[BossTactic, tuple[str, str]] = {
     BossTactic.ONE_HITTER: (
         "One hitter, the others support",
-        "P1 attacks. While a boss is up, the others blade P1 and trap and feint the boss, and P1 "
+        "Player 1 attacks. While a boss is up, the others blade Player 1 and trap and feint the boss, and Player 1 "
         "casts last. In fights with no boss, everyone attacks.",
     ),
     BossTactic.EVERYONE_ATTACKS: (
@@ -325,6 +335,10 @@ class CombatQuestionPage(_CardsPage):
     It opens on the answer the stored Team default already is. On a rerun that default can
     be a duel neither answer names, chosen in Settings › Combat; then no card is selected,
     and Next with none selected keeps that duel.
+
+    It applies only with two or more accounts (#264): a single wizard has no team to ask
+    about. Passed over that way, Finish records it answered on the stored default, so a
+    second account added later doesn't open setup for it; Settings › Combat is still there.
     """
 
     heading = COMBAT_HEADING
@@ -353,7 +367,10 @@ class CombatQuestionPage(_CardsPage):
 
     @classmethod
     def asks_first_run(cls, prefs: PreferenceStore) -> bool:
-        return not combat_question_answered(prefs)
+        return has_team(SettingsManager.instance().account_store) and not combat_question_answered(prefs)
+
+    def applies(self, mode: SetupMode) -> bool:
+        return has_team(SettingsManager.instance().account_store)
 
     def answered(self) -> bool:
         return combat_question_answered(self._prefs)
@@ -361,10 +378,14 @@ class CombatQuestionPage(_CardsPage):
     def record(self) -> bool:
         return record_answer(self._prefs, self._value)
 
+    def record_passed_over(self) -> bool:
+        # None keeps the stored Team default and records only the key.
+        return record_answer(self._prefs, None)
+
 
 # -- the game folder ----------------------------------------------------------------
 
-GAME_FOLDER_HEADING = "Where is Wizard101 installed?"
+GAME_FOLDER_HEADING = "Select Wizard101 install location"
 GAME_FOLDER_INTRO = (
     "BartleBot starts the game from this folder, the one holding its Bin folder. The KingsIsle "
     "launcher installs it in C:\\ProgramData\\KingsIsle Entertainment\\Wizard101, and Steam in "
@@ -491,17 +512,17 @@ class GameFolderPage(FirstRunPage):
 
 # -- accounts -----------------------------------------------------------------------
 
-ACCOUNTS_HEADING = "Which accounts should BartleBot log in to?"
+ACCOUNTS_HEADING = "Add Wizard101 accounts"
 ACCOUNTS_INTRO = (
-    "BartleBot logs these accounts in when it launches the game for you. Passwords are kept in "
-    "Windows Credential Manager, never in a file."
+    "BartleBot uses your Wizard101 logins to launch the game and to relaunch it after a crash or "
+    "disconnect. Passwords are kept in Windows Credential Manager, never in a file. You can leave this "
+    "empty and launch the game yourself, but bots then can't recover from crashes."
 )
-#: Beneath Add account while there is none: leaving the page empty is an answer too.
+#: Beneath the Add button while there is none: leaving the page empty is an answer too.
 ACCOUNTS_EMPTY = (
     "With no account, BartleBot can still hook game windows you start yourself. Accounts can be "
-    "added at any time from Launch › Manage Accounts…"
+    "added at any time from Launch › Manage Wizard101 Accounts…"
 )
-ADD_ACCOUNT = "Add account"
 
 
 class AccountsPage(FirstRunPage):
@@ -580,7 +601,7 @@ class AccountsPage(FirstRunPage):
 
 # -- the launch profile -------------------------------------------------------------
 
-LAUNCH_PROFILE_HEADING = "Which accounts launch together?"
+LAUNCH_PROFILE_HEADING = "Configure launch profiles"
 LAUNCH_PROFILE_INTRO = (
     "BartleBot makes a launch profile of the accounts checked here, to start them all at once from "
     "the Launch menu or the launch screen. They launch in this order: the first is Player 1. The "
@@ -739,10 +760,10 @@ class LaunchProfilePage(FirstRunPage):
     @classmethod
     def asks_first_run(cls, prefs: PreferenceStore) -> bool:
         store = cls._store()
-        return len(store.accounts) >= 2 and not launch_profile_answered(prefs, store)
+        return has_team(store) and not launch_profile_answered(prefs, store)
 
     def applies(self, mode: SetupMode) -> bool:
-        return len(self._store().accounts) >= 2
+        return has_team(self._store())
 
     def answered(self) -> bool:
         return launch_profile_answered(self._prefs, self._store())
@@ -759,14 +780,15 @@ class LaunchProfilePage(FirstRunPage):
 
 # -- quicksell ----------------------------------------------------------------------
 
-QUICKSELL_HEADING = "What may bots sell?"
-#: Above the rows: what the explanation before each run used to say, which this page
-#: turns off, and where the same rows are later.
+QUICKSELL_HEADING = "Configure Quicksell settings"
+#: Above the rows: that quicksell starts off (#262), what turning it on sells, which is
+#: what the explanation before each run used to say and this page turns off, and where
+#: the same rows are later.
 QUICKSELL_INTRO = (
-    "When a backpack is full, bots sell what dropped, except what these settings keep. An item you "
-    "lock in the game is never sold: turn on Backpack Item Lock, under Options › Gameplay Options 2, "
-    "to lock one. These are the Quicksell settings in Settings › Bot, and a bot's own Options can "
-    "change them for that bot."
+    "Quicksell is off until you turn it on. With it on, when a backpack is full, bots sell what "
+    "dropped, except what these settings keep. An item you lock in the game is always kept: turn on "
+    "Backpack Item Lock, under Options › Gameplay Options 2, to lock one. These are the Quicksell "
+    "settings in Settings › Bot, and a bot's own Options can change them for that bot."
 )
 
 
@@ -815,7 +837,7 @@ class QuicksellPage(FirstRunPage):
 
 # -- realm and Safety Delay ---------------------------------------------------------
 
-REALM_DELAY_HEADING = "Where do you play, and how quick is your connection?"
+REALM_DELAY_HEADING = "Select favorite realm and Safety Delay"
 #: Above the rows: what each is for, said once here so the rows can keep the tab's text.
 REALM_DELAY_INTRO = (
     "Bots with a Change Realm step move every player to your favorite realm. Safety Delay is how "
@@ -874,11 +896,8 @@ class RealmAndDelayPage(FirstRunPage):
 
 # -- Custom's options ---------------------------------------------------------------
 
-OPTIONS_HEADING = "A few more choices"
-OPTIONS_INTRO = (
-    "Quick setup turns all three on. Each has a cost, said under it. You can change them later: "
-    "game art on Settings › General, the other two on Settings › Bot."
-)
+OPTIONS_HEADING = "More options"
+OPTIONS_INTRO = "You can change these later in File › Settings…: game art on General, the other two on Bot."
 
 
 class OptionsPage(FirstRunPage):
@@ -950,7 +969,7 @@ class OptionsPage(FirstRunPage):
 
 # -- game art -----------------------------------------------------------------------
 
-GAME_ART_HEADING = "Extracting the game art"
+GAME_ART_HEADING = "Extracting game art"
 GAME_ART_INTRO = (
     "BartleBot is copying the pictures of the spell cards, and the game's school, world and badge "
     "icons, out of your game's files, to show them in its own lists. Back and Finish wait for it to end. "
@@ -1070,9 +1089,9 @@ def needs_asking(prefs: PreferenceStore) -> bool:
     only under Custom, the Options page, opens nothing on its own: its choices are the ones
     Quick applies, and a setup opened for it would end on Quick or Custom with nothing
     asked, and open again next launch. Nor does a page that applies under neither, such as
-    the Launch profile page with fewer than two accounts. Both are still in the dialog's
-    walk when another page opens it, so choosing Custom, or adding accounts on the way,
-    brings them in.
+    the Launch profile page or the combat question with fewer than two accounts. Both kinds
+    are still in the dialog's walk when another page opens it, so choosing Custom, or adding
+    accounts on the way, brings them in.
     """
     return any(page_type.asks_first_run(prefs) for page_type in SETUP_PAGE_TYPES)
 
@@ -1291,9 +1310,20 @@ class FirstRunDialog(QDialog):
         walk = self.walk
         index = walk.index(page)
         if index == len(walk) - 1:
+            self._record_passed_over(walk)
             self.accept()
         else:
             self._show(walk[index + 1])
+
+    def _record_passed_over(self, walk: list[FirstRunPage]) -> None:
+        """On Finish: let each page asked but left out of the walk record what it needs to.
+
+        A failure here doesn't hold Finish: the page was never shown, so there is nothing
+        on screen to retry, and the worst case is the question asked when it applies.
+        """
+        for page in self._asked:
+            if page not in walk and not page.record_passed_over():
+                logger.warning("Could not record the setup page %r as passed over", page.heading)
 
     def _go_back(self) -> None:
         if self.current.busy():

@@ -872,6 +872,7 @@ def main_window_stub():
         _rebuild_launch_menu=lambda: calls.append("menu"),
         refresh_minimum_size=lambda: calls.append("minimum"),
         _game_view_panel=SimpleNamespace(refresh_launch_lists=lambda: calls.append("cards")),
+        left_sidebar=SimpleNamespace(refresh_player_availability=lambda: calls.append("players")),
     )
     stub._after_card_action = MainWindow._after_card_action.__get__(stub)
     return calls, stub
