@@ -9,8 +9,9 @@ asked for — plus the three things it owns, the toggle glyph, the tint and the 
 from dataclasses import replace
 
 import pytest
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QSizePolicy
+from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.theming.theme import DARK, LIGHT, THEME
@@ -225,11 +226,36 @@ def test_the_badge_goes_again(qapp, theme):
 
 
 def test_the_pointer_cursor_shows_only_while_enabled(qapp):
-    from PyQt6.QtCore import Qt
-
     btn = IconButton("close", tooltip="Close")
     assert btn.cursor().shape() == Qt.CursorShape.PointingHandCursor
     btn.setEnabled(False)
     assert btn.cursor().shape() == Qt.CursorShape.ArrowCursor
     btn.setEnabled(True)
     assert btn.cursor().shape() == Qt.CursorShape.PointingHandCursor
+
+
+def test_a_disabled_button_shows_its_parents_cursor(qtbot):
+    """No cursor of its own while disabled (#258): Qt clears a native window's cursor over a
+    disabled widget that has one, and the window then borrows a parent window's, stale or not.
+    """
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    parent.setCursor(Qt.CursorShape.ArrowCursor)
+    btn = IconButton("close", tooltip="Close", parent=parent)
+
+    btn.setEnabled(False)
+
+    assert not btn.testAttribute(Qt.WidgetAttribute.WA_SetCursor)
+    assert btn.cursor().shape() == parent.cursor().shape()
+
+
+def test_re_enabling_an_enabled_button_does_not_set_its_cursor_again(qapp, monkeypatch):
+    """Every setCursor call writes to the button's native window, pointer over it or not,
+    and the authoring bar re-enables its buttons on every refresh (#258)."""
+    btn = IconButton("close", tooltip="Close")
+    calls = []
+    monkeypatch.setattr(btn, "setCursor", calls.append)
+
+    btn.setEnabled(True)
+
+    assert calls == []

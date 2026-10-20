@@ -529,6 +529,8 @@ class GameView(ThemedMixin, QWidget):
         # Drawn over the tiles, which are native: an alien widget would be painted under
         # them. Native by request, since siblings are no longer promoted (native_widgets).
         self._overlay_btn.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+        # A native window needs a cursor of its own, or it borrows GameView's (#258).
+        self._overlay_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._overlay_btn.setVisible(False)
         self._overlay_btn.raise_()
 
