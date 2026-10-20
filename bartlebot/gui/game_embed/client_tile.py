@@ -7,9 +7,9 @@ import ctypes.wintypes
 import logging
 import time
 
-from PyQt6.QtCore import QRect, QRectF, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QPoint, QRect, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
-from PyQt6.QtWidgets import QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QToolTip, QVBoxLayout, QWidget
 
 from bartlebot.game.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui import streamer_mode
@@ -136,7 +136,55 @@ def pill_text(label: str, wizard_name: str | None) -> str:
     return label
 
 
-class ClientTile(QWidget):
+class _PillIconHover:
+    """A pointer and a tooltip over a tile's pill icon, which is painted, not a widget (#258).
+
+    Mixed in ahead of ``QWidget``. The icon is the only part of a tile that acts on a
+    click, so it is the only part that shows a pointer; everywhere else is an arrow. The
+    cursor is set only when it changes, because every ``setCursor`` call writes to the
+    tile's native window (``native_widgets.give_native_ancestors_a_cursor``).
+    """
+
+    _icon_rect: QRect
+
+    def _pill_icon_tip(self) -> str:
+        """What the icon does, as its tooltip says it."""
+        return ""
+
+    def _init_pill_icon_hover(self) -> None:
+        self.setMouseTracking(True)
+
+    def _over_icon(self, pos: QPoint) -> bool:
+        return self._icon_rect.contains(pos)
+
+    def _show_cursor(self, shape: Qt.CursorShape) -> None:
+        if self.cursor().shape() != shape:
+            self.setCursor(shape)
+
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802 - Qt override
+        over = self._over_icon(event.pos())
+        self._show_cursor(Qt.CursorShape.PointingHandCursor if over else Qt.CursorShape.ArrowCursor)
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event) -> None:  # noqa: N802 - Qt override
+        # Or the pointer is what the tile shows on the way back in, until the first move.
+        self._show_cursor(Qt.CursorShape.ArrowCursor)
+        super().leaveEvent(event)
+
+    def event(self, event) -> bool:
+        if event.type() == QEvent.Type.ToolTip:
+            tip = self._pill_icon_tip()
+            if tip and self._over_icon(event.pos()):
+                # The rect: the tooltip goes once the pointer leaves the icon, not the tile.
+                QToolTip.showText(event.globalPos(), tip, self, self._icon_rect)
+            else:
+                QToolTip.hideText()
+                event.ignore()
+            return True
+        return super().event(event)
+
+
+class ClientTile(_PillIconHover, QWidget):
     """Hosts one embedded game window centered within the tile.
 
     The game window is reparented via Win32 SetParent (WS_CHILD) and displayed
@@ -175,6 +223,7 @@ class ClientTile(QWidget):
         # winId() made this tile and every ancestor native, each with a cursor of its own
         # to keep, or the pointer shows whichever one a parent window last held (#258).
         give_native_ancestors_a_cursor(self)
+        self._init_pill_icon_hover()
         self._reposition()
 
     # ------------------------------------------------------------------
@@ -280,6 +329,9 @@ class ClientTile(QWidget):
         # base only ever answers "not handled", so answer that directly.
         return False, 0
 
+    def _pill_icon_tip(self) -> str:
+        return "Detach this window"
+
     def set_focused(self, focused: bool) -> None:
         if focused != self._focused:
             self._focused = focused
@@ -355,7 +407,7 @@ class ClientTile(QWidget):
         self._icon_rect = QRect(ix - 2, pill_y, _ICON_SIZE + 4, pill_h)  # 2px buffer
 
 
-class _WindowlessTile(QWidget):
+class _WindowlessTile(_PillIconHover, QWidget):
     """Shared drawing for the tile kinds that hold a slot without a game window in it.
 
     Two of them now -- a detached window, and a launch that has not produced a window
@@ -381,6 +433,7 @@ class _WindowlessTile(QWidget):
         self._color_key: int | None = None
         self._pill_rect: QRect = QRect()
         self._icon_rect: QRect = QRect()
+        self._init_pill_icon_hover()
 
     @property
     def label(self) -> str:
@@ -509,6 +562,9 @@ class DetachedTile(_WindowlessTile):
 
     def _body_text(self) -> str:
         return "Player game window not currently embedded"
+
+    def _pill_icon_tip(self) -> str:
+        return "Re-attach this window"
 
     def _on_icon_clicked(self) -> None:
         self.reattach_requested.emit()
@@ -747,6 +803,9 @@ class PendingTile(_WindowlessTile):
     def failed(self) -> bool:
         """Whether this tile is showing a launch that gave up."""
         return self._failed
+
+    def _pill_icon_tip(self) -> str:
+        return "Dismiss this failed launch"
 
     def _on_icon_clicked(self) -> None:
         self.dismiss_requested.emit()
