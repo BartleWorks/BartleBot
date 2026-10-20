@@ -248,11 +248,12 @@ class AppController(QObject):
         # opened from it. Empty while a bot, or a definition opened on its own, is on top.
         self._doc_stack: list[_DocumentFrame] = []
 
-        # Auto-save state
-        self._has_unsaved_changes: bool = False
+        # Auto-save state, behind _has_unsaved_changes and _clean_snapshot: setting
+        # either refreshes the unsaved marks.
+        self._unsaved: bool = False
         # The open document as last opened or saved; None when there is no such state
         # to return to (a recovered file). See _file_snapshot.
-        self._clean_snapshot: dict | None = None
+        self._clean: dict | None = None
         # The id of the open bot whose author chose Save Without at the Rewards prompt:
         # asked once per open, and remembered nowhere else. See rewards_tag_dialog.
         self._rewards_declined_for: str | None = None
@@ -3415,6 +3416,35 @@ class AppController(QObject):
         own round trip.
         """
         self._mark_unsaved()
+
+    @property
+    def _has_unsaved_changes(self) -> bool:
+        """The dirty flag. Raised by an edit that changes nothing too (#122): compare
+        against ``_clean_snapshot`` before treating it as a change."""
+        return self._unsaved
+
+    @_has_unsaved_changes.setter
+    def _has_unsaved_changes(self, unsaved: bool) -> None:
+        self._unsaved = unsaved
+        self._show_unsaved()
+
+    @property
+    def _clean_snapshot(self) -> dict | None:
+        return self._clean
+
+    @_clean_snapshot.setter
+    def _clean_snapshot(self, snapshot: dict | None) -> None:
+        self._clean = snapshot
+        self._show_unsaved()
+
+    def _show_unsaved(self) -> None:
+        """Mark the window while the open document differs from its file (#267).
+
+        Properties rather than calls at each site, since the flag and the snapshot are
+        set from some two dozen places. Only a raised flag is compared, so a save or an open
+        costs nothing here, and an edit undone back to the file clears the mark.
+        """
+        self._window.set_unsaved(self._unsaved and not _matches_clean(self._loaded_config, self._clean))
 
     def _mark_unsaved(self) -> None:
         """Raise the unsaved flag and enable Save -- except on an Official bot, which is never saved (#149)."""

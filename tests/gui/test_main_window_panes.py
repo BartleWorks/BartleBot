@@ -45,6 +45,13 @@ def test_the_title_bar_holds_the_menus_a_toggle_per_pane_and_the_title(window):
 
     window.set_bot_name("Farm", "farm.json")
     assert window.title_bar.title == "BartleBot — farm.json"
+    # #267: spelled out, since the title bar would print Qt's [*] placeholder as it is.
+    window.set_unsaved(True)
+    assert window.title_bar.title == "BartleBot — *farm.json"
+    window.set_bot_name("Farm", "farm-2.json")
+    assert window.title_bar.title == "BartleBot — *farm-2.json", "a Save As keeps the mark until the flag drops"
+    window.set_unsaved(False)
+    assert window.title_bar.title == "BartleBot — farm-2.json"
 
 
 def test_each_toggle_hides_and_shows_its_pane(window):

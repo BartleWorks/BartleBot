@@ -19,6 +19,11 @@ accent is spent on the enabled state and the icon falls back to the ordinary
 tint when there is nothing to revert -- which means the icon has to be re-rendered
 on ``setEnabled`` as well as on a theme switch.
 
+A badge is a state the button reports without changing its glyph: an accent dot in
+the glyph's top-right corner, as an editor's tab marks unsaved changes (Edit mode's
+Save, #267). It is painted over the icon rather than drawn into the SVG, which is
+tinted whole, and it is a shape as well as a color, so it reads in grayscale.
+
 A tooltip is required rather than optional. An icon-only control carries no label,
 so without one it is unusable to anyone who does not already recognize the glyph;
 making it a keyword argument with no default is what stops that being an oversight.
@@ -28,7 +33,8 @@ from __future__ import annotations
 
 from enum import Enum
 
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QRectF, QSize, Qt
+from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import QPushButton, QWidget
 
 from bartlebot.gui.theming.icon_utils import svg_icon
@@ -82,6 +88,7 @@ class IconButton(ThemedMixin, QPushButton):
         self._checked_icon_name = checked_icon_name
         self._icon_px = icon_size
         self._tint = tint
+        self._badge = False
         self.setToolTip(tooltip)
         self.setFixedSize(size, size)
         self.setIconSize(QSize(icon_size, icon_size))
@@ -112,6 +119,36 @@ class IconButton(ThemedMixin, QPushButton):
             return
         self._tint = tint
         self.refresh_theme_styles()
+
+    @property
+    def has_badge(self) -> bool:
+        """Whether the accent dot is on show."""
+        return self._badge
+
+    def set_badge(self, shown: bool) -> None:
+        """Show or hide the accent dot in the glyph's top-right corner."""
+        if shown == self._badge:
+            return
+        self._badge = shown
+        self.update()
+
+    def _badge_rect(self) -> QRectF:
+        """Where the dot is drawn: three eighths of the glyph across, in its top-right corner."""
+        d = max(5, round(self._icon_px * 3 / 8))
+        left = (self.width() - self._icon_px) / 2 + self._icon_px - d
+        top = (self.height() - self._icon_px) / 2
+        return QRectF(left, top, d, d)
+
+    def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
+        super().paintEvent(event)
+        if not self._badge:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(THEME.accent))
+        painter.drawEllipse(self._badge_rect())
+        painter.end()
 
     def setEnabled(self, enabled: bool) -> None:  # noqa: N802 - Qt override
         was = self.isEnabled()

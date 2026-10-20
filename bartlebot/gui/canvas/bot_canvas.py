@@ -158,6 +158,9 @@ _BUILT_IN_RENAME_TIP = "Official subgraphs can't be renamed. Open one and Save a
 #: The Edit button's tooltip, and what it says on an Official bot, which it offers to copy (#149).
 _EDIT_TIP = "Enter Edit Mode"
 _MAKE_COPY_TIP = "Official bots can't be changed. Click to make your own copy to edit."
+#: Edit mode's Save, and what it says while its dot marks unsaved changes (#267).
+_SAVE_TIP = "Save (Ctrl+S)"
+_SAVE_UNSAVED_TIP = "Save (Ctrl+S) — you have unsaved changes"
 
 
 def _status_dot_color(state: str) -> str:
@@ -1757,7 +1760,7 @@ class BotCanvas(QWidget):
         # (#267). It used to leave without saving, beside a floppy that saved and left,
         # and testers took the floppy for File › Save and the checkmark for a commit --
         # which is what a checkmark is nearly everywhere else.
-        self._save_btn = _icon_btn("save_done", "Save (Ctrl+S)")
+        self._save_btn = _icon_btn("save_done", _SAVE_TIP)
         self._save_btn.clicked.connect(self.save_requested.emit)
 
         self._done_btn = _icon_btn("checkmark", "Save and finish editing")
@@ -2723,6 +2726,11 @@ class BotCanvas(QWidget):
         """
         self._read_only = read_only
         self._edit_btn.setToolTip(_MAKE_COPY_TIP if read_only else _EDIT_TIP)
+
+    def set_unsaved(self, unsaved: bool) -> None:
+        """Mark Edit mode's Save with a dot while the open document differs from its file."""
+        self._save_btn.set_badge(unsaved)
+        self._save_btn.setToolTip(_SAVE_UNSAVED_TIP if unsaved else _SAVE_TIP)
 
     @property
     def is_read_only(self) -> bool:

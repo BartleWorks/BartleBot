@@ -117,6 +117,20 @@ def test_save_stays_in_edit_mode_and_done_leaves_only_through_a_save(canvas):
     assert canvas.mode == BotMode.EDIT
 
 
+def test_save_carries_a_dot_and_says_why_while_there_are_unsaved_changes(canvas):
+    canvas.enter_edit_mode()
+    assert not canvas._save_btn.has_badge
+    assert canvas._save_btn.toolTip() == "Save (Ctrl+S)"
+
+    canvas.set_unsaved(True)
+    assert canvas._save_btn.has_badge
+    assert canvas._save_btn.toolTip() == "Save (Ctrl+S) — you have unsaved changes"
+
+    canvas.set_unsaved(False)
+    assert not canvas._save_btn.has_badge
+    assert canvas._save_btn.toolTip() == "Save (Ctrl+S)"
+
+
 def test_the_view_tools_do_not_move_when_the_mode_changes(canvas):
     """The edit tools take a reserved slot rather than appearing out of nothing: a
     cluster that shifts 78px sideways on a mode switch is one the user has to re-find."""
