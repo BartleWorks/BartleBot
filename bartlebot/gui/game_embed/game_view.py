@@ -172,7 +172,11 @@ class _GamePlaceholder(QWidget):
         self._launch_note = ThemedTextLabel("", css=f"font-size: {THEME.font_small_px}px;")
         self._launch_note.setWordWrap(True)
         self._launch_note.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
-        self._launch_note.setMaximumWidth(_LAUNCH_NOTE_WIDTH)
+        # A fixed width, and the height it needs at that width set as its minimum on every
+        # change of text (``_set_launch_note``). Height-for-width does not survive the trip
+        # through the body's nested box layouts, so left to them the label got one line's
+        # height and drew a two-line note cut off mid-sentence.
+        self._launch_note.setFixedWidth(_LAUNCH_NOTE_WIDTH)
         center.addWidget(self._launch_note, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         center.addStretch(1)
@@ -380,6 +384,7 @@ class _GamePlaceholder(QWidget):
 
     def _set_launch_note(self, text: str, color: str) -> None:
         self._launch_note.setText(text)
+        self._launch_note.setMinimumHeight(self._launch_note.heightForWidth(_LAUNCH_NOTE_WIDTH) if text else 0)
         self._launch_note.set_color(color)
         self._launch_note.setVisible(bool(text))
 

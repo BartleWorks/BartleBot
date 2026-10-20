@@ -17,6 +17,7 @@ from bartlebot.clients.tile_slots import TileSlot
 from bartlebot.game.game_sizing import required_game_area
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
+from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -208,6 +209,19 @@ def test_a_selection_that_will_not_fit_turns_launch_off_and_says_why(quick_launc
     screen.refresh_fit()
     assert screen.launch_button.isEnabled()
     assert screen.launch_note == ""
+
+
+def test_the_note_under_the_button_is_given_every_line_it_wraps_to(qapp, quick_launch):
+    """Left to the nested box layouts, it got one line's height and drew the prompt cut
+    off mid-sentence -- "Select an account or a launch profile to"."""
+    screen = quick_launch()
+    screen.show()
+    qapp.processEvents()
+    (note,) = [label for label in screen.findChildren(ThemedTextLabel) if label.text() == screen.launch_note]
+
+    assert note.height() >= note.heightForWidth(note.width())
+    assert note.heightForWidth(note.width()) > note.fontMetrics().height(), "the prompt wraps"
+    screen.close()
 
 
 def test_a_long_name_is_elided_on_the_button(quick_launch):
