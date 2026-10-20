@@ -235,8 +235,8 @@ def test_the_cards_carry_their_verbs_openly_here(qapp, screen, populated, column
 def test_the_launch_screens_cards_keep_the_trash_off_their_faces(qapp):
     """A trash icon 22px from a body whose double-click starts a game client is a
     mis-click that costs a stored credential and a character roster. It stays on the
-    right-click menu there, while the pencil is drawn openly (#266)."""
+    right-click menu there."""
     card = ProfileCard(PROFILES[0], ACCOUNTS)
 
     assert card.action_button("Delete") is None
-    assert card.action_button("Edit").isVisibleTo(card)
+    assert card.action_button("Edit").isHidden()

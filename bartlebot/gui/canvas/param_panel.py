@@ -339,8 +339,7 @@ def _row_action(icon_name: str, tooltip: str) -> ActionButton:
     under a field at its end instead, as Unity's object picker and Houdini's select
     arrow do. Still an ``ActionButton`` -- the same frame and weight the labeled ones
     had -- and always drawn, never revealed on hover: on a tool surface a hidden verb
-    is one nobody finds, and one revealed under the pointer is one the user misses
-    (``CardFrame``'s face buttons, #266).
+    is one nobody finds (the launch cards' ``pins_chrome`` reasoning).
     """
     button = ActionButton(icon_name, "", fill=False)
     button.setToolTip(tooltip)

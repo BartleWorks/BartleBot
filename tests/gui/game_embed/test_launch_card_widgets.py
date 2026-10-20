@@ -228,14 +228,14 @@ def test_an_account_cards_pencil_edits_without_launching(qapp):
 
 
 @pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
-def test_the_edit_button_is_drawn_without_hovering(qapp, factory):
-    """#266: revealed on hover, the pencil appeared under the pointer as it arrived, and
-    testers aiming at it launched instead. The grip is still revealed on hover."""
+def test_the_edit_button_and_the_grip_are_revealed_on_hover(qapp, factory):
+    """Secondary to picking a name: a button visible on every card competes with it. Safe
+    since #266, because a near miss on the body only selects the card."""
     card = factory()
     edit_btn = card.action_button("Edit")
     # isVisibleTo, not isVisible: the card is never shown in the test, and isVisible is
-    # False for every child of an unshown parent — which would fail whatever we did.
-    assert edit_btn.isVisibleTo(card)
+    # False for every child of an unshown parent — which would pass whatever we did.
+    assert not edit_btn.isVisibleTo(card)
     assert not card.grip.isVisibleTo(card)
 
     point = QPoint(5, 5).toPointF()
@@ -244,7 +244,7 @@ def test_the_edit_button_is_drawn_without_hovering(qapp, factory):
     assert card.grip.isVisibleTo(card)
 
     card.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert edit_btn.isVisibleTo(card)
+    assert not edit_btn.isVisibleTo(card)
     assert not card.grip.isVisibleTo(card)
 
 
@@ -269,9 +269,9 @@ def test_an_account_with_no_known_characters_still_builds(qapp):
 
 @pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
 def test_hovering_does_not_resize_the_card(qapp, factory):
-    """Revealing the grip on hover must not resize the card: a card that grows under the
-    pointer can move out from under it, hiding the grip and shrinking back — the jitter
-    that made the cards unusable to mouse over."""
+    """Revealing the buttons on hover must not resize the card: a card that grows under
+    the pointer can move out from under it, hiding the buttons and shrinking back — the
+    jitter that made the cards unusable to mouse over."""
     card = factory()
     card.resize(300, card.sizeHint().height())
     hidden = card.sizeHint()

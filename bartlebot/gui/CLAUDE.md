@@ -424,7 +424,7 @@ geometry all internally consistent about the wrong answer, which is why it reads
 arithmetic bug rather than a visibility one. `DragReorder._begin_drag` is the case:
 the placeholder standing in for a lifted card has to be `show()`n by hand, after the
 parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and is what
-the launch cards' hover-revealed grip uses — but it only applies to a widget the layout
+the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
 is still asked about.)
 
 

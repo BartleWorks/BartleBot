@@ -81,12 +81,12 @@ card is on -- and three of the four things a card varies by are read off it:
   works.
 - ``selects_on_click`` -- whether a click selects and a double-click activates, rather
   than a click activating. True only on the launch screen; see the click model above.
-- ``pins_grip`` -- whether the drag handle is pinned open or revealed on hover. Hover is
-  right on the launch screen, where the cards' job is to be picked out by name and a column
-  of dots beside every one competes with it; the other two surfaces exist to rearrange and
-  run things, and hiding the handle there is backwards. The face *buttons* are pinned
-  everywhere: a pencil that appeared under the pointer on the way in was a target that
-  moved as the user aimed at it, on a card whose body launched (#266).
+- ``pins_chrome`` -- whether the grip and the face buttons are pinned open or revealed on
+  hover. Hover is right where the card's job is to be picked out by name; the other two
+  surfaces exist to run the verbs, and hiding them there is backwards. A pencil revealed
+  under the pointer was once a mis-launch waiting to happen -- a near miss landed on a body
+  that launched (#266) -- but a body click on the launch screen only selects now, so a
+  miss costs nothing.
 - ``refuses_when_unfit`` -- whether a card that will not fit goes gray and refuses its
   activation. True only on the launch screen, where activating starts what does not fit.
   It can still be selected there, so the screen can say why Launch is off. Elsewhere it
@@ -203,13 +203,13 @@ class CardMode(Enum):
     """
 
     #: The Quick Launch screen. A body click selects and a double-click launches, the
-    #: grip is revealed on hover, and a card that will not fit goes gray and refuses to
+    #: chrome is revealed on hover, and a card that will not fit goes gray and refuses to
     #: launch.
     LAUNCH = "launch"
-    #: The Game settings tab. A body click edits, the grip is pinned open, and a card
+    #: The Game settings tab. A body click edits, the chrome is pinned open, and a card
     #: that will not fit is noted rather than grayed.
     MANAGE = "manage"
-    #: A card whose body is not a button. The grip is pinned open and nothing refuses,
+    #: A card whose body is not a button. The chrome is pinned open and nothing refuses,
     #: exactly as in MANAGE, and the body has no verb at all -- so no pointing-hand cursor,
     #: no hover highlight and no ``activated``. Two surfaces mean it: a row in a launch
     #: profile being assembled, whose verbs are the grip and the cross; and a player card
@@ -417,6 +417,9 @@ class CardFrame(ThemedMixin, QWidget):
         # A card's optional face button for verbs the face alone does not show -- see
         # ``_make_kebab_button``. None on every card that has not asked for one.
         self._kebab_btn: QToolButton | None = None
+        # Face buttons a subclass placed itself rather than drawing from a verb -- see
+        # ``_make_face_icon_button``. Held only so the launch screen's hover reveals them.
+        self._extra_face_btns: list[IconButton] = []
         self._dragging = False
         # Lit for a moment after the card was added, so the user sees where it landed --
         # see ``highlight``. A styling state like ``_hovered``.
@@ -471,13 +474,12 @@ class CardFrame(ThemedMixin, QWidget):
         return self._mode is CardMode.LAUNCH
 
     @property
-    def pins_grip(self) -> bool:
-        """Whether the drag handle stays visible instead of awaiting hover.
+    def pins_chrome(self) -> bool:
+        """Whether the grip and the face buttons stay visible instead of awaiting hover.
 
         False only on the launch screen, whose job is to let a name be picked out: a
-        column of dots beside every card competes with the names there, and there is
-        nothing for it to compete with on a surface that exists to rearrange things. The
-        face buttons are not asked: they are pinned on every surface (the module docstring).
+        button drawn permanently on every card competes with the name there, and there is
+        nothing for it to compete with on a surface that exists to run the verbs.
         """
         return self._mode is not CardMode.LAUNCH
 
@@ -540,14 +542,14 @@ class CardFrame(ThemedMixin, QWidget):
     def _make_grip(self, what: str) -> GripHandle:
         """This card's drag handle, named after what a drag would reorder.
 
-        Revealed on hover on the launch screen and pinned open elsewhere -- see
-        ``pins_grip``. The face buttons used to share that answer, and stopped (#266): a
-        handle appearing under the pointer is harmless, since a press on it moves nothing
-        until it drags, but a pencil appearing beside a body that launched was a target
-        the user missed into the launch.
+        Revealed and hidden with the face buttons, and pinned open on the surfaces they
+        are pinned open on -- ``pins_chrome`` is one answer for both. It is the same
+        judgement: on the launch screen the card's job is to be picked out by name and
+        everything else defers to that, while the Game tab and the profile editor exist to
+        do things to the card, so the things you can do to it are on its face.
         """
         self._grip = GripHandle(f"Drag to reorder {what}", self)
-        self._grip.setVisible(self.pins_grip)
+        self._grip.setVisible(self.pins_chrome)
         return self._grip
 
     @property
@@ -803,13 +805,24 @@ class CardFrame(ThemedMixin, QWidget):
         consumes its own clicks. The whole card is a hit target, and a painted-on icon
         would activate the thing the user was trying to do something else to.
 
-        Always drawn, on every surface. It was revealed on hover on the launch screen, to
-        keep the names uncluttered, and that is what testers mis-clicked on (#266): the
-        pencil appeared under the pointer as it arrived, so the user aimed at a target that
-        had not been there a moment before, on a card whose body launched.
+        Revealed on hover on the launch screen, because it is secondary to launching: a
+        button drawn permanently on every card competes with the name for attention, on
+        the one screen whose job is to let you pick a name. Hover-only is not the whole
+        answer to reaching it — that is what ``contextMenuEvent`` below is for, which is
+        also the route for anyone not using a mouse. A pencil appearing under the pointer
+        as it arrives is a target that moves as the user aims, and when the body beside it
+        launched, a near miss launched (#266). The body only selects there now, so a miss
+        costs a selection and nothing more.
 
-        The button's space is held while a subclass hides it -- a verb offered only in
-        some states -- so that showing it again does not resize the card under the pointer.
+        Pinned open wherever the card is the thing being worked on rather than launched:
+        there is nothing for the icons to compete with on those surfaces, and hiding the
+        verbs behind hover on a surface that exists to run them is backwards. It is also
+        what lets those surfaces carry a trash, or a cross, on the face at all.
+
+        The button's space is held while it is hidden, or revealing it on hover would
+        resize the card under the pointer -- which can move the card out from under it,
+        hiding the button again, resizing back: the whole card jitters as long as the
+        pointer sits near its edge.
         """
         button = QToolButton(self)
         button.setFixedSize(_FACE_BTN_SIZE, _FACE_BTN_SIZE)
@@ -820,6 +833,7 @@ class CardFrame(ThemedMixin, QWidget):
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setToolTip(verb.tooltip)
         button.clicked.connect(verb.run)
+        button.setVisible(self.pins_chrome)
         self._action_btns.append((button, verb))
         return button
 
@@ -928,6 +942,7 @@ class CardFrame(ThemedMixin, QWidget):
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setToolTip(tooltip)
         button.setIcon(svg_icon("more_vert", size=14))
+        button.setVisible(self.pins_chrome)
         button.clicked.connect(lambda: self._open_verbs_menu(button))
         self._kebab_btn = button
         return button
@@ -942,13 +957,15 @@ class CardFrame(ThemedMixin, QWidget):
         swaps glyphs through ``set_icon_name``, so there is nothing here for
         ``_restyle_action_icons`` to keep in step.
 
-        Sized and held while hidden exactly as the verb buttons are, so it sits in the
-        same row as them without a seam.
+        Sized, revealed and held while hidden exactly as the verb buttons are, so it sits
+        in the same row as them without a seam.
         """
         button = IconButton(icon_name, tooltip=tooltip, size=_FACE_BTN_SIZE, icon_size=14, parent=self)
         policy = button.sizePolicy()
         policy.setRetainSizeWhenHidden(True)
         button.setSizePolicy(policy)
+        button.setVisible(self.pins_chrome)
+        self._extra_face_btns.append(button)
         return button
 
     def _open_verbs_menu(self, anchor: QWidget) -> None:
@@ -962,20 +979,28 @@ class CardFrame(ThemedMixin, QWidget):
     # Hover and activation
     # ------------------------------------------------------------------
 
-    def _set_grip_visible(self, visible: bool) -> None:
-        """Show or hide the drag handle -- a no-op where it is pinned open."""
-        if not self.pins_grip and self._grip is not None:
+    def _set_actions_visible(self, visible: bool) -> None:
+        """Show or hide the grip and the face buttons — a no-op where they are pinned open."""
+        if self.pins_chrome:
+            return
+        for button, _verb in self._action_btns:
+            button.setVisible(visible)
+        if self._kebab_btn is not None:
+            self._kebab_btn.setVisible(visible)
+        for button in self._extra_face_btns:
+            button.setVisible(visible)
+        if self._grip is not None:
             self._grip.setVisible(visible)
 
     def enterEvent(self, event) -> None:
         self._hovered = True
-        self._set_grip_visible(True)
+        self._set_actions_visible(True)
         self.refresh_theme_styles()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self._hovered = False
-        self._set_grip_visible(False)
+        self._set_actions_visible(False)
         self.refresh_theme_styles()
         super().leaveEvent(event)
 
