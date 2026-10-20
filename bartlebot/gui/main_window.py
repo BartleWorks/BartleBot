@@ -793,7 +793,7 @@ class MainWindow(QMainWindow):
 
         self._launch_menu.addSeparator()
 
-        manage_action = QAction("Manage Accounts…", self)
+        manage_action = QAction("Manage Wizard101 Accounts…", self)
         manage_action.triggered.connect(lambda: self._open_settings(tab_name="game"))
         self._launch_menu.addAction(manage_action)
 

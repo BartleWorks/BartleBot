@@ -74,6 +74,9 @@ from bartlebot.settings_manager import SettingsManager
 # user does not yet know what a launch profile *is*, so one line of what the thing is
 # stays, and only while the column is empty. Once there are cards, they are the
 # explanation.
+# "Wizard101", because testers read a bare "account" as one made with BartleBot (#261).
+ACCOUNTS_TITLE = "Wizard101 Accounts"
+ADD_ACCOUNT = "Add Wizard101 account"
 EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one and it launches from here in a click."
 EMPTY_PROFILES_HINT = "A launch profile starts several accounts at once, in the order you give them."
 

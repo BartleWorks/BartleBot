@@ -70,7 +70,7 @@ from bartlebot.clients.install_location import apply_install
 from bartlebot.game import card_art
 from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
-from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.card_columns import ADD_ACCOUNT, CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row
@@ -266,7 +266,7 @@ class _CardsPage(FirstRunPage):
 
 # -- Quick or Custom ------------------------------------------------------------
 
-MODE_HEADING = "How would you like to set up BartleBot?"
+MODE_HEADING = "Select setup mode"
 #: Each mode's card: its name, and what it asks.
 MODE_CARDS: dict[SetupMode, tuple[str, str]] = {
     SetupMode.QUICK: (
@@ -308,7 +308,7 @@ class ModePage(_CardsPage):
 
 # -- the combat question ------------------------------------------------------------
 
-COMBAT_HEADING = "How should your team take on bosses?"
+COMBAT_HEADING = "Select a team strategy for boss fights"
 #: Each answer's card: its name, and what it does in a fight.
 TACTIC_CARDS: dict[BossTactic, tuple[str, str]] = {
     BossTactic.ONE_HITTER: (
@@ -385,7 +385,7 @@ class CombatQuestionPage(_CardsPage):
 
 # -- the game folder ----------------------------------------------------------------
 
-GAME_FOLDER_HEADING = "Where is Wizard101 installed?"
+GAME_FOLDER_HEADING = "Select Wizard101 install location"
 GAME_FOLDER_INTRO = (
     "BartleBot starts the game from this folder, the one holding its Bin folder. The KingsIsle "
     "launcher installs it in C:\\ProgramData\\KingsIsle Entertainment\\Wizard101, and Steam in "
@@ -512,17 +512,17 @@ class GameFolderPage(FirstRunPage):
 
 # -- accounts -----------------------------------------------------------------------
 
-ACCOUNTS_HEADING = "Which accounts should BartleBot log in to?"
+ACCOUNTS_HEADING = "Add Wizard101 accounts"
 ACCOUNTS_INTRO = (
-    "BartleBot logs these accounts in when it launches the game for you. Passwords are kept in "
-    "Windows Credential Manager, never in a file."
+    "BartleBot uses your Wizard101 logins to launch the game and to relaunch it after a crash or "
+    "disconnect. Passwords are kept in Windows Credential Manager, never in a file. You can leave this "
+    "empty and launch the game yourself, but bots then can't recover from crashes."
 )
-#: Beneath Add account while there is none: leaving the page empty is an answer too.
+#: Beneath the Add button while there is none: leaving the page empty is an answer too.
 ACCOUNTS_EMPTY = (
     "With no account, BartleBot can still hook game windows you start yourself. Accounts can be "
-    "added at any time from Launch › Manage Accounts…"
+    "added at any time from Launch › Manage Wizard101 Accounts…"
 )
-ADD_ACCOUNT = "Add account"
 
 
 class AccountsPage(FirstRunPage):
@@ -601,7 +601,7 @@ class AccountsPage(FirstRunPage):
 
 # -- the launch profile -------------------------------------------------------------
 
-LAUNCH_PROFILE_HEADING = "Which accounts launch together?"
+LAUNCH_PROFILE_HEADING = "Configure launch profiles"
 LAUNCH_PROFILE_INTRO = (
     "BartleBot makes a launch profile of the accounts checked here, to start them all at once from "
     "the Launch menu or the launch screen. They launch in this order: the first is Player 1. The "
@@ -780,7 +780,7 @@ class LaunchProfilePage(FirstRunPage):
 
 # -- quicksell ----------------------------------------------------------------------
 
-QUICKSELL_HEADING = "What may bots sell?"
+QUICKSELL_HEADING = "Configure Quicksell settings"
 #: Above the rows: that quicksell starts off (#262), what turning it on sells, which is
 #: what the explanation before each run used to say and this page turns off, and where
 #: the same rows are later.
@@ -837,7 +837,7 @@ class QuicksellPage(FirstRunPage):
 
 # -- realm and Safety Delay ---------------------------------------------------------
 
-REALM_DELAY_HEADING = "Where do you play, and how quick is your connection?"
+REALM_DELAY_HEADING = "Select favorite realm and Safety Delay"
 #: Above the rows: what each is for, said once here so the rows can keep the tab's text.
 REALM_DELAY_INTRO = (
     "Bots with a Change Realm step move every player to your favorite realm. Safety Delay is how "
@@ -896,11 +896,8 @@ class RealmAndDelayPage(FirstRunPage):
 
 # -- Custom's options ---------------------------------------------------------------
 
-OPTIONS_HEADING = "A few more choices"
-OPTIONS_INTRO = (
-    "Quick setup turns all three on. Each has a cost, said under it. You can change them later: "
-    "game art on Settings › General, the other two on Settings › Bot."
-)
+OPTIONS_HEADING = "More options"
+OPTIONS_INTRO = "You can change these later in File › Settings…: game art on General, the other two on Bot."
 
 
 class OptionsPage(FirstRunPage):
@@ -972,7 +969,7 @@ class OptionsPage(FirstRunPage):
 
 # -- game art -----------------------------------------------------------------------
 
-GAME_ART_HEADING = "Extracting the game art"
+GAME_ART_HEADING = "Extracting game art"
 GAME_ART_INTRO = (
     "BartleBot is copying the pictures of the spell cards, and the game's school, world and badge "
     "icons, out of your game's files, to show them in its own lists. Back and Finish wait for it to end. "

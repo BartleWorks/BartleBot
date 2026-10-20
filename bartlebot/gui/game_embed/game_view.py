@@ -19,6 +19,8 @@ from PyQt6.QtWidgets import (
 from bartlebot.clients.tile_slots import TileKey, TileSlot, plan_tile_changes
 from bartlebot.game.game_sizing import grid_for, required_game_area
 from bartlebot.gui.game_embed.card_columns import (
+    ACCOUNTS_TITLE,
+    ADD_ACCOUNT,
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
     CardColumn,
@@ -108,7 +110,7 @@ class _GamePlaceholder(QWidget):
         outer.addLayout(body, stretch=1)
 
         # -- Left: Accounts --------------------------------------------
-        self._accounts_col = CardColumn("Accounts", EMPTY_ACCOUNTS_HINT, "Add account")
+        self._accounts_col = CardColumn(ACCOUNTS_TITLE, EMPTY_ACCOUNTS_HINT, ADD_ACCOUNT)
         self._accounts_col.add_requested.connect(self.add_account_requested)
         self._accounts_col.reordered.connect(self.reorder_accounts_requested)
         self._accounts_col.settings_requested.connect(self.manage_accounts_requested)
