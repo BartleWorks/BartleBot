@@ -64,6 +64,17 @@ places enforce it, as with restricted zones:
 3. `AppController._check_player_realms` refuses the run, which is what a hand-edited file or an
    override from before the node was added reaches.
 
+**With one player there is nothing to arrange** (#264), so Option Values grays both choices, each
+saying why (`player_realms.NO_TEAM_REASON`), while the user has fewer than two accounts and fewer
+than two games connected (`player_realms.has_players`). Games connected count because clients
+started by hand are hooked without an account. Grayed rather than hidden, so the row is where it
+always was once there is a team, and the value shown is left alone, as a blocked Separate's is.
+The row is re-judged as clients connect and after any account edit (`refresh_player_availability`,
+from `MainWindow`'s card actions and the Settings dialog). Options, the author's surface, never
+grays it: an author with one account still writes the choice for users with a team. Setup has no
+Player Realms page; its other team question, the combat one, leaves the walk instead
+(`docs/FIRST_RUN.md`).
+
 ## Acting
 
 | where | Together | Separate |

@@ -11,13 +11,18 @@ import json
 from pathlib import Path
 
 import pytest
+from PyQt6.QtWidgets import QRadioButton
 
+from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel
 from bartlebot.content.templates.template_store import list_templates
 from bartlebot.gui.canvas.edit_scene import _validate_node
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
+from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.widgets.inputs.option_widgets import (
     NODE_ONLY_TYPES,
     block_separate_if_merging,
+    gray_without_players,
     make_option_widget,
     widget_value,
 )
@@ -25,6 +30,7 @@ from bartlebot.gui.widgets.inputs.player_realms_choice import PlayerRealmsChoice
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.options import bot_options, player_realms
 from bartlebot.paths import project_root
+from bartlebot.settings_manager import SettingsManager
 
 _ROOT = project_root()
 
@@ -203,7 +209,115 @@ def test_without_a_merging_node_separate_is_offered(qapp):
 def test_other_controls_are_left_alone(qapp):
     widget = make_option_widget("bool", True)
     block_separate_if_merging(widget, _config("teleport_to_friend"))  # no error, no change
+    gray_without_players(widget, team=False, connected=0)
     assert widget_value(widget) is True
+    assert widget.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# One player: nothing to arrange (#264)
+# ---------------------------------------------------------------------------
+
+
+def _radios(widget: PlayerRealmsChoice) -> list[QRadioButton]:
+    return widget.findChildren(QRadioButton)
+
+
+def test_with_one_player_both_choices_gray_and_say_why(qapp):
+    widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.SEPARATE)
+    gray_without_players(widget, team=False, connected=1)
+
+    assert widget.no_team()
+    assert [radio.isEnabled() for radio in _radios(widget)] == [False, False]
+    assert {radio.toolTip() for radio in _radios(widget)} == {player_realms.NO_TEAM_REASON}
+    # The value is left as it is, as a blocked Separate is.
+    assert widget_value(widget) == player_realms.SEPARATE
+
+
+@pytest.mark.parametrize(("team", "connected"), [(True, 0), (False, 2)])
+def test_two_accounts_or_two_games_connected_offer_the_choice(qapp, team, connected):
+    """Clients started by hand are hooked without an account, so two connected is a team too."""
+    widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.TOGETHER)
+    gray_without_players(widget, team=False, connected=0)
+
+    gray_without_players(widget, team=team, connected=connected)
+
+    assert not widget.no_team()
+    assert [radio.isEnabled() for radio in _radios(widget)] == [True, True]
+
+
+def test_a_merging_node_still_grays_separate_once_there_is_a_team(qapp):
+    widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.TOGETHER)
+    block_separate_if_merging(widget, _config("sync_in_zone", "teleport_to_friend"))
+    gray_without_players(widget, team=False, connected=0)
+
+    gray_without_players(widget, team=True, connected=0)
+
+    together, separate = _radios(widget)
+    assert together.isEnabled() and not separate.isEnabled()
+    assert "'Node 1'" in separate.toolTip()
+    assert widget.blocked_reason() == separate.toolTip()
+
+
+@pytest.fixture
+def settings(tmp_path, monkeypatch):
+    monkeypatch.setattr(sm_mod, "_appdata_dir", lambda: tmp_path)
+    return SettingsManager()
+
+
+def _realms_row(settings, clients: int = 0) -> tuple[OptionValuesSection, PlayerRealmsChoice]:
+    section = OptionValuesSection(settings=settings)
+    section.set_clients_getter(lambda: [object()] * clients)
+    section.set_config(_config("sync_in_zone"))
+    return section, section.option_widgets[player_realms.OPTION]
+
+
+def test_option_values_grays_the_row_for_one_account(qapp, settings):
+    settings.accounts = [{"username": "one@example.com", "alias": ""}]
+
+    _section, widget = _realms_row(settings)
+
+    assert widget.no_team()
+
+
+def test_option_values_offers_the_row_to_two_accounts(qapp, settings):
+    settings.accounts = [{"username": u, "alias": ""} for u in ("one@example.com", "two@example.com")]
+
+    _section, widget = _realms_row(settings)
+
+    assert not widget.no_team()
+
+
+def test_option_values_offers_the_row_once_a_second_game_connects(qapp, settings):
+    clients: list = [object()]
+    section = OptionValuesSection(settings=settings)
+    section.set_clients_getter(lambda: clients)
+    section.set_config(_config("sync_in_zone"))
+    widget = section.option_widgets[player_realms.OPTION]
+    assert widget.no_team()
+
+    clients.append(object())
+    section.refresh_player_availability()
+
+    assert not widget.no_team()
+
+
+def test_option_values_offers_the_row_once_a_second_account_is_added(qapp, settings):
+    section, widget = _realms_row(settings)
+    assert widget.no_team()
+
+    settings.accounts = [{"username": u, "alias": ""} for u in ("one@example.com", "two@example.com")]
+    section.refresh_player_availability()
+
+    assert not widget.no_team()
+
+
+def test_the_options_tab_never_grays_the_row(qapp, settings):
+    """An author with one account still writes the choice for users with a team."""
+    section = OptionsSection(settings=settings)
+    section.set_config(_config("sync_in_zone"))
+
+    assert not section.option_widgets[player_realms.OPTION].no_team()
 
 
 # ---------------------------------------------------------------------------

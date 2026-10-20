@@ -36,6 +36,7 @@ from bartlebot.shared.account_setup import record_accounts_answered
 from bartlebot.shared.account_store import AccountStore
 from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
 from bartlebot.shared.first_run import BossTactic, combat_question_answered, record_answer
+from bartlebot.shared.launch_profiles import record_launch_profile_answered
 from bartlebot.shared.preferences import PreferenceStore
 
 _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
@@ -115,6 +116,13 @@ def startup(qapp, monkeypatch, tmp_path):
     return state
 
 
+@pytest.fixture
+def team(startup) -> None:
+    """Two accounts with their launch profile answered: the combat question is asked only of a team (#264)."""
+    _two_accounts()
+    record_launch_profile_answered(_prefs())
+
+
 def _prefs() -> PreferenceStore:
     """The store the app reads: the vendor root under this test's ``%APPDATA%``."""
     return PreferenceStore()
@@ -124,7 +132,7 @@ def _walked(dialog: FirstRunDialog) -> list[type]:
     return [type(page) for page in dialog.walk[1:]]
 
 
-def test_it_opens_on_a_first_run_with_the_combat_question(startup):
+def test_it_opens_on_a_first_run_with_the_combat_question(startup, team):
     startup.ns._after_window_shown()
 
     assert len(startup.opened) == 1
@@ -132,7 +140,7 @@ def test_it_opens_on_a_first_run_with_the_combat_question(startup):
     assert _walked(startup.opened[0]) == [CombatQuestionPage]
 
 
-def test_the_update_check_starts_before_setup_opens(startup):
+def test_the_update_check_starts_before_setup_opens(startup, team):
     """It opens nothing itself, so it runs while setup is answered (``gui/update_prompt.py``)."""
     startup.ns._updates = SimpleNamespace(check_at_startup=lambda: startup.events.append("update check"))
 
@@ -141,7 +149,7 @@ def test_the_update_check_starts_before_setup_opens(startup):
     assert startup.events[:2] == ["update check", "first run"]
 
 
-def test_it_opens_once_and_never_after_finish(startup):
+def test_it_opens_once_and_never_after_finish(startup, team):
     startup.answer = BossTactic.EVERYONE_ATTACKS
 
     startup.ns._after_window_shown()
@@ -151,7 +159,7 @@ def test_it_opens_once_and_never_after_finish(startup):
     assert _prefs().get(_TEAM) == SHIPPED_EVERYONE_ATTACKS_DUEL_ID
 
 
-def test_closing_it_unanswered_asks_again_next_launch(startup):
+def test_closing_it_unanswered_asks_again_next_launch(startup, team):
     startup.ns._after_window_shown()
     startup.ns._after_window_shown()
 
@@ -192,7 +200,7 @@ def test_a_team_default_chosen_elsewhere_keeps_it_closed(startup):
     assert startup.opened == []
 
 
-def test_it_opens_on_the_answer_the_team_default_already_is(startup):
+def test_it_opens_on_the_answer_the_team_default_already_is(startup, team):
     _prefs().set(_TEAM, SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
     startup.answer = BossTactic.EVERYONE_ATTACKS
 
@@ -202,14 +210,14 @@ def test_it_opens_on_the_answer_the_team_default_already_is(startup):
     assert combat.tactic is BossTactic.EVERYONE_ATTACKS
 
 
-def test_it_comes_before_a_file_named_at_launch_and_refreshes_what_it_changed(startup):
+def test_it_comes_before_a_file_named_at_launch_and_refreshes_what_it_changed(startup, team):
     """Never two modals at once: the import's summary waits for setup to close."""
     startup.ns._after_window_shown()
 
     assert startup.events == ["first run", "refresh", "layout", "accounts", "import"]
 
 
-def test_set_up_again_shows_every_page_once_all_are_answered(startup):
+def test_set_up_again_shows_every_page_once_all_are_answered(startup, team):
     record_answer(_prefs(), BossTactic.EVERYONE_ATTACKS)
     startup.answer = BossTactic.ONE_HITTER
 
@@ -219,6 +227,7 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup):
     assert _walked(startup.opened[0]) == [
         GameFolderPage,
         AccountsPage,
+        LaunchProfilePage,
         CombatQuestionPage,
         QuicksellPage,
         RealmAndDelayPage,
@@ -425,6 +434,18 @@ def test_a_favorite_realm_chosen_in_settings_keeps_it_closed(startup):
     sm.set_general(REALM_DELAY_ANSWERED, False)
     sm.favorite_realm = "Balestrom"
     record_answer(_prefs(), None)
+
+    startup.ns._offer_first_run()
+
+    assert startup.opened == []
+
+
+# -- one account: no team questions (#264) ----------------------------------------------
+
+
+def test_one_account_and_the_combat_question_unanswered_keep_it_closed(startup):
+    """The combat question applies only to a team, so it opens nothing on its own."""
+    AccountStore().set_accounts([{"username": "one@example.com", "alias": ""}])
 
     startup.ns._offer_first_run()
 

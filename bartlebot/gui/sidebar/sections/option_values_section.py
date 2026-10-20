@@ -82,6 +82,7 @@ from bartlebot.gui.widgets.inputs.option_widgets import (
     TALL_TYPES,
     block_separate_if_merging,
     connect_widget,
+    gray_without_players,
     make_option_widget,
     set_widget_value,
 )
@@ -90,6 +91,7 @@ from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 from bartlebot.options import bot_options, option_groups
 from bartlebot.options.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.account_setup import has_team
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -250,10 +252,21 @@ class OptionValuesSection(SidebarSection):
         self.refresh_player_availability()
 
     def refresh_player_availability(self) -> None:
-        """Re-gray the player checkboxes — call when clients connect or disconnect."""
+        """Re-gray the player checkboxes, and Player Realms — call when clients or accounts change."""
         connected = len(self._get_clients())
         for w in self.findChildren(PlayerListWidget):
             w.set_available_players(connected)
+        team = self._has_team()
+        for widget in self._option_widgets.values():
+            gray_without_players(widget, team, connected)
+
+    def _has_team(self) -> bool:
+        try:
+            return has_team(self._sm().account_store)
+        except Exception:
+            logger.exception("Failed to read the accounts")
+            # Offered rather than grayed: a choice wrongly offered does no harm.
+            return True
 
     def set_editable(self, editable: bool) -> None:
         """Accepted and ignored: this surface has no authoring controls to reveal.
@@ -540,6 +553,7 @@ class OptionValuesSection(SidebarSection):
             get_clients=lambda: self._get_clients(),
         )
         block_separate_if_merging(widget, self._config)
+        gray_without_players(widget, self._has_team(), connected)
         is_bool = opt.type == "bool"
         caption = _SourceCaption()
 

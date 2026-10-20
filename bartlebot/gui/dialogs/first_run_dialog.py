@@ -16,14 +16,16 @@ Settings › Combat).
 THE PAGES
 ---------
 
-A page is a :class:`FirstRunPage`: a heading, its body, and seven methods. ``answered()``
+A page is a :class:`FirstRunPage`: a heading, its body, and eight methods. ``answered()``
 says its setting already exists, so a first run passes it over. ``applies(mode)`` says it
 belongs in the walk now, under Quick or Custom. ``ready()`` says its answer can be
 recorded, and Next waits for it. ``busy()`` says work running holds the user on the page,
 and Back and Next both wait for it. ``record()`` writes its answer and says whether that
 reached disk. ``enter()``, a no-op by default, runs each time the dialog turns to the page,
 for a page that draws what an earlier page wrote. ``stop()``, also a no-op, runs when setup
-closes, for a page with work running.
+closes, for a page with work running. ``record_passed_over()``, also a no-op, runs on
+Finish for a page asked but left out of the walk, which is how the combat question records
+itself for a user with one account.
 
 The dialog opens on :class:`ModePage`, Quick or Custom, which is not stored: it only
 decides which pages follow. **There is no Skip.** Next records the page shown and moves on
@@ -93,7 +95,7 @@ from bartlebot.options.custom_setup import (
 from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
 from bartlebot.options.realm_delay_setup import realm_delay_answered, record_realm_delay, setup_realm
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
-from bartlebot.shared.account_setup import accounts_answered, record_accounts_answered
+from bartlebot.shared.account_setup import accounts_answered, has_team, record_accounts_answered
 from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
 from bartlebot.shared.game_install import (
     SOURCE_NAMES,
@@ -188,6 +190,14 @@ class FirstRunPage(QWidget):
     def record(self) -> bool:
         """Store this page's answer. Whether it reached disk."""
         raise NotImplementedError
+
+    def record_passed_over(self) -> bool:
+        """Called on Finish for a page asked but not in the walk. Whether what it wrote reached disk.
+
+        A no-op by default. The combat question, passed over for want of a team, records
+        itself answered, so a second account added later doesn't open setup for it.
+        """
+        return True
 
     def stop(self) -> None:
         """Called when setup closes, finished or not: a page with work running stops it.
@@ -325,6 +335,10 @@ class CombatQuestionPage(_CardsPage):
     It opens on the answer the stored Team default already is. On a rerun that default can
     be a duel neither answer names, chosen in Settings › Combat; then no card is selected,
     and Next with none selected keeps that duel.
+
+    It applies only with two or more accounts (#264): a single wizard has no team to ask
+    about. Passed over that way, Finish records it answered on the stored default, so a
+    second account added later doesn't open setup for it; Settings › Combat is still there.
     """
 
     heading = COMBAT_HEADING
@@ -353,13 +367,20 @@ class CombatQuestionPage(_CardsPage):
 
     @classmethod
     def asks_first_run(cls, prefs: PreferenceStore) -> bool:
-        return not combat_question_answered(prefs)
+        return has_team(SettingsManager.instance().account_store) and not combat_question_answered(prefs)
+
+    def applies(self, mode: SetupMode) -> bool:
+        return has_team(SettingsManager.instance().account_store)
 
     def answered(self) -> bool:
         return combat_question_answered(self._prefs)
 
     def record(self) -> bool:
         return record_answer(self._prefs, self._value)
+
+    def record_passed_over(self) -> bool:
+        # None keeps the stored Team default and records only the key.
+        return record_answer(self._prefs, None)
 
 
 # -- the game folder ----------------------------------------------------------------
@@ -739,10 +760,10 @@ class LaunchProfilePage(FirstRunPage):
     @classmethod
     def asks_first_run(cls, prefs: PreferenceStore) -> bool:
         store = cls._store()
-        return len(store.accounts) >= 2 and not launch_profile_answered(prefs, store)
+        return has_team(store) and not launch_profile_answered(prefs, store)
 
     def applies(self, mode: SetupMode) -> bool:
-        return len(self._store().accounts) >= 2
+        return has_team(self._store())
 
     def answered(self) -> bool:
         return launch_profile_answered(self._prefs, self._store())
@@ -1070,9 +1091,9 @@ def needs_asking(prefs: PreferenceStore) -> bool:
     only under Custom, the Options page, opens nothing on its own: its choices are the ones
     Quick applies, and a setup opened for it would end on Quick or Custom with nothing
     asked, and open again next launch. Nor does a page that applies under neither, such as
-    the Launch profile page with fewer than two accounts. Both are still in the dialog's
-    walk when another page opens it, so choosing Custom, or adding accounts on the way,
-    brings them in.
+    the Launch profile page or the combat question with fewer than two accounts. Both kinds
+    are still in the dialog's walk when another page opens it, so choosing Custom, or adding
+    accounts on the way, brings them in.
     """
     return any(page_type.asks_first_run(prefs) for page_type in SETUP_PAGE_TYPES)
 
@@ -1291,9 +1312,20 @@ class FirstRunDialog(QDialog):
         walk = self.walk
         index = walk.index(page)
         if index == len(walk) - 1:
+            self._record_passed_over(walk)
             self.accept()
         else:
             self._show(walk[index + 1])
+
+    def _record_passed_over(self, walk: list[FirstRunPage]) -> None:
+        """On Finish: let each page asked but left out of the walk record what it needs to.
+
+        A failure here doesn't hold Finish: the page was never shown, so there is nothing
+        on screen to retry, and the worst case is the question asked when it applies.
+        """
+        for page in self._asked:
+            if page not in walk and not page.record_passed_over():
+                logger.warning("Could not record the setup page %r as passed over", page.heading)
 
     def _go_back(self) -> None:
         if self.current.busy():

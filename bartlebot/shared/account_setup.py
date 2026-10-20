@@ -26,6 +26,11 @@ def accounts_answered(prefs: PreferenceStore, store: AccountStore) -> bool:
     return bool(store.accounts) or bool(prefs.get(ANSWERED_KEY))
 
 
+def has_team(store: AccountStore) -> bool:
+    """Whether the user has two or more accounts: what a question about a team needs to mean anything (#264)."""
+    return len(store.accounts) >= 2
+
+
 def record_accounts_answered(prefs: PreferenceStore) -> bool:
     """Record the Accounts page answered. Whether it reached disk."""
     return prefs.set(ANSWERED_KEY, True)

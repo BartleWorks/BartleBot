@@ -48,6 +48,23 @@ SPEC = BotOptionSpec(
 )
 
 
+#: Why a user with one player sees the choice grayed (#264): with one wizard there is
+#: nothing to arrange. Disabled rather than hidden, so it is found once there is a team.
+NO_TEAM_REASON = (
+    "Player Realms arranges two or more players. Add a second account in Launch › Manage "
+    "Accounts…, or connect a second game, to choose."
+)
+
+
+def has_players(team: bool, connected: int) -> bool:
+    """Whether Player Realms means anything: two or more accounts (*team*), or two games connected now.
+
+    Clients started by hand are hooked without an account, so a user with none can still
+    have a team on screen.
+    """
+    return team or connected >= 2
+
+
 def _specs(specs=None):
     if specs is not None:
         return specs

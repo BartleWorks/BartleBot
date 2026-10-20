@@ -50,9 +50,9 @@ launch is imported, so the two modals never stack.
 
 A first run opens only when `needs_asking` finds a page unanswered that applies under
 Quick, the walk a first run takes unless the user picks Custom. Two kinds of page open
-nothing on their own. The Launch profile page, unanswered with fewer than two accounts,
-is in the walk whenever another page opens setup, so accounts added on the way bring it
-in. The Options page applies only under Custom, and its choices are the ones Quick
+nothing on their own. The Launch profile page and the combat question, unanswered with
+fewer than two accounts, are in the walk whenever another page opens setup, so accounts
+added on the way bring them in. The Options page applies only under Custom, and its choices are the ones Quick
 applies: a setup opened for it alone would end on Quick or Custom with nothing asked, and
 open again every launch. It is still in the walk when another page opens setup and the
 user picks Custom.
@@ -110,7 +110,7 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | Where is Wizard101 installed? | `game.install_dir` in `preferences.json`, through `shared/game_install.set_install_dir`, only for a folder the user changed to | `find_install` finds an install, stored or detected |
 | Which accounts should BartleBot log in to? | each account as it is added, edited or removed, to `accounts.json` (and its password to Credential Manager), through `accounts_tab`'s card actions; on Next, `setup.accounts_answered` in `preferences.json`, through `shared/account_setup.record_accounts_answered` | `accounts_answered`: `accounts.json` holds an account, from either product, or the key is set |
 | Which accounts launch together? (two or more accounts) | one launch profile of the accounts checked, to `accounts.json`, through `shared/launch_profiles.add_profile`, the function Settings › Game's Add uses; and `setup.launch_profile_answered` in `preferences.json`, through `record_launch_profile_answered` | `launch_profile_answered`: `accounts.json` holds a launch profile, from either product, or the key is set |
-| How should your team take on bosses? | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
+| How should your team take on bosses? (two or more accounts) | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
 | What may bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
 | Where do you play, and how quick is your connection? | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
 | A few more choices (Custom only) | `setup.extract_art`, `auto_group_players` and `default_refill_potions`, all in BartleBot's `settings.json` (`general`), through `options/custom_setup.record_options`; the last two are the keys Settings › Bot's OK writes | `options_answered`: `setup.extract_art` is stored |
@@ -123,6 +123,17 @@ Two cards, the recommended answer (one hitter, the others support) first.
 stores. The page opens on the answer the stored Team default already is. On a rerun that
 default can be a duel neither answer names, chosen in Settings › Combat; then no card is
 selected, and Next with none selected keeps that duel and records only the key.
+
+**It is asked only of a team** (#264): with fewer than two accounts
+(`shared/account_setup.has_team`) the page is out of the walk, since one wizard has no one
+to support it. The Accounts page's `walk_changed` recounts the walk, so a second account
+added there brings it in. A page asked but left out of the walk is offered
+`FirstRunPage.record_passed_over` on Finish, and this one records the key there on the
+stored Team default, as Next with no card selected does: otherwise a second account added
+later would open setup on the next launch for this question alone. Closing setup records
+nothing, as always. Settings › Combat is still where the Team default is changed. The
+other team question, Player Realms, is a bot option rather than a setup page, and is
+grayed on the Options tab instead (`docs/PLAYER_REALMS.md`).
 
 ### The game folder
 
