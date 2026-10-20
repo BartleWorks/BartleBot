@@ -431,9 +431,14 @@ class CardColumn(QWidget):
         the bar is shown or not -- which matters beyond looks: a card that wrapped
         differently at a new width could change the column's height, and with it whether
         the bar is needed at all.
+
+        Asked with ``isVisibleTo`` the scroll area, never ``isHidden``: Qt hides a
+        container the bar sits in rather than the bar, so once a column had overflowed
+        even once, its bar went on reporting itself shown and the column kept giving up
+        the bar's width with no bar there.
         """
         bar = self._area.verticalScrollBar()
-        taken = 0 if bar.isHidden() else bar.sizeHint().width()
+        taken = bar.sizeHint().width() if bar.isVisibleTo(self._area) else 0
         self._rows_layout().setContentsMargins(0, 0, max(0, self._inset - taken), 0)
 
     def _add_row(self, card: QWidget) -> None:

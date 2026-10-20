@@ -76,6 +76,27 @@ def test_a_scroll_bar_takes_its_width_from_the_gutter_not_the_cards(qapp):
     column.close()
 
 
+def test_a_scroll_bar_that_has_gone_gives_its_width_back(qapp):
+    """Qt hides the bar's container, not the bar, so a column that had overflowed once
+    went on giving up the bar's width after the bar was gone -- in the Game tab, the
+    column without a bar ran past its rule beside the one with a bar."""
+    column = CardColumn("Launch Profiles", "hint", "Add launch profile")
+    column.set_cards([ProfileCard({"name": f"Profile {i}", "accounts": ["someone@example.com"]}, []) for i in range(8)])
+    column.resize(400, 250)
+    column.show()
+    qapp.processEvents()
+    bar = column.scroll_area.verticalScrollBar()
+    assert bar.isVisible(), "the column has to overflow first for this to test anything"
+
+    column.resize(400, 2000)
+    qapp.processEvents()
+    (rule,) = [f for f in column.findChildren(QFrame) if f.frameShape() == QFrame.Shape.HLine]
+
+    assert not bar.isVisibleTo(column.scroll_area)
+    assert _span(column.cards[0].frame, column) == _span(rule, column)
+    column.close()
+
+
 def test_an_untitled_column_keeps_its_full_width(qapp):
     """No rule to line up with, so no right gutter narrowing the cards: the Players tab's
     column is in a sidebar."""
