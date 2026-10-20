@@ -384,6 +384,7 @@ class AppController(QObject):
         w.bot_canvas.pause_requested.connect(self._pause_bot)
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
+        w.bot_canvas.save_requested.connect(lambda: self._save_bot())
         w.bot_canvas.save_done.connect(self._save_and_done)
         w.bot_canvas.open_definition_requested.connect(self._open_definition)
         w.bot_canvas.definition_back_requested.connect(self._definition_back)
@@ -938,12 +939,14 @@ class AppController(QObject):
         return True
 
     def _save_and_done(self) -> None:
-        """Save & Done: back to Run mode, but only once the save has gone through.
+        """Done: back to Run mode, but only once the save has gone through.
 
         A save the author cancels -- at the Rewards prompt, or in the file dialog --
-        leaves them where they were, editing.
+        leaves them where they were, editing. A bot still as it was opened or last saved
+        is not written again: Done is Edit mode's one way back to Run mode (#267), and leaving
+        after only looking would otherwise rewrite the file and ask about Rewards.
         """
-        if self._save_bot():
+        if _matches_clean(self._loaded_config, self._clean_snapshot) or self._save_bot():
             self._window.bot_canvas.exit_edit_mode(saved=True)
 
     def _confirm_rewards_tags(self) -> bool:

@@ -1593,6 +1593,9 @@ class BotCanvas(QWidget):
     run_requested = pyqtSignal()
     pause_requested = pyqtSignal()
     resume_requested = pyqtSignal()
+    # Edit mode's two save buttons: Save stays, as File › Save does, and Done leaves
+    # once the save has gone through (#267).
+    save_requested = pyqtSignal()
     save_done = pyqtSignal()
     # Emitted with "log" or "properties" to switch a sidebar tab.  "log" now lands on
     # the *right* sidebar; the canvas does not know or care which one holds it.
@@ -1750,11 +1753,15 @@ class BotCanvas(QWidget):
         self._layout_btn = _icon_btn("layout", "Auto-Layout states")
         self._layout_btn.clicked.connect(self._on_layout_clicked)
 
-        self._done_btn = _icon_btn("checkmark", "Apply changes and return to Run mode (does not save to disk)")
-        self._done_btn.clicked.connect(self._on_done_clicked)
+        # Every save keeps editing and only Done leaves, and Done saves on the way out
+        # (#267). It used to leave without saving, beside a floppy that saved and left,
+        # and testers took the floppy for File › Save and the checkmark for a commit --
+        # which is what a checkmark is nearly everywhere else.
+        self._save_btn = _icon_btn("save_done", "Save (Ctrl+S)")
+        self._save_btn.clicked.connect(self.save_requested.emit)
 
-        self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
-        self._save_done_btn.clicked.connect(self._on_save_done_clicked)
+        self._done_btn = _icon_btn("checkmark", "Save and finish editing")
+        self._done_btn.clicked.connect(self._on_done_clicked)
 
         # ── Center zone: the transport, in Edit mode as well ─────────
         # A transport is a landmark: people aim at it without looking, so it stays put
@@ -1814,13 +1821,14 @@ class BotCanvas(QWidget):
         run_right_row.addStretch(1)
         run_right_row.addWidget(self._edit_btn)
 
-        # Edit mode page: two icons, filling the pair's width exactly
+        # Edit mode page: two icons, filling the pair's width exactly. Done takes the
+        # Edit button's corner, so the way out is where the way in was.
         edit_right = QWidget()
         edit_right_row = QHBoxLayout(edit_right)
         edit_right_row.setContentsMargins(0, 0, 0, 0)
         edit_right_row.setSpacing(_BTN_GAP)
+        edit_right_row.addWidget(self._save_btn)
         edit_right_row.addWidget(self._done_btn)
-        edit_right_row.addWidget(self._save_done_btn)
 
         self._right_stack = QStackedWidget()
         self._right_stack.setFixedWidth(_PAIR_WIDTH)
@@ -2739,15 +2747,15 @@ class BotCanvas(QWidget):
         self.enter_edit_mode()
 
     def exit_edit_mode(self, *, saved: bool = False) -> bool:
-        """Switch back to Run mode, as the Done button does.
+        """Switch back to Run mode, as the Done button does once its save has gone through.
 
         Returns False, having changed nothing, in a definition document, which has no
         Run mode: its way out is back to the document it was opened from. The
         counterpart to :meth:`enter_edit_mode`, so that a caller outside the canvas can
         drive a round trip -- the layout probe and the height tests both do -- without
-        reaching for the button's own slot.
+        a save.
 
-        *saved* is Save & Done's way out, taken after the save has been written: there
+        *saved* is Done's way out, taken after the save has been written: there
         is no change to announce, and announcing one would mark the bot unsaved again.
         Nor is there after a session that left the config as it found it -- every edit
         announced itself as it landed, so this only catches one that did not (#122).
@@ -2762,14 +2770,10 @@ class BotCanvas(QWidget):
         return True
 
     def _on_done_clicked(self) -> None:
-        if self.is_definition:
-            self.definition_back_requested.emit()
-            return
-        self.exit_edit_mode()
-
-    def _on_save_done_clicked(self) -> None:
-        # The listener saves and then calls ``exit_edit_mode``, and only if the save went
-        # through: a save the author cancels (the Rewards prompt) leaves them editing.
+        # The listener saves and then leaves -- for Run mode, or a definition back to the
+        # document it was opened from -- and only if the save went through: a save the
+        # author cancels (the Rewards prompt) leaves them editing. A definition is left
+        # unsaved by Esc or the crumb's close button, which ask first.
         if self.is_definition:
             self.definition_save_requested.emit(True)
             return

@@ -1,8 +1,8 @@
 """The save-time Rewards prompt: the dialog, and the controller's once-per-open rule.
 
 Which bots are asked at all is ``wants_rewards_prompt``'s, tested in ``test_bot_tags``.
-This is what happens once one is: the three answers, and that Save & Done only leaves
-Edit mode behind a save that went through.
+This is what happens once one is: the three answers, and that Done only leaves Edit
+mode behind a save that went through -- or with nothing to save, without asking.
 """
 
 from __future__ import annotations
@@ -107,6 +107,7 @@ def _controller(config: BotConfig, path) -> SimpleNamespace:
         _loaded_config=config,
         _last_save_path=str(path),
         _has_unsaved_changes=True,
+        _clean_snapshot=None,
         _rewards_declined_for=None,
         _read_only_open=lambda: False,
         _delete_autosave=lambda *a: None,
@@ -143,6 +144,20 @@ def test_picking_a_reward_saves_it_into_the_file(tmp_path, fake_dialog):
     controller._save_and_done()
 
     assert BotConfig.load(path).tags == ["Pets", "Boss"]
+    assert controller.exits == [True]
+
+
+def test_done_on_an_unchanged_bot_leaves_without_writing_or_asking(tmp_path, fake_dialog):
+    """#267: Done is how Edit mode is left, so a look around must not rewrite the file."""
+    path = tmp_path / "bot.json"
+    config = _config()
+    controller = _controller(config, path)
+    controller._clean_snapshot = app_controller._file_snapshot(config)
+
+    controller._save_and_done()
+
+    assert not path.exists()
+    assert fake_dialog.asked == 0
     assert controller.exits == [True]
 
 

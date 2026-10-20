@@ -11,6 +11,7 @@ import pytest
 from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.gui.canvas.bot_canvas import BotMode
 
 
 @pytest.fixture
@@ -95,9 +96,25 @@ def test_leaving_edit_mode_puts_the_run_button_back(canvas):
     not call it on the way back the button would stay disabled for good."""
     canvas.set_run_enabled(True)
     canvas.enter_edit_mode()
-    canvas._done_btn.click()
+    canvas.exit_edit_mode()
 
     assert canvas._run_pause_btn.isEnabled()
+
+
+def test_save_stays_in_edit_mode_and_done_leaves_only_through_a_save(canvas):
+    """#267: Save keeps editing, as File › Save does, and Done asks for the save that
+    leaves -- the controller calls ``exit_edit_mode`` once it has gone through."""
+    saves, dones = [], []
+    canvas.save_requested.connect(lambda: saves.append(True))
+    canvas.save_done.connect(lambda: dones.append(True))
+    canvas.enter_edit_mode()
+
+    canvas._save_btn.click()
+    canvas._done_btn.click()
+
+    assert saves == [True]
+    assert dones == [True]
+    assert canvas.mode == BotMode.EDIT
 
 
 def test_the_view_tools_do_not_move_when_the_mode_changes(canvas):
@@ -112,12 +129,12 @@ def test_the_view_tools_do_not_move_when_the_mode_changes(canvas):
 
 def test_the_mode_toggle_stays_anchored_to_the_right_margin(canvas):
     """One button in Run mode, two in Edit -- right-aligned inside a fixed slot, so
-    the way out of the mode is always in the same corner."""
+    the way out of the mode is in the corner the way in was."""
     before = _right_edge(canvas, canvas._edit_btn)
 
     canvas.enter_edit_mode()
 
-    assert _right_edge(canvas, canvas._save_done_btn) == before
+    assert _right_edge(canvas, canvas._done_btn) == before
 
 
 @pytest.mark.parametrize("edit_mode", [False, True])
