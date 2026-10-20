@@ -8,6 +8,10 @@ BartleBot is available for 64-bit Windows 10 or 11, and requires an existing Wiz
    Start Menu, then opens BartleBot's setup, which finds your game, adds your accounts,
    and copies the game's art from your own install.
 
+## Playing alongside BartleBot
+
+Accounts you launch from BartleBot open inside its window, but they are still the game: click into one and play as you normally would. While a bot is running, your mouse and keyboard reach the game too, so leave that bot's clients alone unless it needs a hand.
+
 ## Common Issues
 
 BartleBot isn't officially registered and code-signed, and it interacts with Wizard101 by reading and writing memory. Because of this, downloading and running BartleBot can often cause Windows or an antivirus program to flag it. Below are some common issues that users may encounter while downloading, installing, and running BartleBot.

@@ -198,6 +198,12 @@ cascade and the writes are theirs. Each writes `accounts.json` as it happens, an
 password goes to Windows Credential Manager through `CredentialStore`, never to disk. An
 account added here is on Settings › Game and in the Launch menu at once.
 
+The intro ends by saying the game opens inside BartleBot's window and is still the user's
+to play, and that while a bot runs their input reaches the game too (#265). Testers took
+the embedded clients for the app's own, and so neither played in them nor kept out of a
+run. It is said here, where launching is first set up, rather than as a hint on the game
+view, which would be on screen at every launch after the first.
+
 So Next has nothing of the accounts left to store. It records `setup.accounts_answered`,
 which is what keeps a user who chose no account from being asked again: the page may be
 left empty, since clients started by hand can still be hooked, and with none it says so

@@ -516,7 +516,9 @@ ACCOUNTS_HEADING = "Add Wizard101 accounts"
 ACCOUNTS_INTRO = (
     "BartleBot uses your Wizard101 logins to launch the game and to relaunch it after a crash or "
     "disconnect. Passwords are kept in Windows Credential Manager, never in a file. You can leave this "
-    "empty and launch the game yourself, but bots then can't recover from crashes."
+    "empty and launch the game yourself, but bots then can't recover from crashes. "
+    "The game opens inside BartleBot's window and is still yours to play, but while a bot runs, your "
+    "clicks and keys reach the game too and can throw the bot off."
 )
 #: Beneath the Add button while there is none: leaving the page empty is an answer too.
 ACCOUNTS_EMPTY = (
