@@ -95,7 +95,7 @@ read, so in a build it reads the build (`bartlebot/packaging/self_check.py`).
 | `shared set` | every duel, player strategy and deck loads, and every shipped default id in `shared/combat_defaults.py` is among them |
 | `game data` | every snapshot in `game/data/` is there and parses. The list is the readers' own path constants (`game_data_files`), and a test fails when a file there has no entry |
 | `type dump` | the dump art extraction reads is there, and katsuba's native extension opens it |
-| `native` | curl_cffi (wiki import), Pillow's DDS decoder (game art) and Velopack import, the combat DSL grammar parses the last-resort DSL, and cryptography loads every key in `TRUSTED_KEYS` and refuses a signature of zeros (the update feed) |
+| `native` | curl_cffi (wiki import), pywebview's WebView2 backend with .NET under it (the wiki window for a Cloudflare check, #278), Pillow's DDS decoder (game art) and Velopack import, the combat DSL grammar parses the last-resort DSL, and cryptography loads every key in `TRUSTED_KEYS` and refuses a signature of zeros (the update feed) |
 | `qt` | a `QApplication` starts on Qt's platform plugin, and every icon and the logo render through QtSvg |
 
 A check that raises is a failure with the exception's text, and one failure stops none

@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import DropModel
+from bartlebot.game.wiki_browser import BrowserFetch, is_challenge
 from bartlebot.game.wiki_drops import match_name_for
 from bartlebot.game.wiki_pages import WIKI_HOST as _WIKI_HOST
 from bartlebot.game.wiki_pages import page_title, wiki_page_path
@@ -71,12 +72,20 @@ def _fetch_drops(url: str) -> dict[str, list[str]]:
     An ``asyncio.to_thread`` call rather than a ``QThread``, as game art does: Nuitka
     documents Qt threading as unsupported under PyQt6, and the packaged build must not
     depend on it (``docs/RELEASING.md``).
+
+    Raises :class:`WikiChallenged` when Cloudflare asks for a check this fetch cannot pass.
     """
     from curl_cffi import requests as cf_requests
 
     resp = cf_requests.get(url, timeout=15, impersonate="chrome124")
+    if is_challenge(resp.status_code, resp.headers, resp.text):
+        raise WikiChallenged(f"HTTP {resp.status_code}, cf-ray {resp.headers.get('cf-ray', '?')}")
     resp.raise_for_status()
     return _parse_drops(resp.text)
+
+
+class WikiChallenged(Exception):
+    """Cloudflare answered the fetch with a check only a person can pass (#278)."""
 
 
 # ---------------------------------------------------------------------------
@@ -174,6 +183,7 @@ class WikiImportDialog(ThemedMixin, QDialog):
         self.setMinimumSize(480, 500)
         self.resize(540, 580)
         self._task: asyncio.Task | None = None
+        self._browser: BrowserFetch | None = None
         self._closed = False
         self._selected: list[DropModel] = []
         self._page: str | None = None
@@ -271,6 +281,9 @@ class WikiImportDialog(ThemedMixin, QDialog):
     def closeEvent(self, event) -> None:
         # The thread runs on to the end of its request, but nothing it returns is shown.
         self._closed = True
+        # A window open for the wiki's check closes with the dialog.
+        if self._browser is not None:
+            self._browser.cancel()
         if self._task is not None:
             self._task.cancel()
             self._task = None
@@ -304,14 +317,36 @@ class WikiImportDialog(ThemedMixin, QDialog):
 
     async def _fetch(self, url: str) -> None:
         try:
-            drops = await asyncio.to_thread(_fetch_drops, url)
+            try:
+                drops = await asyncio.to_thread(_fetch_drops, url)
+            except WikiChallenged as exc:
+                logger.info("The wiki's Cloudflare check challenged the fetch of %s (%s); opening a window", url, exc)
+                drops = await self._fetch_in_window(url)
         except Exception as exc:
             logger.exception("Wiki fetch failed for %s", url)
             if not self._closed:
                 self._on_fetch_error(str(exc))
             return
-        if not self._closed:
-            self._on_fetch_done(drops)
+        if self._closed:
+            return
+        if drops is None:
+            self._btn_fetch.setEnabled(True)
+            self._set_status("The wiki window was closed before the page loaded. Click Fetch to try again.", error=True)
+            return
+        self._on_fetch_done(drops)
+
+    async def _fetch_in_window(self, url: str) -> dict[str, list[str]] | None:
+        """The drops from *url* loaded in a window where the user passes the check; None if closed first."""
+        self._set_status(
+            "The wiki asked to check that you're human. Finish its check in the window that opened, "
+            "and the drops will load here."
+        )
+        self._browser = BrowserFetch(url)
+        try:
+            html = await asyncio.to_thread(self._browser.run)
+        finally:
+            self._browser = None
+        return None if html is None else await asyncio.to_thread(_parse_drops, html)
 
     def _on_fetch_done(self, drops: dict[str, list[str]]) -> None:
         self._btn_fetch.setEnabled(True)
