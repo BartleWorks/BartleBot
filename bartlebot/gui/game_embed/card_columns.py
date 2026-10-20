@@ -59,6 +59,7 @@ from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
 from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.link_button import LinkButton
+from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
     AUTOSCROLL_MARGIN,
@@ -239,6 +240,19 @@ class CardColumn(QWidget):
         super().__init__(parent)
         self._empty_hint = empty_hint
         self._add_text = add_text
+        # How far the heading, the rule and the banner sit in from each side, and the
+        # cards from the right. A card's frame starts a grip's gutter in from the column's
+        # left edge, because the grip sits beside the frame; with the rule spanning the
+        # full width, every card looked narrower than its column. Insetting the rule to the
+        # frames puts the grips outside the column as drawn, and the matching gutter on the
+        # right keeps that column centered where it was. The grips cannot leave the
+        # column's *widget*: the scroll area clips what is outside it, and a grip that was
+        # not the card's own child would hide itself as the pointer left the card for it
+        # (see ``GripHandle``).
+        #
+        # Only under a heading: an untitled column draws no rule to line up with, and the
+        # right gutter would only narrow its cards -- the Players tab's, in a sidebar.
+        self._inset = GRIP_GUTTER if title else 0
         # The Add card at the foot, when this column has one. Not one of ``cards`` -- it
         # is the column's terminator, not an entry in the ordered list.
         self._add_card: QWidget | None = None
@@ -257,6 +271,13 @@ class CardColumn(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
+        # Everything above the cards, inset by the grip's gutter on both sides. See
+        # ``_inset``.
+        top = QVBoxLayout()
+        top.setContentsMargins(self._inset, 0, self._inset, 0)
+        top.setSpacing(layout.spacing())
+        layout.addLayout(top)
+
         # An empty *title* draws no heading and no rule, rather than an empty bold label
         # above a line that then reads as a stray divider. That is for a column whose
         # surface already names it: the Players tab's own label says "Players", and a
@@ -267,16 +288,16 @@ class CardColumn(QWidget):
             font.setBold(True)
             header.setFont(font)
             header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(header)
+            top.addWidget(header)
 
             rule = QFrame()
             rule.setFrameShape(QFrame.Shape.HLine)
             rule.setFrameShadow(QFrame.Shadow.Sunken)
-            layout.addWidget(rule)
+            top.addWidget(rule)
 
         self._banner = _FitBanner(show_link=show_settings_link)
         self._banner.settings_requested.connect(self.settings_requested)
-        layout.addWidget(self._banner)
+        top.addWidget(self._banner)
 
         self._area = QScrollArea()
         self._area.setWidgetResizable(True)
@@ -284,7 +305,9 @@ class CardColumn(QWidget):
         self._area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         container = QWidget()
         rows = QVBoxLayout(container)
-        rows.setContentsMargins(0, 0, 0, 0)
+        # The right side's matching gutter: the cards carry the left one themselves, so
+        # their frames end where the rule does.
+        rows.setContentsMargins(0, 0, self._inset, 0)
         rows.setSpacing(4)
         rows.addStretch()
         self._area.setWidget(container)
@@ -373,6 +396,9 @@ class CardColumn(QWidget):
             hint = ThemedTextLabel(self._empty_hint, css=f"font-size: {THEME.font_small_px}px;")
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            # Centered under the Add card's frame, which starts a gutter in, not under
+            # the row, which the right gutter has already ended a gutter early.
+            hint.setContentsMargins(self._inset, 0, 0, 0)
             layout.addWidget(hint)
 
         layout.addStretch()
