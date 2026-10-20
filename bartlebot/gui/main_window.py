@@ -66,6 +66,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("BartleBot")
         self._shutdown_handler = None
+        # The title's two parts: the open document's file, and whether it differs from it.
+        self._title_file: str | None = None
+        self._unsaved = False
 
         self._build_menu()
         self._build_central()
@@ -580,8 +583,26 @@ class MainWindow(QMainWindow):
         *name* is not pushed anywhere: the header reads it from the BotConfig it was
         given, and in Edit mode it is the field the user is typing into.
         """
-        self.setWindowTitle(f"BartleBot — {filename}" if filename else "BartleBot")
+        self._title_file = filename
+        self._retitle()
         self.bot_canvas.set_bot_file(filename)
+
+    def set_unsaved(self, unsaved: bool) -> None:
+        """Mark the open document as differing from its file: a ``*`` before its name in
+        the title, in either mode, and a dot on Edit mode's Save (#267)."""
+        if unsaved == self._unsaved:
+            return
+        self._unsaved = unsaved
+        self._retitle()
+        self.bot_canvas.set_unsaved(unsaved)
+
+    def _retitle(self) -> None:
+        # Spelled out rather than Qt's [*] placeholder: the custom title bar shows
+        # windowTitle() as it is, and would print the placeholder.
+        if self._title_file:
+            self.setWindowTitle(f"BartleBot — {'*' if self._unsaved else ''}{self._title_file}")
+        else:
+            self.setWindowTitle("BartleBot")
 
     def set_client_summary(self, connected: int) -> None:
         """Tell Bar A how many clients are hooked — it is the bar that owns them."""

@@ -85,15 +85,17 @@ def test_a_definition_cannot_run_or_leave_edit_mode(doc):
     assert doc.mode == BotMode.EDIT
 
 
-def test_done_goes_back_and_save_and_done_saves_then_goes_back(doc):
-    back, saved = [], []
+def test_done_saves_then_goes_back_and_save_stays(doc):
+    back, saved, plain = [], [], []
     doc.definition_back_requested.connect(lambda: back.append(True))
     doc.definition_save_requested.connect(saved.append)
+    doc.save_requested.connect(lambda: plain.append(True))
     doc._done_btn.click()
-    doc._save_done_btn.click()
+    doc._save_btn.click()
     doc.crumb_bar.save_button.click()
-    assert back == [True]
+    assert back == [], "Done never leaves without the save"
     assert saved == [True, False]
+    assert plain == [True]
 
 
 def test_linking_to_a_new_input_and_undoing_it(doc):
@@ -291,7 +293,7 @@ def test_back_with_unsaved_changes_can_discard(harness, library, monkeypatch):
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
     assert harness._has_unsaved_changes
-    canvas._done_btn.click()
+    canvas.step_back()
     assert not canvas.is_definition
     assert library.get(SYNC_ID).version == 1
     assert not harness._has_unsaved_changes
