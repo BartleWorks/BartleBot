@@ -39,6 +39,7 @@ from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared import game_dpi
+from bartlebot.updates.check import current_version
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class _GamePlaceholder(QWidget):
     """Placeholder shown in GameView when no clients are embedded.
 
     Three-column layout:
-        [Accounts column] | [Logo + Launch + settings link] | [Launch Profiles column]
+        [Accounts column] | [Name + version, logo, Launch, settings link] | [Launch Profiles column]
 
     The two outer columns are ``CardColumn``s -- the same widget the Game settings tab is
     built from, so the surface that launches an account and the surface that edits one
@@ -154,6 +155,17 @@ class _GamePlaceholder(QWidget):
         center.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         center.addStretch(1)
+
+        # The app's name and this build's version, over the logo, so a screenshot of the
+        # launch screen says which build it came from.
+        name = ThemedTextLabel("BartleBot", color="text")
+        name.setFont(THEME.ui_font(THEME.font_heading_px + 7, bold=True))
+        name.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        center.addWidget(name, alignment=Qt.AlignmentFlag.AlignHCenter)
+        version = ThemedTextLabel(f"v{current_version()}", css=f"font-size: {THEME.font_small_px}px;")
+        version.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        center.addWidget(version, alignment=Qt.AlignmentFlag.AlignHCenter)
+        center.addSpacing(8)
 
         logo = LogoDisc(_LOGO_SIZE)
         logo_wrapper = QHBoxLayout()
