@@ -1,0 +1,2219 @@
+{
+  "id": "9898ccd0-75a6-4087-be5a-4aca2421fed3",
+  "name": "Hollow Mountain",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Ampul of the Discordant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Amulet of the Mind Monk",
+      "category": "Amulets"
+    },
+    {
+      "name": "Ape Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Arcana of Cacophony",
+      "category": "Decks"
+    },
+    {
+      "name": "Armor of the Mind Monk",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of the Smoking Ember",
+      "category": "Robes"
+    },
+    {
+      "name": "Athame of Himoolayan Sleet",
+      "category": "Athames"
+    },
+    {
+      "name": "Balance-Boon Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Banshee",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Battlegear of Harmony",
+      "category": "Robes"
+    },
+    {
+      "name": "Battlehelm of Harmony",
+      "category": "Hats"
+    },
+    {
+      "name": "Blade of Himoolayan Ice",
+      "category": "Wands"
+    },
+    {
+      "name": "Blemished Accurate Amethyst +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Jade +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Peridot +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Jade +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Peridot +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Sapphire +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Opal +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +36",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished PIP Opal +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blizzard of Ninja's Steel",
+      "category": "Athames"
+    },
+    {
+      "name": "Body Monk's Band of Vigor",
+      "category": "Rings"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Claw of Monastic Devotion",
+      "category": "Athames"
+    },
+    {
+      "name": "Cloud Colossus",
+      "category": "Pets"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Crunch Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cyclops",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dalai Lamba's Harmony Vial",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dark Asura's Poleaxe",
+      "category": "Wands"
+    },
+    {
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Death Ninja",
+      "category": "Pets"
+    },
+    {
+      "name": "Death Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Death-Giver Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deathbat",
+      "category": "Pets"
+    },
+    {
+      "name": "Deck of the Beguiling Song",
+      "category": "Decks"
+    },
+    {
+      "name": "Discordant One's Plate",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dream Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Eager Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Edge of the Beguiling Song",
+      "category": "Athames"
+    },
+    {
+      "name": "Edge of the Himoolayan Sun",
+      "category": "Athames"
+    },
+    {
+      "name": "Effective Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Eggplant",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ensemble of the Harmonious (Square)",
+      "category": "Decks",
+      "match_name": "Ensemble of the Harmonious"
+    },
+    {
+      "name": "Ensemble of the Harmonious (Tear)",
+      "category": "Decks",
+      "match_name": "Ensemble of the Harmonious"
+    },
+    {
+      "name": "Ensemble of the Harmonious (Triangle)",
+      "category": "Decks",
+      "match_name": "Ensemble of the Harmonious"
+    },
+    {
+      "name": "Ether Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fabled Shangri-Baa Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Fabled Shangri-Baa Trekkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fire Passion Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fire Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Wyvern (335-395)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire-Shot Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Firewing",
+      "category": "Pets"
+    },
+    {
+      "name": "Flawed Accurate Amethyst +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Citrine +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Jade +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Onyx +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Peridot +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Ruby +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Sapphire +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Citrine +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Jade +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Onyx +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Peridot +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +35",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mending Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Footgear of Harmony",
+      "category": "Boots"
+    },
+    {
+      "name": "Gallery of Kembaalung (Square)",
+      "category": "Decks",
+      "match_name": "Gallery of Kembaalung"
+    },
+    {
+      "name": "Gallery of Kembaalung (Triangle)",
+      "category": "Decks",
+      "match_name": "Gallery of Kembaalung"
+    },
+    {
+      "name": "Glacial Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Goat Monk",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Golden Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Squash",
+      "category": "Snacks"
+    },
+    {
+      "name": "Green Ghost",
+      "category": "Pets"
+    },
+    {
+      "name": "Halberd of Himoolayan Frost",
+      "category": "Wands"
+    },
+    {
+      "name": "Hamakala's Amulet of Havoc",
+      "category": "Amulets"
+    },
+    {
+      "name": "Hamakala's Signet of Pain",
+      "category": "Rings"
+    },
+    {
+      "name": "Harmonious One's Striders",
+      "category": "Boots"
+    },
+    {
+      "name": "Harmonious One's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Helm of Ardent Purpose",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Fabled Shangri-Baa",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of the Harmonious",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of the Smoking Ember",
+      "category": "Hats"
+    },
+    {
+      "name": "Himoolayan Avalanche Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Himoolayan Avalanche Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Himoolayan Avalanche Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Himoolayan Blizzard Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Himoolayan Blizzard Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Himoolayan Blizzard Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Himoolayan Hailstone Ji",
+      "category": "Wands"
+    },
+    {
+      "name": "Himoolayan Hailstone Vial",
+      "category": "Amulets"
+    },
+    {
+      "name": "Himoolayan Ice Pick",
+      "category": "Athames"
+    },
+    {
+      "name": "Himoolayan Ji of Sunbursts",
+      "category": "Wands"
+    },
+    {
+      "name": "Himoolayan Ji of Valiance",
+      "category": "Wands"
+    },
+    {
+      "name": "Himoolayan Snow Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Himoolayan Snow Cover",
+      "category": "Robes"
+    },
+    {
+      "name": "Himoolayan Snowshoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Himoolayan Warrior's Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Himoolayan Warrior's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Himoolayan Warrior's Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Hollow Mountain Trekkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hoof Choker of Eradication",
+      "category": "Amulets"
+    },
+    {
+      "name": "Hot and Sour Bits",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hot Ginger Snaps",
+      "category": "Snacks"
+    },
+    {
+      "name": "Humongofrog Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Proof Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Jade Oni",
+      "category": "Pets"
+    },
+    {
+      "name": "Ji of the Harmonious Path",
+      "category": "Wands"
+    },
+    {
+      "name": "Kembaalung Blizzard Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Kembaalung Sword of Guile",
+      "category": "Wands"
+    },
+    {
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Laminar of Ardent Purpose",
+      "category": "Robes"
+    },
+    {
+      "name": "Large Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leech Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Legend Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Life Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Life Scarab",
+      "category": "Pets"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Longblade of the Asura",
+      "category": "Wands"
+    },
+    {
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mind Monk's Footgear",
+      "category": "Boots"
+    },
+    {
+      "name": "Mind Monk's Headgear",
+      "category": "Hats"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Pets"
+    },
+    {
+      "name": "Monk of Mourning",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Monk's Bauble of Constancy",
+      "category": "Amulets"
+    },
+    {
+      "name": "Monk's Charm of Aplomb",
+      "category": "Amulets"
+    },
+    {
+      "name": "Monk's Choker of Asperity",
+      "category": "Amulets"
+    },
+    {
+      "name": "Monk's Jewel of Radiance",
+      "category": "Amulets"
+    },
+    {
+      "name": "Monk's Laminar of Focus",
+      "category": "Robes"
+    },
+    {
+      "name": "Monk's Runners of Focus",
+      "category": "Boots"
+    },
+    {
+      "name": "Monk's Warhelm of Focus",
+      "category": "Hats"
+    },
+    {
+      "name": "MooShu Cheddar",
+      "category": "Snacks"
+    },
+    {
+      "name": "Mote of Wisdom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mountain Paradise Claw",
+      "category": "Athames"
+    },
+    {
+      "name": "Myth Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nature's Wrath",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ninja Piggle",
+      "category": "Pets"
+    },
+    {
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Orange Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ore",
+      "category": "Reagents"
+    },
+    {
+      "name": "Overtake Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pack of the Tuned Mind (Square)",
+      "category": "Decks",
+      "match_name": "Pack of the Tuned Mind"
+    },
+    {
+      "name": "Pack of the Tuned Mind (Triangle)",
+      "category": "Decks",
+      "match_name": "Pack of the Tuned Mind"
+    },
+    {
+      "name": "Pagoda of Harmony Memento",
+      "category": "Amulets"
+    },
+    {
+      "name": "Path of Harmony Hook",
+      "category": "Athames"
+    },
+    {
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Pink Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Pink Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Polearm of the Summoned",
+      "category": "Wands"
+    },
+    {
+      "name": "Power Play Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "Red Banshee",
+      "category": "Pets"
+    },
+    {
+      "name": "Samoorai",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scimitar of the Harmonious",
+      "category": "Wands"
+    },
+    {
+      "name": "Seal of the Roaring Heart",
+      "category": "Rings"
+    },
+    {
+      "name": "Seraph Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Signet of the Harmonious",
+      "category": "Rings"
+    },
+    {
+      "name": "Silence Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Smoking Ember Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Snows of Kembaalung Saber",
+      "category": "Wands"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Spirit Monk' Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Spirit Monk's Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Spirit Monk's Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Spirit Monk's Torc of Grit",
+      "category": "Amulets"
+    },
+    {
+      "name": "Spirit Monk's Warplate",
+      "category": "Robes"
+    },
+    {
+      "name": "Square Root",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stone Block",
+      "category": "Reagents"
+    },
+    {
+      "name": "Storm Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stout Himoolayan Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Striders of Ardent Purpose",
+      "category": "Boots"
+    },
+    {
+      "name": "Sun Bird",
+      "category": "Pets"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Super-Pass Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Super-Stall Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sword of Fervent Resolve",
+      "category": "Wands"
+    },
+    {
+      "name": "Talon of the Harmonious One",
+      "category": "Athames"
+    },
+    {
+      "name": "Temple Guardian's Flametusk",
+      "category": "Athames"
+    },
+    {
+      "name": "Temple Scourge's Hook",
+      "category": "Athames"
+    },
+    {
+      "name": "Thermic Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tonkatsu's Boots of Discord",
+      "category": "Boots"
+    },
+    {
+      "name": "Tonkatsu's Deck of Discord",
+      "category": "Decks"
+    },
+    {
+      "name": "Tonkatsu's Helm of Discord",
+      "category": "Hats"
+    },
+    {
+      "name": "Tonkatsu's Plate of Discord",
+      "category": "Robes"
+    },
+    {
+      "name": "Tonkatsu's Ring of Havoc",
+      "category": "Rings"
+    },
+    {
+      "name": "Tough Troll",
+      "category": "Pets"
+    },
+    {
+      "name": "Treant",
+      "category": "Pets"
+    },
+    {
+      "name": "Troll",
+      "category": "Pets"
+    },
+    {
+      "name": "Tsutsui's Mighty Hand (Tear)",
+      "category": "Decks",
+      "match_name": "Tsutsui's Mighty Hand"
+    },
+    {
+      "name": "Vanquished Asura's Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanquished Asura's Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanquished Asura's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Venus Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Vial of Fabled Shangri-Baa",
+      "category": "Amulets"
+    },
+    {
+      "name": "Volcanic Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Housing",
+    "Dungeon"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Amulet of the Mind Monk",
+        "=Dalai Lamba's Harmony Vial",
+        "=Hamakala's Amulet of Havoc",
+        "=Hoof Choker of Eradication",
+        "=Monk's Bauble of Constancy",
+        "=Monk's Choker of Asperity",
+        "=Vial of Fabled Shangri-Baa"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.999938308534,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999938308534,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z01_KimbaalungVillage"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z01_KimbaalungVillage",
+        "xyz": {
+          "x": 2744.0,
+          "y": -11216.0,
+          "z": 3736.0
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Hollow Mountain",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_SB/SB_Z01_KimbaalungVillage",
+        "dungeon_zone": "G14_SB/SB_Z05_CaveSystem",
+        "dungeon_name": "Hollow Mountain",
+        "sigil_xyz": {
+          "x": 3912.33,
+          "y": -11542.76,
+          "z": 3738.93
+        },
+        "reset_xyz": {
+          "x": 2744.0,
+          "y": -11216.0,
+          "z": 3736.0
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 17160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z01_KimbaalungVillage"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z05_CaveSystem",
+        "xyz": {
+          "x": -697.56,
+          "y": -667.43,
+          "z": 112.23
+        }
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat Woolly Bully",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-SB-Yeti",
+        "wiki_page": "Creature:Woolly Bully",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z05_CaveSystem",
+        "xyz": {
+          "x": -6254.77,
+          "y": -2210.8,
+          "z": 670.32
+        }
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Hoof Ninja",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-SB-GoatNinja",
+        "wiki_page": "Creature:Hoof Ninja",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "enter_zone",
+      "label": "Enter puzzle room",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_SB/SB_Z05_CaveSystem",
+        "to_zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "xyz": {
+          "x": -6327.62,
+          "y": 3082.26,
+          "z": 947.13
+        },
+        "reset_xyz": {
+          "x": -6379.96,
+          "y": 2500.03,
+          "z": 849.14
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "xyz": {
+          "x": -1094.89,
+          "y": -3323.74,
+          "z": -2184.13
+        }
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "interact",
+      "label": "Interact with Prayer Wheel",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": 1326.85,
+          "y": -6987.64,
+          "z": -2622.43
+        },
+        "reset_xyz": {
+          "x": 760.76,
+          "y": -6994.25,
+          "z": -2622.43
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact",
+      "label": "Interact with Prayer Wheel",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": 919.51,
+          "y": -7541.15,
+          "z": -2622.43
+        },
+        "reset_xyz": {
+          "x": 800.14,
+          "y": -7021.19,
+          "z": -2622.43
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Interact with Prayer Wheel",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": 919.51,
+          "y": -7541.15,
+          "z": -2622.43
+        },
+        "reset_xyz": {
+          "x": 800.14,
+          "y": -7021.19,
+          "z": -2622.43
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Interact with Prayer Wheel",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": 80.57,
+          "y": -7550.69,
+          "z": -2622.43
+        },
+        "reset_xyz": {
+          "x": 78.22,
+          "y": -7198.29,
+          "z": -2622.43
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "interact",
+      "label": "Interact with Prayer Wheel",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": 80.57,
+          "y": -7550.69,
+          "z": -2622.43
+        },
+        "reset_xyz": {
+          "x": 78.22,
+          "y": -7198.29,
+          "z": -2622.43
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "interact",
+      "label": "Interact with Prayer Wheel",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": -282.21,
+          "y": -6992.36,
+          "z": -2622.43
+        },
+        "reset_xyz": {
+          "x": 128.36,
+          "y": -7077.92,
+          "z": -2622.43
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "interact",
+      "label": "Interact with Brazier",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "interact_xyz": {
+          "x": 439.53,
+          "y": -6733.82,
+          "z": -2637.84
+        },
+        "reset_xyz": {
+          "x": 455.45,
+          "y": -6251.45,
+          "z": -2617.68
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "enter_zone",
+      "label": "Enter Hamakala's Mausoleum",
+      "position": {
+        "x": 11440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_SB/SB_Z06_PuzzleRoom",
+        "to_zone": "G14_SB/SB_Z07_Hallway",
+        "xyz": {
+          "x": 494.75,
+          "y": -10228.99,
+          "z": -1872.85
+        },
+        "reset_xyz": {
+          "x": 495.69,
+          "y": -9573.98,
+          "z": -2064.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "handle_combat",
+      "label": "Defeat Hoof Ninja",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-SB-GoatNinja",
+        "wiki_page": "Creature:Hoof Ninja",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 12760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z07_Hallway",
+        "xyz": {
+          "x": -16.02,
+          "y": 170.35,
+          "z": 0.2
+        }
+      }
+    },
+    {
+      "id": "state_23",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 13200.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_24",
+      "node_type": "handle_combat",
+      "label": "Defeat Zhu Wuneng",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-SB-GoatNinja_Boss",
+        "wiki_page": "Creature:Zhu Wuneng",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_25",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 14080.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_26",
+      "node_type": "enter_zone",
+      "label": "Enter Shrine Room",
+      "position": {
+        "x": 14520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_SB/SB_Z07_Hallway",
+        "to_zone": "G14_SB/SB_Z08_ShrineRoom",
+        "xyz": {
+          "x": -4.97,
+          "y": 5862.21,
+          "z": 0.21
+        },
+        "reset_xyz": {
+          "x": -5.72,
+          "y": 5124.81,
+          "z": 0.2
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_27",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 14960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_SB/SB_Z08_ShrineRoom",
+        "xyz": {
+          "x": -4.63,
+          "y": -1336.92,
+          "z": 0.2
+        }
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 15400.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "handle_combat",
+      "label": "Defeat Master Tonkatsu",
+      "position": {
+        "x": 15840.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-SB-BoarNinja_Boss",
+        "wiki_page": "Creature:Master Tonkatsu",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_30",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 16720.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_31",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 16280.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "G14_SB/SB_Z01_KimbaalungVillage"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.999938308534,
+          "y": 0.00021952501634925348
+        }
+      }
+    },
+    {
+      "id": "27d33c0b",
+      "label": "Master Tonkatsu",
+      "members": [
+        "state_29",
+        "state_27",
+        "state_31",
+        "state_30",
+        "state_28"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "35452736",
+      "label": "Hamakala's Mausoleum",
+      "members": [
+        "state_23",
+        "state_20",
+        "state_25",
+        "state_26",
+        "state_22",
+        "state_21",
+        "state_24"
+      ],
+      "color": 3,
+      "collapsed": true
+    },
+    {
+      "id": "59ee0bbc",
+      "label": "Prayer Wheel Puzzle",
+      "members": [
+        "state_18",
+        "state_15",
+        "state_12",
+        "state_13",
+        "state_17",
+        "state_19",
+        "state_16",
+        "state_11",
+        "state_14",
+        "state_10"
+      ],
+      "color": 2,
+      "collapsed": true
+    },
+    {
+      "id": "ae756485",
+      "label": "Cave System",
+      "members": [
+        "state_6",
+        "state_7",
+        "state_8",
+        "state_5",
+        "state_9",
+        "state_4",
+        "state_3"
+      ],
+      "color": 1,
+      "collapsed": true
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  },
+  "history": [
+    "bede0bd09f3fdab46ccceed70dfbce6361106436b437074a32be9ca3886309e4",
+    "7c96ae01e8f899de9fa17339b5958481ebb2754e509a5934cdc842f419712e05"
+  ]
+}

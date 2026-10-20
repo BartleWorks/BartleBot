@@ -24,6 +24,14 @@
       "category": "Decks"
     },
     {
+      "name": "Balance Potbelly",
+      "category": "Pets"
+    },
+    {
+      "name": "Barkingham Blade of Blight",
+      "category": "Athames"
+    },
+    {
       "name": "Barkingham Cards of Acumen",
       "category": "Decks"
     },
@@ -32,12 +40,48 @@
       "category": "Decks"
     },
     {
+      "name": "Barkingham Claw of Insight",
+      "category": "Athames"
+    },
+    {
+      "name": "Barkingham Dagger of Nerve",
+      "category": "Athames"
+    },
+    {
+      "name": "Barkingham Dirk of Thunder",
+      "category": "Athames"
+    },
+    {
+      "name": "Barkingham Firepoker",
+      "category": "Athames"
+    },
+    {
+      "name": "Barkingham Knife of Floods",
+      "category": "Athames"
+    },
+    {
       "name": "Barkingham Pack of Malaise",
       "category": "Decks"
     },
     {
+      "name": "Barkingham Palace Icepick",
+      "category": "Athames"
+    },
+    {
       "name": "Barkingham Set of Integrity",
       "category": "Decks"
+    },
+    {
+      "name": "Barkingham Steel Splinter",
+      "category": "Athames"
+    },
+    {
+      "name": "Black Waves Floor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Blue Waves Floor",
+      "category": "Housing Items"
     },
     {
       "name": "Boots of the Forlorn Watch",
@@ -52,8 +96,20 @@
       "category": "Boots"
     },
     {
+      "name": "Claw of the Vicious Hound",
+      "category": "Athames"
+    },
+    {
       "name": "Clean Sweep",
       "category": "Spellements"
+    },
+    {
+      "name": "Cyan Waves Floor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Dagger of Royal Countenance",
+      "category": "Athames"
     },
     {
       "name": "Deck of the Ferocious Hound (Tear)",
@@ -85,6 +141,10 @@
       "category": "Spellements"
     },
     {
+      "name": "Jackall's Edge of Reality",
+      "category": "Athames"
+    },
+    {
       "name": "Jackall's Mystifying Cards (Tear)",
       "category": "Decks",
       "match_name": "Jackall's Mystifying Cards"
@@ -98,12 +158,20 @@
       "category": "Spellements"
     },
     {
+      "name": "Mote of Beauty",
+      "category": "Reagents"
+    },
+    {
       "name": "Myth Potbelly",
       "category": "Pets"
     },
     {
       "name": "Palace Guard's Firewalkers",
       "category": "Boots"
+    },
+    {
+      "name": "Palace Guard's Ice Razor",
+      "category": "Athames"
     },
     {
       "name": "Palace Guard's Rain Waders",
@@ -136,6 +204,14 @@
       "match_name": "Regal Gallery of Dignity"
     },
     {
+      "name": "Royal Athame of Duality",
+      "category": "Athames"
+    },
+    {
+      "name": "Royal Bodkin of Awareness",
+      "category": "Athames"
+    },
+    {
       "name": "Royal Boots of Whirlwind",
       "category": "Boots"
     },
@@ -144,12 +220,32 @@
       "category": "Boots"
     },
     {
+      "name": "Royal Ceremonial Stiletto",
+      "category": "Athames"
+    },
+    {
+      "name": "Royal Cutlass of Efficacy",
+      "category": "Athames"
+    },
+    {
+      "name": "Royal Dagger of Allegiance",
+      "category": "Athames"
+    },
+    {
       "name": "Royal Footgear of Charisma",
       "category": "Boots"
     },
     {
       "name": "Royal Footguards of Accord",
       "category": "Boots"
+    },
+    {
+      "name": "Royal Palace Guard's Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Royal Point of No Return",
+      "category": "Athames"
     },
     {
       "name": "Royal Shoes of Remembrance",
@@ -179,12 +275,20 @@
       "category": "Spellements"
     },
     {
+      "name": "Yeoman's Athame of Decay",
+      "category": "Athames"
+    },
+    {
       "name": "Yeoman's Boots of Reverie",
       "category": "Boots"
     },
     {
       "name": "Yeoman's Crisp Cards",
       "category": "Decks"
+    },
+    {
+      "name": "Yeoman's Dagger of Sparks",
+      "category": "Athames"
     },
     {
       "name": "Yeoman's Shoes of Bounty",
@@ -220,6 +324,12 @@
         "=Royal Footguards of Accord",
         "=Royal Shoes of Remembrance"
       ]
+    },
+    {
+      "name": "Defeat Billy the Cutter",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to defeat Billy the Cutter, an optional secret side boss that drops the Balance Potbelly."
     }
   ],
   "states": [
@@ -502,7 +612,7 @@
       "node_type": "enter_zone",
       "label": "Enter third room",
       "position": {
-        "x": 6600,
+        "x": 9240.0,
         "y": 0.0
       },
       "params": {
@@ -618,89 +728,72 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true
       }
+    },
+    {
+      "id": "state_20",
+      "node_type": "enter_zone",
+      "label": "Enter Billy the Cutter's room",
+      "position": {
+        "x": 6600.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z03_PalaceWestWing_02",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z12_SkeletoneKey01",
+        "xyz": {
+          "x": -1332.84,
+          "y": 586.96,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": -1095.97,
+          "y": 595.26,
+          "z": 0.2
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "handle_combat",
+      "label": "Defeat Billy the Cutter",
+      "position": {
+        "x": 7040.0,
+        "y": 90.0
+      },
+      "params": {
+        "enemy": "G14-BP-Barker_SKR",
+        "wiki_page": "Creature:Billy the Cutter",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "enter_zone",
+      "label": "Exit Billy the Cutter's room",
+      "position": {
+        "x": 8800.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z12_SkeletoneKey01",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z03_PalaceWestWing_02",
+        "xyz": {
+          "x": 9.58,
+          "y": 1656.98,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 4.38,
+          "y": 1367.81,
+          "z": 0.2
+        },
+        "stagger": false
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_10",
@@ -744,11 +837,41 @@
     {
       "trigger": "advance",
       "source": "state_14",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Billy the Cutter",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
       "dest": "state_15",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Billy the Cutter",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -785,6 +908,46 @@
       "trigger": "advance",
       "source": "state_18",
       "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_15",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -833,6 +996,26 @@
     },
     {
       "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_3",
       "dest": "state_7",
       "when": "SUCCESS",
@@ -843,8 +1026,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_19",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -856,6 +1059,16 @@
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -875,6 +1088,26 @@
       "trigger": "advance",
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -938,7 +1171,10 @@
         "state_12",
         "state_13",
         "state_14",
-        "state_15"
+        "state_15",
+        "state_20",
+        "state_21",
+        "state_22"
       ],
       "color": 4,
       "collapsed": true
@@ -963,6 +1199,7 @@
     "version": 1
   },
   "history": [
+    "32ea60261f78ec19d9f497e0975c16186311c4314e428d33dd06192ba2c09991",
     "247938f5fc77795a9ede205ecc3621737388ef8203fadc065956cbf318997bf4",
     "da2f419dcb3d88ef622b60d4ec1efbaf6f844508f0f17df6a81b9c66a6b1eedd"
   ]
