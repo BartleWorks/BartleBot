@@ -592,7 +592,7 @@ class TestLogOutStrandedFighters:
             assert await harness._log_out_for_recovery([first, second]) is True
 
         close.assert_not_awaited()
-        harness._machine.suspend_health_checks_for.assert_called_once_with([200, 300])
+        harness._machine.suspend_health_checks_for.assert_called_once_with([200, 300], watch_disconnects=True)
         harness._machine.resume_health_checks_for.assert_called_once_with([200, 300])
         assert harness._pending_recovery == {}
 

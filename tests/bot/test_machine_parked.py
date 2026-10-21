@@ -143,6 +143,35 @@ class TestSuspendHealthChecks:
 
         await _finish(machine, task)
 
+    async def test_a_logout_keeps_the_disconnect_watcher_on(self):
+        machine = make_machine(quick_node)
+        task = await _run_briefly(machine)
+        await asyncio.sleep(0.02)
+
+        machine.suspend_health_checks_for([111], watch_disconnects=True)
+        monitor = machine.health_monitor
+        assert monitor.is_suspended(111)
+        assert not monitor.is_flagged(111)  # the flag is what the disconnect dialog watcher skips
+
+        await _finish(machine, task)
+
+    async def test_resuming_leaves_a_client_a_watcher_recovered_meanwhile_flagged(self, monkeypatch):
+        """The flag is what stops a second watcher recovering a client recovery is already relaunching."""
+        client = FakeClient()
+        machine = BotMachine(clients=[client], config=CONFIG, node_registry={"mock": quick_node}, stop_grace_period=0.1)
+        task = await _run_briefly(machine)
+        await asyncio.sleep(0.02)
+        monkeypatch.setattr(ClientHealthMonitor, "_force_kill_process", staticmethod(lambda _pid: None))
+        monitor = machine.health_monitor
+
+        machine.suspend_health_checks_for([client.window_handle], watch_disconnects=True)
+        monitor.recover(client, "shows a disconnect modal")
+        machine.resume_health_checks_for([client.window_handle])
+
+        assert machine.is_handed_to_recovery(client)
+        assert monitor.is_flagged(client.window_handle)
+        await _finish(machine, task)
+
 
 class TestAbandonClient:
     """A node handing a client it wedged to crash recovery, or stopping when recovery cannot help."""
@@ -197,6 +226,21 @@ class TestAbandonClient:
         (message,) = stopped
         assert message.startswith("Player 2 has been loading for 60s")
         assert "no password saved for 'Account 2'" in message
+        await _finish(machine, task)
+
+    async def test_a_client_already_handed_over_is_not_recovered_again(self, monkeypatch):
+        """The disconnect dialog watcher runs through a relog, and can close the client first."""
+        client = FakeClient()
+        machine, _ = self._machine(quick_node, [client], recovery_gap=lambda _hwnd: None)
+        task = await _run_briefly(machine)
+        await asyncio.sleep(0.02)
+        monkeypatch.setattr(ClientHealthMonitor, "_force_kill_process", staticmethod(lambda _pid: None))
+        machine.health_monitor.recover(client, "shows a disconnect modal")
+        recovered: list = []
+        monkeypatch.setattr(machine.health_monitor, "recover", lambda c, r: recovered.append((c, r)))
+
+        assert machine.abandon_client(client, "has been loading for 60s") is True
+        assert recovered == []
         await _finish(machine, task)
 
     async def test_a_gap_lookup_that_raises_is_not_a_gap(self, monkeypatch):

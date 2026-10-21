@@ -132,7 +132,8 @@ NODE_SPEC = NodeSpec(
         "it is still loading a minute after leaving character select) is closed and "
         "relaunched as though its game had crashed, and the bot carries on from its recovery "
         "state. If that player cannot be relaunched, because no account is linked or no "
-        "password is saved, the bot stops and says so.\n\n"
+        "password is saved, the bot stops and says so. A player that has lost its connection "
+        "to the game, before Quit or after, is closed and relaunched the same way.\n\n"
         "A player that has only just logged in, because crash recovery or a scheduled relog "
         "brought it back, is skipped until something moves it: a login has already done what "
         "this node does. That is what keeps a Relog recovery state from logging the team out "
@@ -213,6 +214,25 @@ async def _back_in_world(client) -> bool:
         return False
 
 
+async def _disconnected(client) -> bool:
+    """Whether this client is showing a disconnect modal ("Connection Lost!" and the like).
+
+    A disconnected client goes on answering ``zone_name()`` with the zone it was last in, so
+    ``_back_in_world`` takes it for a player still in the world, and nothing on its screen
+    responds: Quit does nothing, and the modal blocks the spellbook. Only a relaunch brings
+    it back, so it is abandoned to crash recovery rather than reported as a FAILURE the run
+    counts, and can stop on.
+    """
+    try:
+        return await node_helpers.identify_modal(client) in dialog_captions.DISCONNECTS
+    except Exception:
+        return False
+
+
+_DISCONNECTED = "lost its connection to the game"
+# Reads after a subject, as _abandon's reasons do.
+
+
 def _abandon(machine, client, reason: str) -> str:
     """Give up on a player past Quit, handing it to crash recovery when there is one.
 
@@ -232,8 +252,30 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
 
     *in_battle* reaches Quit with Esc rather than the spellbook, which will not open in battle.
     Crash recovery uses it to log players out of a fight a relaunched player could not get back
-    into. The caller holds health checks off for *client* throughout, as :func:`run` does.
+    into. The caller holds health checks off for *client* throughout, as :func:`run` does, all
+    but the disconnect dialog watcher.
+
+    That watcher can hand the client to crash recovery part-way through, closing it. Whatever
+    the steps here made of that -- a menu that never opened, a read that raised -- the answer
+    is then ABANDONED, so the caller leaves the client to recovery as it would one this
+    function gave up on itself.
     """
+    try:
+        result = await _log_out_and_in(machine, client, in_battle=in_battle)
+    except Exception:
+        if machine.is_handed_to_recovery(client):
+            return ABANDONED
+        raise
+    if result != BACK and machine.is_handed_to_recovery(client):
+        return ABANDONED
+    return result
+
+
+async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
+    """The steps of :func:`log_out_and_in`, which stop early once *client* is handed to recovery."""
+    if await _disconnected(client):
+        return _abandon(machine, client, _DISCONNECTED)
+
     opened = (
         await _open_settings_page_in_battle(machine, client)
         if in_battle
@@ -249,10 +291,16 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     # that each tick rather than spending a Safety Delay up front on a dialog that is
     # normally absent.
     refusal: str | None = None
+    disconnected = False
 
     async def _reached_char_select() -> bool:
-        nonlocal refusal
+        nonlocal refusal, disconnected
+        if machine.is_handed_to_recovery(client):
+            return True
         if await auto_select.at_character_select(client):
+            return True
+        if await _disconnected(client):
+            disconnected = True
             return True
         outcome = await node_helpers.resolve_modal(client)
         refusal = outcome.refusal
@@ -270,6 +318,10 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
             client,
             f"left the world but character select never appeared within {RELOG_CHAR_SELECT_TIMEOUT:.0f}s",
         )
+    if machine.is_handed_to_recovery(client):
+        return ABANDONED
+    if disconnected:
+        return _abandon(machine, client, _DISCONNECTED)
     if refusal:
         machine.log(f"relog: the game refused the logout — {dialog_captions.describe(refusal)}", logging.WARNING)
         return FAILED
@@ -288,6 +340,8 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     deadline = loop.time() + RELOG_IN_GAME_TIMEOUT
     loading_since: float | None = None
     while (now := loop.time()) < deadline:
+        if machine.is_handed_to_recovery(client):
+            return ABANDONED
         if await _back_in_world(client):
             machine.note_logged_in([client.window_handle])
             return BACK
@@ -387,6 +441,7 @@ async def run(machine, clients: list, params: dict) -> str:
     ClientClosedError instead of returning. A FAILURE is routed and counted before the run
     parks, and can stop the run before recovery resumes it; the dead-client branch parks
     without counting. Health checks stay off for that player until recovery's resume().
+    A player showing a disconnect modal is handed over the same way, before Quit or after.
     """
     raw: list[int] = params.get("relog_clients") or []
     indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else list(range(len(clients)))
@@ -416,7 +471,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"relog: logging player(s) {[i + 1 for i in indices]} out and back in")
 
     hwnds = [c.window_handle for c in targets]
-    machine.suspend_health_checks_for(hwnds)
+    machine.suspend_health_checks_for(hwnds, watch_disconnects=True)
     results: list = []
     try:
         results = await asyncio.gather(

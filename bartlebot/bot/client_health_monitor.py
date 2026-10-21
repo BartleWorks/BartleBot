@@ -13,7 +13,9 @@ Five polling loops run concurrently:
 - _restricted_zone_watcher: polls zone_name() -- and the duel's own PvP flags
   once a client is in combat -- to stop the bot outright in PvP zones.
 
-All loops write to a shared _flagged set so a client is never double-reported.
+All loops write to a shared _flagged set so a client is never double-reported. A client
+in _suspended, which a relog puts there, is skipped by every loop but the disconnect
+dialog watcher: a disconnect modal is never part of a relog.
 """
 
 import asyncio
@@ -218,23 +220,46 @@ class ClientHealthMonitor:
         # Told of every client seen loading, or unreadable, on every poll. See _note_loading.
         self._on_loading = on_loading
         self._flagged: set[int] = set()  # HWNDs already flagged as unresponsive
+        self._suspended: set[int] = set()  # HWNDs a relog holds every watcher but the dialog one off
 
     def clear_flagged(self) -> None:
-        """Clear flagged HWNDs so recovered clients can be monitored again."""
+        """Clear flagged and suspended HWNDs so recovered clients can be monitored again."""
         self._flagged.clear()
+        self._suspended.clear()
 
     def is_flagged(self, hwnd: int) -> bool:
         """Whether this client is currently being ignored by every watcher."""
         return hwnd in self._flagged
 
+    def is_suspended(self, hwnd: int) -> bool:
+        """Whether this client is ignored by every watcher but the disconnect dialog one."""
+        return hwnd in self._suspended
+
+    def _ignored(self, hwnd: int) -> bool:
+        """Whether the watchers other than the disconnect dialog one should skip this client."""
+        return hwnd in self._flagged or hwnd in self._suspended
+
     def unflag(self, hwnd: int) -> None:
         """Start watching this client again, without touching anyone else's flag.
 
-        The counterpart to ``flag`` for a suspension that ends inside a run rather than at
-        a resume: ``clear_flagged`` would also un-flag a client that is genuinely dead and
-        part-way through recovery.
+        The counterpart to ``flag`` and ``suspend`` for a suspension that ends inside a run
+        rather than at a resume: ``clear_flagged`` would also un-flag a client that is
+        genuinely dead and part-way through recovery.
         """
         self._flagged.discard(hwnd)
+        self._suspended.discard(hwnd)
+
+    def suspend(self, hwnd: int) -> None:
+        """Stop every watcher but the disconnect dialog one reacting to this client.
+
+        For a relog, which logs a client out to character select and back. That fails
+        ``zone_name()`` and shows loading screens, as ``flag`` explains, but nothing in it
+        puts up a disconnect modal. One that appears means the session is gone, and Quit
+        and Play can never bring it back: only closing and relaunching the client can.
+        Holding the dialog watcher off too is what once left four disconnected clients on
+        "Connection Lost!" until the run stopped.
+        """
+        self._suspended.add(hwnd)
 
     def flag(self, hwnd: int) -> None:
         """Stop every watcher reacting to this client until the flags are cleared.
@@ -406,7 +431,7 @@ class ClientHealthMonitor:
         _client_status_watcher.
         """
         hwnd = client.window_handle
-        if hwnd in self._flagged:
+        if self._ignored(hwnd):
             streaks.pop(hwnd, None)
             return
         try:
@@ -458,7 +483,7 @@ class ClientHealthMonitor:
             try:
                 for client in list(self._clients_ref()):
                     hwnd = client.window_handle
-                    if hwnd in self._flagged:
+                    if self._ignored(hwnd):
                         continue
                     try:
                         await client.zone_name()
@@ -551,7 +576,7 @@ class ClientHealthMonitor:
                         continue  # let _client_status_watcher handle dead clients
                     if is_loading:
                         self._note_loading(client)
-                    if hwnd in self._flagged:
+                    if self._ignored(hwnd):
                         loading_since.pop(hwnd, None)
                         continue
 

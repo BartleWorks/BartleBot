@@ -79,3 +79,52 @@ async def test_the_restricted_zone_watcher_still_fires_after_a_bad_pass(fast):
     await asyncio.wait_for(monitor._restricted_zone_watcher(), timeout=1.0)
 
     assert fired.call_count == 1
+
+
+class TestSuspend:
+    """A relog's suspension: every watcher stands down for the client but the disconnect dialog one."""
+
+    @staticmethod
+    def _monitor(clients) -> ClientHealthMonitor:
+        return ClientHealthMonitor(clients_ref=lambda: clients, stop_flag=asyncio.Event(), on_pause=MagicMock())
+
+    def test_a_suspended_client_is_not_flagged(self):
+        monitor = self._monitor([])
+        monitor.suspend(7)
+        assert monitor.is_suspended(7)
+        assert not monitor.is_flagged(7)
+
+    def test_unflag_lifts_a_suspension(self):
+        monitor = self._monitor([])
+        monitor.suspend(7)
+        monitor.unflag(7)
+        assert not monitor.is_suspended(7)
+
+    def test_clear_flagged_lifts_every_suspension(self):
+        monitor = self._monitor([])
+        monitor.suspend(7)
+        monitor.flag(8)
+        monitor.clear_flagged()
+        assert not monitor.is_suspended(7)
+        assert not monitor.is_flagged(8)
+
+    async def test_the_status_watcher_leaves_a_suspended_client_alone(self, fast):
+        """A client at character select fails zone_name(), which is a relog working, not a crash."""
+        client = FakeClient()
+
+        async def _unreadable():
+            raise RuntimeError("at character select")
+
+        client.zone_name = _unreadable
+        monitor = self._monitor([client])
+        monitor.suspend(client.window_handle)
+        recovered: list = []
+        monitor.recover = lambda c, r: recovered.append(c)
+
+        task = asyncio.create_task(monitor._client_status_watcher())
+        await asyncio.sleep(0.05)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert recovered == []

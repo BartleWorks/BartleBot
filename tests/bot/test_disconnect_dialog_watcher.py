@@ -3,7 +3,7 @@
 Covers:
 - Detection fires when MessageBoxModalWindow is visible with a disconnect caption.
 - Detection does NOT fire for non-disconnect modals (caption mismatch).
-- Already-flagged clients are skipped.
+- Already-flagged clients are skipped; suspended ones are not.
 - Clients with no modal visible are skipped.
 - _is_disconnect_modal_visible returns False when modal root is missing.
 - _is_disconnect_modal_visible returns False when caption text is absent.
@@ -241,6 +241,31 @@ async def test_watcher_skips_already_flagged_client():
 
     mock_kill.assert_not_called()
     on_pause.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_watcher_still_recovers_a_client_a_relog_has_suspended():
+    """A relog holds the other watchers off, never this one: a disconnect modal is no part of a
+    relog, and Quit cannot get past it. Skipping it left four clients on "Connection Lost!"
+    until the run stopped."""
+    root = _make_disconnect_tree("You have been disconnected.")
+    client = _make_client(hwnd=5, pid=500, root_window=root)
+    monitor, stop_flag, on_pause, on_disconnected = _make_monitor([client])
+    monitor.suspend(5)
+
+    with patch.object(ClientHealthMonitor, "_force_kill_process") as mock_kill:
+        task = asyncio.create_task(monitor._disconnect_dialog_watcher())
+        await asyncio.sleep(_ONE_PASS)
+        stop_flag.set()
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    mock_kill.assert_called_once_with(500)
+    on_disconnected.assert_called_once_with(5)
+    assert monitor.is_flagged(5)
 
 
 @pytest.mark.asyncio
