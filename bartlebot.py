@@ -52,3 +52,9 @@ if __name__ == "__main__":
         controller = AppController(app)
         controller.listen_for_launches(instance)
         loop.run_until_complete(controller.run())
+
+    from bartlebot.gui.app_exit import exit_skipping_teardown
+
+    # Python's own teardown frees the Qt wrappers in an order that now and then crashes in
+    # sip after the app has quit cleanly. Nothing in it is needed, so it is skipped.
+    exit_skipping_teardown(0)
