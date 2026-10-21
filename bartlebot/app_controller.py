@@ -2814,10 +2814,14 @@ class AppController(QObject):
             return
         if not self._check_variables():
             return
-        from bartlebot.gui.dialogs.safety_warning_dialog import level_scaling_players  # noqa: PLC0415
+        from bartlebot.gui.dialogs.safety_warning_dialog import (  # noqa: PLC0415
+            level_scaling_players,
+            uses_friends_list,
+        )
 
         clients = self._client_manager.clients
         players = level_scaling_players(self._loaded_config, len(clients))
+        friends_list = uses_friends_list(self._loaded_config, len(clients))
         # Who is in a fight, and whether a level scaling player already has an elixir, are
         # memory reads, which are async, and what they feed is a blocking dialog, which must
         # not open inside a task (see "qasync + Python 3.13" in bartlebot/gui/CLAUDE.md). So
@@ -2825,7 +2829,7 @@ class AppController(QObject):
         # which the loop calls outside any task.
         if self._run_probe is not None and not self._run_probe.done():
             return  # a second press while the first is still reading
-        self._run_probe = asyncio.create_task(run_probe.probe_before_run(clients, players))
+        self._run_probe = asyncio.create_task(run_probe.probe_before_run(clients, players, friends_list))
         self._run_probe.add_done_callback(self._on_run_probe_done)
 
     def _on_run_probe_done(self, probe: asyncio.Task) -> None:
@@ -2834,13 +2838,13 @@ class AppController(QObject):
             return
         if probe.exception() is not None:
             logger.warning("Could not read the players before the run", exc_info=probe.exception())
-            self._finish_run_request(())
+            self._finish_run_request((), ())
             return
         result: run_probe.RunProbe = probe.result()
         if result.fighting:
             self._refuse_while_fighting(result.fighting)
             return
-        self._finish_run_request(result.elixir_players)
+        self._finish_run_request(result.elixir_players, result.quick_teleport_players)
 
     def _refuse_while_fighting(self, fighting: list[int]) -> None:
         """Refuse to start while a player is in a fight (#203).
@@ -2854,7 +2858,7 @@ class AppController(QObject):
         logger.warning("Refusing to run: %s in a fight", players)
         QMessageBox.warning(self._window, "Players in a Fight", run_probe.refusal_text(fighting))
 
-    def _finish_run_request(self, elixir_players) -> None:
+    def _finish_run_request(self, elixir_players, quick_teleport_players) -> None:
         """The rest of the run sequence: the dialogs that ask, then the run itself."""
         if not self._client_manager.clients or self._loaded_config is None:
             return
@@ -2863,7 +2867,9 @@ class AppController(QObject):
             collect_safety_warnings,
         )
 
-        safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients, elixir_players)
+        safety_warnings = collect_safety_warnings(
+            self._loaded_config, self._client_manager.clients, elixir_players, quick_teleport_players
+        )
         if safety_warnings:
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
             if not dlg.exec():

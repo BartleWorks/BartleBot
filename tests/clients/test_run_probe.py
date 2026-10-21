@@ -1,5 +1,7 @@
 """Tests for the reads the run request makes before it starts a bot (#141, #203)."""
 
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -49,6 +51,92 @@ async def test_unreadable_clients_and_a_failed_elixir_read_refuse_nothing(elixir
     elixirs.side_effect = RuntimeError("memory read failed")
 
     assert await run_probe.probe_before_run(clients, [1]) == run_probe.RunProbe([], ())
+
+
+# ---------------------------------------------------------------------------
+# Dblclick Go To Friend, read from each client's own install
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def installs(monkeypatch):
+    """Each client's install by its window handle, and every config.xml read, by install."""
+    state = SimpleNamespace(by_handle={}, on=set(), reads=[])
+
+    def read(install):
+        state.reads.append(install)
+        return install in state.on
+
+    monkeypatch.setattr(run_probe, "client_install", lambda c: state.by_handle.get(c.window_handle))
+    monkeypatch.setattr(run_probe, "quick_friend_teleport_on", read)
+    return state
+
+
+def test_the_players_whose_install_has_it_on_are_numbered_from_one(installs):
+    clients = [FakeClient(), FakeClient(), FakeClient()]
+    live, test = Path("C:/live"), Path("C:/test")
+    installs.by_handle = {clients[0].window_handle: live, clients[1].window_handle: test}
+    installs.by_handle[clients[2].window_handle] = test
+    installs.on = {test}
+
+    assert run_probe.quick_teleport_players(clients) == (2, 3)
+
+
+def test_clients_sharing_an_install_read_its_config_once(installs):
+    clients = [FakeClient(), FakeClient()]
+    installs.by_handle = {c.window_handle: Path("C:/live") for c in clients}
+
+    run_probe.quick_teleport_players(clients)
+
+    assert installs.reads == [Path("C:/live")]
+
+
+def test_a_client_whose_install_cannot_be_found_is_not_counted(installs):
+    assert run_probe.quick_teleport_players([FakeClient()]) == ()
+    assert installs.reads == []
+
+
+def test_a_client_with_no_process_has_no_install():
+    """FakeClient has no process_id, which is a read that fails like any other."""
+    assert run_probe.client_install(FakeClient()) is None
+
+
+def test_a_client_is_traced_to_the_folder_above_its_bin(monkeypatch):
+    exe = Path("C:/Games/Wizard101 Test/Bin/WizardGraphicalClient.exe")
+    monkeypatch.setattr(run_probe, "process_executable", lambda pid: exe if pid == 42 else None)
+
+    assert run_probe.client_install(SimpleNamespace(process_id=42)) == Path("C:/Games/Wizard101 Test")
+
+
+async def test_a_run_that_uses_the_friends_list_reads_the_setting(installs, elixirs):
+    clients = [FakeClient(), FakeClient()]
+    installs.by_handle = {c.window_handle: Path("C:/live") for c in clients}
+    installs.on = {Path("C:/live")}
+
+    probe = await run_probe.probe_before_run(clients, [], uses_friends_list=True)
+
+    assert probe.quick_teleport_players == (1, 2)
+
+
+async def test_a_run_that_does_not_use_the_friends_list_reads_nothing(installs, elixirs):
+    clients = [FakeClient()]
+    installs.by_handle = {clients[0].window_handle: Path("C:/live")}
+    installs.on = {Path("C:/live")}
+
+    probe = await run_probe.probe_before_run(clients, [])
+
+    assert probe.quick_teleport_players == ()
+    assert installs.reads == []
+
+
+async def test_a_fight_skips_the_setting_read(installs, elixirs):
+    clients = [FakeClient()]
+    clients[0].in_battle.return_value = True
+    installs.by_handle = {clients[0].window_handle: Path("C:/live")}
+
+    await run_probe.probe_before_run(clients, [], uses_friends_list=True)
+
+    assert installs.reads == []
 
 
 @pytest.mark.parametrize(

@@ -13,6 +13,8 @@ from bartlebot.gui.dialogs.safety_warning_dialog import (
     declared_sales_message,
     level_scaling_players,
     level_scaling_warning,
+    quick_friend_teleport_warning,
+    uses_friends_list,
 )
 from bartlebot.nodes.zone_entry import enter_dungeon
 from bartlebot.settings_manager import SettingsManager
@@ -717,3 +719,40 @@ def test_the_elixir_warning_joins_the_other_safety_warnings():
     assert collect_safety_warnings(config) == []
     warnings = collect_safety_warnings(config, [FakeClient()], [1])
     assert [w.details for w in warnings] == [[("Elixir already active", "Player 1")]]
+
+
+# ---------------------------------------------------------------------------
+# Dblclick Go To Friend on in a client this app did not launch
+# ---------------------------------------------------------------------------
+
+
+def test_a_team_run_uses_the_friends_list():
+    """Forming the group and every port to another player go through it."""
+    assert uses_friends_list(_config({"node_type": "sleep"}), client_count=2)
+
+
+def test_a_solo_run_uses_the_friends_list_only_to_teleport_to_a_friend():
+    assert not uses_friends_list(_config({"node_type": "sleep"}), client_count=1)
+    assert uses_friends_list(_config({"node_type": "teleport_to_friend"}), client_count=1)
+
+
+def test_the_option_on_warns_and_names_the_players_and_where_to_turn_it_off():
+    warning = quick_friend_teleport_warning([2, 3])
+
+    assert "as if the friend were not on the list" in warning.message
+    assert warning.details == [
+        ("Dblclick Go To Friend on", "Player 2, Player 3"),
+        ("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"),
+    ]
+
+
+def test_the_option_off_everywhere_does_not_warn():
+    assert quick_friend_teleport_warning([]) is None
+
+
+def test_the_option_warning_joins_the_other_safety_warnings():
+    config = _config({"node_type": "sleep"})
+
+    warnings = collect_safety_warnings(config, [FakeClient(), FakeClient()], quick_teleport_players=[1])
+
+    assert [w.details[0] for w in warnings] == [("Dblclick Go To Friend on", "Player 1")]

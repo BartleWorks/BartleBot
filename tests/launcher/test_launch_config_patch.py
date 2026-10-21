@@ -104,6 +104,34 @@ def test_window_config_patch_carries_the_quick_teleport_tag(tmp_path, config):
 
 
 # ---------------------------------------------------------------------------
+# Reading Dblclick Go To Friend back, for a client this app did not launch
+# ---------------------------------------------------------------------------
+
+
+def _install(tmp_path, text: str | None):
+    if text is not None:
+        (tmp_path / "Bin").mkdir()
+        (tmp_path / "Bin" / "config.xml").write_text(text, encoding="utf-8")
+    return tmp_path
+
+
+def test_quick_friend_teleport_on_is_read_from_the_installs_config(tmp_path):
+    assert launch_profile.quick_friend_teleport_on(_install(tmp_path, CONFIG_XML)) is True
+
+
+def test_quick_friend_teleport_off_is_read_as_off(tmp_path):
+    text = CONFIG_XML.replace('"INT">1</Quick', '"INT">0</Quick')
+
+    assert launch_profile.quick_friend_teleport_on(_install(tmp_path, text)) is False
+
+
+@pytest.mark.parametrize("text", [None, "<config>\n</config>\n"], ids=["no file", "no tag"])
+def test_a_setting_that_cannot_be_read_is_taken_as_off(tmp_path, text):
+    """The check only warns; a warning about a setting nobody could read teaches clicking it away."""
+    assert launch_profile.quick_friend_teleport_on(_install(tmp_path, text)) is False
+
+
+# ---------------------------------------------------------------------------
 # config.xml lookup
 # ---------------------------------------------------------------------------
 

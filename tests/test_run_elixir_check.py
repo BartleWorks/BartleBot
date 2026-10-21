@@ -1,4 +1,4 @@
-"""The run request's reads: an elixir already active (#141), and a player in a fight (#203).
+"""The run request's reads: an elixir already active (#141), a player in a fight (#203), and Dblclick Go To Friend on.
 
 The reads are async and what they feed is a blocking dialog, so the run sequence is split
 around them: the reads run as a task and the dialogs run from its done callback, outside any task.
@@ -214,4 +214,19 @@ async def test_a_fight_that_cannot_be_read_does_not_refuse_the_run(dialogs, refu
     await controller.settle()
 
     assert refusals.texts == []
+    assert controller.started == 1
+
+
+async def test_a_team_run_with_dblclick_go_to_friend_on_warns_before_it_starts(dialogs, monkeypatch):
+    """A client started by hand keeps the option, and grouping then fails as "could not find P2"."""
+    from bartlebot.clients import run_probe  # noqa: PLC0415
+
+    monkeypatch.setattr(run_probe, "quick_teleport_players", lambda clients: (2,))
+    controller = _Controller("sleep")
+
+    controller._on_run_requested()
+    await controller.settle()
+
+    assert [w.details[0] for w in dialogs.warnings[0]] == [("Dblclick Go To Friend on", "Player 2")]
+    assert dialogs.in_task == [False]
     assert controller.started == 1
