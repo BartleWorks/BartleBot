@@ -2201,18 +2201,12 @@ async def apply_deck(
         # on its own, patching the game's GetCursorPos and putting it back, four times
         # per open/close cycle. The handler is ref-counted precisely so an outer hold
         # collapses those into one.
+        # open_deck_page() records that it left the page on the deck, so
+        # view_deck_cards() inside write_deck leaves the view alone rather than
+        # switching to the treasure cards, which corrupts the spell list (see the
+        # module docstring). Until wizwalker 8783db0 it did not, and this set the
+        # flag itself.
         async with client.mouse_handler, DeckBuilder(client) as db:
-            # open_deck_page() has just clicked the "Deck" tab, so we are on the
-            # deck page — but it never records that, leaving _on_deck_page at the
-            # False it was constructed with.  view_deck_cards() reads that flag and
-            # would "correct" it by clicking through to the treasure card view,
-            # which corrupts the spell list (see the module docstring).
-            #
-            # refresh_deck_page() used to set the flag as a side effect, which is
-            # the only reason this was ever safe.  Dropping that redundant reopen
-            # means saying it outright.  The real fix belongs in open_deck_page();
-            # until the fork is bumped, assert it here.
-            db._on_deck_page = True  # noqa: SLF001
             return await write_deck(db, deck, set_archmastery=set_archmastery)
 
     token = _apply_slot.set(slot)
