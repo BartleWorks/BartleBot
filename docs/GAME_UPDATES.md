@@ -189,13 +189,24 @@ uv sync                                              # the pin again, when done
 ```
 
 Every command needs `--no-sync` while it is in, or the first plain `uv run` puts the pin back
-without a word (`docs/UPSTREAM.md`, *Bumping a pin*). Reinstall after each change to the
-checkout; the install is a copy.
+without a word (`docs/UPSTREAM.md`, *Bumping a pin*). That includes `uv run --with capstone`
+for `find_function.py`: `--with` adds to the environment but still syncs it first, and its
+"Uninstalled 1 package" is the branch going. Reinstall after each change to the checkout; the
+install is a copy. Check which is in before trusting a run against a client:
+`uv run --no-sync python -c "import wizwalker.memory.handler as h; print(h.HookHandler.AUTOBOT_SIZE)"`.
 
 The smoke test hooks one client, in the world, and goes through each hook and offset group a
 bot uses, saying which failed; `--in-duel`, run in a fight, reads every participant. Close
 BartleBot first. Then a bot: start the Test realm client by hand, log in, and run BartleBot
 with `uv run --no-sync python bartlebot.py`, which attaches to it.
+
+**A client started by hand misses what BartleBot does at launch**, since BartleBot's game
+folder is the live install: chiefly `QuickFriendTeleport = 0` in `Bin/config.xml`
+(`launcher/launch_profile.py`). With the game's *Options › Gameplay Options 4 › Dblclick Go
+To Friend* on, a click on a friends list row closes the list instead of opening the
+friend's profile, and grouping and every friend port fail as if the friend were not on the
+list. Turn it off on each Test realm character before a team run; it cost r811339 an
+evening of looking for a patch fault that was not there.
 
 ## Record: r811339 (Ahmarra)
 
@@ -217,6 +228,12 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
   (`m_isRaidVisitor` added). Against r800294 it is 219: 51 had already changed by r806919,
   among them the UI controls' `Grayed` fields renamed `Greyed`, which is why a diff runs
   from the live build's own dump.
+- **In game, 2026-10-21:** `smoke_test_client.py` passed every check on a Test realm client
+  (each hook, the moved `m_fScale`, a teleport of +40 that landed at +40.0 and back to 0.0),
+  then BartleBot ran a solo bot through a fight, and a two-player team bot five times in a
+  row: pre-run grouping added P2 and sync ported P2 through the friends list every time.
+  The team failures before those five were the game's *Dblclick Go To Friend*, on in the
+  hand-launched clients (section 6), not the update.
 - **Offsets:** 127 in wizwalker moved, all in `combat_participant.py` (+8 up to
   `m_shadowSpellEffects`, -8 from `m_deathActivatedEffects`) and `core_object.py`
   (`m_nMobileID`, `m_fScale`, after the new `m_turnSpeedMultiplier`); `--fix` rewrote them
