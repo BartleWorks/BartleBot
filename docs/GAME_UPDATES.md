@@ -106,10 +106,31 @@ in `bartlebot/game/data/` and the one it replaces moves to `tools/` with `git mv
 Test realm dump in `game/data/` on `master`: art extraction reads that one at run time,
 against the live game's files.
 
-Then `typedump.py annotate <file>` over wizwalker's memory objects, and the offsets our own
-code reads: `bartlebot/game/wizard_names.py` (`ClientWizPlayerNameBehavior`),
-`bartlebot/combat/deck_io.py` (the deck lists), and the probes `tools/README.md` lists
-under *Probes to rerun after a game patch*.
+Then the offsets, which a moved field breaks without failing anything: the read just
+returns a neighbor's value.
+
+```bash
+uv run python tools/typedump.py stale ../wizwalker/wizwalker --old tools/r<old>_WizardDev.json
+uv run python tools/typedump.py stale ../wizwalker/wizwalker --old tools/r<old>_WizardDev.json --fix
+```
+
+`stale` reads every `read_*`/`write_*` call given a literal offset, takes the property the
+old dump has there on the game class of the wizwalker class's name (`GameStats` is
+`WizGameStats`), and says where the new dump has it: **moved**, **gone**, or **raw**, an
+unreflected member with properties within 16 bytes that moved, which the dump cannot settle.
+`--fix` rewrites the moved ones in place, in each literal's own base. **Do not rerun `stale`
+against the old dump after `--fix`**: the source then holds new offsets, and the old dump
+names their old occupants. Check a fix by pairing each changed line's offset before
+(`git show HEAD:`) on the old dump with the same line's after on the new one; every pair
+should name one property.
+
+What `stale` cannot see: the wizwalker classes with no reflected game class (the camera
+controllers, the scene manager, the duel and quest managers, `GameClient`, the deck and spell
+list entries), and BartleBot's own offsets, which are not in classes named for the game's:
+`bartlebot/game/wizard_names.py` (`ClientWizPlayerNameBehavior` and `ClientObject`) and
+`bartlebot/combat/deck_io.py` (the deck lists, a raw gap of `DeckListControl`). Check
+those by hand with `typedump.py at` on both dumps, and the probes `tools/README.md` lists
+under *Probes to rerun after a game patch*. wizsprinter reads no offsets of its own.
 
 ## 5. Replacing a broken pattern
 
@@ -174,6 +195,14 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
   (`m_isRaidVisitor` added). Against r800294 it is 219: 51 had already changed by r806919,
   among them the UI controls' `Grayed` fields renamed `Greyed`, which is why a diff runs
   from the live build's own dump.
+- **Offsets:** 127 in wizwalker moved, all in `combat_participant.py` (+8 up to
+  `m_shadowSpellEffects`, -8 from `m_deathActivatedEffects`) and `core_object.py`
+  (`m_nMobileID`, `m_fScale`, after the new `m_turnSpeedMultiplier`); `--fix` rewrote them
+  and every pair checked. `CoreObject.parent()` at 208 is raw and stays: the block from
+  `m_fScale` to `m_inactiveBehaviors` (224, unmoved) shrank by four bytes, which an 8-aligned
+  pointer at 208 does not need. `WizGameStats` did not move. BartleBot's own (`m_characterId`
+  at 0x1C0, `m_nameKeys` at 0x160, `m_eGender` at 0x1B0, `DeckListControl`'s layout) are
+  unchanged; `m_isRaidVisitor` went into padding.
 - **Hooks:** nine patterns broken. Their replacements:
 
 | pattern | hook | replacement |
@@ -183,7 +212,8 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
 | `MovementTeleportHook.pattern` | teleport | The client object's set-position function (`rcx` the object, `rdx` the position), found by its position store `movsd [rcx+0xA8]; ...; or dword [rcx+0x160], 1`. r811339 gave it a longer prologue, which the old site (`push rdi; sub rsp, 0x20`, replayed from the bytecode) sat in. The hook now goes on the first instruction after either prologue, `mov rbx, [rcx+0x1B8]`, 7 bytes with 2 `nop`s, and the bytecode replays whatever it overwrote, read from the site. Matches once on both builds. |
 | `MovementTeleportHook` `inside_event_je` scan | teleport | The movement function has two collision blocks, each a `[rax+0x10]` call on `[rdi+0xA0]` and then an event dispatch `[rax+0x18]`; the patched one hands the call a stack buffer (`lea r8, [rsp+?]`), the other `r8 = r15`. The stack slots the old patterns named swapped between the blocks on r811339, so `event_dispatch`'s pattern still matched, on the **other** block's dispatch. Now the check is found by its `lea r8` (a fixed-width lookbehind, so the match is the `je`), and the dispatch as the first `[rax+0x18]` call's `je` after it. Both find exactly the live pair on r806919. The `je`s at +15 and +24 of `\x8B\x5F\x70\xF3` were checked too: the same on both. |
 | `DropsToggleHook.pattern` | drops | The function that sends the "Loot" event, hooked at entry to return 0. Found by the string: an immediate (`mov dword [rsp+?], 'Loot'`) on r806919, a `lea rdx, [rip+"Loot"]` on r811339, which turned both of live's inline "Loot"s into `.rdata` references (two referrers became four). New pattern from r811339's prologue through that string's setup, which only it has; the jump overwrites `sub rsp, 0x68` and the EH state store, 13 bytes, replayed from the site. New build only: live's prologue is a different shape. |
-| `ChatHook.pattern` | chat | |
-| `ChatSendHook._SEND_PATTERN` | sending chat | |
-| `ChatSendHook._BUDDY_PATTERN` | buddy requests | |
-| `_SSM_CONSTRUCTOR_PATTERN` (`social_systems_manager.py`) | the social systems manager | |
+| `RootWindowHook.pattern` (held) | the root window | Not broken, and wrong: its pattern wildcards the site, `mov rcx, [reg+0xD8]`, but its bytecode named `r13`, both reading the window and replaying the instruction, and r811339 loads from `r15`. It would have exported garbage and loaded `rcx` from it, ahead of a vtable call. The pattern now asks that the site load `rcx` (ModRM `0x88`-`0x8F`, not `0x8C`, which takes a SIB byte), and the hook replays the instruction as read and then exports `rcx`, naming no register. Found by comparing every hook's replayed bytes with its site on both builds; the other five matched. |
+| `ChatHook.pattern` | chat | Deferred: neither BartleBot nor wizsprinter activates it (`activate_all_hooks` does not). |
+| `ChatSendHook._SEND_PATTERN` | sending chat | Deferred, as `ChatHook`. |
+| `ChatSendHook._BUDDY_PATTERN` | buddy requests | Deferred, as `ChatHook`. |
+| `_SSM_CONSTRUCTOR_PATTERN` (`social_systems_manager.py`) | the social systems manager | Deferred: BartleBot reads group state from the UI instead, the memory route being dead already (`clients/group_manager.py`). |

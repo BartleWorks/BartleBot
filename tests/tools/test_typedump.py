@@ -15,6 +15,7 @@ from bartlebot.paths import project_root
 
 sys.path.insert(0, str(project_root() / "tools"))
 
+import typedump  # noqa: E402
 from typedump import Prop, TypeDump, _sizeof, main  # noqa: E402
 
 
@@ -181,3 +182,69 @@ def test_cli_gaps_brackets_unreflected_region(tmp_path, capsys):
     # m_vec is a 24-byte vector at 112, so it ends at 136; m_tail starts at 200.
     assert "0x88" in out and "0xc8" in out
     assert "m_vec" in out and "m_tail" in out
+
+
+# ------------------------------------------------------------------ stale offsets after a patch
+
+OLD = {
+    "class PropertyClass": {"bases": [], "properties": {}},
+    "class Participant": {
+        "bases": ["PropertyClass"],
+        "properties": {"m_kept": _prop(64), "m_health": _prop(244), "m_side": _prop(616), "m_dropped": _prop(700)},
+    },
+    "class WizGameStats": {"bases": ["PropertyClass"], "properties": {"m_maxHealth": _prop(80)}},
+}
+NEW = {
+    "class PropertyClass": {"bases": [], "properties": {}},
+    "class Participant": {
+        "bases": ["PropertyClass"],
+        "properties": {"m_kept": _prop(64), "m_health": _prop(252), "m_side": _prop(608)},
+    },
+    "class WizGameStats": {"bases": ["PropertyClass"], "properties": {"m_maxHealth": _prop(88)}},
+}
+
+SOURCE = (
+    "class DynamicParticipant(Thing):\r\n"
+    "    async def kept(self):\r\n"
+    "        return await self.read_value_from_offset(64, Primitive.int32)\r\n"
+    "    async def health(self):\r\n"
+    "        return await self.read_value_from_offset(244, Primitive.int32)\r\n"
+    "    async def write_side(self, v):\r\n"
+    "        await self.write_value_to_offset(0x268, v, Primitive.int32)\r\n"
+    "    async def dropped(self):\r\n"
+    "        return await self.read_enum(700, Kind)\r\n"
+    "    async def raw_pointer(self):\r\n"
+    "        return await self.read_value_from_offset(248, Primitive.int64)\r\n"
+    "    # return await self.read_value_from_offset(244, Primitive.int32)\r\n"
+    "class GameStats(Thing):\r\n"
+    "    async def max_health(self):\r\n"
+    "        return await self.read_value_from_offset(80, Primitive.int32)\r\n"
+    "class NotAGameClass(Thing):\r\n"
+    "    async def x(self):\r\n"
+    "        return await self.read_value_from_offset(244, Primitive.int32)\r\n"
+)
+
+
+def test_stale_offsets_names_what_moved_what_went_and_raw_members_beside_them():
+    found, unmatched = typedump.stale_offsets(SOURCE, "p.py", TypeDump(OLD), TypeDump(NEW))
+    got = {(f.line, f.kind, f.new_offset) for f in found}
+    assert got == {
+        (5, "moved", 252),  # m_health
+        (7, "moved", 608),  # m_side, written as hex
+        (9, "gone", None),  # m_dropped, through read_enum
+        (11, "raw", None),  # unreflected, between properties that moved
+        (15, "moved", 88),  # GameStats is the game's WizGameStats
+    }
+    # m_kept did not move; the commented-out read is not code
+    assert unmatched == {"NotAGameClass"}
+
+
+def test_fix_moved_rewrites_each_in_its_own_base_and_leaves_the_rest():
+    found, _ = typedump.stale_offsets(SOURCE, "p.py", TypeDump(OLD), TypeDump(NEW))
+    fixed = typedump.fix_moved(SOURCE, found).split("\r\n")
+    assert "read_value_from_offset(252," in fixed[4]
+    assert "write_value_to_offset(0x260," in fixed[6]
+    assert "read_enum(700," in fixed[8]  # gone: nowhere to move it to
+    assert "read_value_from_offset(248," in fixed[10]  # raw: left for a person
+    assert "read_value_from_offset(88," in fixed[14]
+    assert typedump.fix_moved(SOURCE, found).count("\r\n") == SOURCE.count("\r\n")
