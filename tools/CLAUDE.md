@@ -33,6 +33,11 @@ Two things to know before trusting it:
   `ClientInventoryBehavior` → `"WizardInventoryBehavior"`. The authoritative list
   is `await client_object.list_behavior_names()` on a live client.
 
+**A dump is captured with wiztype**, from one running client:
+`uvx --from wiztype==0.1.13 python tools/game_update/capture_type_dump.py`. katsuba only
+reads one. The tool finds the type registry itself when a patch breaks wiztype's own scan,
+as r811339 did; `docs/GAME_UPDATES.md` has when to run it and where the file goes.
+
 **Dumps are committed, and old ones are never deleted.** A dump can only be
 captured from a running client, so once a patch ships there is no way back to the
 previous layout. The checked-in dumps are the only record of what the offsets were
@@ -288,15 +293,17 @@ their "display name" before this was caught).
 
 [`katsuba`](https://pypi.org/project/katsuba/) is a real BINd deserializer — the
 same one the wizdb/Kimerith-WindHammer Discord-bot toolchain uses — and it reads
-straight off `bartlebot/game/data/r800294_WizardDev.json`, the wiztype dump already checked in
-for `typedump.py`, so no separate type dump is needed:
+straight off the newest wiztype dump, the one in `bartlebot/game/data/` that `typedump.py`
+reads too, so no separate type dump is needed:
 
 ```python
 from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
 from katsuba.wad import Archive
 
+from bartlebot.game.art_extraction import type_dump
+
 archive = Archive.mmap(str(wad_path))
-types = TypeList.open("bartlebot/game/data/r800294_WizardDev.json")
+types = TypeList.open(str(type_dump()))
 opts = SerializerOptions()
 opts.flags = STATEFUL_FLAGS
 opts.shallow = False

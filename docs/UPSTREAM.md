@@ -87,7 +87,10 @@ is squash-merged PRs producing new SHAs for identical content, not real drift.
 ## After a game update breaks memory offsets
 
 Offsets change with most game patches. Laurenz usually fixes them first — check before
-doing the work by hand.
+doing the work by hand. `docs/GAME_UPDATES.md` is the whole procedure for an update, from
+the Test realm on: which hooks it breaks, the type dump, and replacing a pattern ourselves.
+Changes for an update not yet live go on a branch named for it, here and in the library,
+and none merges until the update is live.
 
 ```bash
 cd ../wizwalker

@@ -16,8 +16,8 @@ WHERE THE DATA COMES FROM
     A deserializer *is* needed to find the right *field*, though.
     ``katsuba`` (the same library the wizdb/Kimerith-WindHammer toolchain uses,
     and already used by ``wizwalker/examples/read_deck.py`` in our fork) reads
-    a spell's BINd bytes against ``bartlebot/game/data/r800294_WizardDev.json`` -- the wiztype
-    dump already checked in for ``typedump.py`` -- and returns a real object with
+    a spell's BINd bytes against the newest wiztype dump in ``bartlebot/game/data/`` -- the
+    one ``typedump.py`` reads -- and returns a real object with
     ``m_displayName``, the exact field ``CombatCard.display_name`` reads from a
     live client (wizwalker/wizwalker/combat/card.py). That value is a langcode
     (e.g. "Spells_00003940"): the record "00003940" of ``Locale/en-US/Spells.lang``,
@@ -50,7 +50,7 @@ WHY A SNAPSHOT IS SAFE
 USAGE
     uv run python tools/dump_spell_names.py
     uv run python tools/dump_spell_names.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
-    uv run python tools/dump_spell_names.py --types bartlebot/game/data/r800294_WizardDev.json
+    uv run python tools/dump_spell_names.py --types tools/r800294_WizardDev.json   # an older build's types
 """
 
 from __future__ import annotations
