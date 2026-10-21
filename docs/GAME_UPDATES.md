@@ -175,6 +175,28 @@ and prints both openings side by side to write the new pattern from. Then:
   shared (`tests/memory/test_handler.py` is the pattern). The game's own bytes stay out of
   the repo, as its art does.
 
+## 6. Running against the update
+
+The update's wizwalker branch is neither pushed nor pinned, so it goes into the venv by
+hand, as a normal install of the checkout, never an editable one: wizsprinter installs
+into `wizwalker/extensions/`, and an editable wizwalker hides it, which breaks every
+wizsprinter import.
+
+```bash
+uv pip install --no-deps --reinstall ../wizwalker   # the checkout, on the update's branch
+uv run --no-sync python tools/game_update/smoke_test_client.py
+uv sync                                              # the pin again, when done
+```
+
+Every command needs `--no-sync` while it is in, or the first plain `uv run` puts the pin back
+without a word (`docs/UPSTREAM.md`, *Bumping a pin*). Reinstall after each change to the
+checkout; the install is a copy.
+
+The smoke test hooks one client, in the world, and goes through each hook and offset group a
+bot uses, saying which failed; `--in-duel`, run in a fight, reads every participant. Close
+BartleBot first. Then a bot: start the Test realm client by hand, log in, and run BartleBot
+with `uv run --no-sync python bartlebot.py`, which attaches to it.
+
 ## Record: r811339 (Ahmarra)
 
 Found on the Test realm on 2026-10-21, against live r806919. Its dump was captured the same
