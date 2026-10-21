@@ -34,11 +34,12 @@ logger = logging.getLogger(__name__)
 CAPS_PATH = Path(__file__).resolve().parent / "data" / "stat_caps.json"
 
 #: The highest level, and the step between the levels the caps are given for.
-MAX_LEVEL = 180
+MAX_LEVEL = 190
 LEVEL_STEP = 10
 
 #: Worlds with Challenge Mode dungeons and no Scales of Knowledge to read their level from.
-#: Darkmoor's is the max level, so it scales nobody.
+#: Darkmoor's was the max level until Ahmarra raised it to 190, so it now scales a level
+#: 181 to 190 player down to the level 180 caps.
 WORLD_LEVELS_WITHOUT_SCALES: dict[str, int] = {"Wallaru": 170, "Darkmoor": 180}
 
 

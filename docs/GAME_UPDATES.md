@@ -51,6 +51,15 @@ What a diff usually means:
 | a new level in `stat_caps` | `stat_caps.MAX_LEVEL`, and what its comments say about the old max level |
 | spells renamed | a search of `bots/`, `templates/`, `subgraphs/` and `strategies/` for the old names |
 
+A new world's entry in `zone_nav.json` needs its door named (`test_zone_names.py`), and a
+zone's name needs its own wad, so before the install is complete it declares only what can
+be named. `tools/zone_graph/main_zones.py --game-data <Test GameData> --world <key>` reads
+the world's hub and door from `Root.wad`, which a Test realm install has whole, and
+proposes its main zones. `dump_zone_names.py --game-data <Test GameData> --out <scratch>`
+then names the zones whose wads are there; merge only the new world's rows into the
+shipped file, since every other zone the Test install lacks would drop out. The full
+rerun on the day the update goes live replaces the merge.
+
 ## 3. Which hooks break
 
 ```bash
@@ -219,6 +228,20 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
   cards, none named by shipped content), four spells moved school. Nothing removed from
   the zone map. Key rebinding arrives: `Data/GameData/LocalInputBindings.xml`, and new
   `InputBindings.xml` and `InputActions.lang` in `Root.wad`.
+- **Game data on the branch:** the `Root.wad` snapshots regenerated (badge categories,
+  spell names and schools, stat caps, world names); `MAX_LEVEL` 190, so Darkmoor (180) now
+  scales a level 190 player; Ahmarra on the World Gate list (`SPIRAL_DOOR_WORLDS`), with
+  its emblem (`Button_World_Ahmarra`, the texture its badge category names). In
+  `zone_nav.json` it has only its hub and door, Bale Flotilla, the one main zone whose wad
+  the Test install had; its name is merged into `zone_names.json` from a Test realm dump
+  (English only so far). Still waiting on the world's wads: the other main zones
+  `main_zones.py` proposes (`AH_Z01_WesternSea`, `AH_Z02_FloodedCity`,
+  `AH_Z03_IslandOfTheStorm` and its `_B`, `AH_Z04_PrimalArchipelago`, `AH_Z05_EasternSea`,
+  `AH_Z06_ForbiddenCity`, `AH_Z07_AkashicCityB`, `AH_Z08_AkashicCityY`,
+  `AH_Z09_AkashicCityW`, `AH_Z10_DarkWaterTrench`), the zone, entity and reagent snapshots,
+  Ahmarra's World Gate and links, which need recording in game, a Scales of Knowledge entry
+  once it has Challenge Mode, and a `bots/` folder once a bot for it exists (the folders
+  after it renumber then).
 - **wiztype:** its scan no longer matched; `capture_type_dump.py` was written for it. The
   registry is the first of four map globals built the same way in both builds
   (`0x3372898` live, `0x379c618` on r811339). 7,033 types, from 6,981 on live.
