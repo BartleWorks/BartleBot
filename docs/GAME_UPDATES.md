@@ -66,6 +66,13 @@ wizwalker writes into the client, and say nothing. To check the update's wizwalk
 rather than the installed pin, pass `--source ../wizwalker/wizwalker`: a fixed pattern moves
 from broken to new only.
 
+**A pattern that holds can still be wrong.** It says only that the bytes still occur, not
+that they are still the site the code meant, nor that what the code does at an offset from
+the match is still there. On r811339 the teleport hook's `event_dispatch` pattern held while
+landing on a different block's `je`. So for every hook whose other patterns broke, and for
+any pattern used with an offset (`+15`, `+24`) or whose overwritten bytes are replayed from
+the bytecode, look at the code around the match on both builds.
+
 `AUTOBOT_PATTERN` (`memory/handler.py`) is the one to look at first: it finds the code cave
 every `SimpleHook` is written into, so when it breaks, every such hook does too.
 
@@ -173,9 +180,9 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
 |---|---|---|
 | `AUTOBOT_PATTERN` (`memory/handler.py`) | the code cave of every `SimpleHook` | The cave is `AutobotManager::Initialize`, found on both builds by the string naming it. Recompiled with a `mov rax, rsp` frame and an EH state store; the new pattern runs from that prologue to the body's first `cmp byte [rax+?], 0; je`, which it alone of 296 such prologues has. The function shrank from 4,188 bytes to 3,975, so `AUTOBOT_SIZE` went from 4,100 to 3,968; every hook at once reserves 1,050. |
 | `ClientHook.pattern` | the current client | The site names no strings. Found by the field it reads, `[reg+0x1C0]` (`ClientObject.m_characterId`, which the update did not move), straight after the getter's result: six such sites on each build, in the same order, and the one in a function of 230 bytes and 8 callers on live is 240 and 8 on r811339. Only the stack slot of the next `mov rdi, [rsp+?]` moved (0x38 to 0x40), so that byte is a wildcard and the pattern matches once on both builds. |
-| `MovementTeleportHook.pattern` | teleport | |
-| `MovementTeleportHook` `inside_event_je` scan | teleport | |
-| `DropsToggleHook.pattern` | drops | |
+| `MovementTeleportHook.pattern` | teleport | The client object's set-position function (`rcx` the object, `rdx` the position), found by its position store `movsd [rcx+0xA8]; ...; or dword [rcx+0x160], 1`. r811339 gave it a longer prologue, which the old site (`push rdi; sub rsp, 0x20`, replayed from the bytecode) sat in. The hook now goes on the first instruction after either prologue, `mov rbx, [rcx+0x1B8]`, 7 bytes with 2 `nop`s, and the bytecode replays whatever it overwrote, read from the site. Matches once on both builds. |
+| `MovementTeleportHook` `inside_event_je` scan | teleport | The movement function has two collision blocks, each a `[rax+0x10]` call on `[rdi+0xA0]` and then an event dispatch `[rax+0x18]`; the patched one hands the call a stack buffer (`lea r8, [rsp+?]`), the other `r8 = r15`. The stack slots the old patterns named swapped between the blocks on r811339, so `event_dispatch`'s pattern still matched, on the **other** block's dispatch. Now the check is found by its `lea r8` (a fixed-width lookbehind, so the match is the `je`), and the dispatch as the first `[rax+0x18]` call's `je` after it. Both find exactly the live pair on r806919. The `je`s at +15 and +24 of `\x8B\x5F\x70\xF3` were checked too: the same on both. |
+| `DropsToggleHook.pattern` | drops | The function that sends the "Loot" event, hooked at entry to return 0. Found by the string: an immediate (`mov dword [rsp+?], 'Loot'`) on r806919, a `lea rdx, [rip+"Loot"]` on r811339, which turned both of live's inline "Loot"s into `.rdata` references (two referrers became four). New pattern from r811339's prologue through that string's setup, which only it has; the jump overwrites `sub rsp, 0x68` and the EH state store, 13 bytes, replayed from the site. New build only: live's prologue is a different shape. |
 | `ChatHook.pattern` | chat | |
 | `ChatSendHook._SEND_PATTERN` | sending chat | |
 | `ChatSendHook._BUDDY_PATTERN` | buddy requests | |
