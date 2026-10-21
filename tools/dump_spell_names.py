@@ -20,8 +20,13 @@ WHERE THE DATA COMES FROM
     dump already checked in for ``typedump.py`` -- and returns a real object with
     ``m_displayName``, the exact field ``CombatCard.display_name`` reads from a
     live client (wizwalker/wizwalker/combat/card.py). That value is a langcode
-    (e.g. "Spells_00003940"), which ``get_langcode_name`` then resolves via
-    ``Locale/en-US/Spells.lang``.
+    (e.g. "Spells_00003940"): the record "00003940" of ``Locale/en-US/Spells.lang``,
+    read out of the same archive.
+
+    The text comes from that archive too, never from wizwalker's ``CacheHandler``.
+    That reads whichever install wizwalker finds rather than ``--wad``, so a run on
+    the Test realm paired its spells with live names, and its own wad reader took
+    over nine minutes where ``katsuba`` takes seconds.
 
     An earlier version of this tool skipped the deserializer: it searched the
     raw bytes for the first literal ``b"Spells_"`` and read the length byte
@@ -51,7 +56,6 @@ USAGE
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 import sys
 from datetime import date
@@ -59,12 +63,12 @@ from pathlib import Path, PurePosixPath
 
 from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
 from katsuba.wad import Archive
-from wizwalker.file_readers.cache_handler import CacheHandler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
 from bartlebot.game.spell_names import NAMES_PATH  # noqa: E402
+from tools.dump_world_names import parse_lang  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
 # The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
@@ -89,10 +93,18 @@ def _build_serializer(types_path: Path) -> Serializer:
     return Serializer(opts, types)
 
 
-async def build_snapshot(wad_path: Path, types_path: Path) -> dict:
+def _lang_table(archive: Archive, tables: dict[str, dict[str, str]], stem: str) -> dict[str, str]:
+    """``Locale/en-US/<stem>.lang`` as {record: text}, read once; empty when the archive has none."""
+    if stem not in tables:
+        path = f"Locale/en-US/{stem}.lang"
+        tables[stem] = parse_lang(bytes(archive[path])) if path in set(archive.iter_glob(path)) else {}
+    return tables[stem]
+
+
+def build_snapshot(wad_path: Path, types_path: Path) -> dict:
     archive = Archive.mmap(str(wad_path))
     ser = _build_serializer(types_path)
-    cache_handler = CacheHandler()
+    tables: dict[str, dict[str, str]] = {}
 
     names: dict[str, str] = {}
     skipped = 0
@@ -111,9 +123,10 @@ async def build_snapshot(wad_path: Path, types_path: Path) -> dict:
         if not langcode:
             skipped += 1
             continue
-        try:
-            display_name = await cache_handler.get_langcode_name(langcode)
-        except ValueError:
+        # "Spells_00003940" -> the "00003940" record of Spells.lang.
+        stem, _, record = langcode.partition("_")
+        display_name = _lang_table(archive, tables, stem).get(record)
+        if not display_name:
             skipped += 1
             continue
         names[internal_name] = display_name
@@ -128,7 +141,7 @@ async def build_snapshot(wad_path: Path, types_path: Path) -> dict:
     }
 
 
-async def main() -> int:
+def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--wad", type=Path, default=DEFAULT_WAD, help="path to Root.wad")
     ap.add_argument("--types", type=Path, default=DEFAULT_TYPES, help="path to a wiztype types JSON dump")
@@ -142,7 +155,7 @@ async def main() -> int:
         print(f"types JSON not found at {args.types}; pass --types")
         return 1
 
-    snapshot = await build_snapshot(args.wad, args.types)
+    snapshot = build_snapshot(args.wad, args.types)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(snapshot, indent=1, ensure_ascii=False), encoding="utf-8")
 
@@ -155,4 +168,4 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())
