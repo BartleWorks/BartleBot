@@ -57,8 +57,8 @@ site = [
 # commit -- see docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
-wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "79003692eaf949e0f5053566edbac4d17f0f25e4" }
-wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "e82212b59d1e34ce0ede8ba50ccb2770b6cba183" }
+wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "8783db03a890065174acf15ff36bca902ab45631" }
+wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "6f06c87ccb9d6421da4e6a8233b0d302cf94a519" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

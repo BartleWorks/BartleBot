@@ -6,14 +6,38 @@ exact commit. The local checkout paths and repo URLs are in the root `CLAUDE.md`
 
 ## The libraries
 
-- **WizWalker**: low-level Wizard101 memory hooking — `BartleWorks/wizwalker`, branch `main`
-- **WizSprinter**: safe wrappers + combat DSL — `BartleWorks/wizsprinter`, branch `main`
+- **WizWalker**: low-level Wizard101 memory hooking — `BartleWorks/wizwalker`
+- **WizSprinter**: safe wrappers + combat DSL — `BartleWorks/wizsprinter`
 
 Both are pinned by exact commit `rev` in `pyproject.toml`, using HTTPS URLs so CI can
 fetch them without SSH credentials. They carry fixes the original projects do not have,
 including the `SpellListControl` / `DeckListControl` memory offsets that
 `bartlebot/combat/deck_io.py` depends on. Pointing either back at its original repo will break
 deck reads.
+
+## Branches
+
+Both repos keep the same two long-lived branches:
+
+| branch | holds | moves when |
+|---|---|---|
+| `main` | what BartleBot may pin | `dev` has been run in game: `git merge --ff-only dev`, then tag |
+| `dev` | merged work, its test suite green | a feature branch is done |
+
+A change is a feature branch off `dev`, merged back into it. **Pin only from `main`.**
+`main` only ever fast-forwards to `dev`, so the two cannot drift and promoting is one
+command; a fix that cannot wait goes on `main` and is then merged into `dev`.
+
+`dev` is the state that had no home before: passing the suite but not yet tried in
+game. Without it, wizsprinter's pins sat on the tip of a stack of feature branches
+(`enchant-ahead` through `review-fixes`) while its `main` fell behind; those were folded
+into `main` with `bartlebot-pin-20261021`.
+
+Each library has its own suite (`uv sync && uv run pytest` in the checkout), against fakes
+of the game's memory and windows: run it before merging into `dev`. wizsprinter's runs
+against our wizwalker at the commit pinned here, named in its dev dependency group, so
+move that with this pin. It sits there and not in `[tool.uv.sources]` because uv reads a
+git dependency's sources too, and two wizwalker pins then refuse to lock.
 
 ## Where updates come from
 
@@ -68,10 +92,13 @@ doing the work by hand.
 ```bash
 cd ../wizwalker
 git fetch laurenz
+git switch dev
 git log --oneline HEAD..laurenz/development     # anything new?
-git merge laurenz/development                   # expect conflicts: our commits touch offsets too
+git merge laurenz/development                   # a real merge, never squashed or rebased;
+                                                # expect conflicts: our commits touch offsets too
 uv run pytest                                   # then smoke-test against a live client
-git push origin main
+git switch main && git merge --ff-only dev
+git push origin main dev
 ```
 
 Then bump the pin in this repo (see below). If Laurenz has not fixed it yet, re-derive
@@ -80,14 +107,21 @@ exists specifically to make offsets recoverable.
 
 ## Bumping a pin
 
-Local edits do **not** affect the app until they are pushed and the pin moves:
+Local edits do **not** affect the app until they reach `main`, are pushed, and the pin
+moves:
 
 ```bash
-cd ../wizwalker && git commit -am "..." && git push origin main
+cd ../wizwalker
+git switch main && git merge --ff-only dev      # once dev has been run in game
+git tag bartlebot-pin-$(date +%Y%m%d) main
+git push origin main dev refs/tags/bartlebot-pin-$(date +%Y%m%d)
 cd ../BartleBot
-# update the rev in pyproject.toml to the new commit hash
+# update the rev in pyproject.toml to main's full commit hash
 uv lock && uv sync
 ```
+
+Bumping wizwalker's pin also means moving the wizwalker reference in wizsprinter's dev
+dependency group, on its `dev`, so its suite keeps testing against what ships.
 
 While iterating rapidly, install the local copy as editable instead of bumping the pin
 each time. **Every plain `uv run` syncs the venv back to `uv.lock` first**, which
@@ -118,27 +152,33 @@ orphaned by a force-push, rebase, or branch rename, and `uv sync` then fails for
 everyone including CI. Tag it *before* bumping the pin:
 
 ```bash
-cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
+cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) main && git push origin refs/tags/bartlebot-pin-$(date +%Y%m%d)
 ```
 
-Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `7900369`
-(`bartlebot-pin-20261021`, which waits for the friend-teleport confirmation popup by polling
-its caption instead of a fixed second, on top of `4af3353`, `bartlebot-pin-20261018`, a review's fixes: polls that never yielded the event loop, the
-mouseless hook's user32 writes and its 200 ms re-parse, a dead client's leaked process
-handle, unbounded reads and broken string writes, and fewer reads per UI search, on top of
-`override_cache_folder` for #234) and wizsprinter `e82212b`
-(`bartlebot-pin-20261018`, on its `review-fixes` branch, which bounds the draw and discard
-waits, reads the combatants once a round and builds the config parser once, on top of
-`condition-attributes`, which names a combatant
-in the turn trace by its slot and refuses a condition attribute that can never be read,
-on top of `harmful-aura`, which adds the
-`harmful_aura` and `stronger` template keywords, on top of `turn-trace`, which logs each turn's decisions
-and casts the card a move's own enchant fused into, on top of `enchant-only-lookup`,
-which looks up a card aimed at a spell among enchants only, on top of `stacks` and its
-`stacks` template keyword, on top of `enchant-ahead`). A second pin on the same day takes a
-letter after the date, as `bartlebot-pin-20260926b` did. Never
-delete a tag that an older commit of this repo still pins, or you break the build at
-that revision.
+Tags follow `bartlebot-pin-YYYYMMDD`. A second pin on the same day takes a letter after
+the date, as `bartlebot-pin-20260926b` did. Never delete a tag that an older commit of
+this repo still pins, or you break the build at that revision. The tags are also what
+keeps a pin reachable once the feature branch it was made on is deleted.
+
+Current pins, both on `main`:
+
+- **wizwalker `8783db0`** (`bartlebot-pin-20261021b`): its test suite, `utils.poll_until`,
+  and a review's fixes. The ones BartleBot meets: a port to a friend from a friends list
+  left on a later page went to whoever sat in that row there; `in_battle()` never
+  returned before the client hook had run; `DeckBuilder.open_deck_page` never recorded
+  the deck page (so `deck_io.apply_deck` no longer sets `_on_deck_page` itself);
+  `clear_deck` answered its confirm box before the box was up; and a combatant's Health
+  window was never waited for. The deck page, friends list and message boxes are polled
+  where they were fixed waits, and the round waits read the duel every 0.2 s, not 0.5 s.
+  On top of `7900369` (`bartlebot-pin-20261021`), which polls for the friend-teleport
+  confirmation.
+- **wizsprinter `6f06c87`** (`bartlebot-pin-20261021`): its test suite, including copies
+  of the `SprintyCombat` tests in `tests/wizsprinter` here, which stay as this repo's
+  guard on what it pins while the forks have no CI; each card effect read once
+  however many requirements ask about it; an enchant's fuse seen when it lands rather
+  than after a fixed `cast_time * 2`; `CombatConfigProvider.from_string`; and the
+  generator backend's unawaited round. On top of `e82212b` (`bartlebot-pin-20261018`) and
+  the feature branches before it, which `git log` and the earlier tags record.
 
 ## Remotes and identity
 
