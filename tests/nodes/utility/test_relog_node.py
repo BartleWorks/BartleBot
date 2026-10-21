@@ -16,6 +16,7 @@ than returning a FAILURE the run would count and possibly stop on.
 
 import asyncio
 import logging
+from unittest.mock import patch
 
 import pytest
 from wizwalker.errors import ClientClosedError
@@ -469,6 +470,45 @@ class TestHealthChecks:
         clients, _ = games({}, {})
         await relog_node.run(machine, clients, {"relog_clients": [1]})
         assert machine.health_checks_resumed == {clients[0].window_handle}
+
+    async def test_the_disconnect_dialog_watcher_stays_on(self, machine, games):
+        """A disconnect modal is no part of a relog, and only a relaunch gets past it."""
+        clients, _ = games({})
+        await relog_node.run(machine, clients, {})
+        assert machine.watching_disconnects is True
+
+
+class TestHandedToRecoveryMidRelog:
+    """The disconnect dialog watcher can close a client while the node is still working on it."""
+
+    async def test_the_wait_for_character_select_ends_and_the_player_is_left_to_recovery(self, machine, games):
+        (client,), _ = games({"reaches_char_select": False})  # Quit does nothing: the session is gone
+
+        async def _watcher_recovers():
+            await asyncio.sleep(0.02)
+            machine.lost = {client.window_handle}
+
+        asyncio.create_task(_watcher_recovers())
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        with pytest.raises(ClientClosedError):
+            await relog_node.run(machine, [client], {})
+
+        assert loop.time() - started < relog_node.RELOG_CHAR_SELECT_TIMEOUT
+        assert machine.abandoned == []  # the watcher did it, so the node hands nothing over itself
+        assert client.window_handle not in machine.health_checks_resumed
+
+    async def test_a_read_that_raises_on_the_closed_client_is_an_abandon_not_an_error(self, machine, games):
+        (client,), _ = games({})
+        machine.lost = {client.window_handle}
+
+        async def _closed(*_args):
+            raise RuntimeError("process gone")
+
+        import bartlebot.nodes.node_helpers as nh
+
+        with patch.object(nh, "click_by_path", _closed):
+            assert await relog_node.log_out_and_in(machine, client) == relog_node.ABANDONED
 
 
 class TestRegrouping:

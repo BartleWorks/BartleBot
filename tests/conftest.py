@@ -285,9 +285,14 @@ class FakeMachine:
         if self.drop_poll is not None and not self.drop_poll.done():
             await asyncio.wait({self.drop_poll})
 
-    def suspend_health_checks_for(self, hwnds) -> None:
+    def suspend_health_checks_for(self, hwnds, *, watch_disconnects: bool = False) -> None:
         """Record a health-check suspension. Real BotMachine flags them on its monitor."""
         self.health_checks_suspended.update(hwnds)
+        self.watching_disconnects = watch_disconnects
+
+    def is_handed_to_recovery(self, client) -> bool:
+        """Mirror BotMachine: set ``lost`` to the hwnds a watcher has handed to recovery."""
+        return client.window_handle in getattr(self, "lost", set())
 
     def resume_health_checks_for(self, hwnds) -> None:
         self.health_checks_suspended.difference_update(hwnds)

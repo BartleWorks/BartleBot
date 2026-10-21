@@ -626,7 +626,7 @@ class BotMachine:
             stopped.cancel()
         return self._parked.is_set() and not self._stop_flag.is_set()
 
-    def suspend_health_checks_for(self, hwnds: Iterable[int]) -> None:
+    def suspend_health_checks_for(self, hwnds: Iterable[int], *, watch_disconnects: bool = False) -> None:
         """Stop ClientHealthMonitor reacting to these clients until the run resumes.
 
         Closing clients on purpose, or logging one out to character select, looks exactly
@@ -634,13 +634,21 @@ class BotMachine:
         appear, and the status watcher force-queues a recovery that is already under way.
         Flagging the hwnds is the monitor's own mechanism for "already dealt with".
 
+        *watch_disconnects* is for a logout, which keeps the clients running: the disconnect
+        dialog watcher stays on for them (``ClientHealthMonitor.suspend``), since a client
+        that loses its connection mid-relog can only come back by being relaunched. Closing
+        clients leaves it False, as the clients are going away regardless.
+
         ``resume()`` clears the flags, so the suspension lifts on its own and nothing has
         to remember to undo it. A no-op when no run is in flight.
         """
         if self._health_monitor is None:
             return
         for hwnd in hwnds:
-            self._health_monitor.flag(hwnd)
+            if watch_disconnects:
+                self._health_monitor.suspend(hwnd)
+            else:
+                self._health_monitor.flag(hwnd)
 
     # --- Who shares a realm ---
 
@@ -1564,11 +1572,23 @@ class BotMachine:
         A relog that happens *inside* a node has to put the watchers back itself: nothing
         calls resume() on the way out, so without this the clients it touched would go
         unwatched for the rest of the run.
+
+        Skips a client a watcher has handed to crash recovery in the meantime, which stays
+        flagged until recovery's ``resume()`` so no watcher recovers it a second time.
         """
         if self._health_monitor is None:
             return
         for hwnd in hwnds:
-            self._health_monitor.unflag(hwnd)
+            if hwnd not in self._lost_hwnds:
+                self._health_monitor.unflag(hwnd)
+
+    def is_handed_to_recovery(self, client) -> bool:
+        """Whether *client* has been handed to crash recovery since the run last resumed.
+
+        By a watcher or by ``abandon_client``. A node holding health checks off for a client
+        asks, since the disconnect dialog watcher can close it under the node mid-step.
+        """
+        return client.window_handle in self._lost_hwnds
 
     def abandon_client(self, client, reason: str) -> bool:
         """Hand a client a node can no longer use to crash recovery, to be closed and relaunched.
@@ -1587,12 +1607,18 @@ class BotMachine:
         client recovery could not relaunch stops the run with a message saying why: closing
         it would only leave the bot paused on a player that never comes back.
 
+        True as well, without a second recovery, when a watcher has handed the client over
+        already: the disconnect dialog watcher keeps running through a relog
+        (``suspend_health_checks_for(watch_disconnects=True)``) and can get there first.
+
         *reason* reads after a subject: "has been loading for 60s".
         """
         monitor = self._health_monitor
         if monitor is None:
             return False
         hwnd = client.window_handle
+        if hwnd in self._lost_hwnds:
+            return True
         gap = None
         if self._recovery_gap:
             try:

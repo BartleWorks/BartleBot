@@ -1492,7 +1492,7 @@ class ClientManager(QObject):
                 )
                 return False
 
-        machine.suspend_health_checks_for([c.window_handle for c in clients])
+        machine.suspend_health_checks_for([c.window_handle for c in clients], watch_disconnects=True)
         logger.info("Logging out %d player(s) so the whole team starts again together", len(clients))
         outcomes = await asyncio.gather(
             *[relog_node.log_out_and_in(machine, c, in_battle=True) for c in clients],

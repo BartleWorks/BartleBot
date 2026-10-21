@@ -232,8 +232,27 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
 
     *in_battle* reaches Quit with Esc rather than the spellbook, which will not open in battle.
     Crash recovery uses it to log players out of a fight a relaunched player could not get back
-    into. The caller holds health checks off for *client* throughout, as :func:`run` does.
+    into. The caller holds health checks off for *client* throughout, as :func:`run` does, all
+    but the disconnect dialog watcher.
+
+    That watcher can hand the client to crash recovery part-way through, closing it. Whatever
+    the steps here made of that -- a menu that never opened, a read that raised -- the answer
+    is then ABANDONED, so the caller leaves the client to recovery as it would one this
+    function gave up on itself.
     """
+    try:
+        result = await _log_out_and_in(machine, client, in_battle=in_battle)
+    except Exception:
+        if machine.is_handed_to_recovery(client):
+            return ABANDONED
+        raise
+    if result != BACK and machine.is_handed_to_recovery(client):
+        return ABANDONED
+    return result
+
+
+async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
+    """The steps of :func:`log_out_and_in`, which stop early once *client* is handed to recovery."""
     opened = (
         await _open_settings_page_in_battle(machine, client)
         if in_battle
@@ -252,6 +271,8 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
 
     async def _reached_char_select() -> bool:
         nonlocal refusal
+        if machine.is_handed_to_recovery(client):
+            return True
         if await auto_select.at_character_select(client):
             return True
         outcome = await node_helpers.resolve_modal(client)
@@ -270,6 +291,8 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
             client,
             f"left the world but character select never appeared within {RELOG_CHAR_SELECT_TIMEOUT:.0f}s",
         )
+    if machine.is_handed_to_recovery(client):
+        return ABANDONED
     if refusal:
         machine.log(f"relog: the game refused the logout — {dialog_captions.describe(refusal)}", logging.WARNING)
         return FAILED
@@ -288,6 +311,8 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     deadline = loop.time() + RELOG_IN_GAME_TIMEOUT
     loading_since: float | None = None
     while (now := loop.time()) < deadline:
+        if machine.is_handed_to_recovery(client):
+            return ABANDONED
         if await _back_in_world(client):
             machine.note_logged_in([client.window_handle])
             return BACK
@@ -416,7 +441,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"relog: logging player(s) {[i + 1 for i in indices]} out and back in")
 
     hwnds = [c.window_handle for c in targets]
-    machine.suspend_health_checks_for(hwnds)
+    machine.suspend_health_checks_for(hwnds, watch_disconnects=True)
     results: list = []
     try:
         results = await asyncio.gather(
