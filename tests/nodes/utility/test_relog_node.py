@@ -49,6 +49,10 @@ class FakeGame:
     out to character select, ``hangs_loading`` on the one back in, and ``crashes_loading``
     goes unreadable instead. ``ignores_play_for`` is a character select that takes that
     many seconds to accept Play.
+
+    ``disconnects`` is a lost connection: ``"before"`` the node starts or ``"on_quit"``. The
+    client then sits on "Connection Lost!", where nothing it is sent does anything, and goes
+    on answering zone_name() with the zone it was in, as the game does.
     """
 
     def __init__(
@@ -64,7 +68,9 @@ class FakeGame:
         ignores_play_for: float = 0.0,
         load_seconds: float | None = None,
         escape_opens: bool = True,
+        disconnects: str | None = None,
     ):
+        self.disconnects = disconnects
         self.escape_opens = escape_opens
         self.escapes = 0
         self.load_seconds = load_seconds
@@ -83,6 +89,8 @@ class FakeGame:
         self.plays = 0
         self.opens = 0
         self._loading_ticks = 0
+        if disconnects == "before":
+            self.screen = "disconnected"
 
     # --- what the node reads -------------------------------------------------
     def is_visible(self, path: list[str]) -> bool:
@@ -99,6 +107,8 @@ class FakeGame:
     def text(self, path: list[str]) -> str:
         if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "dialog":
             return self.quit_dialog[0]
+        if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "disconnected":
+            return CONNECTION_LOST_CAPTION
         return ""
 
     def at_character_select(self) -> bool:
@@ -111,7 +121,7 @@ class FakeGame:
 
     async def zone_name(self) -> str:
         # The world is readable with a menu or a dialog open over it, as in the game.
-        if self.screen not in ("world", "spellbook", "settings", "dialog"):
+        if self.screen not in ("world", "spellbook", "settings", "dialog", "disconnected"):
             raise RuntimeError("not in a zone")
         return "TestZone"
 
@@ -128,7 +138,9 @@ class FakeGame:
             self.opens_on_realms = False
             self.screen = "world"
         elif path == SETTINGS_QUIT_BUTTON_PATH and self.screen == "settings":
-            if self.quit_dialog:
+            if self.disconnects == "on_quit":
+                self.screen = "disconnected"
+            elif self.quit_dialog:
                 self.screen = "dialog"
             elif self.logout_hangs:
                 self.screen = "loading_out"
@@ -287,6 +299,8 @@ class TestRealmsTabGuard:
 
 
 # The game's own en-US text for the two logout warnings, as the snapshot holds it.
+CONNECTION_LOST_CAPTION = "Connection Lost!"
+
 DUNGEON_LOGOUT_CAPTION = (
     "If you log out in a Dungeon you will lose all your progress in the Dungeon and will have "
     "to start over at the beginning.<br>Are you sure you want to log out now?"
@@ -688,3 +702,34 @@ class TestFreshLogins:
 
         assert await relog_node.run(machine, clients, {}) == "SUCCESS"
         assert formed == []
+
+
+class TestDisconnected:
+    """A client on "Connection Lost!" still reports its zone, so it once read as "still in the world"."""
+
+    async def test_a_connection_lost_after_quit_is_handed_to_recovery_without_waiting(self, machine, games):
+        machine.recovers = True
+        (client,), _ = games({"disconnects": "on_quit"})
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+
+        with pytest.raises(ClientClosedError):
+            await relog_node.run(machine, [client], {})
+
+        assert loop.time() - started < relog_node.RELOG_CHAR_SELECT_TIMEOUT
+        ((abandoned, reason),) = machine.abandoned
+        assert abandoned is client
+        assert reason == "lost its connection to the game"
+
+    async def test_one_already_disconnected_is_handed_over_before_opening_any_menu(self, machine, games):
+        machine.recovers = True
+        (client,), (game,) = games({"disconnects": "before"})
+
+        assert await relog_node.log_out_and_in(machine, client) == relog_node.ABANDONED
+        assert game.clicks == []
+
+    async def test_with_no_recovery_behind_the_run_it_is_a_failure_that_says_why(self, machine, games):
+        (client,), _ = games({"disconnects": "on_quit"})
+        assert await relog_node.run(machine, [client], {}) == "FAILURE"
+        assert any("lost its connection" in msg for msg, _ in machine.logs)
+        assert not any("still in the world" in msg for msg, _ in machine.logs)
