@@ -25,6 +25,7 @@ from typing import Any
 
 from bartlebot.game import entity_names, zone_names
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION
 from bartlebot.nodes.paths import NPC_RANGE_TITLE_PATH
 from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL
 
@@ -73,11 +74,14 @@ async def run_recording(
     try_set_label: Callable[[str], None],
     *,
     player: int | None = None,
+    safety_delay: float = SAFETY_DELAY_OPTION.default,
 ) -> None:
     """Dispatch to the recording workflow for *node_type*.
 
     *player* is the 1-based number of the player *client* is, for a workflow that
-    records who performed the step; None when the caller cannot say.
+    records who performed the step; None when the caller cannot say. *safety_delay* is
+    the bot's Safety Delay, as a run would resolve it: how long ``interact`` watches for
+    dialogue after the interaction.
 
     At most one session runs at a time.  Returns immediately if another
     session is already active.
@@ -91,7 +95,7 @@ async def run_recording(
     my_task = asyncio.current_task()
     _active_task = my_task
     try:
-        await fn.record(client, param_form, on_status, on_btn, try_set_label, player)
+        await fn.record(client, param_form, on_status, on_btn, try_set_label, player, safety_delay)
     finally:
         # Only clear if we're still the registered task; a cancel followed by
         # an immediate new session could have already replaced _active_task.
@@ -217,6 +221,29 @@ async def _wait_out_loading(client) -> None:
         await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
 
+async def _dialogue_follows(client, within: float) -> bool:
+    """Whether dialogue opens within *within* seconds of an interaction, the moment its prompt went.
+
+    Dialogue that opens once the player has done something else is not this interaction's:
+    a new prompt showing means they reached another object, and moving off the spot means
+    they walked on, or walked out of range rather than interacting at all. Either ends the
+    watch with no, as the full *within* passing does.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + within
+    spot = await client.body.position()
+    while True:
+        if await client.is_in_dialog():
+            return True
+        if await client.is_in_npc_range():
+            return False
+        if node_helpers.distance(await client.body.position(), spot) > node_helpers.POSITION_MARGIN:
+            return False
+        if loop.time() >= deadline:
+            return False
+        await asyncio.sleep(RECORDING_POLL_INTERVAL)
+
+
 @dataclass(frozen=True, kw_only=True)
 class _Workflow:
     """The session every workflow shares: the Stop button while it runs, and the
@@ -232,13 +259,22 @@ class _Workflow:
     #: to stop.
     shows_stop: bool = True
 
-    async def record(self, client, param_form, on_status, on_btn, try_set_label, player=None) -> None:
+    async def record(
+        self,
+        client,
+        param_form,
+        on_status,
+        on_btn,
+        try_set_label,
+        player=None,
+        safety_delay: float = SAFETY_DELAY_OPTION.default,
+    ) -> None:
         saved = param_form.snapshot(self.keys())
         if self.shows_stop:
             on_btn("Stop")
             on_status("Starting…")
         try:
-            on_status(await self.capture(client, param_form, on_status, try_set_label, player))
+            on_status(await self.capture(client, param_form, on_status, try_set_label, player, safety_delay))
             on_btn("Record")
         except asyncio.CancelledError:
             param_form.restore(saved)
@@ -253,8 +289,9 @@ class _Workflow:
         """Every param key ``capture`` may write."""
         raise NotImplementedError
 
-    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
-        """Fill *param_form* and return the closing status. *player* is as ``run_recording``'s."""
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
+        """Fill *param_form* and return the closing status. *player* and *safety_delay* are as
+        ``run_recording``'s."""
         raise NotImplementedError
 
 
@@ -288,7 +325,7 @@ class _WalkIn(_Workflow):
         points = [] if self.point_key is None else ["reset_xyz", self.point_key]
         return [k for k in (self.zone_key, *points, self.destination_key, self.name_key) if k is not None]
 
-    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
         from_zone = await _zone_to_record(client)
         if self.zone_key is not None:
             param_form.set_str(self.zone_key, from_zone)
@@ -342,6 +379,9 @@ class _Interact(_Workflow):
     player there: ``Enter <destination> via …`` when the zones' names tell them apart, and
     ``A → B via …`` by path segment when they do not. With *players_key*, an empty player list becomes the player the
     step was recorded from; one the author already filled is left alone.
+
+    With *dialogue_key*, the workflow watches for dialogue for the Safety Delay after the
+    prompt goes, and the bool says whether it opened (``_dialogue_follows``).
     """
 
     zone_key: str = "zone"
@@ -352,14 +392,17 @@ class _Interact(_Workflow):
     todo: str | None = None
     names_target: bool = False
     players_key: str | None = None
+    dialogue_key: str | None = None
 
     def keys(self) -> list[str]:
         keys = [self.zone_key, "reset_xyz", "interact_xyz"]
         if self.players_key is not None:
             keys.append(self.players_key)
+        if self.dialogue_key is not None:
+            keys.append(self.dialogue_key)
         return keys if self.destination_key is None else [*keys, self.destination_key]
 
-    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
         zone = await _zone_to_record(client)
         param_form.set_str(self.zone_key, zone)
         _set_position(param_form, "reset_xyz", await client.body.position())
@@ -379,12 +422,20 @@ class _Interact(_Workflow):
             if not await client.is_in_npc_range():
                 break
 
+        dialogue = None
+        if self.dialogue_key is not None:
+            on_status("Watching for dialogue…")
+            dialogue = await _dialogue_follows(client, safety_delay)
+            param_form.set_bool(self.dialogue_key, dialogue)
+
         if self.players_key is not None and player is not None and not param_form.players(self.players_key):
             param_form.set_players(self.players_key, [player])
 
         if self.destination_key is None:
             try_set_label(f"Interact with {target}" if target else _zone_display(zone))
             where = zone.split("/")[-1]
+            if dialogue is not None:
+                where += " · dialogue" if dialogue else " · no dialogue"
             return f"Done — {self.todo} ({where})" if self.todo else f"Done — {where}"
 
         on_status("Loading…")
@@ -409,7 +460,7 @@ class _Point(_Workflow):
     def keys(self) -> list[str]:
         return ["zone", "xyz"]
 
-    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
         zone = await _zone_to_record(client)
         pos = await client.body.position()
         param_form.set_str("zone", zone)
@@ -433,7 +484,7 @@ class _Enemy(_Workflow):
     def keys(self) -> list[str]:
         return [self.key]
 
-    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
         mob = await client.find_closest_mob()
         name = await mob.object_name() if mob is not None else None
         if not name:
@@ -472,7 +523,7 @@ _REGISTRY: dict[str, _Workflow] = {
         names_target=True,
         name_key="gauntlet_name",
     ),
-    "interact": _Interact(names_target=True, players_key="interact_clients"),
+    "interact": _Interact(names_target=True, players_key="interact_clients", dialogue_key="has_dialogue"),
     "interact_menu": _Interact(todo="set Menu Path manually", names_target=True, players_key="interact_clients"),
     "enter_zone_via_object": _Interact(
         zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone", names_target=True
@@ -510,8 +561,8 @@ def recording_hint(node_type: str, schema, params) -> str:
         return ""
     names = [f.label for f in fields]
     listed = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
-    from bartlebot.content.templates.setup_steps import field_empty  # noqa: PLC0415 - keeps this module's imports light
+    from bartlebot.options.param_cards import unrecorded  # noqa: PLC0415 - keeps this module's imports light
 
-    if all(field_empty(f, params) for f in fields):
+    if unrecorded(fields, params, keys):
         return f"Not recorded. Record fills {listed}."
     return f"Recording again replaces {listed}."

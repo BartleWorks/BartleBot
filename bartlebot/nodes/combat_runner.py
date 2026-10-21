@@ -135,16 +135,16 @@ def resolve_combat(
 
 @lru_cache(maxsize=1)
 def _lark_parser():
-    """Build the wizsprinter combat grammar parser once and reuse it.
+    """Build the wizsprinter combat grammar parser once and reuse it for checking DSLs.
 
-    Building one compiles the grammar (~77 ms). ``validate_dsl`` parses with it
-    directly, and ``_run_combat``'s provider, one per client per fight, does too.
-    wizsprinter's own ``parse_config()`` built a new one on every call until
-    e82212b, which is why this exists; it is still the one both share.  Lark parsers
-    are reusable across ``parse()`` calls, and one shared instance is safe across
-    threads too: the GUI's background checks (``gui/combat_strategies/dsl_checks.py``)
-    parse on a worker while the event loop may parse a fight's DSL. lark's Earley
-    parser sets its state when it is built and keeps each parse's in locals.
+    Building one compiles the grammar (~77 ms). ``validate_dsl`` parses with it so it
+    keeps the tree, which the name warnings read too. A fight's provider
+    (``CombatConfigProvider.from_string``) parses with wizsprinter's own parser, cached
+    the same way since e82212b. Lark parsers are reusable across ``parse()`` calls, and
+    one shared instance is safe across threads too: the GUI's background checks
+    (``gui/combat_strategies/dsl_checks.py``) parse on a worker while the event loop may
+    check another. lark's Earley parser sets its state when it is built and keeps each
+    parse's in locals.
     """
     from lark import Lark  # noqa: PLC0415
     from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
@@ -154,41 +154,16 @@ def _lark_parser():
     return Lark(get_sprinty_grammar())
 
 
-@lru_cache(maxsize=1)
-def _str_provider_class():
-    """Return a CombatConfigProvider subclass that accepts a DSL string.
+def _combat_provider(dsl: str, cast_time: float = 0.2):
+    """wizsprinter's combat config provider over a DSL string, as a fight runs one.
 
-    Built lazily and cached so importing this module does not pull in wizwalker,
-    and so both ``_run_combat`` and ``validate_dsl`` share one definition.
+    Imported here, not at the top, so importing this module does not pull in wizwalker.
     """
-    from wizwalker.extensions.wizsprinter.combat_backends.backend_base import (  # noqa: PLC0415
-        BaseCombatBackend,
-    )
-    from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
-        TreeToConfig,
-    )
     from wizwalker.extensions.wizsprinter.combat_backends.config_backend import (  # noqa: PLC0415
         CombatConfigProvider,
     )
 
-    class _StrCombatConfigProvider(CombatConfigProvider):
-        """CombatConfigProvider variant that accepts a DSL string directly."""
-
-        def __init__(self, content: str, cast_time: float = 0.2, *, tree=None):  # noqa: ANN001 - a Lark Tree
-            """*tree* is *content* already parsed, for a caller that wants the tree as well."""
-            # Bypass the parent __init__ (which opens a file path).
-            BaseCombatBackend.__init__(self, cast_time=cast_time)
-            self.filename = "<inline>"
-            self.config = self.parse_config(content) if tree is None else self._config_from(tree)
-
-        def parse_config(self, file_contents):
-            # Same as the parent, but against the shared parser instead of a new one.
-            return self._config_from(_lark_parser().parse(file_contents))
-
-        def _config_from(self, tree):  # noqa: ANN001, ANN202 - a Lark Tree and wizsprinter's config
-            return self._expand_config(TreeToConfig().transform(tree))
-
-    return _StrCombatConfigProvider
+    return CombatConfigProvider.from_string(dsl, cast_time)
 
 
 class DslError(NamedTuple):
@@ -349,9 +324,15 @@ def check_dsl_uncached(dsl: str) -> DslCheck:
 
 def _checked(dsl: str) -> DslCheck:
     """Parse ``dsl`` once and answer both questions from that parse."""
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
+        TreeToConfig,
+    )
+
     try:
         tree = _lark_parser().parse(dsl)
-        _str_provider_class()(dsl, tree=tree)
+        # The transform is where a fight's provider refuses what parses but can never
+        # hold: an unknown attribute, a % on a count, a negated filter.
+        TreeToConfig().transform(tree)
     except Exception as exc:
         return DslCheck(_error_from(exc))
     return DslCheck(None, _warnings_in(tree))
@@ -483,7 +464,7 @@ async def _run_combat(client, combat_dsl: str, watch: "FightWatch | None" = None
     casting. Without one it fights to the end, as the authoring tools' test fight wants.
     *number*, the client's 1-based player number, tags its lines in the turn trace.
     """
-    provider = _str_provider_class()(combat_dsl)
+    provider = _combat_provider(combat_dsl)
     log_tag = f"[P{number}]" if number is not None else ""
     if watch is None:
         from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
@@ -727,7 +708,7 @@ async def _flee(combat, watch: FightWatch) -> None:
 def _watched_combat_class():
     """SprintyCombat that asks a FightWatch, each planning phase, whether to flee instead.
 
-    Built lazily and cached for the same reason as ``_str_provider_class``.
+    Built lazily, so importing this module does not pull in wizwalker, and cached.
     """
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 

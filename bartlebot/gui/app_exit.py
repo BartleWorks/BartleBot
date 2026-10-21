@@ -10,15 +10,34 @@ log has ended, which reads as a crash on quit. It is intermittent (about one qui
 and goes back at least to September 2026.
 
 Nothing in that teardown is worth keeping, so it is skipped: the logs are flushed and
-closed, the standard streams flushed, and the process ends with ``os._exit``.
+closed, the standard streams flushed, and the process ends with ``TerminateProcess``.
+
+Not ``os._exit``, which this first used: it skips Python's teardown but still detaches
+every DLL, and Qt's ran its static destructors with the QApplication still alive. Its
+thread storage then warned ``QThreadStorage: entry 2 destroyed before end of thread`` from
+inside the detach, through our Qt message handler -- Python code running under the loader
+lock, after logging was shut down. ``TerminateProcess`` notifies no DLL, so none of that
+runs. ``os._exit`` stays as the fallback should the call fail.
 """
 
+import ctypes
 import logging
 import os
 import sys
 from typing import NoReturn
 
 logger = logging.getLogger(__name__)
+
+
+def _terminate(code: int) -> None:
+    """End this process at once with *code*, notifying no DLL. Returns only if it failed."""
+    try:
+        kernel32 = ctypes.WinDLL("kernel32")
+        kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+        kernel32.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        kernel32.TerminateProcess(kernel32.GetCurrentProcess(), code)
+    except Exception:
+        pass
 
 
 def exit_skipping_teardown(code: int = 0) -> NoReturn:
@@ -35,4 +54,5 @@ def exit_skipping_teardown(code: int = 0) -> NoReturn:
                 stream.flush()
         except Exception:
             pass
+    _terminate(code)
     os._exit(code)

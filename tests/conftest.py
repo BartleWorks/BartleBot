@@ -360,18 +360,20 @@ def message_box_patches(visible_buttons=()):
 class FakeParamForm:
     """Minimal stub for _DynamicParamForm used by recording workflows.
 
-    Recording workflows write through three methods, and snapshot/restore around them:
+    Recording workflows write through four methods, and snapshot/restore around them:
       - set_str(key, value)      — stores a string field
       - set_xyz(key, x, y, z)   — stores an XYZ coordinate triple
       - set_players(key, value) — stores a player list, read back by players(key)
+      - set_bool(key, value)    — stores a bool field
 
-    Tests inspect .str_fields, .xyz_fields and .player_fields directly.
+    Tests inspect .str_fields, .xyz_fields, .player_fields and .bool_fields directly.
     """
 
     def __init__(self):
         self.str_fields: dict[str, str] = {}
         self.xyz_fields: dict[str, tuple[float, float, float]] = {}
         self.player_fields: dict[str, list[int]] = {}
+        self.bool_fields: dict[str, bool] = {}
 
     def players(self, key: str) -> list[int]:
         return self.player_fields.get(key, [])
@@ -385,12 +387,18 @@ class FakeParamForm:
     def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
         self.xyz_fields[key] = (x, y, z)
 
+    def set_bool(self, key: str, value: bool) -> None:
+        self.bool_fields[key] = value
+
+    def _stores(self) -> tuple[dict, ...]:
+        return self.str_fields, self.xyz_fields, self.player_fields, self.bool_fields
+
     def snapshot(self, keys) -> dict:
-        return {key: (self.str_fields.get(key), self.xyz_fields.get(key), self.player_fields.get(key)) for key in keys}
+        return {key: tuple(fields.get(key) for fields in self._stores()) for key in keys}
 
     def restore(self, saved: dict) -> None:
-        for key, (text, xyz, players) in saved.items():
-            for fields, value in ((self.str_fields, text), (self.xyz_fields, xyz), (self.player_fields, players)):
+        for key, values in saved.items():
+            for fields, value in zip(self._stores(), values):
                 if value is None:
                     fields.pop(key, None)
                 else:

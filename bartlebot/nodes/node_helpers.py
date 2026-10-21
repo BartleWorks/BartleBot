@@ -1276,7 +1276,10 @@ async def click_until_gone(
     notice the click worked: the gap is spent polling the predicate, so a close that took
     effect immediately returns immediately instead of after a full interval.
 
-    Returns False if the panel is still open when the timeout expires.
+    Returns False if the panel is still open when the timeout expires. The warning then says
+    how many of the clicks were never sent, because the button was missing or grayed. That
+    separates the two ways a close can fail: none sent means a disabled button, all sent
+    means something on top took them.
     """
     if is_open is None:
 
@@ -1288,10 +1291,13 @@ async def click_until_gone(
 
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
+    attempts = unsent = 0
     while True:
         if await _gone():
             return True
-        await click_by_path(client, path)
+        attempts += 1
+        if not await click_by_path(client, path):
+            unsent += 1
         if loop.time() >= deadline:
             break
         if await poll_until(_gone, timeout=poll_interval, poll_interval=WINDOW_CLOSE_CONFIRM_INTERVAL):
@@ -1299,7 +1305,13 @@ async def click_until_gone(
 
     still_open = await is_open()
     if still_open:
-        logger.warning("Window closed via %s is still open after %.0fs of retries", "/".join(path), timeout)
+        logger.warning(
+            "Window closed via %s is still open after %.0fs of retries (%d of %d clicks not sent: button missing or grayed)",
+            "/".join(path),
+            timeout,
+            unsent,
+            attempts,
+        )
     return not still_open
 
 

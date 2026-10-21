@@ -1043,7 +1043,9 @@ async def _visible_windows(client) -> str:
     """Report which of the windows involved here are currently visible.
 
     Diagnostic only. A close click that lands on a covering window fails silently, so when
-    a close does time out the useful question is "what else was on screen?".
+    a close does time out the useful question is "what else was on screen?". The game's
+    shared message box is included because it is the one window grouping never opens on
+    purpose that can still sit on top of the others.
     """
     checks = {
         "wndCharacter": CHARACTER_PROFILE_PATH,
@@ -1055,7 +1057,7 @@ async def _visible_windows(client) -> str:
             parts.append(f"{label}={await node_helpers.is_visible_by_path(client, path)}")
         except Exception:
             parts.append(f"{label}=<error>")
-    for name in FRIENDS_LIST_WINDOW_NAMES:
+    for name in (*FRIENDS_LIST_WINDOW_NAMES, "MessageBoxModalWindow"):
         try:
             parts.append(f"{name}={await node_helpers.is_named_window_visible(client, name)}")
         except Exception:
@@ -1078,14 +1080,18 @@ async def _close_overlapping_windows(client) -> None:
     because a click swallowed by an overlapping window leaves the next one aimed at the
     wrong place too. Each also checks first, so a window that is not open costs a read and
     no input.
+
+    A profile that will not close is followed by a list of what else was showing, since a
+    click that something on top took is the usual way this fails.
     """
     await close_social_window(client)
     try:
-        await node_helpers.click_until_gone(
+        if not await node_helpers.click_until_gone(
             client,
             CHARACTER_PROFILE_CLOSE_PATH,
             is_open=lambda: node_helpers.is_visible_by_path(client, CHARACTER_PROFILE_PATH),
-        )
+        ):
+            logger.debug("Friend profile popup did not close. Visible windows: %s", await _visible_windows(client))
     except Exception:
         logger.debug("Could not close the friend profile popup", exc_info=True)
 

@@ -92,7 +92,7 @@ from bartlebot.gui.widgets.pickers.scales_picker import ScalesButton
 from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton, is_destination
 from bartlebot.gui.widgets.pills.tag_pill import NeutralChip
 from bartlebot.nodes import zone_navigation
-from bartlebot.nodes.param_schema import ParamField
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, ParamField
 from bartlebot.nodes.registry import (
     NODE_CATEGORIES,
     NODE_PARAM_SCHEMAS,
@@ -1913,6 +1913,12 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if isinstance(widget, _XyzField):
             widget.set_coordinate({"x": x, "y": y, "z": z})
 
+    def set_bool(self, key: str, value: bool) -> None:
+        """Programmatically set a 'bool' field by key."""
+        widget = self._widgets.get(key)
+        if isinstance(widget, QCheckBox):
+            widget.setChecked(value)
+
     def players(self, key: str) -> list[int]:
         """The 1-based players a 'player_list' field names, or [] for no such field."""
         widget = self._widgets.get(key)
@@ -1925,7 +1931,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             widget.set_value(value)
 
     def snapshot(self, keys) -> dict[str, Any]:
-        """What the zone, xyz and player list fields named in *keys* hold now, for ``restore``.
+        """What the zone, xyz, player list and bool fields named in *keys* hold now, for ``restore``.
 
         Record writes as it goes, so a recording cancelled partway puts these back
         rather than leaving half of it behind. An xyz field is kept as its boxes'
@@ -1943,6 +1949,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 saved[key] = widget.text()
             elif isinstance(widget, PlayerListWidget):
                 saved[key] = widget.get_value()
+            elif isinstance(widget, QCheckBox):
+                saved[key] = widget.isChecked()
         return saved
 
     def restore(self, saved: dict[str, Any]) -> None:
@@ -1953,6 +1961,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 widget.set_texts(value)
             elif isinstance(widget, PlayerListWidget):
                 widget.set_value(value)
+            elif isinstance(widget, QCheckBox):
+                widget.setChecked(value)
             else:
                 self.set_str(key, value)
 
@@ -2388,6 +2398,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._get_clients: Callable[[], list] = lambda: []
         # The player Ctrl+R records from; AppController points it at the last-focused game window.
         self._preferred_player: Callable[[], int] = lambda: 0
+        # The open bot's Safety Delay, for Record; BotCanvas resolves it as a run would.
+        self._safety_delay: Callable[[], float] = lambda: SAFETY_DELAY_OPTION.default
         # All states for the source/dest dropdowns; populated by show_transition()
         self._all_states: list = []
         # Other transitions in the config — for duplicate-check in endpoint change
@@ -3508,6 +3520,11 @@ class _ParamPanel(ThemedMixin, QWidget):
         """Pass a callable naming the player index Ctrl+R records from."""
         self._preferred_player = fn
 
+    def set_safety_delay_getter(self, fn: Callable[[], float]) -> None:
+        """Pass a callable returning the open bot's Safety Delay, how long Record watches for dialogue."""
+        self._safety_delay = fn
+        self._call_page.set_safety_delay_getter(fn)
+
     def toggle_record(self) -> None:
         """Ctrl+R: start or cancel recording the shown node.
 
@@ -3548,6 +3565,7 @@ class _ParamPanel(ThemedMixin, QWidget):
                 self._record_btn.set_label,
                 self._try_set_label,
                 player=clients.index(client) + 1 if client in clients else None,
+                safety_delay=self._safety_delay(),
             )
         )
         return True

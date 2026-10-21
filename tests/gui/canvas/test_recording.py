@@ -50,6 +50,13 @@ def _client(zone="TestZone/Area", pos=None):
     return c
 
 
+def _then_false(*first):
+    """A side effect answering *first* in turn and False ever after: a prompt that shows, then
+    stays gone however often ``interact``'s dialogue watch asks."""
+    answers = iter(first)
+    return lambda: next(answers, False)
+
+
 # ---------------------------------------------------------------------------
 # _zone_display (relocated from test_enter_zone.py)
 # ---------------------------------------------------------------------------
@@ -286,13 +293,13 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
 
     client = _client()
     # Enough for any workflow: the prompt shows then goes, a load starts then ends, a mob is near.
-    client.is_in_npc_range.side_effect = [True, False]
+    client.is_in_npc_range.side_effect = _then_false(True)
     client.is_loading.side_effect = [True, False]
     client.find_closest_mob.return_value = _mob("Test-Mob")
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording(node_type, client, form, on_status, on_btn, try_set_label, player=1)
+    await run_recording(node_type, client, form, on_status, on_btn, try_set_label, player=1, safety_delay=0)
 
     fields = NODE_PARAM_SCHEMAS[node_type]
     # A plain-text param is filled only by the workflow that names it; every other is a zone.
@@ -302,6 +309,9 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
     assert set(form.str_fields) <= {f.key for f in fields}
     assert set(form.xyz_fields) == {f.key for f in fields if f.type == "xyz"}
     assert set(form.player_fields) <= {f.key for f in fields if f.type == "player_list"}
+    assert set(form.bool_fields) == {f.key for f in fields if f.type == "bool"} & set(
+        recording._REGISTRY[node_type].keys()
+    )
     assert on_status.call_args_list[-1][0][0].startswith("Done")
 
 
@@ -653,13 +663,15 @@ async def test_interact_happy_path(zero_poll):
         XYZ(0.0, 0.0, 0.0),  # start_pos / reset_xyz
         XYZ(5.0, 5.0, 0.0),  # in-range poll 1
         XYZ(6.0, 6.0, 0.0),  # in-range poll 2 (last)
+        XYZ(6.0, 6.0, 0.0),  # where the prompt went, for the dialogue watch
+        XYZ(6.0, 6.0, 0.0),  # still there
     ]
-    client.is_in_npc_range.side_effect = [False, False, True, True, False]
+    client.is_in_npc_range.side_effect = _then_false(False, False, True, True)
 
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("interact", client, form, on_status, on_btn, try_set_label)
+    await run_recording("interact", client, form, on_status, on_btn, try_set_label, safety_delay=0)
 
     assert form.str_fields["zone"] == "Zone/Name"
     assert form.xyz_fields["reset_xyz"] == (0.0, 0.0, 0.0)
@@ -678,13 +690,15 @@ async def test_interact_xyz_tracks_updates_while_in_range(zero_poll):
         XYZ(1.0, 0.0, 0.0),
         XYZ(2.0, 0.0, 0.0),
         XYZ(3.0, 0.0, 0.0),
+        XYZ(3.0, 0.0, 0.0),  # the dialogue watch's two reads
+        XYZ(3.0, 0.0, 0.0),
     ]
-    client.is_in_npc_range.side_effect = [True, True, True, False]
+    client.is_in_npc_range.side_effect = _then_false(True, True, True)
 
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("interact", client, form, on_status, on_btn, try_set_label)
+    await run_recording("interact", client, form, on_status, on_btn, try_set_label, safety_delay=0)
 
     assert form.xyz_fields["interact_xyz"] == (3.0, 0.0, 0.0)
 
@@ -857,11 +871,11 @@ async def test_enter_zone_interact_exception(zero_poll):
 
 
 def _interact_client():
-    """A client that walks into range for one poll, then out."""
+    """A client in range for one poll, then interacting where it stands: the prompt goes."""
     client = FakeClient()
     client.zone_name.return_value = "Zone/Name"
     client.body.position.return_value = XYZ(1.0, 2.0, 3.0)
-    client.is_in_npc_range.side_effect = [True, False]
+    client.is_in_npc_range.side_effect = _then_false(True)
     return client
 
 
@@ -877,7 +891,9 @@ def prompt_title(monkeypatch):
 async def test_interact_is_named_after_the_prompt_title(zero_poll, prompt_title, node_type):
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording(node_type, _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+    await run_recording(
+        node_type, _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label, safety_delay=0
+    )
 
     try_set_label.assert_called_once_with("Interact with Cyrus Drake")
     assert prompt_title.await_args.args[1] == recording.NPC_RANGE_TITLE_PATH
@@ -887,7 +903,9 @@ async def test_interact_with_no_readable_title_is_named_after_the_zone(zero_poll
     prompt_title.return_value = ""
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("interact", _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+    await run_recording(
+        "interact", _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label, safety_delay=0
+    )
 
     try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
 
@@ -897,7 +915,7 @@ async def test_a_title_read_that_fails_does_not_fail_the_recording(zero_poll, pr
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label)
+    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label, safety_delay=0)
 
     try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
     assert form.xyz_fields["interact_xyz"] == (1.0, 2.0, 3.0)
@@ -908,7 +926,7 @@ async def test_an_empty_player_list_becomes_the_recorded_player(zero_poll, node_
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording(node_type, _interact_client(), form, on_status, on_btn, try_set_label, player=2)
+    await run_recording(node_type, _interact_client(), form, on_status, on_btn, try_set_label, player=2, safety_delay=0)
 
     assert form.player_fields["interact_clients"] == [2]
 
@@ -918,7 +936,9 @@ async def test_a_filled_player_list_is_left_alone(zero_poll):
     form.set_players("interact_clients", [1, 3])
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label, player=2)
+    await run_recording(
+        "interact", _interact_client(), form, on_status, on_btn, try_set_label, player=2, safety_delay=0
+    )
 
     assert form.player_fields["interact_clients"] == [1, 3]
 
@@ -927,9 +947,135 @@ async def test_no_player_named_leaves_the_player_list_empty(zero_poll):
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label)
+    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label, safety_delay=0)
 
     assert "interact_clients" not in form.player_fields
+
+
+# ---------------------------------------------------------------------------
+# interact — whether dialogue followed the interaction
+# ---------------------------------------------------------------------------
+
+
+async def _record_dialogue(client, *, safety_delay: float = 5.0, form=None):
+    """Record *client* on an interact node; the form and the closing status."""
+    form = form if form is not None else FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+    await run_recording("interact", client, form, on_status, on_btn, try_set_label, safety_delay=safety_delay)
+    return form, on_status.call_args_list[-1][0][0]
+
+
+async def test_dialogue_opening_after_the_interaction_records_has_dialogue(zero_poll):
+    client = _interact_client()
+    client.is_in_dialog.side_effect = [False, False, True]
+
+    form, status = await _record_dialogue(client)
+
+    assert form.bool_fields["has_dialogue"] is True
+    assert status == "Done — Name · dialogue"
+
+
+async def test_no_dialogue_within_the_safety_delay_records_no_dialogue(zero_poll):
+    """The dialogue opens, but only after the watch has run out."""
+    client = _interact_client()
+    client.is_in_dialog.side_effect = [False, True]
+
+    form, status = await _record_dialogue(client, safety_delay=0)
+
+    assert form.bool_fields["has_dialogue"] is False
+    assert status == "Done — Name · no dialogue"
+
+
+async def test_a_silent_interaction_records_no_dialogue_once_the_delay_has_passed():
+    client = _interact_client()
+
+    with patch.object(recording, "RECORDING_POLL_INTERVAL", 0.01):
+        form, _ = await _record_dialogue(client, safety_delay=0.05)
+
+    assert form.bool_fields["has_dialogue"] is False
+    assert client.is_in_dialog.await_count > 1, "watched for the whole delay, not once"
+
+
+async def test_dialogue_after_a_new_prompt_belongs_to_the_next_interaction(zero_poll):
+    """The prompt comes back: the player has reached something else, whose dialogue this is."""
+    client = _interact_client()
+    client.is_in_npc_range.side_effect = _then_false(True, False, True)
+    client.is_in_dialog.side_effect = [False, True]
+
+    form, _ = await _record_dialogue(client)
+
+    assert form.bool_fields["has_dialogue"] is False
+    assert client.is_in_dialog.await_count == 1, "the watch ended when the prompt came back"
+
+
+async def test_dialogue_after_the_player_moves_belongs_to_another_interaction(zero_poll):
+    client = _interact_client()
+    client.body.position.side_effect = [
+        XYZ(0.0, 0.0, 0.0),  # reset_xyz
+        XYZ(1.0, 2.0, 3.0),  # in range
+        XYZ(1.0, 2.0, 3.0),  # where the prompt went
+        XYZ(200.0, 2.0, 3.0),  # walked on
+    ]
+    client.is_in_dialog.side_effect = [False, True]
+
+    form, _ = await _record_dialogue(client)
+
+    assert form.bool_fields["has_dialogue"] is False
+    assert client.is_in_dialog.await_count == 1
+
+
+async def test_a_wobble_on_the_spot_is_not_a_move(zero_poll):
+    client = _interact_client()
+    client.body.position.side_effect = [
+        XYZ(0.0, 0.0, 0.0),
+        XYZ(1.0, 2.0, 3.0),
+        XYZ(1.0, 2.0, 3.0),
+        XYZ(2.0, 2.0, 3.0),  # within POSITION_MARGIN
+    ]
+    client.is_in_dialog.side_effect = [False, True]
+
+    form, _ = await _record_dialogue(client)
+
+    assert form.bool_fields["has_dialogue"] is True
+
+
+async def test_a_cancel_while_watching_puts_has_dialogue_back(zero_poll):
+    form = FakeParamForm()
+    form.set_bool("has_dialogue", False)
+    client = _interact_client()
+    watching = asyncio.Event()
+
+    def no_dialogue_yet():
+        watching.set()
+        return False
+
+    client.is_in_dialog.side_effect = no_dialogue_yet
+    task = asyncio.create_task(run_recording("interact", client, form, *_callbacks(), safety_delay=60))
+    await watching.wait()
+    task.cancel()
+    await task
+
+    assert form.bool_fields == {"has_dialogue": False}
+
+
+async def test_interact_menu_records_no_dialogue_flag(zero_poll):
+    """Only interact has Has Dialogue; interact_menu's dialogue is its menu."""
+    form = FakeParamForm()
+
+    await run_recording("interact_menu", _interact_client(), form, *_callbacks())
+
+    assert form.bool_fields == {}
+
+
+def test_a_fresh_interact_node_still_reads_not_recorded():
+    """Has Dialogue always holds a value, so it cannot say Record has run."""
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
+
+    schema = NODE_PARAM_SCHEMAS["interact"]
+    hint = recording.recording_hint("interact", schema, {"has_dialogue": True})
+
+    assert hint.startswith("Not recorded. Record fills ")
+    assert "Has Dialogue" in hint
 
 
 # ---------------------------------------------------------------------------

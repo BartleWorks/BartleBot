@@ -669,6 +669,35 @@ async def test_click_until_gone_returns_false_when_it_never_closes():
     assert window.clicks > 0
 
 
+@pytest.mark.parametrize("sent", [True, False], ids=["clicks-sent", "button-grayed"])
+async def test_click_until_gone_says_how_many_clicks_were_never_sent(sent, caplog):
+    """A grayed button and a covered one time out alike; only the count tells them apart."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    clicks = {"count": 0}
+
+    async def click(_client, _path):
+        clicks["count"] += 1
+        return sent
+
+    async def window_is_open():
+        return True
+
+    with (
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=click)),
+        caplog.at_level(logging.WARNING, logger=nh_mod.__name__),
+    ):
+        result = await nh_mod.click_until_gone(
+            None, ["Some", "Close"], is_open=window_is_open, timeout=0.05, poll_interval=0.01
+        )
+
+    assert result is False
+    unsent = 0 if sent else clicks["count"]
+    assert f"({unsent} of {clicks['count']} clicks not sent" in caplog.text
+
+
 async def test_click_until_gone_returns_as_soon_as_the_window_goes():
     """poll_interval bounds the next CLICK, not the next look.
 

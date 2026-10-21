@@ -184,10 +184,9 @@ class FakeDeckBuilder:
             mouse_handler=_FakeMouse(self),
             client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=None)),
         )
-        # Real DeckBuilder constructs this False and open_deck_page() never sets
-        # it; whoever opens the page is responsible for saying so. Direct
-        # write_deck tests stand in for a properly-opened page, so True here â€”
-        # _CtxDeckBuilder resets it to False to test that apply_deck does its part.
+        # Real DeckBuilder constructs this False and open_deck_page() sets it, as
+        # it clicks the Deck tab. Direct write_deck tests stand in for a page
+        # opened that way, so True here.
         self._on_deck_page = True
 
     @property
@@ -783,9 +782,8 @@ class _CtxDeckBuilder(FakeDeckBuilder):
         self.entered = True
         if self._page_state is not None:
             self._page_state.is_open = True
-        # As the real open_deck_page() leaves it: on the deck page in fact, but
-        # not in the flag. apply_deck must set it before write_deck runs.
-        self._on_deck_page = False
+        # As the real open_deck_page() leaves it: on the deck page, and saying so
+        self._on_deck_page = True
         return self
 
     async def __aexit__(self, *_exc):
@@ -826,16 +824,44 @@ async def test_apply_deck_opens_the_builder_and_writes(fake_deck_builder):
     assert db.added == {"Tempest": 4}
 
 
-async def test_apply_deck_marks_the_page_before_writing(fake_deck_builder):
-    """open_deck_page() clicks the Deck tab but leaves _on_deck_page False, so
-    apply_deck must set it. Without that, write_deck's view_deck_cards() call
-    switches to the treasure card view and corrupts the spell list â€” which is
-    exactly what dropping the redundant refresh_deck_page() exposed."""
-    await apply_deck(FakeClient(), DeckData(normal={"Tempest": 1}))
+async def test_wizwalkers_deck_page_open_stays_on_the_deck_view(monkeypatch):
+    """Guards the pinned WizWalker, not deck_io: open_deck_page() clicked the Deck tab but
+    left _on_deck_page False until 8783db0, so write_deck's view_deck_cards() switched to
+    the treasure card view and corrupted the spell list. apply_deck set the flag itself
+    until then; now it relies on this."""
+    from wizwalker.extensions.scripting import deck_builder
 
-    db = fake_deck_builder.instances[0]
-    assert db._on_deck_page
-    assert "view_deck_cards" in db.calls
+    clicked = []
+
+    class _Window:
+        def __init__(self, name):
+            self.name = name
+
+        async def is_visible(self):
+            return False
+
+    async def _window(_parent, name, retries=4):
+        return _Window(name)
+
+    class _Mouse:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return False
+
+        async def click_window(self, window, **_kwargs):
+            clicked.append(window.name)
+
+    monkeypatch.setattr(deck_builder, "_maybe_get_named_window", _window)
+    db = deck_builder.DeckBuilder(SimpleNamespace(root_window=object(), mouse_handler=_Mouse()))
+    db.switch_card_type_window = AsyncMock()
+
+    await db.open_deck_page()
+    await db.view_deck_cards()
+
+    assert clicked == ["Deck"]
+    db.switch_card_type_window.assert_not_awaited()
 
 
 async def test_apply_deck_never_uses_set_deck_preset(fake_deck_builder):

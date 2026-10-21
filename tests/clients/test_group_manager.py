@@ -1391,6 +1391,25 @@ async def test_profile_close_is_attempted_only_once_the_social_window_is_gone(ui
     assert order.index("social") < order.index("profile"), f"profile closed before the social window: {order}"
 
 
+async def test_a_profile_that_will_not_close_is_followed_by_what_was_showing(ui, caplog):
+    """The close's own warning cannot say what took its clicks; this line is what can."""
+    leader = ui.make_client("Alice Ashblade")
+    ui.profile_open[leader] = True
+    ui.swallow_closes = 10**6
+
+    async def quick_click_until_gone(client, path, is_open=None, **_):
+        return await _REAL_CLICK_UNTIL_GONE(client, path, is_open=is_open, timeout=0.05, poll_interval=0.0)
+
+    with caplog.at_level(logging.DEBUG, logger=gm.logger.name), ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(nh, "click_until_gone", new=AsyncMock(side_effect=quick_click_until_gone)))
+        await gm._close_overlapping_windows(leader)
+
+    assert "Friend profile popup did not close. Visible windows: wndCharacter=True" in caplog.text
+    assert "MessageBoxModalWindow=" in caplog.text
+
+
 async def test_friends_list_is_closed_once_for_the_whole_regroup(ui):
     """It is reused between invites, so closing per-invite would force a reopen each time."""
     leader = ui.make_client("Alice Ashblade")

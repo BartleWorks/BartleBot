@@ -11,8 +11,8 @@ from unittest.mock import patch
 import pytest
 
 from bartlebot.nodes.combat_runner import (
+    _combat_provider,
     _lark_parser,
-    _str_provider_class,
     dsl_check,
     dsl_error,
     dsl_warning_text,
@@ -87,8 +87,8 @@ def test_validation_does_not_mutate_the_input():
 
 
 def test_lark_grammar_is_compiled_only_once():
-    """Compiling the grammar costs ~77 ms and _run_combat makes one provider per client
-    per fight, so it must be compiled once and shared."""
+    """Compiling the grammar costs ~77 ms and every strategy card checks its DSL, so it
+    must be compiled once and shared."""
     import lark
 
     real_lark = lark.Lark
@@ -127,12 +127,12 @@ def test_repeated_validation_of_one_dsl_parses_it_once():
     dsl = "any<blade>[sharp]@ally(2)"
     dsl_check.cache_clear()
     try:
-        with patch("bartlebot.nodes.combat_runner._str_provider_class", wraps=_str_provider_class) as provider_class:
+        with patch("bartlebot.nodes.combat_runner._lark_parser", wraps=_lark_parser) as parser:
             for _ in range(10):
                 assert validate_dsl(dsl) is None
                 assert dsl_error(dsl) is None
 
-        assert provider_class.call_count == 1
+        assert parser.call_count == 1
     finally:
         dsl_check.cache_clear()
 
@@ -259,19 +259,23 @@ def test_only_a_spell_type_can_be_negated(dsl):
     assert validate_dsl(dsl).startswith("Only a spell type can be negated")
 
 
-def test_provider_class_is_cached():
-    first = _str_provider_class()
-    second = _str_provider_class()
+def test_a_fights_provider_parses_without_a_client():
+    """The provider _run_combat builds needs no game running, nor a file."""
+    provider = _combat_provider("any<blade>[sharp]@ally(2)", cast_time=0.3)
 
-    assert first is second
-
-
-def test_provider_parses_without_a_client():
-    """validate_dsl must be callable with no game running."""
-    provider = _str_provider_class()("any<blade>[sharp]@ally(2)")
-
-    assert provider.config is not None
+    assert provider.config.infinite_rounds
     assert provider.filename == "<inline>"
+    assert provider.cast_time == 0.3
+
+
+def test_validation_refuses_what_a_fights_provider_would():
+    """validate_dsl transforms the tree rather than building the provider, so the two
+    must refuse the same DSLs: one it passed would raise mid-fight."""
+    dsl = "?(boss.heath > 0) pass"
+
+    assert validate_dsl(dsl) is not None
+    with pytest.raises(Exception, match="heath"):
+        _combat_provider(dsl)
 
 
 # ---------------------------------------------------------------------------
@@ -316,7 +320,7 @@ def test_a_warning_covers_the_name_where_it_is_written():
 
 
 def _rounds(dsl: str) -> list[list[str]]:
-    config = _str_provider_class()(dsl).config
+    config = _combat_provider(dsl).config
     lines = [*config.specific_rounds.values(), *config.infinite_rounds]  # {n} lines, then the rest
     return [[getattr(p.move.card, "name", p.move.card) for p in line.priorities] for line in lines]
 

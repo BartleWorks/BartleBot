@@ -189,13 +189,23 @@ def params_summary(schema: Iterable[Any], params: Mapping[str, Any]) -> list[Sum
     return parts or [SummaryPart("Nothing set")]
 
 
+def unrecorded(schema: Iterable[Any], params: Mapping[str, Any], recorded_keys: Iterable[str]) -> bool:
+    """Whether nothing Record fills is set yet.
+
+    Asked of the fields that can be blank: a bool Record fills, like ``interact``'s Has
+    Dialogue, always holds a value, so it cannot say whether Record has run.
+    """
+    keys = set(recorded_keys)
+    blankable = [f for f in schema if f.key in keys and f.type != "bool"]
+    return bool(blankable) and all(field_empty(f, params) for f in blankable)
+
+
 def recording_summary(
     schema: Iterable[Any], params: Mapping[str, Any], recorded_keys: Iterable[str]
 ) -> list[SummaryPart]:
     """A recordable node's folded line: "Not recorded" while nothing Record fills is set."""
-    keys = set(recorded_keys)
     fields = list(schema)
-    if keys and all(field_empty(f, params) for f in fields if f.key in keys):
+    if unrecorded(fields, params, recorded_keys):
         return [SummaryPart("Not recorded")]
     return params_summary(fields, params)
 
