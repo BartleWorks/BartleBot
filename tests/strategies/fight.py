@@ -39,7 +39,7 @@ from wizwalker.memory import EffectTarget, SpellEffects
 from wizwalker.memory.memory_objects.enums import HangingDisposition
 
 from bartlebot.combat.strategy_store import load_player_strategy
-from bartlebot.nodes.combat_runner import _str_provider_class
+from bartlebot.nodes.combat_runner import _combat_provider
 from bartlebot.paths import project_root
 from tests.wizsprinter.fakes import Card, Effect, Hanging, Member, fake_combat
 
@@ -234,7 +234,7 @@ class Turn:
 @lru_cache(maxsize=64)
 def _provider(dsl: str):
     """The DSL parsed the way a fight parses it, once: a parse costs more than a round."""
-    return _str_provider_class()(dsl, cast_time=0)
+    return _combat_provider(dsl, cast_time=0)
 
 
 @cache
