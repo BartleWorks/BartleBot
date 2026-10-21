@@ -99,7 +99,7 @@ requires-dist = [
     { name = "velopack", specifier = "==1.2.161" },
     { name = "wakepy", specifier = ">=1.0" },
     { name = "wizsprinter", git = "https://github.com/BartleWorks/wizsprinter.git?rev=e82212b59d1e34ce0ede8ba50ccb2770b6cba183" },
-    { name = "wizwalker", git = "https://github.com/BartleWorks/wizwalker.git?rev=4af3353b83883c2441d42a67260c71d4b8e4d81f" },
+    { name = "wizwalker", git = "https://github.com/BartleWorks/wizwalker.git?rev=79003692eaf949e0f5053566edbac4d17f0f25e4" },
 ]
 
 [package.metadata.requires-dev]
@@ -1511,7 +1511,7 @@ dependencies = [
 [[package]]
 name = "wizwalker"
 version = "1.8.2"
-source = { git = "https://github.com/BartleWorks/wizwalker.git?rev=4af3353b83883c2441d42a67260c71d4b8e4d81f#4af3353b83883c2441d42a67260c71d4b8e4d81f" }
+source = { git = "https://github.com/BartleWorks/wizwalker.git?rev=79003692eaf949e0f5053566edbac4d17f0f25e4#79003692eaf949e0f5053566edbac4d17f0f25e4" }
 dependencies = [
     { name = "aiofiles" },
     { name = "appdirs" },

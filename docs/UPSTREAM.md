@@ -121,8 +121,9 @@ everyone including CI. Tag it *before* bumping the pin:
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
 ```
 
-Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `4af3353`
-(`bartlebot-pin-20261018`, a review's fixes: polls that never yielded the event loop, the
+Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `7900369`
+(`bartlebot-pin-20261021`, which waits for the friend-teleport confirmation popup by polling
+its caption instead of a fixed second, on top of `4af3353`, `bartlebot-pin-20261018`, a review's fixes: polls that never yielded the event loop, the
 mouseless hook's user32 writes and its 200 ms re-parse, a dead client's leaked process
 handle, unbounded reads and broken string writes, and fewer reads per UI search, on top of
 `override_cache_folder` for #234) and wizsprinter `e82212b`
