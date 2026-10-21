@@ -79,6 +79,13 @@ def test_a_recordable_node_reads_not_recorded_until_something_record_fills_is_se
     assert summary_text(pc.recording_summary([ZONE, DEST], {"from_zone": "Aquila/AQ_Z00_Hub"}, keys)) == "AQ_Z00_Hub"
 
 
+def test_a_bool_record_fills_does_not_count_as_recorded():
+    """interact's Has Dialogue is filled by Record and always holds a value."""
+    keys = ["from_zone", "offers_team_up"]
+    assert pc.unrecorded([ZONE, TEAM], {"offers_team_up": True}, keys)
+    assert not pc.unrecorded([ZONE, TEAM], {"from_zone": "Aquila/AQ_Z00_Hub", "offers_team_up": True}, keys)
+
+
 def test_notes_summarize_as_their_first_line():
     assert summary_text(pc.notes_summary("\n  Team-Up stays off here.\nSecond line")) == "Team-Up stays off here."
     assert summary_text(pc.notes_summary(None)) == pc.NO_NOTES

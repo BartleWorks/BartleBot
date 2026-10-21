@@ -53,6 +53,7 @@ from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
 from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.pickers.player_picker import pick_player
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.options import param_cards
 
@@ -116,6 +117,7 @@ class CallNodePage(QWidget):
         self._initial_values: dict[str | None, dict] = {}
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zones: Callable[[], list[str]] = lambda: []
+        self._safety_delay: Callable[[], float] = lambda: SAFETY_DELAY_OPTION.default
         self._record_status: dict[str, QLabel] = {}
         self._record_hint: dict[str, Callable[[], str]] = {}
         self._recorded_nodes: dict[str, str] = {}
@@ -190,6 +192,9 @@ class CallNodePage(QWidget):
 
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         self._get_zones = fn
+
+    def set_safety_delay_getter(self, fn: Callable[[], float]) -> None:
+        self._safety_delay = fn
 
     def set_subgraph_library(self, library) -> None:
         """Where an input linked into a nested instance finds that instance's definition."""
@@ -562,6 +567,7 @@ class CallNodePage(QWidget):
                 button.set_label,
                 lambda _label: None,  # the member's label belongs to the definition
                 player=index + 1,
+                safety_delay=self._safety_delay(),
             )
         )
 

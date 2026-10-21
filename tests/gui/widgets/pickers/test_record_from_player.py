@@ -122,7 +122,7 @@ def panel(qapp, monkeypatch, players):
 
     started: list[object] = []
 
-    async def _fake_run(node_type, client, *_args, player=None):
+    async def _fake_run(node_type, client, *_args, player=None, safety_delay=None):
         started.append(client)
         players.append(player)
 

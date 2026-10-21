@@ -20,7 +20,10 @@ def interact_panel(qapp, monkeypatch):
     canvases = []
 
     def _make(label: str = "", run=None):
-        async def _fake_run(node_type, client, param_form, on_status, on_btn, try_set_label, *, player=None):
+        async def _fake_run(
+            node_type, client, param_form, on_status, on_btn, try_set_label, *, player=None, safety_delay=None
+        ):
+            run.safety_delay = safety_delay
             await run(param_form, try_set_label, player)
 
         monkeypatch.setattr(recording, "run_recording", _fake_run)
@@ -103,6 +106,44 @@ async def test_the_player_list_is_written_and_read_through_the_form(interact_pan
 
     assert canvas.param_panel.param_form.players("interact_clients") == [2]
     assert canvas.config.states[0].params["interact_clients"] == [2], "saved to the node, not just shown"
+
+
+async def test_has_dialogue_is_written_through_the_form(interact_panel):
+    async def _run(form, _try_set_label, _player):
+        form.set_bool("has_dialogue", False)
+
+    canvas = interact_panel("", _run)
+
+    canvas.param_panel.start_record("p1")
+    await _settle()
+
+    assert canvas.config.states[0].params["has_dialogue"] is False, "saved to the node, not just shown"
+
+
+async def test_a_snapshot_puts_has_dialogue_back(interact_panel):
+    canvas = interact_panel("", _labels_it(""))
+    form = canvas.param_panel.param_form
+    form.set_bool("has_dialogue", True)
+    saved = form.snapshot(["has_dialogue"])
+
+    form.set_bool("has_dialogue", False)
+    form.restore(saved)
+
+    assert form.get_params()["has_dialogue"] is True
+
+
+async def test_record_watches_for_dialogue_for_the_bots_safety_delay(interact_panel):
+    """Resolved as a run would: here the app setting answers, since the bot sets none."""
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().default_safety_delay = 6.5
+    run = _labels_it("")
+    canvas = interact_panel("", run)
+
+    canvas.param_panel.start_record("p1")
+    await _settle()
+
+    assert run.safety_delay == 6.5
 
 
 async def test_a_snapshot_puts_the_player_list_back(interact_panel):

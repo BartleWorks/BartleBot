@@ -128,8 +128,9 @@ from bartlebot.gui.widgets.pickers.tag_picker import (
 from bartlebot.gui.widgets.pills.source_pill import source_pill
 from bartlebot.gui.widgets.pills.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
-from bartlebot.nodes.param_schema import narrowest_type
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
+from bartlebot.options import option_values
 from bartlebot.options.bot_options import compose_options, orphaned_flag_options
 from bartlebot.settings_manager import SettingsManager
 
@@ -1721,6 +1722,9 @@ class BotCanvas(QWidget):
         # An unset Scales param means the open bot's world's, so its picker says which that is.
         self._param_panel.set_default_scales_getter(lambda: scales.default_for(self._config))
         self._param_panel.set_variables_getter(lambda: list(self._config.variables) if self._config else [])
+        self._param_panel.set_safety_delay_getter(
+            lambda: option_values.option_value(self._config, "Safety Delay", SAFETY_DELAY_OPTION.default)
+        )
 
         # ── Buttons ───────────────────────────────────────────────────
         self._run_pause_btn = _icon_btn("play", "Run bot")
