@@ -1,0 +1,1265 @@
+{
+  "id": "b130789a-45b2-47f4-aa1f-107dcd05d4e0",
+  "name": "Jacques the Scratcher",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Adroit Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Alluring Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Altar with Candles",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Black Mantle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Blade of Frost",
+      "category": "Athames"
+    },
+    {
+      "name": "Blizzard Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bomber Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Boots of the Nucleus",
+      "category": "Boots"
+    },
+    {
+      "name": "Brisk Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Inventor",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Kraken",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Unicorn",
+      "category": "Hats"
+    },
+    {
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cat Burglar's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Chipped Damage Amethyst +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Damage Peridot +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Damage Ruby +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Amethyst +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Citrine +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Jade +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Onyx +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Ruby +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Sapphire +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Mana Opal +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Mana Opal +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped PIP Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Path Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cloak",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Cloak of Clarity",
+      "category": "Robes"
+    },
+    {
+      "name": "Cloak of Fascination",
+      "category": "Robes"
+    },
+    {
+      "name": "Comedian's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cracked Damage Opal +3",
+      "category": "Jewels"
+    },
+    {
+      "name": "Crossbone Gravestone",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cyclops",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Death-Proof Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deer Knight Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dependable Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dexterous Vest",
+      "category": "Robes"
+    },
+    {
+      "name": "Dirt Post Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Distinguished Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Distract Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Doctor's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Dryad",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Eager Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Enigmatic Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Spellements"
+    },
+    {
+      "name": "Evil Snowman (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Exacting Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Exclusive Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Exclusive Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Famous Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Fancy Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Feline's Fiery Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Feline's Somber Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Fire Cat",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire Cat (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire Elf (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire-Away Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Amethyst +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Citrine +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Jade +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Onyx +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Peridot +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Ruby +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Sapphire +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Onyx +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Opal +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Opal +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Healing Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mending Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Footwraps of Anguish",
+      "category": "Boots"
+    },
+    {
+      "name": "Forceful Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Frog",
+      "category": "Pets"
+    },
+    {
+      "name": "Frost Beetle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Frost Beetle (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Frozen Canine Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Garment of the Supreme",
+      "category": "Robes"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Giant",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Grandiose Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Grumpy Snowman",
+      "category": "Pets"
+    },
+    {
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Healer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Heck Hound",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "High Quality Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ice-Away Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Shot Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Immolate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Informant's Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Jacques' Artificial Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Jacques' Boots of Courtesy",
+      "category": "Boots"
+    },
+    {
+      "name": "Jacques' Hat of Winter",
+      "category": "Hats"
+    },
+    {
+      "name": "Jacques' Helm of the Mender",
+      "category": "Hats"
+    },
+    {
+      "name": "Jacques' Intolerant Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Jacques' Restorative Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Jacques' Robe of Numbness",
+      "category": "Robes"
+    },
+    {
+      "name": "Jacques' Saw",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Jacques' Soothing Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Jacques's Band of Tragedy",
+      "category": "Rings"
+    },
+    {
+      "name": "Jacques's Polished Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Kraken",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Large Stone Fountain",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lightning Bats (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mana Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Marleybone Theme 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mechanical Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Medium Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Medium Magenta Rug",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Monstrous",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Beetle (Storm)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mute Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth-Away Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth-Boon Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Noteworthy Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Opportunists' Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Ornate Wall Clock",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pacify",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Perplex Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Precious Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Professor Balestrom",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "Quick-Witted Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Recovery Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Redskin Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ring of Effect",
+      "category": "Rings"
+    },
+    {
+      "name": "Robe of Excellence",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Extinction",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Ideals",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Bubble",
+      "category": "Robes"
+    },
+    {
+      "name": "Sandals of Delusion",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of Paramount",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Satyr",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Satyr Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Savvy Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Scarab",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scarab (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scratcher's Black Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Scratcher's Black Mantle",
+      "category": "Robes"
+    },
+    {
+      "name": "Scratcher's Confined Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Scratcher's Elegant Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Scratcher's Invigorated Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Scratcher's Ring of Chivalry",
+      "category": "Rings"
+    },
+    {
+      "name": "Shoes of Sentiments",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Chimera",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Devoted",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Windless",
+      "category": "Boots"
+    },
+    {
+      "name": "Short Metal Fence",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Shortblade of Flowers",
+      "category": "Athames"
+    },
+    {
+      "name": "Silence Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Skeletal Pirate",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Slippers of Gusto",
+      "category": "Boots"
+    },
+    {
+      "name": "Slippers of the Worrier",
+      "category": "Boots"
+    },
+    {
+      "name": "Slowpoke Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sniper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snow Serpent (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spectral Blast Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spirit Armor",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Square Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stable Salacot",
+      "category": "Hats"
+    },
+    {
+      "name": "Stack of 4 Books",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Staff of Rejuvenation",
+      "category": "Wands"
+    },
+    {
+      "name": "Stein",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Stinky Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm-Away Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Boon Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Giver Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stumble Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sturdy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stylish Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sunbird (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Thinker's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Thinker's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Thunder Snake",
+      "category": "Spellements"
+    },
+    {
+      "name": "Thunder Snake (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Time of Legend Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tin Can",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Vampire",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Vestment of Expertise",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Fright",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Stability",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Beacon",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Enigma",
+      "category": "Robes"
+    },
+    {
+      "name": "Visor of Invention",
+      "category": "Hats"
+    },
+    {
+      "name": "Watchman's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Watchman's Uniform",
+      "category": "Robes"
+    },
+    {
+      "name": "Wheat Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Windstorm Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Winter Canine Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Wyldfire Ruby",
+      "category": "Jewels"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Jacques' Hat of Winter",
+        "=Jacques' Restorative Robe",
+        "=Jacques' Artificial Sandals",
+        "=Windstorm Amethyst",
+        "=Wyldfire Ruby"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Knight's Tower",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_ScotlandYard/MB_KnightsCourt",
+        "dungeon_zone": "Marleybone/MB_ScotlandYard/Interiors/MB_KnightsCourt_T3",
+        "dungeon_name": "Knight's Tower",
+        "sigil_xyz": {
+          "x": 162.81,
+          "y": 7176.72,
+          "z": -480.0
+        },
+        "reset_xyz": {
+          "x": 428.92,
+          "y": 6354.01,
+          "z": -479.93
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat Jacques the Scratcher",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Cat-Jaques-MBBoss-L46",
+        "wiki_page": "Creature:Jacques the Scratcher (Rank 6)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_ScotlandYard/Interiors/MB_KnightsCourt_T3",
+        "to_zone": "Marleybone/MB_ScotlandYard/MB_KnightsCourt",
+        "xyz": {
+          "x": 5.48,
+          "y": -1249.06,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 0.84,
+          "y": -1060.11,
+          "z": 0.0
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "Marleybone/MB_ScotlandYard/MB_KnightsCourt"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Marleybone/MB_ScotlandYard/MB_KnightsCourt"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  },
+  "history": [
+    "40c0d251c2b632bad4f2fc7207b0b28d7853824987b73ea4e1d312de60667b99",
+    "73ccf194ce30f5b45b5bc1e87a80373be50cfd3dab10555029b88bf3328feed1"
+  ]
+}

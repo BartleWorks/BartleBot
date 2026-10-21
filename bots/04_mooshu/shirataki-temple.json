@@ -1,0 +1,2762 @@
+{
+  "id": "ecb254e4-b39f-4b56-aa2d-8c9e58f674b4",
+  "name": "Shirataki Temple",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Ape Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Athame of Attention",
+      "category": "Athames"
+    },
+    {
+      "name": "Balefrost",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Band of Sandcastles",
+      "category": "Rings"
+    },
+    {
+      "name": "Band of the Primitives",
+      "category": "Rings"
+    },
+    {
+      "name": "Banshee",
+      "category": "Spellements"
+    },
+    {
+      "name": "Black Mantle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Amethyst +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Jade +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Onyx +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Peridot +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Ruby +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Sapphire +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +36",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blight Hound",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blood Bat",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boots of Commotion",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of the Verse",
+      "category": "Boots"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bubbling Cauldron",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cap of Consideration",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of Exertion",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of Song",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Verse",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of Tribulations",
+      "category": "Hats"
+    },
+    {
+      "name": "Cloak",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Cloak of Charity",
+      "category": "Robes"
+    },
+    {
+      "name": "Cloak of Pictures",
+      "category": "Robes"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Comprehensive Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Concordant Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cowl of Cooperation",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of Discord",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of Rhyming",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of Sympathy",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of Tact",
+      "category": "Hats"
+    },
+    {
+      "name": "Crane Tablet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Crunch Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cyclops",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cyclops Minion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dagger of Detachment",
+      "category": "Athames"
+    },
+    {
+      "name": "Dagger of Soul-Searching",
+      "category": "Athames"
+    },
+    {
+      "name": "Dark Sprite",
+      "category": "Spellements"
+    },
+    {
+      "name": "Darkwind",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Decorative Stone Pagoda",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Dirk of Sandcastles",
+      "category": "Athames"
+    },
+    {
+      "name": "Dirt Pile",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Discerning Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Diseased Mushrooms",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Donate Power",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dreamer's Band of Reality",
+      "category": "Rings"
+    },
+    {
+      "name": "Druidic Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Earth Walker",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ecstatic Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Engrossed Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Enlivened Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Entranced Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Euphonic Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Cat",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Spellements"
+    },
+    {
+      "name": "Flawed Accurate Amethyst +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Onyx +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Sapphire +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mending Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed PIP Opal +3%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Footwraps of Charity",
+      "category": "Boots"
+    },
+    {
+      "name": "Footwraps of Generations",
+      "category": "Boots"
+    },
+    {
+      "name": "Footwraps of Pictures",
+      "category": "Boots"
+    },
+    {
+      "name": "Footwraps of Predicament",
+      "category": "Boots"
+    },
+    {
+      "name": "Footwraps of Sandcastles",
+      "category": "Boots"
+    },
+    {
+      "name": "Forceful Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Friendly Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Frost Beetle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gallant Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Garment of Sandcastles",
+      "category": "Robes"
+    },
+    {
+      "name": "Garment of Yodels",
+      "category": "Robes"
+    },
+    {
+      "name": "Garments of the Opus",
+      "category": "Robes"
+    },
+    {
+      "name": "Garments of Unrest",
+      "category": "Robes"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gogi Berry Stained Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Golden Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Squash",
+      "category": "Snacks"
+    },
+    {
+      "name": "Green Samoorai Armor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Haskarr's Barbarish Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Hat of Niceties",
+      "category": "Hats"
+    },
+    {
+      "name": "Hat of Nuisance",
+      "category": "Hats"
+    },
+    {
+      "name": "Hat of the Lotus",
+      "category": "Hats"
+    },
+    {
+      "name": "Hat of the Triad",
+      "category": "Hats"
+    },
+    {
+      "name": "Headwraps of Much Ado",
+      "category": "Hats"
+    },
+    {
+      "name": "Healer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Heedful Headwraps",
+      "category": "Hats"
+    },
+    {
+      "name": "Hooked Lantern",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Humongofrog Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ideyoshi's Adroit Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Ideyoshi's Analytical Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Ideyoshi's Contemplative Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Ideyoshi's Deck of Purpose",
+      "category": "Decks"
+    },
+    {
+      "name": "Ideyoshi's Idealistic Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Ideyoshi's Resonant Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Ideyoshi's Zealous Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Immersive Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Immolate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Imp",
+      "category": "Spellements"
+    },
+    {
+      "name": "Imperial Shrine",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Indulgent Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Indulgent Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Industrial Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Industrial Uniform",
+      "category": "Robes"
+    },
+    {
+      "name": "Intrepid Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Kagemoosha's Citrine Blade",
+      "category": "Wands"
+    },
+    {
+      "name": "Knife of Preoccupation",
+      "category": "Athames"
+    },
+    {
+      "name": "Kraken",
+      "category": "Spellements"
+    },
+    {
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Large Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leprechaun",
+      "category": "Spellements"
+    },
+    {
+      "name": "Life Scarab",
+      "category": "Pets"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lyrical Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Lyrical Garments",
+      "category": "Robes"
+    },
+    {
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Mask of the Chipper",
+      "category": "Hats"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Mist Wood",
+      "category": "Reagents"
+    },
+    {
+      "name": "Monk Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Monstrous",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "MooShu Battle Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "MooShu Mystical Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "MooShu Plague Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "MooShu War Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Move It! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth-Away Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nunu's Mask of the Twisted",
+      "category": "Hats"
+    },
+    {
+      "name": "Nunu's Twisted Uniform",
+      "category": "Robes"
+    },
+    {
+      "name": "Pearl Orchid",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Phoenix",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pink Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Pip O'Plenty Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plague Oni's Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Plague Oni's Sapphire Blade",
+      "category": "Wands"
+    },
+    {
+      "name": "Plague Oni's Vacant Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Plagued Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Plagued Collar of the Beast",
+      "category": "Amulets"
+    },
+    {
+      "name": "Plagued Cowl of Aspirations",
+      "category": "Hats"
+    },
+    {
+      "name": "Problematic Headwraps",
+      "category": "Hats"
+    },
+    {
+      "name": "Problematic Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Proficient Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Profound Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Quick-Witted Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Ring of Regard",
+      "category": "Rings"
+    },
+    {
+      "name": "River Spirit's Deck of Senses",
+      "category": "Decks"
+    },
+    {
+      "name": "River Spirit's Diligent Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "River Spirit's Dreaming Band",
+      "category": "Rings"
+    },
+    {
+      "name": "River Spirit's Drifting Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "River Spirit's Lively Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Robe of Song",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Lithe",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Verse",
+      "category": "Robes"
+    },
+    {
+      "name": "Samoorai",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sanctuary",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sandals of Nuisance",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of Soul-Searching",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of the Determined",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of the Universe",
+      "category": "Boots"
+    },
+    {
+      "name": "Satyr",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scarab",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Seraph",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Seraph Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shoes of Deliberation",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of Dreaming",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of Hinderance",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of Preoccupation",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of Scruples",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of Woe",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoji's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Shoji's Deck of Aspirations",
+      "category": "Decks"
+    },
+    {
+      "name": "Shoji's Precautionary Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Shoji's Ring of Pondering",
+      "category": "Rings"
+    },
+    {
+      "name": "Shoji's Shoes of Pondering",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoji's Shroud of Disorder",
+      "category": "Hats"
+    },
+    {
+      "name": "Shortsword of Scrutiny",
+      "category": "Athames"
+    },
+    {
+      "name": "Shroud of Chants",
+      "category": "Hats"
+    },
+    {
+      "name": "Shroud of Music",
+      "category": "Hats"
+    },
+    {
+      "name": "Shroud of the Opus",
+      "category": "Hats"
+    },
+    {
+      "name": "Silence Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Silver Lantern",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Slippers of the Lotus",
+      "category": "Boots"
+    },
+    {
+      "name": "Slippers of the Opus",
+      "category": "Boots"
+    },
+    {
+      "name": "Solar Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Spectral Blast",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Square Root",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stone Case",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Stone Dog Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Storm Serpent",
+      "category": "Pets"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stormbat",
+      "category": "Pets"
+    },
+    {
+      "name": "Stormzilla",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stressed Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tall Boulder",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tan Samoorai Armor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tea Plant",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Thunder Snake",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tormented Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tough Troll",
+      "category": "Pets"
+    },
+    {
+      "name": "Troll",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tunic of Chimes",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of Impression",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of the Whim",
+      "category": "Robes"
+    },
+    {
+      "name": "Ultra Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vampire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Vestment of Apprehension",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Arias",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Hymns",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Niceties",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Eager",
+      "category": "Robes"
+    },
+    {
+      "name": "Vexing Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vigilant Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Wavebringer's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Wood Saw",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wyldfire",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Zippy Tunic",
+      "category": "Robes"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Dungeon"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Plague Oni's Footwraps",
+        "=Plague Oni's Sapphire Blade",
+        "=Plague Oni's Vacant Robe"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.999938308534,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999938308534,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+        "xyz": {
+          "x": -152.44,
+          "y": 15238.18,
+          "z": 702.07
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Shirataki Temple",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+        "dungeon_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "dungeon_name": "Shirataki Temple",
+        "sigil_xyz": {
+          "x": -411.38,
+          "y": 15907.65,
+          "z": 705.86
+        },
+        "reset_xyz": {
+          "x": -152.0,
+          "y": 15236.0,
+          "z": 702.07
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 22440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Hub"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Shoji's Dojo",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T5",
+        "xyz": {
+          "x": 11006.47,
+          "y": -15177.73,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": 11008.9,
+          "y": -14622.74,
+          "z": -0.01
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Shoji",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Samoorai-Ronin-1-MSBoss-L43",
+        "wiki_page": "Creature:Shoji",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Exit Shoji's Dojo",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T5",
+        "to_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": -3.88,
+          "y": -1839.78,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 20.53,
+          "y": -1510.07,
+          "z": 0.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "interact_xyz": {
+          "x": 3555.93,
+          "y": 2976.45,
+          "z": 0.01
+        },
+        "reset_xyz": {
+          "x": 3747.37,
+          "y": 2897.7,
+          "z": 0.01
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Interact with Brazier",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "interact_xyz": {
+          "x": 15449.44,
+          "y": 7056.44,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 15008.58,
+          "y": 7043.71,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "interact",
+      "label": "Interact with Din Ho",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "interact_xyz": {
+          "x": 42265.42,
+          "y": 3390.29,
+          "z": 393.87
+        },
+        "reset_xyz": {
+          "x": 42623.52,
+          "y": 3427.12,
+          "z": 393.87
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "enter_zone",
+      "label": "Enter Haru's Dojo",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_Dojo1",
+        "xyz": {
+          "x": 24945.97,
+          "y": 41926.35,
+          "z": 295.14
+        },
+        "reset_xyz": {
+          "x": 24962.03,
+          "y": 40684.6,
+          "z": 79.6
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "handle_combat",
+      "label": "Defeat Haru",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Pig-Plague-Warrior-MSBoss-L47",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Exit Haru's Dojo",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_Dojo1",
+        "to_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": 2921.61,
+          "y": -0.8,
+          "z": 30.0
+        },
+        "reset_xyz": {
+          "x": 2291.82,
+          "y": -19.18,
+          "z": 30.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "teleport_to_coordinates",
+      "label": "Open Gate",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": 42921.15,
+          "y": 3365.04,
+          "z": 395.89
+        }
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact",
+      "label": "Interact with Din Ho",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "interact_xyz": {
+          "x": 42186.15,
+          "y": 3363.86,
+          "z": 393.87
+        },
+        "reset_xyz": {
+          "x": 42921.15,
+          "y": 3365.04,
+          "z": 395.89
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Enter Fire Shrine",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T2",
+        "xyz": {
+          "x": 4022.2,
+          "y": 15072.49,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": 4019.67,
+          "y": 15363.49,
+          "z": 153.52
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "handle_combat",
+      "label": "Defeat Ronin Blademaster",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Samoorai-Ronin-2-L40",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "interact",
+      "label": "Interact with Fire Shrine",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T2",
+        "interact_xyz": {
+          "x": 259.84,
+          "y": 1601.95,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 982.67,
+          "y": 1617.89,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone",
+      "label": "Exit Fire Shrine",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T2",
+        "to_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": -6.29,
+          "y": -1829.35,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 16.29,
+          "y": -1450.1,
+          "z": 0.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "enter_zone",
+      "label": "Enter Earth Shrine",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T1",
+        "xyz": {
+          "x": 10997.58,
+          "y": 22298.71,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": 11006.64,
+          "y": 21970.94,
+          "z": 153.52
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "handle_combat",
+      "label": "Defeat Diseased Water Spirit",
+      "position": {
+        "x": 11440.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Elemental-Water-Diseased-L37",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "interact",
+      "label": "Interact with Earth Shrine",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T1",
+        "interact_xyz": {
+          "x": 234.02,
+          "y": 1645.82,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 943.34,
+          "y": 1662.04,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "enter_zone",
+      "label": "Exit Earth Shrine",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T1",
+        "to_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": 1.23,
+          "y": -1832.59,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 6.44,
+          "y": -1549.11,
+          "z": 0.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 12760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": 3997.8,
+          "y": 21472.11,
+          "z": -0.01
+        }
+      }
+    },
+    {
+      "id": "state_23",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 13200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_24",
+      "node_type": "enter_zone",
+      "label": "Enter Air Shrine",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T3",
+        "xyz": {
+          "x": 3994.57,
+          "y": 22300.87,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": 3997.8,
+          "y": 21472.11,
+          "z": -0.01
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_25",
+      "node_type": "handle_combat",
+      "label": "Defeat Zaneki",
+      "position": {
+        "x": 14080.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Goat-Peasant-Diseased-2-MSBoss-L42",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_26",
+      "node_type": "interact",
+      "label": "Interact with Air Shrine",
+      "position": {
+        "x": 14520.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T3",
+        "interact_xyz": {
+          "x": 300.02,
+          "y": 1683.51,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 966.0,
+          "y": 1678.79,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_27",
+      "node_type": "enter_zone",
+      "label": "Exit Air Shrine",
+      "position": {
+        "x": 14960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T3",
+        "to_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": 1.93,
+          "y": -1839.02,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 11.13,
+          "y": -1489.56,
+          "z": 0.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 15400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "enter_zone",
+      "label": "Enter Spirit Shrine",
+      "position": {
+        "x": 15840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T4",
+        "xyz": {
+          "x": -4305.9,
+          "y": 13990.04,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": -4058.38,
+          "y": 13995.94,
+          "z": 153.52
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_30",
+      "node_type": "handle_combat",
+      "label": "Defeat Imitsu Retainer",
+      "position": {
+        "x": 16280.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Horse-Merc-Tan-L38",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_31",
+      "node_type": "interact",
+      "label": "Interact with Spirit Shrine",
+      "position": {
+        "x": 16720.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T4",
+        "interact_xyz": {
+          "x": 240.96,
+          "y": 1690.45,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 996.13,
+          "y": 1678.19,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_32",
+      "node_type": "enter_zone",
+      "label": "Exit Spirit Shrine",
+      "position": {
+        "x": 17160.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/Interiors/MS_Plague3_T4",
+        "to_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": -4.59,
+          "y": -1840.9,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -0.96,
+          "y": -1461.41,
+          "z": 0.0
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_33",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 17600.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_34",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 18040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "xyz": {
+          "x": 44055.2,
+          "y": 3541.6,
+          "z": 442.83
+        }
+      }
+    },
+    {
+      "id": "state_35",
+      "node_type": "handle_combat",
+      "label": "Defeat Wavebringer",
+      "position": {
+        "x": 18480.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Elemental-Water-Diseased-MSBoss-L48",
+        "wiki_page": "Creature:Wavebringer",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_36",
+      "node_type": "enter_zone",
+      "label": "Enter Shirataki Temple central room",
+      "position": {
+        "x": 18920.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace",
+        "to_zone": "MooShu/MS_Plague/Interiors/MS_Plague2_PalaceInterior",
+        "xyz": {
+          "x": 49374.8,
+          "y": 3568.32,
+          "z": 1059.6
+        },
+        "reset_xyz": {
+          "x": 48411.86,
+          "y": 3579.26,
+          "z": 1059.6
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_37",
+      "node_type": "handle_combat",
+      "label": "Defeat Ideyoshi",
+      "position": {
+        "x": 19360.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Pig-Plague-Lord-MSBoss-L46",
+        "wiki_page": "Creature:Ideyoshi",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_38",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait For Dialogue",
+      "position": {
+        "x": 19800.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_39",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport To Coordinates",
+      "position": {
+        "x": 20240.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Plague/Interiors/MS_Plague2_PalaceInterior",
+        "xyz": {
+          "x": -23.74,
+          "y": -1713.89,
+          "z": 0.0
+        }
+      }
+    },
+    {
+      "id": "state_40",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 20680.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_41",
+      "node_type": "handle_combat",
+      "label": "Defeat Plague Oni",
+      "position": {
+        "x": 21560.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Oni-Plague-MSBoss-L54",
+        "wiki_page": "Creature:Plague Oni",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_42",
+      "node_type": "sleep",
+      "label": "Sleep",
+      "position": {
+        "x": 21120.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 5.0,
+        "use_safety_delay": false
+      }
+    },
+    {
+      "id": "state_43",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 22000.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_43",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.999938308534,
+          "y": 0.00021952501634925348
+        }
+      }
+    },
+    {
+      "id": "b1a627c7",
+      "label": "Plague Oni",
+      "members": [
+        "state_38",
+        "state_39",
+        "state_41",
+        "state_40",
+        "state_42",
+        "state_43"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "5182577a",
+      "label": "Ideyoshi",
+      "members": [
+        "state_36",
+        "state_37"
+      ],
+      "color": 2,
+      "collapsed": true
+    },
+    {
+      "id": "9f93bd52",
+      "label": "Wavebringer",
+      "members": [
+        "state_35",
+        "state_34"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "1bb9fcc1",
+      "label": "Spirit Shrine",
+      "members": [
+        "state_32",
+        "state_33",
+        "state_30",
+        "state_29",
+        "state_31"
+      ],
+      "color": 3,
+      "collapsed": true
+    },
+    {
+      "id": "a312e73b",
+      "label": "Air Shrine",
+      "members": [
+        "state_27",
+        "state_26",
+        "state_28",
+        "state_25",
+        "state_24"
+      ],
+      "color": 6,
+      "collapsed": true
+    },
+    {
+      "id": "597e4127",
+      "label": "Earth Shrine",
+      "members": [
+        "state_20",
+        "state_18",
+        "state_23",
+        "state_21",
+        "state_19",
+        "state_22"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "08e64a12",
+      "label": "Fire Shrine",
+      "members": [
+        "state_14",
+        "state_17",
+        "state_16",
+        "state_15"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "18a79b9e",
+      "label": "Shoji",
+      "members": [
+        "state_5",
+        "state_4",
+        "state_3",
+        "state_6",
+        "state_7"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "41c4675f",
+      "label": "Haru",
+      "members": [
+        "state_11",
+        "state_12",
+        "state_8",
+        "state_9",
+        "state_13",
+        "state_10"
+      ],
+      "color": 2,
+      "collapsed": true
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  },
+  "history": [
+    "861a69ea2e7d6422588c845e847ba3e19e36477b87e29b174c6fd6ae3b33df14",
+    "fdfd160cd3dbbaf1ff4406334b8a56e78a626c1bc7c30a0614ad388723ef27d7",
+    "097d850ca06c99e99bde000fe12e836021ceeda58b35dc0905cf4874e860a0a9"
+  ]
+}
