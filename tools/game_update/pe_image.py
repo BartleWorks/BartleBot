@@ -11,9 +11,11 @@ environment (``docs/GAME_UPDATES.md``).
 
 from __future__ import annotations
 
+import bisect
 import re
 import struct
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 LIVE_EXE = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Bin\WizardGraphicalClient.exe")
@@ -84,6 +86,58 @@ class Image:
     def rip_target(self, offset: int, displacement_at: int, length: int) -> int:
         """RVA a RIP-relative operand names: the instruction at `offset`, its disp32 at `displacement_at`."""
         return self.rva(offset) + length + self.i32(offset + displacement_at)
+
+    def section(self, name: str) -> Section | None:
+        return next((s for s in self.sections if s.name == name), None)
+
+    @cached_property
+    def functions(self) -> list[tuple[int, int]]:
+        """(begin, end) RVAs of every function, sorted: the x64 unwind table in ``.pdata`` lists them all.
+
+        A chained entry (a function's cold part, split off) is listed as its own range, so a
+        function can be two entries; neither overlaps another.
+        """
+        pdata = self.section(".pdata")
+        if pdata is None:
+            return []
+        entries = set()
+        for at in range(pdata.file_offset, pdata.file_offset + min(pdata.virtual_size, pdata.raw_size) - 11, 12):
+            begin, end, _unwind = struct.unpack_from("<III", self.data, at)
+            if begin and end > begin:
+                entries.add((begin, end))
+        return sorted(entries)
+
+    def function_at(self, rva: int) -> tuple[int, int] | None:
+        """The (begin, end) of the function holding `rva`, or None outside every function."""
+        i = bisect.bisect_right(self.functions, (rva, 1 << 63)) - 1
+        if i >= 0 and self.functions[i][0] <= rva < self.functions[i][1]:
+            return self.functions[i]
+        return None
+
+    def strings(self, text: str) -> list[int]:
+        """RVAs in ``.rdata`` where the NUL-terminated `text` starts, as ASCII or UTF-16LE."""
+        rdata = self.section(".rdata")
+        if rdata is None:
+            return []
+        blob = self.data[rdata.file_offset : rdata.file_offset + rdata.raw_size]
+        found = []
+        for needle, width in ((text.encode("ascii") + b"\0", 1), (text.encode("utf-16-le") + b"\0\0", 2)):
+            for m in re.finditer(re.escape(needle), blob):
+                if m.start() < width or blob[m.start() - width : m.start()] == b"\0" * width:
+                    found.append(rdata.rva + m.start())
+        return sorted(found)
+
+    def referrers(self, target_rva: int) -> list[int]:
+        """RVAs of every ``lea``/``mov reg, [rip+x]`` (REX.W, seven bytes) whose operand is `target_rva`."""
+        return [
+            self.rva(o)
+            for o in self.find(rb"[\x48\x4C][\x8B\x8D][\x05\x0D\x15\x1D\x25\x2D\x35\x3D]")
+            if self.rip_target(o, 3, 7) == target_rva
+        ]
+
+    def callers(self, target_rva: int) -> list[int]:
+        """RVAs of every rel32 ``call`` (E8) in .text that lands on `target_rva`."""
+        return [self.rva(o) for o in self.find(rb"\xE8") if self.rva(o) + 5 + self.i32(o + 1) == target_rva]
 
 
 def hexs(data: bytes) -> str:

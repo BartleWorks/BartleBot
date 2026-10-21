@@ -35,15 +35,17 @@ def test_literals_finds_every_pattern_and_skips_the_tests_and_the_file_readers(t
 
 def test_each_literal_gets_the_verdict_its_counts_imply():
     old = _image(b"\xaa\xbb\xcc\xdd", b"\x11\x22\x33\x44", b"\x55\x66\x77\x88", b"\x55\x66\x77\x88")
-    new = _image(b"\x11\x22\x33\x44", b"\x55\x66\x77\x88")
+    new = _image(b"\x11\x22\x33\x44", b"\x55\x66\x77\x88", b"\x99\x88\x77\x66")
     found = [
         hooks.Literal("a.py", 1, rb"\xAA\xBB\xCC\xDD"),
         hooks.Literal("a.py", 2, rb"\x11\x22\x33\x44"),
         hooks.Literal("a.py", 3, rb"\x55\x66\x77\x88"),
         hooks.Literal("a.py", 4, b"\x48\x81\xec(\x00\x00\x00"),  # code wizwalker writes: not a regex
         hooks.Literal("a.py", 5, rb"\xFE\xED\xFA\xCE"),
+        hooks.Literal("a.py", 6, rb"\x99\x88\x77\x66"),  # a replacement written for the new build
     ]
-    assert [r.verdict for r in hooks.check(found, old, new)] == ["broken", "holds", "changed", "neither", "neither"]
+    verdicts = [r.verdict for r in hooks.check(found, old, new)]
+    assert verdicts == ["broken", "holds", "changed", "neither", "neither", "new only"]
 
 
 def test_a_broken_pattern_fails_the_run(capsys):

@@ -60,8 +60,11 @@ uv run python tools/game_update/check_hook_patterns.py
 Every byte pattern in the installed wizwalker, scanned against the live and the Test realm
 exe on disk; the code bytes are the same as in a running client, so no client is needed.
 **broken** is a hook that will not install on the new build, **changed** a pattern whose
-match count moved, which matters to a scan that takes the first match. The literals that
-match neither are mostly the code wizwalker writes into the client, and say nothing.
+match count moved, which matters to a scan that takes the first match, and **new only** a
+pattern written for the new build. The literals that match neither are mostly the code
+wizwalker writes into the client, and say nothing. To check the update's wizwalker branch
+rather than the installed pin, pass `--source ../wizwalker/wizwalker`: a fixed pattern moves
+from broken to new only.
 
 `AUTOBOT_PATTERN` (`memory/handler.py`) is the one to look at first: it finds the code cave
 every `SimpleHook` is written into, so when it breaks, every such hook does too.
@@ -104,18 +107,45 @@ under *Probes to rerun after a game patch*.
 ## 5. Replacing a broken pattern
 
 Check Laurenz's wizwalker first (`docs/UPSTREAM.md`); she often has the fix before we
-look. When she does not:
+look. When she does not, `find_function.py` does the finding, with capstone for the
+disassembly (not a project dependency, so `uv run --with capstone`):
 
-- **Find what the old pattern matched on the live exe**, and what the code there does:
-  follow its calls and RIP-relative operands with `tools/game_update/pe_image.py`.
+```bash
+uv run --with capstone python tools/game_update/find_function.py --pattern 'rb"<the old pattern>"'
+uv run --with capstone python tools/game_update/find_function.py --string "<a string it names>"
+```
+
+The first says, on the live exe, which function the old pattern matched (its bounds from
+`.pdata`, the x64 unwind table that lists every function), where in it, its callers, and
+every string it names. The second finds the function naming that string on both builds,
+and prints both openings side by side to write the new pattern from. Then:
+
+- **Find what the old pattern matched on the live exe**, and what the code there does.
 - **Anchor on what the code does, not on its bytes.** r811339 was rebuilt with different
   code generation: not one getter of the shape wiztype's target had survived, though the
   getter itself had. Constants, field offsets and the order of operations survive a
   recompile far better than prologues and register choices do.
+- **A function that names no string** is found by what else survives: a field offset it
+  reads that the type diff says did not move, the function it calls, its size and its
+  number of callers. List every site of that kind on both builds; they tend to come in the
+  same order, and the counterpart is the one whose size and callers agree.
+- **Try the smallest change first.** Compare the old match's function with its new
+  counterpart instruction by instruction: often one stack slot or register moved, and a
+  wildcard on that byte gives a pattern that matches once on both builds, which keeps the
+  library branch running against live too. Rewrite the pattern only when the code around
+  the site was really recompiled.
 - **Prove the new anchor on the live exe first**: it has to find what the old pattern
   found there, at the same address, before its answer on the new build means anything.
 - **Count, don't assume.** Where an anchor matches several sites, take one by position
   only when both builds have the same number, in the same order, and say so in the code.
+- **A pattern can carry a size, too.** Where the code assumes something about what the
+  match finds beyond its start, check that against the new build. `AUTOBOT_SIZE` is the
+  case: wizwalker zeroes that many bytes from the autobot's start, and on r811339 the
+  function had shrunk below it, so the old size would have overwritten the code after it.
+- **Then a test in wizwalker** that runs the new pattern over the prologue assembled with
+  made-up operands, and one that it does not match the prologue alone, where that is
+  shared (`tests/memory/test_handler.py` is the pattern). The game's own bytes stay out of
+  the repo, as its art does.
 
 ## Record: r811339 (Ahmarra)
 
@@ -141,8 +171,8 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
 
 | pattern | hook | replacement |
 |---|---|---|
-| `AUTOBOT_PATTERN` (`memory/handler.py`) | the code cave of every `SimpleHook` | |
-| `ClientHook.pattern` | the current client | |
+| `AUTOBOT_PATTERN` (`memory/handler.py`) | the code cave of every `SimpleHook` | The cave is `AutobotManager::Initialize`, found on both builds by the string naming it. Recompiled with a `mov rax, rsp` frame and an EH state store; the new pattern runs from that prologue to the body's first `cmp byte [rax+?], 0; je`, which it alone of 296 such prologues has. The function shrank from 4,188 bytes to 3,975, so `AUTOBOT_SIZE` went from 4,100 to 3,968; every hook at once reserves 1,050. |
+| `ClientHook.pattern` | the current client | The site names no strings. Found by the field it reads, `[reg+0x1C0]` (`ClientObject.m_characterId`, which the update did not move), straight after the getter's result: six such sites on each build, in the same order, and the one in a function of 230 bytes and 8 callers on live is 240 and 8 on r811339. Only the stack slot of the next `mov rdi, [rsp+?]` moved (0x38 to 0x40), so that byte is a wildcard and the pattern matches once on both builds. |
 | `MovementTeleportHook.pattern` | teleport | |
 | `MovementTeleportHook` `inside_event_je` scan | teleport | |
 | `DropsToggleHook.pattern` | drops | |

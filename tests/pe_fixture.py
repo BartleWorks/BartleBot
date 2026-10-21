@@ -11,6 +11,8 @@ from __future__ import annotations
 import struct
 
 TEXT_RVA = 0x1000
+RDATA_RVA = 0x100000
+PDATA_RVA = 0x180000
 DATA_RVA = 0x200000
 _TEXT_OFFSET = 0x400
 _PE_AT = 0x40
@@ -47,21 +49,36 @@ class Code:
         self.buf += byte * n
 
 
-def build_pe(code: bytes, data_size: int = 0x1000) -> bytes:
-    """An exe whose .text is `code` at TEXT_RVA and whose .data is zeros at DATA_RVA."""
-    text_size = (len(code) + 0x1FF) & ~0x1FF
-    data_offset = _TEXT_OFFSET + text_size
-    coff = struct.pack("<HHIIIHH", 0x8664, 2, 0, 0, 0, 0, 0x22)
-    sections = b"".join(
-        name.ljust(8, b"\0") + struct.pack("<IIIIIIHHI", vsize, rva, rsize, roff, 0, 0, 0, 0, 0)
-        for name, vsize, rva, rsize, roff in (
-            (b".text", len(code), TEXT_RVA, text_size, _TEXT_OFFSET),
-            (b".data", data_size, DATA_RVA, data_size, data_offset),
-        )
-    )
+def _aligned(n: int) -> int:
+    return (n + 0x1FF) & ~0x1FF
+
+
+def build_pe(
+    code: bytes,
+    data_size: int = 0x1000,
+    rdata: bytes = b"",
+    functions: list[tuple[int, int]] | None = None,
+) -> bytes:
+    """An exe: `code` as .text at TEXT_RVA, `rdata` at RDATA_RVA, `functions` as .pdata's
+    (begin, end) RVAs at PDATA_RVA, and .data as zeros at DATA_RVA."""
+    pdata = b"".join(struct.pack("<III", begin, end, 0) for begin, end in functions or [])
+    layout = [(b".text", code, TEXT_RVA, b"\xcc")]
+    if rdata:
+        layout.append((b".rdata", rdata, RDATA_RVA, b"\0"))
+    if pdata:
+        layout.append((b".pdata", pdata, PDATA_RVA, b"\0"))
+    layout.append((b".data", bytes(data_size), DATA_RVA, b"\0"))
+
+    coff = struct.pack("<HHIIIHH", 0x8664, len(layout), 0, 0, 0, 0, 0x22)
+    table, body, offset = b"", b"", _TEXT_OFFSET
+    for name, content, rva, fill in layout:
+        size = _aligned(len(content))
+        table += name.ljust(8, b"\0") + struct.pack("<IIIIIIHHI", len(content), rva, size, offset, 0, 0, 0, 0, 0)
+        body += content.ljust(size, fill)
+        offset += size
     header = bytearray(_TEXT_OFFSET)
     header[:2] = b"MZ"
     header[0x3C:0x40] = struct.pack("<I", _PE_AT)
-    pe = b"PE\0\0" + coff + sections
+    pe = b"PE\0\0" + coff + table
     header[_PE_AT : _PE_AT + len(pe)] = pe
-    return bytes(header) + code.ljust(text_size, b"\xcc") + bytes(data_size)
+    return bytes(header) + body

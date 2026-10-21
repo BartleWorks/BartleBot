@@ -36,8 +36,9 @@ works with against the one coming, so a Test realm patch can be read before it i
 | `game_update/compare_installs.py` | compares two installs: revision, `Bin/` files, wads, and `Root.wad` entry by entry |
 | `game_update/diff_snapshots.py` | regenerates every snapshot from another install into a scratch folder and diffs it with the shipped one |
 | `game_update/check_hook_patterns.py` | scans wizwalker's byte patterns against two client exes on disk: which hooks a build breaks |
+| `game_update/find_function.py` | finds the function a broken pattern matched on the old exe, and the same function on the new one by a string it names; disassembles with `uv run --with capstone` |
 | `game_update/capture_type_dump.py` | captures a type dump from a running client with wiztype, finding the type registry itself when wiztype's scan no longer matches; run under `uvx --from wiztype==0.1.13` |
-| `game_update/pe_image.py` | the static exe reader the others share: sections, RVAs, calls and RIP-relative operands |
+| `game_update/pe_image.py` | the static exe reader the others share: sections, RVAs, calls and RIP-relative operands, functions from `.pdata`, strings and what refers to them |
 
 ## Reading the game's own data
 

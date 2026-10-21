@@ -8,7 +8,7 @@ from bartlebot.paths import project_root
 
 sys.path.insert(0, str(project_root()))
 
-from tests.pe_fixture import DATA_RVA, TEXT_RVA, Code, build_pe  # noqa: E402
+from tests.pe_fixture import DATA_RVA, RDATA_RVA, TEXT_RVA, Code, build_pe  # noqa: E402
 from tools.game_update.pe_image import Image  # noqa: E402
 
 
@@ -44,6 +44,39 @@ def test_a_call_and_a_rip_operand_resolve_to_what_they_name():
     image = _image(code)
     assert image.rva(image.call_target(image.offset(call_at))) == TEXT_RVA + 0x80
     assert image.rip_target(image.offset(load_at), 3, 7) == DATA_RVA + 0x18
+
+
+def test_functions_come_from_pdata_and_function_at_finds_the_one_holding_an_address():
+    code = Code()
+    code.pad(0x100)
+    image = Image(
+        build_pe(bytes(code.buf), functions=[(TEXT_RVA + 0x40, TEXT_RVA + 0x80), (TEXT_RVA, TEXT_RVA + 0x20)])
+    )
+    assert image.functions == [(TEXT_RVA, TEXT_RVA + 0x20), (TEXT_RVA + 0x40, TEXT_RVA + 0x80)]
+    assert image.function_at(TEXT_RVA + 0x50) == (TEXT_RVA + 0x40, TEXT_RVA + 0x80)
+    assert image.function_at(TEXT_RVA + 0x30) is None  # between the two
+
+
+def test_a_string_is_found_whole_in_either_encoding():
+    # A wide string is 2-aligned, as the compiler places one: hence the extra NUL before it.
+    rdata = b"\0Manager::InitializeTail\0Manager::Initialize\0\0" + "Wide".encode("utf-16-le") + b"\0\0"
+    image = Image(build_pe(b"\xcc", rdata=rdata))
+    # Only where it starts a string: not inside "Manager::InitializeTail", nor "Initialize" alone.
+    assert image.strings("Manager::Initialize") == [RDATA_RVA + 25]
+    assert image.strings("Initialize") == []
+    assert image.strings("Wide") == [RDATA_RVA + 46]
+
+
+def test_referrers_and_callers_find_the_code_naming_an_address():
+    code = Code()
+    target = code.raw(b"\xc3")  # the function called
+    code.pad(15)
+    call_at = code.call(target)
+    lea_at = code.rip(b"\x48\x8d\x0d", RDATA_RVA + 8)  # lea rcx, [rip+string]
+    code.rip(b"\x48\x8d\x0d", RDATA_RVA + 16)
+    image = Image(build_pe(bytes(code.buf), rdata=bytes(32)))
+    assert image.callers(target) == [call_at]
+    assert image.referrers(RDATA_RVA + 8) == [lea_at]
 
 
 def test_a_file_that_is_not_an_exe_is_refused():

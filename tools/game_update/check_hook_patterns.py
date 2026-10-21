@@ -13,6 +13,8 @@ WHAT IT READS
 
 WHAT IT SAYS
     broken   matches the old exe and not the new: that hook fails on the new build
+    new only matches the new exe and not the old: a replacement written for the new
+             build, as on an update's library branch
     changed  matches both, a different number of times: a scan that takes the first
              match, or expects one, may now land somewhere else
     holds    matches both the same number of times
@@ -62,6 +64,8 @@ class Result:
             return "neither"
         if self.old and not self.new:
             return "broken"
+        if self.new and not self.old:
+            return "new only"
         return "holds" if self.old == self.new else "changed"
 
 
@@ -99,7 +103,7 @@ def report(results: list[Result]) -> int:
     by_verdict: dict[str, list[Result]] = {}
     for r in results:
         by_verdict.setdefault(r.verdict, []).append(r)
-    for verdict in ("broken", "changed", "holds"):
+    for verdict in ("broken", "new only", "changed", "holds"):
         rows = by_verdict.get(verdict, [])
         print(f"{verdict}: {len(rows)}")
         for r in rows:
