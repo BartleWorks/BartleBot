@@ -400,7 +400,9 @@ async def _regroup(machine, clients: list) -> None:
         return
     try:
         names = await wizard_names.resolve_names(clients)
-        result = await group_manager.form_group(clients, names, log=machine.log)
+        result = await group_manager.form_group(
+            clients, names, log=machine.log, safety_delay=machine.get_option("Safety Delay", 3.0)
+        )
         if result.success:
             machine.log(f"relog: group re-formed — {result.summary()}")
         else:

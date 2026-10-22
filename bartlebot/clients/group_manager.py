@@ -73,6 +73,7 @@ from bartlebot.nodes.timing import (
     TRIGGER_TIMEOUT,
     jitter,
 )
+from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
 
@@ -582,6 +583,7 @@ async def form_group(
     leader_index: int = 0,
     log=None,
     states: list[GroupState] | None = None,
+    safety_delay: float | None = None,
 ) -> GroupResult:
     """Ensure every client is in one shared group, inviting whoever is missing.
 
@@ -599,6 +601,9 @@ async def form_group(
     doubles both the time and the number of chances for a flaky UI read. They are ignored
     (and re-read) if another form_group call was in progress, since it may have changed
     membership while we waited.
+
+    `safety_delay` is how long to wait for the social window the game opens on the leader
+    when the first invitation forms the group. It defaults to the app's Safety Delay setting.
 
     Returns a GroupResult instead of raising. Callers decide what a partial failure means:
     the node fails the run, the automatic hooks log and carry on.
@@ -631,7 +636,9 @@ async def form_group(
     if contended:
         _log("Another group formation is already running — waiting for it to finish", logging.DEBUG)
     async with lock:
-        return await _form_group_locked(clients, names, leader_index, _log, None if contended else states)
+        if safety_delay is None:
+            safety_delay = SettingsManager.instance().default_safety_delay
+        return await _form_group_locked(clients, names, leader_index, _log, None if contended else states, safety_delay)
 
 
 def _in_leader_group(state: GroupState, leader_state: GroupState) -> bool:
@@ -742,6 +749,7 @@ async def _form_group_locked(
     leader_index: int,
     _log,
     states: list[GroupState] | None,
+    safety_delay: float,
 ) -> GroupResult:
     """Body of form_group. Must only be called while _form_group_lock is held."""
     if states is None:
@@ -774,7 +782,9 @@ async def _form_group_locked(
             continue
         to_invite.append(idx)
 
-    joined = await _invite_all(leader, clients, names, to_invite, names[leader_idx], _log)
+    joined = await _invite_all(
+        leader, clients, names, to_invite, names[leader_idx], _log, safety_delay if not leader_state.grouped else None
+    )
     result.added = [slot_label(idx) for idx in to_invite if idx in joined]
     result.failed += [slot_label(idx) for idx in to_invite if idx not in joined]
     if len(joined) < len(to_invite):
@@ -809,6 +819,7 @@ async def _invite_all(
     to_invite: list[int],
     leader_name: str | None,
     log,
+    social_window_wait: float | None = None,
 ) -> set[int]:
     """Invite every client in `to_invite` into the leader's group. Returns the ones that joined.
 
@@ -832,15 +843,21 @@ async def _invite_all(
     A client that did not join is retried in the next round, up to GROUP_ADD_RETRIES. One
     the game refused, or that is not in the friends list, drops out at once: retrying cannot
     fix either.
+
+    `social_window_wait` is set when the leader is not yet in a group. The first invitation
+    then forms one, and the game opens the social window on the leader a moment later; the
+    first send waits that long for it (see _send_invite). Once an invitation has gone out,
+    the leader is grouped and no later send waits.
     """
     joined: set[int] = set()
     pending = list(to_invite)
     for attempt in range(1, GROUP_ADD_RETRIES + 1):
         sent: list[int] = []
         for idx in list(pending):
-            outcome = await _try_send(leader, clients[idx], names[idx], slot_label(idx), log)
+            outcome = await _try_send(leader, clients[idx], names[idx], slot_label(idx), log, social_window_wait)
             if outcome is _SENT:
                 sent.append(idx)
+                social_window_wait = None
             elif outcome is _GIVE_UP:
                 pending.remove(idx)
 
@@ -870,14 +887,14 @@ _RETRY = "retry"
 _GIVE_UP = "give up"
 
 
-async def _try_send(leader, target, name: str, label: str, log) -> str:
+async def _try_send(leader, target, name: str, label: str, log, social_window_wait: float | None = None) -> str:
     """Send one invitation, turning each way it can fail into what the round should do.
 
     `name` is what the friends list is searched for; `label` is what the log calls the
     target. They are kept apart so a wizard name never reaches a log line.
     """
     try:
-        return _SENT if await _send_invite(leader, target, name, label, log) else _RETRY
+        return _SENT if await _send_invite(leader, target, name, label, log, social_window_wait) else _RETRY
     except AlreadyInAnotherGroup:
         log(f"{label} is already in another group and must leave it before joining this one", logging.WARNING)
         return _GIVE_UP
@@ -891,12 +908,17 @@ async def _try_send(leader, target, name: str, label: str, log) -> str:
         return _RETRY
 
 
-async def _send_invite(leader, target, name: str, label: str, log) -> bool:
+async def _send_invite(leader, target, name: str, label: str, log, social_window_wait: float | None = None) -> bool:
     """Invite one client, and return True once the invitation is showing on it. Does not accept it.
 
     The leader's social window and friend profile are cleared before the send as well as
     after. The social window opens on the leader by itself when the group forms, and on top
     of the friends list: left there, it takes the click meant for the next friend's row.
+
+    `social_window_wait` is given when this invitation forms the group. The window opens a
+    moment after the invitation is out, so a close that runs at once can read it before it
+    exists and leave it open; the send waits up to that long for it to show, and the close
+    in the `finally` then finds it.
     """
     await _close_overlapping_windows(leader)
     try:
@@ -928,6 +950,12 @@ async def _send_invite(leader, target, name: str, label: str, log) -> bool:
         if not invited:
             log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
             return False
+        if social_window_wait is not None and not await node_helpers.poll_until(
+            lambda: node_helpers.is_visible_by_path(leader, SOCIAL_WINDOW_PATH),
+            timeout=social_window_wait,
+            poll_interval=POLL_INTERVAL,
+        ):
+            log(f"The social window did not open on the leader within {social_window_wait:.0f}s", logging.DEBUG)
         return True
     finally:
         # The friends list is deliberately left open — it is reused for the next invite and

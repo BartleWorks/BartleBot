@@ -120,10 +120,12 @@ class FakeUI:
         self.accept_clicks: list[FakeClient] = []
         # Accept clicks the game ignores, per client: the prompt goes, but nobody joins.
         self.drop_accepts: dict[FakeClient, int] = {}
-        # When the social window opens on the leader by itself: on the join that forms the
-        # group ("accept"), or on sending the first invitation ("send"). Both are modeled,
-        # so the leader's cleanup is proven against either.
-        self.leader_social_opens_on = "accept"
+        # When the social window opens on the leader by itself: on sending the first
+        # invitation ("send", what the game does), a moment after it ("delayed", the read
+        # that beats it now that wizwalker is fast), or on the join that forms the group
+        # ("accept", which the game does not, kept to model a window that never shows up
+        # while the first invitation waits for it).
+        self.leader_social_opens_on = "send"
         self.lookups_under_social_window: list[FakeClient] = []
         self._pending_name: str | None = None
 
@@ -311,6 +313,8 @@ class FakeUI:
                 first = not self.grouped.get(client, False) and client not in self._awaiting.values()
                 if first and self.leader_social_opens_on == "send":
                     self._set_social_open(client, True)
+                elif first and self.leader_social_opens_on == "delayed":
+                    asyncio.get_running_loop().call_later(0.05, self._set_social_open, client, True)
                 self._awaiting[target] = client
             return True
         if path == GROUP_INVITE_ACCEPT_PATH and client in self._awaiting:
@@ -1128,7 +1132,7 @@ async def test_every_invitation_is_sent_before_any_is_accepted(ui):
     assert kinds == ["invite"] * 3 + ["accept"] * 3, f"an invitation was accepted mid-send: {ui.events}"
 
 
-@pytest.mark.parametrize("opens_on", ["accept", "send"])
+@pytest.mark.parametrize("opens_on", ["send", "delayed"])
 async def test_the_leader_never_looks_up_a_friend_under_its_social_window(ui, opens_on):
     """Whichever moment the game opens it, the window is cleared before the next lookup.
 
@@ -1798,3 +1802,50 @@ async def test_already_grouped_client_is_not_reinvited(ui):
     assert result.success is True
     assert result.added == ["P3"]
     assert ui.invited_names == ["Carol Cloudrider"]
+
+
+_PAIR = ("Alice Ashblade", "Bob Battlecaster")
+
+
+async def test_the_first_invitation_waits_for_the_social_window_it_opens(ui):
+    """The window opens a moment after the invite; a close that ran at once would miss it."""
+    ui.leader_social_opens_on = "delayed"
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    result = await _run_with(ui, lambda: gm.form_group([leader, joiner], list(_PAIR), safety_delay=2.0))
+
+    assert result.success is True
+    assert ui.closed_group_window_on.count(leader) >= 1
+    assert ui.social_open[leader] is False, "the leader's social window was left open"
+
+
+async def test_the_wait_for_the_social_window_gives_up_after_the_safety_delay(ui):
+    """A window that never opens costs the safety delay once, and the group still forms."""
+    ui.leader_social_opens_on = "accept"
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    result = await _run_with(ui, lambda: gm.form_group([leader, joiner], list(_PAIR), safety_delay=0.3))
+
+    assert result.success is True
+    assert loop.time() - started >= 0.3
+
+
+async def test_a_leader_already_in_a_group_does_not_wait_for_the_social_window(ui):
+    """Inviting into an existing group opens no window on the leader, so nothing is waited for."""
+    ui.leader_social_opens_on = "accept"
+    leader = ui.make_client("Alice Ashblade")
+    member = ui.make_client("Bob Battlecaster")
+    joiner = ui.make_client("Carol Cloudweaver")
+    ui.put_in_group(leader, member)
+    names = ["Alice Ashblade", "Bob Battlecaster", "Carol Cloudweaver"]
+
+    result = await asyncio.wait_for(
+        _run_with(ui, lambda: gm.form_group([leader, member, joiner], names, safety_delay=30.0)), timeout=10
+    )
+
+    assert result.success is True
+    assert result.added == ["P3"]
