@@ -8,12 +8,11 @@ NODE_SPEC = NodeSpec(
     description="Does nothing and returns SUCCESS. Its edges choose where to go next.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Always returned, at once."),
+        ReturnSpec("SUCCESS", "Always, at once."),
     ],
     usage_notes=(
-        "Give its SUCCESS port several edges, each with a condition, and one without for "
-        "when none of them is true: a switch. Several nodes can lead into one branch and "
-        "share its switch, instead of each carrying a copy of the edges."
+        "Give its SUCCESS port several edges with conditions, plus one without for when none is "
+        "true. Several nodes can lead into one Branch and share its edges."
     ),
     see_also=["set_variables"],
 )

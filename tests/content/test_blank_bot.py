@@ -102,5 +102,5 @@ def test_a_new_node_is_named_what_the_node_browser_calls_its_type(canvas):
     new_id = canvas.scene.create_state_at("teleport_to_world_hub", QPointF(0, 0))
 
     state = next(s for s in canvas.config.states if s.id == new_id)
-    assert state.label == "Teleport To World Hub"
-    assert canvas.scene.node_items[new_id].label == "Teleport To World Hub"
+    assert state.label == "Teleport to World Hub"
+    assert canvas.scene.node_items[new_id].label == "Teleport to World Hub"

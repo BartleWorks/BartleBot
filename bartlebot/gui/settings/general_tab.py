@@ -25,6 +25,9 @@ from bartlebot.shared.preferences import PreferenceStore
 #: Each of the window size's two boxes, which share one row and one control slot.
 _SIZE_BOX_PX = 112
 
+#: Both Log rows' details: the one fact that holds for each, in the same words.
+_SESSION_LOG_KEEPS = "The session log file keeps every line."
+
 
 def _default(key: str):
     return default_for("general", key)
@@ -38,7 +41,7 @@ class GeneralTab(SettingsForm):
         # ------------------------------------------------------------------
         # Game section
         # ------------------------------------------------------------------
-        self.add_heading("Game")
+        self.add_heading("Game files")
 
         # A shared preference, not a settings.json key: BartleBuddy launches from it too.
         self._prefs = PreferenceStore()
@@ -63,9 +66,8 @@ class GeneralTab(SettingsForm):
                 self._check_updates_cb,
                 default=default_for("updates", "check_at_startup"),
                 details=(
-                    "Releases are how fixed and new Official bots reach you. A new one is offered once, and "
-                    "installs only when you say, never while a bot runs. Help › Check for Updates… looks "
-                    "whenever you ask, whatever this says."
+                    "An update installs only when you choose, never during a run. Use Help › Check for "
+                    "Updates… to check at any time."
                 ),
             )
         )
@@ -79,14 +81,11 @@ class GeneralTab(SettingsForm):
         self._clear_log_cb.setChecked(sm.get_general("clear_log_on_run", default=True))
         self.add_row(
             SettingRow(
-                "Clear log on Run",
+                "Clear log when a run starts",
                 "Empty the Log tab each time a bot starts.",
                 self._clear_log_cb,
                 default=_default("clear_log_on_run"),
-                details=(
-                    "Keeps what is on screen to the run you are watching. The session file in logs/ "
-                    "keeps everything either way."
-                ),
+                details=_SESSION_LOG_KEEPS,
             )
         )
 
@@ -97,11 +96,11 @@ class GeneralTab(SettingsForm):
         self._log_max_lines_sb.setValue(sm.get_general("log_max_lines", default=5000))
         self.add_row(
             SettingRow(
-                "Max log lines",
-                "How much the Log tab holds before the oldest lines drop.",
+                "Maximum log lines",
+                "How many lines the Log tab keeps before dropping the oldest.",
                 self._log_max_lines_sb,
                 default=_default("log_max_lines"),
-                details="Affects the Log tab only. The session file on disk is never trimmed.",
+                details=_SESSION_LOG_KEEPS,
             )
         )
 
@@ -145,10 +144,10 @@ class GeneralTab(SettingsForm):
         self._size_row = self.add_row(
             SettingRow(
                 "Default window size",
-                "The size the main window opens at when not maximized.",
+                "How large the main window opens when it isn't maximized.",
                 size,
                 default=(_default("window_width"), _default("window_height")),
-                details="Resizing the window afterwards does not change this.",
+                details="Resizing the window doesn't change this.",
                 binding=Binding(
                     read=lambda: (self._width_sb.value(), self._height_sb.value()),
                     write=self._set_window_size,
@@ -167,7 +166,7 @@ class GeneralTab(SettingsForm):
         self.add_row(
             SettingRow(
                 "Default left sidebar width",
-                "The bot's own configuration: Options and Combat, or Options and Properties.",
+                "How wide the Options sidebar on the left opens.",
                 self._left_sb,
                 default=_default("left_sidebar_width"),
             )
@@ -180,7 +179,7 @@ class GeneralTab(SettingsForm):
         self.add_row(
             SettingRow(
                 "Default right sidebar width",
-                "Players, Drops and Log.",
+                "How wide the Players, Drops and Log sidebar opens.",
                 self._right_sb,
                 default=_default("right_sidebar_width"),
             )
@@ -193,12 +192,11 @@ class GeneralTab(SettingsForm):
         self.add_row(
             SettingRow(
                 "Default bottom section height",
-                "The bot canvas under the game view.",
+                "How tall the bot canvas under the game view opens.",
                 self._bottom_sb,
                 default=_default("bottom_section_height"),
                 details=(
-                    "Setup fits it and both sidebars to your screen, leaving the game view room for "
-                    "your launches, until you change them here. Every section is draggable once open."
+                    "Setup sizes both sidebars and the canvas to fit your screen. Drag a section's edge to resize it."
                 ),
             )
         )
@@ -212,15 +210,13 @@ class GeneralTab(SettingsForm):
         self._streamer_mode_cb.setChecked(sm.streamer_mode)
         self.add_row(
             SettingRow(
-                "Streamer Mode",
-                "Show 'Character 1', 'Character 2' and so on in place of wizard names.",
+                "Streamer mode",
+                'Show "Character 1", "Character 2" and so on instead of wizard names.',
                 self._streamer_mode_cb,
                 default=_default("streamer_mode"),
                 details=(
-                    "A wizard name links your account to whoever posted the picture, and the launch "
-                    "screen and Players list are the two most screenshotted parts of this app. Display "
-                    "only: bots keep using the real names, and the logs never contained one in the "
-                    "first place."
+                    "Turn on streamer mode when sharing screenshots or streaming. Bots still use the real "
+                    "names, and logs never include them."
                 ),
             )
         )
@@ -233,13 +229,12 @@ class GeneralTab(SettingsForm):
         self._autosave_cb = QCheckBox()
         self._autosave_cb.setChecked(sm.get_general("auto_save_enabled", default=True))
         autosave = SettingRow(
-            "Enable auto-save",
+            "Auto-save",
             "Keep a recovery copy of a bot with unsaved edits.",
             self._autosave_cb,
             default=_default("auto_save_enabled"),
             details=(
-                "So a crash does not lose them. It is a separate file, never the bot's own: nothing "
-                "here writes over your bot behind your back, and the copy is deleted once you save."
+                "The copy is a separate file, deleted when you save. Your bot file changes only when you save it."
             ),
         )
 
@@ -253,7 +248,6 @@ class GeneralTab(SettingsForm):
             "How often the recovery copy is rewritten.",
             self._autosave_interval_sb,
             default=_default("auto_save_interval_seconds"),
-            details="At most this much work is at risk in a crash.",
         )
         self.add_group(SettingGroup("autosave", autosave, [interval]))
 
@@ -270,7 +264,7 @@ class GeneralTab(SettingsForm):
     def _on_maximize_toggled(self, checked: bool) -> None:
         # Not a group: Maximize being *on* is what makes the size moot, the reverse of a
         # parent setting whose rows only count while it is on.
-        self._size_row.set_available(not checked, "Maximize on open is on, so this has no effect.")
+        self._size_row.set_available(not checked, "Turn off Maximize on open to use this.")
 
     @property
     def game_folder_row(self) -> SettingRow:

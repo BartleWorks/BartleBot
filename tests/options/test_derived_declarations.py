@@ -178,7 +178,7 @@ def test_the_options_of_one_node_stay_together():
     config.options.append(BotOptionModel(name="Sell Pets", type="bool", default=False))
 
     order = _order(config)
-    quicksell = [i for i, name in enumerate(order) if name.startswith(("Sell ", "Enable Quicksell", "Quicksell "))]
+    quicksell = [i for i, name in enumerate(order) if name.startswith(("Sell ", "Quicksell", "Quicksell "))]
 
     assert order[0] == "Skip to boss", "a hand-added option is the author's own and comes first"
     assert quicksell == list(range(min(quicksell), max(quicksell) + 1))

@@ -200,7 +200,7 @@ class _GamePlaceholder(QWidget):
         body.addLayout(center, stretch=1)
 
         # -- Right: Launch Profiles ------------------------------------
-        self._profiles_col = CardColumn("Launch Profiles", EMPTY_PROFILES_HINT, "Add launch profile")
+        self._profiles_col = CardColumn("Launch profiles", EMPTY_PROFILES_HINT, "Add launch profile")
         self._profiles_col.add_requested.connect(self.add_profile_requested)
         self._profiles_col.reordered.connect(self.reorder_profiles_requested)
         self._profiles_col.settings_requested.connect(self.manage_accounts_requested)

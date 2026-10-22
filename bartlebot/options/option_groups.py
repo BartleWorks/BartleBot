@@ -13,7 +13,7 @@ group           holds                                                   first ru
 ==============  ======================================================  ===========
 This dungeon    the author's own options, Challenge Mode                expanded
 Team            Player Realms, Team-Up, Level Scaling Players, ...      expanded
-Quicksell       Enable Quicksell as the header switch, the sell flags   collapsed
+Quicksell       Quicksell as the header switch, the sell flags   collapsed
 General         Safety Delay, Favorite Realm                            collapsed
 ==============  ======================================================  ===========
 
@@ -23,7 +23,7 @@ only thing an author's own option can be about. A card with nothing in it is lef
 
 One option per group may *head* it (``BotOptionSpec.heads_group``): it is drawn as a
 switch in the card's header rather than as a row, and turning it off disables every
-row in the card. Enable Quicksell is the one there is. Nothing here decides how that
+row in the card. Quicksell is the one there is. Nothing here decides how that
 looks; this module only says which option it is.
 
 Pure, like ``bot_options``: no Qt, no settings store, no client. The surfaces hand in

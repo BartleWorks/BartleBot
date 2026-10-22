@@ -466,7 +466,7 @@ def test_the_source_caption_shares_the_name_line(qapp, settings):
 # The children
 # ---------------------------------------------------------------------------
 #
-# The three sell flags say nothing at all while Enable Quicksell is off -- nothing
+# The three sell flags say nothing at all while Quicksell is off -- nothing
 # is sold, so there is nothing for them to spare -- and before ``depends_on`` they
 # stayed live and unmarked, three tick boxes that could not affect the run and gave
 # no sign of it. They are indented under the parent now and grayed while it is off.
@@ -606,7 +606,7 @@ def test_a_child_row_draws_the_branch_rule_in_its_indent(qapp, settings):
 
 
 def test_a_row_whose_parent_heads_its_card_is_not_indented(qapp, settings):
-    """The sell flags are Enable Quicksell's children, and Enable Quicksell is their
+    """The sell flags are Quicksell's children, and Quicksell is their
     card's header switch -- the card already says what they belong to."""
     section = _section(settings, _config())
     section.resize(400, 900)

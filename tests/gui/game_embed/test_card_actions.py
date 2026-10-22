@@ -17,7 +17,7 @@ are the three things that has to mean:
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtWidgets import QDialog, QMessageBox
+from PyQt6.QtWidgets import QDialog
 
 from bartlebot.clients import character_roster
 from bartlebot.clients.credentials import CredentialStore
@@ -68,13 +68,12 @@ def store(monkeypatch):
 def confirm(monkeypatch):
     """Answer the delete confirm. Call with True to accept, False to decline.
 
-    Patched rather than driven, because ``QMessageBox.question`` is modal: an unanswered
-    one blocks the whole suite until the run is killed.
+    Patched rather than driven, because the confirm is modal: an unanswered one blocks
+    the whole suite until the run is killed.
     """
 
     def _answer(yes: bool):
-        button = QMessageBox.StandardButton.Yes if yes else QMessageBox.StandardButton.No
-        monkeypatch.setattr(accounts_tab.QMessageBox, "question", lambda *a, **k: button)
+        monkeypatch.setattr(accounts_tab, "_confirm_delete", lambda *a, **k: yes)
 
     return _answer
 

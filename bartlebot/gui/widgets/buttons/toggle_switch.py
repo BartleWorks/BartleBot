@@ -3,7 +3,7 @@
 A check box and a switch say different things, and the app needs both. A check box is an
 option inside a form; a switch turns a feature on or off and takes effect at once.
 Microsoft's and Apple's guidance both draw that line, and so does this app: the Quicksell
-card's header holds Enable Quicksell, which decides whether every row under it means
+card's header holds Quicksell, which decides whether every row under it means
 anything at all, and drawing it as one more check box would make it look like one more
 of those rows.
 

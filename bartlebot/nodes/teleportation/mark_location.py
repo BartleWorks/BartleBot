@@ -8,6 +8,7 @@ from enum import Enum, auto
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
@@ -18,8 +19,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name all players must be in when this node executes. "
-        "If players are in the correct zone but at the wrong XYZ, they will be teleported.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -27,7 +27,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Mark XYZ",
-        help="Coordinates to teleport players to before marking, if not already there.",
+        help="Where to mark. Players elsewhere in Zone teleport here first.",
         default=None,
         required=True,
     ),
@@ -35,30 +35,29 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Marks the current in-game location by clicking the MarkButton in the compass HUD. "
-        "A player who already marked this spot earlier in the run is left alone, so a bot can "
-        "pass through this node every loop. Handles the edge case where marking the same "
-        "location as an existing mark clears it rather than resetting it."
+        "Marks every player's location. A player who already marked this spot in this run is left "
+        "alone, so a loop can pass through the node every time."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players have a mark here: set now, or set earlier in this run."),
+        ReturnSpec("SUCCESS", "Every player has a mark here, set now or earlier in this run."),
         ReturnSpec(
             "FAILURE",
-            "One or more players could not mark (MarkButton grayed: no mana, in combat, or a zone "
-            "that refuses marks); players were not in the expected zone; or the game did not "
-            "answer a click within the Safety Delay.",
+            (
+                "A player wasn't in Zone, had no mana, was in a fight or a zone that refuses marks, or "
+                "the game didn't answer within Safety Delay."
+            ),
         ),
     ],
     required_bot_options=[SAFETY_DELAY_OPTION],
     max_consecutive_retries=5,
     usage_notes=(
-        "Marking has no cooldown, but it costs mana, and a drop in mana is how the node knows a "
-        "click landed. The timer under the Recall button is recall's own 30-second cooldown, "
-        "separate from the one the hub button and HOME share. While it runs the Recall button is "
-        "grayed and cannot show whether a mark is set, so the node waits it out first.\n\n"
-        "Raise Safety Delay if marks fail on a slow connection: it is how long the node waits "
-        "for the game to answer each click."
+        (
+            "Marking costs mana, so a player with no mana can't mark. If recall is on cooldown, the "
+            "node waits for it first."
+        )
+        + "\n\n"
+        + "Raise Safety Delay if marks fail on a slow connection."
     ),
 )
 

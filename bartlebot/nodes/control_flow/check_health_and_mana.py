@@ -23,33 +23,31 @@ PARAM_SCHEMA: list[ParamField] = [
         key="health_threshold",
         type="ratio",
         label="Health Threshold",
-        help=("FALSE if any player's health is below this percentage. Set to 0% to skip the health check."),
+        help="The node returns FALSE if any player's health is below this. At 0%, health isn't checked.",
         default=1.0,
         minimum=0.0,
         maximum=1.0,
-        default_hint="FALSE unless every player is at full health",
+        default_hint="full health",
     ),
     ParamField(
         key="mana_threshold",
         type="ratio",
         label="Mana Threshold",
         help=(
-            "FALSE if any player's mana is below this percentage. "
-            "Set to 0% to skip the mana check, or to 1% to catch only a player with no mana "
-            "at all — after fleeing a battle, for instance."
+            "The node returns FALSE if any player's mana is below this. At 0%, mana isn't checked. At "
+            "1%, only a player with no mana fails, as after fleeing a battle."
         ),
         default=1.0,
         minimum=0.0,
         maximum=1.0,
-        default_hint="FALSE unless every player is at full mana",
+        default_hint="full mana",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Returns TRUE if every player's health and mana ratios are at or above their thresholds, "
-        "FALSE otherwise. A threshold of 0 skips that stat. Useful for skipping a top-up detour, "
-        "such as collecting wisps, while the players are already healthy."
+        "Checks whether every player's health and mana are at or above the thresholds. Use it to "
+        "skip a detour, such as collecting wisps, when players are already healthy."
     ),
     params=PARAM_SCHEMA,
     returns=[

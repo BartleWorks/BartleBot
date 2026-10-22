@@ -5,6 +5,7 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QLineEdit
 
 from bartlebot.clients.credentials import CredentialStore
+from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.settings.accounts_tab import _AccountDialog
 
 # Synthetic, as CLAUDE.md requires.
@@ -34,12 +35,35 @@ def test_tab_goes_from_username_to_password_then_alias(qapp):
 
 def test_the_alias_placeholder_names_the_censored_username(qapp):
     dlg = _AccountDialog()
-    assert dlg.alias_placeholder == "Optional — shown instead of username"
+    assert dlg.alias_placeholder == "Optional, shown instead of the username"
     _line_edits_in_tab_order(dlg)[0].setText(USERNAME)
-    assert dlg.alias_placeholder == f"Optional — shown as {CredentialStore.display_name(USERNAME, None)}"
+    assert dlg.alias_placeholder == f"Optional, shown as {CredentialStore.display_name(USERNAME, None)}"
     assert USERNAME not in dlg.alias_placeholder
 
 
 def test_editing_an_account_names_its_censored_username_at_once(qapp):
     dlg = _AccountDialog(username=USERNAME)
-    assert dlg.alias_placeholder == f"Optional — shown as {CredentialStore.display_name(USERNAME, None)}"
+    assert dlg.alias_placeholder == f"Optional, shown as {CredentialStore.display_name(USERNAME, None)}"
+
+
+def test_the_editor_says_whether_it_adds_or_edits(qapp):
+    assert _AccountDialog().windowTitle() == "Add Wizard101 Account"
+    assert _AccountDialog(username=USERNAME).windowTitle() == "Edit Wizard101 Account"
+
+
+def _answer_confirm_with(monkeypatch, text: str) -> None:
+    """Click the confirm's button reading *text*, in place of the modal exec()."""
+
+    def click(box):
+        next(button for button in box.buttons() if button.text().replace("&", "") == text).click()
+        return 0
+
+    monkeypatch.setattr(accounts_tab.QMessageBox, "exec", click)
+
+
+def test_a_delete_confirm_offers_delete_and_cancel(qapp, monkeypatch):
+    _answer_confirm_with(monkeypatch, "Delete")
+    assert accounts_tab._confirm_delete(None, "Delete Account", "Delete it?")
+
+    _answer_confirm_with(monkeypatch, "Cancel")
+    assert not accounts_tab._confirm_delete(None, "Delete Account", "Delete it?")

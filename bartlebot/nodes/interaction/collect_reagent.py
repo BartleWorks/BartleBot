@@ -6,6 +6,7 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, REAGENT_DROP_MESSAGE_POLL, REAGENT_DROP_MESSAGE_TIMEOUT
 
@@ -14,7 +15,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name all players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -22,12 +23,9 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Starting XYZ",
-        help=(
-            "Optional coordinates to teleport all players to before searching for reagents. "
-            "Leave blank to collect from the current position."
-        ),
+        help="Where to teleport players before searching.",
         default=None,
-        default_hint="No teleport — collect from current position.",
+        default_hint="where players stand",
         required=False,
     ),
     ParamField(
@@ -35,11 +33,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str_list",
         label="Entity IDs",
         help=(
-            "IDs of the reagents to collect: their internal object names, as the Entity "
-            "Browser's ID column gives them, not the names shown in game. Each must be the "
-            "whole ID, though case does not matter: 'Stone' collects Stone, never Sandstone. "
-            "For a partial match, use wildcards (* ? []): '*Stone*' matches anywhere and "
-            "'Stone*' only IDs starting with it. All listed reagents are collected in one pass."
+            "The IDs of the reagents to collect, as the Entity Browser shows them, not their in-game "
+            "names. Each must be a whole ID, in any case, so Stone never collects Sandstone. Use * "
+            "and ? to match a pattern, such as *Stone*."
         ),
         default=[],
         required=True,
@@ -48,31 +44,25 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Finds all present instances of a named reagent entity in the zone and collects them. "
-        "Optionally teleports all players to a starting position first. "
-        "Each player searches and collects independently, so players on different servers "
-        "work from their own entity lists. "
-        "An empty spawn is a normal outcome, not a failure — the node succeeds with nothing collected."
+        "Collects every listed reagent in the zone, each player on its own. Finding none "
+        "succeeds, since spawns are random."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "The zone was searched. Includes finding nothing — reagent spawns are random, "
-            "so an empty pass is expected and the route should carry on to its next stop.",
+            "The zone was searched, whether or not anything was found.",
         ),
         ReturnSpec(
             "FAILURE",
-            "The search could not be performed: a player is in the wrong zone, or entity_names is empty.",
+            "A player wasn't in Zone, or Entity IDs is empty.",
         ),
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=5,
-    safety_warning=(
-        "This bot teleports to collect reagents. Ensure that you are not in a busy realm when you run this bot."
-    ),
+    safety_warning="This bot teleports to collect reagents. Run it on a quiet realm.",
     implies_tags=["Reagents"],
 )
 

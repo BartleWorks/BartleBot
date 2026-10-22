@@ -464,7 +464,7 @@ async def test_no_pet_warning_when_pets_are_not_being_sold():
 # The node asks ``machine.get_option`` and does what it is told; which of the four
 # levels answered is ``bot_options``' business, and is logged there. What is worth
 # pinning down here is the round trip: that a value set at each level reaches the
-# clicks this node makes, and that Enable Quicksell off stops it doing anything.
+# clicks this node makes, and that Quicksell off stops it doing anything.
 #
 # The settings used are the per-test isolated ones from conftest, not the
 # developer's.

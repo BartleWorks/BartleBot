@@ -6,6 +6,17 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import (
+    INTERACT_PLAYERS,
+    INTERACT_XYZ,
+    OBJECT_USE_DELAY_HELP,
+    RESET_XYZ,
+    SEQUENTIAL_INTERACTION,
+    SEQUENTIAL_INTERACTION_HINT,
+    SEQUENTIAL_INTERACTION_NOTE,
+    ZONE_AT_START,
+    seconds,
+)
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import (
     DIALOG_TIMEOUT,
@@ -20,7 +31,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -28,7 +39,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
-        help=("Coordinates of the item to interact with. The interact prompt should appear when standing here."),
+        help=(INTERACT_XYZ),
         default=None,
         required=True,
     ),
@@ -36,10 +47,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="reset_xyz",
         type="xyz",
         label="Reset XYZ",
-        help=(
-            "Coordinates used to dismiss the interact prompt and reset state. "
-            "The prompt must NOT appear when standing here."
-        ),
+        help=(RESET_XYZ),
         default=None,
         required=True,
     ),
@@ -47,7 +55,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_clients",
         type="player_list",
         label="Interact Players",
-        help="Which players perform this interaction.",
+        help=INTERACT_PLAYERS,
         default=[],
         required=True,
     ),
@@ -56,9 +64,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Has Dialogue",
         help=(
-            "Whether this interaction produces dialogue. "
-            "Set to False for silent interactions (levers, collectables) to skip waiting for "
-            "dialogue that will never appear. The ambient watcher will still catch any unexpected dialogue."
+            "Turn off for an interaction without dialogue, such as a lever, so the node doesn't wait "
+            "for any. Unexpected dialogue is still clicked through."
         ),
         default=True,
         required=False,
@@ -67,76 +74,48 @@ PARAM_SCHEMA: list[ParamField] = [
         key="animation_delay",
         type="float",
         label="Animation Delay (s)",
-        help=(
-            "Extra seconds to wait for this interaction's own animation, on top of the "
-            "Safety Delay. Each player gets it before its first dialogue window opens, so a "
-            "cutscene that opens one late is not mistaken for silence; once a player's "
-            "dialogue has appeared, the node waits the Safety Delay alone after the last "
-            "page. Additive rather than a replacement: the animation takes the same time on "
-            "every connection, while Safety Delay is the slack this player's connection "
-            "needs on top of it."
-        ),
+        help="Extra seconds to wait for an animation or cutscene before dialogue opens, on top of Safety Delay.",
         default=INTERACT_ANIMATION_DELAY,
         minimum=0.0,
-        default_hint="No animation to wait out.",
+        default_hint="none",
         required=False,
     ),
     ParamField(
         key="sequential",
         type="bool",
         label="Sequential Interaction",
-        help=(
-            "Have players use the object one at a time instead of together. Some objects only "
-            "serve one player at a time, and a second player interacting while the first is "
-            "mid-interaction has their keypress swallowed. Each player waits at Reset XYZ, "
-            "takes its turn, and advances its own dialogue before the next player starts. "
-            "Slower — leave off unless this object actually needs it."
-        ),
+        help=(SEQUENTIAL_INTERACTION),
         default=False,
-        default_hint="All players interact at once.",
+        default_hint=SEQUENTIAL_INTERACTION_HINT,
         required=False,
     ),
     ParamField(
         key="object_use_delay",
         type="float",
         label="Delay Between Object Uses (s)",
-        help=(
-            "Seconds to leave between one player finishing at the object and the next player starting "
-            "on it, in Sequential Interaction. The object becoming free again has no readable signal, "
-            "so this is the only cover for it — raise it for an object with a slow cycle, such as a "
-            "teleporter that takes several seconds to reset. Ignored unless Sequential Interaction is "
-            "on."
-        ),
+        help=(OBJECT_USE_DELAY_HELP),
         default=OBJECT_USE_DELAY,
         minimum=0.0,
-        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
+        default_hint=seconds(OBJECT_USE_DELAY),
         required=False,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description=(
-        "Interacts with an NPC or world object (lever, collectable, etc.) and advances through any resulting dialogue. "
-        "Set Has Dialogue to False for silent interactions (levers, collectables) to skip the dialogue wait entirely."
-    ),
+    description="Interacts with an NPC or object and clicks through any dialogue that follows.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Interaction complete and all dialogue dismissed."),
+        ReturnSpec("SUCCESS", "Every player interacted, and all dialogue is closed."),
         ReturnSpec(
             "FAILURE",
-            "The interact prompt never appeared after retries, or dialogue did not clear within the timeout.",
+            "The interact prompt never appeared, or dialogue didn't close in time.",
         ),
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=10,
-    usage_notes=(
-        "Turn on Sequential Interaction when the object refuses to serve more than one player "
-        "at a time — the symptom is that one player interacts normally and the others' X press "
-        "does nothing, intermittently rather than every run. It costs roughly one full "
-        "interaction per extra player, so leave it off otherwise."
-    ),
+    usage_notes=(SEQUENTIAL_INTERACTION_NOTE),
 )
 
 

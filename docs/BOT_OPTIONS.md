@@ -34,7 +34,7 @@ A bot option also reaches **every** node in the bot at once. That is not a detai
 quicksell's flags were per-node, so `hall_of_heroes` needed two quicksell nodes and
 two mutually exclusive bool options to offer one choice between two keep lists. It
 is one node now, declaring `["Merciless"]`: the choice is a value the user edits,
-and `Enable Quicksell` already answers the third branch that skipped selling
+and `Quicksell` already answers the third branch that skipped selling
 altogether.
 
 Three things that fall out of it:
@@ -125,8 +125,8 @@ list keeps as checked and locked, with a tooltip pointing to Settings → Bot.
 the templates reach the library nearly every bot sells, and a dialog on every run
 teaches the user to click through it, along with the teleport and elixir warnings it
 shares the dialog with. So the explanation carries a check box under it, *Don't show
-this quicksell explanation again*, which turns off *Show Quicksell explanation before
-each run* on the Bot settings tab. It is a check box under its own warning, the form
+this quicksell explanation again*, which turns off *Quicksell reminder* on the Bot settings
+tab. It is a check box under its own warning, the form
 Windows and macOS use for suppressing an alert, rather than a footer button: the dialog
 holds several warnings, and a button there reads as "don't show this dialog". The
 switch is one answer for the whole app. What the explanation asks (lock what you value,
@@ -223,7 +223,7 @@ Option Values and Options draw a bot's options as four folding cards, always in 
 |---|---|---|
 | **This dungeon** | the author's own options, Challenge Mode | expanded |
 | **Team** | Player Realms, Team-Up and Minimum Team Size, Level Scaling Players, Friend Name | expanded |
-| **Quicksell** | Enable Quicksell as the header switch; the sell flags; the keep list | collapsed |
+| **Quicksell** | Quicksell as the header switch; the sell flags; the keep list | collapsed |
 | **General** | Safety Delay, Refill Potions, Favorite Realm | collapsed |
 
 The card is declared once, on the option: `BotOptionSpec.group`. An option no node declares

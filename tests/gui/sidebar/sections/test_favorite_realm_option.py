@@ -94,12 +94,12 @@ def test_the_bot_tab_writes_the_chosen_realm(qapp):
     before = sm.favorite_realm
     try:
         tab = BotTab()
-        _field(tab, "Favorite realm").set_value("Wraith")
+        _field(tab, "Favorite Realm").set_value("Wraith")
 
         tab.apply()
 
         assert sm.favorite_realm == "Wraith"
-        assert _field(BotTab(), "Favorite realm").get_value() == "Wraith"
+        assert _field(BotTab(), "Favorite Realm").get_value() == "Wraith"
     finally:
         sm.favorite_realm = before
 

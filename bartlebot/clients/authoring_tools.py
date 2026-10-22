@@ -71,8 +71,8 @@ class AuthoringAction(StrEnum):
 
 #: What each action is called on a button and in a settings row.
 ACTION_LABELS: dict[AuthoringAction, str] = {
-    AuthoringAction.XYZ_SYNC: "XYZ Sync",
-    AuthoringAction.TP_TO_FOCUSED: "TP to Player",
+    AuthoringAction.XYZ_SYNC: "XYZ sync",
+    AuthoringAction.TP_TO_FOCUSED: "Teleport to player",
     AuthoringAction.TOGGLE_SPEED: "Speed",
     AuthoringAction.TOGGLE_COMBAT: "Auto-combat",
     AuthoringAction.TOGGLE_DIALOGUE: "Auto-dialogue",

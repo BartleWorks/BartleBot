@@ -7,6 +7,7 @@ from wizwalker import Keycode
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ZONE_AT_END
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
 #: The param holding the entrance prompt's title. Editor-only: see bartlebot/content/bot_summary.py.
@@ -17,7 +18,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="dungeon_zone",
         type="zone",
         label="Dungeon Zone",
-        help="Zone name all players must be in after successfully entering the gauntlet.",
+        help=ZONE_AT_END,
         default="",
         required=True,
     ),
@@ -26,28 +27,25 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Gauntlet Name",
         help=(
-            "The gauntlet's name as its entrance prompt shows it. Record fills it in. "
-            "Nothing reads it while the bot runs: it names the gauntlet in the bot's "
-            "generated description."
+            "The gauntlet's name as its entrance prompt shows it. Record fills it in, and it's used "
+            "only to name the gauntlet in the bot's description."
         ),
         default="",
-        default_hint="Empty — the generated description names the gauntlet by its zone, if at all.",
+        default_hint="named by its zone, if at all",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Enters a gauntlet dungeon placed in a player's house. Unlike enter_dungeon, "
-        "this node does not teleport players — they must walk to the gauntlet sigil. "
-        "Waits for the entrance prompt to appear, presses X, confirms any warning dialog, "
-        "and waits for all players to arrive in the dungeon zone."
+        "Enters a gauntlet placed in a player's house. Players must already be at its sigil, "
+        "since this node doesn't teleport them."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now in dungeon_zone."),
+        ReturnSpec("SUCCESS", "Every player is in Dungeon Zone."),
         ReturnSpec(
             "FAILURE",
-            "The entrance prompt never appeared within the timeout, or not all players reached dungeon_zone.",
+            "The entrance prompt never appeared, or not every player reached Dungeon Zone.",
         ),
     ],
     required_bot_options=[

@@ -12,7 +12,7 @@ The rows sit in **folding cards** (#138): *This dungeon*, *Team*, *Quicksell* an
 goes where, and ``option_card`` draws one).  A flat list of thirteen options ran 859px
 tall against a 404px sidebar at 1080p; folding the groups nobody is working in is
 what gets the rest on screen.  Which cards are folded is the reader's, remembered in
-``settings.json`` for every bot and shared with the Options tab.  Enable Quicksell is
+``settings.json`` for every bot and shared with the Options tab.  Quicksell is
 not a row: it is the Quicksell card's header switch, and with it off every row in
 the card is disabled.
 
@@ -308,7 +308,7 @@ class OptionValuesSection(SidebarSection):
     def option_widgets(self) -> dict[str, QWidget]:
         """``{option name: value widget}`` for the options currently shown.
 
-        Enable Quicksell's is its card's header switch, which speaks the same check
+        Quicksell's is its card's header switch, which speaks the same check
         box protocol as any other bool's control.
         """
         return dict(self._option_widgets)

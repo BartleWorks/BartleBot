@@ -6,6 +6,7 @@ import logging
 from wizwalker import XYZ
 
 from bartlebot.nodes.combat_and_healing import scaled_ratios
+from bartlebot.nodes.help_text import seconds
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
@@ -15,72 +16,54 @@ PARAM_SCHEMA: list[ParamField] = [
         key="if_health_below",
         type="ratio",
         label="Collect Health Wisps If Below",
-        help=(
-            "Teleport to the closest health wisp while the player's health is below "
-            "this percentage. Set to 0% to skip "
-            "health wisp collection entirely."
-        ),
+        help="Players below this share of their health collect health wisps. At 0%, health wisps are skipped.",
         default=1.0,
-        default_hint="collect health wisps whenever not at full health",
+        default_hint="below full health",
     ),
     ParamField(
         key="if_mana_below",
         type="ratio",
         label="Collect Mana Wisps If Below",
-        help=(
-            "Teleport to the closest mana wisp while the player's mana is below "
-            "this percentage. Set to 0% to skip "
-            "mana wisp collection entirely."
-        ),
+        help="Players below this share of their mana collect mana wisps. At 0%, mana wisps are skipped.",
         default=1.0,
-        default_hint="collect mana wisps whenever not at full mana",
+        default_hint="below full mana",
     ),
     ParamField(
         key="timeout",
         type="float",
-        label="Timeout (seconds, 0 = no limit)",
-        help=(
-            "Maximum seconds to spend collecting wisps. Bounds the collection loop in case a "
-            "stale or bugged health/mana ratio reading never crosses the threshold. Set to 0 "
-            "to wait indefinitely."
-        ),
+        label="Timeout (s)",
+        help="The longest to spend collecting. 0 means no limit.",
         default=WISP_COLLECT_TIMEOUT,
-        default_hint="10s",
+        default_hint=seconds(WISP_COLLECT_TIMEOUT),
     ),
     ParamField(
         key="fail_if_health_below",
         type="ratio",
         label="Fail If Health Still Below",
         help=(
-            "After wisp collection, if any player's health is still below this "
-            "percentage, the node returns FAILURE. "
-            "Useful for routing to a potion node when wisps are insufficient. "
-            "Set to 0% to never fail on health."
+            "After collecting, the node fails if any player's health is still below this. At 0%, it "
+            "never fails on health."
         ),
         default=0.5,
-        default_hint="FAILURE if any player is still below 50% health",
+        default_hint="50%",
     ),
     ParamField(
         key="fail_if_mana_below",
         type="ratio",
         label="Fail If Mana Still Below",
         help=(
-            "After wisp collection, if any player's mana is still below this "
-            "percentage, the node returns FAILURE. "
-            "Useful for routing to a potion node when wisps are insufficient. "
-            "Set to 0% to never fail on mana."
+            "After collecting, the node fails if any player's mana is still below this. At 0%, it never fails on mana."
         ),
         default=0.5,
-        default_hint="FAILURE if any player is still below 50% mana",
+        default_hint="50%",
     ),
     ParamField(
         key="only_safe",
         type="bool",
         label="Only Collect Safe Wisps",
         help=(
-            f"Skip wisps that are within {SAFE_RADIUS:.0f} units of an enemy. Prevents "
-            "accidentally entering combat while collecting wisps after a fight. Disable only "
-            "if you need to collect wisps in areas where enemies are always nearby."
+            f"When on, skips wisps within {SAFE_RADIUS:.0f} units of an enemy, so collecting doesn't start a fight. "
+            "Turn off only where enemies are always nearby."
         ),
         default=True,
         default_hint="skip wisps near enemies",
@@ -89,26 +72,30 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Collects health and mana wisps after combat if players are below specified "
-        "thresholds. The players move as one group, all teleporting to the same wisp at "
-        "once, so a player who is already full passes through without using it up and nobody "
-        "is left behind on their own. Repeats until every player meets its thresholds, no "
-        "wisp is left, or the timeout expires. "
-        f"By default, skips wisps within {SAFE_RADIUS:.0f} units of an enemy to avoid "
-        "re-entering combat. Returns FAILURE if any player is still below the configured fail "
-        "thresholds after collection — useful for routing to a potion fallback node. "
-        "With Challenge Mode on, a player outside the dungeon is measured against the max its "
-        "next entry scales it to, as handle_potions does."
+        "Collects health and mana wisps after a fight, until every player meets its thresholds or "
+        "no wisps are left. Fails if a player is still below the fail thresholds, so you can "
+        "route to a potion node."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are at or above both fail thresholds after collection."),
+        ReturnSpec("SUCCESS", "Every player is at or above both fail thresholds."),
         ReturnSpec(
             "FAILURE",
-            "At least one player is still below a fail threshold after wisps were exhausted.",
+            "A player is still below a fail threshold.",
         ),
     ],
     max_consecutive_retries=15,
+    usage_notes=(
+        (
+            "Players move together, teleporting to the same wisp, so a player who's already full "
+            "passes through without using it up."
+        )
+        + "\n\n"
+        + (
+            "With Challenge Mode on, a player outside the dungeon is measured against the lower "
+            "maximum its next entry scales it to, as in Handle Potions."
+        )
+    ),
 )
 
 

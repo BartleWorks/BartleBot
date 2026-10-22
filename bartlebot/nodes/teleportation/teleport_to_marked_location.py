@@ -7,6 +7,7 @@ from wizwalker import XYZ
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ARRIVAL_NOTE, ZONE_AT_END
 from bartlebot.nodes.node_helpers import POSITION_MARGIN, TRIGGER_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH
@@ -19,53 +20,45 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help=(
-            "Zone name all players must be in after this node completes. Blank: the zone each "
-            "player marked in earlier in this run."
-        ),
+        help=(ZONE_AT_END),
         default="",
         required=False,
+        default_hint="each player's mark zone",
     ),
     ParamField(
         key="xyz",
         type="xyz",
         label="Mark XYZ",
-        help=(
-            "Expected XYZ coordinates after recalling. Used to verify arrival. Blank: where each "
-            "player marked earlier in this run."
-        ),
+        help="Where players should be after recalling.",
         default=None,
         required=False,
+        default_hint="each player's mark",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description=(
-        "Recalls all players to an existing marked location by clicking the RecallButton. "
-        "Handles the loading screen and verifies arrival zone and position."
-    ),
+    description="Recalls every player to their mark and checks that they arrived.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players recalled and arrived at the expected zone and XYZ."),
+        ReturnSpec("SUCCESS", "Every player recalled to Zone and Mark XYZ."),
         ReturnSpec(
             "FAILURE",
-            "One or more players had no mana; the RecallButton was not enabled within the "
-            "timeout (no mark set); the game refused the recall (most often because the marked "
-            "dungeon's timer ended and it has been reset); players did not move or enter a "
-            "loading screen within the trigger timeout; or not all players arrived in the "
-            "expected zone and position after recalling.",
+            (
+                "A player had no mana or no mark, the game refused the recall (usually because the marked "
+                "dungeon has reset), a player never started loading, or not every player arrived."
+            ),
         ),
     ],
     required_bot_options=[player_realms.SPEC],
     max_consecutive_retries=5,
     usage_notes=(
-        "Leave Zone and Mark XYZ blank to check each player against the mark it set earlier in "
-        "this run, through Mark Location or Handle Level Scaling: a bot that marks and recalls "
-        "then names the spot once. With them blank, a player that has not marked in this run "
-        "fails the node before anyone recalls.\n\n"
-        "If some but not all players end up in the expected zone, the node first tries "
-        "teleporting the stragglers to whichever player did arrive before reporting "
-        "FAILURE. That needs every player to already be mutual in-game friends."
+        (
+            "Leave Zone and Mark XYZ empty to check each player against the mark it set earlier in "
+            "this run, with Mark Location or Handle Level Scaling. A player with no mark from this "
+            "run then fails the node before anyone recalls."
+        )
+        + "\n\n"
+        + ARRIVAL_NOTE
     ),
 )
 

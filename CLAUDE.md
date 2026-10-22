@@ -95,6 +95,7 @@ read on purpose.
 | `bartlebot/nodes/CLAUDE.md` | adding a node, timing, multi-client coordination, session logs, modal dialogs, UI paths |
 | `tests/CLAUDE.md` | what a change ships with, keeping the suite fast, one QApplication per worker |
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
+| `docs/UI_TEXT.md` | writing anything a user reads: the three layers of a setting, voice, words, capitals, messages, and the rules of their own for setup's pages and the node help |
 | `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and when its warning is shown |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels and how to name them, the two storage roots, a Bot Combat Strategy's own strategies and the own-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |

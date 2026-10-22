@@ -30,8 +30,8 @@ from bartlebot.options.quicksell_setup import (
 from bartlebot.settings_manager import SettingsManager, default_for
 
 #: The row titles, for whoever finds a row the way a reader would.
-ENABLE_TITLE = "Enable Quicksell"
-SELL_PETS_TITLE = "Sell Pets"
+ENABLE_TITLE = "Quicksell"
+SELL_PETS_TITLE = "Sell pets"
 SELL_SOCKET_WRENCHES_TITLE = "Sell Socket Wrenches"
 SELL_SKELETON_KEYS_TITLE = "Sell Skeleton Keys"
 KEEP_LIST_TITLE = "Always keep"
@@ -62,29 +62,29 @@ class QuicksellSettings:
             self._enabled,
             default=default_for("general", ENABLED_KEY),
             details=(
-                "Off means backpacks fill, further drops go to your shared bank, and once that is full "
-                "too only Crowns items are kept."
+                "When off, a full backpack overflows into the character's bank. Once the bank is full too, "
+                "only Crowns items are kept."
             ),
         )
         self._sell_pets = _check_box(flags.sell_pets)
         sell_pets = SettingRow(
             SELL_PETS_TITLE,
-            "Off is the only way to keep a pet.",
+            "Turn off to keep pets.",
             self._sell_pets,
             default=default_for("general", SELL_PETS_KEY),
-            details="The quicksell window lists pets by nickname, so no keep-list keyword can match one.",
+            details="The keep list can't protect a pet.",
         )
         self._sell_socket_wrenches = _check_box(flags.sell_socket_wrenches)
         sell_wrenches = SettingRow(
             SELL_SOCKET_WRENCHES_TITLE,
-            'When off, quicksell keeps any item with "Socket Wrench" in its name.',
+            'Turn off to keep any item with "Socket Wrench" in its name.',
             self._sell_socket_wrenches,
             default=default_for("general", SELL_SOCKET_WRENCHES_KEY),
         )
         self._sell_skeleton_keys = _check_box(flags.sell_skeleton_keys)
         sell_keys = SettingRow(
             SELL_SKELETON_KEYS_TITLE,
-            'When off, quicksell keeps any item with "Skeleton Key" in its name.',
+            'Turn off to keep any item with "Skeleton Key" in its name.',
             self._sell_skeleton_keys,
             default=default_for("general", SELL_SKELETON_KEYS_KEY),
         )
@@ -92,13 +92,10 @@ class QuicksellSettings:
         self._keep_list.setPlaceholderText("e.g. Amber, Pearl")
         keep = SettingRow(
             KEEP_LIST_TITLE,
-            "Items every bot keeps, on top of its own keep list.",
+            "Which items every bot keeps, besides its own keep list.",
             self._keep_list,
             default=format_list_text(default_for("general", USER_KEEP_LIST_KEY) or []),
-            details=(
-                "Separate them with commas; any item whose name contains one is not sold. Pets are listed "
-                "by nickname, so this cannot keep one."
-            ),
+            details="Separate items with commas. Any item whose name contains an entry is kept, except pets.",
             wide=True,
         )
         self._group = SettingGroup(

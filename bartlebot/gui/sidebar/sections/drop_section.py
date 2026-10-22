@@ -279,7 +279,7 @@ class DropSection(QWidget):
         """The keywords quicksell would spare items by, for the bound bot.
 
         Empty for a bot that never sells — one with no quicksell node, and one whose
-        Enable Quicksell is off. Both keep every drop, so filtering to "what was
+        Quicksell is off. Both keep every drop, so filtering to "what was
         kept" would hide nothing and mean nothing; an empty list is what turns the
         checkbox off rather than showing a filter that cannot answer.
 

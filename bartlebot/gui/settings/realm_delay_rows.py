@@ -1,4 +1,4 @@
-"""The Default Safety Delay and Favorite realm rows, on Settings › Bot and setup's realm page (#231).
+"""The Default Safety Delay and Favorite Realm rows, on Settings › Bot and setup's realm page (#231).
 
 One builder for both, so the page asks exactly what the tab shows. The tab puts each row
 under its own heading, Timing and Realms; the page shows the two together. Both write
@@ -12,11 +12,11 @@ from PyQt6.QtWidgets import QDoubleSpinBox
 
 from bartlebot.gui.settings.rows import SettingRow
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
-from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
+from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION, SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for
 
 SAFETY_DELAY_TITLE = "Default Safety Delay"
-FAVORITE_REALM_TITLE = "Favorite realm"
+FAVORITE_REALM_TITLE = "Favorite Realm"
 
 
 def safety_delay_row(settings: SettingsManager) -> SettingRow:
@@ -43,13 +43,13 @@ def favorite_realm_row(settings: SettingsManager, realm: str | None = None) -> S
     combo.set_value(settings.favorite_realm if realm is None else realm)
     return SettingRow(
         FAVORITE_REALM_TITLE,
-        "The realm Change Realm switches every player to.",
+        "Where Change Realm and Sync in Zone send players.",
         combo,
         default=default_for("general", "favorite_realm"),
-        details=(
-            "Yours rather than the bot's: a realm in a shared bot file would send everyone who "
-            "runs it to the same place. With one set, every launched player also has the game's "
-            "Remember Realm option turned on, so a relogged player comes back to the realm it "
-            "left."
+        details=FAVORITE_REALM_DESCRIPTION
+        + (
+            " "
+            "Launched players also get the game's Remember Realm option, so a relogged player returns "
+            "to the realm it left."
         ),
     )

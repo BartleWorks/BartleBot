@@ -1,4 +1,4 @@
-"""Widget tests for the 'nav_zone' param, driven through the real Sync In Zone schema (QApplication required).
+"""Widget tests for the 'nav_zone' param, driven through the real Sync in Zone schema (QApplication required).
 
 The point of the type is that the bot file stores a zone path and nothing else: the button shows
 the zone's world, name and id, but a world written back into the bot would be a second value
@@ -97,7 +97,7 @@ async def test_a_failed_trip_is_logged_and_gives_the_button_back(qapp, monkeypat
         field.go_btn.click()
         await asyncio.gather(*param_panel._NAV_TASKS)
 
-    assert "Sync In Zone from the properties panel failed" in caplog.text
+    assert "Sync in Zone from the properties panel failed" in caplog.text
     assert field.go_btn.isEnabled()
 
 

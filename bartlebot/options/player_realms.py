@@ -39,11 +39,10 @@ SPEC = BotOptionSpec(
     type=OPTION_TYPE,
     default=TOGETHER,
     description=(
-        "Together: every player on one realm and in one area. A player found on another realm "
-        "is ported to the others before it can enter a separate battle or dungeon.\n\n"
-        "Separate: never move a player onto another player's realm. Change Realm gives each "
-        "player a realm of its own, and any split already made is left as it is. For bots "
-        "like the reagent collectors, where players on one realm compete for the same spawns."
+        "Together keeps every player on one realm. A player found on another realm is brought to "
+        "the others before a battle or dungeon.\n\nSeparate gives each player its own realm and "
+        "never moves one onto another's. Use it when players on one realm would compete for the "
+        "same spawns, as reagent collectors do."
     ),
 )
 

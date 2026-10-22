@@ -6,6 +6,16 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import (
+    INTERACT_PLAYERS,
+    INTERACT_XYZ,
+    OBJECT_USE_DELAY_HELP,
+    RESET_XYZ,
+    SEQUENTIAL_INTERACTION,
+    SEQUENTIAL_INTERACTION_HINT,
+    ZONE_AT_START,
+    seconds,
+)
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, TRIGGER_TIMEOUT
 
@@ -14,7 +24,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -22,7 +32,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
-        help="Coordinates of the item to interact with. The interact prompt should appear when standing here.",
+        help=INTERACT_XYZ,
         default=None,
         required=True,
     ),
@@ -30,10 +40,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="reset_xyz",
         type="xyz",
         label="Reset XYZ",
-        help=(
-            "Coordinates used to dismiss the interact prompt and reset state. "
-            "The prompt must NOT appear when standing here."
-        ),
+        help=(RESET_XYZ),
         default=None,
         required=True,
     ),
@@ -41,7 +48,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_clients",
         type="player_list",
         label="Interact Players",
-        help="Which players perform this interaction.",
+        help=INTERACT_PLAYERS,
         default=[],
         required=True,
     ),
@@ -49,67 +56,52 @@ PARAM_SCHEMA: list[ParamField] = [
         key="menu_path",
         type="str_list",
         label="Menu Path",
-        help=(
-            "Window-tree path to the UI element that becomes visible when the menu opens. "
-            "Polled after pressing X to confirm the interaction succeeded. "
-            "Use paths from bartlebot/nodes/paths.py when possible."
-        ),
+        help="The UI path of an element that appears when the menu opens. The node waits for it after pressing X.",
         required=True,
     ),
     ParamField(
         key="menu_timeout",
         type="float",
         label="Menu Timeout (s)",
-        help="Seconds to wait for the menu path to become visible after pressing X.",
+        help="How long to wait for Menu Path after pressing X.",
         default=TRIGGER_TIMEOUT,
-        default_hint=f"{TRIGGER_TIMEOUT}s",
+        default_hint=seconds(TRIGGER_TIMEOUT),
     ),
     ParamField(
         key="sequential",
         type="bool",
         label="Sequential Interaction",
-        help=(
-            "Have players open the menu one at a time instead of together. Each player waits "
-            "at Reset XYZ, takes its turn, and has its menu confirmed open before the next "
-            "player starts. Note that on an object which only serves one player at a time, "
-            "the previous player's menu may well close as the next one opens — so this helps "
-            "when the interaction itself is being swallowed, but it cannot leave every player "
-            "sitting in an open menu at once."
-        ),
+        help=(SEQUENTIAL_INTERACTION),
         default=False,
-        default_hint="All players interact at once.",
+        default_hint=SEQUENTIAL_INTERACTION_HINT,
         required=False,
     ),
     ParamField(
         key="object_use_delay",
         type="float",
         label="Delay Between Object Uses (s)",
-        help=(
-            "Seconds to leave between one player finishing at the object and the next player starting "
-            "on it, in Sequential Interaction. The object becoming free again has no readable signal, "
-            "so this is the only cover for it — raise it for an object whose menu takes several "
-            "seconds to close and reopen. Ignored unless Sequential Interaction is on."
-        ),
+        help=(OBJECT_USE_DELAY_HELP),
         default=OBJECT_USE_DELAY,
         minimum=0.0,
-        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
+        default_hint=seconds(OBJECT_USE_DELAY),
         required=False,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Interacts with an NPC or world object (lever, vendor, service NPC, etc.) and confirms "
-        "that a specific UI menu opened. Unlike the interact node, this node does not advance "
-        "dialogue — use it when the interaction opens a menu window rather than a dialogue box."
+        "Interacts with an NPC or object that opens a menu, such as a shop, and checks that the "
+        "menu opened. For an interaction that starts dialogue, use Interact."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Interaction complete and menu path became visible on all active players."),
+        ReturnSpec("SUCCESS", "Menu Path is visible for every player who interacted."),
         ReturnSpec(
             "FAILURE",
-            "Players not in zone, interact prompt never appeared after retries, "
-            "or menu path did not become visible within menu_timeout.",
+            (
+                "A player wasn't in Zone, the interact prompt never appeared, or Menu Path didn't appear "
+                "within Menu Timeout."
+            ),
         ),
     ],
     required_bot_options=[
@@ -117,13 +109,12 @@ NODE_SPEC = NodeSpec(
     ],
     max_consecutive_retries=10,
     usage_notes=(
-        "Use this node when pressing X opens a shop, NPC services menu, or any other UI window. "
-        "For interactions that trigger dialogue, use the interact node instead. "
-        "Set menu_path to a path from bartlebot/nodes/paths.py that is only visible when the "
-        "target menu is open (e.g. POTION_SHOP_BASE_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH). "
-        "Turn on Sequential Interaction when the object will not serve more than one player at "
-        "once — but read that parameter's help first: it confirms each menu in turn and does "
-        "not promise every player is left in an open menu."
+        "Set Menu Path to an element that's visible only while the menu is open. The UI Tree Browser shows its path."
+        + "\n\n"
+        + (
+            "Sequential Interaction checks each player's menu in turn. On an object that serves one "
+            "player at a time, the previous player's menu may close as the next one opens."
+        )
     ),
 )
 

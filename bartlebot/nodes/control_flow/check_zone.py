@@ -7,8 +7,8 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
         type="zone",
-        label="Zone Name",
-        help="Zone name to check (e.g. 'WizardCity/WC_Ravenwood').",
+        label="Zone",
+        help="The zone to check, such as WizardCity/WC_Ravenwood.",
         default="",
         required=True,
     ),
@@ -16,18 +16,18 @@ PARAM_SCHEMA: list[ParamField] = [
         key="clients_to_check",
         type="player_list",
         label="Players to Check",
-        help="Which players to check zone for.",
+        help="Which players to check.",
         default=[],
         required=True,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Checks whether all specified players are currently in a given zone.",
+    description="Checks whether the chosen players are all in a zone.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("TRUE", "All checked players are in the specified zone."),
-        ReturnSpec("FALSE", "One or more checked players are not in the specified zone."),
+        ReturnSpec("TRUE", "Every checked player is in Zone."),
+        ReturnSpec("FALSE", "A checked player isn't in Zone."),
     ],
 )
 

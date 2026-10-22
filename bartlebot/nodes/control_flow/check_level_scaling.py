@@ -14,18 +14,18 @@ _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     group=GROUP_TEAM,
     type="player_list",
     default=[],
-    description="Which players to check/apply level scaling. Empty = no players. Shared by every level scaling node.",
+    description=(
+        "Which players need the level scaling elixir. Every level scaling node uses this list, "
+        "and an empty list means no players."
+    ),
 )
 
 NODE_SPEC = NodeSpec(
-    description=(
-        "Checks whether the level-scaling elixir UI indicator is visible for the "
-        "specified players. Returns TRUE only if every checked player is level scaled."
-    ),
+    description="Checks whether every Level Scaling Player has the level scaling elixir.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("TRUE", "All specified players have an active level-scaling elixir."),
-        ReturnSpec("FALSE", "One or more specified players are not level scaled."),
+        ReturnSpec("TRUE", "Every Level Scaling Player has the elixir."),
+        ReturnSpec("FALSE", "A Level Scaling Player doesn't have the elixir."),
     ],
     required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
 )

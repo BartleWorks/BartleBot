@@ -1459,7 +1459,7 @@ the list. Four rules:
   The rule is `quicksell.matching_keyword`, so a row shown is a row the node would spare,
   and the list is the *effective* one — a socket wrench kept by a `sell_*` bool shows up
   beside what was typed. The checkbox is disabled, not hidden, for a bot that never sells
-  (no quicksell node, or Enable Quicksell off): there the filter can only hide everything,
+  (no quicksell node, or Quicksell off): there the filter can only hide everything,
   and a control that appears for some bots is one nobody finds. The keep list is a bot
   option edited over in Option Values and nothing reports here, so `DropSection.refresh_keep_list`
   re-resolves it when the Drops tab comes forward.
@@ -1496,11 +1496,11 @@ already has.
   - **Card headers have no option gutter; rows keep theirs.** A header holding only a
     title would carry fifty pixels of empty gutter before it, while every row's revert
     and `?` still sit in one column.
-  - **Enable Quicksell is a switch in the Quicksell band, not a row** (`heads_group`).
+  - **Quicksell is a switch in the Quicksell band, not a row** (`heads_group`).
     A switch turns a feature on or off; a check box is an option in a form. It has no
     revert — flipping a two-state control back to the inherited value already drops the
     override — and no `?`: its description is its tooltip, and the top of the card while
-    descriptions are shown. Options has no switch, since Enable Quicksell is user-owned.
+    descriptions are shown. Options has no switch, since Quicksell is user-owned.
   - **Collapse all and Expand all are drawn, not shown, on hover.** `HeadingAction`
     blanks its glyph rather than hiding, because a hidden widget leaves the Tab order and
     could never be focused into view. Hidden outright only while the section is folded.
@@ -1654,7 +1654,7 @@ already has.
   it carries `type` and the bounds — derived, never persisted, and dropped when
   the named parent is not in this graph, because a row indented under a row that
   is not there reads as a child of whatever precedes it. Quicksell's three sell
-  flags are the case: with `Enable Quicksell` off nothing is sold, so there is
+  flags are the case: with `Quicksell` off nothing is sold, so there is
   nothing for them to spare, and they were three live tick boxes that could not
   affect the run and gave no sign of it.
 
@@ -1662,7 +1662,7 @@ already has.
   this surface follows:
 
   - **Only Option Values indents, and only under a parent that is a row.** Options edits
-    declarations, and `Enable Quicksell` is user-owned, so the parent has no row there
+    declarations, and `Quicksell` is user-owned, so the parent has no row there
     to be a child of. On Option Values the sell flags are not indented either: their parent is
     the switch heading their card, and the card already says what they belong to.
     Minimum Team Size, under Team-Up, is the child that is. A row whose parent heads
