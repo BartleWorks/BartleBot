@@ -1,0 +1,1497 @@
+{
+  "id": "13c46227-3475-4f0e-8230-807246815e5b",
+  "name": "Morganthe",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "2 Pollen Mote",
+      "category": "Reagents"
+    },
+    {
+      "name": "Accurate Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Aged Hundred Legger Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Amulet of the Grand Prophecy",
+      "category": "Amulets"
+    },
+    {
+      "name": "Amulet of the Shadow Palace",
+      "category": "Amulets"
+    },
+    {
+      "name": "Amulet of the Shadow Web",
+      "category": "Amulets"
+    },
+    {
+      "name": "Animate Skeleton Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Archangel's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of the BurrowBreaker",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of the QuietBlade",
+      "category": "Robes"
+    },
+    {
+      "name": "Artisan's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Astral Shard",
+      "category": "Reagents"
+    },
+    {
+      "name": "Athame of the Chosen One",
+      "category": "Athames"
+    },
+    {
+      "name": "Aura Crush Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Avenging Fossil",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Balanceblade Talent Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Band of the Shadow Web",
+      "category": "Rings"
+    },
+    {
+      "name": "Basilisk",
+      "category": "Spellements"
+    },
+    {
+      "name": "Berry Poundcake",
+      "category": "Snacks"
+    },
+    {
+      "name": "Berserk Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Big Sparky Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Black Lotus",
+      "category": "Reagents"
+    },
+    {
+      "name": "Black Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Black Widow",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Black Widow Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blade Flurry Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blade of Fire Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blade of Ice Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blade of the Shadow Palace",
+      "category": "Athames"
+    },
+    {
+      "name": "Blazing Oak Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blood Moss",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boom Stroganoff",
+      "category": "Snacks"
+    },
+    {
+      "name": "Boots of the BurrowBreaker",
+      "category": "Boots"
+    },
+    {
+      "name": "Bread Fruit Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brood Mother's Regal Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Burrower Robe of Ingenuity",
+      "category": "Robes"
+    },
+    {
+      "name": "Button Tom Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Celestial Calendar",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Chastisement",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Chimera",
+      "category": "Spellements"
+    },
+    {
+      "name": "Choke",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Clear Critical Amethyst +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Critical Jade +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Critical Onyx +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Critical Ruby +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Damage Amethyst +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Damage Onyx +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Damage Ruby +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Piercing Amethyst +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clock Spider Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cold Snap Peas",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cornbread Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Crystal Spider",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Crystal Staff of Mirages",
+      "category": "Wands"
+    },
+    {
+      "name": "Cycle of Life",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deck of Shadow Lightning (Square)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Lightning"
+    },
+    {
+      "name": "Deck of Shadow Lightning (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Lightning"
+    },
+    {
+      "name": "Deck of Shadow Lightning (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Lightning"
+    },
+    {
+      "name": "Deck of Shadow Prophecy (Square)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Prophecy"
+    },
+    {
+      "name": "Deck of Shadow Prophecy (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Prophecy"
+    },
+    {
+      "name": "Deck of Shadow Prophecy (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Prophecy"
+    },
+    {
+      "name": "Deck of the Shadow Heart (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of the Shadow Heart"
+    },
+    {
+      "name": "Deep Mushroom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Desparagus Salad",
+      "category": "Snacks"
+    },
+    {
+      "name": "Devotion Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Digger's Mail of Symmetry",
+      "category": "Robes"
+    },
+    {
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dr. Von's Monster",
+      "category": "Spellements"
+    },
+    {
+      "name": "Draconian Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Draconium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Edge of the Shadow Web",
+      "category": "Athames"
+    },
+    {
+      "name": "Efreet",
+      "category": "Spellements"
+    },
+    {
+      "name": "Elf on Fire Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Empowerment Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Enfeeble (-All)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Face Palm",
+      "category": "Seeds"
+    },
+    {
+      "name": "Feeling Weak Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Feinting Spell Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fire Blossom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Fire Dragon",
+      "category": "Spellements"
+    },
+    {
+      "name": "Forest Lord",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fossil",
+      "category": "Reagents"
+    },
+    {
+      "name": "Freddo Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Frost Giant",
+      "category": "Spellements"
+    },
+    {
+      "name": "Furnace",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gem of the Grand Prophecy",
+      "category": "Amulets"
+    },
+    {
+      "name": "Geometry of Shadows",
+      "category": "Rings"
+    },
+    {
+      "name": "Get Sunbird Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Giant Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Gnomes!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Go Humongo Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Golden Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Granny Snow Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Greensleeves Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hooligan",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Huckleberry Muffin",
+      "category": "Snacks"
+    },
+    {
+      "name": "Huckleberry Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Huntress' Mirrormask",
+      "category": "Hats"
+    },
+    {
+      "name": "Insignia of the Dark Woman",
+      "category": "Rings"
+    },
+    {
+      "name": "Jewel of the Shadow Web",
+      "category": "Amulets"
+    },
+    {
+      "name": "Keen Eyes Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Khrysalis Hive Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Starfall Sea Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "King Artorius (Balance)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Death)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Fire)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Ice)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Life)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Myth)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Storm)",
+      "category": "Spellements"
+    },
+    {
+      "name": "Kris of Shadow and Light",
+      "category": "Athames"
+    },
+    {
+      "name": "Kris of the Chosen One",
+      "category": "Athames"
+    },
+    {
+      "name": "Kris of the Shadow Palace",
+      "category": "Athames"
+    },
+    {
+      "name": "Kris of the Shadow Web",
+      "category": "Athames"
+    },
+    {
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lady of Spiders' Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Lady of Spiders' Royal Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Lady of Spiders' Royal Sigil",
+      "category": "Rings"
+    },
+    {
+      "name": "Lava Lily",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leaf Shield Armor of Vigor",
+      "category": "Robes"
+    },
+    {
+      "name": "Legendary Treant (445)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Leviathan",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Loop of the Umbra Legion",
+      "category": "Rings"
+    },
+    {
+      "name": "Lord of Winter",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lost Mouse King's Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Lucius McTavish",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Luminous Weaver",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Malduit Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mander Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Medusa",
+      "category": "Spellements"
+    },
+    {
+      "name": "Mega Hurry Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mend Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Meowiarty Archmage Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meowiarty Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mercy of Shadow and Light",
+      "category": "Athames"
+    },
+    {
+      "name": "Merle's Whisker",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mist Wood",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mokompo Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Morganthe's Amulet of Amber",
+      "category": "Amulets"
+    },
+    {
+      "name": "Morganthe's Bite",
+      "category": "Athames"
+    },
+    {
+      "name": "Morganthe's Dark Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Morganthe's Dark Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Morganthe's Kris",
+      "category": "Athames"
+    },
+    {
+      "name": "Morganthe's Shadow of Amber",
+      "category": "Amulets"
+    },
+    {
+      "name": "Mouse Boots of Rebellion",
+      "category": "Boots"
+    },
+    {
+      "name": "Mouse Vestment of Mourning",
+      "category": "Robes"
+    },
+    {
+      "name": "Mulligan's Shuffle Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nerys Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nightshade",
+      "category": "Reagents"
+    },
+    {
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "O'Leary Swindler",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ore",
+      "category": "Reagents"
+    },
+    {
+      "name": "Orichalcum",
+      "category": "Reagents"
+    },
+    {
+      "name": "Orthrus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Participation Trophy",
+      "category": "Reagents"
+    },
+    {
+      "name": "Pesky Beetle",
+      "category": "Pets"
+    },
+    {
+      "name": "Pierce",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Piercemonger Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plaguebringer Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polar Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Polished Accurate Hematite +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Opal +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Amethyst +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Citrine +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Hematite +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Jade +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Onyx +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Onyx +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Opal +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Peridot +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Ruby +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Sapphire +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Amethyst +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Citrine +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Hematite +42",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Hematite +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Jade +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Onyx +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Opal +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Sapphire +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Hematite +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Opal +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +94",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +95",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Mending Opal +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Citrine +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Hematite +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Hematite +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Ruby +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished PIP Hematite +1",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pollen Mote",
+      "category": "Reagents"
+    },
+    {
+      "name": "Power Nova",
+      "category": "Spellements"
+    },
+    {
+      "name": "Punishment",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Purloin Health Talent Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pyrosaurus Rex Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ra",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rage of Winter Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Rain of Fire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rattlebones Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rebirth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Red Mandrake",
+      "category": "Reagents"
+    },
+    {
+      "name": "Relic of the Shadow Palace",
+      "category": "Amulets"
+    },
+    {
+      "name": "Reliquary",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ring of the Dying Star",
+      "category": "Rings"
+    },
+    {
+      "name": "Rye Bread Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sabertooth",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sanctuary",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scarecrow",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scorched Armor of the Burn",
+      "category": "Robes"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scrounger",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Seal of the Shadow Palace",
+      "category": "Rings"
+    },
+    {
+      "name": "Shadow Queen's Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Shadow Queen's Grace",
+      "category": "Amulets"
+    },
+    {
+      "name": "Shadow Spider's Kris",
+      "category": "Athames"
+    },
+    {
+      "name": "Shadow Spider's Sting",
+      "category": "Athames"
+    },
+    {
+      "name": "Shatter (3 Pip)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sigil of Shadows",
+      "category": "Rings"
+    },
+    {
+      "name": "Sigil of the Dark Woman",
+      "category": "Rings"
+    },
+    {
+      "name": "Sigil of the Shadow Palace",
+      "category": "Rings"
+    },
+    {
+      "name": "Sigil of the Shadow Queen",
+      "category": "Rings"
+    },
+    {
+      "name": "Sigil of the Shadow Web",
+      "category": "Rings"
+    },
+    {
+      "name": "Sigil of the Umbra Legion",
+      "category": "Rings"
+    },
+    {
+      "name": "Signet of the Shadow Queen",
+      "category": "Rings"
+    },
+    {
+      "name": "Sir Bedevere Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sir Lamorak Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sirens",
+      "category": "Spellements"
+    },
+    {
+      "name": "Skeletal Dragon",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sleet Storm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Angel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snow Apple Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "SnowBorn Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spinysaur",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spirit Armor Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sprite Swarm (40+360)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sprite Time Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Steal Health Talent Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stone Block",
+      "category": "Reagents"
+    },
+    {
+      "name": "Storm Lord",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Owl",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm-Tooth Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Strong Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sun Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sunstone",
+      "category": "Reagents"
+    },
+    {
+      "name": "The Dark Woman's Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "The Dark Woman's Kris",
+      "category": "Athames"
+    },
+    {
+      "name": "The Deer Knight Rises Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Thunder Lizard Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Time Skip Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Tower Shield Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Treant Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Turquoise",
+      "category": "Reagents"
+    },
+    {
+      "name": "Unstoppable Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vassanji Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Virulence",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wildfire Treant",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wizard City Dreamworld Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Woolly Mammoth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Wrath's Grape Juice",
+      "category": "Snacks"
+    },
+    {
+      "name": "Zeus Exalted Duel",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Archangel's Vestment",
+        "=Amulet of the Grand Prophecy",
+        "=Amulet of the Shadow Palace",
+        "=Amulet of the Shadow Web",
+        "=Lady of Spiders' Amulet",
+        "=Morganthe's Amulet of Amber",
+        "=Morganthe's Dark Amulet",
+        "=Shadow Queen's Amulet",
+        "=Band of the Shadow Web",
+        "=Geometry of Shadows",
+        "=Insignia of the Dark Woman",
+        "=Lady of Spiders' Royal Ring",
+        "=Loop of the Umbra Legion",
+        "=Ring of the Dying Star",
+        "=Seal of the Shadow Palace",
+        "=Signet of the Shadow Queen",
+        "=Athame of the Chosen One",
+        "=Blade of the Shadow Palace",
+        "=Brood Mother's Regal Blade",
+        "=Edge of the Shadow Web",
+        "=Mercy of Shadow and Light",
+        "=Morganthe's Bite",
+        "=Shadow Spider's Sting",
+        "=The Dark Woman's Dagger"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Morganthe's Chamber",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+        "dungeon_zone": "Khrysalis/Interiors/KR_Z12_I04_MorgantheBossRoom",
+        "dungeon_name": "Morganthe's Chamber",
+        "sigil_xyz": {
+          "x": -221.6,
+          "y": -2202.58,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -15.55,
+          "y": -2719.18,
+          "z": 0.0
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat boss",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KR_MorgantheGrey_A_Bossfight",
+        "wiki_page": "Creature:Morganthe (Death)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Khrysalis/Interiors/KR_Z12_I04_MorgantheBossRoom",
+        "to_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+        "xyz": {
+          "x": -8.06,
+          "y": -1800.33,
+          "z": 0.3
+        },
+        "reset_xyz": {
+          "x": -0.23,
+          "y": -1505.23,
+          "z": 0.3
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "Khrysalis/Interiors/KR_Z12_I02_Entry"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Khrysalis/Interiors/KR_Z12_I02_Entry"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  },
+  "history": [
+    "78a77c83d3f5e981be0d2a221136bcd080034328d9da28f99236cb2b6554c11f"
+  ]
+}
