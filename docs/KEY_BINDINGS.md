@@ -121,3 +121,14 @@ before the run, since the other action happens too and the player may wonder why
 `ClientManager` starts it, as a task of its own, once the client's hooks are up: by then a
 character is in the world, and so are its bindings. A failure there is logged at DEBUG; the
 pre-run read repeats it, and warns.
+
+## The authoring hotkeys' clash warning
+
+Settings › Authoring flags a hotkey that lands on a key the game binds, since the hotkey holds
+the key while a game window has the keyboard (`game/game_keybindings.py`, #81). It used to
+read `Bin/config.xml`'s `<InputMappings>`, which the game no longer keeps current: a rebound
+key still read as its old one there. It now takes the bindings last read from each client's
+memory, all of them together, since a hotkey is armed in whichever game window has the
+keyboard (`game_keys.known_maps()`, which reads nothing: the dialog cannot wait). With no
+client read yet, it reads the install's `LocalInputBindings.xml`, the last account to save,
+and failing that the shipped `InputBindings.xml`.

@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QDoubleSpinBox, QKeySequenceEdit
 
+from bartlebot.clients import game_keys
 from bartlebot.clients.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
 from bartlebot.game.game_keybindings import GameBinding, read_game_keybindings
 from bartlebot.gui.global_hotkeys import parse_binding
@@ -72,7 +73,7 @@ def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBindi
 
     Pure, so the rules are testable without a QApplication. A key nothing can register is
     one problem; two actions on one key is another, since only the first would ever fire;
-    a key the game itself binds (*game_bindings*, from ``config.xml``) is a third, since
+    a key the game itself binds (*game_bindings*, the players' own) is a third, since
     while the hotkey is armed the game never sees that key.
     """
     problems: list[str] = []
@@ -106,7 +107,7 @@ class AuthoringTab(SettingsForm):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         sm = SettingsManager.instance()
-        self._game_bindings = read_game_keybindings()
+        self._game_bindings = read_game_keybindings(game_keys.known_maps())
 
         self.add_heading("Speed")
         self._speed_sb = QDoubleSpinBox()

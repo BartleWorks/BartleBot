@@ -250,3 +250,11 @@ async def test_an_action_with_no_key_a_press_can_use_raises_naming_it():
 def test_a_code_keycode_has_is_sent_as_its_member():
     assert game_keys.keycode(0x58) is Keycode.X
     assert game_keys.keycode(0xDE) == game_keys.VirtualKey(0xDE)
+
+
+async def test_the_bindings_last_read_are_known_without_a_read():
+    memory = FakeMemory()
+    _player_set(memory, interact="k")
+    client = MemoryClient(memory)
+    keys = await game_keys.key_map(client)
+    assert keys in game_keys.known_maps()

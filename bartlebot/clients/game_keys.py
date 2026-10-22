@@ -56,6 +56,8 @@ class _Entry:
     unreadable: bool = False
     """Memory gave no list: defaults until a refresh, rather than a four-second scan per press."""
     fixed: KeyMap | None = None
+    last: KeyMap | None = None
+    """The bindings the last read from memory found, for a caller that cannot wait on a read."""
 
 
 _entries: dict[int, _Entry] = {}
@@ -208,7 +210,8 @@ async def key_map(client, *, refresh: bool = False, warn: bool = True) -> KeyMap
     try:
         if entry.address is not None:
             try:
-                return KeyMap(await read_binding_list(reader, entry.address), source="memory")
+                entry.last = KeyMap(await read_binding_list(reader, entry.address), source="memory")
+                return entry.last
             except Exception:  # noqa: BLE001 - moved, or the process is gone; find it again
                 entry.address = None
         address = await find_binding_list(reader)
@@ -225,7 +228,17 @@ async def key_map(client, *, refresh: bool = False, warn: bool = True) -> KeyMap
         )
         return KeyMap.defaults()
     entry.address = address
-    return KeyMap(bindings, source="memory")
+    entry.last = KeyMap(bindings, source="memory")
+    return entry.last
+
+
+def known_maps() -> list[KeyMap]:
+    """The bindings last read from each client's memory, without reading: for the GUI thread.
+
+    Every client read this session, a closed one's included, which suits the one caller, a
+    warning about keys the game uses.
+    """
+    return [entry.last for entry in _entries.values() if entry.last is not None]
 
 
 def use_map(client, keys: KeyMap | None) -> None:
