@@ -2024,3 +2024,22 @@ async def test_a_recovery_port_that_times_out_is_logged_not_raised():
         await nh._port_stragglers(machine, 0, "someone", [FakeClient()], "Dst", 0)
 
     assert any("timed out" in msg and "friends list" in msg for msg, _ in machine.logs)
+
+
+# ── read_zones ───────────────────────────────────────────────────────────────
+
+
+async def test_read_zones_waits_until_every_zone_is_readable():
+    ready, slow = FakeClient(), FakeClient()
+    ready.zone_name = AsyncMock(return_value="Alpha/Hub")
+    slow.zone_name = AsyncMock(side_effect=[None, None, "Beta/Hub"])
+
+    assert await nh.read_zones([ready, slow], 1.0, 0.01) == ["Alpha/Hub", "Beta/Hub"]
+
+
+async def test_read_zones_gives_back_none_for_a_zone_that_never_turns_readable():
+    ready, gone = FakeClient(), FakeClient()
+    ready.zone_name = AsyncMock(return_value="Alpha/Hub")
+    gone.zone_name = AsyncMock(return_value=None)
+
+    assert await nh.read_zones([ready, gone], 0.05, 0.01) == ["Alpha/Hub", None]

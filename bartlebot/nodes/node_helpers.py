@@ -47,6 +47,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
+    ZONE_READABLE_TIMEOUT,
     ZONE_SETTLE_GRACE,
 )
 from bartlebot.options import player_realms
@@ -1023,6 +1024,26 @@ async def wait_for_zone(
     if await poll_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
         return None
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
+
+
+async def read_zones(
+    clients: list, timeout: float = ZONE_READABLE_TIMEOUT, poll_interval: float = POLL_INTERVAL
+) -> list[str | None]:
+    """Every client's zone_name(), waiting up to *timeout* for each to be readable.
+
+    A client between zones, or not logged in, has no zone: zone_name() is None. That says
+    nothing about where it is going, so a comparison against it (or against another None)
+    proves nothing and is waited out here instead. Returns the last read; a client that is
+    still None after *timeout* is still unreadable, and the caller decides what that means.
+    """
+    zones: list[str | None] = []
+
+    async def readable() -> bool:
+        zones[:] = await asyncio.gather(*[c.zone_name() for c in clients])
+        return all(zones)
+
+    await poll_until(readable, timeout, poll_interval)
+    return zones
 
 
 import contextlib  # noqa: E402 -- beside the one switch that uses them
