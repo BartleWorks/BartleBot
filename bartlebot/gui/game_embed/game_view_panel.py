@@ -69,7 +69,7 @@ def authoring_tooltip(action: AuthoringAction, binding: str, *, on: bool = False
     """
     what = {
         AuthoringAction.XYZ_SYNC: "Move every other player in the same zone onto the focused player's spot",
-        AuthoringAction.TP_TO_FOCUSED: "Port every other player to the focused player through the friends list",
+        AuthoringAction.TP_TO_FOCUSED: "Teleport every other player to the focused player through the friends list",
         AuthoringAction.TOGGLE_SPEED: "Make every player walk faster, until switched off or a bot starts",
         AuthoringAction.TOGGLE_COMBAT: "Fight any battle a player enters, with the open bot's default Duel Strategy",
         AuthoringAction.TOGGLE_DIALOGUE: "Click through every player's NPC dialogue, declining any side quest",

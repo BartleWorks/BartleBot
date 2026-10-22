@@ -43,13 +43,11 @@ def favorite_realm_row(settings: SettingsManager, realm: str | None = None) -> S
     combo.set_value(settings.favorite_realm if realm is None else realm)
     return SettingRow(
         FAVORITE_REALM_TITLE,
-        "The realm Change Realm switches every player to.",
+        "Which realm the Change Realm node switches every player to.",
         combo,
         default=default_for("general", "favorite_realm"),
         details=(
-            "Yours rather than the bot's: a realm in a shared bot file would send everyone who "
-            "runs it to the same place. With one set, every launched player also has the game's "
-            "Remember Realm option turned on, so a relogged player comes back to the realm it "
-            "left."
+            "Launched players also get the game's Remember Realm option, so a relogged player returns "
+            "to the realm it left."
         ),
     )

@@ -288,3 +288,8 @@ def test_the_add_button_opens_the_picker(qapp, screen, stored):
 
     assert dlg.account_picker is not None
     assert dlg.account_picker.selection() == [ONE]
+
+
+def test_the_dialog_says_whether_it_adds_or_edits(qapp, screen, stored):
+    assert ProfileDialog().windowTitle() == "Add Launch Profile"
+    assert ProfileDialog(name="Farm Team", selected_usernames=[ONE]).windowTitle() == "Edit Launch Profile"

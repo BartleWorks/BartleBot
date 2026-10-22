@@ -798,7 +798,7 @@ class QuicksellPage(FirstRunPage):
     """What bots may sell: Settings › Bot's quicksell rows, on the stored values.
 
     The rows are :class:`~bartlebot.gui.settings.quicksell_group.QuicksellSettings`, the
-    builder the Bot tab uses, without its Show Quicksell explanation row: Next writes
+    builder the Bot tab uses, without its Quicksell reminder row: Next writes
     through :func:`~bartlebot.options.quicksell_setup.record_quicksell`, which turns the
     explanation off, since this page has given it.
     """

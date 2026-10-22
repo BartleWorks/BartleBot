@@ -62,7 +62,12 @@ from bartlebot.gui.game_embed.card_columns import (
     refresh_column_fit,
 )
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard
-from bartlebot.gui.settings.profile_editor import ProfileDialog, mark_unfittable_resolutions
+from bartlebot.gui.settings.profile_editor import (
+    ADD_PROFILE_TITLE,
+    EDIT_PROFILE_TITLE,
+    ProfileDialog,
+    mark_unfittable_resolutions,
+)
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.gui.theming.account_accent import (
     ACCOUNT_PALETTE_SIZE,
@@ -76,6 +81,22 @@ from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager, default_for
 from bartlebot.shared.launch_profiles import add_profile, build_profile, copy_name, profile_names
+
+#: The account editor's window title, and the title of a message about what it was given.
+ADD_ACCOUNT_TITLE = "Add Wizard101 Account"
+EDIT_ACCOUNT_TITLE = "Edit Wizard101 Account"
+
+
+def _confirm_delete(parent: QWidget | None, title: str, text: str) -> bool:
+    """Ask before a delete, with the verb on the button, and Cancel the default."""
+    box = QMessageBox(parent)
+    box.setWindowTitle(title)
+    box.setIcon(QMessageBox.Icon.Warning)
+    box.setText(text)
+    delete = box.addButton("Delete", QMessageBox.ButtonRole.DestructiveRole)
+    box.setDefaultButton(box.addButton(QMessageBox.StandardButton.Cancel))
+    box.exec()
+    return box.clickedButton() is delete
 
 
 def _slots_in_use(exclude: str = "") -> dict[int, list[str]]:
@@ -182,7 +203,7 @@ class _AccountColorPicker(ThemedMixin, QWidget):
             btn = _Swatch(taken=bool(holders))
             btn.setCheckable(True)
             btn.setFixedSize(self.SWATCH_SIZE, self.SWATCH_SIZE)
-            btn.setToolTip("Already used by " + ", ".join(holders) if holders else "Not used by another account")
+            btn.setToolTip("Already used by " + ", ".join(holders) if holders else "Available")
             btn.clicked.connect(lambda _=False, k=key: self.set_selected(k))
             self._swatches[key] = btn
             row.addWidget(btn)
@@ -255,7 +276,7 @@ class _AccountDialog(QDialog):
         parent=None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Wizard101 Account")
+        self.setWindowTitle(EDIT_ACCOUNT_TITLE if username else ADD_ACCOUNT_TITLE)
         self.setMinimumWidth(300)
 
         form = QFormLayout()
@@ -265,7 +286,7 @@ class _AccountDialog(QDialog):
         self._password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         if username:
             self._username_edit.setReadOnly(True)
-            self._username_edit.setToolTip("An account's username cannot be changed. Set an alias instead.")
+            self._username_edit.setToolTip("A username can't be changed. To rename the account, set an alias.")
             self._password_edit.setPlaceholderText("Leave blank to keep existing password")
 
         self._color_picker = _AccountColorPicker(selected=color, taken=taken)
@@ -301,9 +322,9 @@ class _AccountDialog(QDialog):
         """
         if self.username:
             shown = CredentialStore.display_name(self.username, None)
-            self._alias_edit.setPlaceholderText(f"Optional — shown as {shown}")
+            self._alias_edit.setPlaceholderText(f"Optional, shown as {shown}")
         else:
-            self._alias_edit.setPlaceholderText("Optional — shown instead of username")
+            self._alias_edit.setPlaceholderText("Optional, shown instead of the username")
 
     @property
     def alias_placeholder(self) -> str:
@@ -348,14 +369,14 @@ def add_account(parent: QWidget | None = None) -> bool:
         return False
     username = dlg.username
     if not username:
-        QMessageBox.warning(parent, "Invalid", "Username cannot be empty.")
+        QMessageBox.warning(parent, ADD_ACCOUNT_TITLE, "Enter a username.")
         return False
     if not dlg.password:
-        QMessageBox.warning(parent, "Invalid", "Password cannot be empty for a new account.")
+        QMessageBox.warning(parent, ADD_ACCOUNT_TITLE, "Enter a password.")
         return False
     accounts = SettingsManager.instance().accounts
     if any(a["username"] == username for a in accounts):
-        QMessageBox.warning(parent, "Duplicate", f"Account '{username}' already exists.")
+        QMessageBox.warning(parent, ADD_ACCOUNT_TITLE, f"Account '{username}' already exists.")
         return False
     CredentialStore.store(username, dlg.password)
     record = {"username": username, "alias": dlg.alias or ""}
@@ -430,13 +451,7 @@ def delete_account(username: str, parent: QWidget | None = None) -> bool:
     if account is None:
         return False
     display = CredentialStore.display_name(username, account.get("alias") or None)
-    reply = QMessageBox.question(
-        parent,
-        "Delete account",
-        f"Remove '{display}', its stored password, and its known characters?",
-        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-    )
-    if reply != QMessageBox.StandardButton.Yes:
+    if not _confirm_delete(parent, "Delete Account", f"Delete {display}, its saved password and its known characters?"):
         return False
     CredentialStore.delete(username)
     character_roster.forget(username)
@@ -495,11 +510,11 @@ def add_launch_profile(
         return False
     name = dlg.name
     if not name:
-        QMessageBox.warning(parent, "Invalid", "Profile name cannot be empty.")
+        QMessageBox.warning(parent, ADD_PROFILE_TITLE, "Enter a profile name.")
         return False
     store = SettingsManager.instance().account_store
     if name in profile_names(store):
-        QMessageBox.warning(parent, "Duplicate", f"Profile '{name}' already exists.")
+        QMessageBox.warning(parent, ADD_PROFILE_TITLE, f"Profile '{name}' already exists.")
         return False
     add_profile(store, build_profile(name, dlg.selected_usernames, dlg.resolution))
     return True
@@ -541,11 +556,11 @@ def edit_launch_profile(
         return False
     new_name = dlg.name
     if not new_name:
-        QMessageBox.warning(parent, "Invalid", "Profile name cannot be empty.")
+        QMessageBox.warning(parent, EDIT_PROFILE_TITLE, "Enter a profile name.")
         return False
     profiles = SettingsManager.instance().launch_profiles
     if new_name != old_name and any(p["name"] == new_name for p in profiles):
-        QMessageBox.warning(parent, "Duplicate", f"Profile '{new_name}' already exists.")
+        QMessageBox.warning(parent, EDIT_PROFILE_TITLE, f"Profile '{new_name}' already exists.")
         return False
     for p in profiles:
         if p["name"] == old_name:
@@ -602,13 +617,7 @@ def delete_launch_profile(name: str, parent: QWidget | None = None) -> bool:
     profiles = SettingsManager.instance().launch_profiles
     if not any(p.get("name") == name for p in profiles):
         return False
-    reply = QMessageBox.question(
-        parent,
-        "Delete profile",
-        f"Remove launch profile '{name}'?",
-        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-    )
-    if reply != QMessageBox.StandardButton.Yes:
+    if not _confirm_delete(parent, "Delete Launch Profile", f"Delete launch profile '{name}'?"):
         return False
     SettingsManager.instance().launch_profiles = [p for p in profiles if p.get("name") != name]
     return True
@@ -674,13 +683,12 @@ class AccountsTab(QWidget):
         launch_form.add_row(
             SettingRow(
                 "Default game resolution",
-                "BartleBot sets it at every launch and runs the game windowed.",
+                "Which resolution the game launches at, in a window.",
                 self._res_combo,
                 default=default_for("game_embed", "resolution"),
                 details=(
-                    "At smaller sizes it scales the game's own UI down to match while it runs, and puts "
-                    "it back when the client closes. Widescreen sizes keep a larger UI than 4:3 ones of "
-                    "the same height."
+                    "Smaller sizes also shrink the game's UI until the client closes. Widescreen sizes keep a "
+                    "larger UI than 4:3 sizes of the same height."
                 ),
             )
         )
@@ -694,9 +702,8 @@ class AccountsTab(QWidget):
                 self._auto_select_cb,
                 default=default_for("general", "auto_select_character"),
                 details=(
-                    "Also used to bring a player back after it crashes mid-run. With this off, every "
-                    "launched window still arrives at its character-select screen, embedded in the game "
-                    "view, waiting for you to pick."
+                    "Crash recovery also uses this setting. When off, each game window waits at character "
+                    "select for you to pick."
                 ),
             )
         )
@@ -707,9 +714,9 @@ class AccountsTab(QWidget):
                 self._quick_tp_cb,
                 default=default_for("general", "disable_quick_friend_teleport"),
                 details=(
-                    "With it on, nodes that double-click a Friends List name to open a profile teleport "
-                    "instead. The game reads this at startup, so it does not reach a client that is "
-                    "already running."
+                    "When quick friend teleport is on, double-clicking a name on the friends list teleports "
+                    "instead of opening the profile, which breaks some nodes. The change applies from the "
+                    "next launch."
                 ),
             )
         )
@@ -726,7 +733,7 @@ class AccountsTab(QWidget):
         # naming them above two that already do is the noise the rule was meant
         # to cut.
         # ------------------------------------------------------------------
-        layout.addWidget(QLabel("Passwords are stored in Windows Credential Manager:"))
+        layout.addWidget(QLabel("Passwords are stored in Windows Credential Manager."))
 
         columns = QHBoxLayout()
         columns.setSpacing(16)
@@ -740,7 +747,7 @@ class AccountsTab(QWidget):
         columns.addWidget(self._accounts_col, 1)
 
         self._profiles_col = CardColumn(
-            "Launch Profiles", EMPTY_PROFILES_HINT, "Add launch profile", show_settings_link=False
+            "Launch profiles", EMPTY_PROFILES_HINT, "Add launch profile", show_settings_link=False
         )
         self._profiles_col.add_requested.connect(self._on_profile_add)
         self._profiles_col.reordered.connect(self._on_profiles_reordered)

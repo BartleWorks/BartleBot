@@ -105,7 +105,7 @@ PROFILE_DIALOG_MIN_HEIGHT = 480
 
 #: The column's heading. Says the ordering is real, which the ``P1``…``Pn`` pills on the
 #: cards then let the user read rather than count.
-ACCOUNTS_COLUMN_TITLE = "Accounts (in player order)"
+ACCOUNTS_COLUMN_TITLE = "Accounts, in player order"
 
 #: Shown only while the profile has no accounts at all, in the empty column. The Add
 #: button is beside the column rather than inside it now, so this is the only thing an
@@ -120,8 +120,12 @@ EMPTY_PROFILE_HINT = "A profile launches its accounts together, in the order you
 #: used, since standing apart from the list it no longer reads as one of that list's own
 #: rows -- and "Add accounts" alone suggests entering account details again, not choosing
 #: among the ones already stored.
-ADD_BUTTON_TEXT = "Add/remove profile accounts"
+ADD_BUTTON_TEXT = "Choose accounts…"
 PICKER_TITLE = "Profile accounts"
+
+#: The editor's window title, and the title of a message about what it was given.
+ADD_PROFILE_TITLE = "Add Launch Profile"
+EDIT_PROFILE_TITLE = "Edit Launch Profile"
 
 
 def mark_unfittable_resolutions(
@@ -244,7 +248,7 @@ class ProfileDialog(QDialog):
         # agree about which resolutions can be launched. None falls back to the
         # configured layout alone — see gui/screen_fit.budget_for.
         self._live_game_area = live_game_area
-        self.setWindowTitle("Launch Profile")
+        self.setWindowTitle(EDIT_PROFILE_TITLE if name else ADD_PROFILE_TITLE)
         self.setMinimumWidth(PROFILE_DIALOG_MIN_WIDTH)
         self.setMinimumHeight(PROFILE_DIALOG_MIN_HEIGHT)
 
@@ -294,7 +298,7 @@ class ProfileDialog(QDialog):
 
         res_form = QFormLayout()
         self._res_combo = QComboBox()
-        self._res_combo.addItem("Use global setting", userData=None)
+        self._res_combo.addItem("Use the default resolution", userData=None)
         for w, h in VALID_RESOLUTIONS:
             self._res_combo.addItem(f"{w}×{h}", userData=(w, h))
 
@@ -430,8 +434,8 @@ class ProfileDialog(QDialog):
         self._res_hint.setText(
             f"Largest that fits {clients} on this screen: {largest[0]}×{largest[1]}."
             if largest is not None
-            else f"No offered resolution fits {clients} on this screen — remove an account, "
-            "or make the sidebars and bot canvas smaller in Settings → General."
+            else f"No resolution fits {clients} on this screen. Remove an account, "
+            "or make the sidebars and bot canvas smaller in Settings › General."
         )
 
     # ------------------------------------------------------------------

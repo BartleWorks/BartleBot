@@ -133,7 +133,7 @@ def _quicksell_message(config, states, clients, message: str) -> str | SafetyWar
     value, keep it on a list — is the same for every bot, so the way out of it is one
     answer for the whole app, not one per bot: per bot, it would ask the same question
     eighty times. It is shown before each run until the user ticks the check box under
-    it, which turns off Show Quicksell explanation before each run in Settings → Bot.
+    it, which turns off Quicksell reminder in Settings › Bot.
 
     That switch does not reach a bot selling more than the user's own settings would,
     which only its file can do (``quicksell.declared_sales``). That is the case this

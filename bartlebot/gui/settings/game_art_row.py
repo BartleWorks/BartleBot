@@ -43,10 +43,8 @@ EXTRACT_TITLE = "Extract game art"
 EXTRACT_SUMMARY = "Show spell cards, schools, worlds and tags with the game's own pictures."
 #: The cost, said once for setup's choice and the Settings row.
 EXTRACT_DETAILS = (
-    "BartleBot copies them out of your game's files into its own folder in AppData, about "
-    "35 MB, and never shares them or puts them in a bot file. Without them, cards and lists "
-    "show names only. Extract them again from Settings › General › Game art after a game "
-    "patch adds spells."
+    "The pictures take about 35 MB in AppData, and need extracting again when a game update adds "
+    "spells. Without them, cards and lists show names only."
 )
 
 SETTINGS_TITLE = "Game art"
@@ -58,17 +56,14 @@ EXTRACTED_UNDATED = "Extracted: {files:,} pictures for {templates:,} cards."
 #: Under the bar: the step, with how far through it when it has a count.
 STEP_COUNTED = "{step} · {done:,} of {total:,}"
 STARTING = "Starting…"
-DONE = "Done: {files:,} pictures for {templates:,} cards, and {icons:,} icons, {mb:.0f} MB."
-FAILED = (
-    "Couldn't extract the game art: {reason} BartleBot works without it, showing names where the "
-    "art would be. Try again from Settings › General › Game art."
-)
-NO_GAME = "Wizard101's folder wasn't found, so there is nothing to read."
+DONE = "Extracted {files:,} pictures for {templates:,} cards and {icons:,} icons ({mb:.0f} MB)."
+FAILED = "Couldn't extract the game art. {reason} Cards and lists show names until the art is extracted."
+NO_GAME = "Wizard101 wasn't found. Choose the game folder, then try again."
 
 #: The progress bar's height.
 BAR_PX = 8
 
-DIALOG_TITLE = "Extract game art"
+DIALOG_TITLE = "Extract Game Art"
 CLOSE = "Close"
 CANCEL = "Cancel"
 

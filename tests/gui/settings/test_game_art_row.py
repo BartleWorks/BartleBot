@@ -145,7 +145,7 @@ async def test_a_failed_run_says_why_and_close_is_ready(qapp, prefs):
     await dialog.extraction.task
 
     assert not dialog.extraction.ok
-    assert "folder wasn't found" in dialog.extraction.outcome_text
+    assert "Wizard101 wasn't found" in dialog.extraction.outcome_text
     assert dialog.close_button.isEnabled()
 
 

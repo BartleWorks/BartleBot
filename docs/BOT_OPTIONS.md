@@ -125,8 +125,8 @@ list keeps as checked and locked, with a tooltip pointing to Settings → Bot.
 the templates reach the library nearly every bot sells, and a dialog on every run
 teaches the user to click through it, along with the teleport and elixir warnings it
 shares the dialog with. So the explanation carries a check box under it, *Don't show
-this quicksell explanation again*, which turns off *Show Quicksell explanation before
-each run* on the Bot settings tab. It is a check box under its own warning, the form
+this quicksell explanation again*, which turns off *Quicksell reminder* on the Bot settings
+tab. It is a check box under its own warning, the form
 Windows and macOS use for suppressing an alert, rather than a footer button: the dialog
 holds several warnings, and a button there reads as "don't show this dialog". The
 switch is one answer for the whole app. What the explanation asks (lock what you value,

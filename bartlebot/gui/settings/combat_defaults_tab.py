@@ -72,10 +72,7 @@ from bartlebot.shared.store_files import held_listings
 
 logger = logging.getLogger(__name__)
 
-INTRO = (
-    "A fight uses one of these when nothing is tailored to it: no Bot Combat Strategy on the bot's "
-    "Combat tab, or one that gives the fight no duel strategy. BartleBuddy uses the same two."
-)
+INTRO = "Used for any fight that the bot's Combat tab doesn't give a Duel Strategy."
 HEADING = "Default Duel Strategies"
 
 CHANGE = "Change…"
@@ -87,19 +84,17 @@ SUMMARIES = {
     TeamSize.SOLO: "With one game client connected.",
     TeamSize.TEAM: "With two to four game clients connected.",
 }
-RECOMMENDED_NOTE = "Recommended: the default that ships with BartleBot."
-CHOSEN_NOTE = "Your choice, for every bot with nothing tailored."
+RECOMMENDED_NOTE = "The recommended Duel Strategy, included with BartleBot."
+CHOSEN_NOTE = "Chosen by you."
 #: What a card says when not even the shipped duel can be read.
-UNREADABLE = "The shipped duel could not be read, so these fights use the built-in DSL."
+UNREADABLE = "The recommended Duel Strategy couldn't be read, so these fights use a basic built-in one."
 
 LOG_HEADING = "Log"
 RECORD_TITLE = "Record combat decisions"
-RECORD_SUMMARY = "Write why each turn cast what it did to the session log."
+RECORD_SUMMARY = "Write each turn's reasoning to the session log."
 RECORD_DETAILS = (
-    "Every round of every fight: the hand, each line of the strategy and why it was passed over, "
-    "every enchant fused, and the card cast and at whom. Players are written by their slot, never "
-    "their name. It adds a few kilobytes a round for each client, so turn it on to look into a fight "
-    "that misbehaves, and off again after. Developer mode records it either way."
+    "Recording adds a few kilobytes per round for each client and names players by slot, never by "
+    "wizard name. Turn recording on to look into a fight that goes wrong."
 )
 
 #: The team size Change… filters to: the smallest the card answers for.
@@ -138,11 +133,11 @@ class DefaultDuelCard(SettingCard):
         text.addWidget(self._summary)
         head.addLayout(text, 1)
         self._change_btn = ActionButton("search", CHANGE, style=ActionStyle.SECONDARY, fill=False)
-        self._change_btn.setToolTip(f"Pick the duel strategy {TITLES[size].lower()} fights use")
+        self._change_btn.setToolTip(f"Pick the Duel Strategy for {TITLES[size].lower()} fights")
         self._change_btn.clicked.connect(self._on_change)
         head.addWidget(self._change_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         self._recommended_btn = ActionButton("revert", USE_RECOMMENDED, fill=False)
-        self._recommended_btn.setToolTip("Go back to the duel strategy that ships with BartleBot")
+        self._recommended_btn.setToolTip("Use the Duel Strategy that comes with BartleBot")
         self._recommended_btn.clicked.connect(lambda: self.set_choice(None))
         head.addWidget(self._recommended_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         column.addLayout(head)

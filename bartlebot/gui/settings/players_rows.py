@@ -16,6 +16,7 @@ from bartlebot.settings_manager import SettingsManager, default_for
 
 AUTO_GROUP_TITLE = "Automatically group players"
 REFILL_POTIONS_TITLE = "Refill potions"
+REFILL_POTIONS_DETAILS = "Each refill costs gold and a trip to the Commons, and players come back to where they were."
 
 
 def _check_box(checked: bool) -> QCheckBox:
@@ -32,9 +33,8 @@ def auto_group_row(settings: SettingsManager) -> SettingRow:
         _check_box(settings.auto_group_players),
         default=default_for("general", "auto_group_players"),
         details=(
-            "And again after one crashes or is closed. Group members get wisps after combat "
-            "and take the first turn in battle, and crashing drops a player out of the group. "
-            "Requires every account to be on the others' friends lists in-game."
+            "Every account must be on the others' friends lists. Players regroup after a crash, and "
+            "group members share wisps and take the first turn in battle."
         ),
     )
 
@@ -46,8 +46,5 @@ def refill_potions_row(settings: SettingsManager) -> SettingRow:
         "Buy potions from Hilda Brewer when a player runs out.",
         _check_box(refill_potions(settings)),
         default=default_for("general", "default_refill_potions"),
-        details=(
-            "Players go to the Commons, buy, then recall to where they were. Buying costs "
-            "gold. Off, they keep farming without potions."
-        ),
+        details=REFILL_POTIONS_DETAILS,
     )

@@ -427,7 +427,7 @@ class SettingRow(QWidget):
         described = self._binding.describe(self._default)
         self._revert.setToolTip(f"Reset to the default ({described})" if changed else f"At the default ({described})")
         if self._rolled_up and not changed:
-            self._bar.setToolTip("A setting inside has been changed")
+            self._bar.setToolTip("Changed inside this group")
         else:
             self._bar.setToolTip("Changed from the default" if changed else "")
 
@@ -569,7 +569,7 @@ class SettingGroup(SettingCard):
 
     def _refresh_gate(self, *_args) -> None:
         on = self._header.control.isChecked()
-        reason = f"{self._header.title} is off, so this has no effect."
+        reason = f"Turn on {self._header.title} to use this."
         for row in self._rows:
             row.set_available(on, reason)
 

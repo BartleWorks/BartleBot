@@ -26,8 +26,7 @@ from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for
 
 _INTRO = (
-    "Starting answers, not rules. A bot's author can override them, and your value in a bot's "
-    "Options tab overrides both."
+    "Defaults for every bot. A bot's own value overrides these, and a value you set in its Options tab overrides both."
 )
 
 
@@ -62,12 +61,8 @@ class BotTab(SettingsForm):
                 self._relog_interval_sb,
                 default=_default("relog_interval_hours"),
                 details=(
-                    "A game client gets slower the longer it stays logged in — over one measured "
-                    "overnight run the same fight went from 23 to 32 seconds — and relogging is the "
-                    "only thing that clears it. Costs about three minutes per cycle for four players. "
-                    "The run pauses at a node boundary, every player is closed and brought back by "
-                    "the same path used after a crash, and the bot resumes at its recovery state. It "
-                    "is skipped entirely if any player could not be logged back in. Off never relogs."
+                    "Each relog takes about three minutes for four players. The run pauses, then continues "
+                    "where it left off."
                 ),
             )
         )
@@ -85,14 +80,10 @@ class BotTab(SettingsForm):
         self.add_row(
             SettingRow(
                 "Friend teleport target",
-                "Who a bot ports to when it names none of its own players.",
+                "Who a bot teleports to when it doesn't name one of your players.",
                 self._friend_name_edit,
                 default=_default("default_friend_name"),
-                details=(
-                    "The wizard teleport_to_friend ports to. This one is yours: a name in a shared bot "
-                    "file would send everyone else to a wizard who is not on their friends list, so no "
-                    "bot stores one. That wizard must be online and on every player's friends list."
-                ),
+                details="This wizard must be online and on every player's friends list.",
             )
         )
 
@@ -113,15 +104,11 @@ class BotTab(SettingsForm):
         self._explain_quicksell_cb = QCheckBox()
         self._explain_quicksell_cb.setChecked(sm.show_quicksell_explanation)
         explain = SettingRow(
-            "Show Quicksell explanation before each run",
-            "Explain what quicksell sells before a run starts.",
+            "Quicksell reminder",
+            "Explain what quicksell sells before each run.",
             self._explain_quicksell_cb,
             default=_default("show_quicksell_explanation"),
-            details=(
-                "The safety check explains it before each run of a bot that has quicksell. Off skips the "
-                "explanation, but a bot that sells something your settings here keep is still flagged, "
-                "once for each bot."
-            ),
+            details="A bot that would sell something on your keep list is still flagged, once per bot.",
         )
         # The same rows setup's Quicksell page shows, written through the same functions.
         self._quicksell = QuicksellSettings(sm, extra_rows=[explain])
@@ -136,14 +123,11 @@ class BotTab(SettingsForm):
         self._apply_archmastery_cb.setChecked(sm.get_general("default_apply_archmastery", default=False))
         self.add_row(
             SettingRow(
-                "Set archmastery school on deck apply",
-                "Applying a saved deck also sets its archmastery school.",
+                "Set archmastery with decks",
+                "Set a deck's archmastery school when applying it.",
                 self._apply_archmastery_cb,
                 default=_default("default_apply_archmastery"),
-                details=(
-                    "Off by default: the school outlives the run, and most decks do not care what it is. "
-                    "An individual deck can pin its own answer, which wins over this."
-                ),
+                details="The school stays set after the run. A deck's own setting overrides this one.",
             )
         )
 

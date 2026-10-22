@@ -975,9 +975,7 @@ def editor(monkeypatch):
     monkeypatch.setattr(CredentialStore, "store", staticmethod(lambda u, pw: Editor.passwords.__setitem__(u, pw)))
     monkeypatch.setattr(CredentialStore, "delete", staticmethod(lambda u: Editor.passwords.pop(u, None)))
     monkeypatch.setattr(character_roster, "forget", lambda u: None)
-    monkeypatch.setattr(
-        accounts_tab.QMessageBox, "question", lambda *a, **k: accounts_tab.QMessageBox.StandardButton.Yes
-    )
+    monkeypatch.setattr(accounts_tab, "_confirm_delete", lambda *a, **k: True)
     return Editor
 
 
@@ -1364,7 +1362,7 @@ def _row(widget: QWidget, title: str) -> SettingRow:
     return next(row for row in widget.findChildren(SettingRow) if row.title == title)
 
 
-_SWITCHES = ("Enable Quicksell", "Sell Pets", "Sell Socket Wrenches", "Sell Skeleton Keys")
+_SWITCHES = ("Quicksell", "Sell pets", "Sell Socket Wrenches", "Sell Skeleton Keys")
 
 
 def test_the_quicksell_page_shows_the_bot_tabs_rows_but_the_explanation(qapp):
@@ -1373,7 +1371,7 @@ def test_the_quicksell_page_shows_the_bot_tabs_rows_but_the_explanation(qapp):
     tab_titles = [row.title for row in tab_group.findChildren(SettingRow)]
 
     assert page_titles == [*_SWITCHES, "Always keep"]
-    assert tab_titles == [*_SWITCHES, "Show Quicksell explanation before each run", "Always keep"]
+    assert tab_titles == [*_SWITCHES, "Quicksell reminder", "Always keep"]
 
 
 def test_the_quicksell_page_opens_on_the_stored_settings(qapp):
@@ -1505,7 +1503,7 @@ def test_the_quicksell_page_shows_every_description_with_no_way_to_hide_one(qapp
 )
 def test_the_wrench_and_key_rows_say_what_they_do_to_quicksell(qapp, title, keyword):
     """On the page and on Settings › Bot alike: the rows come from one builder."""
-    expected = f'When off, quicksell keeps any item with "{keyword}" in its name.'
+    expected = f'Turn off to keep any item with "{keyword}" in its name.'
 
     assert _row(QuicksellPage(), title).summary.text() == expected
     assert _row(BotTab(), title).summary.text() == expected
