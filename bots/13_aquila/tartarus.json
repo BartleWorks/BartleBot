@@ -107,6 +107,10 @@
       "category": "Boots"
     },
     {
+      "name": "Frigid Skeleturion",
+      "category": "Pets"
+    },
+    {
       "name": "Grim Skeleturion",
       "category": "Pets"
     },
@@ -603,7 +607,14 @@
     "Dungeon",
     "Challenge Mode"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Defeat Stheno",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to fail the urn puzzle and defeat Stheno, an optional boss that drops the Frigid Skeleturion."
+    }
+  ],
   "states": [
     {
       "id": "t_sync_players_1_state_1",
@@ -706,7 +717,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 25080.0,
+        "x": 25960.0,
         "y": 0.0
       },
       "params": {
@@ -1360,7 +1371,7 @@
       "node_type": "enter_zone",
       "label": "Exit Temple of Longing",
       "position": {
-        "x": 20240.0,
+        "x": 21120.0,
         "y": 0.0
       },
       "params": {
@@ -1384,7 +1395,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Coordinates",
       "position": {
-        "x": 20680.0,
+        "x": 21560.0,
         "y": 0.0
       },
       "params": {
@@ -1401,7 +1412,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Coordinates",
       "position": {
-        "x": 21120.0,
+        "x": 22000.0,
         "y": 0.0
       },
       "params": {
@@ -1418,7 +1429,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Coordinates",
       "position": {
-        "x": 21560.0,
+        "x": 22440.0,
         "y": 0.0
       },
       "params": {
@@ -1435,7 +1446,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for Dialogue",
       "position": {
-        "x": 22000.0,
+        "x": 22880.0,
         "y": 0.0
       },
       "params": {
@@ -1448,7 +1459,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Cerberus",
       "position": {
-        "x": 22440.0,
+        "x": 23320.0,
         "y": 0.0
       },
       "params": {
@@ -1463,7 +1474,7 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of Hades",
       "position": {
-        "x": 22880.0,
+        "x": 23760.0,
         "y": 0.0
       },
       "params": {
@@ -1487,7 +1498,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Coordinates",
       "position": {
-        "x": 23320.0,
+        "x": 24200.0,
         "y": 0.0
       },
       "params": {
@@ -1504,7 +1515,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for Dialogue",
       "position": {
-        "x": 23760.0,
+        "x": 24640.0,
         "y": 0.0
       },
       "params": {
@@ -1517,7 +1528,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Hades the Unseen",
       "position": {
-        "x": 24200.0,
+        "x": 25080.0,
         "y": 0.0
       },
       "params": {
@@ -1532,7 +1543,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for Dialogue",
       "position": {
-        "x": 24640.0,
+        "x": 25520.0,
         "y": 0.0
       },
       "params": {
@@ -1625,7 +1636,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Lion's Tail Leaves",
       "position": {
-        "x": 19800.0,
+        "x": 20680.0,
         "y": 0.0
       },
       "params": {
@@ -1733,7 +1744,7 @@
       "label": "Assemble fourth urn piece",
       "position": {
         "x": 19360.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
         "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
@@ -1754,6 +1765,34 @@
         "animation_delay": 0.0,
         "sequential": false,
         "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_60",
+      "node_type": "handle_combat",
+      "label": "Defeat Stheno",
+      "position": {
+        "x": 19800.0,
+        "y": 90.0
+      },
+      "params": {
+        "enemy": "AQ-Gorgon-Stheno",
+        "wiki_page": "Creature:Stheno",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_61",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 20240.0,
+        "y": 90.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
       }
     }
   ],
@@ -1961,11 +2000,41 @@
     {
       "trigger": "advance",
       "source": "state_34",
+      "dest": "state_59",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
       "dest": "state_56",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -2181,11 +2250,41 @@
     {
       "trigger": "advance",
       "source": "state_59",
+      "dest": "state_60",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
       "dest": "state_55",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -2347,6 +2446,26 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_60",
+      "dest": "state_61",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_61",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -2399,7 +2518,7 @@
         "state_11",
         "state_4"
       ],
-      "color": 1,
+      "color": 3,
       "collapsed": true
     },
     {
@@ -2431,7 +2550,7 @@
         "state_27",
         "state_26"
       ],
-      "color": 1,
+      "color": 2,
       "collapsed": true
     },
     {
@@ -2449,9 +2568,11 @@
         "state_57",
         "state_52",
         "state_58",
-        "state_55"
+        "state_55",
+        "state_61",
+        "state_60"
       ],
-      "color": 1,
+      "color": 5,
       "collapsed": true
     },
     {
@@ -2477,7 +2598,7 @@
         "state_49",
         "state_47"
       ],
-      "color": 1,
+      "color": 6,
       "collapsed": true
     }
   ],
@@ -2486,6 +2607,9 @@
     "version": 1
   },
   "history": [
+    "9b4c77a2bb63f5b1dbc619e60b29a8c31c49769232f375f2294aa2ac7b8c3892",
+    "189d16f448bbfe071dc3000bb15895969bb368fc44f4e9a1d1aa3f73036f62cb",
+    "5749fb87a7b839a455c4523150a906b389a8cea901ce6b7d25c06cf69cd5bdb6",
     "6609fa8ef7161487f7aeeca6f108f9c782cbd6dbe763174e2931a9c52da937b9",
     "0d5f80692128537b16d590064377137d83d24c9c25e9111ee9101c37c1da7898",
     "9958d838f6f5fb2a77474745e26cb467849d14e256366027bcaafd1180b78830",
