@@ -109,6 +109,7 @@ read on purpose.
 | `docs/PLAYER_REALMS.md` | telling whether players share a realm by sight, the record of who does, the Player Realms option (Together/Separate) and what blocks Separate, and where each node checks and repairs |
 | `docs/AMBIENT_COMBAT.md` | a fight no node started: the game rules it rests on, cancelling and rerunning the node, who helps and how (same realm, or by port), holding the first cast, where everyone goes after, how a session ends, the flee limit |
 | `docs/LEVEL_SCALING.md` | the one level scaling node, why it never cancels an elixir and warns at run start instead, the Scales of Knowledge table and how to add an entry, and Challenge Mode's stat caps: why potions read against the scaled max, and which level a dungeon scales to |
+| `docs/KEY_BINDINGS.md` | the player's key bindings: why they are read from each client's memory and not the file, finding the list once and reading it each time, a key's name to its code and the two names to recheck before the branch merges, and what a press can use: a bare key only, never one the chat line shares |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |

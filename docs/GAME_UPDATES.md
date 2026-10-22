@@ -279,3 +279,15 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
 | `ChatSendHook._SEND_PATTERN` | sending chat | Deferred, as `ChatHook`. |
 | `ChatSendHook._BUDDY_PATTERN` | buddy requests | Deferred, as `ChatHook`. |
 | `_SSM_CONSTRUCTOR_PATTERN` (`social_systems_manager.py`) | the social systems manager | Deferred: BartleBot reads group state from the UI instead, the memory route being dead already (`clients/group_manager.py`). |
+
+- **Key rebinding:** bindings belong to the account, not the install, and each client holds
+  its own in memory, one `InputBindingList` (`tools/probe_binding_memory.py`); the shared
+  `LocalInputBindings.xml` holds one account's at most. A binding with a modifier did not
+  reach the game by any of three ways of sending it (`tools/probe_key_bindings.py`).
+  **Recheck both of these on the build that goes live, before this branch merges:** the game
+  names the main `.` key `comma` and the `,` key `period`, swapped (seen binding by hand on
+  2026-10-22, and pressing each code opened the other's action), which reads as a bug
+  KingsIsle may fix; and whether the numpad `.` key, code `0x6E` with no name in the game's
+  table, lands on N's binding, as sending `0x6E` toggled the compass (N) here. Untried so far
+  for want of a numpad. `docs/KEY_BINDINGS.md` has the rest: how BartleBot reads a client's
+  bindings, and what a press of an action can use.
