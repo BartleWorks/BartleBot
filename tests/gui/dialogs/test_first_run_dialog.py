@@ -1596,7 +1596,7 @@ def test_what_the_page_stores_shows_on_settings_bot(qapp):
     _next(dialog)
 
     tab = BotTab()
-    assert tab.row("Favorite realm").control.get_value() == "Balestrom"
+    assert tab.row("Favorite Realm").control.get_value() == "Balestrom"
     assert tab.row("Default Safety Delay").control.value() == 5.0
 
 
@@ -1629,7 +1629,7 @@ def test_the_page_shows_the_bot_tabs_rows_with_every_description(qapp):
     tab = BotTab()
     rows = page.findChildren(SettingRow)
 
-    assert [row.title for row in rows] == ["Favorite realm", "Default Safety Delay"]
+    assert [row.title for row in rows] == ["Favorite Realm", "Default Safety Delay"]
     for row in rows:
         assert row.summary.text() == tab.row(row.title).summary.text()
         assert row.details.text() == tab.row(row.title).details.text()

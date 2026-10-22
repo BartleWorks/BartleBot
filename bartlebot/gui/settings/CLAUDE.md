@@ -223,7 +223,7 @@ client whether or not a bot is ever run.
 because the app setting and the *option* are the same value and one value
 described twice is how the two texts come to disagree —
 `test_the_safety_delay_setting_and_option_read_the_same` checks the tab's hint
-and every NodeSpec that declares the option against it. Its row and Favorite realm's are
+and every NodeSpec that declares the option against it. Its row and Favorite Realm's are
 built by `realm_delay_rows`, which setup's Realm and Safety Delay page shows too, as
 `quicksell_group` is for the quicksell rows; so the delay's guidance by region is in that
 one text, not on the page.

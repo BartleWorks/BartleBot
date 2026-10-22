@@ -281,7 +281,7 @@ shared `preferences.json`.
 
 ### Realm and Safety Delay
 
-The page shows Settings › Bot's **Favorite realm** and **Default Safety Delay** rows,
+The page shows Settings › Bot's **Favorite Realm** and **Default Safety Delay** rows,
 built for both by `gui/settings/realm_delay_rows`, with every description shown. Above
 them, a line says what each is for: Change Realm moves every player to the favorite
 realm, and Safety Delay is how long the game server gets to answer an action, so the

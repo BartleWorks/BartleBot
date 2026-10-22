@@ -1,4 +1,4 @@
-"""The Default Safety Delay and Favorite realm rows, on Settings › Bot and setup's realm page (#231).
+"""The Default Safety Delay and Favorite Realm rows, on Settings › Bot and setup's realm page (#231).
 
 One builder for both, so the page asks exactly what the tab shows. The tab puts each row
 under its own heading, Timing and Realms; the page shows the two together. Both write
@@ -16,7 +16,7 @@ from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION, SAFETY_DEL
 from bartlebot.settings_manager import SettingsManager, default_for
 
 SAFETY_DELAY_TITLE = "Default Safety Delay"
-FAVORITE_REALM_TITLE = "Favorite realm"
+FAVORITE_REALM_TITLE = "Favorite Realm"
 
 
 def safety_delay_row(settings: SettingsManager) -> SettingRow:
