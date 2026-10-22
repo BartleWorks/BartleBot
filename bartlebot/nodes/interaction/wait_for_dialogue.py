@@ -10,44 +10,34 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="timeout",
         type="float",
-        label="Timeout (seconds, 0 = no limit)",
-        help=(
-            "Maximum seconds to wait before returning FAILURE. "
-            "Set to 0 to wait indefinitely (mirrors Deimos waitforfree behavior)."
-        ),
+        label="Timeout (s)",
+        help="The longest to wait before failing. 0 means no limit.",
         default=60.0,
-        default_hint="60s",
+        default_hint="60 seconds",
     ),
     ParamField(
         key="animation_delay",
         type="float",
         label="Animation Delay (s)",
         help=(
-            "Extra seconds to wait for an animation or cutscene, on top of the Safety "
-            "Delay. Added to the quiet period this node requires before it calls the "
-            "conversation finished, so a pause between two dialogue windows is not "
-            "mistaken for the end of it. Additive rather than a replacement: the "
-            "animation takes the same time on every connection, while Safety Delay is "
-            "the slack this player's connection needs on top of it."
+            "Extra seconds of quiet to wait for, on top of Safety Delay, so a pause between two "
+            "dialogue windows isn't taken for the end."
         ),
         default=INTERACT_ANIMATION_DELAY,
         minimum=0.0,
-        default_hint="No animation to wait out.",
+        default_hint="none",
         required=False,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Dismisses dialogue on all players. Polls for at least Safety Delay (plus Animation Delay) seconds; "
-        "if no player has dialogue for the full delay, returns SUCCESS. Each time dialogue is dismissed, the "
-        "timer resets, preventing premature exit between consecutive dialogue windows. Set timeout to 0 for "
-        "no time limit."
+        "Clicks through dialogue on every player until none has appeared for Safety Delay plus Animation Delay."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players have been dialogue-free for at least the quiet period."),
-        ReturnSpec("FAILURE", "The timeout expired while players were still in dialogue."),
+        ReturnSpec("SUCCESS", "No player has had dialogue for the whole quiet period."),
+        ReturnSpec("FAILURE", "Timeout ran out while a player still had dialogue."),
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,

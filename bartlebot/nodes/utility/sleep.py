@@ -11,8 +11,8 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="duration",
         type="float",
-        label="Duration (seconds)",
-        help="Number of seconds to wait before continuing.",
+        label="Duration (s)",
+        help="How long to wait.",
         default=1.0,
         minimum=0.0,
         disabled_by=PARAM_USE_SAFETY_DELAY,
@@ -23,21 +23,20 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Use Safety Delay",
         help=(
-            "On: wait the user's Safety Delay instead of Duration. Use it for a wait on the game "
-            "server, whose length depends on the user's connection rather than on the dungeon.\n\n"
-            "Off: wait Duration."
+            "When on, the node waits for the user's Safety Delay instead of Duration. Use it when "
+            "waiting on the game server, since that depends on the user's connection."
         ),
         default=False,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Waits for the given number of seconds, or for the Safety Delay, then returns SUCCESS.",
+    description="Waits for Duration, or for Safety Delay.",
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "Always returned after the delay has elapsed.",
+            "Always, once the wait is over.",
         ),
     ],
     # Only a sleep that reads it puts Safety Delay in the bot's options.

@@ -256,8 +256,8 @@ descriptions. So the details layer gets longer here, and moves to the usage note
   filter", "10 seconds".
 - **N8. A return says when its port fires.** FAILURE lists its causes, most common
   first, separated by commas. Say "Always" for a port that always fires.
-- **N9. Shared params and notes have one text.** Write it once and use it everywhere,
-  so the same thing never reads differently on two nodes. Examples: Zone, From Zone,
+- **N9. Shared params and notes have one text,** in `bartlebot/nodes/help_text.py`. Write
+  it once and use it everywhere, so the same thing never reads differently on two nodes. Examples: Zone, From Zone,
   To Zone, Reset XYZ, Interact XYZ, Sequential Interaction, Delay Between Object Uses,
   Animation Delay, and the note on players who don't arrive. The same goes for an
   option's description, which every node declaring it shows.

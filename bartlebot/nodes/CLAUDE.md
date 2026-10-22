@@ -11,8 +11,9 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
 6. Write the spec's text for the bot author: description, usage notes, param help and
    hints, returns, and the safety warning. `docs/UI_TEXT.md`, *Node help*, has the form
-   of each, and the shared wordings a new node reuses (Zone, Reset XYZ, the note on
-   players who don't arrive)
+   of each. A param or note another node already has takes its text from
+   `bartlebot/nodes/help_text.py` (Zone, Reset XYZ, the note on players who don't arrive), and
+   `tests/nodes/test_help_text.py` checks it does
 7. Every `BotOptionSpec` in `required_bot_options` names its `group` — the card it is drawn
    in on Option Values and Options (`bartlebot/options/option_groups.py`). Reuse the group an existing
    declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`

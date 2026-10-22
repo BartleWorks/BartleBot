@@ -5,6 +5,7 @@ from wizwalker import XYZ
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ARRIVAL_NOTE, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.options import player_realms
 
@@ -13,7 +14,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="zone",
         label="From Zone",
-        help="Zone name players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -21,7 +22,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="zone",
         label="To Zone",
-        help="Zone name players must be in after this node completes.",
+        help=ZONE_AT_END,
         default="",
         required=True,
     ),
@@ -29,10 +30,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Transition XYZ",
-        help=(
-            "A point inside the destination zone's transition bounding box. "
-            "Teleporting players here triggers the automatic zone change."
-        ),
+        help="A spot inside the zone change's trigger. Teleporting here starts the zone change.",
         default=None,
         required=True,
     ),
@@ -41,11 +39,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Reset XYZ",
         help=(
-            "Where players stand to re-arm the trigger: a spot clear of the transition "
-            "bounding box. When the zone change does not fire (e.g. a trigger that needs a "
-            "scripted event to finish first), the stuck players are teleported here and "
-            "back, up to 3 attempts, each waiting the user's Safety Delay for the trigger "
-            "to fire (see usage notes). Record captures it as the starting position."
+            "A spot clear of the trigger, where players step to re-arm it. A player whose zone change "
+            "doesn't fire is moved here and back, up to three times."
         ),
         default=None,
         required=True,
@@ -55,11 +50,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Stagger Players",
         help=(
-            "Send the first player through the transition alone and wait for it to fully "
-            "load into the destination zone before sending the rest. Prevents players from "
-            "being split across different realms of the destination zone. Only takes effect "
-            "when exactly 4 players are connected — with 3 or fewer this has not been observed "
-            "to be an issue."
+            "When on, the first player goes through alone, and the rest follow once it has loaded, so "
+            "all four end up on one realm. Applies only with four players."
         ),
         default=False,
     ),
@@ -67,21 +59,18 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Transitions all players from one zone to another by teleporting them "
-        "into the destination zone's transition bounding box. Optionally staggers "
-        "the transition (lead player first, then the rest) when 4 players are "
-        "connected, to avoid players landing in different realms."
+        "Moves every player to another zone by teleporting them into the spot that triggers the "
+        "zone change. Can send four players one at a time to keep them on one realm."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "All players are now in to_zone.",
+            "Every player is in To Zone.",
         ),
         ReturnSpec(
             "FAILURE",
-            "Players were not in from_zone at the start, or not all players reached "
-            "to_zone after the transition and its retries.",
+            "A player wasn't in From Zone at the start, or not every player reached To Zone.",
         ),
     ],
     required_bot_options=[
@@ -90,19 +79,13 @@ NODE_SPEC = NodeSpec(
     ],
     max_consecutive_retries=10,
     usage_notes=(
-        "reset_xyz is where players stand to re-arm the trigger, so it has to be clear of "
-        "the transition bounding box — anywhere in from_zone the trigger does not reach. "
-        "Record sets it to where the players stood when recording started. A caller that "
-        "passes none (a route the zone navigation map builds, say) resets each player to "
-        "where it stood when the node started instead.\n\n"
-        "A player whose trigger never fires is not failed on its own: once reset_xyz's "
-        "retries are exhausted, the node still waits for a loading screen and "
-        "checks arrival, so a groupmate who did transition gives the straggler a working "
-        "fallback — see the next paragraph.\n\n"
-        "If some but not all players reach to_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
+        (
+            "Keep Reset XYZ clear of the trigger. Record sets it to where players stood when "
+            "recording started. Left empty, each player resets to where it stood when the node "
+            "started."
+        )
+        + "\n\n"
+        + ARRIVAL_NOTE
     ),
 )
 

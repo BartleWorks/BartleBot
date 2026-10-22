@@ -9,24 +9,26 @@ PARAM_SCHEMA: list[ParamField] = [
         type="assignments",
         label="Assignments",
         help=(
-            "Each row writes one variable: set it to a value, add a whole number to an int, or "
-            "toggle a bool. Rows apply in order, so a later row sees an earlier one's write."
+            "Each row sets one variable: to a value, by adding a whole number to an int, or by "
+            "toggling a bool. Rows apply in order, so a later row sees an earlier one's change."
         ),
         default=[],
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Writes the bot's variables, one row at a time, then returns SUCCESS.",
+    description="Sets the bot's variables, one row at a time.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Always returned, once every row is written."),
+        ReturnSpec("SUCCESS", "Always, once every row is written."),
     ],
     usage_notes=(
-        "Never touches the game. Use it to remember something the run found, for an edge "
-        "condition further on to read: which rack is next, how many swords are placed.\n\n"
-        "Every row is written at once or none is, so an ambient fight can never apply a row "
-        "twice. More than a few dozen variable-only nodes in a row stop the run."
+        (
+            "Use this node to remember something for a later edge condition, such as which rack is "
+            "next. It doesn't touch the game."
+        )
+        + "\n\n"
+        + ("All rows are written together. More than a few dozen variable nodes in a row stop the run.")
     ),
     see_also=["branch"],
 )

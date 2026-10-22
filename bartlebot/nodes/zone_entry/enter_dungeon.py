@@ -7,6 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ARRIVAL_NOTE, RESET_XYZ, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
@@ -39,7 +40,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="zone",
         label="From Zone",
-        help="Zone name players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -47,7 +48,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="dungeon_zone",
         type="zone",
         label="Dungeon Zone",
-        help="Zone name all players must be in after successfully entering the dungeon.",
+        help=ZONE_AT_END,
         default="",
         required=True,
     ),
@@ -56,19 +57,17 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Dungeon Name",
         help=(
-            "The dungeon's name as its entrance prompt shows it. Record fills it in. "
-            "Nothing reads it while the bot runs: it names the dungeon in the bot's generated "
-            "description, which the zone cannot always do, because many dungeons share their "
-            "street's zone name."
+            "The dungeon's name as its entrance prompt shows it. Record fills it in, and it's used "
+            "only to name the dungeon in the bot's description."
         ),
         default="",
-        default_hint="Empty — the generated description names the dungeon by its zone, if at all.",
+        default_hint="named by its zone, if at all",
     ),
     ParamField(
         key="sigil_xyz",
         type="xyz",
         label="Sigil XYZ",
-        help=("Coordinates of the dungeon sigil. Standing here should trigger the dungeon entrance prompt."),
+        help="Where players stand to get the dungeon's entrance prompt.",
         default=None,
         required=True,
     ),
@@ -76,10 +75,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="reset_xyz",
         type="xyz",
         label="Reset XYZ",
-        help=(
-            "Coordinates used to dismiss the entrance prompt and reset state. "
-            "The prompt must NOT appear when standing here."
-        ),
+        help=(RESET_XYZ),
         default=None,
         required=True,
     ),
@@ -87,50 +83,39 @@ PARAM_SCHEMA: list[ParamField] = [
         key=PARAM_OFFERS_CHALLENGE_MODE,
         type="bool",
         label="Offers Challenge Mode",
-        help=(
-            "Tick this only if this dungeon's sigil offers Challenge Mode. It adds the "
-            "Challenge Mode bot option, so the user can choose whether to use it; leave it "
-            "off and the option does not appear at all, because there is nothing to choose."
-        ),
+        help="Turn on if this sigil offers Challenge Mode. The user then gets a Challenge Mode bot option.",
         default=False,
-        default_hint="Off — the dungeon is entered in normal mode.",
+        default_hint="normal mode only",
     ),
     ParamField(
         key=PARAM_OFFERS_TEAM_UP,
         type="bool",
         label="Offers Team-Up",
         help=(
-            "Tick this only if this sigil offers Team-Up *and* this is a run you would be "
-            "happy for a stranger to be matched into — the queue brings in players who are "
-            "not yours and cannot see what the bot is doing. It adds the Team-Up bot option, "
-            "so the user chooses whether to use it; leave it off and neither option appears."
+            "Turn on if this sigil offers Team-Up and a stranger joining the run is acceptable. The "
+            "user then gets the Team-Up and Minimum Team Size bot options."
         ),
         default=False,
-        default_hint="Off — the dungeon is entered alone.",
+        default_hint="no Team-Up",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Enters a dungeon via its sigil. Handles prompt detection, "
-        "dungeon warning confirmation, and player zone desynchronization, and fails if a player "
-        "outside the team entered with them. "
-        "Tick Offers Challenge Mode if this dungeon has it: that gives the user a Challenge Mode "
-        "bot option, and when they turn it on the sigil is toggled before entering. "
-        "Tick Offers Team-Up to give the user a Team-Up bot option, which enters through the "
-        "matchmaking queue instead — the same sigil, a different tail."
+        "Enters a dungeon through its sigil and checks that every player arrived. Fails if a "
+        "player outside the team entered with them."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now in dungeon_zone."),
+        ReturnSpec("SUCCESS", "Every player is in Dungeon Zone."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in from_zone at the start, the entrance prompt "
-            "never appeared after retries, Challenge Mode was requested but the sigil "
-            "could not be toggled into it, the Team-Up confirmation window never opened, "
-            "timed out waiting for the zone change or for the queue to match, "
-            "not all players reached dungeon_zone, or a player outside the team entered "
-            "with them (never checked through Team-Up, which brings strangers in on purpose).",
+            (
+                "A player wasn't in From Zone, the entrance prompt never appeared, not every player "
+                "reached Dungeon Zone, a player outside the team entered with them, the sigil couldn't "
+                "switch to Challenge Mode, or Team-Up didn't open or match in time. Team-Up runs skip the "
+                "check for outsiders."
+            ),
         ),
     ],
     required_bot_options=[
@@ -141,10 +126,7 @@ NODE_SPEC = NodeSpec(
             group=GROUP_DUNGEON,
             type="bool",
             default=False,
-            description=(
-                "Enter this bot's dungeon in Challenge Mode. Each player toggles the sigil's mode "
-                "on the entrance prompt before pressing X."
-            ),
+            description="Enter the dungeon in Challenge Mode.",
             # Only the author knows whether their dungeon has a Challenge Mode at all, and
             # most do not. Without this the option appeared in every bot with a sigil in it.
             required_when=PARAM_OFFERS_CHALLENGE_MODE,
@@ -155,8 +137,8 @@ NODE_SPEC = NodeSpec(
             type="bool",
             default=False,
             description=(
-                "Join this bot's dungeon through the Team-Up queue instead of entering it alone. "
-                "Matching can take up to an hour, and brings in players who are not yours."
+                "Enter the dungeon through the Team-Up queue. Matching can take up to an hour and brings "
+                "in players who aren't yours."
             ),
             # The same shape Challenge Mode established: the author states the fact about
             # their dungeon in a param, and whether to use it stays the user's choice.
@@ -179,17 +161,12 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     safety_warning=(
-        "Team-Up is on with more than one player hooked. Each player queues on their own, so they "
-        "can be matched into different instances of the dungeon. The node checks on arrival, ports "
-        "anyone in another instance to the others, and fails if the game refuses the port."
+        "Team-Up is on with more than one player. Each player queues alone and may land in a "
+        "different copy of the dungeon, so the bot brings them together on arrival and stops if "
+        "the game refuses."
     ),
     max_consecutive_retries=10,
-    usage_notes=(
-        "If some but not all players reach dungeon_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
-    ),
+    usage_notes=(ARRIVAL_NOTE),
     implies_tags_when={"Team-Up": PARAM_OFFERS_TEAM_UP, "Challenge Mode": PARAM_OFFERS_CHALLENGE_MODE},
 )
 

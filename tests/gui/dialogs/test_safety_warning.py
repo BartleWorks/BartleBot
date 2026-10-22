@@ -150,7 +150,7 @@ def test_quicksell_still_warns_when_enabled_resolves_true():
     warnings = collect_safety_warnings(config)
 
     assert len(warnings) == 1
-    assert "locked any valuable items" in warnings[0].message
+    assert "Lock valuable items" in warnings[0].message
     assert dict(warnings[0].details)["Enable Quicksell"].startswith("Yes")
 
 
@@ -178,7 +178,7 @@ def test_an_override_turning_quicksell_back_on_outranks_the_app_setting():
     warnings = collect_safety_warnings(config)
 
     assert len(warnings) == 1
-    assert "locked any valuable items" in warnings[0].message
+    assert "Lock valuable items" in warnings[0].message
 
 
 def test_a_bot_that_declares_quicksell_off_keeps_the_sentence_that_is_still_true():
@@ -274,7 +274,7 @@ def _stop_explaining() -> None:
 def test_the_explanation_offers_to_stop_showing_itself():
     (warning,) = collect_safety_warnings(_quicksell_bot())
 
-    assert "locked any valuable items" in warning.message
+    assert "Lock valuable items" in warning.message
     assert warning.opt_out is not None
     assert warning.opt_out[0] == QUICKSELL_OPT_OUT_LABEL
 
@@ -336,7 +336,7 @@ def test_such_a_bot_leads_with_what_it_sells():
     (warning,) = collect_safety_warnings(_quicksell_bot(Sell_Skeleton_Keys=True))
 
     assert warning.message.startswith(declared_sales_message(["Sell Skeleton Keys"]))
-    assert "locked any valuable items" in warning.message
+    assert "Lock valuable items" in warning.message
 
 
 def test_a_sale_run_past_for_one_bot_is_not_asked_about_again_for_it(qapp):
@@ -373,7 +373,7 @@ def test_running_past_a_sale_does_not_also_turn_the_explanation_off(qapp):
 
     (warning,) = collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True))
 
-    assert "locked any valuable items" in warning.message
+    assert "Lock valuable items" in warning.message
     assert not warning.message.startswith(declared_sales_message(["Sell Skeleton Keys"]))
 
 
@@ -638,7 +638,7 @@ def test_teamup_with_two_clients_warns():
     warning = _enter_dungeon_warning(_teamup_config(), [FakeClient(), FakeClient()])
 
     assert warning is not None
-    assert "instance" in warning.message
+    assert "different copy of the dungeon" in warning.message
 
 
 def test_teamup_with_one_client_does_not_warn():

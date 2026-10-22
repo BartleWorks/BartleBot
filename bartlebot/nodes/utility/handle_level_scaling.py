@@ -38,7 +38,10 @@ LEVEL_SCALING_PLAYERS_OPTION = BotOptionSpec(
     group=GROUP_TEAM,
     type="player_list",
     default=[],
-    description="Which players to check/apply level scaling. Empty = no players. Shared by every level scaling node.",
+    description=(
+        "Which players need the level scaling elixir. Every level scaling node uses this list, "
+        "and an empty list means no players."
+    ),
 )
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -47,59 +50,65 @@ PARAM_SCHEMA: list[ParamField] = [
         type="scales",
         label="Scales of Knowledge",
         help=(
-            "Which Scales of Knowledge the players take the elixir from. Normally the Scales of the "
-            "world this bot farms, since the elixir scales a player to that dungeon's level.\n\n"
-            "The list is grouped by world; type part of a dungeon's name, its world or its level to "
-            "narrow it."
+            "Which Scales of Knowledge to take the elixir from, usually the one in the world this bot "
+            "farms. Type part of a dungeon's name, world or level to narrow the list."
         ),
         default="",
-        default_hint=(
-            "The Scales of the world this bot farms, when that world has one. Choose one by hand for a "
-            "world that has several, or to use another world's."
-        ),
+        default_hint="the Scales of the world this bot farms",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Makes sure every Level Scaling Player has the level scaling elixir. When one does not, every "
-        "player marks where they stand, travels to the chosen Scales of Knowledge, the players who lack "
-        "the elixir take it, and everyone recalls. Players already inside the Scales' dungeon take the "
-        "elixir in place and stay there."
+        "Gives the level scaling elixir to every Level Scaling Player who lacks it. Players "
+        "travel to the chosen Scales of Knowledge and recall, or take it in place if they're "
+        "already in the Scales' dungeon."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "Every Level Scaling Player has the elixir, and the players are where the bot expects them: "
-            "back where they were, or still inside the Scales' dungeon if that is where they started.",
+            (
+                "Every Level Scaling Player has the elixir, and players are back where they were, or "
+                "still in the Scales' dungeon if they started there."
+            ),
         ),
         ReturnSpec(
             "FAILURE",
-            "The Scales is not one this build knows; a player could not mark (no mana, or a zone that "
-            "refuses marks, such as a house); the trip to the Scales failed; a player still lacks the "
-            "elixir after every retry; or a player did not land back on their mark.",
+            (
+                "The trip to the Scales failed, a player couldn't mark, a player still lacks the elixir "
+                "after every retry, a player didn't land back on its mark, or this version doesn't know "
+                "the Scales."
+            ),
         ),
     ],
     required_bot_options=[player_realms.SPEC, SAFETY_DELAY_OPTION, LEVEL_SCALING_PLAYERS_OPTION],
     # One tick is a whole trip, and the apply step already retries every player.
     max_consecutive_retries=3,
     usage_notes=(
-        "When every Level Scaling Player already shows an elixir, nothing happens and the node returns "
-        "SUCCESS at once, so it is cheap at the top of a loop.\n\n"
-        "Left unset, the Scales is the one for the world this bot farms: the world most of its zones are "
-        "in. A world with several Scales, or none, has no default, and the node says so.\n\n"
-        "Whether the players mark and recall is decided by where they are, not by a setting. Away from "
-        "the Scales' dungeon, they mark, travel, scale and recall. Inside it, they scale in place and "
-        "stay. So in a bot that farms the Scales' own dungeon, place this node after the bot's dungeon "
-        "entry; placed before it, the players make an extra trip in and back out.\n\n"
-        "Every player makes the trip, not only the ones being scaled. The dungeon is entered through "
-        "its sigil in normal mode, never through Team-Up or Challenge Mode.\n\n"
-        "In a Challenge Mode dungeon the node does nothing and returns SUCCESS: the game level scales "
-        "everyone inside it, and it has no Scales of Knowledge.\n\n"
-        "A player who already has an elixir keeps it: the node never cancels one. The game shows every "
-        "elixir the same way, so a player with any other elixir active reads as level scaled. Starting "
-        "a run in that state raises a warning."
+        (
+            "In a bot that farms the Scales' own dungeon, place this node after entering the dungeon. "
+            "Placed before, players make an extra trip in and out."
+        )
+        + "\n\n"
+        + (
+            "When every Level Scaling Player already has an elixir, the node succeeds at once, so "
+            "it's cheap at the top of a loop."
+        )
+        + "\n\n"
+        + (
+            "Left unset, the Scales is the one in the world this bot farms. A world with several "
+            "Scales, or none, has no default."
+        )
+        + "\n\n"
+        + ("Every player makes the trip, including those already scaled. The dungeon is entered in normal mode.")
+        + "\n\n"
+        + ("In a Challenge Mode dungeon, the node does nothing and succeeds, since the game already scales everyone.")
+        + "\n\n"
+        + (
+            "The node never cancels an elixir. Any active elixir reads as level scaled, so a player "
+            "with a different elixir isn't scaled, and the run warns about it at start."
+        )
     ),
     see_also=["sync_in_zone", "enter_dungeon"],
 )

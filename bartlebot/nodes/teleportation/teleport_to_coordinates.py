@@ -6,6 +6,7 @@ import logging
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import MAX_RETRIES
@@ -15,7 +16,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name all players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -23,21 +24,20 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Target XYZ",
-        help="Coordinates within zone to teleport players to.",
+        help="Where in Zone to teleport players to.",
         default=None,
         required=True,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports all players to a specific XYZ coordinate within the current zone.",
+    description="Teleports every player to a spot in the current zone.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now at the target XYZ within the expected zone."),
+        ReturnSpec("SUCCESS", "Every player is at Target XYZ."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in the expected zone at the start, or not all players "
-            "reached the target XYZ after several teleports a Safety Delay apart.",
+            "A player wasn't in Zone at the start, or didn't reach Target XYZ after several tries.",
         ),
     ],
     required_bot_options=[SAFETY_DELAY_OPTION],

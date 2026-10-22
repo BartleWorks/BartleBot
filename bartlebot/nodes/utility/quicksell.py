@@ -87,24 +87,19 @@ PARAM_SCHEMA: list[ParamField] = []
 #: in is run -- the sale the rest of the warning is about is not going to happen,
 #: but a backpack quietly filling over a long unattended farm still is.
 SAFETY_WARNING_DISABLED = (
-    "With Enable Quicksell off nothing is sold: the backpack fills, further drops overflow "
-    "into your shared bank, and once that is full too only Crowns items are kept."
+    "With quicksell off, nothing is sold. A full backpack overflows into the character's bank, and once "
+    "the bank is full too, only Crowns items are kept."
 )
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Checks if the main backpack or jewel pouch is full. "
-        "If either is full, opens the quicksell UI and sells all items except those "
-        "the keep list keeps: a keyword keeps any item whose name contains it, a ticked item "
-        "keeps only itself. "
-        "sell_pets controls whether pets are included — it is all-or-nothing, because the "
-        "quicksell window shows a pet's nickname rather than its body type and no keep-list "
-        "keyword can match it. Crowns items are always included."
+        "Sells drops when the backpack or jewel pouch is full, except items a keep list keeps. "
+        "Crowns items are sold like any other."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Neither backpack was full, or items were sold successfully."),
-        ReturnSpec("FAILURE", "The quicksell UI did not appear or the sell could not be completed."),
+        ReturnSpec("SUCCESS", "Nothing was full, or the drops were sold."),
+        ReturnSpec("FAILURE", "The quicksell window didn't open, or the sale didn't finish."),
     ],
     required_bot_options=[
         SAFETY_DELAY_OPTION,
@@ -118,9 +113,8 @@ NODE_SPEC = NodeSpec(
             # otherwise lose them on a first run.
             default=None,
             description=(
-                "Whether this bot sells anything at all. Turn it off to farm without selling: the "
-                "backpack fills, and after that new drops go to your shared bank instead. Once the "
-                "bank is full too, only Crowns items are still kept and everything else is lost."
+                "Sell drops so backpacks never fill. When off, a full backpack overflows into the "
+                "character's bank, and once the bank is full too, only Crowns items are kept."
             ),
         ),
         BotOptionSpec(
@@ -129,12 +123,7 @@ NODE_SPEC = NodeSpec(
             type="bool",
             default=None,
             depends_on=OPTION_ENABLED,
-            description=(
-                "Whether pets are sold along with everything else. The keep list cannot spare an "
-                "individual pet: the quicksell window lists a pet by the nickname its owner gave it, "
-                "never by the body type a drop table names it with, so no keyword ever matches one. "
-                "Turning this off is the only thing that keeps a pet."
-            ),
+            description="Turn off to keep pets. The keep list can't protect a pet.",
         ),
         BotOptionSpec(
             name=SELL_FLAG_OPTIONS["sell_socket_wrenches"],
@@ -142,9 +131,7 @@ NODE_SPEC = NodeSpec(
             type="bool",
             default=None,
             depends_on=OPTION_ENABLED,
-            description=(
-                "Whether items whose name contains 'Socket Wrench' are sold. Off adds that keyword to the keep list."
-            ),
+            description=('Turn off to keep any item with "Socket Wrench" in its name.'),
         ),
         BotOptionSpec(
             name=SELL_FLAG_OPTIONS["sell_skeleton_keys"],
@@ -152,9 +139,7 @@ NODE_SPEC = NodeSpec(
             type="bool",
             default=None,
             depends_on=OPTION_ENABLED,
-            description=(
-                "Whether items whose name contains 'Skeleton Key' are sold. Off adds that keyword to the keep list."
-            ),
+            description=('Turn off to keep any item with "Skeleton Key" in its name.'),
         ),
         BotOptionSpec(
             name=OPTION_KEEP_LIST,
@@ -164,23 +149,20 @@ NODE_SPEC = NodeSpec(
             type="drop_keep_list",
             default=[],
             description=(
-                "What to keep when quickselling. A keyword you type keeps every item whose name "
-                "contains it (case-insensitive, so 'giver' keeps every Giver jewel). An item you "
-                "tick keeps that item alone: ticking Couch Potatoes does not keep Red Couch Potatoes. "
-                "The bot's author recommends a list; yours replaces it. Your own keep list in "
-                "Settings → Bot is kept too, in every bot."
+                'Which items quicksell keeps. A keyword keeps every item containing it, so "giver" keeps '
+                "every Giver jewel, and a checked item keeps only itself. Your list replaces the "
+                "author's, and your Always keep list in Settings › Bot applies too."
             ),
         ),
     ],
     max_consecutive_retries=5,
     safety_warning=(
-        "This bot quicksells items when your backpack is full. "
-        "Ensure that you have locked any valuable items (the game's Backpack Item Lock, under "
-        "Options → Gameplay Options 2, has to be on first) or have added them to a keep list: "
-        "this bot's, in Options, or your own, in Settings → Bot, which every bot keeps. "
-        "Pets are the exception: the quicksell window lists them by nickname, so the keep list "
-        "cannot spare one — turn Sell Pets off to keep your pets. " + SAFETY_WARNING_DISABLED
-    ),
+        "This bot sells drops when your backpack is full. Lock valuable items in the game, or add "
+        "them to a keep list in this bot's Options or in Settings › Bot. To lock items, first "
+        "turn on Backpack Item Lock in the game's Options › Gameplay Options 2. Turn off Sell "
+        "Pets to keep pets. "
+    )
+    + SAFETY_WARNING_DISABLED,
 )
 
 from bartlebot.nodes.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # noqa: E402

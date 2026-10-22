@@ -3,6 +3,7 @@
 import asyncio
 import logging
 
+from bartlebot.nodes.help_text import UI_PATH_NOTE, seconds
 from bartlebot.nodes.node_helpers import (
     click_window,
     is_enabled_by_path,
@@ -18,7 +19,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="path",
         type="str_list",
         label="UI Path",
-        help="Window tree path to the element to click, e.g. ['WorldView', 'windowHUD', 'btnSpellbook'].",
+        help="The UI path of the element to click, such as WorldView › windowHUD › btnSpellbook.",
         required=True,
     ),
     ParamField(
@@ -26,10 +27,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="player_list",
         label="Click Players",
         help=(
-            "Which players click the element. Leave all unchecked to click on every player, "
-            "which is what this node has always done. Select a subset when the UI is only open "
-            "on some players — a menu opened by interact_menu with a narrower Interact Players "
-            "is not present on the others, and the path matches nothing there."
+            "Which players click. Choose some when the element is open only for some players, such as "
+            "a menu that Interact Menu opened for fewer players."
         ),
         default=[],
         default_hint="all players",
@@ -39,9 +38,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Match Text",
         help=(
-            "When several elements share the same path — a menu whose rows are identical by name — "
-            "keep only those whose text, or the text of any element inside them, matches this. "
-            "Read the text off the Text column in the UI Tree Browser. Leave empty to skip the text filter."
+            "When several elements share the path, click only one whose text, or the text of "
+            "something inside it, matches this. The UI Tree Browser's Text column shows each "
+            "element's text."
         ),
         default="",
         default_hint="no text filter",
@@ -49,10 +48,9 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="match_text_exact",
         type="bool",
-        label="Match Text: Exact (vs Contains)",
+        label="Match Whole Text",
         help=(
-            "When Match Text is set: if True, the text must match exactly; if False, it need only "
-            "contain the string. Case-insensitive either way. Ignored when Match Text is empty."
+            "When on, the text must match Match Text exactly. When off, it only has to contain it. Case never matters."
         ),
         default=False,
     ),
@@ -61,9 +59,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="int",
         label="Match Index",
         help=(
-            "Which of the matching elements to click, 0-based, in tree order (negative counts from "
-            "the end). Applied after Match Text. Leave at 0 to click the first match, which is what "
-            "this node has always done."
+            "Which matching element to click, counting from 0 in tree order, after Match Text. A "
+            "negative number counts from the end, so -1 is the last."
         ),
         default=0,
         default_hint="first match",
@@ -72,71 +69,59 @@ PARAM_SCHEMA: list[ParamField] = [
         key="availability_timeout",
         type="float",
         label="Availability Timeout (s)",
-        help=(
-            "Seconds to wait for the path to be visible and enabled before giving up. "
-            "Set to 0 to check once without waiting."
-        ),
+        help="How long to wait for the element to be visible and enabled. At 0, the node checks once.",
         default=TRIGGER_TIMEOUT,
-        default_hint=f"{TRIGGER_TIMEOUT}s",
+        default_hint=seconds(TRIGGER_TIMEOUT),
     ),
     ParamField(
         key="confirm_path",
         type="str_list",
         label="Confirm Path",
-        help=(
-            "If set, polls this path after clicking to confirm the action triggered. "
-            "Leave empty to skip the post-click check."
-        ),
+        help="A UI path that shows the click worked. After clicking, the node waits for its first match.",
         default=[],
-        default_hint="skip confirm",
+        default_hint="no check",
     ),
     ParamField(
         key="confirm_visible",
         type="bool",
-        label="Confirm: Check Visible (vs Enabled)",
-        help=(
-            "When Confirm Path is set: if True, waits until the path is visible; "
-            "if False, waits until it is enabled (not grayed)."
-        ),
+        label="Confirm When Visible",
+        help="When on, the node waits for Confirm Path to be visible. When off, it waits for it to be enabled.",
         default=True,
     ),
     ParamField(
         key="confirm_timeout",
         type="float",
         label="Confirm Timeout (s)",
-        help="Seconds to wait for the confirm path condition to be met after clicking.",
+        help="How long to wait for Confirm Path after clicking.",
         default=TRIGGER_TIMEOUT,
-        default_hint=f"{TRIGGER_TIMEOUT}s",
+        default_hint=seconds(TRIGGER_TIMEOUT),
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Clicks a UI element at a window-tree path. Waits for the element to be visible and enabled "
-        "before clicking. When the path is ambiguous, Match Text and Match Index pick which of the "
-        "matching elements to click. Optionally polls a second path after clicking to confirm the "
-        "action triggered."
+        "Clicks the game's UI element at a UI path, once it's visible and enabled. Can confirm "
+        "the click worked by waiting for a second path."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Element clicked (and confirm condition met, if configured)."),
+        ReturnSpec("SUCCESS", "The element was clicked, and Confirm Path, if set, was met."),
         ReturnSpec(
             "FAILURE",
-            "No element matched the path (or Match Text / Match Index selected none of them) and was "
-            "visible and enabled within the timeout, the click returned False, "
-            "or the confirm condition was not met within the confirm timeout.",
+            "No element matched in time, the click didn't register, or Confirm Path wasn't met in time.",
         ),
     ],
     max_consecutive_retries=5,
     usage_notes=(
-        "Use paths from bartlebot/nodes/paths.py when possible. "
-        "Paths match on window NAME only, and several elements can share one path — a list menu "
-        "whose rows are structurally identical is the usual case. Without Match Text or Match Index "
-        "the first match in tree order is clicked, and the log warns when there was more than one. "
-        "Every player clicks unless Click Players narrows it, so a menu that only some players "
-        "opened needs the same selection here that opened it. "
-        "The confirm path is useful when a click opens a dialog or changes a button state "
-        "that the next node depends on; it always uses its first match and takes no match params."
+        UI_PATH_NOTE
+        + " A path matches window names only, so several elements can share one, as the rows of a list menu do."
+        " Match Text and Match Index pick among them. Without them, the first match is clicked, and the log warns"
+        " that there were more."
+        + "\n\n"
+        + (
+            "Every player clicks unless Click Players narrows it. For a menu only some players "
+            "opened, choose the same players here."
+        )
     ),
 )
 

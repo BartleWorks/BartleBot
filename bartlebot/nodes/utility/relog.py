@@ -91,57 +91,57 @@ PARAM_SCHEMA: list[ParamField] = [
         type="player_list",
         label="Players to Relog",
         help=(
-            "Which players log out and back in. All of them by default.\n\n"
-            "Relogging the whole group at once is usually what you want: the players are "
-            "logged out for the same few seconds, and the group is re-formed once at the end "
-            "rather than after each one."
+            "Which players log out and back in. Relogging everyone at once is usually best, since the "
+            "group re-forms once at the end."
         ),
         default=[],
         required=False,
-        default_hint="Empty means every player.",
+        default_hint="every player",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Logs players out to the character select screen and immediately plays the same "
-        "character back in, without closing the game. Clears the slowdown that builds up over "
-        "a long session in seconds rather than the minutes a full relaunch costs."
+        "Logs players out to character select and straight back in, which clears the slowdown of "
+        "a long session in seconds."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "Every selected player logged out and is back in the world."),
         ReturnSpec(
             "FAILURE",
-            "A fight did not end in time, the spellbook or its settings page did not open, the "
-            "game refused the logout, or Quit did not take effect. In every case the player is "
-            "still in the world.",
+            (
+                "A fight didn't end in time, the spellbook or its settings page didn't open, or the game "
+                "refused to log out. The player is still in the world in every case."
+            ),
         ),
     ],
     max_consecutive_retries=2,
     usage_notes=(
-        "Players come back where they were BEFORE entering their current dungeon or house — "
-        "logging out leaves an instance. Place this node where the bot can carry on from "
-        "whatever the character's position turns out to be, normally just before it travels "
-        "somewhere.\n\n"
-        "The group is lost on logout and re-formed afterwards when 'Automatically group "
-        "players' is enabled in Settings.\n\n"
-        "Nobody is logged out while any player is in a fight, and the group is not re-formed "
-        "until a fight the players logged back into is over. The bot fights it in the meantime.\n\n"
-        "A player that logs out but cannot get back in (character select never appears, or "
-        "it is still loading a minute after leaving character select) is closed and "
-        "relaunched as though its game had crashed, and the bot carries on from its recovery "
-        "state. If that player cannot be relaunched, because no account is linked or no "
-        "password is saved, the bot stops and says so. A player that has lost its connection "
-        "to the game, before Quit or after, is closed and relaunched the same way.\n\n"
-        "A player that has only just logged in, because crash recovery or a scheduled relog "
-        "brought it back, is skipped until something moves it: a login has already done what "
-        "this node does. That is what keeps a Relog recovery state from logging the team out "
-        "again straight after recovery.\n\n"
-        "You may not need this node at all: Settings → Bot → 'Relog interval' does "
-        "the same job on a timer, and can also bring back a player too broken to use its own "
-        "menu. Use the node when the moment matters — after a fixed number of passes, or on a "
-        "FAILURE transition as a last resort before giving up."
+        (
+            "Place this node just before the bot travels. Players come back where they were before "
+            "entering their current dungeon or house."
+        )
+        + "\n\n"
+        + (
+            "Settings › Bot › Relog interval does the same on a timer. Use this node when the moment "
+            "matters, such as after a set number of loops, or on a FAILURE edge as a last resort."
+        )
+        + "\n\n"
+        + (
+            "The group is lost on logout, and re-formed afterward when Automatically group players is "
+            "on in Settings › Bot."
+        )
+        + "\n\n"
+        + ("Nobody logs out during a fight, and the group re-forms only after any fight the players log back into.")
+        + "\n\n"
+        + (
+            "A player that can't log back in is closed and relaunched as after a crash, and the bot "
+            "continues from its recovery state. If that player has no account or saved password, the "
+            "bot stops."
+        )
+        + "\n\n"
+        + ("A player that just logged in, after crash recovery or a scheduled relog, is skipped until it moves.")
     ),
 )
 
