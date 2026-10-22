@@ -225,6 +225,14 @@ Pick by the shape of the wait that follows:
 | a *sticky* condition (left the zone, arrived) | `await_instance_prompt()`, or `answer_instance_prompts()` for a whole group |
 | one-off, mid-loop | `resolve_modal()` directly |
 
+`await_instance_prompt()` answers once, within the Safety Delay, so a prompt that comes up later or
+is missed stays open with nothing left to press it (#281: a client left at the dungeon exit). The waits
+that follow keep answering instead. `wait_for_zone_with_recovery` confirms the prompt of each client not
+yet in the zone and not loading, every poll until its deadline, and ends at once on a refusal; the
+straggler in `enter_zone`'s leave-zone poll is `ModalAwareRetry`'s. Both pass `recognized_only`, so a
+wait that lasts half a minute never confirms or declines a dialog the snapshot does not know, such as
+an invitation.
+
 Never answer a dialog with a blocking wait ahead of an `is_loading()` check: it
 costs the full Safety Delay whenever no dialog appears, and three seconds spent
 before watching for a loading screen can miss it entirely.

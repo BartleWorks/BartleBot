@@ -8,8 +8,8 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_zone as gtz
-from bartlebot.nodes.paths import MESSAGE_BOX_CENTER
-from tests.conftest import FakeClient, FakeMachine
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+from tests.conftest import FakeClient, FakeMachine, ModalScreen
 
 # Minimal params used across all tests.
 _PARAMS = {"from_zone": "Src", "to_zone": "Dst", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
@@ -243,6 +243,48 @@ async def test_exit_dungeon_dialog_dismissed():
     # confirm button clicked; no keypresses
     client.send_key.assert_not_called()
     click_by_path_mock.assert_awaited_with(client, MESSAGE_BOX_CENTER)
+
+
+_EXIT_CAPTION = (
+    "If you leave a Dungeon you will lose all your progress in the Dungeon and will have to start over at the "
+    "beginning.<br>Are you sure you want to leave now?"
+)
+
+
+async def test_a_prompt_the_first_answer_missed_is_confirmed_while_waiting_to_leave():
+    """#281: the exit prompt sat open with the client at the exit, and only a new attempt answered it."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    client = FakeClient()
+    client.zone_name = AsyncMock(side_effect=lambda: "Src" if screen.modals else "Dst")
+
+    with (
+        screen.apply(),
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "answer_instance_prompts", new=AsyncMock(return_value=None)),
+    ):
+        result = await gtz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert screen.clicked == [MESSAGE_BOX_CENTER]
+    # Answering stood in for a re-teleport: the opening one is the only one.
+    assert client.teleport.call_count == 1
+
+
+async def test_a_refusal_found_while_waiting_to_leave_fails_the_node():
+    screen = ModalScreen(("Your friend is busy right now.", [MESSAGE_BOX_RIGHT]))
+    client = FakeClient()
+    client.zone_name = AsyncMock(side_effect=lambda: "Src")
+    machine = FakeMachine()
+
+    with (
+        screen.apply(),
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "answer_instance_prompts", new=AsyncMock(return_value=None)),
+    ):
+        result = await gtz.run(machine, [client], _PARAMS)
+
+    assert result == "FAILURE"
+    assert any("refused the zone change" in msg for msg, _ in machine.logs)
 
 
 def _make_client():

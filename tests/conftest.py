@@ -6,6 +6,7 @@ import itertools
 import logging
 import os
 import sys
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -355,6 +356,47 @@ def message_box_patches(visible_buttons=()):
         patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
         patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
     ), clicked
+
+
+class ModalScreen:
+    """A stack of modals over a client, each a (caption, buttons) pair, closed by a click on one of its buttons.
+
+    Stands in for the game's modal message box: `patches()` replaces the three reads and the click
+    node_helpers makes, and `stubborn` makes a click that does nothing. `clicked` records every click.
+    """
+
+    def __init__(self, *modals, stubborn: bool = False):
+        self.modals = list(modals)
+        self.stubborn = stubborn
+        self.clicked: list[list[str]] = []
+
+    def patches(self):
+        import bartlebot.nodes.node_helpers as nh_mod
+        from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
+
+        async def _text(_client, path):
+            return self.modals[0][0] if self.modals and list(path) == MESSAGE_BOX_CAPTION_PATH else ""
+
+        async def _visible(_client, path):
+            return bool(self.modals) and list(path) in self.modals[0][1]
+
+        async def _click(_client, path):
+            self.clicked.append(list(path))
+            if self.modals and list(path) in self.modals[0][1] and not self.stubborn:
+                self.modals.pop(0)
+
+        return (
+            patch.object(nh_mod, "get_text_by_path", new=_text),
+            patch.object(nh_mod, "is_visible_by_path", new=_visible),
+            patch.object(nh_mod, "click_by_path", new=_click),
+        )
+
+    def apply(self) -> ExitStack:
+        """Enter every patch; use as `with screen.apply():`."""
+        stack = ExitStack()
+        for patcher in self.patches():
+            stack.enter_context(patcher)
+        return stack
 
 
 class FakeParamForm:

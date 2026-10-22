@@ -243,7 +243,7 @@ class ModalOutcome(NamedTuple):
 _NOTHING = ModalOutcome(answered=False)
 
 
-async def resolve_modal(client) -> ModalOutcome:
+async def resolve_modal(client, *, recognized_only: bool = False) -> ModalOutcome:
     """Answer whatever modal is on screen.
 
     The one call a node needs while waiting for something the game may be holding behind a
@@ -263,10 +263,16 @@ async def resolve_modal(client) -> ModalOutcome:
     Refusals are dismissed with the right button where it exists and the center otherwise:
     a one-button refusal puts OK in the center, and a two-button one puts cancel on the
     right, which is the answer that leaves the game alone.
+
+    `recognized_only` answers only a dialog the snapshot knows, and leaves any other alone.
+    It is for a wait that goes on answering for as long as it lasts, which would otherwise
+    confirm or decline whatever the game raises meanwhile: an invitation, a request.
     """
     key = await identify_modal(client)
 
     if key is None:
+        if recognized_only:
+            return _NOTHING
         if await is_visible_by_path(client, MESSAGE_BOX_CENTER):
             await click_by_path(client, MESSAGE_BOX_CENTER)
             return ModalOutcome(answered=True)
@@ -368,12 +374,13 @@ class ModalAwareRetry:
     turn a successful teleport into a timeout.
     """
 
-    def __init__(self, action_fn):
+    def __init__(self, action_fn, *, recognized_only: bool = False):
         self._action_fn = action_fn
+        self._recognized_only = recognized_only
         self.refusal: str | None = None
 
     async def __call__(self, client) -> None:
-        outcome = await resolve_modal(client)
+        outcome = await resolve_modal(client, recognized_only=self._recognized_only)
         if outcome.refusal:
             self.refusal = outcome.refusal
             return
@@ -1104,8 +1111,15 @@ async def wait_for_zone_with_recovery(
     a client mid-transition is never reported as one that failed to arrive. An endless
     loading screen is ClientHealthMonitor's to call, not this loop's.
 
+    A straggler held at an instance prompt is not stuck either, and nothing else would press
+    it: leaving a dungeon asks first, and until the question is answered the zone change never
+    fires (#281). Every poll before the deadline answers the prompt of a client that is not
+    loading, as many times as it shows, and re-arms the settle grace for the screen it opens.
+    Only dialogs the snapshot knows are answered. A refusal ends the wait at once, with the
+    zones as they are, since the game has said no.
+
     Returns None on success (whether or not recovery was needed), or the list of actual
-    zone names if the deadline passed with some clients still not in `zone`.
+    zone names if the deadline passed with some clients still not in `zone`, or the game refused.
     """
     if settle_grace is None:
         settle_grace = ZONE_SETTLE_GRACE  # read here, not in the signature, so it stays tunable
@@ -1122,7 +1136,17 @@ async def wait_for_zone_with_recovery(
         behind = [c for c, z in zip(clients, zones) if not zone_matches(z, zone)]
         now = loop.time()
         # Mid-transition, not stuck: let the screen clear and re-read before judging it.
-        arriving = any(await asyncio.gather(*[c.is_loading() for c in behind]))
+        loading = await asyncio.gather(*[c.is_loading() for c in behind])
+        arriving = any(loading)
+        prompts = await _answer_waiting_prompts(
+            machine, [c for c, busy in zip(behind, loading) if not busy], now, deadline
+        )
+        if prompts is None:
+            return zones
+        if prompts:
+            settled_after = loop.time() + settle_grace
+            await asyncio.sleep(poll_interval)
+            continue
         if arriving:
             settled_after = now + settle_grace
         elif (
@@ -1138,6 +1162,23 @@ async def wait_for_zone_with_recovery(
         if not arriving and now >= deadline and now >= settled_after:
             return zones
         await asyncio.sleep(poll_interval)
+
+
+async def _answer_waiting_prompts(machine, clients: list, now: float, deadline: float) -> bool | None:
+    """Answer the instance prompt on each of `clients` that has one, while a zone wait has time left.
+
+    True when a prompt was answered, False when there was nothing to answer, None when the game
+    refused (logged here): the wait cannot succeed and should end. A read that fails is the
+    client's own business and means no prompt was answered, as a client loading in raises.
+    """
+    if not clients or now >= deadline:
+        return False
+    outcomes = await asyncio.gather(*[resolve_modal(c, recognized_only=True) for c in clients], return_exceptions=True)
+    answered = [o for o in outcomes if isinstance(o, ModalOutcome) and o.answered]
+    if refusal := next((o.refusal for o in answered if o.refusal), None):
+        machine.log(f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}", logging.WARNING)
+        return None
+    return bool(answered)
 
 
 @dataclass(frozen=True)

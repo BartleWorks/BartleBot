@@ -163,10 +163,17 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
         # retry is skipped for it: that teleport would be applied on arrival and drop the
         # client back at the bounding box in the zone it just reached (#70).
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
+        #
+        # The retry answers an instance prompt before it teleports: a prompt that came up late,
+        # or that the first answer missed, would otherwise sit there with the client reset
+        # around it, and nothing leaves a dungeon until it is answered (#281).
+        retry = node_helpers.ModalAwareRetry(
+            node_helpers.skip_while_loading(lambda c: c.teleport(target)), recognized_only=True
+        )
         seen_left = await node_helpers.poll_each_until_seen(
             group,
             check_fn=lambda c: _has_left_zone(c, from_zone),
-            action_fn=node_helpers.skip_while_loading(lambda c: c.teleport(target)),
+            action_fn=retry,
             timeout=safety_delay,
             poll_interval=POLL_INTERVAL,
             # Stop chasing the stragglers the moment a groupmate who already left from_zone
@@ -174,6 +181,12 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
             # immediately rather than waiting out the rest of this attempt's safety_delay.
             stop_fn=lambda left_clients: _any_confirmed_arrival(left_clients, to_zone),
         )
+        if retry.refusal:
+            machine.log(
+                f"FAILURE: the game refused the zone change — {dialog_captions.describe(retry.refusal)}",
+                logging.WARNING,
+            )
+            return "FAILURE"
         if len(seen_left) == len(group):
             # Zone change triggered for everyone — no more retries needed.
             break
