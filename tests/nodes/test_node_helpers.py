@@ -1826,3 +1826,116 @@ async def test_a_wildcard_fight_name_matches_as_written():
     client = FakeClient()
     world = _world(client, ("AQ-Piranha-Guard_StandIn", 5.0), ("AQ-Piranha-Guard", 300.0))
     assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard*") is world["AQ-Piranha-Guard_StandIn"]
+
+
+# ---------------------------------------------------------------------------
+# clear_modals — back out of whatever is up, never confirm it
+# ---------------------------------------------------------------------------
+
+
+class _Screen:
+    """A stack of modals, each a (caption, buttons) pair, closed by a click on one of its buttons."""
+
+    def __init__(self, *modals, stubborn: bool = False):
+        self.modals = list(modals)
+        self.stubborn = stubborn
+        self.clicked: list[list[str]] = []
+
+    def patches(self):
+        import bartlebot.nodes.node_helpers as nh_mod
+        from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
+
+        async def _text(_client, path):
+            return self.modals[0][0] if self.modals and list(path) == MESSAGE_BOX_CAPTION_PATH else ""
+
+        async def _visible(_client, path):
+            return bool(self.modals) and list(path) in self.modals[0][1]
+
+        async def _click(_client, path):
+            self.clicked.append(list(path))
+            if self.modals and list(path) in self.modals[0][1] and not self.stubborn:
+                self.modals.pop(0)
+
+        return (
+            patch.object(nh_mod, "get_text_by_path", new=_text),
+            patch.object(nh_mod, "is_visible_by_path", new=_visible),
+            patch.object(nh_mod, "click_by_path", new=_click),
+        )
+
+
+async def _clear(screen: _Screen, timeout: float = 0.2):
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    a, b, c = screen.patches()
+    with a, b, c:
+        return await nh_mod.clear_modals(FakeClient(), timeout, 0.001)
+
+
+async def test_clear_modals_with_nothing_up_clicks_nothing():
+    screen = _Screen()
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == ()
+    assert screen.clicked == []
+
+
+async def test_clear_modals_cancels_a_question_instead_of_confirming_it():
+    """Confirming the exit prompt would leave the dungeon; the caller wanted a menu, not that."""
+    from bartlebot.game import dialog_captions
+
+    screen = _Screen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == (dialog_captions.INSTANCE_EXIT,)
+    assert screen.clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_clear_modals_closes_a_one_button_dialog_with_its_center():
+    screen = _Screen(("Your friend is busy right now.", [MESSAGE_BOX_CENTER]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert screen.clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_clear_modals_closes_a_dialog_the_snapshot_does_not_know():
+    screen = _Screen(("A dialog nobody has cataloged", [MESSAGE_BOX_RIGHT]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == (None,)
+
+
+async def test_clear_modals_closes_every_dialog_in_a_stack():
+    screen = _Screen(
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+        ("Your friend is busy right now.", [MESSAGE_BOX_RIGHT]),
+    )
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert len(result.dismissed) == 2
+    assert screen.modals == []
+
+
+async def test_clear_modals_gives_up_on_a_dialog_that_stays_and_names_it():
+    from bartlebot.game import dialog_captions
+
+    screen = _Screen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]), stubborn=True)
+    result = await _clear(screen, timeout=0.05)
+
+    assert result.cleared is False
+    assert result.disconnected is False
+    assert result.key == dialog_captions.INSTANCE_EXIT
+
+
+async def test_clear_modals_leaves_a_disconnect_alone():
+    """Nothing on a disconnect modal helps, and the health monitor recovers the client."""
+    screen = _Screen(("Connection Lost!", [MESSAGE_BOX_CENTER]))
+    result = await _clear(screen)
+
+    assert result.cleared is False
+    assert result.disconnected is True
+    assert screen.clicked == []

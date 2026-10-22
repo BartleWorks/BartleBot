@@ -29,6 +29,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     LARGE_FRIENDS_LIST_WINDOW_NAME,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_LEFT,
     MESSAGE_BOX_RIGHT,
     TELEPORT_TIMER_PATH,
 )
@@ -288,6 +289,62 @@ async def resolve_modal(client) -> ModalOutcome:
     # Recognized, but somebody else's dialog — leave it alone rather than click blind.
     logger.debug("resolve_modal: leaving %s to its own handler", key)
     return _NOTHING
+
+
+class ModalClearance(NamedTuple):
+    """What clear_modals() found, and did.
+
+    `cleared` says nothing is blocking the screen now. Otherwise `disconnected` says the
+    client is out of the game, which is crash recovery's to deal with and was left alone, and
+    `key` names the dialog still up when the wait ran out (None for one the snapshot does not
+    know). `dismissed` is the key of every dialog it closed along the way, None for an unknown
+    one: keys only, never the caption, which can carry a wizard's name.
+    """
+
+    cleared: bool
+    disconnected: bool = False
+    key: str | None = None
+    dismissed: tuple[str | None, ...] = ()
+
+
+async def clear_modals(
+    client, timeout: float = TRIGGER_TIMEOUT, poll_interval: float = POLL_INTERVAL
+) -> ModalClearance:
+    """Close every modal on screen the way a player backs out of one, so a menu can be reached.
+
+    A modal swallows every click aimed at the screen behind it, so a node about to click
+    through a menu (the spellbook) fails on whichever dialog the game left up: the dungeon
+    exit prompt of a player that never left, a stale invitation, a refusal nobody answered.
+    The caption does not matter to this, which is the difference from resolve_modal(): that
+    one *answers* a dialog the node is waiting on, confirming a question so the action
+    proceeds. Here the node wants none of the actions, and confirming one would leave a
+    dungeon, enter another or port across realms. Cancel is always safe, so the right button
+    is pressed where the dialog has one, else the center (a one-button OK), else the left.
+
+    Rereads the caption after each click, since a box takes a moment to close and another may
+    be queued behind it. Gives up after `timeout` and says which dialog was left, so the node
+    can fail with the reason instead of a menu that "did not open". A disconnect modal is not
+    clicked: nothing on it helps, and it is the health monitor's to recover.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    dismissed: list[str | None] = []
+    while True:
+        text = await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
+        if not text:
+            return ModalClearance(cleared=True, dismissed=tuple(dismissed))
+        key = dialog_captions.identify_caption(text)
+        if key in dialog_captions.DISCONNECTS:
+            return ModalClearance(cleared=False, disconnected=True, key=key, dismissed=tuple(dismissed))
+        if loop.time() >= deadline:
+            return ModalClearance(cleared=False, key=key, dismissed=tuple(dismissed))
+        for button in (MESSAGE_BOX_RIGHT, MESSAGE_BOX_CENTER, MESSAGE_BOX_LEFT):
+            if await is_visible_by_path(client, button):
+                await click_by_path(client, button)
+                if not dismissed or dismissed[-1] != key:
+                    dismissed.append(key)
+                break
+        await asyncio.sleep(poll_interval)
 
 
 class ModalAwareRetry:

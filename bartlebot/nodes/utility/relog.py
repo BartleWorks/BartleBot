@@ -28,6 +28,14 @@ recovery's Esc → Quit or this node itself left it outside any instance on a fr
 nothing has moved it since. Nearly every shipped bot's recovery state is this node, and without
 the skip it logged out a team recovery had just logged in.
 
+**A dialog over the screen is closed first (#281).** Every modal swallows clicks on whatever is behind it,
+and the spellbook is behind them all. A player that failed to leave a dungeon is still looking at its exit
+prompt when recovery sends the bot here, so ``node_helpers.clear_modals`` closes whatever is up before the
+spellbook is clicked, and again if one opens over it. It *cancels*: the right button, else the center. Confirming
+would leave the dungeon or enter another, and Quit raises its own question about a dungeon, which is
+confirmed after the click. A dialog that will not close fails the node, naming it. A disconnect modal is left
+alone and the player is handed to crash recovery.
+
 **Where the character comes back.** Not where it logged out. Quitting from inside a dungeon
 or a house puts the character back where it stood before entering. Put this node somewhere
 the bot can carry on from — typically just before it travels somewhere — rather than in the
@@ -74,8 +82,9 @@ from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
 
-# How many times to reopen the spellbook when it comes up on the Realms tab, which is the
-# one tab that hides the Quit button. Two is already paranoid: a fresh open shows it.
+# How many times to try the menu: reopening the spellbook when it comes up on the Realms tab,
+# which is the one tab that hides the Quit button (a fresh open shows it), or when a dialog
+# opened over it. Two is already paranoid.
 _MENU_ATTEMPTS = 2
 
 # How one player's relog ended, as log_out_and_in returns it. BACK is in the world again;
@@ -111,8 +120,8 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             (
-                "A fight didn't end in time, the spellbook or its settings page didn't open, or the game "
-                "refused to log out. The player is still in the world in every case."
+                "A fight didn't end in time, a dialog wouldn't close, the spellbook or its settings page "
+                "didn't open, or the game refused to log out. The player is still in the world in every case."
             ),
         ),
     ],
@@ -136,6 +145,11 @@ NODE_SPEC = NodeSpec(
         + ("Nobody logs out during a fight, and the group re-forms only after any fight the players log back into.")
         + "\n\n"
         + (
+            "A dialog left open on a player, such as the prompt for leaving a dungeon, is closed first "
+            "with Cancel or OK, so nothing it asks for happens."
+        )
+        + "\n\n"
+        + (
             "A player that can't log back in is closed and relaunched as after a crash, and the bot "
             "continues from its recovery state. If that player has no account or saved password, the "
             "bot stops."
@@ -146,6 +160,29 @@ NODE_SPEC = NodeSpec(
 )
 
 
+async def _clear_modals(machine, client) -> bool:
+    """Close any dialog over the screen, which would swallow every click on the menu behind it.
+
+    A player that failed to leave a dungeon is left looking at its exit prompt, and recovery
+    sends the bot here from exactly that state (#281). Cancelled rather than confirmed, so
+    nothing the dialog asks for happens: Quit asks about a dungeon itself, and that one is
+    confirmed after the click. False when a dialog would not close, or the client is
+    disconnected, which the caller sorts out.
+    """
+    result = await node_helpers.clear_modals(client, TRIGGER_TIMEOUT, POLL_INTERVAL)
+    if result.dismissed:
+        machine.log(f"relog: closed {len(result.dismissed)} dialog(s) over the menu — {_named(result.dismissed)}")
+    if result.cleared or result.disconnected:
+        return result.cleared
+    machine.log(f"relog: a dialog is blocking the menu and would not close — {_named((result.key,))}", logging.WARNING)
+    return False
+
+
+def _named(keys) -> str:
+    """The dialogs a log line speaks of, by what a player would have read, never by their text."""
+    return ", ".join(dialog_captions.describe(key) if key else "one this build does not recognize" for key in keys)
+
+
 async def _open_settings_page(machine, client) -> bool:
     """Open the spellbook's settings page with the Quit button showing.
 
@@ -154,12 +191,17 @@ async def _open_settings_page(machine, client) -> bool:
     around, which needs no knowledge of what the other tabs are called.
     """
     for attempt in range(_MENU_ATTEMPTS):
+        if not await _clear_modals(machine, client):
+            return False
         await node_helpers.click_by_path(client, SPELLBOOK_BUTTON_PATH)
         if not await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, SPELLBOOK_PREFERENCES_TAB_PATH),
             TRIGGER_TIMEOUT,
             POLL_INTERVAL,
         ):
+            if attempt + 1 < _MENU_ATTEMPTS and await node_helpers.modal_showing(client):
+                machine.log("relog: a dialog opened over the spellbook — closing it", logging.DEBUG)
+                continue
             machine.log("relog: spellbook did not open", logging.WARNING)
             return False
 
@@ -188,6 +230,8 @@ async def _open_settings_page_in_battle(machine, client) -> bool:
     on an open page closes it. Not while "You Are Idle" is up, which blocks it.
     """
     for _attempt in range(_MENU_ATTEMPTS):
+        if not await _clear_modals(machine, client):
+            return False
         await auto_select.press_escape(client.window_handle)
         if await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, SETTINGS_QUIT_BUTTON_PATH),
@@ -282,7 +326,8 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
         else await _open_settings_page(machine, client)
     )
     if not opened:
-        return FAILED
+        # A connection lost while the menu was being opened is recovery's, not a failure in the world.
+        return _abandon(machine, client, _DISCONNECTED) if await _disconnected(client) else FAILED
 
     await node_helpers.click_by_path(client, SETTINGS_QUIT_BUTTON_PATH)
 
@@ -415,6 +460,7 @@ async def _regroup(machine, clients: list) -> None:
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: node_helpers.click_by_path(), node_helpers.poll_until(), node_helpers.resolve_modal(),
+          node_helpers.clear_modals(),
           node_helpers.is_visible_by_path(), auto_select.at_character_select(),
           auto_select.press_character_select_play(), client.is_loading(), client.zone_name(),
           machine.suspend_health_checks_for() / resume_health_checks_for(),
@@ -426,15 +472,16 @@ async def run(machine, clients: list, params: dict) -> str:
          fails zone_name() and shows loading screens, which is indistinguishable from the
          crash those watchers exist to catch — without this the monitor force-closes a
          client that is relogging perfectly well.
-      2. Open the spellbook, open Preferences, and make sure the Quit button is showing.
+      2. Close any dialog over the screen, open the spellbook, open Preferences, and make sure the
+         Quit button is showing.
       3. Click Quit and wait for the character select screen, confirming the warning the
          game raises when logging out of a dungeon or with Dungeon Recall open.
       4. Press Play, and keep pressing while the screen is still up.
       5. Wait for the world to be readable again.
       6. Put health monitoring back, then re-form the group once no player is in a fight.
 
-    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; the spellbook
-    or its settings page did not open; the game refused the logout; or Quit did not take
+    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; a dialog over
+    the screen would not close; the spellbook or its settings page did not open; the game refused the logout; or Quit did not take
     effect. The player is still in the world each time.
 
     Past Quit, a player that does not make it back (character select never appears, a

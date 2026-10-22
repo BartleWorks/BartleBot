@@ -52,6 +52,15 @@ What must not be broken:
   It parks at once only because `abandon_client` told it the client is gone: the same
   errors from a client nobody handed over are waited on for `DEAD_CLIENT_CONFIRM_TIMEOUT`,
   for the client to leave the list, and are the node's FAILURE if it never does.
+- **Clear the screen before the menu.** Every modal swallows clicks on what is behind it, and the
+  spellbook is behind them all. A player that failed to leave a dungeon is looking at its exit prompt
+  when recovery sends the bot to the Relog node (#281), and the click on the spellbook did nothing.
+  `node_helpers.clear_modals` closes whatever is up first, and again if one opens over the spellbook.
+  It **cancels** (right button, else center) where `resolve_modal` confirms: confirming leaves the
+  dungeon or enters another, and Quit asks its own question about a dungeon, answered after the click.
+  A dialog that will not close is a FAILURE naming it, the player still in the world. A disconnect
+  modal is not clicked: it is handed to recovery. Esc cannot stand in: it opens the settings page
+  behind the modal, where Quit is just as unreachable.
 - **Close, never unhook.** Killing the process sidesteps `HookHandler._rewrite_autobot`'s
   fixed 0.5 s sleep, which is a hazard on exactly the lagging clients this exists for.
 - **Recover the fleet as one batch, not a client at a time.** A relog closes every

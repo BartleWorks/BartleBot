@@ -50,6 +50,11 @@ class FakeGame:
     goes unreadable instead. ``ignores_play_for`` is a character select that takes that
     many seconds to accept Play.
 
+    ``over_world`` is a dialog the game left up over the world before the node began, as it
+    leaves the dungeon exit prompt of a player that never left: its caption and buttons. It
+    swallows every click but its own buttons, which close it unless ``stubborn``. With
+    ``dialog_on_open`` the dialog comes up on the first spellbook click instead, taking it.
+
     ``disconnects`` is a lost connection: ``"before"`` the node starts or ``"on_quit"``. The
     client then sits on "Connection Lost!", where nothing it is sent does anything, and goes
     on answering zone_name() with the zone it was in, as the game does.
@@ -69,7 +74,13 @@ class FakeGame:
         load_seconds: float | None = None,
         escape_opens: bool = True,
         disconnects: str | None = None,
+        over_world: tuple[str, tuple] | None = None,
+        dialog_on_open: tuple[str, tuple] | None = None,
+        stubborn: bool = False,
     ):
+        self.over_world = over_world
+        self.dialog_on_open = dialog_on_open
+        self.stubborn = stubborn
         self.disconnects = disconnects
         self.escape_opens = escape_opens
         self.escapes = 0
@@ -94,6 +105,8 @@ class FakeGame:
 
     # --- what the node reads -------------------------------------------------
     def is_visible(self, path: list[str]) -> bool:
+        if self.over_world and path in (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT):
+            return path in self.over_world[1]
         if path == SPELLBOOK_PREFERENCES_TAB_PATH:
             return self.screen in ("spellbook", "settings")
         if path == SETTINGS_QUIT_BUTTON_PATH:
@@ -105,6 +118,8 @@ class FakeGame:
         return False
 
     def text(self, path: list[str]) -> str:
+        if path == MESSAGE_BOX_CAPTION_PATH and self.over_world:
+            return self.over_world[0]
         if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "dialog":
             return self.quit_dialog[0]
         if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "disconnected":
@@ -128,6 +143,13 @@ class FakeGame:
     # --- what the node does --------------------------------------------------
     def click(self, path: list[str]) -> None:
         self.clicks.append(list(path))
+        if self.over_world:
+            if path in self.over_world[1] and not self.stubborn:
+                self.over_world = None
+            return
+        if path == SPELLBOOK_BUTTON_PATH and self.screen == "world" and self.dialog_on_open:
+            self.over_world, self.dialog_on_open = self.dialog_on_open, None
+            return
         if path == SPELLBOOK_BUTTON_PATH and self.screen == "world":
             self.opens += 1
             self.screen = "spellbook"
@@ -325,6 +347,66 @@ class TestLogoutWarnings:
         assert MESSAGE_BOX_CENTER not in game.clicks
         assert any("refused the logout" in msg for msg, _ in machine.logs)
         assert not any("never appeared" in msg for msg, _ in machine.logs)
+
+
+DUNGEON_EXIT_CAPTION = (
+    "If you leave a Dungeon you will lose all your progress in the Dungeon and will have to start over at the "
+    "beginning.<br>Are you sure you want to leave now?"
+)
+FRIEND_BUSY_CAPTION = "Your friend is busy right now."
+
+
+class TestDialogOverTheScreen:
+    """#281: a modal swallows the spellbook click, so recovery's relog failed behind a dungeon exit prompt."""
+
+    async def test_the_exit_prompt_is_cancelled_not_confirmed_and_the_relog_carries_on(self, machine, games):
+        clients, (game,) = games({"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[0] == MESSAGE_BOX_RIGHT
+        assert MESSAGE_BOX_CENTER not in game.clicks[:2]
+        assert game.clicks[1] == SPELLBOOK_BUTTON_PATH
+
+    async def test_a_one_button_dialog_is_closed_with_its_center_button(self, machine, games):
+        clients, (game,) = games({"over_world": (FRIEND_BUSY_CAPTION, (MESSAGE_BOX_CENTER,))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[0] == MESSAGE_BOX_CENTER
+
+    async def test_a_dialog_nobody_cataloged_is_closed_too(self, machine, games):
+        clients, (game,) = games({"over_world": ("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[0] == MESSAGE_BOX_RIGHT
+
+    async def test_a_dialog_that_opens_over_the_spellbook_is_closed_and_the_menu_reopened(self, machine, games):
+        clients, (game,) = games({"dialog_on_open": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[:3] == [SPELLBOOK_BUTTON_PATH, MESSAGE_BOX_RIGHT, SPELLBOOK_BUTTON_PATH]
+
+    async def test_a_dialog_that_will_not_close_fails_naming_it_and_the_player_stays_in_the_world(self, machine, games):
+        clients, (game,) = games(
+            {"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT)), "stubborn": True}
+        )
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert SPELLBOOK_BUTTON_PATH not in game.clicks
+        assert any("would not close" in msg and "InstanceExit" in msg for msg, _ in machine.logs)
+        assert machine.abandoned == []
+
+    async def test_an_unknown_dialog_that_will_not_close_says_so_without_quoting_it(self, machine, games):
+        clients, _ = games({"over_world": ("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,)), "stubborn": True})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert any("does not recognize" in msg for msg, _ in machine.logs)
+        assert not any("nobody has cataloged" in msg for msg, _ in machine.logs)
+
+    async def test_the_esc_route_closes_a_dialog_first_too(self, machine, games):
+        clients, (game,) = games({"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.log_out_and_in(machine, clients[0], in_battle=True) == relog_node.BACK
+        assert game.clicks[0] == MESSAGE_BOX_RIGHT
+
+    async def test_the_dialog_is_closed_for_each_player_that_has_one(self, machine, games):
+        clients, (blocked, clear) = games(
+            {"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))}, {}
+        )
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert blocked.screen == clear.screen == "world"
 
 
 class TestFailurePaths:
