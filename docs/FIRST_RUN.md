@@ -107,14 +107,14 @@ that cannot fit anyway is left out, and the canvas is never below 220.
 | page | writes | answered when |
 |---|---|---|
 | Quick or Custom | nothing | never: it is always the first page |
-| Select Wizard101 install location | `game.install_dir` in `preferences.json`, through `shared/game_install.set_install_dir`, only for a folder the user changed to | `find_install` finds an install, stored or detected |
-| Add Wizard101 accounts | each account as it is added, edited or removed, to `accounts.json` (and its password to Credential Manager), through `accounts_tab`'s card actions; on Next, `setup.accounts_answered` in `preferences.json`, through `shared/account_setup.record_accounts_answered` | `accounts_answered`: `accounts.json` holds an account, from either product, or the key is set |
-| Configure launch profiles (two or more accounts) | one launch profile of the accounts checked, to `accounts.json`, through `shared/launch_profiles.add_profile`, the function Settings › Game's Add uses; and `setup.launch_profile_answered` in `preferences.json`, through `record_launch_profile_answered` | `launch_profile_answered`: `accounts.json` holds a launch profile, from either product, or the key is set |
-| Select a team strategy for boss fights (two or more accounts) | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
-| Configure Quicksell settings | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
-| Select favorite realm and Safety Delay | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
-| More options (Custom only) | `setup.extract_art`, `auto_group_players` and `default_refill_potions`, all in BartleBot's `settings.json` (`general`), through `options/custom_setup.record_options`; the last two are the keys Settings › Bot's OK writes | `options_answered`: `setup.extract_art` is stored |
-| Extracting game art (whenever game art is on, as under Quick, and none is extracted) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, the Options page turned the art off, or art is already extracted |
+| Where is Wizard101 installed? | `game.install_dir` in `preferences.json`, through `shared/game_install.set_install_dir`, only for a folder the user changed to | `find_install` finds an install, stored or detected |
+| Add your Wizard101 accounts | each account as it is added, edited or removed, to `accounts.json` (and its password to Credential Manager), through `accounts_tab`'s card actions; on Next, `setup.accounts_answered` in `preferences.json`, through `shared/account_setup.record_accounts_answered` | `accounts_answered`: `accounts.json` holds an account, from either product, or the key is set |
+| Which accounts do you play together? (two or more accounts) | one launch profile of the accounts checked, to `accounts.json`, through `shared/launch_profiles.add_profile`, the function Settings › Game's Add uses; and `setup.launch_profile_answered` in `preferences.json`, through `record_launch_profile_answered` | `launch_profile_answered`: `accounts.json` holds a launch profile, from either product, or the key is set |
+| How should your team fight bosses? (two or more accounts) | the Team default, through `shared/first_run.record_answer`, and `setup.combat_defaults_answered` in `preferences.json` | `combat_question_answered`: the key is set (by either product, or #209's Skip), or the Team default is a duel neither answer names |
+| What should bots sell? | the four quicksell switches and `quicksell_keep_list`, through `options/quicksell_setup.write_sell_flags` and `write_keep_list`, the functions Settings › Bot uses; `show_quicksell_explanation = False`; and `setup.quicksell_answered`, all in BartleBot's `settings.json` (`general`), through `record_quicksell` | `quicksell_answered`: the key is set, or any quicksell setting is off its default (a switch, the keep list, or the explanation turned off) |
+| Set your favorite realm and Safety Delay | `favorite_realm` and `default_safety_delay`, through the `SettingsManager` setters Settings › Bot's OK uses, and `setup.realm_delay_answered`, all in BartleBot's `settings.json` (`general`), through `options/realm_delay_setup.record_realm_delay` | `realm_delay_answered`: the key is set, or a favorite realm is already set |
+| Choose a few more options (Custom only) | `setup.extract_art`, `auto_group_players` and `default_refill_potions`, all in BartleBot's `settings.json` (`general`), through `options/custom_setup.record_options`; the last two are the keys Settings › Bot's OK writes | `options_answered`: `setup.extract_art` is stored |
+| Extracting game art… (whenever game art is on, as under Quick, and none is extracted) | the art, into `%APPDATA%/Bartleby/BartleBot/art`, through `game/art_extraction.extract_art`; on Finish, `setup.art_answered`, through `record_art_answered` | `art_answered`: the key is set, the Options page turned the art off, or art is already extracted |
 
 ### The combat question
 
@@ -262,11 +262,10 @@ user folded in Settings. Sell Socket Wrenches and Sell Skeleton Keys say what th
 quicksell: turned off, it keeps any item with "Socket Wrench", or "Skeleton Key", in its
 name.
 
-Above the rows, a line says quicksell is off until the user turns it on, then what the
-explanation before each run used to: with it on, bots sell what dropped except what these
-settings keep, an item locked in the game is always kept, with where Backpack Item Lock is
-turned on, and that these are the Settings › Bot rows a bot's
-Options can change for that bot. The tab's **Quicksell reminder**
+Above the rows, a line says what the explanation before each run used to: quicksell
+sells every drop these settings don't keep, never an item locked in the game, and where
+Backpack Item Lock is turned on. It ends with where to change them later, Settings › Bot or
+a bot's own Options. That quicksell starts off is left to the Quicksell check box. The tab's **Quicksell reminder**
 row is not on the page, since Next turns it off.
 
 Next writes through `options/quicksell_setup.record_quicksell`: the switches, the keep
@@ -309,7 +308,7 @@ be unset.
 
 ### Custom's options
 
-Under Custom only, after Realm and Safety Delay: **More options**, three check
+Under Custom only, after Realm and Safety Delay: **Choose a few more options**, three check
 boxes, all on, each with a description of what it costs, every one shown.
 
 - **Extract game art**: the game's own pictures for spell cards, schools, worlds and tags,
