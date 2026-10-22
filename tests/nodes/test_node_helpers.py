@@ -2013,3 +2013,14 @@ async def test_a_prompt_answered_late_restarts_the_settle_grace():
         result = await nh.wait_for_zone_with_recovery(FakeMachine(), [client], "Dst", 0.01, 0.001, 0.1)
 
     assert result is None
+
+
+async def test_a_recovery_port_that_times_out_is_logged_not_raised():
+    """#281: a modal blocks the Friends button, the wait for the list times out, and the run took it for a dead client."""
+    from wizwalker import ExceptionalTimeout
+
+    machine = FakeMachine()
+    with patch.object(nh, "port_to_friend", new=AsyncMock(side_effect=ExceptionalTimeout("friends list"))):
+        await nh._port_stragglers(machine, 0, "someone", [FakeClient()], "Dst", 0)
+
+    assert any("timed out" in msg and "friends list" in msg for msg, _ in machine.logs)

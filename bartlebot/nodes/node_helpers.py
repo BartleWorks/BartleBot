@@ -11,7 +11,7 @@ from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from wizwalker import Keycode, MemoryReadError
+from wizwalker import ExceptionalTimeout, Keycode, MemoryReadError
 from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
@@ -282,10 +282,12 @@ async def resolve_modal(client, *, recognized_only: bool = False) -> ModalOutcom
         return _NOTHING
 
     if key in dialog_captions.CONFIRM_TO_PROCEED:
+        logger.debug("resolve_modal: confirming %s", key)
         await click_by_path(client, MESSAGE_BOX_CENTER)
         return ModalOutcome(answered=True)
 
     if key in dialog_captions.REFUSALS:
+        logger.debug("resolve_modal: dismissing %s", key)
         if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
             await click_by_path(client, MESSAGE_BOX_RIGHT)
         else:
@@ -1295,6 +1297,16 @@ async def _port_stragglers(machine, index: int, name: str, stragglers: list, zon
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
         machine.log(f"Recovery teleport to P{index + 1} failed: it is not on every straggler's friends list")
+        return
+    except ExceptionalTimeout:
+        # A straggler that cannot open its friends list is not a dead client: a dialog over the
+        # screen swallows the click on the Friends button (#281). Raised out of here it parked
+        # the run for DEAD_CLIENT_CONFIRM_TIMEOUT. A client that did die fails the caller's next
+        # read with its own error, and is handled as one.
+        machine.log(
+            f"Recovery teleport to P{index + 1} timed out: a window may be blocking a straggler's friends list",
+            logging.WARNING,
+        )
         return
 
     if result.refusal:
