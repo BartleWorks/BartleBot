@@ -44,7 +44,7 @@ def test_the_keyboard_bindings_are_read_with_their_modifiers_and_the_rest_skippe
     assert game_bindings(parse_binding_file(_DEFAULTS)) == [
         GameBinding(event="Quit", binding="Alt+F4"),
         GameBinding(event="FindNearestActiveQuest", binding="Ctrl+Shift+Q"),
-        GameBinding(event="PrintScreen", binding="Printscreen"),
+        GameBinding(event="PrintScreen", binding="Print Screen"),
         GameBinding(event="PrintScreen", binding="F12"),
     ]
 

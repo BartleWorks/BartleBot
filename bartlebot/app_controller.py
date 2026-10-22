@@ -2866,7 +2866,7 @@ class AppController(QObject):
         """
         for problem in problems:
             logger.warning("Refusing to run: %s", problem)
-        QMessageBox.warning(self._window, "Key Bindings", run_probe.key_refusal_text(problems))
+        QMessageBox.warning(self._window, "Run Bot", run_probe.key_refusal_text(problems))
 
     def _finish_run_request(self, elixir_players) -> None:
         """The rest of the run sequence: the dialogs that ask, then the run itself."""

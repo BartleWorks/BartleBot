@@ -140,12 +140,63 @@ class KeyInput:
 
     @property
     def text(self) -> str:
-        """For people: ``Ctrl+Shift+Q``, ``.`` ``0xBA``. The game's own name where it has one."""
-        if len(self.key) == 1:
-            key = self.key.upper() if self.key.isascii() and self.key.isprintable() else f"0x{ord(self.key):02X}"
-        else:
-            key = self.key.capitalize() if not re.fullmatch(r"f\d+", self.key) else self.key.upper()
-        return "+".join([*(m.capitalize() for m in self.modifiers), key])
+        """For people, as the keyboard labels it: ``Ctrl+Shift+Q``, ``/``, ``Numpad +``, ``Page Up``."""
+        return "+".join([*(m.capitalize() for m in self.modifiers), key_label(self.key)])
+
+
+# What a keyboard prints on the keys the game names, or writes as an unprintable code. By code,
+# not by name, so the "." key reads "." though r811339 names it "comma".
+_KEY_LABELS: dict[int, str] = {
+    0x08: "Backspace",
+    0x09: "Tab",
+    0x0D: "Enter",
+    0x13: "Pause",
+    0x1B: "Esc",
+    0x20: "Space",
+    0x21: "Page Up",
+    0x22: "Page Down",
+    0x23: "End",
+    0x24: "Home",
+    0x25: "Left",
+    0x26: "Up",
+    0x27: "Right",
+    0x28: "Down",
+    0x2C: "Print Screen",
+    0x2D: "Insert",
+    0x2E: "Delete",
+    **{0x60 + n: f"Numpad {n}" for n in range(10)},
+    0x6A: "Numpad *",
+    0x6B: "Numpad +",
+    0x6C: "Separator",
+    0x6D: "Numpad -",
+    0x6E: "Numpad .",
+    0x6F: "Numpad /",
+    **{0x70 + n: f"F{n + 1}" for n in range(24)},
+    0x90: "Num Lock",
+    0xBA: ";",
+    0xBB: "=",
+    0xBC: ",",
+    0xBD: "-",
+    0xBE: ".",
+    0xBF: "/",
+    0xC0: "`",
+    0xDB: "[",
+    0xDC: "\\",
+    0xDD: "]",
+    0xDE: "'",
+}
+
+
+def key_label(name: str) -> str:
+    """A key's name as the keyboard labels the key: ``x`` -> ``X``, ``question`` -> ``/``."""
+    code = key_code(name)
+    if code in _KEY_LABELS:
+        return _KEY_LABELS[code]
+    if code is not None and 0x30 <= code <= 0x5A:
+        return chr(code)
+    if len(name) == 1:
+        return name.upper() if name.isascii() and name.isprintable() else f"0x{ord(name):02X}"
+    return name.capitalize()
 
 
 def parse_input(text: str) -> KeyInput | None:
@@ -228,30 +279,31 @@ class KeyMap:
         """The key to press for *action*: its first bare keyboard key that no chat-line action shares.
 
         A slot it cannot use is passed over for the other, so an action on Ctrl+X with a bare
-        second key still has a key. ``problem`` says why when neither slot will do.
+        second key still has a key. ``problem`` says where the action is when neither slot will
+        do, as the rest of a sentence the caller starts with the action's name: "is on Ctrl+X."
+        It is shown to the user (``docs/UI_TEXT.md``), and names each key as the keyboard does.
         """
         inputs = self.inputs(action)
         if not inputs:
-            return Choice(action, None, problem="is not bound to any key")
-        reasons: list[str] = []
+            return Choice(action, None, problem="has no key")
+        places: list[str] = []
         for text in inputs:
             parsed = parse_input(text)
             if parsed is None:
-                reasons.append(f"{text.split('.', 1)[0] or text} input")
+                places.append("the mouse" if text.startswith("mouse.") else "an input BartleBot can't press")
                 continue
             if parsed.modifiers:
-                reasons.append(f"{parsed.text}, which BartleBot cannot press: a key with Ctrl, Shift or Alt")
+                places.append(parsed.text)
                 continue
             if parsed.code is None:
-                reasons.append(f"{parsed.text}, a key BartleBot does not know")
+                places.append(f"{parsed.text}, a key BartleBot doesn't recognize")
                 continue
             others = sorted({b.action for b in self.bindings if b.input == text and b.action != action})
-            chat = [o for o in others if o in CHAT_LINE_ACTIONS]
-            if chat:
-                reasons.append(f"{parsed.text}, which also opens the chat line ({action_label(chat[0])})")
+            if any(o in CHAT_LINE_ACTIONS for o in others):
+                places.append(f"{parsed.text}, which also opens the chat")
                 continue
             return Choice(action, parsed.code, parsed, shared_with=tuple(others))
-        return Choice(action, None, problem="is bound only to " + " and ".join(reasons))
+        return Choice(action, None, problem="is on " + " and ".join(places))
 
     def problems(self, actions: Iterable[str] = tuple(GameAction)) -> list[Choice]:
         """The actions among *actions* that have no key a press can use."""

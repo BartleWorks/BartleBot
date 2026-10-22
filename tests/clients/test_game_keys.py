@@ -242,7 +242,7 @@ async def test_a_key_keycode_has_no_member_for_is_sent_by_its_code():
 
 async def test_an_action_with_no_key_a_press_can_use_raises_naming_it():
     client = _client_with(("NPCInteract", "ctrl.x", 0))
-    with pytest.raises(game_keys.KeyNotPressable, match=r"Interact is bound only to Ctrl\+X"):
+    with pytest.raises(game_keys.KeyNotPressable, match=r"Interact is on Ctrl\+X"):
         await game_keys.press(client, GameAction.INTERACT)
     client.send_key.assert_not_awaited()
 

@@ -81,8 +81,8 @@ def test_each_action_a_player_cannot_have_pressed_is_named_with_the_player():
         [KeyMap.defaults(), _keys(("NPCInteract", "ctrl.x"), ("ToggleDeckConfig", "alt.p"))]
     )
     assert problems == (
-        "Player 2: Interact is bound only to Ctrl+X, which BartleBot cannot press: a key with Ctrl, Shift or Alt.",
-        "Player 2: Deck is bound only to Alt+P, which BartleBot cannot press: a key with Ctrl, Shift or Alt.",
+        "Player 2: Interact is on Ctrl+X.",
+        "Player 2: Deck is on Alt+P.",
     )
 
 
@@ -90,8 +90,7 @@ def test_a_key_the_chat_line_shares_is_a_problem():
     keys = _keys(("ToggleFurniture", "question"))
     keys = KeyMap([*keys.bindings, Binding("ToggleChatBoxInputSlash", PREFIX + "question")], source="memory")
     (problem,) = run_probe.key_problems([keys])
-    assert problem.startswith("Player 1: Housing is bound only to")
-    assert "chat line" in problem
+    assert problem == "Player 1: Housing is on /, which also opens the chat."
 
 
 def test_a_key_another_action_shares_is_logged_not_refused(caplog):
@@ -116,10 +115,11 @@ async def test_the_probe_reads_every_player_s_keys_afresh(elixirs, monkeypatch):
     probe = await run_probe.probe_before_run([FakeClient(), FakeClient()], [])
 
     assert calls == [True, True]
-    assert probe.key_problems == ("Player 2: Move Left is bound only to mouse input.",)
+    assert probe.key_problems == ("Player 2: Move Left is on the mouse.",)
 
 
 def test_the_key_refusal_lists_each_problem_and_how_to_fix_it():
-    text = run_probe.key_refusal_text(("Player 1: Interact is bound only to Ctrl+X.",))
-    assert "Player 1: Interact is bound only to Ctrl+X." in text
+    text = run_probe.key_refusal_text(("Player 1: Interact is on Ctrl+X.",))
+    assert "Player 1: Interact is on Ctrl+X." in text
+    assert "Keybinding tab" in text
     assert "without Ctrl, Shift or Alt" in text

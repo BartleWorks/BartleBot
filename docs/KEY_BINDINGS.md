@@ -108,8 +108,10 @@ fails on a `Keycode` anywhere in `bartlebot/` but Space and Escape.
 (`clients/run_probe.py`). The run request reads each client's bindings in the same task as
 its other memory reads, with `refresh=True` so a client that failed before is tried again,
 and refuses to start, telling rather than asking, when any player has an action in
-`GameAction` with no key a press can use: one sentence per action, naming the player and why
-("Player 2: Interact is bound only to Ctrl+X, which BartleBot cannot press"). Narrower checks
+`GameAction` with no key a press can use. The dialog, titled Run Bot, has one line per action,
+naming the player and where the action is ("Player 2: Interact is on Ctrl+X."), then says to
+fix them in the game's Keybinding tab; its wording follows `docs/UI_TEXT.md`, and names each
+key as the keyboard labels it (`key_label`), so the swapped `comma` reads ".". Narrower checks
 were weighed and turned down: which actions a bot needs depends on its nodes, the subgraphs
 they call and the ambient watchers, which press Interact for potions in any bot, and a list
 kept per node goes stale silently, where a refusal the player fixes once does not.

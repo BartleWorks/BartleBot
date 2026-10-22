@@ -9,6 +9,7 @@ from bartlebot.game.key_bindings import (
     KeyMap,
     action_label,
     key_code,
+    key_label,
     parse_binding_file,
     parse_input,
 )
@@ -79,8 +80,7 @@ def test_a_key_with_a_modifier_is_passed_over_for_a_bare_second_key():
 def test_an_action_with_only_modified_keys_cannot_be_pressed_and_says_why():
     choice = _map(("NPCInteract", "ctrl.x", 0), ("NPCInteract", "alt.j", 1)).choose(GameAction.INTERACT)
     assert choice.code is None
-    assert "Ctrl+X" in choice.problem and "Alt+J" in choice.problem
-    assert "Ctrl, Shift or Alt" in choice.problem
+    assert choice.problem == "is on Ctrl+X and Alt+J"
 
 
 def test_an_action_on_the_mouse_alone_cannot_be_pressed():
@@ -91,7 +91,7 @@ def test_an_action_on_the_mouse_alone_cannot_be_pressed():
 def test_an_unbound_action_cannot_be_pressed():
     choice = _map(("ToggleInventory", "b", 0)).choose(GameAction.INTERACT)
     assert choice.code is None
-    assert choice.problem == "is not bound to any key"
+    assert choice.problem == "has no key"
 
 
 def test_a_key_the_chat_line_shares_is_never_pressed():
@@ -100,7 +100,7 @@ def test_a_key_the_chat_line_shares_is_never_pressed():
     keys = _map(("ToggleChatBoxInputSlash", "question", 0), ("ToggleFurniture", "question", 0))
     choice = keys.choose(GameAction.HOUSING)
     assert choice.code is None
-    assert "chat line" in choice.problem
+    assert choice.problem == "is on /, which also opens the chat"
 
 
 def test_a_shared_key_that_is_not_the_chat_line_is_pressed_and_named():
@@ -181,3 +181,20 @@ def test_a_bindings_file_is_read_with_its_slots_and_raw_bytes():
 
 def test_live_s_older_bindings_file_has_no_slot_and_reads_as_slot_0():
     assert parse_binding_file(_LIVE_FILE) == [Binding("ToggleJewelInventory", "keyboard.down.y", 0)]
+
+
+def test_a_key_is_named_as_the_keyboard_labels_it():
+    assert key_label("question") == "/"
+    assert key_label("\xba") == ";"
+    assert key_label("add") == "Numpad +"
+    assert key_label("pageup") == "Page Up"
+    assert key_label("f12") == "F12"
+    assert key_label("x") == "X"
+    assert key_label("7") == "7"
+    assert key_label(".") == "Delete"
+
+
+def test_the_swapped_names_read_as_the_keys_they_press():
+    # r811339 names the "." key "comma": the user is shown the key they pressed.
+    assert key_label("comma") == "."
+    assert key_label("period") == ","

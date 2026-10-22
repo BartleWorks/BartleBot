@@ -238,5 +238,5 @@ async def test_an_action_a_player_cannot_have_pressed_refuses_the_run(dialogs, r
 
     assert controller.started == 0
     assert refusals.in_task == [False]
-    assert "Player 2: Interact is bound only to Ctrl+X" in refusals.texts[0]
+    assert "Player 2: Interact is on Ctrl+X." in refusals.texts[0]
     assert dialogs.warnings == []

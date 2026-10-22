@@ -104,10 +104,10 @@ def refusal_text(fighting: list[int]) -> str:
 
 
 def key_refusal_text(problems: tuple[str, ...]) -> str:
-    """The dialog's text when a player has an action BartleBot cannot press."""
+    """The dialog's text when a player has an action BartleBot cannot press (``docs/UI_TEXT.md``, M2)."""
     return (
-        "BartleBot cannot press every key this run needs:\n\n"
+        "BartleBot can't press every action this run needs.\n\n"
         + "\n".join(problems)
-        + "\n\nIn the game's key bindings, give each of these a key of its own, without Ctrl, "
-        "Shift or Alt, as its first or second key, and save. Then start the bot again."
+        + "\n\nIn the game's Keybinding tab, give each of these actions a key without Ctrl, Shift or Alt "
+        "that nothing else uses. Either of an action's two keys works. Then run the bot again."
     )
