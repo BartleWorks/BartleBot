@@ -6,10 +6,12 @@ import re
 import struct
 
 import pytest
+from wizwalker import Keycode
 from wizwalker.errors import MemoryReadError
 
 from bartlebot.clients import game_keys
-from bartlebot.game.key_bindings import GameAction, KeyMap
+from bartlebot.game.key_bindings import PREFIX, Binding, GameAction, KeyMap
+from tests.conftest import FakeClient
 
 BASE = 0x2000_0000
 VTABLE = 0x7FF7_1C47_8B30
@@ -214,3 +216,37 @@ async def test_a_fixed_map_answers_without_reading_memory():
     game_keys.use_map(client, KeyMap.defaults())
     assert (await game_keys.key_map(client)).source == "defaults"
     assert memory.scans == 0
+
+
+def _client_with(*bindings: tuple[str, str, int]) -> FakeClient:
+    client = FakeClient()
+    keys = KeyMap((Binding(action, PREFIX + key, slot) for action, key, slot in bindings), source="memory")
+    game_keys.use_map(client, keys)
+    return client
+
+
+async def test_a_press_sends_the_key_the_account_has_the_action_on():
+    client = _client_with(("NPCInteract", "k", 0))
+    await game_keys.press(client, GameAction.INTERACT, 0.1)
+    client.send_key.assert_awaited_once_with(Keycode.K, 0.1)
+
+
+async def test_a_key_keycode_has_no_member_for_is_sent_by_its_code():
+    # Keycode stops short of the punctuation keys; wizwalker's send_key reads only .value.
+    client = _client_with(("NPCInteract", "\xba", 0))  # the ; key, written as its code
+    await game_keys.press(client, GameAction.INTERACT)
+    sent = client.send_key.await_args.args[0]
+    assert sent == game_keys.VirtualKey(0xBA)
+    assert sent.value == 0xBA
+
+
+async def test_an_action_with_no_key_a_press_can_use_raises_naming_it():
+    client = _client_with(("NPCInteract", "ctrl.x", 0))
+    with pytest.raises(game_keys.KeyNotPressable, match=r"Interact is bound only to Ctrl\+X"):
+        await game_keys.press(client, GameAction.INTERACT)
+    client.send_key.assert_not_awaited()
+
+
+def test_a_code_keycode_has_is_sent_as_its_member():
+    assert game_keys.keycode(0x58) is Keycode.X
+    assert game_keys.keycode(0xDE) == game_keys.VirtualKey(0xDE)

@@ -3,8 +3,10 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -367,7 +369,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
             continue
 
         machine.log("Pressing X to open potion shop…", logging.DEBUG)
-        await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+        await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in clients])
 
         if await node_helpers.poll_until(lambda: _all_shop_open(clients), SHOP_OPEN_TIMEOUT, POLL_INTERVAL):
             return True
@@ -399,7 +401,7 @@ async def _buy_potions_for_client(machine, client) -> None:
         # Re-open the shop window if it closed between iterations.
         if not await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
             machine.log("Shop closed unexpectedly; re-opening…", logging.DEBUG)
-            await client.send_key(Keycode.X, 0.1)
+            await game_keys.press(client, GameAction.INTERACT, 0.1)
             await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
                 SHOP_OPEN_TIMEOUT,
@@ -426,7 +428,7 @@ async def _buy_potions_for_client(machine, client) -> None:
 
         # Re-open the shop for the next purchase iteration.
         if charge_after < max_potions:
-            await client.send_key(Keycode.X, 0.1)
+            await game_keys.press(client, GameAction.INTERACT, 0.1)
             await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
                 SHOP_OPEN_TIMEOUT,

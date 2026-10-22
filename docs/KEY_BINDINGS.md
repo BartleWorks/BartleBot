@@ -80,3 +80,24 @@ An action with neither slot usable has no key, and `Choice.problem` says why in 
 Space, which advances dialogue, and Escape, which closes a page (`CloseUI`, which the game
 does not let a player rebind), are not actions BartleBot looks up: Space advances dialogue
 whatever jump is bound to.
+
+## Pressing an action
+
+Nothing presses a game action by its letter: `clients/game_keys.press(client, action, seconds)`
+looks the action up in that client's bindings, chooses its key, and sends it with
+`client.send_key`, as every node did before. `GameAction` lists every action BartleBot presses:
+Interact, Backpack and Open Jewels (quicksell), Character Sheet (reading a wizard's name),
+Deck, Housing (the castle list), Friends (closing the friends list) and Move Left (the
+anti-idle press while queued for a team-up). `test_no_game_action_is_pressed_by_a_fixed_key`
+fails on a `Keycode` anywhere in `bartlebot/` but Space and Escape.
+
+- **`Keycode` stops short of the punctuation keys.** wizwalker's enum has no member for
+  0xBA-0xDE (`;` `=` `,` `-` `.` `/` `` ` `` `[` `\` `]` `'`), which a player can bind like any
+  other, and `send_key` reads only the key's `.value`; so `keycode()` sends a `VirtualKey`
+  carrying the code for those, with no change to wizwalker.
+- **wizwalker's `DeckBuilder` presses P itself**, to open, close and refresh the deck page,
+  always through `_press_spellbook_key`. `deck_io.deck_builder()` overrides that one method to
+  press the player's Deck key; `test_the_deck_builder_presses_the_player_s_deck_key` fails if a
+  wizwalker update renames it.
+- **No key to press raises `KeyNotPressable`**, naming the action and why, and the node fails.
+  The pre-run check refuses a run before that can happen, so it is a rebind made mid-run.

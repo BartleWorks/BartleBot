@@ -23,9 +23,10 @@ import asyncio
 import logging
 import re
 
-from wizwalker import Keycode
 from wizwalker.memory.memory_object import Primitive
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.game.name_tables import decode_name_keys
 from bartlebot.nodes.paths import CHARACTER_PAGE_TITLE_WINDOW
 from bartlebot.nodes.timing import CHARACTER_PAGE_SETTLE, TRIGGER_TIMEOUT, jitter
@@ -64,7 +65,7 @@ async def detect_wizard_name(client) -> str | None:
     as an error worth aborting a bot run for.
     """
     try:
-        await client.send_key(Keycode.C, 0.1)
+        await game_keys.press(client, GameAction.CHARACTER_SHEET, 0.1)
         await asyncio.sleep(jitter(CHARACTER_PAGE_SETTLE))
 
         name = await _read_title_scroll(client)
@@ -81,7 +82,7 @@ async def detect_wizard_name(client) -> str | None:
         # Always attempt to close the page, including on failure — leaving it open would
         # obscure the HUD for every node that runs afterwards.
         try:
-            await client.send_key(Keycode.C, 0.1)
+            await game_keys.press(client, GameAction.CHARACTER_SHEET, 0.1)
         except Exception:
             logger.debug("Could not close the character page", exc_info=True)
 

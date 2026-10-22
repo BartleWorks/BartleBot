@@ -3,8 +3,10 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, REAGENT_DROP_MESSAGE_POLL, REAGENT_DROP_MESSAGE_TIMEOUT
@@ -140,7 +142,7 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         )
 
         if prompted:
-            await client.send_key(Keycode.X, 0.1)
+            await game_keys.press(client, GameAction.INTERACT, 0.1)
             dismissed = await node_helpers.poll_until(
                 lambda: node_helpers.none_in_npc_range([client]),
                 safety_delay,

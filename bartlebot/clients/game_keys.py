@@ -14,7 +14,11 @@ is found again.
 
 **Never a reason not to run.** A client whose bindings cannot be read gets the game's
 defaults for the actions BartleBot presses, with a warning, until ``key_map(refresh=True)``
-tries again: the pre-run check does, before every run. ``docs/KEY_BINDINGS.md``.
+tries again: the pre-run check does, before every run.
+
+**Pressed by action.** ``press(client, GameAction.INTERACT)`` sends whatever key that client's
+account has Interact on, never a fixed letter; ``test_game_keys_no_fixed_keys`` keeps a fixed
+one out. ``docs/KEY_BINDINGS.md``.
 """
 
 from __future__ import annotations
@@ -24,10 +28,11 @@ import re
 import struct
 from dataclasses import dataclass
 
+from wizwalker import Keycode
 from wizwalker.errors import PatternFailed
 from wizwalker.memory.memory_object import DynamicMemoryObject, PropertyClass
 
-from bartlebot.game.key_bindings import ENCODING, Binding, KeyMap
+from bartlebot.game.key_bindings import ENCODING, Binding, GameAction, KeyMap, action_label
 
 logger = logging.getLogger(__name__)
 
@@ -227,3 +232,42 @@ def use_map(client, keys: KeyMap | None) -> None:
     For a client with no game behind it: the tests' FakeClient.
     """
     _entries.setdefault(_handle(client), _Entry()).fixed = keys
+
+
+class KeyNotPressable(RuntimeError):
+    """The client has no key a press of the action can use: bound only with a modifier, say."""
+
+
+@dataclass(frozen=True)
+class VirtualKey:
+    """A key code ``Keycode`` has no member for: wizwalker's ``send_key`` reads only ``.value``.
+
+    ``Keycode`` stops short of the punctuation keys (``;`` ``=`` ``[`` and the rest, 0xBA-0xDE),
+    which a player can bind like any other.
+    """
+
+    value: int
+
+    @property
+    def name(self) -> str:
+        return f"VK_0x{self.value:02X}"
+
+
+def keycode(code: int) -> Keycode | VirtualKey:
+    """What ``client.send_key`` sends for a virtual-key code."""
+    try:
+        return Keycode(code)
+    except ValueError:
+        return VirtualKey(code)
+
+
+async def press(client, action: GameAction, seconds: float = 0) -> None:
+    """Press the key *client*'s account has *action* on, for *seconds* as ``send_key`` does.
+
+    Raises KeyNotPressable, naming the action and why, when it has none a press can use. The
+    pre-run check refuses a run before that can happen; this is for a rebind made mid-run.
+    """
+    choice = (await key_map(client)).choose(action)
+    if choice.code is None:
+        raise KeyNotPressable(f"{action_label(action)} {choice.problem}")
+    await client.send_key(keycode(choice.code), seconds)

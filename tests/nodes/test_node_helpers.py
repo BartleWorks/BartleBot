@@ -726,9 +726,8 @@ async def test_click_until_gone_returns_as_soon_as_the_window_goes():
 
 async def test_press_key_until_gone_returns_as_soon_as_the_panel_goes():
     """The keyboard counterpart of the same rule — see click_until_gone above."""
-    from wizwalker import Keycode
-
     import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot.game.key_bindings import GameAction
 
     panel = _Closeable(clicks_needed=1)
 
@@ -743,7 +742,9 @@ async def test_press_key_until_gone_returns_as_soon_as_the_panel_goes():
 
     loop = asyncio.get_event_loop()
     start = loop.time()
-    result = await nh_mod.press_key_until_gone(client, Keycode.F, is_open=is_open, timeout=5, poll_interval=2.0)
+    result = await nh_mod.press_key_until_gone(
+        client, GameAction.FRIENDS, is_open=is_open, timeout=5, poll_interval=2.0
+    )
     elapsed = loop.time() - start
 
     assert result is True

@@ -3,9 +3,9 @@
 import asyncio
 import logging
 
-from wizwalker import Keycode
-
+from bartlebot.clients import game_keys
 from bartlebot.game import dialog_captions
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 
@@ -62,7 +62,7 @@ from bartlebot.nodes.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.send_key(Keycode.X), client.is_loading()
+    APIs: game_keys.press(client, GameAction.INTERACT), client.is_loading()
 
     Flow:
       1. Wait for the gauntlet entrance prompt to appear on all clients within Safety Delay
@@ -92,7 +92,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Press X to enter.
     machine.log("Pressing X to enter gauntlet", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+    await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in clients])
 
     # 3. Answer the entry prompt if the gauntlet raises one.
     machine.log("Checking for an instance prompt…", logging.DEBUG)

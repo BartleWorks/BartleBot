@@ -11,9 +11,11 @@ import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
 from bartlebot.game import scales, zone_names
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -476,7 +478,7 @@ async def _use_station(machine, client, client_number: int, interact: XYZ, safet
         return
 
     machine.log(f"Client {client_number}: pressing X to interact with level-scaling NPC", logging.DEBUG)
-    await client.send_key(Keycode.X, 0.1)
+    await game_keys.press(client, GameAction.INTERACT, 0.1)
 
     machine.log(f"Client {client_number}: waiting for NPCServicesWin menu…", logging.DEBUG)
     if not await node_helpers.poll_until(lambda: _all_menu_visible([client]), safety_delay, POLL_INTERVAL):

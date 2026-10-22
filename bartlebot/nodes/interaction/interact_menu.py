@@ -3,8 +3,10 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, TRIGGER_TIMEOUT
@@ -179,7 +181,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("Sequential interaction: clients take turns at the object", logging.DEBUG)
 
         async def _turn(client) -> bool:
-            await client.send_key(Keycode.X, 0.1)
+            await game_keys.press(client, GameAction.INTERACT, 0.1)
             return await _menu_open(client)
 
         numbers = [i + 1 for i in interact_indices]
@@ -224,7 +226,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 5. Press X to begin interaction.
     machine.log("Pressing X to interact", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in active_clients])
+    await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in active_clients])
 
     # 6. Wait for the menu to open on all active clients.
     machine.log(f"Waiting for menu path {'→'.join(menu_path)}…", logging.DEBUG)

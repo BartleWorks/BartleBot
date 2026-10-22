@@ -14,6 +14,9 @@ from typing import NamedTuple
 from wizwalker import Keycode, MemoryReadError
 from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction, action_label
+
 logger = logging.getLogger(__name__)
 
 from bartlebot.clients import sightings
@@ -1388,12 +1391,12 @@ async def open_friends_list(client):
 
 async def press_key_until_gone(
     client,
-    key: Keycode,
+    action: GameAction,
     is_open,
     timeout: float = WINDOW_CLOSE_TIMEOUT,
     poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
 ) -> bool:
-    """Press `key` until `is_open()` reports the panel has closed. Returns True once gone.
+    """Press `action`'s key until `is_open()` reports the panel has closed. Returns True once gone.
 
     The keyboard counterpart to click_until_gone, and preferable for panels that have a
     keyboard toggle: a keypress goes to the client as a whole, so unlike a click it cannot
@@ -1417,7 +1420,7 @@ async def press_key_until_gone(
     while True:
         if await _gone():
             return True
-        await client.send_key(key, 0.1)
+        await game_keys.press(client, action, 0.1)
         if loop.time() >= deadline:
             break
         if await poll_until(_gone, timeout=poll_interval, poll_interval=WINDOW_CLOSE_CONFIRM_INTERVAL):
@@ -1425,7 +1428,7 @@ async def press_key_until_gone(
 
     still_open = await is_open()
     if still_open:
-        logger.warning("Panel toggled by %s is still open after %.0fs of retries", key, timeout)
+        logger.warning("Panel toggled by %s is still open after %.0fs of retries", action_label(action), timeout)
     return not still_open
 
 
@@ -1446,7 +1449,7 @@ async def is_friends_list_open(client) -> bool:
 async def close_friends_list(client) -> bool:
     """Close the friends list, retrying until it is gone. Never raises.
 
-    Closed with the F toggle rather than a close button. F cycles
+    Closed with the Friends toggle (F by default) rather than a close button. F cycles
     closed -> NewFriendsListWindow -> wndFriendsList -> closed, so pressing it until
     neither window is visible handles whichever list the client happens to be showing.
 
@@ -1458,7 +1461,7 @@ async def close_friends_list(client) -> bool:
     try:
         return await press_key_until_gone(
             client,
-            Keycode.F,
+            GameAction.FRIENDS,
             is_open=lambda: is_friends_list_open(client),
         )
     except Exception:
