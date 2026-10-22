@@ -87,3 +87,13 @@ def test_a_duration_hint_counts_its_seconds():
     assert help_text.seconds(1.0) == "1 second"
     assert help_text.seconds(10.0) == "10 seconds"
     assert help_text.seconds(2.5) == "2.5 seconds"
+
+
+def test_a_node_name_keeps_its_short_words_lowercase():
+    """N3: title case, as Unreal names its nodes, with the first word always capitalized."""
+    from bartlebot.nodes.registry import node_display_name
+
+    assert node_display_name("teleport_to_world_hub") == "Teleport to World Hub"
+    assert node_display_name("enter_zone_via_object") == "Enter Zone via Object"
+    assert node_display_name("check_health_and_mana") == "Check Health and Mana"
+    assert node_display_name("handle_combat") == "Handle Combat"

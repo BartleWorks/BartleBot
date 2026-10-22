@@ -980,10 +980,10 @@ def test_every_reagent_id_names_a_real_entity():
 
 
 def test_no_bot_uses_the_retired_zone_list_node():
-    """enter_zone_via_list is not a node any more (#36) -- Sync In Zone is.
+    """enter_zone_via_list is not a node any more (#36) -- Sync in Zone is.
 
     A list object only ever stands in a zone the navigation map declares, so there is nowhere
-    it could be pointed that Sync In Zone cannot already plan a route to. The module survives as
+    it could be pointed that Sync in Zone cannot already plan a route to. The module survives as
     the step runner behind a planned list or gate step; what is gone is authoring one by hand,
     with a zone and a destination that had to be kept agreeing with each other and a row's text
     that was one locale's answer frozen into the file.

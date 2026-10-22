@@ -122,14 +122,20 @@ NODE_SPECS: dict[str, NodeSpec] = {
 NODE_PARAM_SCHEMAS: dict[str, list[ParamField]] = {k: v.params for k, v in NODE_SPECS.items()}
 
 
+#: Words a node name keeps lowercase after its first word, as Unreal's node names do
+#: (docs/UI_TEXT.md, N3).
+_SMALL_WORDS = frozenset({"a", "an", "and", "at", "by", "for", "in", "of", "on", "or", "the", "to", "via"})
+
+
 def node_display_name(node_type: str) -> str:
     """What the node browser calls a node type, and the label a new node of it starts with.
 
     Examples:
-        enter_zone_via_list → "Enter Zone Via List"
+        enter_zone_via_list → "Enter Zone via List"
         handle_combat       → "Handle Combat"
     """
-    return node_type.replace("_", " ").title()
+    words = node_type.split("_")
+    return " ".join(w if i and w in _SMALL_WORDS else w.capitalize() for i, w in enumerate(words))
 
 
 # Ordered category groupings used by the GUI dropdown.

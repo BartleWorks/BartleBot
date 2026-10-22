@@ -733,7 +733,7 @@ class _ZoneWidget(QWidget):
 class _AuthoringMachine:
     """The slice of BotMachine zone navigation reads, for a trip started from the properties panel.
 
-    Records go under the Sync In Zone node's logger, as they would in a run. Safety Delay is the
+    Records go under the Sync in Zone node's logger, as they would in a run. Safety Delay is the
     user's app setting: there is no bot run here to hold an override or a declaration.
     """
 
@@ -758,7 +758,7 @@ class _NavZoneField(QWidget):
     """A 'nav_zone' param: the zone picker, then Fill current and Go to zone at the end of its line.
 
     Fill sets the zone from a connected player's current zone, as the zone and xyz fields do. Go
-    runs the same navigation the Sync In Zone node runs, so a bot can be authored from wherever the
+    runs the same navigation the Sync in Zone node runs, so a bot can be authored from wherever the
     players happen to be without starting a run.
     """
 
@@ -843,7 +843,7 @@ class _NavZoneField(QWidget):
         try:
             await zone_navigation.navigate(_AuthoringMachine(), clients, zone)
         except Exception:
-            logger.exception("Sync In Zone from the properties panel failed")
+            logger.exception("Sync in Zone from the properties panel failed")
         finally:
             try:
                 self.go_btn.setEnabled(True)
