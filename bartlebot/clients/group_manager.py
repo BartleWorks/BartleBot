@@ -516,13 +516,18 @@ async def leave_group(client) -> bool:
         if not await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH):
             return True
 
-        await node_helpers.click_by_path(client, LEAVE_GROUP_BUTTON_PATH)
+        clicked = await node_helpers.click_by_path(client, LEAVE_GROUP_BUTTON_PATH)
         # Leaving is a server round-trip, so the button does not vanish on the click.
-        return await node_helpers.poll_until(
+        left = await node_helpers.poll_until(
             lambda: _left_the_group(client),
             timeout=GROUP_VERIFY_TIMEOUT,
             poll_interval=POLL_INTERVAL,
         )
+        if not left:
+            logger.debug(
+                "Leave Group button still showing %.0fs after the click (click sent: %s)", GROUP_VERIFY_TIMEOUT, clicked
+            )
+        return left
     except Exception:
         logger.warning("Failed to leave the group", exc_info=True)
         return False
@@ -935,10 +940,14 @@ async def _send_invite(leader, target, name: str, label: str, log, social_window
             ):
                 log(f"Friend profile for {label} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
 
+            # Read straight before the click and again straight after, so a click that lands on
+            # the wrong button (#280) shows which one was where, and whether the layout moved.
+            log(f"Profile buttons before the invite click for {label}: {await _profile_buttons(leader)}", logging.DEBUG)
             if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
                 diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
                 log(f"Group invite button unavailable for {label}: {diagnosis}", logging.DEBUG)
                 return False
+            log(f"Profile buttons after the invite click for {label}: {await _profile_buttons(leader)}", logging.DEBUG)
 
         invited, refused = await _await_invite_outcome(leader, target)
         if refused:
@@ -949,6 +958,8 @@ async def _send_invite(leader, target, name: str, label: str, log, social_window
             raise AlreadyInAnotherGroup(f"{label} is already in another group")
         if not invited:
             log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
+            log(f"Leader's windows then: {await _visible_windows(leader)}", logging.DEBUG)
+            log(f"Profile buttons then: {await _profile_buttons(leader)}", logging.DEBUG)
             return False
         if social_window_wait is not None and not await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(leader, SOCIAL_WINDOW_PATH),
@@ -1065,6 +1076,36 @@ async def _confirm_joined(target) -> GroupState:
 def _lists(roster: tuple[str, ...], name: str) -> bool:
     """Whether `name` appears on this roster, compared case-insensitively."""
     return name.casefold() in {member.casefold() for member in roster}
+
+
+async def _profile_buttons(client) -> str:
+    """Describe the friend profile popup's buttons: where each one is and whether it shows. Never raises.
+
+    Diagnostic only, for a click that lands on the wrong button (#280): Invite to Group
+    sits in a ButtonLayout beside buttons such as the wishlist's, and the layout can still
+    be moving when the popup first reads as visible. Two reads that disagree show the
+    layout moved; one read shows which button covered the point that was clicked.
+    The names are the game's own control names, never a player's.
+    """
+    try:
+        popups = await node_helpers.find_windows_by_path(client.root_window, CHARACTER_PROFILE_PATH)
+        if not popups:
+            return "popup missing"
+        popup = popups[0]
+        parts = [f"popup@{_rect_text(await popup.scale_to_client())}"]
+        for layout in await popup.children():
+            if await layout.name() != "ButtonLayout":
+                continue
+            for button in await layout.children():
+                shown = "" if await button.is_visible() else " hidden"
+                parts.append(f"{await button.name()}{shown}@{_rect_text(await button.scale_to_client())}")
+        return ", ".join(parts)
+    except Exception as exc:
+        return f"<unreadable: {exc!r}>"
+
+
+def _rect_text(rect) -> str:
+    return f"({rect.x1},{rect.y1},{rect.x2},{rect.y2})"
 
 
 async def _visible_windows(client) -> str:

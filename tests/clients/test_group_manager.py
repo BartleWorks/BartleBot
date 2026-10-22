@@ -1849,3 +1849,63 @@ async def test_a_leader_already_in_a_group_does_not_wait_for_the_social_window(u
 
     assert result.success is True
     assert result.added == ["P3"]
+
+
+# --- _profile_buttons: the #280 diagnostic -------------------------------------------------
+
+
+class _Rect:
+    def __init__(self, x1, y1, x2, y2):
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+
+
+class _Win:
+    def __init__(self, name, rect=(0, 0, 1, 1), visible=True, children=()):
+        self._name, self._rect, self._visible, self._children = name, rect, visible, list(children)
+
+    async def name(self):
+        return self._name
+
+    async def children(self):
+        return self._children
+
+    async def is_visible(self):
+        return self._visible
+
+    async def scale_to_client(self):
+        return _Rect(*self._rect)
+
+
+class _RootHolder:
+    def __init__(self, root_window):
+        self.root_window = root_window
+
+
+def _profile_tree():
+    invite = _Win("btnInvite", (439, 133, 464, 158))
+    wishlist = _Win("btnCharacterWishlistInspection", (439, 199, 464, 224), visible=False)
+    layout = _Win("ButtonLayout", children=[invite, wishlist])
+    other_layout = _Win("ButtonLayout")
+    popup = _Win("wndCharacter", (400, 90, 500, 300), children=[other_layout, layout, _Win("lblCharacterName")])
+    root = _Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])])
+    return _RootHolder(root)
+
+
+async def test_profile_buttons_reports_each_button_with_its_rectangle_and_visibility():
+    text = await gm._profile_buttons(_profile_tree())
+    assert text == (
+        "popup@(400,90,500,300), btnInvite@(439,133,464,158), btnCharacterWishlistInspection hidden@(439,199,464,224)"
+    )
+
+
+async def test_profile_buttons_says_so_when_the_popup_is_not_open():
+    assert await gm._profile_buttons(_RootHolder(_Win("root"))) == "popup missing"
+
+
+async def test_profile_buttons_never_raises():
+    class Broken:
+        @property
+        def root_window(self):
+            raise RuntimeError("memory read failed")
+
+    assert (await gm._profile_buttons(Broken())).startswith("<unreadable:")
