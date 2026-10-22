@@ -46,8 +46,10 @@ Two rules about the settings dialog itself:
 - **A row explains itself on the page, not on hover — in one line.** Every
   setting is a `rows.SettingRow`: the title, one line under it saying what the
   setting does, and the control right-aligned in a fixed-width slot. The line is
-  always on screen; anything longer, the *why*, goes in `details=` and folds behind
-  the row's `?`, and the page's *Show descriptions · Hide descriptions* open or
+  always on screen; anything the user needs in order to choose, and doesn't get from
+  the line, goes in `details=` and folds behind the row's `?`. That means a cost, when
+  the change applies, what overrides it, or what Off costs. The *why* goes in no row at
+  all. `docs/UI_TEXT.md` has the rules for all three layers. The page's *Show descriptions · Hide descriptions* open or
   fold every row at once (#148); a form with no `details=` to open hides them
   (`SettingsForm.finish`). Before the description-row rework the Log, Layout
   and Auto-save rows had no explanation at all; after it every row carried a
