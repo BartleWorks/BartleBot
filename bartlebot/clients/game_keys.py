@@ -191,10 +191,11 @@ async def read_binding_list(reader, address: int) -> list[Binding]:
     return bindings
 
 
-async def key_map(client, *, refresh: bool = False) -> KeyMap:
+async def key_map(client, *, refresh: bool = False, warn: bool = True) -> KeyMap:
     """The client's key bindings, from its memory; the game's defaults when they cannot be read.
 
-    *refresh* tries memory again for a client that failed before. Never raises.
+    *refresh* tries memory again for a client that failed before. *warn* False logs a failure
+    at DEBUG: the read made as a client attaches, which the pre-run check repeats. Never raises.
     """
     entry = _entries.setdefault(_handle(client), _Entry())
     if entry.fixed is not None:
@@ -216,7 +217,8 @@ async def key_map(client, *, refresh: bool = False) -> KeyMap:
         bindings = await read_binding_list(reader, address)
     except Exception:
         entry.unreadable = True
-        logger.warning(
+        logger.log(
+            logging.WARNING if warn else logging.DEBUG,
             "Could not read a client's key bindings from its memory (window %s); pressing the game's default keys",
             _handle(client),
             exc_info=True,

@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot.clients import run_probe
+from bartlebot.clients import game_keys, run_probe
+from bartlebot.game.key_bindings import PREFIX, Binding, KeyMap
 from bartlebot.nodes.utility import handle_level_scaling
 from tests.conftest import FakeClient
 
@@ -61,3 +62,64 @@ async def test_unreadable_clients_and_a_failed_elixir_read_refuse_nothing(elixir
 )
 def test_the_refusal_names_every_player_in_a_fight(fighting, opening):
     assert run_probe.refusal_text(fighting).startswith(opening)
+
+
+def _keys(*changes: tuple[str, str]) -> KeyMap:
+    """The defaults, with each named action's binding replaced."""
+    replaced = {action for action, _ in changes}
+    bindings = [b for b in KeyMap.defaults().bindings if b.action not in replaced]
+    bindings += [Binding(action, PREFIX + key) for action, key in changes]
+    return KeyMap(bindings, source="memory")
+
+
+def test_the_defaults_have_every_key_a_run_needs():
+    assert run_probe.key_problems([KeyMap.defaults(), KeyMap.defaults()]) == ()
+
+
+def test_each_action_a_player_cannot_have_pressed_is_named_with_the_player():
+    problems = run_probe.key_problems(
+        [KeyMap.defaults(), _keys(("NPCInteract", "ctrl.x"), ("ToggleDeckConfig", "alt.p"))]
+    )
+    assert problems == (
+        "Player 2: Interact is bound only to Ctrl+X, which BartleBot cannot press: a key with Ctrl, Shift or Alt.",
+        "Player 2: Deck is bound only to Alt+P, which BartleBot cannot press: a key with Ctrl, Shift or Alt.",
+    )
+
+
+def test_a_key_the_chat_line_shares_is_a_problem():
+    keys = _keys(("ToggleFurniture", "question"))
+    keys = KeyMap([*keys.bindings, Binding("ToggleChatBoxInputSlash", PREFIX + "question")], source="memory")
+    (problem,) = run_probe.key_problems([keys])
+    assert problem.startswith("Player 1: Housing is bound only to")
+    assert "chat line" in problem
+
+
+def test_a_key_another_action_shares_is_logged_not_refused(caplog):
+    keys = KeyMap([*KeyMap.defaults().bindings, Binding("ToggleMapWindow", PREFIX + "x")], source="memory")
+    assert run_probe.key_problems([keys]) == ()
+    assert "Player 1: Interact's key, X, also does Toggle Map Window in the game" in caplog.text
+
+
+async def test_the_probe_reads_every_player_s_keys_afresh(elixirs, monkeypatch):
+    calls = []
+
+    on_the_mouse = KeyMap(
+        [*(b for b in KeyMap.defaults().bindings if b.action != "MoveLeft"), Binding("MoveLeft", "mouse.button3.down")],
+        source="memory",
+    )
+
+    async def key_map(client, *, refresh=False, warn=True):
+        calls.append(refresh)
+        return on_the_mouse if len(calls) == 2 else KeyMap.defaults()
+
+    monkeypatch.setattr(game_keys, "key_map", key_map)
+    probe = await run_probe.probe_before_run([FakeClient(), FakeClient()], [])
+
+    assert calls == [True, True]
+    assert probe.key_problems == ("Player 2: Move Left is bound only to mouse input.",)
+
+
+def test_the_key_refusal_lists_each_problem_and_how_to_fix_it():
+    text = run_probe.key_refusal_text(("Player 1: Interact is bound only to Ctrl+X.",))
+    assert "Player 1: Interact is bound only to Ctrl+X." in text
+    assert "without Ctrl, Shift or Alt" in text

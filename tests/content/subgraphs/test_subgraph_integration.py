@@ -54,6 +54,7 @@ class ControllerHarness:
             "_on_run_requested",
             "_on_run_probe_done",
             "_refuse_while_fighting",
+            "_refuse_unpressable_keys",
             "_finish_run_request",
             "_check_restricted_zones",
             "_check_player_realms",

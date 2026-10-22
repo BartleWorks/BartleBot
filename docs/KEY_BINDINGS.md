@@ -101,3 +101,23 @@ fails on a `Keycode` anywhere in `bartlebot/` but Space and Escape.
   wizwalker update renames it.
 - **No key to press raises `KeyNotPressable`**, naming the action and why, and the node fails.
   The pre-run check refuses a run before that can happen, so it is a rebind made mid-run.
+
+## Before a run
+
+**Every action BartleBot presses is required of every player, whatever the bot**
+(`clients/run_probe.py`). The run request reads each client's bindings in the same task as
+its other memory reads, with `refresh=True` so a client that failed before is tried again,
+and refuses to start, telling rather than asking, when any player has an action in
+`GameAction` with no key a press can use: one sentence per action, naming the player and why
+("Player 2: Interact is bound only to Ctrl+X, which BartleBot cannot press"). Narrower checks
+were weighed and turned down: which actions a bot needs depends on its nodes, the subgraphs
+they call and the ambient watchers, which press Interact for potions in any bot, and a list
+kept per node goes stale silently, where a refusal the player fixes once does not.
+
+A key shared with an action that is not the chat line is pressed, and logged at WARNING
+before the run, since the other action happens too and the player may wonder why it opened.
+
+**The scan is begun as a client arrives.** Finding a client's list takes seconds, so
+`ClientManager` starts it, as a task of its own, once the client's hooks are up: by then a
+character is in the world, and so are its bindings. A failure there is logged at DEBUG; the
+pre-run read repeats it, and warns.

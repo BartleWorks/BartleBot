@@ -188,6 +188,34 @@ async def test_client_is_published_once_hooks_come_up(harness):
         harness.stop()
 
 
+async def test_a_client_s_key_bindings_are_read_once_its_hooks_come_up(harness, monkeypatch):
+    """The scan for a client's key bindings takes seconds, so it is begun as the client
+    arrives, quietly, rather than when the first run starts; and publishing never waits on it."""
+    from bartlebot.clients import game_keys  # noqa: PLC0415
+
+    reads: list[tuple[int, bool]] = []
+    scan = asyncio.Event()
+
+    async def key_map(client, *, refresh=False, warn=True):
+        reads.append((client.window_handle, warn))
+        await scan.wait()
+
+    monkeypatch.setattr(game_keys, "key_map", key_map)
+    client = FakeHookClient(100)
+    harness._handler.add(client)
+    harness.start()
+    try:
+        await _tick(2)
+        assert reads == []
+        client.hooks_ready.set_result(None)
+        await _tick(3)
+        assert reads == [(100, False)]
+        assert harness.published_hwnds == {100}  # while the scan is still going
+    finally:
+        scan.set()
+        harness.stop()
+
+
 async def test_failed_activation_is_not_published_or_retried(harness):
     """A failed hook install is abandoned, not retried.
 
