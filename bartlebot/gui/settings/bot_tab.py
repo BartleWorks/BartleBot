@@ -79,7 +79,7 @@ class BotTab(SettingsForm):
         self._friend_name_edit.setPlaceholderText("Wizard name")
         self.add_row(
             SettingRow(
-                "Friend teleport target",
+                "Friend Name",
                 "Who a bot teleports to when it doesn't name one of your players.",
                 self._friend_name_edit,
                 default=_default("default_friend_name"),

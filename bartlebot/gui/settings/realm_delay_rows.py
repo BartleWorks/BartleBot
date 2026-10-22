@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import QDoubleSpinBox
 
 from bartlebot.gui.settings.rows import SettingRow
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
-from bartlebot.options.bot_options import SAFETY_DELAY_DESCRIPTION
+from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION, SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for
 
 SAFETY_DELAY_TITLE = "Default Safety Delay"
@@ -43,10 +43,12 @@ def favorite_realm_row(settings: SettingsManager, realm: str | None = None) -> S
     combo.set_value(settings.favorite_realm if realm is None else realm)
     return SettingRow(
         FAVORITE_REALM_TITLE,
-        "Which realm the Change Realm node switches every player to.",
+        "Where Change Realm and Sync in Zone send players.",
         combo,
         default=default_for("general", "favorite_realm"),
-        details=(
+        details=FAVORITE_REALM_DESCRIPTION
+        + (
+            " "
             "Launched players also get the game's Remember Realm option, so a relogged player returns "
             "to the realm it left."
         ),

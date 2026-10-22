@@ -34,7 +34,7 @@ A bot option also reaches **every** node in the bot at once. That is not a detai
 quicksell's flags were per-node, so `hall_of_heroes` needed two quicksell nodes and
 two mutually exclusive bool options to offer one choice between two keep lists. It
 is one node now, declaring `["Merciless"]`: the choice is a value the user edits,
-and `Enable Quicksell` already answers the third branch that skipped selling
+and `Quicksell` already answers the third branch that skipped selling
 altogether.
 
 Three things that fall out of it:
@@ -223,7 +223,7 @@ Option Values and Options draw a bot's options as four folding cards, always in 
 |---|---|---|
 | **This dungeon** | the author's own options, Challenge Mode | expanded |
 | **Team** | Player Realms, Team-Up and Minimum Team Size, Level Scaling Players, Friend Name | expanded |
-| **Quicksell** | Enable Quicksell as the header switch; the sell flags; the keep list | collapsed |
+| **Quicksell** | Quicksell as the header switch; the sell flags; the keep list | collapsed |
 | **General** | Safety Delay, Refill Potions, Favorite Realm | collapsed |
 
 The card is declared once, on the option: `BotOptionSpec.group`. An option no node declares

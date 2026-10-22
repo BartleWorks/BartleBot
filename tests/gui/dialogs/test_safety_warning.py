@@ -123,7 +123,7 @@ def test_quicksell_details_cover_the_switch_the_flags_and_the_keep_list():
 
     details = dict(collect_safety_warnings(config)[0].details)
 
-    assert details["Enable Quicksell"].startswith("Yes")
+    assert details["Quicksell"].startswith("Yes")
     assert set(details) >= {"Sell Pets", "Sell Socket Wrenches", "Sell Skeleton Keys"}
     assert details["Quicksell Keep List"].startswith("Amber (")
     assert not any("Crowns" in k for k in details)
@@ -151,14 +151,14 @@ def test_quicksell_still_warns_when_enabled_resolves_true():
 
     assert len(warnings) == 1
     assert "Lock valuable items" in warnings[0].message
-    assert dict(warnings[0].details)["Enable Quicksell"].startswith("Yes")
+    assert dict(warnings[0].details)["Quicksell"].startswith("Yes")
 
 
 def test_the_users_own_override_turning_quicksell_off_removes_the_warning():
     """Nothing is sold, so a sale warning has nothing to say — and a dialog that fires on
     runs with no risk is one the user learns to click straight through."""
     config = _config({"node_type": "quicksell", "params": {}})
-    SettingsManager.instance().set_option_override(config.id, "Enable Quicksell", False)
+    SettingsManager.instance().set_option_override(config.id, "Quicksell", False)
 
     assert collect_safety_warnings(config) == []
 
@@ -173,7 +173,7 @@ def test_turning_quicksell_off_in_settings_removes_the_warning():
 def test_an_override_turning_quicksell_back_on_outranks_the_app_setting():
     SettingsManager.instance().set_general("default_quicksell_enabled", False)
     config = _config({"node_type": "quicksell", "params": {}})
-    SettingsManager.instance().set_option_override(config.id, "Enable Quicksell", True)
+    SettingsManager.instance().set_option_override(config.id, "Quicksell", True)
 
     warnings = collect_safety_warnings(config)
 
@@ -188,28 +188,28 @@ def test_a_bot_that_declares_quicksell_off_keeps_the_sentence_that_is_still_true
 
     config = _config(
         {"node_type": "quicksell", "params": {}},
-        options=[{"name": "Enable Quicksell", "type": "bool", "default": False}],
+        options=[{"name": "Quicksell", "type": "bool", "default": False}],
     )
 
     warnings = collect_safety_warnings(config)
 
     assert len(warnings) == 1
     assert warnings[0].message == quicksell.SAFETY_WARNING_DISABLED
-    assert warnings[0].details == [("Enable Quicksell", "No (Bot default)")]
+    assert warnings[0].details == [("Quicksell", "No (Bot default)")]
 
 
 def test_a_disabled_quicksell_does_not_drag_the_rest_of_the_table_along():
     config = _config(
         {"node_type": "quicksell", "params": {}},
         options=[
-            {"name": "Enable Quicksell", "type": "bool", "default": False},
+            {"name": "Quicksell", "type": "bool", "default": False},
             {"name": "Quicksell Keep List", "type": "drop_keep_list", "default": ["Amber"]},
         ],
     )
 
     details = dict(collect_safety_warnings(config)[0].details)
 
-    assert set(details) == {"Enable Quicksell"}
+    assert set(details) == {"Quicksell"}
 
 
 def test_a_suppressed_quicksell_leaves_the_other_warnings_alone():
@@ -217,7 +217,7 @@ def test_a_suppressed_quicksell_leaves_the_other_warnings_alone():
         {"node_type": "quicksell", "params": {}},
         {"node_type": "collect_reagent", "params": {"zone": "Z", "entity_name": "Fungus"}},
     )
-    SettingsManager.instance().set_option_override(config.id, "Enable Quicksell", False)
+    SettingsManager.instance().set_option_override(config.id, "Quicksell", False)
 
     warnings = collect_safety_warnings(config)
 

@@ -26,7 +26,7 @@ Every setting is a card of its own, a row in Windows 11's settings style::
 
 Borders go on each setting, not around a section: sections are ``RuleHeading``s, as
 they were. The one card holding several rows is a :class:`SettingGroup` -- a setting
-with settings that depend on it (Enable Quicksell and its five rows) -- which folds,
+with settings that depend on it (Quicksell and its five rows) -- which folds,
 the way Windows' ``SettingsExpander`` does and only where it does.
 
 A group's fold is a reading preference, so it lives in ``ui_state.json`` rather than in

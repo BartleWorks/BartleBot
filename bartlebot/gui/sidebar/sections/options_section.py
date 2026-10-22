@@ -17,7 +17,7 @@ only place a name changes: the two transition flag forms, and the override store
 
 The rows sit in the same folding cards as Option Values's (#138), folded the same way -- the
 answer is one, remembered for every bot and shared by both tabs -- so a mode switch
-does not move a row to a different place. Enable Quicksell is the user's alone and is
+does not move a row to a different place. Quicksell is the user's alone and is
 not on this surface at all, so the Quicksell card here has no header switch; a card
 with nothing left on it, General usually, is left out. Nothing here is ever the
 user's value, so no card's stripe is lit, and a folded card summarizes the

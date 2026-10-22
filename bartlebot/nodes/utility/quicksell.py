@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 # whereas the reverse loses gear.
 
 #: The option whose answer decides whether this node does anything at all.
-OPTION_ENABLED = "Enable Quicksell"
+OPTION_ENABLED = "Quicksell"
 
 #: The authorial one: keywords naming this dungeon's drops worth keeping.
 OPTION_KEEP_LIST = "Quicksell Keep List"
@@ -287,7 +287,7 @@ def resolve_options(get_option, user_keep_list=()) -> dict:
     lookup in the editor.  Its answer is checked rather than trusted: an override
     written under an older type, or a stub that answers everything with a number,
     must not turn a bool into "sell everything".  A value of the wrong shape falls
-    back to the floor -- off for Enable Quicksell, ``SELL_FLAG_DEFAULTS`` for the
+    back to the floor -- off for Quicksell, ``SELL_FLAG_DEFAULTS`` for the
     flags -- never to something more destructive.
 
     *user_keep_list* is the user's own list from Settings -> Bot, read by the caller
@@ -588,7 +588,7 @@ async def run(machine, clients: list, params: dict) -> str:
           node_helpers.click_by_path(), node_helpers.get_text_by_path()
 
     Flow (per client, run concurrently via asyncio.gather):
-      0. Resolve the five bot options via resolve_options(). Enable Quicksell off is
+      0. Resolve the five bot options via resolve_options(). Quicksell off is
          SUCCESS without touching a client -- a node that does nothing has not failed.
       1. Build the effective keep_list via effective_keep_list(): the Quicksell Keep
          List option, the user's own list from Settings -> Bot, and the keywords
@@ -629,7 +629,7 @@ async def run(machine, clients: list, params: dict) -> str:
         # it. What that costs them is in the option's own description and in the
         # safety dialog -- the backpack fills, then the bank, and after that only
         # Crowns items are kept.
-        machine.log("quicksell: Enable Quicksell is off — nothing will be sold.")
+        machine.log("quicksell: Quicksell is off — nothing will be sold.")
         return "SUCCESS"
 
     # Only when the user typed keywords of their own: the implied ones can never

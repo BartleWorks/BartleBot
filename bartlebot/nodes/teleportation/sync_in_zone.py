@@ -13,6 +13,7 @@ from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.options import player_realms
+from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION
 from bartlebot.options.option_groups import GROUP_GENERAL
 
 PARAM_KEEP_CURRENT_REALM = "keep_current_realm"
@@ -70,10 +71,7 @@ NODE_SPEC = NodeSpec(
             # Null, always: the author has no opinion about which realm you farm in, and
             # cannot have one. The level below is your app setting.
             default=None,
-            description=(
-                "The realm the leader changes to, where everyone joins it. It's stored on this computer, "
-                "never in the bot file. When unset, nobody changes realm."
-            ),
+            description=FAVORITE_REALM_DESCRIPTION,
             required_unless=PARAM_KEEP_CURRENT_REALM,
         ),
     ],

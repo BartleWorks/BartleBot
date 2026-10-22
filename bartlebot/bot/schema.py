@@ -258,7 +258,7 @@ class BotOptionModel(BaseModel):
     suffix: str | None = None
     # The bool option this one is a child of, carried on the same way. A child is
     # indented under its parent in Option Values and disabled while the parent is off --
-    # ``Sell Pets`` does nothing whatever it says while ``Enable Quicksell`` is off,
+    # ``Sell Pets`` does nothing whatever it says while ``Quicksell`` is off,
     # and a live-looking control that cannot affect the run is the thing to avoid.
     depends_on: str | None = None
 

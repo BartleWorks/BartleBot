@@ -128,7 +128,7 @@ def test_the_bot_tab_writes_what_it_was_given(qapp):
     tab = BotTab()
     _field(tab, "Default Safety Delay").setValue(7.5)
     _field(tab, "Quicksell").setChecked(False)
-    _field(tab, "Friend teleport target").setText("  Spare Idler  ")
+    _field(tab, "Friend Name").setText("  Spare Idler  ")
 
     tab.apply()
 

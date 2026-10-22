@@ -39,7 +39,7 @@ class BotOptionSpec:
 
                      This is for an option that cannot affect the run at all while
                      another is off: ``Sell Pets`` says nothing whatever it holds when
-                     ``Enable Quicksell`` is off. Unlike ``required_when`` the option is
+                     ``Quicksell`` is off. Unlike ``required_when`` the option is
                      still *composed* -- the author is not saying it does not exist, the
                      user has switched it off, and it has to come back on unchanged.
         required_when: Key of a bool param on the *same node*; the option is required
@@ -66,7 +66,7 @@ class BotOptionSpec:
                      so. An option no node declares belongs to *This dungeon*.
         heads_group: Draw this option as its card's header switch rather than as a row,
                      and disable every row in the card while it is off. A bool only, and
-                     one per group: Enable Quicksell is the case -- with it off, nothing
+                     one per group: Quicksell is the case -- with it off, nothing
                      the Quicksell card holds can affect the run.
     """
 

@@ -52,6 +52,7 @@ from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT, TRIGG
 from bartlebot.nodes.utility import realm_list
 from bartlebot.nodes.utility.realm_list import REALMS_PER_PAGE
 from bartlebot.options import player_realms
+from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION
 from bartlebot.options.option_groups import GROUP_GENERAL
 
 _TAG = "change_realm"
@@ -118,10 +119,7 @@ NODE_SPEC = NodeSpec(
             # Null, always: the author has no opinion about which realm you farm in, and
             # cannot have one. The level below is your app setting.
             default=None,
-            description=(
-                "The realm every player switches to. It's stored on this computer, never in the bot file, "
-                "and set in Settings › Bot."
-            ),
+            description=FAVORITE_REALM_DESCRIPTION,
             required_when=PARAM_USE_FAVORITE_REALM,
         ),
     ],
