@@ -65,6 +65,7 @@ from bartlebot.nodes.timing import (
     GROUP_ADD_RETRIES,
     GROUP_INVITE_TIMEOUT,
     GROUP_JOIN_HINT_TIMEOUT,
+    GROUP_PROFILE_SETTLE_TIMEOUT,
     GROUP_PROFILE_TIMEOUT,
     GROUP_TAB_LOAD_TIMEOUT,
     GROUP_UI_SETTLE,
@@ -933,21 +934,48 @@ async def _send_invite(leader, target, name: str, label: str, log, social_window
             # two — polled rather than slept through. A timeout here is not fatal on its
             # own: the click below then fails and reports what it actually found, which is a
             # better diagnosis than "the popup was late".
-            if not await node_helpers.poll_until(
+            settled = None
+            if await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(leader, CHARACTER_PROFILE_PATH),
                 timeout=GROUP_PROFILE_TIMEOUT,
                 poll_interval=POLL_INTERVAL,
             ):
+                # Visible is not laid out: aimed at the first positions read, the click can
+                # land on the wishlist button below Invite to Group (#280).
+                settled, reads = await _await_settled_profile(leader)
+                if settled is None:
+                    log(
+                        f"Profile buttons for {label} were still moving after "
+                        f"{GROUP_PROFILE_SETTLE_TIMEOUT:.0f}s; clicking anyway",
+                        logging.DEBUG,
+                    )
+                elif reads > 2:
+                    log(
+                        f"Profile buttons for {label} moved after the popup showed; settled after {reads} reads",
+                        logging.DEBUG,
+                    )
+            else:
                 log(f"Friend profile for {label} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
 
             # Read straight before the click and again straight after, so a click that lands on
             # the wrong button (#280) shows which one was where, and whether the layout moved.
-            log(f"Profile buttons before the invite click for {label}: {await _profile_buttons(leader)}", logging.DEBUG)
+            before, before_text = (settled, _layout_text(settled)) if settled else await _read_profile(leader)
+            log(f"Profile buttons before the invite click for {label}: {before_text}", logging.DEBUG)
             if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
                 diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
                 log(f"Group invite button unavailable for {label}: {diagnosis}", logging.DEBUG)
                 return False
-            log(f"Profile buttons after the invite click for {label}: {await _profile_buttons(leader)}", logging.DEBUG)
+            after, after_text = await _read_profile(leader)
+            log(f"Profile buttons after the invite click for {label}: {after_text}", logging.DEBUG)
+            aimed, now = _button_rect(before, _INVITE_BUTTON), _button_rect(after, _INVITE_BUTTON)
+            if aimed and now and aimed != now:
+                # Not treated as a miss: the click may still have landed first. The outcome
+                # wait below decides; this says why it failed if it does.
+                log(
+                    f"Invite to Group moved under the click for {label}, from {_rect_text(aimed)} to "
+                    f"{_rect_text(now)}, so the click may have hit another button",
+                    logging.WARNING,
+                )
 
         invited, refused = await _await_invite_outcome(leader, target)
         if refused:
@@ -1078,34 +1106,87 @@ def _lists(roster: tuple[str, ...], name: str) -> bool:
     return name.casefold() in {member.casefold() for member in roster}
 
 
-async def _profile_buttons(client) -> str:
-    """Describe the friend profile popup's buttons: where each one is and whether it shows. Never raises.
+# The friend profile popup's buttons as (name, shown, (x1, y1, x2, y2)), the popup itself
+# first under the name "popup". The names are the game's control names, never a player's.
+_ProfileLayout = tuple[tuple[str, bool, tuple[int, int, int, int]], ...]
 
-    Diagnostic only, for a click that lands on the wrong button (#280): Invite to Group
-    sits in a ButtonLayout beside buttons such as the wishlist's, and the layout can still
-    be moving when the popup first reads as visible. Two reads that disagree show the
-    layout moved; one read shows which button covered the point that was clicked.
-    The names are the game's own control names, never a player's.
+_INVITE_BUTTON = INVITE_TO_GROUP_BUTTON_PATH[-1]
+
+
+async def _read_profile(client) -> tuple[_ProfileLayout | None, str]:
+    """Read where each of the friend profile popup's buttons is and whether it shows. Never raises.
+
+    Returns the layout, None when the popup is not open or could not be read, and the text
+    the logs show for it. Invite to Group sits in a ButtonLayout beside buttons such as the
+    wishlist's, and the layout can still be moving when the popup first reads as visible
+    (#280): two reads that disagree show it moved, and one shows which button covered the
+    point that was clicked.
     """
     try:
         popups = await node_helpers.find_windows_by_path(client.root_window, CHARACTER_PROFILE_PATH)
         if not popups:
-            return "popup missing"
+            return None, _layout_text(None)
         popup = popups[0]
-        parts = [f"popup@{_rect_text(await popup.scale_to_client())}"]
-        for layout in await popup.children():
-            if await layout.name() != "ButtonLayout":
+        entries = [("popup", True, _rect_tuple(await popup.scale_to_client()))]
+        for child in await popup.children():
+            if await child.name() != "ButtonLayout":
                 continue
-            for button in await layout.children():
-                shown = "" if await button.is_visible() else " hidden"
-                parts.append(f"{await button.name()}{shown}@{_rect_text(await button.scale_to_client())}")
-        return ", ".join(parts)
+            for button in await child.children():
+                entries.append(
+                    (await button.name(), await button.is_visible(), _rect_tuple(await button.scale_to_client()))
+                )
+        layout = tuple(entries)
+        return layout, _layout_text(layout)
     except Exception as exc:
-        return f"<unreadable: {exc!r}>"
+        return None, f"<unreadable: {exc!r}>"
 
 
-def _rect_text(rect) -> str:
-    return f"({rect.x1},{rect.y1},{rect.x2},{rect.y2})"
+async def _profile_buttons(client) -> str:
+    """Describe the friend profile popup's buttons for a log line. Never raises."""
+    return (await _read_profile(client))[1]
+
+
+async def _await_settled_profile(client) -> tuple[_ProfileLayout | None, int]:
+    """Wait for the profile popup's buttons to stop moving, and return where they settled.
+
+    Returns the settled layout, or None if no two reads in a row agreed within
+    GROUP_PROFILE_SETTLE_TIMEOUT, with the number of reads taken. A popup already laid out
+    settles in two. The reads are spaced a POLL_INTERVAL apart, because two taken back to
+    back can both come before the game's next layout pass and agree while still wrong.
+    An unreadable popup never counts as settled.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + GROUP_PROFILE_SETTLE_TIMEOUT
+    previous, _ = await _read_profile(client)
+    reads = 1
+    while loop.time() < deadline:
+        await asyncio.sleep(POLL_INTERVAL)
+        current, _ = await _read_profile(client)
+        reads += 1
+        if current is not None and current == previous:
+            return current, reads
+        previous = current
+    return None, reads
+
+
+def _button_rect(layout: _ProfileLayout | None, name: str) -> tuple[int, int, int, int] | None:
+    """Where the named button is in a layout read, or None if the read has no such button."""
+    return next((rect for button, _shown, rect in layout or () if button == name), None)
+
+
+def _layout_text(layout: _ProfileLayout | None) -> str:
+    if layout is None:
+        return "popup missing"
+    return ", ".join(f"{name}{'' if shown else ' hidden'}@{_rect_text(rect)}" for name, shown, rect in layout)
+
+
+def _rect_tuple(rect) -> tuple[int, int, int, int]:
+    return (rect.x1, rect.y1, rect.x2, rect.y2)
+
+
+def _rect_text(rect: tuple[int, int, int, int]) -> str:
+    x1, y1, x2, y2 = rect
+    return f"({x1},{y1},{x2},{y2})"
 
 
 async def _visible_windows(client) -> str:

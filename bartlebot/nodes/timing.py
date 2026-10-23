@@ -507,6 +507,13 @@ GROUP_PROFILE_TIMEOUT = 6.0
 # the friends list. Polled rather than slept through: the popup is drawn locally with no
 # server round-trip, so it is normally up within a frame or two and the wait ends there.
 
+GROUP_PROFILE_SETTLE_TIMEOUT = 2.0
+# Ceiling on waiting for the profile popup's buttons to stop moving before Invite to Group
+# is clicked (#280). The popup reads as visible before its ButtonLayout has closed up the
+# gaps its hidden buttons leave, so the first positions read can be a slot or two low, and
+# a click aimed at them lands on the button below. Two reads a POLL_INTERVAL apart that
+# agree end the wait; a settled popup costs one interval. On timeout the click goes ahead.
+
 GROUP_JOIN_HINT_TIMEOUT = 3.0
 # Ceiling on waiting for the game to open the social window by itself on an invited client
 # after it accepts. That auto-open is only a hint that the accept was processed — the
