@@ -603,7 +603,6 @@
   "tags": [
     "Gear",
     "Jewels",
-    "Reagents",
     "Pets",
     "Dungeon",
     "Challenge Mode"
@@ -1554,7 +1553,7 @@
     },
     {
       "id": "state_51",
-      "node_type": "collect_reagent",
+      "node_type": "collect_item",
       "label": "Collect first urn piece",
       "position": {
         "x": 15840.0,
@@ -1569,12 +1568,13 @@
         },
         "entity_names": [
           "AQ-TART-UrnPiece1-Maze"
-        ]
+        ],
+        "collect_client": 1
       }
     },
     {
       "id": "state_52",
-      "node_type": "collect_reagent",
+      "node_type": "collect_item",
       "label": "Collect second urn piece",
       "position": {
         "x": 16280.0,
@@ -1589,12 +1589,13 @@
         },
         "entity_names": [
           "AQ-TART-UrnPiece2-Maze"
-        ]
+        ],
+        "collect_client": 1
       }
     },
     {
       "id": "state_53",
-      "node_type": "collect_reagent",
+      "node_type": "collect_item",
       "label": "Collect third urn piece",
       "position": {
         "x": 16720.0,
@@ -1609,12 +1610,13 @@
         },
         "entity_names": [
           "AQ-TART-UrnPiece3-Maze"
-        ]
+        ],
+        "collect_client": 1
       }
     },
     {
       "id": "state_54",
-      "node_type": "collect_reagent",
+      "node_type": "collect_item",
       "label": "Collect fourth urn piece",
       "position": {
         "x": 17160.0,
@@ -1629,12 +1631,13 @@
         },
         "entity_names": [
           "AQ-TART-UrnPiece4-Maze"
-        ]
+        ],
+        "collect_client": 1
       }
     },
     {
       "id": "state_55",
-      "node_type": "collect_reagent",
+      "node_type": "collect_item",
       "label": "Collect Lion's Tail Leaves",
       "position": {
         "x": 20680.0,
@@ -1649,7 +1652,8 @@
         },
         "entity_names": [
           "AQ-TAR-Liontail"
-        ]
+        ],
+        "collect_client": 1
       }
     },
     {
@@ -1762,7 +1766,7 @@
         "interact_clients": [
           4
         ],
-        "has_dialogue": true,
+        "has_dialogue": false,
         "animation_delay": 0.0,
         "sequential": false,
         "object_use_delay": 1.0
@@ -2300,6 +2304,26 @@
     },
     {
       "trigger": "advance",
+      "source": "state_60",
+      "dest": "state_61",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_61",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_7",
       "dest": "state_8",
       "when": "SUCCESS",
@@ -2447,26 +2471,6 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_60",
-      "dest": "state_61",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_61",
-      "dest": "state_55",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -2608,6 +2612,8 @@
     "version": 1
   },
   "history": [
+    "98fefb55f4e830e198e5101a2c07ef70b9d078e73321ed67d73c34e72d04df70",
+    "f1809fe077190bae2213031d47c2dcbb7cb288fef811d63864bfab520f1881a6",
     "9b4c77a2bb63f5b1dbc619e60b29a8c31c49769232f375f2294aa2ac7b8c3892",
     "189d16f448bbfe071dc3000bb15895969bb368fc44f4e9a1d1aa3f73036f62cb",
     "5749fb87a7b839a455c4523150a906b389a8cea901ce6b7d25c06cf69cd5bdb6",
