@@ -170,7 +170,7 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 COMBAT_DROP_MESSAGE_POLL = 0.5
 # How often to re-read the chat log while waiting for a combat drop announcement.
 # Coarser than the reagent poll on purpose: each read is a synchronous
-# ReadProcessMemory of the whole chat log on the event loop thread, and these
+# ReadProcessMemory of the chat log's tail, up to 200 KB, on the event loop thread, and these
 # reads land during the end-of-fight lag spike they are waiting out. Since the
 # poll returns on the first hit, a coarser interval costs latency, never a drop.
 
