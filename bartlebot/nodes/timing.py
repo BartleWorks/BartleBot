@@ -631,7 +631,14 @@ FLEE_VOTE_TIMEOUT = 5.0
 # Seconds a player waits, at the start of a planning phase, for the rest of our players in
 # its fight to report whether they can still deal damage. A report that has not arrived by
 # then counts as "can", so a slow read never causes a flee. Well inside the 30s planning
-# timer, which is spent only once the wait is over.
+# timer, which is spent only once the wait is over. A player whose own report cannot be read
+# abstains rather than staying silent, so the others are not kept waiting this long for it.
+
+ROUND_REPORT_READS = 3
+ROUND_REPORT_RETRY_INTERVAL = 0.1
+# Tries at a player's round report, and the pause between them, before it abstains. A read
+# can catch a combatant mid-rebuild at the start of a planning phase (MemoryInvalidated), and
+# a moment later reads cleanly.
 
 FLEE_CONFIRM_TIMEOUT = 3.0
 # Seconds to wait for the flee confirmation to appear after clicking Flee. A miss is retried

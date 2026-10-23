@@ -124,6 +124,32 @@ async def test_a_player_whose_report_never_arrives_counts_as_able_to_deal_damage
     assert not any(any(d) for d in decisions)
 
 
+@pytest.mark.parametrize("abstainer_first", [False, True])
+async def test_a_player_whose_report_is_unreadable_abstains_so_no_one_waits_for_it(abstainer_first, monkeypatch):
+    """P2 cannot read its report. Silent, it kept P1 waiting FLEE_VOTE_TIMEOUT every round."""
+    monkeypatch.setattr(combat_runner, "FLEE_VOTE_TIMEOUT", 30.0)
+    watch, clients, _log = await _watch(11, 22)
+    order = list(reversed(clients)) if abstainer_first else clients
+    with (
+        _reports({(11, "*"): ({11, 22}, False, False)}),
+        patch.object(combat_runner, "_readable_round", AsyncMock(side_effect=[1, 2, 3, 4, 5, 6])),
+    ):
+        decisions = [await asyncio.wait_for(_round(watch, order), 1.0) for _ in range(_ROUNDS)]
+
+    # An abstention counts as able to deal damage, so the fight is never judged hopeless.
+    assert not any(any(d) for d in decisions)
+
+
+async def test_an_abstention_with_no_round_still_releases_the_open_ballot(monkeypatch):
+    monkeypatch.setattr(combat_runner, "FLEE_VOTE_TIMEOUT", 30.0)
+    watch, clients, _log = await _watch(11, 22)
+    with (
+        _reports({(11, "*"): ({11, 22}, False, False)}),
+        patch.object(combat_runner, "_readable_round", AsyncMock(return_value=None)),
+    ):
+        assert await asyncio.wait_for(_round(watch, clients), 1.0) == [False, False]
+
+
 async def test_an_unreadable_id_turns_off_the_judgement_but_not_the_time_limit():
     log = _Log()
     client = FakeClient()
@@ -153,22 +179,25 @@ async def test_flee_all_needs_no_vote():
 
 
 def _member(owner: int, team: int, *, dead: bool = False, effects=()) -> MagicMock:
+    """One of the duel's participants."""
     participant = MagicMock()
+    participant.owner_id_full = AsyncMock(return_value=owner)
     participant.team_id = AsyncMock(return_value=team)
+    participant.game_stats = AsyncMock(
+        return_value=SimpleNamespace(current_hitpoints=AsyncMock(return_value=0 if dead else 4000))
+    )
     participant.hanging_effects = AsyncMock(
         return_value=[SimpleNamespace(effect_type=AsyncMock(return_value=e)) for e in effects]
     )
-    member = MagicMock()
-    member.owner_id = AsyncMock(return_value=owner)
-    member.get_participant = AsyncMock(return_value=participant)
-    member.is_dead = AsyncMock(return_value=dead)
-    return member
+    return participant
 
 
 def _report_combat(members: list, round_num: int = 4) -> SimpleNamespace:
+    """A combat whose duel lists *members*. The combatant windows are never read."""
     client = FakeClient()
     client.duel.round_num = AsyncMock(return_value=round_num)
-    return SimpleNamespace(client=client, get_members=AsyncMock(return_value=members))
+    client.duel.participant_list = AsyncMock(return_value=members)
+    return SimpleNamespace(client=client, get_members=AsyncMock(side_effect=AssertionError("windows read")))
 
 
 async def test_the_report_names_our_players_in_the_duel_and_reads_the_enemies_effects():
@@ -195,9 +224,24 @@ async def test_a_defeated_player_reports_no_damage_whatever_it_holds():
     assert report.dot_on_enemies is False
 
 
-async def test_a_report_that_cannot_find_its_own_player_is_unreadable():
+async def test_a_report_that_cannot_find_its_own_player_is_unreadable(monkeypatch):
+    monkeypatch.setattr(combat_runner, "ROUND_REPORT_RETRY_INTERVAL", 0)
     members = [_member(22, team=1), _member(500, team=2)]
     assert await combat_runner._round_report(_report_combat(members), 11, frozenset({11, 22})) is None
+
+
+async def test_a_report_caught_mid_rebuild_is_read_again(monkeypatch):
+    """The first read of a planning phase can find a combatant mid-rebuild (MemoryInvalidated)."""
+    from wizwalker.errors import MemoryInvalidated
+
+    monkeypatch.setattr(combat_runner, "ROUND_REPORT_RETRY_INTERVAL", 0)
+    members = [_member(11, team=1), _member(500, team=2)]
+    combat = _report_combat(members)
+    combat.client.duel.participant_list = AsyncMock(side_effect=[MemoryInvalidated("rebuilt"), members])
+    with patch.object(combat_runner, "_holds_castable_damage", AsyncMock(return_value=True)):
+        report = await combat_runner._round_report(combat, 11, frozenset({11}))
+
+    assert report == RoundReport(4, frozenset({11}), True, False)
 
 
 async def test_only_castable_damage_cards_count():
