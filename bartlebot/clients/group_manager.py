@@ -48,6 +48,7 @@ from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
     FRIENDLY_PLAYER_GO_TO_BUTTON_PATH,
     FRIENDLY_PLAYER_MENU_PATH,
     FRIENDS_LIST_WINDOW_NAMES,
@@ -1200,6 +1201,7 @@ async def _visible_windows(client) -> str:
     checks = {
         "wndCharacter": CHARACTER_PROFILE_PATH,
         "SocialSystemsWindow": SOCIAL_WINDOW_PATH,
+        "PermanentShopModalWindow": CROWNS_SHOP_WINDOW_PATH,
     }
     parts = []
     for label, path in checks.items():
@@ -1218,13 +1220,16 @@ async def _visible_windows(client) -> str:
 async def _close_overlapping_windows(client) -> None:
     """Close the windows that can sit on top of the friends list. Never raises.
 
-    The friend profile popup, and the social window the game opens on its own when a group
-    forms. Left open they cover the HUD for every node that runs afterwards, and the
-    friends list for the next invite.
+    The friend profile popup, the social window the game opens on its own when a group
+    forms, and the crowns shop, which an invite click that lands on the profile's wishlist
+    button opens (#280). Left open they cover the HUD for every node that runs afterwards,
+    and the friends list for the next invite.
 
-    ORDER MATTERS. The social window opens on top of the friend profile, and it covers the
-    profile's close button — a click aimed at that button lands on the social window
-    instead, leaving the profile open. So the social window is closed first.
+    ORDER MATTERS. The crowns shop is a modal over everything, so it goes first: left up,
+    it took every later click of a run, the spellbook's included, until the bot stopped.
+    The social window opens on top of the friend profile, and it covers the profile's
+    close button — a click aimed at that button lands on the social window instead,
+    leaving the profile open. So the social window is closed next.
 
     Each close retries until the window is actually gone rather than trusting one click,
     because a click swallowed by an overlapping window leaves the next one aimed at the
@@ -1234,6 +1239,7 @@ async def _close_overlapping_windows(client) -> None:
     A profile that will not close is followed by a list of what else was showing, since a
     click that something on top took is the usual way this fails.
     """
+    await _close_crowns_shop(client)
     await close_social_window(client)
     try:
         if not await node_helpers.click_until_gone(
@@ -1244,6 +1250,15 @@ async def _close_overlapping_windows(client) -> None:
             logger.debug("Friend profile popup did not close. Visible windows: %s", await _visible_windows(client))
     except Exception:
         logger.debug("Could not close the friend profile popup", exc_info=True)
+
+
+async def _close_crowns_shop(client) -> None:
+    """Close the crowns shop if it is open, saying so. Never raises."""
+    shop = await node_helpers.close_crowns_shop(client)
+    if shop.was_open and shop.closed:
+        logger.info("Closed the crowns shop, which was covering the friends list")
+    elif shop.was_open:
+        logger.warning("The crowns shop would not close, and it takes every click while it is open")
 
 
 async def teleport_to_group_member(client, name: str) -> None:

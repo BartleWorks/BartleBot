@@ -20,6 +20,7 @@ from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     FRIENDS_LIST_WINDOW_NAME,
@@ -1558,6 +1559,37 @@ async def press_key_until_gone(
     if still_open:
         logger.warning("Panel toggled by %s is still open after %.0fs of retries", key, timeout)
     return not still_open
+
+
+class ShopClosure(NamedTuple):
+    """What close_crowns_shop() found, and did: whether the shop was open, and whether it is shut now."""
+
+    was_open: bool
+    closed: bool
+
+
+async def close_crowns_shop(client) -> ShopClosure:
+    """Close the crowns shop if it is open, with ESC. Never raises.
+
+    The shop is a modal over everything, so while it is up it takes every click: the
+    spellbook's, the friends list's, every close button's. It opens by itself on some logins,
+    and from the wishlist button on a friend's profile, which an invite click can land on
+    (#280). ESC rather than a click, since a keypress goes to the client as a whole and
+    nothing over the shop can take it. A shop that is not open costs a read and no ESC, which
+    on an empty screen would open the game menu instead.
+
+    A read that fails reports the shop as not open, so the caller carries on as it would have.
+    """
+    try:
+        if not await is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH):
+            return ShopClosure(was_open=False, closed=True)
+        closed = await press_key_until_gone(
+            client, Keycode.ESC, is_open=lambda: is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH)
+        )
+        return ShopClosure(was_open=True, closed=closed)
+    except Exception:
+        logger.debug("Could not close the crowns shop", exc_info=True)
+        return ShopClosure(was_open=False, closed=True)
 
 
 async def is_friends_list_open(client) -> bool:

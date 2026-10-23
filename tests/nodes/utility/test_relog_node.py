@@ -19,10 +19,12 @@ import logging
 from unittest.mock import patch
 
 import pytest
+from wizwalker import Keycode
 from wizwalker.errors import ClientClosedError
 
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
@@ -58,6 +60,10 @@ class FakeGame:
     ``disconnects`` is a lost connection: ``"before"`` the node starts or ``"on_quit"``. The
     client then sits on "Connection Lost!", where nothing it is sent does anything, and goes
     on answering zone_name() with the zone it was in, as the game does.
+
+    ``shop`` is the crowns shop left up over the world before the node began, as a wishlist
+    misclick leaves it (#280), and ``shop_on_login`` one the login opens. Like a dialog it
+    swallows every click; ESC closes it unless ``shop_stubborn``.
     """
 
     def __init__(
@@ -77,7 +83,14 @@ class FakeGame:
         over_world: tuple[str, tuple] | None = None,
         dialog_on_open: tuple[str, tuple] | None = None,
         stubborn: bool = False,
+        shop: bool = False,
+        shop_on_login: bool = False,
+        shop_stubborn: bool = False,
     ):
+        self.shop_open = shop
+        self.shop_on_login = shop_on_login
+        self.shop_stubborn = shop_stubborn
+        self.shop_escapes = 0
         self.over_world = over_world
         self.dialog_on_open = dialog_on_open
         self.stubborn = stubborn
@@ -105,6 +118,8 @@ class FakeGame:
 
     # --- what the node reads -------------------------------------------------
     def is_visible(self, path: list[str]) -> bool:
+        if path == CROWNS_SHOP_WINDOW_PATH:
+            return self.shop_open
         if self.over_world and path in (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT):
             return path in self.over_world[1]
         if path == SPELLBOOK_PREFERENCES_TAB_PATH:
@@ -143,6 +158,8 @@ class FakeGame:
     # --- what the node does --------------------------------------------------
     def click(self, path: list[str]) -> None:
         self.clicks.append(list(path))
+        if self.shop_open:
+            return
         if self.over_world:
             if path in self.over_world[1] and not self.stubborn:
                 self.over_world = None
@@ -181,6 +198,12 @@ class FakeGame:
         elif self.screen == "settings":
             self.screen = "world"
 
+    def send_key(self, key) -> None:
+        """A key sent to the client itself: ESC closes the crowns shop."""
+        if key is Keycode.ESC and self.shop_open:
+            self.shop_escapes += 1
+            self.shop_open = self.shop_stubborn
+
     def press_play(self) -> None:
         self.plays += 1
         if self.screen != "char_select":
@@ -206,6 +229,7 @@ class FakeGame:
                 done = self._loading_ticks >= 2
             if done:
                 self.screen = "world"
+                self.shop_open = self.shop_open or self.shop_on_login
 
 
 @pytest.fixture
@@ -243,6 +267,12 @@ def games(monkeypatch):
     monkeypatch.setattr(auto_select, "at_character_select", _at_char_select)
     monkeypatch.setattr(auto_select, "press_character_select_play", _press_play)
     monkeypatch.setattr(auto_select, "press_escape", _press_escape)
+    real_press_key_until_gone = nh.press_key_until_gone
+
+    async def _press_key_until_gone(client, key, is_open, **_):
+        return await real_press_key_until_gone(client, key, is_open=is_open, timeout=0.05, poll_interval=0.0)
+
+    monkeypatch.setattr(nh, "press_key_until_gone", _press_key_until_gone)
     # Cadences, never ceilings — the fakes count polls, not seconds.
     monkeypatch.setattr(relog_node, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(relog_node, "TRIGGER_TIMEOUT", 0.2)
@@ -260,6 +290,11 @@ def games(monkeypatch):
             registry[client.window_handle] = game
             client.is_loading = game.is_loading
             client.zone_name = game.zone_name
+
+            async def _send_key(key, _seconds=0, game=game):
+                game.send_key(key)
+
+            client.send_key = _send_key
             clients.append(client)
             made.append(game)
         return clients, made
@@ -407,6 +442,42 @@ class TestDialogOverTheScreen:
         )
         assert await relog_node.run(machine, clients, {}) == "SUCCESS"
         assert blocked.screen == clear.screen == "world"
+
+
+class TestCrownsShop:
+    """#280: a shop a wishlist misclick left up kept the spellbook shut until the bot stopped."""
+
+    async def test_a_shop_over_the_world_is_closed_with_esc_before_the_spellbook(self, machine, games):
+        clients, (game,) = games({"shop": True})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_escapes == 1
+        assert game.clicks[0] == SPELLBOOK_BUTTON_PATH
+        assert ("relog: closed the crowns shop over the menu", logging.INFO) in machine.logs
+
+    async def test_a_shop_that_will_not_close_fails_and_the_player_stays_in_the_world(self, machine, games):
+        clients, (game,) = games({"shop": True, "shop_stubborn": True})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert SPELLBOOK_BUTTON_PATH not in game.clicks
+        assert ("relog: the crowns shop over the menu would not close", logging.WARNING) in machine.logs
+        assert machine.abandoned == []
+
+    async def test_a_shop_the_login_opened_is_closed(self, machine, games):
+        clients, (game,) = games({"shop_on_login": True})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_open is False
+        assert ("relog: closed the crowns shop the login opened", logging.INFO) in machine.logs
+
+    async def test_a_login_shop_that_stays_open_is_logged_but_the_relog_succeeds(self, machine, games):
+        """The player is back either way; the shop costs the next node's clicks, not this relog."""
+        clients, _ = games({"shop_on_login": True, "shop_stubborn": True})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert ("relog: the crowns shop the login opened would not close", logging.WARNING) in machine.logs
+
+    async def test_no_esc_is_sent_without_a_shop(self, machine, games):
+        """On a clear screen ESC opens the game menu."""
+        clients, (game,) = games({})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_escapes == 0
 
 
 class TestFailurePaths:

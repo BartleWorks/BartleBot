@@ -19,6 +19,7 @@ from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
     GROUP_INVITE_ACCEPT_PATH,
     GROUP_ROSTER_LINES,
     GROUP_WINDOW_CLOSE_PATH,
@@ -128,6 +129,14 @@ class FakeUI:
         self.leader_social_opens_on = "send"
         self.lookups_under_social_window: list[FakeClient] = []
         self._pending_name: str | None = None
+        # The crowns shop is a modal over everything: while it is up, every click lands on
+        # it and does nothing else. ESC closes it unless `shop_closes` is False. The next
+        # `invite_misclicks` invite clicks hit the profile's wishlist button instead, which
+        # opens the shop, as in #280.
+        self.shop_open: dict[FakeClient, bool] = {}
+        self.shop_closes = True
+        self.invite_misclicks = 0
+        self.esc_presses: list[FakeClient] = []
 
     def _set_social_open(self, client, value: bool) -> None:
         if value != self.social_open.get(client, False):
@@ -234,6 +243,10 @@ class FakeUI:
         _NEXT_STAGE = {"closed": "compact", "compact": "large", "large": "closed"}
 
         async def send_key(key, _seconds=0):
+            if key is Keycode.ESC:
+                self.esc_presses.append(client)
+                if self.shop_closes:
+                    self.shop_open[client] = False
             # F cycles through the two friends-list windows, as in the game.
             if key is Keycode.F:
                 self.friends_list_close_clicks += 1
@@ -259,6 +272,8 @@ class FakeUI:
             return True
         if path == CHARACTER_PROFILE_PATH:
             return self.profile_open.get(client, False)
+        if path == CROWNS_SHOP_WINDOW_PATH:
+            return self.shop_open.get(client, False)
         if path == SOCIAL_WINDOW_PATH:
             return self.social_open.get(client, False)
         if path == LEAVE_GROUP_BUTTON_PATH:
@@ -277,6 +292,12 @@ class FakeUI:
         return True
 
     async def click_by_path(self, client, path) -> bool:
+        if self.shop_open.get(client, False):
+            return True
+        if path == INVITE_TO_GROUP_BUTTON_PATH and self.invite_misclicks:
+            self.invite_misclicks -= 1
+            self.shop_open[client] = True
+            return True
         if path == INVITE_TO_GROUP_BUTTON_PATH:
             self.invite_sent = True
             self.events.append(("invite", self._by_name.get(self._pending_name)))
@@ -1396,6 +1417,59 @@ async def test_profile_close_is_attempted_only_once_the_social_window_is_gone(ui
 
     assert "social" in order and "profile" in order, f"expected both closes on the leader, got {order}"
     assert order.index("social") < order.index("profile"), f"profile closed before the social window: {order}"
+
+
+# --- The crowns shop a wishlist misclick opens (#280) --------------------------------------
+
+
+async def test_a_wishlist_misclick_is_closed_and_the_invite_retried(ui):
+    """The run #280 stopped: the shop the misclick opened took every click after it."""
+    ui.invite_misclicks = 1
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
+
+    assert result.success is True
+    assert result.added == ["P2"]
+    assert ui.shop_open[leader] is False
+    assert ui.profile_open[leader] is False, "the profile behind the shop was left open"
+
+
+async def test_the_crowns_shop_is_closed_before_the_windows_under_it(ui):
+    """The shop takes the clicks that close the other two, so it has to go first."""
+    leader = ui.make_client("Alice Ashblade")
+    ui.shop_open[leader] = True
+    ui.profile_open[leader] = True
+    ui._set_social_open(leader, True)
+
+    await _run_with(ui, lambda: gm._close_overlapping_windows(leader))
+
+    assert ui.shop_open[leader] is False
+    assert ui.social_open[leader] is False
+    assert ui.profile_open[leader] is False
+
+
+async def test_no_esc_is_pressed_when_the_shop_is_not_open(ui):
+    """On a clear screen ESC opens the game menu, which would cover the HUD in turn."""
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
+
+    assert ui.esc_presses == []
+
+
+async def test_a_crowns_shop_that_will_not_close_is_warned_about(ui, caplog):
+    leader = ui.make_client("Alice Ashblade")
+    ui.shop_open[leader] = True
+    ui.shop_closes = False
+
+    with caplog.at_level(logging.WARNING, logger=gm.logger.name):
+        await _run_with(ui, lambda: gm._close_overlapping_windows(leader))
+
+    assert "The crowns shop would not close" in caplog.text
+    assert ui.esc_presses, "ESC was never tried"
 
 
 async def test_a_profile_that_will_not_close_is_followed_by_what_was_showing(ui, caplog):

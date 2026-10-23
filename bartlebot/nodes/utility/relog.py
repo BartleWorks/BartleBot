@@ -34,7 +34,9 @@ prompt when recovery sends the bot here, so ``node_helpers.clear_modals`` closes
 spellbook is clicked, and again if one opens over it. It *cancels*: the right button, else the center. Confirming
 would leave the dungeon or enter another, and Quit raises its own question about a dungeon, which is
 confirmed after the click. A dialog that will not close fails the node, naming it. A disconnect modal is left
-alone and the player is handed to crash recovery.
+alone and the player is handed to crash recovery. The crowns shop is closed with ESC before any dialog: it is no
+dialog, but it takes every click the same way (#280). It is closed again on logging back in, since some logins
+open it, but there one that stays open is only logged.
 
 **Where the character comes back.** Not where it logged out. Quitting from inside a dungeon
 or a house puts the character back where it stood before entering. Put this node somewhere
@@ -120,7 +122,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             (
-                "A fight didn't end in time, a dialog wouldn't close, the spellbook or its settings page "
+                "A fight didn't end in time, a dialog or the Crowns Shop wouldn't close, the spellbook or its settings page "
                 "didn't open, or the game refused to log out. The player is still in the world in every case."
             ),
         ),
@@ -146,7 +148,8 @@ NODE_SPEC = NodeSpec(
         + "\n\n"
         + (
             "A dialog left open on a player, such as the prompt for leaving a dungeon, is closed first "
-            "with Cancel or OK, so nothing it asks for happens."
+            "with Cancel or OK, so nothing it asks for happens. So is the Crowns Shop, before logging out "
+            "and again after logging back in."
         )
         + "\n\n"
         + (
@@ -168,7 +171,13 @@ async def _clear_modals(machine, client) -> bool:
     nothing the dialog asks for happens: Quit asks about a dungeon itself, and that one is
     confirmed after the click. False when a dialog would not close, or the client is
     disconnected, which the caller sorts out.
+
+    The crowns shop goes first. It is not a dialog, but it takes every click the same way,
+    and one a misclick opened while the group formed kept a run's spellbook shut until the
+    bot stopped (#280).
     """
+    if not await _close_crowns_shop(machine, client, "over the menu"):
+        return False
     result = await node_helpers.clear_modals(client, TRIGGER_TIMEOUT, POLL_INTERVAL)
     if result.dismissed:
         machine.log(f"relog: closed {len(result.dismissed)} dialog(s) over the menu — {_named(result.dismissed)}")
@@ -176,6 +185,19 @@ async def _clear_modals(machine, client) -> bool:
         return result.cleared
     machine.log(f"relog: a dialog is blocking the menu and would not close — {_named((result.key,))}", logging.WARNING)
     return False
+
+
+async def _close_crowns_shop(machine, client, where: str) -> bool:
+    """Close the crowns shop if it is open, saying so. False only when it was open and stayed open.
+
+    *where* finishes the log lines, after "the crowns shop".
+    """
+    shop = await node_helpers.close_crowns_shop(client)
+    if shop.was_open and shop.closed:
+        machine.log(f"relog: closed the crowns shop {where}")
+    elif shop.was_open:
+        machine.log(f"relog: the crowns shop {where} would not close", logging.WARNING)
+    return shop.closed
 
 
 def _named(keys) -> str:
@@ -389,6 +411,10 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
             return ABANDONED
         if await _back_in_world(client):
             machine.note_logged_in([client.window_handle])
+            # The shop opens by itself on some logins. Back in the world is back, open or
+            # not, so a shop that stays up is only logged; the next node's clicks are what it
+            # would cost.
+            await _close_crowns_shop(machine, client, "the login opened")
             return BACK
         if await auto_select.at_character_select(client):
             loading_since = None
@@ -472,16 +498,16 @@ async def run(machine, clients: list, params: dict) -> str:
          fails zone_name() and shows loading screens, which is indistinguishable from the
          crash those watchers exist to catch — without this the monitor force-closes a
          client that is relogging perfectly well.
-      2. Close any dialog over the screen, open the spellbook, open Preferences, and make sure the
-         Quit button is showing.
+      2. Close the crowns shop and any dialog over the screen, open the spellbook, open
+         Preferences, and make sure the Quit button is showing.
       3. Click Quit and wait for the character select screen, confirming the warning the
          game raises when logging out of a dungeon or with Dungeon Recall open.
       4. Press Play, and keep pressing while the screen is still up.
-      5. Wait for the world to be readable again.
+      5. Wait for the world to be readable again, and close the crowns shop if the login opened it.
       6. Put health monitoring back, then re-form the group once no player is in a fight.
 
-    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; a dialog over
-    the screen would not close; the spellbook or its settings page did not open; the game refused the logout; or Quit did not take
+    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; a dialog or the
+    crowns shop over the screen would not close; the spellbook or its settings page did not open; the game refused the logout; or Quit did not take
     effect. The player is still in the world each time.
 
     Past Quit, a player that does not make it back (character select never appears, a
