@@ -167,6 +167,23 @@ def _combat_provider(dsl: str, cast_time: float = 0.2):
     return CombatConfigProvider.from_string(dsl, cast_time)
 
 
+async def parse_strategies(dsls: list[str]) -> None:
+    """Parse each distinct DSL in a worker thread, before a fight makes its providers from them.
+
+    wizsprinter keeps each text's parse, so the provider each player's combat makes then
+    costs nothing, in this fight and every later one. Left to those providers, a long
+    strategy was parsed once per player on the event loop: Preceptor of Order's held it
+    2.3 s at the start of every fight, and the players started 0.8 s apart. In a thread
+    the loop keeps running, sharing the interpreter lock with the parse.
+    Never raises: a DSL that does not parse fails in the fight's own provider, as before.
+    """
+    for dsl in dict.fromkeys(dsls):
+        try:
+            await asyncio.to_thread(_combat_provider, dsl)
+        except Exception:
+            logger.debug("A strategy did not parse ahead of its fight", exc_info=True)
+
+
 class DslError(NamedTuple):
     """Why a DSL does not parse, and where.
 
@@ -871,6 +888,7 @@ async def run_fight(
     """
     if not clients:
         return FightResult(FightEnd.FINISHED, [])
+    await parse_strategies(dsls)
     run = CombatRun(dict(zip(clients, numbers)), log, time_limit)
     await run.identify()
     for client, dsl in zip(clients, dsls):
