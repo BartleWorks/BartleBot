@@ -58,7 +58,7 @@ site = [
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
 wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "53929b787b60490158b9b8e6d8b67cffe0f8f2c8" }
-wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "7be91be00f75f29ba33cb29648baab98b192f5aa" }
+wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "088fc838bda285c8b06d2f235fb5671126035f59" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

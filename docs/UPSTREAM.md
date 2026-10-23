@@ -179,10 +179,17 @@ Current pins, both on `main`:
   where they were fixed waits, and the round waits read the duel every 0.2 s, not 0.5 s.
   On top of `7900369` (`bartlebot-pin-20261021`), which polls for the friend-teleport
   confirmation.
-- **wizsprinter `7be91be`** (`bartlebot-pin-20261023c`): the Draw button and the pet card
-  found by their paths under the planning phase's window, where a grayed Draw found
-  first ended a draw that should have gone ahead; its suite runs against wizwalker
-  `53929b7`. On top of `3d21005` (`bartlebot-pin-20261023`): the deck's card count read from
+- **wizsprinter `088fc83`** (`bartlebot-pin-20261023d`): casts that land. Reads by path
+  are fast enough to catch the game mid-layout, and a Heretical Academy run lost five
+  casts in 173 rounds, three Balaur fights ending in the idle popup's flee. A fused card's
+  cast is now seen to leave the hand and is cast again when the game dropped it; the card
+  to cast after a fuse is found once the hand reads the same twice; each cast reads its
+  target again from fresh combatants, so a Balaur head rebuilt since the round began is
+  not clicked; and an enemy target missed while the fight reads empty is read again for
+  up to a second. On top of `7be91be` (`bartlebot-pin-20261023c`): the Draw button and
+  the pet card found by their paths under the planning phase's window, where a grayed
+  Draw found first ended a draw that should have gone ahead; its suite runs against
+  wizwalker `53929b7`. On top of `3d21005` (`bartlebot-pin-20261023`): the deck's card count read from
   `Hand/DeckCounter/CountText` by its path, where a search of the whole UI by name read
   another `CountText` and spent 2 s a call timing out to (0, 0), and each config text
   parsed once however many providers are made from it. On top of `6f06c87`

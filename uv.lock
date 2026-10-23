@@ -98,7 +98,7 @@ requires-dist = [
     { name = "vdf", specifier = ">=3.4" },
     { name = "velopack", specifier = "==1.2.161" },
     { name = "wakepy", specifier = ">=1.0" },
-    { name = "wizsprinter", git = "https://github.com/BartleWorks/wizsprinter.git?rev=7be91be00f75f29ba33cb29648baab98b192f5aa" },
+    { name = "wizsprinter", git = "https://github.com/BartleWorks/wizsprinter.git?rev=088fc838bda285c8b06d2f235fb5671126035f59" },
     { name = "wizwalker", git = "https://github.com/BartleWorks/wizwalker.git?rev=53929b787b60490158b9b8e6d8b67cffe0f8f2c8" },
 ]
 
@@ -1502,7 +1502,7 @@ wheels = [
 [[package]]
 name = "wizsprinter"
 version = "0.5.5"
-source = { git = "https://github.com/BartleWorks/wizsprinter.git?rev=7be91be00f75f29ba33cb29648baab98b192f5aa#7be91be00f75f29ba33cb29648baab98b192f5aa" }
+source = { git = "https://github.com/BartleWorks/wizsprinter.git?rev=088fc838bda285c8b06d2f235fb5671126035f59#088fc838bda285c8b06d2f235fb5671126035f59" }
 dependencies = [
     { name = "lark" },
     { name = "wizwalker" },
