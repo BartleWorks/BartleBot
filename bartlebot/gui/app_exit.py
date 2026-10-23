@@ -44,7 +44,9 @@ def exit_skipping_teardown(code: int = 0) -> NoReturn:
     """Flush the logs and the standard streams, then end the process with *code*.
 
     Call only after the event loop has returned. ``atexit`` handlers do not run, which is
-    the point for the Qt wrappers and harmless for the rest: none of ours registers one.
+    the point for the Qt wrappers. None of ours registers one, but the standard library
+    does: ``concurrent.futures`` tells a process pool's workers to leave from one, so a
+    worker has to watch for the app ending itself (``combat/dsl_check_worker.py``).
     """
     logger.info("=== BartleBot shutdown ===")
     logging.shutdown()
