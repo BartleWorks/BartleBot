@@ -35,8 +35,8 @@ spellbook is clicked, and again if one opens over it. It *cancels*: the right bu
 would leave the dungeon or enter another, and Quit raises its own question about a dungeon, which is
 confirmed after the click. A dialog that will not close fails the node, naming it. A disconnect modal is left
 alone and the player is handed to crash recovery. The crowns shop is closed with ESC before any dialog: it is no
-dialog, but it takes every click the same way (#280). It is closed again on logging back in, since some logins
-open it, but there one that stays open is only logged.
+dialog, but it takes every click the same way (#280). It is watched for again on logging back in, since the first
+login of the day opens it a moment after the world loads, but there one that stays open is only logged.
 
 **Where the character comes back.** Not where it logged out. Quitting from inside a dungeon
 or a house puts the character back where it stood before entering. Put this node somewhere
@@ -78,6 +78,7 @@ from bartlebot.nodes.timing import (
     RELOG_CHAR_SELECT_TIMEOUT,
     RELOG_FIGHT_TIMEOUT,
     RELOG_IN_GAME_TIMEOUT,
+    RELOG_SHOP_APPEAR_TIMEOUT,
     TRIGGER_TIMEOUT,
 )
 from bartlebot.settings_manager import SettingsManager
@@ -187,12 +188,13 @@ async def _clear_modals(machine, client) -> bool:
     return False
 
 
-async def _close_crowns_shop(machine, client, where: str) -> bool:
+async def _close_crowns_shop(machine, client, where: str, appear_timeout: float = 0.0) -> bool:
     """Close the crowns shop if it is open, saying so. False only when it was open and stayed open.
 
-    *where* finishes the log lines, after "the crowns shop".
+    *where* finishes the log lines, after "the crowns shop". *appear_timeout* watches that
+    long for one still on its way.
     """
-    shop = await node_helpers.close_crowns_shop(client)
+    shop = await node_helpers.close_crowns_shop(client, appear_timeout, POLL_INTERVAL)
     if shop.was_open and shop.closed:
         machine.log(f"relog: closed the crowns shop {where}")
     elif shop.was_open:
@@ -411,10 +413,11 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
             return ABANDONED
         if await _back_in_world(client):
             machine.note_logged_in([client.window_handle])
-            # The shop opens by itself on some logins. Back in the world is back, open or
-            # not, so a shop that stays up is only logged; the next node's clicks are what it
-            # would cost.
-            await _close_crowns_shop(machine, client, "the login opened")
+            # The shop opens by itself on the first login of the day, a moment after the
+            # world is readable, so it is watched for rather than read once. Back in the
+            # world is back, open or not, so a shop that stays up is only logged; the next
+            # node's clicks are what it would cost.
+            await _close_crowns_shop(machine, client, "the login opened", RELOG_SHOP_APPEAR_TIMEOUT)
             return BACK
         if await auto_select.at_character_select(client):
             loading_since = None

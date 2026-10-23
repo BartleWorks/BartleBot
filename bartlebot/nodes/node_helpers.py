@@ -1568,24 +1568,35 @@ class ShopClosure(NamedTuple):
     closed: bool
 
 
-async def close_crowns_shop(client) -> ShopClosure:
+async def close_crowns_shop(client, appear_timeout: float = 0.0, poll_interval: float = POLL_INTERVAL) -> ShopClosure:
     """Close the crowns shop if it is open, with ESC. Never raises.
 
     The shop is a modal over everything, so while it is up it takes every click: the
-    spellbook's, the friends list's, every close button's. It opens by itself on some logins,
-    and from the wishlist button on a friend's profile, which an invite click can land on
-    (#280). ESC rather than a click, since a keypress goes to the client as a whole and
-    nothing over the shop can take it. A shop that is not open costs a read and no ESC, which
-    on an empty screen would open the game menu instead.
+    spellbook's, the friends list's, every close button's. It opens by itself on the first
+    login of the day, and from the wishlist button on a friend's profile, which an invite
+    click can land on (#280). ESC rather than a click, since a keypress goes to the client as
+    a whole and nothing over the shop can take it. A shop that is not open costs a read and
+    no ESC, which on an empty screen would open the game menu instead.
+
+    `appear_timeout` watches that long for a shop that is on its way, as one is just after
+    a login; the default checks once. The shop is not in the window tree at all while it is
+    closed, so a read that finds it is one that is up.
 
     A read that fails reports the shop as not open, so the caller carries on as it would have.
     """
+
+    async def _shown() -> bool:
+        return await is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH)
+
     try:
-        if not await is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH):
-            return ShopClosure(was_open=False, closed=True)
-        closed = await press_key_until_gone(
-            client, Keycode.ESC, is_open=lambda: is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH)
+        shown = (
+            await poll_until(_shown, timeout=appear_timeout, poll_interval=poll_interval)
+            if appear_timeout > 0
+            else await _shown()
         )
+        if not shown:
+            return ShopClosure(was_open=False, closed=True)
+        closed = await press_key_until_gone(client, Keycode.ESC, is_open=_shown)
         return ShopClosure(was_open=True, closed=closed)
     except Exception:
         logger.debug("Could not close the crowns shop", exc_info=True)

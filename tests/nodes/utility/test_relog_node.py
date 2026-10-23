@@ -62,8 +62,9 @@ class FakeGame:
     on answering zone_name() with the zone it was in, as the game does.
 
     ``shop`` is the crowns shop left up over the world before the node began, as a wishlist
-    misclick leaves it (#280), and ``shop_on_login`` one the login opens. Like a dialog it
-    swallows every click; ESC closes it unless ``shop_stubborn``.
+    misclick leaves it (#280), and ``shop_on_login`` one the login opens, which shows
+    ``shop_login_lag`` reads after the world does, as the first login of the day's can. Like
+    a dialog it swallows every click; ESC closes it unless ``shop_stubborn``.
     """
 
     def __init__(
@@ -86,9 +87,12 @@ class FakeGame:
         shop: bool = False,
         shop_on_login: bool = False,
         shop_stubborn: bool = False,
+        shop_login_lag: int = 0,
     ):
         self.shop_open = shop
         self.shop_on_login = shop_on_login
+        self.shop_login_lag = shop_login_lag
+        self._shop_due: int | None = None
         self.shop_stubborn = shop_stubborn
         self.shop_escapes = 0
         self.over_world = over_world
@@ -119,6 +123,11 @@ class FakeGame:
     # --- what the node reads -------------------------------------------------
     def is_visible(self, path: list[str]) -> bool:
         if path == CROWNS_SHOP_WINDOW_PATH:
+            if self._shop_due is not None:
+                if self._shop_due <= 0:
+                    self.shop_open, self._shop_due = True, None
+                else:
+                    self._shop_due -= 1
             return self.shop_open
         if self.over_world and path in (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT):
             return path in self.over_world[1]
@@ -229,7 +238,8 @@ class FakeGame:
                 done = self._loading_ticks >= 2
             if done:
                 self.screen = "world"
-                self.shop_open = self.shop_open or self.shop_on_login
+                if self.shop_on_login:
+                    self._shop_due = self.shop_login_lag
 
 
 @pytest.fixture
@@ -281,6 +291,7 @@ def games(monkeypatch):
     # A third of the overall deadline, as the real minute is of three, so a stuck loading
     # screen is caught by its own clock with room to spare.
     monkeypatch.setattr(relog_node, "LOADING_SCREEN_TIMEOUT", 0.15)
+    monkeypatch.setattr(relog_node, "RELOG_SHOP_APPEAR_TIMEOUT", 0.05)
 
     def _make(*game_kwargs) -> tuple[list, list[FakeGame]]:
         clients, made = [], []
@@ -466,6 +477,13 @@ class TestCrownsShop:
         assert await relog_node.run(machine, clients, {}) == "SUCCESS"
         assert game.shop_open is False
         assert ("relog: closed the crowns shop the login opened", logging.INFO) in machine.logs
+
+    async def test_a_login_shop_that_shows_after_the_world_does_is_waited_for_and_closed(self, machine, games):
+        """Read once, the moment the world was readable, this shop was missed."""
+        clients, (game,) = games({"shop_on_login": True, "shop_login_lag": 5})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_escapes == 1
+        assert game.shop_open is False
 
     async def test_a_login_shop_that_stays_open_is_logged_but_the_relog_succeeds(self, machine, games):
         """The player is back either way; the shop costs the next node's clicks, not this relog."""

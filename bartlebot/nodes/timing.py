@@ -244,6 +244,13 @@ RELOG_IN_GAME_TIMEOUT = 180.0
 # for clients that have become slow, and giving up early on one strands the fleet a player
 # short.
 
+RELOG_SHOP_APPEAR_TIMEOUT = 5.0
+# How long the relog node watches for the crowns shop once a character is back in the world.
+# The game opens it on the first login of the day, and not always at once: a read taken the
+# moment the world is readable can come before it and miss it. Every relog pays this, since
+# a login that will not open the shop looks the same as one that has not yet; the players
+# relog in parallel, so it is paid once per relog, not once per player.
+
 RELOG_WATCH_INTERVAL = 60.0
 # How often a running bot checks whether a relog is due and samples each client's
 # GDI count. Deliberately coarse: the timer it serves is measured in hours, and GDI

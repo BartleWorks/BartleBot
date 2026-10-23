@@ -272,8 +272,9 @@ def archmastery_school_path(school: str) -> list[str]:
     return [*ARCHMASTERY_PANEL_PATH, f"SC_{school}"]
 
 
-# Crowns shop modal. It sometimes opens by itself on login, and the wishlist button on a
-# friend's profile opens it too (#280). ESC closes it.
+# Crowns shop modal. It opens by itself on the first login of the day, and the wishlist
+# button on a friend's profile opens it too (#280). ESC closes it. It is not in the window
+# tree at all while it is closed.
 CROWNS_SHOP_WINDOW_PATH = ["WorldView", "PermanentShopModalWindow"]
 CROWNS_SHOP_PATH = [*CROWNS_SHOP_WINDOW_PATH, "permanentShop"]
 
