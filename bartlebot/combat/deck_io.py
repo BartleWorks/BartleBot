@@ -56,18 +56,19 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from wizwalker import Keycode
-from wizwalker.extensions.scripting.utils import _maybe_get_named_window
+from wizwalker.extensions.scripting.utils import _maybe_get_named_window, _maybe_get_window_at_path
 from wizwalker.memory.memory_object import Primitive
 from wizwalker.memory.memory_objects.conditionals import school_to_str
 from wizwalker.memory.memory_objects.window import (
     DeckListControlSpellEntry,
     DynamicDeckListControl,
     DynamicSpellListControl,
+    window_at_path,
 )
 
 from bartlebot.bot import run_trace
 from bartlebot.combat.card_kinds import classify_effects
-from bartlebot.nodes.paths import ARCHMASTERY_GAUGE_PATH, archmastery_school_path
+from bartlebot.nodes.paths import ARCHMASTERY_GAUGE_PATH, DECK_CONFIGURATION_PATH, archmastery_school_path
 from bartlebot.nodes.timing import (
     ARCHMASTERY_ATTEMPTS,
     ARCHMASTERY_CONFIRM_POLL,
@@ -1854,13 +1855,10 @@ async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
 async def _find_deck_window(client):
     """The DeckConfiguration window if the deck page is open, else None.
 
-    ``retries=0`` because this asks a question whose answer is usually "no", and
-    the default ladder spends 1.6 s sleeping to say so.
+    By its path, read once with no retries: this asks a question whose answer is usually
+    "no", and polls it.
     """
-    try:
-        return await _maybe_get_named_window(client.root_window, "DeckConfiguration", retries=0)
-    except ValueError:
-        return None
+    return await window_at_path(client.root_window, DECK_CONFIGURATION_PATH)
 
 
 async def _wait_for_page(client, *, present: bool):
@@ -2024,7 +2022,7 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
     ``_maybe_get_named_window`` answers by sleeping through its 1.6 s retry ladder.
     """
     report = DeckApplyReport()
-    deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
+    deck_window = await _maybe_get_window_at_path(db.client.root_window, DECK_CONFIGURATION_PATH)
 
     # Before the cards, and before the already-matches check: a deck whose cards
     # are right and whose school is wrong still has work to do, and doing the

@@ -812,65 +812,114 @@ async def test_click_until_gone_without_a_predicate_polls_the_button_and_times_o
 # ---------------------------------------------------------------------------
 
 
-async def _open_friends_list_with(visible_names: set[str]) -> list[str]:
-    """Run open_friends_list against a fake tree and return the actions it took."""
-    from contextlib import ExitStack
+class _HudWindow:
+    """A window of the HUD: a name, its children, and whether it shows."""
+
+    def __init__(self, name: str, *children, visible: bool = True):
+        self._name, self._children, self.visible = name, list(children), visible
+
+    async def name(self):
+        return self._name
+
+    async def children(self):
+        return self._children
+
+    async def is_visible(self):
+        return self.visible
+
+    async def is_control_grayed(self):
+        return False
+
+    async def get_windows_with_name(self, name):
+        raise AssertionError(f"the whole UI was searched for {name}")
+
+
+def _hud(visible_names: set[str], *, compact_exists: bool = True):
+    """The HUD's friends lists and button; the windows named in `visible_names` show."""
+    lists = [_HudWindow("wndFriendsList", visible="wndFriendsList" in visible_names)]
+    if compact_exists:
+        lists.append(_HudWindow("NewFriendsListWindow", visible="NewFriendsListWindow" in visible_names))
+    hud = _HudWindow("windowHUD", _HudWindow("windowForTopRowButtons", _HudWindow("btnFriends")), *lists)
+    root = _HudWindow(
+        "root",
+        # Windows of the same names elsewhere, which a search by name could find first
+        _HudWindow("NewFriendsListWindow", visible=False),
+        _HudWindow("btnFriends"),
+        _HudWindow("WorldView", hud),
+    )
+    return root, hud
+
+
+async def _open_friends_list_with(visible_names: set[str], *, compact_exists: bool = True):
+    """Run open_friends_list against a fake tree; the actions it took, and the window it returned."""
     from unittest.mock import MagicMock, patch
 
     import bartlebot.nodes.node_helpers as nh_mod
 
     actions: list[str] = []
     client = MagicMock()
-    client.root_window = MagicMock()
-
-    compact = MagicMock()
-    compact.is_visible = AsyncMock(return_value="NewFriendsListWindow" in visible_names)
-
-    async def named_visible(_client, name):
-        return name in visible_names
+    client.root_window, hud = _hud(visible_names, compact_exists=compact_exists)
 
     async def closer(_client):
         actions.append("close")
-        visible_names.clear()
-        compact.is_visible = AsyncMock(return_value=False)
+        for window in hud._children:
+            window.visible = False
         return True
 
-    async def maybe_get(_root, name):
-        return compact if name == "NewFriendsListWindow" else MagicMock()
-
-    async def click_window(_btn):
-        actions.append("click btnFriends")
+    async def click_window(btn):
+        # The button under the HUD, not the decoy at the root
+        assert btn in hud._children[0]._children
+        actions.append(f"click {btn._name}")
+        if not compact_exists:
+            hud._children.append(_HudWindow("NewFriendsListWindow"))
 
     client.mouse_handler.click_window = AsyncMock(side_effect=click_window)
 
-    with ExitStack() as stack:
-        stack.enter_context(patch.object(nh_mod, "is_named_window_visible", new=AsyncMock(side_effect=named_visible)))
-        stack.enter_context(patch.object(nh_mod, "close_friends_list", new=AsyncMock(side_effect=closer)))
-        stack.enter_context(
-            patch("wizwalker.extensions.scripting.utils._maybe_get_named_window", new=AsyncMock(side_effect=maybe_get))
-        )
-        await nh_mod.open_friends_list(client)
+    with patch.object(nh_mod, "close_friends_list", new=AsyncMock(side_effect=closer)):
+        window = await nh_mod.open_friends_list(client)
 
-    return actions
+    return actions, window
 
 
 async def test_open_friends_list_closes_the_large_list_first():
     """Visibility is judged from the compact window alone, so from the LARGE list
     this read "closed" and clicked btnFriends anyway — and what the game does with that
     click was never established. Close first, so the state is known."""
-    actions = await _open_friends_list_with({"wndFriendsList"})
+    actions, _ = await _open_friends_list_with({"wndFriendsList"})
     assert actions == ["close", "click btnFriends"]
 
 
 async def test_open_friends_list_does_not_touch_a_list_that_is_already_compact():
     """The normal path must stay one read and no input: the list is reused between invites."""
-    actions = await _open_friends_list_with({"NewFriendsListWindow"})
+    actions, window = await _open_friends_list_with({"NewFriendsListWindow"})
     assert actions == []
+    assert window._name == "NewFriendsListWindow" and window.visible
 
 
 async def test_open_friends_list_clicks_when_nothing_is_open():
-    actions = await _open_friends_list_with(set())
+    actions, window = await _open_friends_list_with(set())
     assert actions == ["click btnFriends"]
+    assert window._name == "NewFriendsListWindow"
+
+
+async def test_open_friends_list_finds_a_list_that_exists_only_once_opened():
+    actions, window = await _open_friends_list_with(set(), compact_exists=False)
+    assert actions == ["click btnFriends"]
+    assert window._name == "NewFriendsListWindow"
+
+
+@pytest.mark.parametrize(
+    "visible_names, open_",
+    [(set(), False), ({"NewFriendsListWindow"}, True), ({"wndFriendsList"}, True)],
+)
+async def test_the_friends_list_is_open_while_either_list_shows(visible_names, open_):
+    from unittest.mock import MagicMock
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    client = MagicMock()
+    client.root_window, _ = _hud(visible_names)
+    assert await nh_mod.is_friends_list_open(client) is open_
 
 
 # ---------------------------------------------------------------------------

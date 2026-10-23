@@ -20,10 +20,12 @@ from bartlebot.nodes.paths import (
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
     CROWNS_SHOP_WINDOW_PATH,
+    FRIENDS_LIST_PATH,
     GROUP_INVITE_ACCEPT_PATH,
     GROUP_ROSTER_LINES,
     GROUP_WINDOW_CLOSE_PATH,
     INVITE_TO_GROUP_BUTTON_PATH,
+    LARGE_FRIENDS_LIST_PATH,
     LEAVE_GROUP_BUTTON_PATH,
     SOCIAL_BUTTON_PATH,
     SOCIAL_GROUP_TAB_PATH,
@@ -270,6 +272,12 @@ class FakeUI:
         # fake; it is what the game does (tools/probe_friends_list.py).
         if path in (CHARACTER_PROFILE_CLOSE_PATH, GROUP_WINDOW_CLOSE_PATH):
             return True
+        # The two friends lists are different windows, so a caller that asks about just one
+        # of them will see "closed" while the other is still on screen.
+        if path == FRIENDS_LIST_PATH:
+            return self.friends_list_stage.get(client, "closed") == "compact"
+        if path == LARGE_FRIENDS_LIST_PATH:
+            return self.friends_list_stage.get(client, "closed") == "large"
         if path == CHARACTER_PROFILE_PATH:
             return self.profile_open.get(client, False)
         if path == CROWNS_SHOP_WINDOW_PATH:
@@ -390,16 +398,7 @@ class FakeUI:
         return None
 
     async def _is_named_window_visible(self, client, name: str) -> bool:
-        """Stands in for is_named_window_visible; only the friends lists are modeled.
-
-        The two lists answer to different names, so a caller that asks about just one of
-        them will see "closed" while the other is still on screen.
-        """
-        stage = self.friends_list_stage.get(client, "closed")
-        if name == "NewFriendsListWindow":
-            return stage == "compact"
-        if name == "wndFriendsList":
-            return stage == "large"
+        """Stands in for is_named_window_visible: no message box is ever up."""
         return False
 
     async def _stub_close_friends_list(self, client) -> bool:

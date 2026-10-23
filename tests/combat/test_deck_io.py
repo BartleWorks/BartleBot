@@ -446,7 +446,7 @@ def item_toggle_env(monkeypatch):
     async def _fake_entry_vector(_control):
         return 0, 0
 
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io._control_for", _fake_control_for)
     monkeypatch.setattr("bartlebot.combat.deck_io._entry_vector", _fake_entry_vector)
 
@@ -524,7 +524,7 @@ async def test_apply_item_toggles_skips_a_slot_whose_page_cannot_be_written(item
 
 async def test_write_deck_counts_item_pages_from_the_highest_index(monkeypatch):
     """read_item_slots skips unreadable entries, so the slot count can undercount pages."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
 
     async def _gappy_slots(*_args, **_kwargs):
@@ -549,7 +549,7 @@ async def test_write_deck_counts_item_pages_from_the_highest_index(monkeypatch):
 
 
 async def test_write_deck_clears_then_adds_normal_cards(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -570,7 +570,7 @@ async def test_write_deck_reads_the_spell_list_before_clearing(monkeypatch):
     _add_all_normal_cards raises on the first name it cannot place, so planning
     afterwards left the wizard with an emptied deck.
     """
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -582,7 +582,7 @@ async def test_write_deck_reads_the_spell_list_before_clearing(monkeypatch):
 
 async def test_write_deck_skips_unowned_cards_instead_of_emptying_the_deck(monkeypatch):
     """One card the account lacks must cost that card, not the entire deck."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -594,7 +594,7 @@ async def test_write_deck_skips_unowned_cards_instead_of_emptying_the_deck(monke
 
 async def test_write_deck_adds_nothing_when_no_card_is_owned(monkeypatch):
     """Degrades to leaving the deck alone rather than raising out of the apply."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -606,7 +606,7 @@ async def test_write_deck_adds_nothing_when_no_card_is_owned(monkeypatch):
 
 
 async def test_write_deck_empty_clears_without_adding(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -616,7 +616,7 @@ async def test_write_deck_empty_clears_without_adding(monkeypatch):
 
 
 async def test_write_deck_ignores_legacy_treasure_cards(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -625,7 +625,7 @@ async def test_write_deck_ignores_legacy_treasure_cards(monkeypatch):
 
 
 async def test_write_deck_skips_when_current_deck_already_matches(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
     db = FakeDeckBuilder()
@@ -639,7 +639,7 @@ async def test_write_deck_skips_when_current_deck_already_matches(monkeypatch):
 
 async def test_write_deck_rewrites_when_item_cards_differ(monkeypatch):
     """Even with matching normal cards, a mismatched item loadout must still trigger a rewrite."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
     db = FakeDeckBuilder()
@@ -652,7 +652,7 @@ async def test_write_deck_rewrites_when_item_cards_differ(monkeypatch):
 def _read_client(monkeypatch, *, open_now: bool = False) -> FakeClient:
     """A client whose deck page opens on P, with the deck's controls faked."""
     state = _PageState(open_now=open_now)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_cards", _fake_deck_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
     client = _page_client(state)
@@ -747,7 +747,7 @@ async def test_a_deck_holding_only_an_archmastery_school_is_still_empty():
 
 
 async def test_write_deck_propagates_failures(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -799,7 +799,7 @@ def fake_deck_builder(monkeypatch):
         "wizwalker.extensions.scripting.deck_builder.DeckBuilder",
         _CtxDeckBuilder,
     )
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     # _fake_window reports the page as permanently open, so deck_page_open takes
@@ -853,7 +853,11 @@ async def test_wizwalkers_deck_page_open_stays_on_the_deck_view(monkeypatch):
         async def click_window(self, window, **_kwargs):
             clicked.append(window.name)
 
+    async def _window_at_path(_parent, path):
+        return _Window(path[-1])
+
     monkeypatch.setattr(deck_builder, "_maybe_get_named_window", _window)
+    monkeypatch.setattr(deck_builder, "window_at_path", _window_at_path)
     db = deck_builder.DeckBuilder(SimpleNamespace(root_window=object(), mouse_handler=_Mouse()))
     db.switch_card_type_window = AsyncMock()
 
@@ -1060,7 +1064,7 @@ async def test_settle_tolerates_a_read_failing_mid_update(monkeypatch):
 async def test_write_deck_settles_before_returning(monkeypatch):
     """write_deck must not hand control back — and so let the page close — until
     the deck reads right."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     monkeypatch.setattr("bartlebot.combat.deck_io.DECK_SETTLE_TIMEOUT", 5.0)
     monkeypatch.setattr("bartlebot.combat.deck_io.DECK_SETTLE_POLL", 0.001)
@@ -1081,9 +1085,9 @@ async def test_write_deck_settles_before_returning(monkeypatch):
 
 
 class _PageState:
-    """Stands in for _maybe_get_named_window, tracking whether the page is open.
+    """Stands in for the window lookups (_patch_windows), tracking whether the page is open.
 
-    The real DeckConfiguration lookup raises ValueError when the page is closed,
+    The real DeckConfiguration lookup finds nothing when the page is closed,
     which is how deck_page_open decides whether it needs to press P.
     """
 
@@ -1093,6 +1097,8 @@ class _PageState:
         self.window = object()
 
     async def __call__(self, _parent, name, retries=4):
+        if isinstance(name, list | tuple):
+            name = name[-1]
         if name == "DeckConfiguration" and not self.is_open:
             raise ValueError(f"No child window named {name}")
         return self.window
@@ -1113,7 +1119,7 @@ def _page_client(state: _PageState) -> FakeClient:
 
 async def test_deck_page_open_presses_p_and_closes_again(monkeypatch):
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     client = _page_client(state)
 
     async with deck_page_open(client) as window:
@@ -1129,7 +1135,7 @@ async def test_deck_page_open_reopens_a_page_it_finds_already_open(monkeypatch):
     reuse CardsInDeck — or on Gardening/Fishing/Cantrips/Castle Magic. Opening
     always lands on the deck itself, so a close/reopen makes the sub-page moot."""
     state = _PageState(open_now=True)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     client = _page_client(state)
 
     async with deck_page_open(client) as window:
@@ -1146,7 +1152,7 @@ async def test_deck_page_open_gives_up_when_an_open_page_will_not_close(monkeypa
     """Pressing P again would toggle something unpredictable, so it stops instead
     and lets the caller fall back to the full path."""
     state = _PageState(open_now=True, ever_opens=False)  # stuck open
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.DECK_PAGE_OPEN_TIMEOUT", 0.05)
     client = _page_client(state)
 
@@ -1159,7 +1165,7 @@ async def test_deck_page_open_gives_up_when_an_open_page_will_not_close(monkeypa
 async def test_deck_page_open_yields_none_when_the_page_never_appears(monkeypatch):
     """And must not press P a second time — that would open it, not close it."""
     state = _PageState(open_now=False, ever_opens=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.DECK_PAGE_OPEN_TIMEOUT", 0.05)
     client = _page_client(state)
 
@@ -1171,7 +1177,7 @@ async def test_deck_page_open_yields_none_when_the_page_never_appears(monkeypatc
 
 async def test_deck_page_open_closes_even_when_the_body_raises(monkeypatch):
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     client = _page_client(state)
 
     with pytest.raises(RuntimeError):
@@ -1185,7 +1191,7 @@ async def test_deck_page_open_takes_no_mouse_handler(monkeypatch):
     """send_key is a plain window message; the mouseless hook patches the game's
     GetCursorPos and governs only cursor position."""
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     client = _page_client(state)
 
     async with deck_page_open(client):
@@ -1196,7 +1202,7 @@ async def test_deck_page_open_takes_no_mouse_handler(monkeypatch):
 
 async def test_deck_matches_true_when_the_deck_is_identical(monkeypatch):
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
 
@@ -1206,7 +1212,7 @@ async def test_deck_matches_true_when_the_deck_is_identical(monkeypatch):
 
 async def test_deck_matches_false_when_the_deck_differs(monkeypatch):
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
 
@@ -1217,7 +1223,7 @@ async def test_deck_matches_false_when_the_read_fails(monkeypatch):
     """A failed read means "cannot confirm", which must send the caller down the
     full path rather than propagate."""
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
 
     async def _boom(*_args, **_kwargs):
         raise RuntimeError("memory read failed")
@@ -1229,7 +1235,7 @@ async def test_deck_matches_false_when_the_read_fails(monkeypatch):
 
 async def test_deck_matches_false_when_the_page_will_not_open(monkeypatch):
     state = _PageState(open_now=False, ever_opens=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.DECK_PAGE_OPEN_TIMEOUT", 0.05)
 
     assert await deck_matches(_page_client(state), DeckData(normal={"Tempest": 2})) is False
@@ -1243,7 +1249,7 @@ async def test_deck_matches_false_when_the_page_will_not_open(monkeypatch):
 async def test_apply_deck_skips_the_deck_ui_entirely_when_it_already_matches(monkeypatch):
     """The whole point: no DeckBuilder, so no tab clicks and no mouse hook."""
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
     _CtxDeckBuilder.instances = []
@@ -1261,7 +1267,7 @@ async def test_apply_deck_skips_the_deck_ui_entirely_when_it_already_matches(mon
 async def test_apply_deck_falls_through_to_the_full_path_on_a_mismatch(monkeypatch):
     """A real content mismatch, read from a page that opens and closes normally."""
     state = _PageState(open_now=False)
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", state)
+    _patch_windows(monkeypatch, state)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _fake_item_slots)
     _CtxDeckBuilder.instances = []
@@ -1309,6 +1315,24 @@ async def test_apply_deck_holds_one_mouse_handler_for_the_whole_write(fake_deck_
 
 async def _fake_window(*_args, **_kwargs):
     return object()
+
+
+def _patch_windows(monkeypatch, fake) -> None:
+    """Stand `fake` in for every window lookup deck_io makes, by name and by path.
+
+    `fake(parent, name_or_path, retries=...)` returns a window or raises ValueError, as
+    the retrying lookups do; the one-read lookup by path answers None instead.
+    """
+    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", fake)
+    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_window_at_path", fake)
+
+    async def at_path(parent, path):
+        try:
+            return await fake(parent, path)
+        except ValueError:
+            return None
+
+    monkeypatch.setattr("bartlebot.combat.deck_io.window_at_path", at_path)
 
 
 async def _no_item_slots(*_args, **_kwargs):
@@ -1552,7 +1576,7 @@ class SingleVariantDeckBuilder(FusionRootDeckBuilder):
 
 
 def _tier_patches(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -2029,7 +2053,7 @@ async def test_an_exact_match_logs_no_substitution(monkeypatch, caplog):
 
 
 async def test_a_clean_apply_reports_nothing_to_say(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -2040,7 +2064,7 @@ async def test_a_clean_apply_reports_nothing_to_say(monkeypatch):
 
 
 async def test_skipped_cards_reach_the_caller(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -2094,7 +2118,7 @@ async def test_an_unreadable_flyout_reports_its_cards_as_skipped(monkeypatch):
 
 
 async def test_an_untouched_deck_reports_that_it_was_untouched(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -2105,7 +2129,7 @@ async def test_an_untouched_deck_reports_that_it_was_untouched(monkeypatch):
 
 
 async def test_a_matching_deck_reports_unchanged(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -2158,7 +2182,7 @@ def test_alternatives_are_sorted_so_the_message_is_stable():
 
 
 async def test_a_skipped_card_carries_its_recorded_kind_into_the_report(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     deck = DeckData(normal={"Tempest": 2, "Inferno Blade": 3}, card_kinds={"Inferno Blade": "blade"})
@@ -2170,7 +2194,7 @@ async def test_a_skipped_card_carries_its_recorded_kind_into_the_report(monkeypa
 
 async def test_a_deck_saved_before_kinds_existed_still_applies(monkeypatch):
     """card_kinds is absent from every deck saved so far."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
@@ -2240,7 +2264,7 @@ class MultiPageDeckBuilder(FusionRootDeckBuilder):
 
 
 def _sweep_patches(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _named_window)
+    _patch_windows(monkeypatch, _named_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
 
@@ -2292,7 +2316,7 @@ async def test_a_reopened_deck_page_is_written_back_to_the_next_bases_page(monke
             raise ValueError("no close button")
         return SimpleNamespace(window_name=name)
 
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _no_close_button)
+    _patch_windows(monkeypatch, _no_close_button)
 
     await write_deck(
         db,
@@ -2913,7 +2937,7 @@ def test_an_unpinned_deck_is_the_default():
 
 
 async def test_write_deck_leaves_the_school_alone_when_not_opted_in(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     called = []
@@ -2932,7 +2956,7 @@ async def test_write_deck_sets_the_school_before_the_already_matches_check(monke
     This is the case that would silently do nothing if the school were handled
     after the early-out, which is the whole reason it goes first.
     """
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_archmastery_school", AsyncMock(return_value="Death"))
@@ -2957,7 +2981,7 @@ async def test_write_deck_sets_the_school_before_the_already_matches_check(monke
 
 async def test_write_deck_does_not_report_a_school_that_already_matched(monkeypatch):
     """archmastery_set means "a persistent setting moved", not "we checked"."""
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_archmastery_school", AsyncMock(return_value="Storm"))
@@ -2971,7 +2995,7 @@ async def test_write_deck_does_not_report_a_school_that_already_matched(monkeypa
 
 
 async def test_write_deck_reports_a_school_it_could_not_set(monkeypatch):
-    monkeypatch.setattr("bartlebot.combat.deck_io._maybe_get_named_window", _fake_window)
+    _patch_windows(monkeypatch, _fake_window)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_item_slots", _no_item_slots)
     monkeypatch.setattr("bartlebot.combat.deck_io.read_archmastery_school", AsyncMock(return_value="Death"))

@@ -173,6 +173,8 @@ CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]
 
 # Realm selection UI — accessed via Spellbook > Preferences > Realms tab
 SPELLBOOK_BUTTON_PATH = ["WorldView", "windowHUD", "btnSpellbook"]
+# The spellbook itself, whichever page it is on. It leaves the tree when it closes.
+DECK_CONFIGURATION_PATH = ["WorldView", "DeckConfiguration"]
 SPELLBOOK_PREFERENCES_TAB_PATH = ["WorldView", "DeckConfiguration", "Preferences"]
 SPELLBOOK_REALMS_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "TabWindow", "RealmsButton"]
 REALM_CURRENT_NAME_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "txtYourRealmName"]
@@ -320,7 +322,7 @@ def quicksell_item_checkbox_path(row: int) -> list[str]:
 # The profile popup (wndCharacter) is opened by clicking a friend's row in the
 # friends list — see node_helpers.open_friend_profile(). Its ButtonLayout holds
 # the per-player actions (go to friend, add/remove friend, add to group, …).
-FRIENDS_LIST_BUTTON_PATH = ["WorldView", "windowHUD", "btnFriends"]
+FRIENDS_LIST_BUTTON_PATH = ["WorldView", "windowHUD", "windowForTopRowButtons", "btnFriends"]
 CHARACTER_PROFILE_PATH = ["WorldView", "windowHUD", "wndCharacter"]
 CHARACTER_PROFILE_NAME_PATH = ["WorldView", "windowHUD", "wndCharacter", "lblCharacterName"]
 CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCharacterClose"]
@@ -335,7 +337,7 @@ CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCh
 #                         pressing F again, or clicking its "More Friends" button.
 #
 # F cycles: closed -> NewFriendsListWindow -> wndFriendsList -> closed. So "the friends
-# list is open" means EITHER window is visible — see FRIENDS_LIST_WINDOW_NAMES, which
+# list is open" means EITHER window is visible — see FRIENDS_LIST_PATHS, which
 # node_helpers.close_friends_list() presses F against until both are gone.
 #
 # There is NO close-button path constant here on purpose. The obvious candidate,
@@ -344,9 +346,9 @@ CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCh
 # compact list open through a full retry cycle. It seemed to work in earlier testing only
 # because both windows place a close button in the same spot, so the click sometimes hit
 # whichever list happened to be showing. Verified with tools/probe_friends_list.py.
-FRIENDS_LIST_WINDOW_NAME = "NewFriendsListWindow"
-LARGE_FRIENDS_LIST_WINDOW_NAME = "wndFriendsList"
-FRIENDS_LIST_WINDOW_NAMES = (FRIENDS_LIST_WINDOW_NAME, LARGE_FRIENDS_LIST_WINDOW_NAME)
+FRIENDS_LIST_PATH = ["WorldView", "windowHUD", "NewFriendsListWindow"]
+LARGE_FRIENDS_LIST_PATH = ["WorldView", "windowHUD", "wndFriendsList"]
+FRIENDS_LIST_PATHS = (FRIENDS_LIST_PATH, LARGE_FRIENDS_LIST_PATH)
 
 # Group invite button in the friends-list profile popup.
 #

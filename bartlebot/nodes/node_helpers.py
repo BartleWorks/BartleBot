@@ -23,11 +23,12 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     CROWNS_SHOP_WINDOW_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
-    FRIENDS_LIST_WINDOW_NAME,
-    FRIENDS_LIST_WINDOW_NAMES,
+    FRIENDS_LIST_BUTTON_PATH,
+    FRIENDS_LIST_PATH,
+    FRIENDS_LIST_PATHS,
     GAUNTLET_ENTRANCE_PATH,
     HUB_BUTTON_PATH,
-    LARGE_FRIENDS_LIST_WINDOW_NAME,
+    LARGE_FRIENDS_LIST_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_LEFT,
@@ -483,8 +484,9 @@ async def is_visible_by_path(client, path: list[str]) -> bool:
 async def is_named_window_visible(client, name: str) -> bool:
     """Return True if any window with this name is visible.
 
-    For windows that are located by name rather than by a fixed path — the friends list
-    is opened and read as "NewFriendsListWindow", whose parent chain is not recorded.
+    A search of the whole UI, about 30 ms of reads on the event loop, so only for a window
+    whose path is not known or that lives in several places, such as MessageBoxModalWindow,
+    and never in a poll. A window with a known path is read by is_visible_by_path.
     """
     try:
         windows = await client.root_window.get_windows_with_name(name)
@@ -1515,12 +1517,12 @@ async def open_friends_list(client):
     """Open the compact friends list if it is not already open, and return its window.
 
     Opens NewFriendsListWindow specifically. The game's other friends list, wndFriendsList,
-    is a separate window reached from this one — see paths.FRIENDS_LIST_WINDOW_NAMES. The
+    is a separate window reached from this one — see paths.FRIENDS_LIST_PATHS. The
     name/profile code reads the compact list, so this deliberately opens only that one.
 
     Raises ValueError if the window cannot be found even after clicking the button.
     """
-    from wizwalker.extensions.scripting.utils import _maybe_get_named_window  # noqa: PLC0415
+    from wizwalker.extensions.scripting.utils import _maybe_get_window_at_path  # noqa: PLC0415
 
     # The large list has to be cleared, not clicked past. Visibility is judged below from
     # NewFriendsListWindow alone, so from the large list this reads "closed" and clicks
@@ -1528,21 +1530,19 @@ async def open_friends_list(client):
     # Closing first replaces an unknown with the known-good closed state, at
     # the cost of one extra toggle in a case that only arises when a list was left open by
     # hand.
-    if await is_named_window_visible(client, LARGE_FRIENDS_LIST_WINDOW_NAME):
+    if await is_visible_by_path(client, LARGE_FRIENDS_LIST_PATH):
         logger.debug("Large friends list is open; closing it before opening the compact one")
         await close_friends_list(client)
 
-    try:
-        friends_window = await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
-        if not await friends_window.is_visible():
-            btn = await _maybe_get_named_window(client.root_window, "btnFriends")
-            await client.mouse_handler.click_window(btn)
+    friends_window = await _get_window_from_path(client.root_window, FRIENDS_LIST_PATH)
+    if friends_window is not None and await friends_window.is_visible():
         return friends_window
-    except ValueError:
-        # The window does not exist at all until the list has been opened once.
-        btn = await _maybe_get_named_window(client.root_window, "btnFriends")
-        await client.mouse_handler.click_window(btn)
-        return await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
+    btn = await _maybe_get_window_at_path(client.root_window, FRIENDS_LIST_BUTTON_PATH)
+    await client.mouse_handler.click_window(btn)
+    if friends_window is not None:
+        return friends_window
+    # The window does not exist at all until the list has been opened once.
+    return await _maybe_get_window_at_path(client.root_window, FRIENDS_LIST_PATH)
 
 
 async def press_key_until_gone(
@@ -1633,13 +1633,13 @@ async def close_crowns_shop(client, appear_timeout: float = 0.0, poll_interval: 
 async def is_friends_list_open(client) -> bool:
     """Return True if EITHER friends-list window is showing.
 
-    There are two independent friends-list windows (see paths.FRIENDS_LIST_WINDOW_NAMES):
+    There are two independent friends-list windows (see paths.FRIENDS_LIST_PATHS):
     the compact NewFriendsListWindow and the larger wndFriendsList. Only one is on screen
-    at a time, and F cycles between them, so a check against a single name will report the
+    at a time, and F cycles between them, so a check against a single one will report the
     list closed while the other one is still up.
     """
-    for name in FRIENDS_LIST_WINDOW_NAMES:
-        if await is_named_window_visible(client, name):
+    for path in FRIENDS_LIST_PATHS:
+        if await is_visible_by_path(client, path):
             return True
     return False
 

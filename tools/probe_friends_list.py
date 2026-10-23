@@ -37,10 +37,10 @@ import sys
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import FRIENDS_LIST_WINDOW_NAMES
+from bartlebot.nodes.paths import FRIENDS_LIST_PATHS
 
 # Both friends-list windows, plus every close button worth distinguishing.
-CANDIDATE_WINDOWS = list(FRIENDS_LIST_WINDOW_NAMES)
+CANDIDATE_WINDOWS = [path[-1] for path in FRIENDS_LIST_PATHS]
 CLOSE_BUTTON_NAMES = ["btnFriendListClose", "btnClose", "Close_Button", "exit"]
 
 

@@ -52,7 +52,7 @@ from bartlebot.nodes.paths import (
     CROWNS_SHOP_WINDOW_PATH,
     FRIENDLY_PLAYER_GO_TO_BUTTON_PATH,
     FRIENDLY_PLAYER_MENU_PATH,
-    FRIENDS_LIST_WINDOW_NAMES,
+    FRIENDS_LIST_PATHS,
     GROUP_INVITE_ACCEPT_PATH,
     GROUP_ROSTER_LINES,
     GROUP_WINDOW_CLOSE_PATH,
@@ -1214,6 +1214,7 @@ async def _visible_windows(client) -> str:
         "wndCharacter": CHARACTER_PROFILE_PATH,
         "SocialSystemsWindow": SOCIAL_WINDOW_PATH,
         "PermanentShopModalWindow": CROWNS_SHOP_WINDOW_PATH,
+        **{path[-1]: path for path in FRIENDS_LIST_PATHS},
     }
     parts = []
     for label, path in checks.items():
@@ -1221,11 +1222,13 @@ async def _visible_windows(client) -> str:
             parts.append(f"{label}={await node_helpers.is_visible_by_path(client, path)}")
         except Exception:
             parts.append(f"{label}=<error>")
-    for name in (*FRIENDS_LIST_WINDOW_NAMES, "MessageBoxModalWindow"):
-        try:
-            parts.append(f"{name}={await node_helpers.is_named_window_visible(client, name)}")
-        except Exception:
-            parts.append(f"{name}=<error>")
+    # Several boxes share this name, in different places; any of them counts here
+    try:
+        parts.append(
+            f"MessageBoxModalWindow={await node_helpers.is_named_window_visible(client, 'MessageBoxModalWindow')}"
+        )
+    except Exception:
+        parts.append("MessageBoxModalWindow=<error>")
     return ", ".join(parts)
 
 
