@@ -65,6 +65,7 @@ from wizwalker.memory.memory_objects.window import (
     DynamicSpellListControl,
 )
 
+from bartlebot.bot import run_trace
 from bartlebot.combat.card_kinds import classify_effects
 from bartlebot.nodes.paths import ARCHMASTERY_GAUGE_PATH, archmastery_school_path
 from bartlebot.nodes.timing import (
@@ -2190,11 +2191,14 @@ async def apply_deck(
         if set_archmastery:
             logger.info("Archmastery school will be set to %s (%s)", deck.archmastery_school, source)
 
-        if not deck.is_empty() and await deck_matches(client, deck, check_archmastery=set_archmastery):
-            logger.info("Deck already matches saved configuration, skipping the deck UI entirely")
-            report = DeckApplyReport()
-            report.unchanged = True
-            return report
+        if not deck.is_empty():
+            with run_trace.span("deck.match_check"):
+                matches = await deck_matches(client, deck, check_archmastery=set_archmastery)
+            if matches:
+                logger.info("Deck already matches saved configuration, skipping the deck UI entirely")
+                report = DeckApplyReport()
+                report.unchanged = True
+                return report
 
         # One mouse_handler for the whole write. Each `async with client.mouse_handler`
         # inside DeckBuilder would otherwise activate and unhook MouselessCursorMoveHook
@@ -2206,12 +2210,14 @@ async def apply_deck(
         # switching to the treasure cards, which corrupts the spell list (see the
         # module docstring). Until wizwalker 8783db0 it did not, and this set the
         # flag itself.
-        async with client.mouse_handler, DeckBuilder(client) as db:
-            return await write_deck(db, deck, set_archmastery=set_archmastery)
+        with run_trace.span("deck.write"):
+            async with client.mouse_handler, DeckBuilder(client) as db:
+                return await write_deck(db, deck, set_archmastery=set_archmastery)
 
     token = _apply_slot.set(slot)
     try:
-        return await asyncio.wait_for(_open_and_write(), timeout=timeout)
+        with run_trace.span("deck.apply", client=client):
+            return await asyncio.wait_for(_open_and_write(), timeout=timeout)
     finally:
         _apply_slot.reset(token)
 

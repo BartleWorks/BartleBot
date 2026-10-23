@@ -30,7 +30,11 @@ change on the canvas is left unrepainted. The window show tracer
 (`bartlebot/gui/debug/window_show_trace.py`, for #120) logs a WARNING for every stray top-level
 window, ours or the game clients', with the Python stack for ours. The press tracer
 (`bartlebot/gui/debug/press_trace.py`, for #126) logs at DEBUG every press over the
-canvas that some other widget took instead of the viewport.
+canvas that some other widget took instead of the viewport. The run trace
+(`bartlebot/bot/run_trace.py`) writes a timeline of every run to `logs/trace/`: spans for
+the pre-run steps, each node and each combat round's phases, every key and click with the
+function that sent it, UI-tree walks, memory reads and event-loop stalls.
+`uv run python tools/run_trace_report.py` summarizes the newest one.
 
 ## Build / Test / Lint
 

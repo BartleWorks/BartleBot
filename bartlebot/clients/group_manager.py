@@ -42,6 +42,7 @@ import logging
 import weakref
 from dataclasses import dataclass, field
 
+from bartlebot.bot import run_trace
 from bartlebot.game import wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
@@ -445,7 +446,9 @@ async def read_group_states(clients: list) -> list[GroupState]:
     No return_exceptions is needed — read_group_state already absorbs every failure and
     answers a blank state, so one unreadable client cannot cancel the survey for the rest.
     """
-    return list(await asyncio.gather(*(read_group_state(c) for c in clients)))
+    return list(
+        await asyncio.gather(*(run_trace.traced(read_group_state(c), "group.read_state", client=c) for c in clients))
+    )
 
 
 async def read_group_flags(clients: list) -> list[bool]:
@@ -861,14 +864,23 @@ async def _invite_all(
     for attempt in range(1, GROUP_ADD_RETRIES + 1):
         sent: list[int] = []
         for idx in list(pending):
-            outcome = await _try_send(leader, clients[idx], names[idx], slot_label(idx), log, social_window_wait)
+            # The span is the invitee's; the inputs in it are the leader's, and carry its slot.
+            with run_trace.span("group.send_invite", client=clients[idx], attempt=attempt):
+                outcome = await _try_send(leader, clients[idx], names[idx], slot_label(idx), log, social_window_wait)
             if outcome is _SENT:
                 sent.append(idx)
                 social_window_wait = None
             elif outcome is _GIVE_UP:
                 pending.remove(idx)
 
-        accepted = await asyncio.gather(*(_accept_invite(clients[i], slot_label(i), log, leader_name) for i in sent))
+        accepted = await asyncio.gather(
+            *(
+                run_trace.traced(
+                    _accept_invite(clients[i], slot_label(i), log, leader_name), "group.accept", client=clients[i]
+                )
+                for i in sent
+            )
+        )
         for idx, ok in zip(sent, accepted):
             if ok:
                 log(f"Added {slot_label(idx)} to the group")

@@ -23,6 +23,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 
+from bartlebot.bot import run_trace
 from bartlebot.clients import group_manager
 from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
@@ -150,8 +151,11 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     if len(clients) < 2:
         return PortMap()
     if names is None:
-        names = await wizard_names.resolve_names(clients)
-    friends = list(await asyncio.gather(*(_online_friends(c) for c in clients)))
+        with run_trace.span("port_survey.resolve_names"):
+            names = await wizard_names.resolve_names(clients)
+    friends = list(
+        await asyncio.gather(*(run_trace.traced(_online_friends(c), "port_survey.friends", client=c) for c in clients))
+    )
     no_rosters = [() for _ in clients]
     if PortMap.from_survey(names, friends, no_rosters).friends_everywhere(names):
         return PortMap.from_survey(names, friends, no_rosters)

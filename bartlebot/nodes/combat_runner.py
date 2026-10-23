@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import TYPE_CHECKING, NamedTuple
 
+from bartlebot.bot import run_trace
 from bartlebot.game import drop_detection
 from bartlebot.nodes.timing import (
     COMBAT_DROP_MESSAGE_POLL,
@@ -713,16 +714,47 @@ def _watched_combat_class():
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 
     class _WatchedCombat(SprintyCombat):
+        # The run_trace spans split each round into what the game took (the waits) and
+        # what we took (the round itself: each priority tried, each condition, each cast).
         def __init__(self, client, provider, watch: FightWatch, *, log_tag: str = ""):
             super().__init__(client, provider, log_tag=log_tag)
             self.watch = watch
+            self._tries = 0  # priorities tried this round, for the trace
+
+        async def handle_combat(self):
+            with run_trace.span("combat.fight", client=self.client):
+                await super().handle_combat()
+
+        async def wait_for_planning_phase(self, *args, **kwargs):
+            with run_trace.span("combat.wait_planning"):
+                await super().wait_for_planning_phase(*args, **kwargs)
+
+        async def wait_until_next_round(self, current_round: int, *args, **kwargs):
+            with run_trace.span("combat.wait_next_round", round=current_round):
+                await super().wait_until_next_round(current_round, *args, **kwargs)
 
         async def handle_round(self):
-            # Outside SprintyCombat's own mouse_handler block: the flee's clicks take it themselves.
-            if await self.watch.should_flee(self):
-                await _flee(self, self.watch)
-                return
-            await super().handle_round()
+            with run_trace.span("combat.round"):
+                if run_trace.active():
+                    run_trace.note(round=await self.round_number())
+                self._tries = 0
+                # Outside SprintyCombat's own mouse_handler block: the flee's clicks take it themselves.
+                if await self.watch.should_flee(self):
+                    run_trace.note(fled=True)
+                    await _flee(self, self.watch)
+                    return
+                await super().handle_round()
+
+        async def try_execute_config(self, move_config, willcasted: bool = False):
+            self._tries += 1
+            with run_trace.span("combat.priority", n=self._tries):
+                result = await super().try_execute_config(move_config, willcasted)
+                run_trace.note(result=repr(result))
+                return result
+
+        async def evaluate_condition(self, condition) -> bool:
+            with run_trace.span("combat.condition"):
+                return await super().evaluate_condition(condition)
 
     return _WatchedCombat
 
