@@ -5,6 +5,7 @@ recall's timer read, and what a MarkButton click does to them. Reads can lag a c
 is the case that used to toggle a freshly set mark straight off again.
 """
 
+import asyncio
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, patch
 
@@ -52,10 +53,12 @@ class _Hud:
         self.shown, self.pending = marked, 0
         self.mana = 100
         self.clicks = 0
+        self.clicked_at: list[float] = []  # the event loop's clock at each click
         client.stats.current_mana = AsyncMock(side_effect=lambda: self.mana)
 
     def click(self) -> None:
         self.clicks += 1
+        self.clicked_at.append(asyncio.get_running_loop().time())
         if not self.lands:
             return
         self.mana -= 1
@@ -173,7 +176,7 @@ async def test_correct_zone_wrong_xyz_teleports_to_target():
     client = _ready_client()
     client.body.position = AsyncMock(return_value=XYZ(100.0, 0.0, 0.0))  # far from target
 
-    with _game({client: _Hud(client)}), patch.object(ml, "POSITION_STABILIZE_TIMEOUT", 0):
+    with _game({client: _Hud(client)}):
         result = await ml.run(_machine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -192,6 +195,66 @@ async def test_correct_zone_correct_xyz_no_teleport():
 
     assert result == "SUCCESS"
     client.teleport.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Waiting for the server to catch up with a teleport
+# ---------------------------------------------------------------------------
+
+_WAITED = "Giving the server"
+
+
+async def test_the_first_click_waits_out_the_safety_delay():
+    """A click before the server hears of a teleport marks the spot the client left."""
+    delay = 0.2
+    client = _ready_client()
+    client.body.position = AsyncMock(return_value=XYZ(100.0, 0.0, 0.0))  # teleports first
+    hud = _Hud(client)
+    started = asyncio.get_running_loop().time()
+
+    with _game({client: hud}):
+        result = await ml.run(FakeMachine(options={"Safety Delay": delay}), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    # Less a little: the loop may fire a timer up to its clock resolution early.
+    assert hud.clicked_at[0] - started >= delay - 0.03
+
+
+async def test_a_player_the_node_did_not_teleport_still_waits():
+    """The node before may have teleported the client here, which this node cannot see."""
+    machine, client = _machine(), _ready_client()
+
+    with _game({client: _Hud(client)}):
+        await ml.run(machine, [client], _PARAMS)
+
+    client.teleport.assert_not_called()
+    assert any(_WAITED in msg for msg, _lvl in machine.logs)
+
+
+async def test_a_recall_cooldown_counts_toward_the_wait():
+    """Waiting out recall's timer already gave the server its time: no further sleep."""
+    machine, client = _machine(), _ready_client()
+
+    async def slow_had_mark(machine, client, safety_delay):
+        await asyncio.sleep(safety_delay * 2)
+        return False
+
+    with _game({client: _Hud(client)}), patch.object(ml, "_had_mark", new=slow_had_mark):
+        assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
+
+    assert not any(_WAITED in msg for msg, _lvl in machine.logs)
+
+
+async def test_marking_again_after_a_clear_does_not_wait_again():
+    """The second click is from the same spot, which the server already has."""
+    machine, client = _machine(), _ready_client()
+    hud = _Hud(client, marked=True, here=True)
+
+    with _game({client: hud}):
+        assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
+
+    assert hud.clicks == 2
+    assert sum(_WAITED in msg for msg, _lvl in machine.logs) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -388,6 +451,38 @@ async def test_a_remembered_mark_that_is_gone_is_set_again():
 
     assert result == "SUCCESS"
     assert hud.clicks == 1
+
+
+def test_forget_drops_only_that_client():
+    machine, kept, dropped = _machine(), _ready_client(), _ready_client()
+    ml._remember(machine, kept, ml.Mark(_ZONE, XYZ(0.0, 0.0, 0.0)))
+    ml._remember(machine, dropped, ml.Mark(_ZONE, XYZ(0.0, 0.0, 0.0)))
+
+    ml.forget(machine, dropped)
+
+    assert ml.marked_at(machine, dropped) is None
+    assert ml.marked_at(machine, kept) is not None
+
+
+def test_forget_with_no_record_leaves_the_scratch_alone():
+    machine = _machine()
+
+    ml.forget(machine, _ready_client())
+
+    assert machine.node_scratch == {}
+
+
+async def test_a_forgotten_mark_is_set_again():
+    """After a recall missed it, the same spot is marked again instead of passed by."""
+    machine, client = _machine(), _ready_client()
+    hud = _Hud(client)
+
+    with _game({client: hud}):
+        assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
+        ml.forget(machine, client)
+        assert await ml.run(machine, [client], _PARAMS) == "SUCCESS"
+
+    assert hud.clicks == 3  # set; then a clear of the mark it stands on, and the mark again
 
 
 async def test_only_the_clients_without_the_mark_are_checked():

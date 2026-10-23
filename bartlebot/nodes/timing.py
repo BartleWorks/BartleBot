@@ -696,10 +696,6 @@ RELOG_FIGHT_TIMEOUT = AMBIENT_COMBAT_MAX_DURATION + FLEE_TIMEOUT
 # re-forming the group (#203). The ambient combat watcher fights it meanwhile, and flees it at
 # AMBIENT_COMBAT_MAX_DURATION, so a fight still going past this is one nothing will end.
 
-POSITION_STABILIZE_TIMEOUT = 5.0
-# Seconds to wait for the server-reported position to match a teleport target. The client
-# moves first and the server confirms after, so this covers the gap.
-
 HOME_LOADING_TIMEOUT = 15.0
 # Seconds to wait for a loading screen to appear after HOME. Longer than TRIGGER_TIMEOUT
 # because the dorm teleport is a full zone load requested from a keypress.

@@ -393,6 +393,9 @@ async def _return_to_marks(machine, clients: list, marks: list[Mark]) -> str:
             f"FAILURE: client(s) {missed} did not land where they marked (margin={POSITION_MARGIN})",
             logging.WARNING,
         )
+        # The record would otherwise have Mark Location pass them by, with the mark elsewhere.
+        for number in missed:
+            mark_location.forget(machine, clients[number - 1])
         return "FAILURE"
     machine.log("SUCCESS: level scaling applied and every client is back on its mark")
     return "SUCCESS"

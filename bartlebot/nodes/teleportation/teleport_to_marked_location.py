@@ -82,7 +82,8 @@ async def run(machine, clients: list, params: dict) -> str:
       6. Wait for all loading screens to finish.
       7. Verify all clients are in zone and within POSITION_MARGIN of xyz. Return FAILURE if not.
          A blank zone or xyz is each client's own mark from this run (mark_location.marked_at),
-         and a client with none fails the node before step 1.
+         and a client with none fails the node before step 1. A client that misses has its
+         mark forgotten (mark_location.forget), so the next Mark Location sets it again.
 
     FAILURE: any client has no mana; RecallButton not enabled within timeout (no mark set);
     recall not triggered within TRIGGER_TIMEOUT; not all clients arrived at expected zone/XYZ;
@@ -125,9 +126,15 @@ async def run(machine, clients: list, params: dict) -> str:
                 f"FAILURE: not all clients in expected zone (expected={expected!r}, got={list(set(actual))})",
                 logging.WARNING,
             )
+            _forget_marks(
+                machine, clients, [i for i, z in enumerate(actual) if not node_helpers.zone_matches(z, expected)]
+            )
             return "FAILURE"
-    elif wrong := [i + 1 for i, (z, e) in enumerate(zip(zones, expected_zones)) if not node_helpers.zone_matches(z, e)]:
-        machine.log(f"FAILURE: client(s) {wrong} did not land in the zone they marked in", logging.WARNING)
+    elif wrong := [i for i, (z, e) in enumerate(zip(zones, expected_zones)) if not node_helpers.zone_matches(z, e)]:
+        machine.log(
+            f"FAILURE: client(s) {[i + 1 for i in wrong]} did not land in the zone they marked in", logging.WARNING
+        )
+        _forget_marks(machine, clients, wrong)
         return "FAILURE"
 
     # 8. Verify all clients are at the expected XYZ.
@@ -141,9 +148,10 @@ async def run(machine, clients: list, params: dict) -> str:
     ]
     if off_target:
         machine.log(
-            f"FAILURE: client(s) {off_target} not at expected XYZ after recall (margin={POSITION_MARGIN})",
+            f"FAILURE: client(s) {[i + 1 for i in off_target]} not at expected XYZ after recall (margin={POSITION_MARGIN})",
             logging.WARNING,
         )
+        _forget_marks(machine, clients, off_target)
         return "FAILURE"
 
     machine.log(f"SUCCESS: all clients recalled to {zone!r}")
@@ -235,6 +243,22 @@ async def recall(machine, clients: list) -> bool:
     machine.log("Waiting for any loading screens to clear…", logging.DEBUG)
     await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
     return True
+
+
+def _forget_marks(machine, clients: list, missed: list[int]) -> None:
+    """Drop the run's record of each mark a recall missed, by 0-based index, so it is set again.
+
+    A mark set before the server heard of a teleport sits where the client stood before it,
+    while the record says it is where the client stands now. Kept, the record has Mark Location
+    pass the client by and every recall after miss the same way.
+    """
+    for i in missed:
+        mark_location.forget(machine, clients[i])
+    if missed:
+        machine.log(
+            f"Forgot the marks of client(s) {[i + 1 for i in missed]}; the next Mark Location marks them again",
+            logging.DEBUG,
+        )
 
 
 def _point(data) -> XYZ | None:

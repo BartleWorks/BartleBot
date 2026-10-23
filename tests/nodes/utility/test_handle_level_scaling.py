@@ -9,6 +9,7 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.utility.handle_level_scaling as hls
 from bartlebot.game import scales
+from bartlebot.nodes.teleportation import mark_location
 from bartlebot.nodes.zone_navigation import Outcome
 from tests.conftest import FakeClient, FakeMachine
 
@@ -415,6 +416,20 @@ async def test_a_recall_that_lands_somewhere_else_fails(zone, spot):
 
     with world.patched():
         assert await hls.run(_machine([1]), [client], _PARAMS) == "FAILURE"
+
+
+async def test_a_recall_that_lands_somewhere_else_forgets_that_mark():
+    """The run's record would otherwise have Mark Location pass the client by."""
+    machine, client = _machine([1]), FakeClient()
+    world = _World([client])
+    world.recall_spot = XYZ(9000.0, 9000.0, 0.0)
+    # The faked mark_client records nothing, so the record is set as the real one would.
+    mark_location._remember(machine, client, mark_location.Mark(_FARM, _FARM_SPOT))
+
+    with world.patched():
+        assert await hls.run(machine, [client], _PARAMS) == "FAILURE"
+
+    assert mark_location.marked_at(machine, client) is None
 
 
 async def test_an_elixir_that_landed_on_the_way_is_not_applied_again():

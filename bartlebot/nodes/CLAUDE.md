@@ -146,6 +146,18 @@ number. Realm cannot be read without opening the spellbook, so never skip portin
 sharing the target's zone or coordinates. When the target is one of ours, use
 `gather_at_player`, which checks arrival against the target's own zone and position.
 
+### A teleport reaches the server late
+
+`client.teleport()` moves the client at once, and the server hears of it a moment later.
+`body.position()` reads the client's side, so it matches the target the instant the teleport
+returns and proves nothing about the server. An action the server places by where it thinks the
+player stands, with no prompt to confirm it, waits Safety Delay after any teleport before it is
+sent, whether or not this node did the teleporting. Mark is the one today: clicked half a second
+after a teleport, it sometimes landed where the player had stood before, and the recall missed by
+the length of the jump. `mark_location.mark_client` waits, and a recall that misses forgets the
+mark (`mark_location.forget`), since the run's record of it is the client's position too.
+Interactions need no wait: the prompt they wait for is the confirmation.
+
 ## Comparing a zone a bot names with one a client is in
 
 Always through `node_helpers.zone_matches`, never `==` or `!=`. Besides globs, it treats every
