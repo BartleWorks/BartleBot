@@ -964,6 +964,33 @@ async def find_entities_by_name(client, pattern: str) -> list:
     return await client.get_base_entities_with_predicate(entity_name_predicate(pattern))
 
 
+class Pickup(enum.Enum):
+    """How one attempt at picking up an entity in the world ended."""
+
+    #: The prompt showed, X was pressed, and the prompt went away.
+    COLLECTED = "collected"
+    #: Standing on the entity brought up no interact prompt.
+    NO_PROMPT = "no prompt"
+    #: X was pressed, and the prompt stayed.
+    NOT_DISMISSED = "not dismissed"
+
+
+async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_INTERVAL) -> Pickup:
+    """Teleport *client* onto *xyz*, press X at the prompt there, and wait for the prompt to clear.
+
+    The step collect_reagent and collect_item share. Each waits *safety_delay* for the prompt
+    and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
+    is its own case to log.
+    """
+    await client.teleport(xyz)
+    if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
+        return Pickup.NO_PROMPT
+    await client.send_key(Keycode.X, 0.1)
+    if not await poll_until(lambda: none_in_npc_range([client]), safety_delay, poll_interval):
+        return Pickup.NOT_DISMISSED
+    return Pickup.COLLECTED
+
+
 def zone_matches(actual: str, pattern: str) -> bool:
     """Return True when actual matches pattern.
 

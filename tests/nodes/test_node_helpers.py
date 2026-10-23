@@ -2043,3 +2043,30 @@ async def test_read_zones_gives_back_none_for_a_zone_that_never_turns_readable()
     gone.zone_name = AsyncMock(return_value=None)
 
     assert await nh.read_zones([ready, gone], 0.05, 0.01) == ["Alpha/Hub", None]
+
+
+# ── pick_up ──────────────────────────────────────────────────────────────────
+
+
+async def test_pick_up_presses_x_at_the_prompt_and_waits_for_it_to_clear():
+    client = FakeClient()
+    client.is_in_npc_range.side_effect = [True, False]
+    spot = XYZ(1.0, 2.0, 3.0)
+
+    assert await nh.pick_up(client, spot, 1.0, 0) is nh.Pickup.COLLECTED
+    client.teleport.assert_called_once_with(spot)
+    client.send_key.assert_called_once()
+
+
+async def test_pick_up_without_a_prompt_presses_nothing():
+    client = FakeClient()
+
+    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NO_PROMPT
+    client.send_key.assert_not_called()
+
+
+async def test_pick_up_whose_prompt_stays_is_not_collected():
+    client = FakeClient()
+    client.is_in_npc_range.return_value = True
+
+    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_DISMISSED
