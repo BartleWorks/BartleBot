@@ -509,17 +509,26 @@ GROUP_VERIFY_TIMEOUT = 15.0
 # invitation is accepted, which is the game's own signal that the join went through. The
 # join is a server round-trip, so this covers more than a local UI update.
 
-GROUP_PROFILE_TIMEOUT = 6.0
+FRIEND_PROFILE_TIMEOUT = 6.0
 # Ceiling on waiting for a friend's profile popup to appear after their row is clicked in
 # the friends list. Polled rather than slept through: the popup is drawn locally with no
 # server round-trip, so it is normally up within a frame or two and the wait ends there.
 
-GROUP_PROFILE_SETTLE_TIMEOUT = 2.0
-# Ceiling on waiting for the profile popup's buttons to stop moving before Invite to Group
-# is clicked (#280). The popup reads as visible before its ButtonLayout has closed up the
-# gaps its hidden buttons leave, so the first positions read can be a slot or two low, and
-# a click aimed at them lands on the button below. Two reads a POLL_INTERVAL apart that
-# agree end the wait; a settled popup costs one interval. On timeout the click goes ahead.
+FRIEND_PROFILE_SETTLE_TIMEOUT = 2.0
+# Ceiling on waiting for the profile popup's buttons to stop moving before one is clicked:
+# Invite to Group (#280) or Go To Friend. The popup reads as visible before its ButtonLayout
+# has closed up the gaps its hidden buttons leave, so the first positions read can be a slot
+# or more low, and a click aimed at them lands on the button below, or on nothing. Two reads
+# a POLL_INTERVAL apart that agree end the wait; a settled popup costs one interval. On
+# timeout the click goes ahead.
+
+FRIEND_TELEPORT_CONFIRM_TIMEOUT = 3.0
+# Seconds to wait for the box asking whether to teleport, after Go To Friend is clicked. It
+# is drawn locally; one that never shows means the click missed the button.
+
+FRIEND_TELEPORT_ATTEMPTS = 2
+# Times Go To Friend is clicked, each from a freshly opened profile, before the port is
+# given up as unable to start.
 
 GROUP_JOIN_HINT_TIMEOUT = 3.0
 # Ceiling on waiting for the game to open the social window by itself on an invited client

@@ -326,6 +326,9 @@ FRIENDS_LIST_BUTTON_PATH = ["WorldView", "windowHUD", "windowForTopRowButtons", 
 CHARACTER_PROFILE_PATH = ["WorldView", "windowHUD", "wndCharacter"]
 CHARACTER_PROFILE_NAME_PATH = ["WorldView", "windowHUD", "wndCharacter", "lblCharacterName"]
 CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCharacterClose"]
+# Go To Friend, in a ButtonLayout as Invite to Group is: the profile layout group_manager
+# logs (node_helpers.read_friend_profile) lists both among ButtonLayout's children.
+GO_TO_FRIEND_BUTTON_PATH = ["WorldView", "windowHUD", "wndCharacter", "ButtonLayout", "btnGoToFriend"]
 
 # The game has TWO entirely separate friends-list windows, each its own UI subtree. Only
 # one is ever on screen, which is what made this confusing to diagnose:

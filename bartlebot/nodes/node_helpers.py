@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 from wizwalker import ExceptionalTimeout, Keycode, MemoryReadError
-from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,8 @@ from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    CHARACTER_PROFILE_CLOSE_PATH,
+    CHARACTER_PROFILE_PATH,
     CROWNS_SHOP_WINDOW_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
@@ -27,6 +28,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     FRIENDS_LIST_PATH,
     FRIENDS_LIST_PATHS,
     GAUNTLET_ENTRANCE_PATH,
+    GO_TO_FRIEND_BUTTON_PATH,
     HUB_BUTTON_PATH,
     LARGE_FRIENDS_LIST_PATH,
     MESSAGE_BOX_CAPTION_PATH,
@@ -39,6 +41,10 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
     DIALOG_PAGE_SETTLE,
     DIALOG_TIMEOUT,
+    FRIEND_PROFILE_SETTLE_TIMEOUT,
+    FRIEND_PROFILE_TIMEOUT,
+    FRIEND_TELEPORT_ATTEMPTS,
+    FRIEND_TELEPORT_CONFIRM_TIMEOUT,
     MAX_RETRIES,
     OBJECT_USE_DELAY,
     POLL_INTERVAL,
@@ -1711,18 +1717,30 @@ async def resolve_friend_name(client, friend_name_lower: str) -> str:
     raise ValueError("Could not find friend in the online friends list")
 
 
+_GO_TO_FRIEND = GO_TO_FRIEND_BUTTON_PATH[-1]
+
+
 async def teleport_via_friends_list(client, friend_name_lower: str) -> None:
-    """Resolve the exact-case friend name, then teleport via the in-game friends list.
+    """Teleport to a friend through the in-game friends list: their profile, then Go To Friend.
 
-    teleport_to_friend_from_list uses a case-sensitive string comparison internally, so the
-    exact-case name is looked up first. The mouse handler context is activated here because
-    both the resolution step and WizWalker's click chain require it.
+    WizWalker's teleport_to_friend_from_list did this, and clicked Go To Friend the moment
+    the profile showed, before its buttons had settled. Here open_friend_profile opens the
+    profile, matching the name case-insensitively, and _click_go_to_friend waits for the
+    buttons. A click that brings up no box missed: the profile (and the crowns shop, should
+    the click have opened it) is closed, and the whole is tried again, up to
+    FRIEND_TELEPORT_ATTEMPTS times.
 
-    Raises ValueError if no friends are online or the name is not found.
+    Raises ValueError if no friends are online, the name is not found, or no click brought
+    up the box. The message never names the friend.
     """
     async with client.mouse_handler:
-        exact_name = await resolve_friend_name(client, friend_name_lower)
-        await teleport_to_friend_from_list(client, name=exact_name)
+        for attempt in range(1, FRIEND_TELEPORT_ATTEMPTS + 1):
+            await open_friend_profile(client, friend_name_lower)
+            if await _click_go_to_friend(client):
+                return
+            logger.debug("Go To Friend missed (attempt %d of %d)", attempt, FRIEND_TELEPORT_ATTEMPTS)
+            await close_friend_profile(client)
+    raise ValueError(f"Go To Friend brought up no box in {FRIEND_TELEPORT_ATTEMPTS} attempts")
 
 
 TRIGGER_MARGIN = 5.0
@@ -1870,8 +1888,10 @@ class PortToFriendResult(NamedTuple):
       where it is going. A port onto a player you are standing beside does nothing visible.
 
     `refusal` is set when the game refused the port outright for one client — pair it with
-    dialog_captions.describe(); `refused_index` says which client hit it. `missing()` is what
-    is left over: clients that showed nothing at all by the ceiling.
+    dialog_captions.describe(); `refused_index` says which client hit it. `unstarted` holds
+    the clients whose port could not begin (their `initiate` raised), which are not waited
+    for. `missing()` is what is left over: those, and clients that showed nothing at all by
+    the ceiling.
     """
 
     seen_loading: set[int]
@@ -1879,6 +1899,7 @@ class PortToFriendResult(NamedTuple):
     refused_index: int | None = None
     jumped: frozenset[int] = frozenset()
     presumed: frozenset[int] = frozenset()
+    unstarted: frozenset[int] = frozenset()
 
     def missing(self, count: int) -> list[int]:
         """Indices below `count` that neither loaded, jumped, nor were presumed already there."""
@@ -1907,8 +1928,10 @@ async def port_to_friend(
     at `ceiling`. Only how the target and the surrounding zone check are resolved differs
     between callers, and that stays with them.
 
-    Raises ValueError if the initial teleport, or a straggler's retry, cannot resolve the
-    friend (not found, or not online) — the same error teleport_via_friends_list raises.
+    Raises ValueError if no client's teleport could begin (the friend not found, not online,
+    or Go To Friend bringing up no box) — the error teleport_via_friends_list raises. A
+    client whose own start or re-issue fails while others' begin is left out of the wait and
+    reported in the result's `unstarted`.
 
     None of the waiting here is bounded by Safety Delay: a caller using this as a fast
     fallback rather than as the whole point of the node should size `ceiling` accordingly
@@ -1963,7 +1986,11 @@ async def port_clients(
     realm, where the port would have loaded, so it goes back to being re-issued like any
     other quiet client.
 
-    Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
+    Each client's port starts on its own: one whose `initiate` raises is left out of the wait
+    (the result's `unstarted`), and the others' ports carry on. Raises what `initiate` raised
+    only when no client's port began, since then there is nothing to wait for; both starters
+    raise ValueError when they cannot begin. A re-issue that raises joins `unstarted` too,
+    and is not re-issued again.
     """
     if quiet_grace is None:
         quiet_grace = PORT_QUIET_GRACE  # read here, not in the signature, so it stays tunable
@@ -1973,7 +2000,12 @@ async def port_clients(
 
     # Positions are read before the port, or a jump that happens during initiate goes unseen.
     start_positions = await asyncio.gather(*[_position_or_none(c) for c in clients_to_move])
-    await asyncio.gather(*[initiate(c) for c in clients_to_move])
+    starts = await _start_each(initiate, clients_to_move)
+    unstarted = {i for i, error in enumerate(starts) if error is not None}
+    if count and len(unstarted) == count:
+        raise starts[0]
+    for i in sorted(unstarted):
+        logger.debug("Client %d of %d: its port could not start (%s)", i + 1, count, type(starts[i]).__name__)
 
     seen_loading: set[int] = set()
     jumped: set[int] = set()
@@ -1983,11 +2015,13 @@ async def port_clients(
     reissued = [False] * count
 
     def result(refusal: str | None = None, refused_index: int | None = None) -> PortToFriendResult:
-        return PortToFriendResult(seen_loading, refusal, refused_index, frozenset(jumped), frozenset(presumed))
+        return PortToFriendResult(
+            seen_loading, refusal, refused_index, frozenset(jumped), frozenset(presumed), frozenset(unstarted)
+        )
 
     while True:
         for i in range(count):
-            if i in seen_loading or i in jumped or i in presumed:
+            if i in seen_loading or i in jumped or i in presumed or i in unstarted:
                 continue
             outcome = await resolve_modal(clients_to_move[i])
             if outcome.refusal:
@@ -2002,7 +2036,8 @@ async def port_clients(
                 seen_loading.add(i)
 
         # A loading client still reports the position it left, so only the rest are read.
-        unsettled = [i for i in range(count) if i not in seen_loading and i not in jumped and i not in presumed]
+        done = seen_loading | jumped | presumed | unstarted
+        unsettled = [i for i in range(count) if i not in done]
         positions = await asyncio.gather(*[_position_or_none(clients_to_move[i]) for i in unsettled])
         quiet: list[int] = []
         for i, pos in zip(unsettled, positions):
@@ -2025,17 +2060,32 @@ async def port_clients(
                 maybe_there.discard(i)
             due.append(i)
 
-        if len(seen_loading | jumped | presumed) == count or now - loop_start > ceiling:
+        if len(seen_loading | jumped | presumed | unstarted) == count or now - loop_start > ceiling:
             return result()
 
         if due:
-            await asyncio.gather(*[initiate(clients_to_move[i]) for i in due])
+            errors = await _start_each(initiate, [clients_to_move[i] for i in due])
+            unstarted.update(i for i, error in zip(due, errors) if error is not None)
             after = loop.time()
             for i in due:
                 last_attempt[i] = after
                 reissued[i] = True
 
         await asyncio.sleep(poll_interval)
+
+
+async def _start_each(initiate, clients: list) -> list[Exception | None]:
+    """Start every client's port at once; what each raised, or None for one that began.
+
+    One client's failure must not cut the others' ports short: a plain gather raises the
+    first error, and the caller never learns which ports had begun. Only an Exception is
+    caught; a cancel goes through.
+    """
+    outcomes = await asyncio.gather(*[initiate(c) for c in clients], return_exceptions=True)
+    for outcome in outcomes:
+        if isinstance(outcome, BaseException) and not isinstance(outcome, Exception):
+            raise outcome
+    return [outcome if isinstance(outcome, Exception) else None for outcome in outcomes]
 
 
 class TogetherOutcome(enum.Enum):
@@ -2240,6 +2290,7 @@ async def open_friend_profile(client, name: str):
         _cycle_to_online_friends,
         _friend_list_entry,
         _maybe_get_named_window,
+        _maybe_get_window_at_path,
     )
 
     friends_window = await open_friends_list(client)
@@ -2274,7 +2325,150 @@ async def open_friend_profile(client, name: str):
         raise ValueError("Could not find friend in the online friends list")
 
     await _click_on_friend(client, friends_list, friend_index)
-    return await _maybe_get_named_window(client.root_window, "wndCharacter")
+    return await _maybe_get_window_at_path(client.root_window, CHARACTER_PROFILE_PATH)
+
+
+# The friend profile popup's buttons as (name, shown, (x1, y1, x2, y2)), the popup itself
+# first under the name "popup". The names are the game's control names, never a player's.
+ProfileLayout = tuple[tuple[str, bool, tuple[int, int, int, int]], ...]
+
+
+async def read_friend_profile(client) -> tuple[ProfileLayout | None, str]:
+    """Read where each of the friend profile popup's buttons is and whether it shows. Never raises.
+
+    Returns the layout, None when the popup is not open or could not be read, and the text
+    the logs show for it. The buttons sit in ButtonLayouts, and the layout can still be
+    moving when the popup first reads as visible (#280): two reads that disagree show it
+    moved, and one shows which button covered the point that was clicked.
+    """
+    try:
+        popups = await find_windows_by_path(client.root_window, CHARACTER_PROFILE_PATH)
+        if not popups:
+            return None, profile_layout_text(None)
+        popup = popups[0]
+        entries = [("popup", True, _rect_tuple(await popup.scale_to_client()))]
+        for child in await popup.children():
+            if await child.name() != "ButtonLayout":
+                continue
+            for button in await child.children():
+                entries.append(
+                    (await button.name(), await button.is_visible(), _rect_tuple(await button.scale_to_client()))
+                )
+        layout = tuple(entries)
+        return layout, profile_layout_text(layout)
+    except Exception as exc:
+        return None, f"<unreadable: {exc!r}>"
+
+
+async def friend_profile_buttons(client) -> str:
+    """Describe the friend profile popup's buttons for a log line. Never raises."""
+    return (await read_friend_profile(client))[1]
+
+
+async def await_settled_friend_profile(client) -> tuple[ProfileLayout | None, int]:
+    """Wait for the profile popup's buttons to stop moving, and return where they settled.
+
+    Returns the settled layout, or None if no two reads in a row agreed within
+    FRIEND_PROFILE_SETTLE_TIMEOUT, with the number of reads taken. A popup already laid out
+    settles in two. The reads are spaced a POLL_INTERVAL apart, because two taken back to
+    back can both come before the game's next layout pass and agree while still wrong.
+    An unreadable popup never counts as settled.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + FRIEND_PROFILE_SETTLE_TIMEOUT
+    previous, _ = await read_friend_profile(client)
+    reads = 1
+    while loop.time() < deadline:
+        await asyncio.sleep(POLL_INTERVAL)
+        current, _ = await read_friend_profile(client)
+        reads += 1
+        if current is not None and current == previous:
+            return current, reads
+        previous = current
+    return None, reads
+
+
+def profile_button_rect(layout: ProfileLayout | None, name: str) -> tuple[int, int, int, int] | None:
+    """Where the named button is in a layout read, or None if the read has no such button."""
+    return next((rect for button, _shown, rect in layout or () if button == name), None)
+
+
+def profile_layout_text(layout: ProfileLayout | None) -> str:
+    if layout is None:
+        return "popup missing"
+    return ", ".join(f"{name}{'' if shown else ' hidden'}@{rect_text(rect)}" for name, shown, rect in layout)
+
+
+def _rect_tuple(rect) -> tuple[int, int, int, int]:
+    return (rect.x1, rect.y1, rect.x2, rect.y2)
+
+
+def rect_text(rect: tuple[int, int, int, int]) -> str:
+    x1, y1, x2, y2 = rect
+    return f"({x1},{y1},{x2},{y2})"
+
+
+async def close_friend_profile(client) -> bool:
+    """Close the friend profile popup, and the crowns shop a click on its wishlist button opens.
+
+    Returns True once neither is up. Never raises. The shop goes first: it is a modal over
+    everything, and the profile's close button cannot be clicked under it.
+    """
+    try:
+        shop = await close_crowns_shop(client)
+        closed = await click_until_gone(
+            client,
+            CHARACTER_PROFILE_CLOSE_PATH,
+            is_open=lambda: is_visible_by_path(client, CHARACTER_PROFILE_PATH),
+        )
+        return shop.closed and closed
+    except Exception:
+        logger.debug("Could not close the friend profile popup", exc_info=True)
+        return False
+
+
+async def _click_go_to_friend(client) -> bool:
+    """Click Go To Friend on the open profile popup and answer the box that asks. True if one came.
+
+    The click waits for the popup's buttons to settle, as Invite to Group's does (#280):
+    sent the moment the popup showed, it landed on Friend Finder below, or on nothing, and
+    no box came. A refusal (dialog_captions.REFUSALS) is left up for port_clients to
+    report; anything else is confirmed, and the profile closed during the teleport's
+    animation, which takes about a second.
+    """
+    if not await poll_until(
+        lambda: is_visible_by_path(client, CHARACTER_PROFILE_PATH),
+        timeout=FRIEND_PROFILE_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
+    ):
+        logger.debug("The friend profile did not appear within %.0fs", FRIEND_PROFILE_TIMEOUT)
+        return False
+    settled, reads = await await_settled_friend_profile(client)
+    if settled is None:
+        logger.debug("Profile buttons still moving after %.0fs; clicking anyway", FRIEND_PROFILE_SETTLE_TIMEOUT)
+    elif reads > 2:
+        logger.debug("Profile buttons moved after the popup showed; settled after %d reads", reads)
+    before = settled or (await read_friend_profile(client))[0]
+    if not await click_by_path(client, GO_TO_FRIEND_BUTTON_PATH):
+        logger.debug("Go To Friend unavailable: %s", await diagnose_path(client, GO_TO_FRIEND_BUTTON_PATH))
+        return False
+
+    if not await poll_until(
+        lambda: modal_showing(client), timeout=FRIEND_TELEPORT_CONFIRM_TIMEOUT, poll_interval=POLL_INTERVAL
+    ):
+        _, after_text = await read_friend_profile(client)
+        logger.debug(
+            "No box asked to teleport within %.0fs of Go To Friend, aimed at %s; profile buttons then: %s",
+            FRIEND_TELEPORT_CONFIRM_TIMEOUT,
+            rect_text(aimed) if (aimed := profile_button_rect(before, _GO_TO_FRIEND)) else "?",
+            after_text,
+        )
+        return False
+    if await identify_modal(client) in dialog_captions.REFUSALS:
+        return True
+    await click_by_path(client, MESSAGE_BOX_CENTER)
+    await click_by_path(client, CHARACTER_PROFILE_CLOSE_PATH)
+    return True
 
 
 # ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import pytest
 from wizwalker import XYZ, MemoryReadError
 
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.game import dialog_captions
 from bartlebot.nodes.node_helpers import (
     _get_window_from_path,
     all_in_zone,
@@ -23,7 +24,14 @@ from bartlebot.nodes.node_helpers import (
     window_text_matches,
     zone_matches,
 )
-from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+from bartlebot.nodes.paths import (
+    CHARACTER_PROFILE_CLOSE_PATH,
+    CHARACTER_PROFILE_PATH,
+    GO_TO_FRIEND_BUTTON_PATH,
+    MESSAGE_BOX_CAPTION_PATH,
+    MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_RIGHT,
+)
 from tests.conftest import FakeClient, FakeEntity, FakeMachine, ModalScreen, message_box_patches, prompt_at
 
 
@@ -923,6 +931,132 @@ async def test_the_friends_list_is_open_while_either_list_shows(visible_names, o
 
 
 # ---------------------------------------------------------------------------
+# The friend profile popup's buttons: the #280 diagnostic
+# ---------------------------------------------------------------------------
+
+
+class _Rect:
+    def __init__(self, x1, y1, x2, y2):
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+
+
+class _Win:
+    def __init__(self, name, rect=(0, 0, 1, 1), visible=True, children=()):
+        self._name, self._rect, self._visible, self._children = name, rect, visible, list(children)
+
+    async def name(self):
+        return self._name
+
+    async def children(self):
+        return self._children
+
+    async def is_visible(self):
+        return self._visible
+
+    async def scale_to_client(self):
+        return _Rect(*self._rect)
+
+
+class _RootHolder:
+    def __init__(self, root_window):
+        self.root_window = root_window
+
+
+def _profile_tree():
+    invite = _Win("btnInvite", (439, 133, 464, 158))
+    wishlist = _Win("btnCharacterWishlistInspection", (439, 199, 464, 224), visible=False)
+    layout = _Win("ButtonLayout", children=[invite, wishlist])
+    other_layout = _Win("ButtonLayout")
+    popup = _Win("wndCharacter", (400, 90, 500, 300), children=[other_layout, layout, _Win("lblCharacterName")])
+    root = _Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])])
+    return _RootHolder(root)
+
+
+async def test_profile_buttons_reports_each_button_with_its_rectangle_and_visibility():
+    text = await nh.friend_profile_buttons(_profile_tree())
+    assert text == (
+        "popup@(400,90,500,300), btnInvite@(439,133,464,158), btnCharacterWishlistInspection hidden@(439,199,464,224)"
+    )
+
+
+async def test_profile_buttons_says_so_when_the_popup_is_not_open():
+    assert await nh.friend_profile_buttons(_RootHolder(_Win("root"))) == "popup missing"
+
+
+async def test_profile_buttons_never_raises():
+    class Broken:
+        @property
+        def root_window(self):
+            raise RuntimeError("memory read failed")
+
+    assert (await nh.friend_profile_buttons(Broken())).startswith("<unreadable:")
+
+
+# ---------------------------------------------------------------------------
+# Waiting for the profile buttons to settle (#280)
+# ---------------------------------------------------------------------------
+
+
+class _MovingWin(_Win):
+    """A window whose rectangle is read from a list, one entry per read, the last repeated."""
+
+    def __init__(self, name, rects):
+        super().__init__(name, rects[0])
+        self._rects = list(rects)
+
+    async def scale_to_client(self):
+        rect = self._rects.pop(0) if len(self._rects) > 1 else self._rects[0]
+        return _Rect(*rect)
+
+
+class _AlwaysMovingWin(_Win):
+    async def scale_to_client(self):
+        self._rect = (self._rect[0], self._rect[1] + 1, self._rect[2], self._rect[3] + 1)
+        return _Rect(*self._rect)
+
+
+def _profile_with(invite):
+    layout = _Win("ButtonLayout", children=[invite])
+    popup = _Win("wndCharacter", (431, 0, 615, 359), children=[layout])
+    return _RootHolder(_Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])]))
+
+
+_STALE = (439, 199, 464, 224)
+_SETTLED = (439, 133, 464, 158)
+
+
+async def _settle(client, timeout=1.0):
+    with patch.object(nh, "POLL_INTERVAL", 0), patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", timeout):
+        return await nh.await_settled_friend_profile(client)
+
+
+async def test_the_settle_wait_outlasts_a_layout_still_moving():
+    """What #280 caught: the first read had Invite two slots low, over the wishlist's spot."""
+    layout, reads = await _settle(_profile_with(_MovingWin("btnInvite", [_STALE, _SETTLED])))
+
+    assert nh.profile_button_rect(layout, "btnInvite") == _SETTLED
+    assert reads == 3
+
+
+async def test_a_popup_already_laid_out_settles_in_two_reads():
+    layout, reads = await _settle(_profile_with(_Win("btnInvite", _SETTLED)))
+
+    assert nh.profile_button_rect(layout, "btnInvite") == _SETTLED
+    assert reads == 2
+
+
+async def test_the_settle_wait_gives_up_on_a_layout_that_never_stops():
+    layout, _ = await _settle(_profile_with(_AlwaysMovingWin("btnInvite", _SETTLED)), timeout=0.05)
+    assert layout is None
+
+
+async def test_a_missing_popup_never_counts_as_settled():
+    """Two reads that both found nothing agree, and must not pass for a laid-out popup."""
+    layout, _ = await _settle(_RootHolder(_Win("root")), timeout=0.05)
+    assert layout is None
+
+
+# ---------------------------------------------------------------------------
 # identify_modal / modal_showing — caption first, buttons as fallback
 # ---------------------------------------------------------------------------
 
@@ -1146,6 +1280,132 @@ async def test_answer_instance_prompts_reports_one_clients_refusal_for_the_group
         refusal = await nh_mod.answer_instance_prompts([ok, blocked], delay=0.01, poll_interval=0)
 
     assert refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE
+
+
+# ---------------------------------------------------------------------------
+# teleport_via_friends_list: Go To Friend, once the profile has settled
+# ---------------------------------------------------------------------------
+
+_GO_STALE = (439, 166, 464, 191)  # where Friend Finder settles: what the misclick hit
+_GO_SETTLED = (439, 68, 464, 92)
+
+
+def _go_layout(rect):
+    return (("popup", True, (431, 0, 615, 359)), ("btnGoToFriend", True, rect))
+
+
+class _ProfileScreen:
+    """A friend's profile popup and the box Go To Friend raises, answering what node_helpers sends.
+
+    The profile's buttons are read from `layouts`, one per read, the last repeated. The box
+    asks only after the Go To Friend clicks numbered in `box_on`: a click that lands brings
+    it up, and one that misses brings nothing.
+    """
+
+    def __init__(self, layouts, *, box_on=(1,)):
+        self.layouts = list(layouts)
+        self.box_on = set(box_on)
+        self.reads = 0
+        self.go_clicks = 0
+        self.opened = []
+        self.events = []
+        self.profile_open = False
+        self.caption = None
+
+    async def open_profile(self, _client, name):
+        self.opened.append(name)
+        self.events.append("open profile")
+        self.profile_open = True
+
+    async def read(self, _client):
+        layout = self.layouts[min(self.reads, len(self.layouts) - 1)]
+        self.reads += 1
+        return layout, nh.profile_layout_text(layout)
+
+    async def visible(self, _client, path):
+        return path == CHARACTER_PROFILE_PATH and self.profile_open
+
+    async def click(self, _client, path):
+        self.events.append((path[-1], self.reads))
+        if path == GO_TO_FRIEND_BUTTON_PATH:
+            self.go_clicks += 1
+            if self.go_clicks in self.box_on:
+                self.caption = "Teleport to your friend?"
+        elif path == MESSAGE_BOX_CENTER:
+            self.caption = None
+        elif path == CHARACTER_PROFILE_CLOSE_PATH:
+            self.profile_open = False
+        return True
+
+    async def text(self, _client, path):
+        return self.caption if path == MESSAGE_BOX_CAPTION_PATH else None
+
+    def clicked(self) -> list[str]:
+        return [event[0] for event in self.events if isinstance(event, tuple)]
+
+
+async def _teleport(screen: _ProfileScreen, *, identify=None):
+    from contextlib import ExitStack
+
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(nh, "POLL_INTERVAL", 0))
+        stack.enter_context(patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", 1.0))
+        stack.enter_context(patch.object(nh, "FRIEND_TELEPORT_CONFIRM_TIMEOUT", 0.05))
+        stack.enter_context(patch.object(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0))
+        stack.enter_context(patch.object(nh, "open_friend_profile", new=AsyncMock(side_effect=screen.open_profile)))
+        stack.enter_context(patch.object(nh, "read_friend_profile", new=AsyncMock(side_effect=screen.read)))
+        stack.enter_context(patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=screen.visible)))
+        stack.enter_context(patch.object(nh, "click_by_path", new=AsyncMock(side_effect=screen.click)))
+        stack.enter_context(patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=screen.text)))
+        if identify is not None:
+            stack.enter_context(patch.object(nh, "identify_modal", new=AsyncMock(return_value=identify)))
+        await nh.teleport_via_friends_list(FakeClient(), "wizardfriend")
+
+
+async def test_go_to_friend_is_clicked_only_once_the_profile_buttons_settle():
+    """Clicked the moment the profile showed, it landed on Friend Finder below, or on nothing."""
+    screen = _ProfileScreen([_go_layout(_GO_STALE), _go_layout(_GO_SETTLED)])
+
+    await _teleport(screen)
+
+    go = next(event for event in screen.events if isinstance(event, tuple) and event[0] == "btnGoToFriend")
+    assert go == ("btnGoToFriend", 3)  # the stale read, then the two that agreed
+    assert screen.clicked() == ["btnGoToFriend", "centerButton", "btnCharacterClose"]
+    assert screen.opened == ["wizardfriend"]
+
+
+async def test_a_go_to_friend_that_brings_up_no_box_is_tried_again_from_a_fresh_profile():
+    screen = _ProfileScreen([_go_layout(_GO_SETTLED)], box_on=(2,))
+
+    await _teleport(screen)
+
+    assert screen.opened == ["wizardfriend", "wizardfriend"]
+    assert screen.clicked() == [
+        "btnGoToFriend",
+        "btnCharacterClose",
+        "btnGoToFriend",
+        "centerButton",
+        "btnCharacterClose",
+    ]
+
+
+async def test_go_to_friend_that_never_brings_up_the_box_cannot_start():
+    screen = _ProfileScreen([_go_layout(_GO_SETTLED)], box_on=())
+
+    with pytest.raises(ValueError) as raised:
+        await _teleport(screen)
+
+    assert screen.go_clicks == nh.FRIEND_TELEPORT_ATTEMPTS
+    assert "wizardfriend" not in str(raised.value)
+    assert not screen.profile_open
+
+
+async def test_a_refusal_after_go_to_friend_is_left_for_port_clients_to_report():
+    screen = _ProfileScreen([_go_layout(_GO_SETTLED)])
+
+    await _teleport(screen, identify=dialog_captions.FRIEND_BUSY)
+
+    assert screen.clicked() == ["btnGoToFriend"]
 
 
 # ---------------------------------------------------------------------------

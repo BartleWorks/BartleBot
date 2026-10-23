@@ -446,10 +446,10 @@ class FakeUI:
             patch.object(gm, "POLL_INTERVAL", 0),
             patch.object(gm, "GROUP_INVITE_TIMEOUT", 0.05),
             patch.object(gm, "GROUP_VERIFY_TIMEOUT", 0.05),
-            patch.object(gm, "GROUP_PROFILE_TIMEOUT", 0.05),
+            patch.object(gm, "FRIEND_PROFILE_TIMEOUT", 0.05),
             # The fake clients have no window tree, so the popup's buttons never read as
             # settled; the wait is skipped rather than timed out on every invite.
-            patch.object(gm, "GROUP_PROFILE_SETTLE_TIMEOUT", 0),
+            patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", 0),
             patch.object(gm, "GROUP_JOIN_HINT_TIMEOUT", 0.05),
             patch.object(gm, "TRIGGER_TIMEOUT", 0.05),
         )
@@ -1927,126 +1927,11 @@ async def test_a_leader_already_in_a_group_does_not_wait_for_the_social_window(u
     assert result.added == ["P3"]
 
 
-# --- _profile_buttons: the #280 diagnostic -------------------------------------------------
-
-
-class _Rect:
-    def __init__(self, x1, y1, x2, y2):
-        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
-
-
-class _Win:
-    def __init__(self, name, rect=(0, 0, 1, 1), visible=True, children=()):
-        self._name, self._rect, self._visible, self._children = name, rect, visible, list(children)
-
-    async def name(self):
-        return self._name
-
-    async def children(self):
-        return self._children
-
-    async def is_visible(self):
-        return self._visible
-
-    async def scale_to_client(self):
-        return _Rect(*self._rect)
-
-
-class _RootHolder:
-    def __init__(self, root_window):
-        self.root_window = root_window
-
-
-def _profile_tree():
-    invite = _Win("btnInvite", (439, 133, 464, 158))
-    wishlist = _Win("btnCharacterWishlistInspection", (439, 199, 464, 224), visible=False)
-    layout = _Win("ButtonLayout", children=[invite, wishlist])
-    other_layout = _Win("ButtonLayout")
-    popup = _Win("wndCharacter", (400, 90, 500, 300), children=[other_layout, layout, _Win("lblCharacterName")])
-    root = _Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])])
-    return _RootHolder(root)
-
-
-async def test_profile_buttons_reports_each_button_with_its_rectangle_and_visibility():
-    text = await gm._profile_buttons(_profile_tree())
-    assert text == (
-        "popup@(400,90,500,300), btnInvite@(439,133,464,158), btnCharacterWishlistInspection hidden@(439,199,464,224)"
-    )
-
-
-async def test_profile_buttons_says_so_when_the_popup_is_not_open():
-    assert await gm._profile_buttons(_RootHolder(_Win("root"))) == "popup missing"
-
-
-async def test_profile_buttons_never_raises():
-    class Broken:
-        @property
-        def root_window(self):
-            raise RuntimeError("memory read failed")
-
-    assert (await gm._profile_buttons(Broken())).startswith("<unreadable:")
-
-
-# --- Waiting for the profile buttons to settle (#280) --------------------------------------
-
-
-class _MovingWin(_Win):
-    """A window whose rectangle is read from a list, one entry per read, the last repeated."""
-
-    def __init__(self, name, rects):
-        super().__init__(name, rects[0])
-        self._rects = list(rects)
-
-    async def scale_to_client(self):
-        rect = self._rects.pop(0) if len(self._rects) > 1 else self._rects[0]
-        return _Rect(*rect)
-
-
-class _AlwaysMovingWin(_Win):
-    async def scale_to_client(self):
-        self._rect = (self._rect[0], self._rect[1] + 1, self._rect[2], self._rect[3] + 1)
-        return _Rect(*self._rect)
-
-
-def _profile_with(invite):
-    layout = _Win("ButtonLayout", children=[invite])
-    popup = _Win("wndCharacter", (431, 0, 615, 359), children=[layout])
-    return _RootHolder(_Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])]))
-
+# --- The invite waits for the profile buttons to settle (#280) -----------------------------
+# node_helpers.await_settled_friend_profile is tested in tests/nodes/test_node_helpers.py.
 
 _STALE = (439, 199, 464, 224)
 _SETTLED = (439, 133, 464, 158)
-
-
-async def _settle(client, timeout=1.0):
-    with patch.object(gm, "POLL_INTERVAL", 0), patch.object(gm, "GROUP_PROFILE_SETTLE_TIMEOUT", timeout):
-        return await gm._await_settled_profile(client)
-
-
-async def test_the_settle_wait_outlasts_a_layout_still_moving():
-    """What #280 caught: the first read had Invite two slots low, over the wishlist's spot."""
-    layout, reads = await _settle(_profile_with(_MovingWin("btnInvite", [_STALE, _SETTLED])))
-
-    assert gm._button_rect(layout, "btnInvite") == _SETTLED
-    assert reads == 3
-
-
-async def test_a_popup_already_laid_out_settles_in_two_reads():
-    layout, reads = await _settle(_profile_with(_Win("btnInvite", _SETTLED)))
-
-    assert gm._button_rect(layout, "btnInvite") == _SETTLED
-    assert reads == 2
-
-
-async def test_the_settle_wait_gives_up_on_a_layout_that_never_stops():
-    layout, _ = await _settle(_profile_with(_AlwaysMovingWin("btnInvite", _SETTLED)), timeout=0.05)
-    assert layout is None
-
-
-async def test_a_missing_popup_never_counts_as_settled():
-    """Two reads that both found nothing agree, and must not pass for a laid-out popup."""
-    layout, _ = await _settle(_RootHolder(_Win("root")), timeout=0.05)
-    assert layout is None
 
 
 def _layout(invite_rect):
@@ -2068,7 +1953,7 @@ async def _invite_with_reads(ui, layouts):
     async def read_profile(_client):
         layout = layouts[min(len(reads), len(layouts) - 1)]
         reads.append(layout)
-        return layout, gm._layout_text(layout)
+        return layout, nh.profile_layout_text(layout)
 
     async def click_by_path(client, path):
         if path == INVITE_TO_GROUP_BUTTON_PATH:
@@ -2078,8 +1963,8 @@ async def _invite_with_reads(ui, layouts):
     with ExitStack() as stack:
         for p in ui.patches():
             stack.enter_context(p)
-        stack.enter_context(patch.object(gm, "GROUP_PROFILE_SETTLE_TIMEOUT", 1.0))
-        stack.enter_context(patch.object(gm, "_read_profile", new=read_profile))
+        stack.enter_context(patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", 1.0))
+        stack.enter_context(patch.object(nh, "read_friend_profile", new=read_profile))
         stack.enter_context(patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click_by_path)))
         result = await gm.form_group(
             [leader, joiner], ["Alice Ashblade", "Bob Battlecaster"], log=lambda m, level: lines.append((m, level))
