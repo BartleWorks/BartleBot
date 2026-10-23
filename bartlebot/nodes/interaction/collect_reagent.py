@@ -3,10 +3,10 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.help_text import ZONE_AT_START
+from bartlebot.nodes.help_text import ENTITY_ID_MATCHING, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, REAGENT_DROP_MESSAGE_POLL, REAGENT_DROP_MESSAGE_TIMEOUT
 
@@ -33,9 +33,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str_list",
         label="Entity IDs",
         help=(
-            "The IDs of the reagents to collect, as the Entity Browser shows them, not their in-game "
-            "names. Each must be a whole ID, in any case, so Stone never collects Sandstone. Use * "
-            "and ? to match a pattern, such as *Stone*."
+            "The IDs of the reagents to collect, as the Entity Browser shows them, not their in-game names. "
+            + ENTITY_ID_MATCHING
         ),
         default=[],
         required=True,
@@ -64,6 +63,7 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=5,
     safety_warning="This bot teleports to collect reagents. Run it on a quiet realm.",
     implies_tags=["Reagents"],
+    see_also=["collect_item"],
 )
 
 
@@ -121,30 +121,16 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
             f"Client {client_idx + 1}: entity {i}/{len(entities)} at ({xyz.x:.1f}, {xyz.y:.1f}, {xyz.z:.1f})",
             logging.DEBUG,
         )
-        await client.teleport(xyz)
-
-        prompted = await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range([client]),
-            safety_delay,
-            POLL_INTERVAL,
-        )
-
-        if prompted:
-            await client.send_key(Keycode.X, 0.1)
-            dismissed = await node_helpers.poll_until(
-                lambda: node_helpers.none_in_npc_range([client]),
-                safety_delay,
-                POLL_INTERVAL,
+        outcome = await node_helpers.pick_up(client, xyz, safety_delay, POLL_INTERVAL)
+        if outcome is node_helpers.Pickup.COLLECTED:
+            collected += 1
+            if track_drops:
+                await _report_drops()
+        elif outcome is node_helpers.Pickup.NOT_DISMISSED:
+            machine.log(
+                f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after X, skipping",
+                logging.DEBUG,
             )
-            if dismissed:
-                collected += 1
-                if track_drops:
-                    await _report_drops()
-            else:
-                machine.log(
-                    f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after X, skipping",
-                    logging.DEBUG,
-                )
         else:
             machine.log(
                 f"Client {client_idx + 1}: entity {i} — no prompt after teleport, skipping",

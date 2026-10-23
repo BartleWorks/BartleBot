@@ -16,6 +16,8 @@ from bartlebot.nodes.control_flow.set_variables import NODE_SPEC as _set_variabl
 from bartlebot.nodes.control_flow.set_variables import run as set_variables_run
 from bartlebot.nodes.interaction.click_path import NODE_SPEC as _click_path_spec
 from bartlebot.nodes.interaction.click_path import run as click_path_run
+from bartlebot.nodes.interaction.collect_item import NODE_SPEC as _collect_item_spec
+from bartlebot.nodes.interaction.collect_item import run as collect_item_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
 from bartlebot.nodes.interaction.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
@@ -71,6 +73,7 @@ NODE_REGISTRY: dict = {
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
     "handle_combat": handle_combat_run,
+    "collect_item": collect_item_run,
     "collect_reagent": collect_reagent_run,
     "check_health_and_mana": check_health_and_mana_run,
     "collect_wisps": collect_wisps_run,
@@ -102,6 +105,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
     "handle_combat": _handle_combat_spec,
+    "collect_item": _collect_item_spec,
     "collect_reagent": _collect_reagent_spec,
     "check_health_and_mana": _check_health_and_mana_spec,
     "collect_wisps": _collect_wisps_spec,
@@ -173,6 +177,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Interaction",
         [
             "click_path",
+            "collect_item",
             "collect_reagent",
             "interact",
             "interact_menu",

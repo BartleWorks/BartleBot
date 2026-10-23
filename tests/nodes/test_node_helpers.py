@@ -24,7 +24,7 @@ from bartlebot.nodes.node_helpers import (
     zone_matches,
 )
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
-from tests.conftest import FakeClient, FakeEntity, FakeMachine, message_box_patches, prompt_at
+from tests.conftest import FakeClient, FakeEntity, FakeMachine, ModalScreen, message_box_patches, prompt_at
 
 
 @pytest.mark.parametrize(
@@ -1826,3 +1826,247 @@ async def test_a_wildcard_fight_name_matches_as_written():
     client = FakeClient()
     world = _world(client, ("AQ-Piranha-Guard_StandIn", 5.0), ("AQ-Piranha-Guard", 300.0))
     assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard*") is world["AQ-Piranha-Guard_StandIn"]
+
+
+# ---------------------------------------------------------------------------
+# clear_modals — back out of whatever is up, never confirm it
+# ---------------------------------------------------------------------------
+
+
+async def _clear(screen: ModalScreen, timeout: float = 0.2):
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    a, b, c = screen.patches()
+    with a, b, c:
+        return await nh_mod.clear_modals(FakeClient(), timeout, 0.001)
+
+
+async def test_clear_modals_with_nothing_up_clicks_nothing():
+    screen = ModalScreen()
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == ()
+    assert screen.clicked == []
+
+
+async def test_clear_modals_cancels_a_question_instead_of_confirming_it():
+    """Confirming the exit prompt would leave the dungeon; the caller wanted a menu, not that."""
+    from bartlebot.game import dialog_captions
+
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == (dialog_captions.INSTANCE_EXIT,)
+    assert screen.clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_clear_modals_closes_a_one_button_dialog_with_its_center():
+    screen = ModalScreen(("Your friend is busy right now.", [MESSAGE_BOX_CENTER]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert screen.clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_clear_modals_closes_a_dialog_the_snapshot_does_not_know():
+    screen = ModalScreen(("A dialog nobody has cataloged", [MESSAGE_BOX_RIGHT]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == (None,)
+
+
+async def test_clear_modals_closes_every_dialog_in_a_stack():
+    screen = ModalScreen(
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+        ("Your friend is busy right now.", [MESSAGE_BOX_RIGHT]),
+    )
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert len(result.dismissed) == 2
+    assert screen.modals == []
+
+
+async def test_clear_modals_gives_up_on_a_dialog_that_stays_and_names_it():
+    from bartlebot.game import dialog_captions
+
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]), stubborn=True)
+    result = await _clear(screen, timeout=0.05)
+
+    assert result.cleared is False
+    assert result.disconnected is False
+    assert result.key == dialog_captions.INSTANCE_EXIT
+
+
+async def test_clear_modals_leaves_a_disconnect_alone():
+    """Nothing on a disconnect modal helps, and the health monitor recovers the client."""
+    screen = ModalScreen(("Connection Lost!", [MESSAGE_BOX_CENTER]))
+    result = await _clear(screen)
+
+    assert result.cleared is False
+    assert result.disconnected is True
+    assert screen.clicked == []
+
+
+# ---------------------------------------------------------------------------
+# wait_for_zone_with_recovery — a straggler at an instance prompt gets it answered (#281)
+# ---------------------------------------------------------------------------
+
+_BUSY_CAPTION = "Your friend is busy right now."
+
+
+def _client_in_zone_once_answered(screen: ModalScreen, zone: str = "Dst"):
+    """A client that stays in Src until every modal over it has been answered, then reads as in `zone`."""
+    client = FakeClient()
+    client.zone_name = AsyncMock(side_effect=lambda: "Src" if screen.modals else zone)
+    return client
+
+
+async def _wait_for_dst(screen: ModalScreen, client, timeout: float = 0.5, machine=None):
+    with screen.apply():
+        return await nh.wait_for_zone_with_recovery(
+            machine or FakeMachine(), [client], "Dst", timeout, 0.001, settle_grace=0
+        )
+
+
+async def test_a_wait_for_the_zone_confirms_an_exit_prompt_that_is_still_up():
+    """The prompt was left unanswered, and nothing leaves a dungeon until it is."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen)) is None
+    assert screen.clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_a_wait_for_the_zone_answers_each_prompt_in_a_stack():
+    screen = ModalScreen(
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+    )
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen)) is None
+    assert screen.clicked == [MESSAGE_BOX_CENTER, MESSAGE_BOX_CENTER]
+
+
+async def test_a_wait_for_the_zone_leaves_a_dialog_it_does_not_know_alone():
+    """Answering whatever shows would decline an invitation or confirm a request nobody asked about."""
+    screen = ModalScreen(("A dialog nobody has cataloged", [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen), timeout=0.02) == ["Src"]
+    assert screen.clicked == []
+
+
+async def test_a_wait_for_the_zone_ends_at_once_on_a_refusal_and_says_why():
+    screen = ModalScreen((_BUSY_CAPTION, [MESSAGE_BOX_RIGHT]))
+    machine = FakeMachine()
+    started = asyncio.get_running_loop().time()
+
+    result = await _wait_for_dst(screen, _client_in_zone_once_answered(screen), timeout=5.0, machine=machine)
+
+    assert result == ["Src"]
+    assert asyncio.get_running_loop().time() - started < 1.0
+    assert any("refused the zone change" in msg for msg, _ in machine.logs)
+    assert screen.clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_a_wait_for_the_zone_leaves_a_loading_clients_prompt_alone():
+    """A client on a loading screen has its answer in flight already; a click now lands on nothing."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    client = _client_in_zone_once_answered(screen)
+    client.is_loading = AsyncMock(return_value=True)
+
+    with screen.apply():
+        task = asyncio.ensure_future(nh.wait_for_zone_with_recovery(FakeMachine(), [client], "Dst", 0.5, 0.001, 0))
+        await asyncio.sleep(0.05)
+        task.cancel()
+
+    assert screen.clicked == []
+
+
+async def test_a_wait_with_no_time_left_answers_nothing():
+    """The checks that wait zero seconds, as teleport_to_marked_location's does, only read."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen), timeout=0) == ["Src"]
+    assert screen.clicked == []
+
+
+async def test_a_prompt_answered_late_restarts_the_settle_grace():
+    """The loading screen the answer opens has not started yet, so the clock for it restarts."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    client = FakeClient()
+    answered_at: list[float] = []
+
+    async def _zone():
+        loop = asyncio.get_running_loop()
+        if screen.modals:
+            return "Src"
+        answered_at.append(answered_at[0] if answered_at else loop.time())
+        # Reads Src for a while after the answer, as a client does before its screen starts.
+        return "Dst" if loop.time() - answered_at[0] > 0.05 else "Src"
+
+    client.zone_name = _zone
+    with screen.apply():
+        # The deadline is shorter than the grace, so only the restart keeps the wait alive past it.
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [client], "Dst", 0.01, 0.001, 0.1)
+
+    assert result is None
+
+
+async def test_a_recovery_port_that_times_out_is_logged_not_raised():
+    """#281: a modal blocks the Friends button, the wait for the list times out, and the run took it for a dead client."""
+    from wizwalker import ExceptionalTimeout
+
+    machine = FakeMachine()
+    with patch.object(nh, "port_to_friend", new=AsyncMock(side_effect=ExceptionalTimeout("friends list"))):
+        await nh._port_stragglers(machine, 0, "someone", [FakeClient()], "Dst", 0)
+
+    assert any("timed out" in msg and "friends list" in msg for msg, _ in machine.logs)
+
+
+# ── read_zones ───────────────────────────────────────────────────────────────
+
+
+async def test_read_zones_waits_until_every_zone_is_readable():
+    ready, slow = FakeClient(), FakeClient()
+    ready.zone_name = AsyncMock(return_value="Alpha/Hub")
+    slow.zone_name = AsyncMock(side_effect=[None, None, "Beta/Hub"])
+
+    assert await nh.read_zones([ready, slow], 1.0, 0.01) == ["Alpha/Hub", "Beta/Hub"]
+
+
+async def test_read_zones_gives_back_none_for_a_zone_that_never_turns_readable():
+    ready, gone = FakeClient(), FakeClient()
+    ready.zone_name = AsyncMock(return_value="Alpha/Hub")
+    gone.zone_name = AsyncMock(return_value=None)
+
+    assert await nh.read_zones([ready, gone], 0.05, 0.01) == ["Alpha/Hub", None]
+
+
+# ── pick_up ──────────────────────────────────────────────────────────────────
+
+
+async def test_pick_up_presses_x_at_the_prompt_and_waits_for_it_to_clear():
+    client = FakeClient()
+    client.is_in_npc_range.side_effect = [True, False]
+    spot = XYZ(1.0, 2.0, 3.0)
+
+    assert await nh.pick_up(client, spot, 1.0, 0) is nh.Pickup.COLLECTED
+    client.teleport.assert_called_once_with(spot)
+    client.send_key.assert_called_once()
+
+
+async def test_pick_up_without_a_prompt_presses_nothing():
+    client = FakeClient()
+
+    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NO_PROMPT
+    client.send_key.assert_not_called()
+
+
+async def test_pick_up_whose_prompt_stays_is_not_collected():
+    client = FakeClient()
+    client.is_in_npc_range.return_value = True
+
+    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_DISMISSED

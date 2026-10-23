@@ -53,6 +53,13 @@ PORT_QUIET_GRACE = 5.0
 # Sized like ZONE_SETTLE_GRACE: long enough for a cross-realm port's loading screen to appear,
 # since re-issuing a port that was about to start is what undoes an arrival (#70).
 
+ZONE_READABLE_TIMEOUT = 10.0
+# Seconds read_zones waits for every client's zone to be readable. zone_name() is None while a
+# client is between zones or not logged in, and it turns readable a moment after the loading
+# screen is gone, so this covers that moment, not a slow load: a caller waits out the loading
+# screen itself first. Comparing a None zone proves nothing, so the zone is waited for rather
+# than judged.
+
 SIGHTING_SETTLE_TIMEOUT = 3.0
 # Seconds an arrival check waits for players who have landed together to see each other in
 # their entity lists (#130). The probe saw arrivals 1-2 s before their own loading screen
@@ -236,6 +243,13 @@ RELOG_IN_GAME_TIMEOUT = 180.0
 # Matched to the launch path's patience rather than to a healthy client's: this node exists
 # for clients that have become slow, and giving up early on one strands the fleet a player
 # short.
+
+RELOG_SHOP_APPEAR_TIMEOUT = 5.0
+# How long the relog node watches for the crowns shop once a character is back in the world.
+# The game opens it on the first login of the day, and not always at once: a read taken the
+# moment the world is readable can come before it and miss it. Every relog pays this, since
+# a login that will not open the shop looks the same as one that has not yet; the players
+# relog in parallel, so it is paid once per relog, not once per player.
 
 RELOG_WATCH_INTERVAL = 60.0
 # How often a running bot checks whether a relog is due and samples each client's
@@ -499,6 +513,13 @@ GROUP_PROFILE_TIMEOUT = 6.0
 # Ceiling on waiting for a friend's profile popup to appear after their row is clicked in
 # the friends list. Polled rather than slept through: the popup is drawn locally with no
 # server round-trip, so it is normally up within a frame or two and the wait ends there.
+
+GROUP_PROFILE_SETTLE_TIMEOUT = 2.0
+# Ceiling on waiting for the profile popup's buttons to stop moving before Invite to Group
+# is clicked (#280). The popup reads as visible before its ButtonLayout has closed up the
+# gaps its hidden buttons leave, so the first positions read can be a slot or two low, and
+# a click aimed at them lands on the button below. Two reads a POLL_INTERVAL apart that
+# agree end the wait; a settled popup costs one interval. On timeout the click goes ahead.
 
 GROUP_JOIN_HINT_TIMEOUT = 3.0
 # Ceiling on waiting for the game to open the social window by itself on an invited client

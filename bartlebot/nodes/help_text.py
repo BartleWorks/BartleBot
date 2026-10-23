@@ -37,6 +37,12 @@ ARRIVAL_NOTE = (
     "every player on the others' friends lists."
 )
 
+#: How Entity IDs match, on every node that takes them.
+ENTITY_ID_MATCHING = (
+    "Each must be a whole ID, in any case, so Stone never collects Sandstone. Use * and ? to match a "
+    "pattern, such as *Stone*."
+)
+
 #: Where an author finds a UI path for a param that takes one.
 UI_PATH_NOTE = "Copy UI paths from the UI Tree Browser."
 

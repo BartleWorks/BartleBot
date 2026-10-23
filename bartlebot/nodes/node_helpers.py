@@ -11,7 +11,7 @@ from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from wizwalker import Keycode, MemoryReadError
+from wizwalker import ExceptionalTimeout, Keycode, MemoryReadError
 from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     FRIENDS_LIST_WINDOW_NAME,
@@ -29,6 +30,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     LARGE_FRIENDS_LIST_WINDOW_NAME,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_LEFT,
     MESSAGE_BOX_RIGHT,
     TELEPORT_TIMER_PATH,
 )
@@ -46,6 +48,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
+    ZONE_READABLE_TIMEOUT,
     ZONE_SETTLE_GRACE,
 )
 from bartlebot.options import player_realms
@@ -242,7 +245,7 @@ class ModalOutcome(NamedTuple):
 _NOTHING = ModalOutcome(answered=False)
 
 
-async def resolve_modal(client) -> ModalOutcome:
+async def resolve_modal(client, *, recognized_only: bool = False) -> ModalOutcome:
     """Answer whatever modal is on screen.
 
     The one call a node needs while waiting for something the game may be holding behind a
@@ -262,10 +265,16 @@ async def resolve_modal(client) -> ModalOutcome:
     Refusals are dismissed with the right button where it exists and the center otherwise:
     a one-button refusal puts OK in the center, and a two-button one puts cancel on the
     right, which is the answer that leaves the game alone.
+
+    `recognized_only` answers only a dialog the snapshot knows, and leaves any other alone.
+    It is for a wait that goes on answering for as long as it lasts, which would otherwise
+    confirm or decline whatever the game raises meanwhile: an invitation, a request.
     """
     key = await identify_modal(client)
 
     if key is None:
+        if recognized_only:
+            return _NOTHING
         if await is_visible_by_path(client, MESSAGE_BOX_CENTER):
             await click_by_path(client, MESSAGE_BOX_CENTER)
             return ModalOutcome(answered=True)
@@ -275,10 +284,12 @@ async def resolve_modal(client) -> ModalOutcome:
         return _NOTHING
 
     if key in dialog_captions.CONFIRM_TO_PROCEED:
+        logger.debug("resolve_modal: confirming %s", key)
         await click_by_path(client, MESSAGE_BOX_CENTER)
         return ModalOutcome(answered=True)
 
     if key in dialog_captions.REFUSALS:
+        logger.debug("resolve_modal: dismissing %s", key)
         if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
             await click_by_path(client, MESSAGE_BOX_RIGHT)
         else:
@@ -288,6 +299,62 @@ async def resolve_modal(client) -> ModalOutcome:
     # Recognized, but somebody else's dialog — leave it alone rather than click blind.
     logger.debug("resolve_modal: leaving %s to its own handler", key)
     return _NOTHING
+
+
+class ModalClearance(NamedTuple):
+    """What clear_modals() found, and did.
+
+    `cleared` says nothing is blocking the screen now. Otherwise `disconnected` says the
+    client is out of the game, which is crash recovery's to deal with and was left alone, and
+    `key` names the dialog still up when the wait ran out (None for one the snapshot does not
+    know). `dismissed` is the key of every dialog it closed along the way, None for an unknown
+    one: keys only, never the caption, which can carry a wizard's name.
+    """
+
+    cleared: bool
+    disconnected: bool = False
+    key: str | None = None
+    dismissed: tuple[str | None, ...] = ()
+
+
+async def clear_modals(
+    client, timeout: float = TRIGGER_TIMEOUT, poll_interval: float = POLL_INTERVAL
+) -> ModalClearance:
+    """Close every modal on screen the way a player backs out of one, so a menu can be reached.
+
+    A modal swallows every click aimed at the screen behind it, so a node about to click
+    through a menu (the spellbook) fails on whichever dialog the game left up: the dungeon
+    exit prompt of a player that never left, a stale invitation, a refusal nobody answered.
+    The caption does not matter to this, which is the difference from resolve_modal(): that
+    one *answers* a dialog the node is waiting on, confirming a question so the action
+    proceeds. Here the node wants none of the actions, and confirming one would leave a
+    dungeon, enter another or port across realms. Cancel is always safe, so the right button
+    is pressed where the dialog has one, else the center (a one-button OK), else the left.
+
+    Rereads the caption after each click, since a box takes a moment to close and another may
+    be queued behind it. Gives up after `timeout` and says which dialog was left, so the node
+    can fail with the reason instead of a menu that "did not open". A disconnect modal is not
+    clicked: nothing on it helps, and it is the health monitor's to recover.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    dismissed: list[str | None] = []
+    while True:
+        text = await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
+        if not text:
+            return ModalClearance(cleared=True, dismissed=tuple(dismissed))
+        key = dialog_captions.identify_caption(text)
+        if key in dialog_captions.DISCONNECTS:
+            return ModalClearance(cleared=False, disconnected=True, key=key, dismissed=tuple(dismissed))
+        if loop.time() >= deadline:
+            return ModalClearance(cleared=False, key=key, dismissed=tuple(dismissed))
+        for button in (MESSAGE_BOX_RIGHT, MESSAGE_BOX_CENTER, MESSAGE_BOX_LEFT):
+            if await is_visible_by_path(client, button):
+                await click_by_path(client, button)
+                if not dismissed or dismissed[-1] != key:
+                    dismissed.append(key)
+                break
+        await asyncio.sleep(poll_interval)
 
 
 class ModalAwareRetry:
@@ -311,12 +378,13 @@ class ModalAwareRetry:
     turn a successful teleport into a timeout.
     """
 
-    def __init__(self, action_fn):
+    def __init__(self, action_fn, *, recognized_only: bool = False):
         self._action_fn = action_fn
+        self._recognized_only = recognized_only
         self.refusal: str | None = None
 
     async def __call__(self, client) -> None:
-        outcome = await resolve_modal(client)
+        outcome = await resolve_modal(client, recognized_only=self._recognized_only)
         if outcome.refusal:
             self.refusal = outcome.refusal
             return
@@ -896,6 +964,33 @@ async def find_entities_by_name(client, pattern: str) -> list:
     return await client.get_base_entities_with_predicate(entity_name_predicate(pattern))
 
 
+class Pickup(enum.Enum):
+    """How one attempt at picking up an entity in the world ended."""
+
+    #: The prompt showed, X was pressed, and the prompt went away.
+    COLLECTED = "collected"
+    #: Standing on the entity brought up no interact prompt.
+    NO_PROMPT = "no prompt"
+    #: X was pressed, and the prompt stayed.
+    NOT_DISMISSED = "not dismissed"
+
+
+async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_INTERVAL) -> Pickup:
+    """Teleport *client* onto *xyz*, press X at the prompt there, and wait for the prompt to clear.
+
+    The step collect_reagent and collect_item share. Each waits *safety_delay* for the prompt
+    and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
+    is its own case to log.
+    """
+    await client.teleport(xyz)
+    if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
+        return Pickup.NO_PROMPT
+    await client.send_key(Keycode.X, 0.1)
+    if not await poll_until(lambda: none_in_npc_range([client]), safety_delay, poll_interval):
+        return Pickup.NOT_DISMISSED
+    return Pickup.COLLECTED
+
+
 def zone_matches(actual: str, pattern: str) -> bool:
     """Return True when actual matches pattern.
 
@@ -957,6 +1052,26 @@ async def wait_for_zone(
     if await poll_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
         return None
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
+
+
+async def read_zones(
+    clients: list, timeout: float = ZONE_READABLE_TIMEOUT, poll_interval: float = POLL_INTERVAL
+) -> list[str | None]:
+    """Every client's zone_name(), waiting up to *timeout* for each to be readable.
+
+    A client between zones, or not logged in, has no zone: zone_name() is None. That says
+    nothing about where it is going, so a comparison against it (or against another None)
+    proves nothing and is waited out here instead. Returns the last read; a client that is
+    still None after *timeout* is still unreadable, and the caller decides what that means.
+    """
+    zones: list[str | None] = []
+
+    async def readable() -> bool:
+        zones[:] = await asyncio.gather(*[c.zone_name() for c in clients])
+        return all(zones)
+
+    await poll_until(readable, timeout, poll_interval)
+    return zones
 
 
 import contextlib  # noqa: E402 -- beside the one switch that uses them
@@ -1047,8 +1162,15 @@ async def wait_for_zone_with_recovery(
     a client mid-transition is never reported as one that failed to arrive. An endless
     loading screen is ClientHealthMonitor's to call, not this loop's.
 
+    A straggler held at an instance prompt is not stuck either, and nothing else would press
+    it: leaving a dungeon asks first, and until the question is answered the zone change never
+    fires (#281). Every poll before the deadline answers the prompt of a client that is not
+    loading, as many times as it shows, and re-arms the settle grace for the screen it opens.
+    Only dialogs the snapshot knows are answered. A refusal ends the wait at once, with the
+    zones as they are, since the game has said no.
+
     Returns None on success (whether or not recovery was needed), or the list of actual
-    zone names if the deadline passed with some clients still not in `zone`.
+    zone names if the deadline passed with some clients still not in `zone`, or the game refused.
     """
     if settle_grace is None:
         settle_grace = ZONE_SETTLE_GRACE  # read here, not in the signature, so it stays tunable
@@ -1065,7 +1187,17 @@ async def wait_for_zone_with_recovery(
         behind = [c for c, z in zip(clients, zones) if not zone_matches(z, zone)]
         now = loop.time()
         # Mid-transition, not stuck: let the screen clear and re-read before judging it.
-        arriving = any(await asyncio.gather(*[c.is_loading() for c in behind]))
+        loading = await asyncio.gather(*[c.is_loading() for c in behind])
+        arriving = any(loading)
+        prompts = await _answer_waiting_prompts(
+            machine, [c for c, busy in zip(behind, loading) if not busy], now, deadline
+        )
+        if prompts is None:
+            return zones
+        if prompts:
+            settled_after = loop.time() + settle_grace
+            await asyncio.sleep(poll_interval)
+            continue
         if arriving:
             settled_after = now + settle_grace
         elif (
@@ -1081,6 +1213,23 @@ async def wait_for_zone_with_recovery(
         if not arriving and now >= deadline and now >= settled_after:
             return zones
         await asyncio.sleep(poll_interval)
+
+
+async def _answer_waiting_prompts(machine, clients: list, now: float, deadline: float) -> bool | None:
+    """Answer the instance prompt on each of `clients` that has one, while a zone wait has time left.
+
+    True when a prompt was answered, False when there was nothing to answer, None when the game
+    refused (logged here): the wait cannot succeed and should end. A read that fails is the
+    client's own business and means no prompt was answered, as a client loading in raises.
+    """
+    if not clients or now >= deadline:
+        return False
+    outcomes = await asyncio.gather(*[resolve_modal(c, recognized_only=True) for c in clients], return_exceptions=True)
+    answered = [o for o in outcomes if isinstance(o, ModalOutcome) and o.answered]
+    if refusal := next((o.refusal for o in answered if o.refusal), None):
+        machine.log(f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}", logging.WARNING)
+        return None
+    return bool(answered)
 
 
 @dataclass(frozen=True)
@@ -1197,6 +1346,16 @@ async def _port_stragglers(machine, index: int, name: str, stragglers: list, zon
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
         machine.log(f"Recovery teleport to P{index + 1} failed: it is not on every straggler's friends list")
+        return
+    except ExceptionalTimeout:
+        # A straggler that cannot open its friends list is not a dead client: a dialog over the
+        # screen swallows the click on the Friends button (#281). Raised out of here it parked
+        # the run for DEAD_CLIENT_CONFIRM_TIMEOUT. A client that did die fails the caller's next
+        # read with its own error, and is handled as one.
+        machine.log(
+            f"Recovery teleport to P{index + 1} timed out: a window may be blocking a straggler's friends list",
+            logging.WARNING,
+        )
         return
 
     if result.refusal:
@@ -1427,6 +1586,48 @@ async def press_key_until_gone(
     if still_open:
         logger.warning("Panel toggled by %s is still open after %.0fs of retries", key, timeout)
     return not still_open
+
+
+class ShopClosure(NamedTuple):
+    """What close_crowns_shop() found, and did: whether the shop was open, and whether it is shut now."""
+
+    was_open: bool
+    closed: bool
+
+
+async def close_crowns_shop(client, appear_timeout: float = 0.0, poll_interval: float = POLL_INTERVAL) -> ShopClosure:
+    """Close the crowns shop if it is open, with ESC. Never raises.
+
+    The shop is a modal over everything, so while it is up it takes every click: the
+    spellbook's, the friends list's, every close button's. It opens by itself on the first
+    login of the day, and from the wishlist button on a friend's profile, which an invite
+    click can land on (#280). ESC rather than a click, since a keypress goes to the client as
+    a whole and nothing over the shop can take it. A shop that is not open costs a read and
+    no ESC, which on an empty screen would open the game menu instead.
+
+    `appear_timeout` watches that long for a shop that is on its way, as one is just after
+    a login; the default checks once. The shop is not in the window tree at all while it is
+    closed, so a read that finds it is one that is up.
+
+    A read that fails reports the shop as not open, so the caller carries on as it would have.
+    """
+
+    async def _shown() -> bool:
+        return await is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH)
+
+    try:
+        shown = (
+            await poll_until(_shown, timeout=appear_timeout, poll_interval=poll_interval)
+            if appear_timeout > 0
+            else await _shown()
+        )
+        if not shown:
+            return ShopClosure(was_open=False, closed=True)
+        closed = await press_key_until_gone(client, Keycode.ESC, is_open=_shown)
+        return ShopClosure(was_open=True, closed=closed)
+    except Exception:
+        logger.debug("Could not close the crowns shop", exc_info=True)
+        return ShopClosure(was_open=False, closed=True)
 
 
 async def is_friends_list_open(client) -> bool:

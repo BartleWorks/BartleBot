@@ -1,0 +1,2127 @@
+{
+  "id": "cfec06e9-8506-402c-ab8b-11ad1bfdb9a3",
+  "name": "Galleries",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "5 Pollen Mote",
+      "category": "Reagents"
+    },
+    {
+      "name": "Aged Hundred Legger Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Aged Hundred Legger Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Aged Hundred Legger Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Alligator Pear",
+      "category": "Snacks"
+    },
+    {
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Angel Oak",
+      "category": "Seeds"
+    },
+    {
+      "name": "Apidae Defender's Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Archangel's Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Armor of the MouseHunter",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of the QuietBlade",
+      "category": "Robes"
+    },
+    {
+      "name": "Astral Shard",
+      "category": "Reagents"
+    },
+    {
+      "name": "Avenging Fossil",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Basilisk",
+      "category": "Spellements"
+    },
+    {
+      "name": "Baton of the Spring Hare",
+      "category": "Wands"
+    },
+    {
+      "name": "Bell Pepper Steak",
+      "category": "Snacks"
+    },
+    {
+      "name": "Berry Poundcake",
+      "category": "Snacks"
+    },
+    {
+      "name": "Besieged Burrower Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Big Holiday Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Black Cloud Carnage",
+      "category": "Wands"
+    },
+    {
+      "name": "Black Lotus",
+      "category": "Reagents"
+    },
+    {
+      "name": "Black Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Black Widow",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Blood Moss",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boo-Hooing Pumpkin Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Boom Stroganoff",
+      "category": "Snacks"
+    },
+    {
+      "name": "Boon Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Boots of the BurrowBreaker",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of the QuietBlade",
+      "category": "Boots"
+    },
+    {
+      "name": "Bowstaff of the Cherubim",
+      "category": "Wands"
+    },
+    {
+      "name": "Bread Fruit Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brood Mother's Lavalliere",
+      "category": "Amulets"
+    },
+    {
+      "name": "Bullheaded Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Burrower Crown of Thunder",
+      "category": "Hats"
+    },
+    {
+      "name": "Burrower Hat of Thunder",
+      "category": "Hats"
+    },
+    {
+      "name": "Burrower Robe of Ingenuity",
+      "category": "Robes"
+    },
+    {
+      "name": "Burrower Scout's Jerkin",
+      "category": "Robes"
+    },
+    {
+      "name": "Burrower's Rainstorm Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Buttered Bread",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cauliflowers",
+      "category": "Snacks"
+    },
+    {
+      "name": "Celestial Calendar",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Charred Hat of the Burn",
+      "category": "Hats"
+    },
+    {
+      "name": "Charred Mantle of the Burn",
+      "category": "Hats"
+    },
+    {
+      "name": "Chastisement",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Chimera",
+      "category": "Spellements"
+    },
+    {
+      "name": "Choke",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Christmas Elf",
+      "category": "Pets"
+    },
+    {
+      "name": "Clear Accurate Jade +9%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Health Opal +79",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Health Opal +80",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Mana Opal +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Mana Opal +36",
+      "category": "Jewels"
+    },
+    {
+      "name": "CloudDancer's Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Cold Pits Stabber",
+      "category": "Wands"
+    },
+    {
+      "name": "Cold Snap Peas",
+      "category": "Snacks"
+    },
+    {
+      "name": "Colossal Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cornbread Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Crystal Icespike",
+      "category": "Wands"
+    },
+    {
+      "name": "Crystal Spider",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Curse Giver Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cycle of Life",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dark Witch's Broomstaff",
+      "category": "Wands"
+    },
+    {
+      "name": "Dead Beet Risotto",
+      "category": "Snacks"
+    },
+    {
+      "name": "Death Scarab",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deck of Charred Shadows (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of Charred Shadows"
+    },
+    {
+      "name": "Deck of Charred Shadows (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of Charred Shadows"
+    },
+    {
+      "name": "Deck of Shadow Lightning (Square)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Lightning"
+    },
+    {
+      "name": "Deck of Shadow Lightning (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of Shadow Lightning"
+    },
+    {
+      "name": "Deck of Sinister Shadows (Square)",
+      "category": "Decks",
+      "match_name": "Deck of Sinister Shadows"
+    },
+    {
+      "name": "Deck of Sinister Shadows (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of Sinister Shadows"
+    },
+    {
+      "name": "Deck of Sinister Shadows (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of Sinister Shadows"
+    },
+    {
+      "name": "Deck of the Shadow Heart (Square)",
+      "category": "Decks",
+      "match_name": "Deck of the Shadow Heart"
+    },
+    {
+      "name": "Deck of the Shadow Heart (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of the Shadow Heart"
+    },
+    {
+      "name": "Deck of the Shadow Web (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of the Shadow Web"
+    },
+    {
+      "name": "Deck of Winter Shadows (Tear)",
+      "category": "Decks",
+      "match_name": "Deck of Winter Shadows"
+    },
+    {
+      "name": "Deck of Winter Shadows (Triangle)",
+      "category": "Decks",
+      "match_name": "Deck of Winter Shadows"
+    },
+    {
+      "name": "Deep Mushroom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Desparagus Quiche",
+      "category": "Snacks"
+    },
+    {
+      "name": "Desparagus Salad",
+      "category": "Snacks"
+    },
+    {
+      "name": "Devil's Flower Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Devil's Flower Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Digger Drone Hat of Duty",
+      "category": "Hats"
+    },
+    {
+      "name": "Digger Drone Helm of Duty",
+      "category": "Hats"
+    },
+    {
+      "name": "Digger's Boots of Symmetry",
+      "category": "Boots"
+    },
+    {
+      "name": "Digger's Brimstone Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Digger's Brimstone Plate",
+      "category": "Robes"
+    },
+    {
+      "name": "Digger's Mail of Symmetry",
+      "category": "Robes"
+    },
+    {
+      "name": "Digger's Stompers of Symmetry",
+      "category": "Boots"
+    },
+    {
+      "name": "Discord Grape Jelly",
+      "category": "Snacks"
+    },
+    {
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dr. Von's Monster",
+      "category": "Spellements"
+    },
+    {
+      "name": "Draconium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Efreet",
+      "category": "Spellements"
+    },
+    {
+      "name": "Egg Hunter's Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Enfeeble",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Enfeeble (-All)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Evil Magma Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Extraordinary Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Face Palm",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fallen Knight Death Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Fallen Knight Death Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "FateSailor's Exalted Steel",
+      "category": "Athames"
+    },
+    {
+      "name": "FateSailor's Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Fifth Column's Protection",
+      "category": "Robes"
+    },
+    {
+      "name": "Fire Beetle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Blossom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Fire Dragon",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire-Proof Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flaming Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flying Squirrel",
+      "category": "Pets"
+    },
+    {
+      "name": "Forceful Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Forest Lord",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fossil",
+      "category": "Reagents"
+    },
+    {
+      "name": "Freddo Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Frost Giant",
+      "category": "Spellements"
+    },
+    {
+      "name": "Frozen in Time Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Frozen in Time Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Furnace",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ghost Dog's Samoorai Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Giant Spider",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gloom Dancer's Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Gloom Dancer's Talon",
+      "category": "Athames"
+    },
+    {
+      "name": "Gnomes!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Goat Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Gorge Digger's Sturdy Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Gorge Digger's Sturdy Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Gorge Excavator's Trekkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Granny Snow Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Grave Digger Drone's Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Grave Digger Drone's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Great Learner Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Greensleeves Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Gummy Humongofrog",
+      "category": "Snacks"
+    },
+    {
+      "name": "Happy Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Healthy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Heart o'Pixie Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Holiday Cookie Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Honey Bee Plant",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hooligan",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Huckleberry Muffin",
+      "category": "Snacks"
+    },
+    {
+      "name": "Huckleberry Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ice-Shot Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Kermes Fire Miner's Clogs",
+      "category": "Boots"
+    },
+    {
+      "name": "Kermes Fire Miner's Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Kermes Fire Stompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Kermes Fire Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Key Lime Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Khrysalis Boris Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Desert Shadows Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Dreamworld Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Fort Rachias Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Hive and Seek Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Hive Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Kondha Desert Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Last Wood Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Moon Cliffs Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Sardonyx Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Shadow Palace Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Khrysalis Starfall Sea Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "King Alric's Royal Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "King Artorius (Balance)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Death)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Fire)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Ice)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Life)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Myth)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Artorius (Storm)",
+      "category": "Spellements"
+    },
+    {
+      "name": "King Banana",
+      "category": "Snacks"
+    },
+    {
+      "name": "King Parsley Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Kitty Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Last Wood Defender's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Last Wood Defender's Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Last Wood Defender's Jewel",
+      "category": "Amulets"
+    },
+    {
+      "name": "Lava Lily",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leaf Shield Armor of Vigor",
+      "category": "Robes"
+    },
+    {
+      "name": "Leaf Shield Clogs of Vigor",
+      "category": "Boots"
+    },
+    {
+      "name": "Leaf Shield Ring of Ardor",
+      "category": "Rings"
+    },
+    {
+      "name": "Leaf Shield Stompers of Vigor",
+      "category": "Boots"
+    },
+    {
+      "name": "Legendary Treant (445)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Leviathan",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Long-Eared Bunny Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Lord of Winter",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lucius McTavish",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Luminous Weaver",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mago's Death's Head Set",
+      "category": "Decks"
+    },
+    {
+      "name": "Mander Minion Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mantis Boots of Patience",
+      "category": "Boots"
+    },
+    {
+      "name": "Mantis Captain's Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Mantis Captain's Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Mantis Chitin Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Mantis Cover of Frostfall",
+      "category": "Hats"
+    },
+    {
+      "name": "Mantis Cover of Readiness",
+      "category": "Hats"
+    },
+    {
+      "name": "Mantis Hat of Cold Truth",
+      "category": "Hats"
+    },
+    {
+      "name": "Mantis Hat of Readiness",
+      "category": "Hats"
+    },
+    {
+      "name": "Mantis Helm of Cold Truth",
+      "category": "Hats"
+    },
+    {
+      "name": "Mantis Hunter's Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Mantis Prophet's Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Mantis Prophet's Garb",
+      "category": "Robes"
+    },
+    {
+      "name": "Mantis Prophet's Ringlet",
+      "category": "Rings"
+    },
+    {
+      "name": "Mantis Stalkers of Secrecy",
+      "category": "Boots"
+    },
+    {
+      "name": "Mass Infection",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Medusa",
+      "category": "Spellements"
+    },
+    {
+      "name": "Melting Beeswax Case",
+      "category": "Decks"
+    },
+    {
+      "name": "Melting Cheese Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Mend Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Meowiarty Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Merle's Whisker",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mist Wood",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mithril",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mokompo Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Moon Flower",
+      "category": "Seeds"
+    },
+    {
+      "name": "Moon's Tear Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Mouse Aegis of Persistence",
+      "category": "Robes"
+    },
+    {
+      "name": "Mouse Armor of Persistence",
+      "category": "Robes"
+    },
+    {
+      "name": "Mouse Boots of Mourning",
+      "category": "Boots"
+    },
+    {
+      "name": "Mouse Knight's Footguards",
+      "category": "Boots"
+    },
+    {
+      "name": "Mouse Knight's Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Mouse Shoes of Ingenuity",
+      "category": "Boots"
+    },
+    {
+      "name": "Mouse Stompers of Ingenuity",
+      "category": "Boots"
+    },
+    {
+      "name": "Mouse Stompers of Mourning",
+      "category": "Boots"
+    },
+    {
+      "name": "Mouse Vestment of Mourning",
+      "category": "Robes"
+    },
+    {
+      "name": "Myth-Boon Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nerys Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nightshade",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Fig Bars",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ninja Pig Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Nutcracker Knight Baton",
+      "category": "Wands"
+    },
+    {
+      "name": "O'Leary Swindler",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Opaque Critical Opal +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ore",
+      "category": "Reagents"
+    },
+    {
+      "name": "Orichalcum",
+      "category": "Reagents"
+    },
+    {
+      "name": "Orthrus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pack of Frozen Souls",
+      "category": "Decks"
+    },
+    {
+      "name": "Participation Trophy",
+      "category": "Reagents"
+    },
+    {
+      "name": "Pierce",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Piercemonger Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polar Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Polished Accurate Amethyst +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Ruby +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Amethyst +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Citrine +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Jade +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Jade +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Onyx +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Peridot +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Ruby +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Ruby +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Sapphire +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Hematite +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Amethyst +42",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Hematite +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Opal +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Peridot +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Sapphire +43",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +91",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +94",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +95",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Mana Opal +37",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Peridot +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished PIP Opal +9%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Power Nova",
+      "category": "Spellements"
+    },
+    {
+      "name": "Prickly Bear Punch",
+      "category": "Snacks"
+    },
+    {
+      "name": "Punishment",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Purloin Health Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ra",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rackum's Blade of Deceit",
+      "category": "Athames"
+    },
+    {
+      "name": "Rain of Fire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rat Illusionist",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Rattlebones Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rebirth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Mandrake",
+      "category": "Reagents"
+    },
+    {
+      "name": "Relic of the Ruined Forest",
+      "category": "Athames"
+    },
+    {
+      "name": "Reliquary",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Rye Bread Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sabertooth",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Salmonberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sanctuary",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Saw Palmetto",
+      "category": "Seeds"
+    },
+    {
+      "name": "Scarab",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scarecrow",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scorched Armor of the Burn",
+      "category": "Robes"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scrounger",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Seal of the Fifth Column",
+      "category": "Rings"
+    },
+    {
+      "name": "Seal of the Lost King",
+      "category": "Rings"
+    },
+    {
+      "name": "Seal of the WoodWard",
+      "category": "Rings"
+    },
+    {
+      "name": "Shadow of the Land's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Shadow Queen Box of Dust",
+      "category": "Decks"
+    },
+    {
+      "name": "Shadow Queen Box of Memes",
+      "category": "Decks"
+    },
+    {
+      "name": "Shadow Queen Deck of Cells",
+      "category": "Decks"
+    },
+    {
+      "name": "Shadow Queen Deck of Dust",
+      "category": "Decks"
+    },
+    {
+      "name": "Shatter",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Shh! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Tomato",
+      "category": "Snacks"
+    },
+    {
+      "name": "Silver",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sir Bedevere Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sir Lamorak Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sirens",
+      "category": "Spellements"
+    },
+    {
+      "name": "Skeletal Dragon",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sleet Storm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Angel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snow Apple Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Snowball",
+      "category": "Pets"
+    },
+    {
+      "name": "Spike of the WoodWard",
+      "category": "Athames"
+    },
+    {
+      "name": "Spiked Set",
+      "category": "Decks"
+    },
+    {
+      "name": "Spinysaur",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sprite Swarm (40+360)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Staff of Heartbeats",
+      "category": "Wands"
+    },
+    {
+      "name": "Stinger's Razor of Fortune",
+      "category": "Athames"
+    },
+    {
+      "name": "Stompers of the QuietBlade",
+      "category": "Boots"
+    },
+    {
+      "name": "Stone Block",
+      "category": "Reagents"
+    },
+    {
+      "name": "Storm Lord",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Owl",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stormrider Hare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Stuffed Bell Pepper",
+      "category": "Snacks"
+    },
+    {
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sun Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sunion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sunstone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sweet Baby Carrots",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sword Fern",
+      "category": "Seeds"
+    },
+    {
+      "name": "The Kroktop",
+      "category": "Hats"
+    },
+    {
+      "name": "The Wyrmrider",
+      "category": "Hats"
+    },
+    {
+      "name": "Tireless Digger's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Titanium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Trader's Desert Fire Choker",
+      "category": "Amulets"
+    },
+    {
+      "name": "Trumpet Vine",
+      "category": "Seeds"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
+    },
+    {
+      "name": "Turkey Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Turquoise",
+      "category": "Reagents"
+    },
+    {
+      "name": "Uni-Corn",
+      "category": "Snacks"
+    },
+    {
+      "name": "Valentine Pig",
+      "category": "Pets"
+    },
+    {
+      "name": "Vassanji Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Virulence",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "White Desparagus",
+      "category": "Seeds"
+    },
+    {
+      "name": "Wildfire Treant",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wipeout Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wizard City Dreamworld Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Woolly Mammoth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Wrath of Aquila Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wrath of Poseidon Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wrath of Zeus Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wrath's Grape Juice",
+      "category": "Snacks"
+    },
+    {
+      "name": "Yuletide Reg. Keeper Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zeus Exalted Duel",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Spellements",
+    "Housing",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Defeat Kravenly the Hunter and Ghost Dog",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to complete the first fight in Galleries. Drops gear, but NOT spellements."
+    },
+    {
+      "name": "Defeat Balor the Broken Fang and Santa Muerte",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to complete the second fight in Galleries. Drops gear, but NOT spellements."
+    },
+    {
+      "name": "Defeat Archmagus Lorcan and Lord Ombra",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to complete the third and final fight in Galleries. Drops gear AND spellements."
+    }
+  ],
+  "states": [
+    {
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Galleries",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+        "dungeon_zone": "Khrysalis/Interiors/KR_Z12_I03_Galleries",
+        "dungeon_name": "Galleries",
+        "sigil_xyz": {
+          "x": -995.73,
+          "y": -3605.18,
+          "z": 14.22
+        },
+        "reset_xyz": {
+          "x": -609.16,
+          "y": -3317.02,
+          "z": 0.0
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat Kravenly the Hunter and Ghost Dog",
+      "position": {
+        "x": 4400.0,
+        "y": 180.0
+      },
+      "params": {
+        "enemy": "KR_Lion_Warlord_A_BossfightSP",
+        "wiki_page": "Creature:Kravenly the Hunter (Gallery)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 7480.0,
+        "y": 270.0
+      },
+      "params": {
+        "from_zone": "Khrysalis/Interiors/KR_Z12_I03_Galleries",
+        "to_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+        "xyz": {
+          "x": -2297.3,
+          "y": -1107.74,
+          "z": 635.12
+        },
+        "reset_xyz": {
+          "x": -2458.81,
+          "y": -961.61,
+          "z": 635.12
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "Khrysalis/Interiors/KR_Z12_I02_Entry"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 5280.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Khrysalis/Interiors/KR_Z12_I03_Galleries",
+        "xyz": {
+          "x": -1131.81,
+          "y": 2265.03,
+          "z": 635.12
+        }
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat Balor the Broken Fang and Santa Muerte",
+      "position": {
+        "x": 5720.0,
+        "y": 90.0
+      },
+      "params": {
+        "enemy": "KR_Bear_Warlord_A_BossfightSP",
+        "wiki_page": "Creature:Balor the Broken Fang (Gallery)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Khrysalis/Interiors/KR_Z12_I03_Galleries",
+        "xyz": {
+          "x": 2366.16,
+          "y": 893.09,
+          "z": 635.12
+        }
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Archmagus Lorcan and Lord Ombra",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KR_Spider_Mage_Lorcan_BossfightSP",
+        "wiki_page": "Creature:Archmagus Lorcan (Gallery)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "handle_potions",
+      "label": "Handle Potions",
+      "position": {
+        "x": 4840.0,
+        "y": 180.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "handle_potions",
+      "label": "Handle Potions",
+      "position": {
+        "x": 6160.0,
+        "y": 90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": true
+            },
+            {
+              "option": "Defeat Archmagus Lorcan and Lord Ombra",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Archmagus Lorcan and Lord Ombra",
+              "negate": false
+            },
+            {
+              "option": "Defeat Kravenly the Hunter and Ghost Dog",
+              "negate": true
+            },
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": false
+            },
+            {
+              "option": "Defeat Kravenly the Hunter and Ghost Dog",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Kravenly the Hunter and Ghost Dog",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Archmagus Lorcan and Lord Ombra",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": true
+            },
+            {
+              "option": "Defeat Archmagus Lorcan and Lord Ombra",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Balor the Broken Fang and Santa Muerte",
+              "negate": false
+            },
+            {
+              "option": "Defeat Archmagus Lorcan and Lord Ombra",
+              "negate": false
+            }
+          ],
+          "op": "OR"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Khrysalis/Interiors/KR_Z12_I02_Entry"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  },
+  "history": [
+    "0270c145e7ac4c60b9cff930a15ae1d393f10748062bdb153a115df00e30a979",
+    "acf44e62bc8ba1d0c834bab7b069827db8f0ee8d949cdc877ce88614afee9ba9",
+    "d40d6f04518e4556a2efa3213195d193fc432479e3ca27a4a304d38ad88b1db0",
+    "55445cd91d312c2261b43f6836b60e72e7c5c7996d733ad3204701d76d015a24"
+  ]
+}
