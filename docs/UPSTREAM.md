@@ -172,13 +172,16 @@ Current pins, both on `main`:
   where they were fixed waits, and the round waits read the duel every 0.2 s, not 0.5 s.
   On top of `7900369` (`bartlebot-pin-20261021`), which polls for the friend-teleport
   confirmation.
-- **wizsprinter `6f06c87`** (`bartlebot-pin-20261021`): its test suite, including copies
-  of the `SprintyCombat` tests in `tests/wizsprinter` here, which stay as this repo's
-  guard on what it pins while the forks have no CI; each card effect read once
-  however many requirements ask about it; an enchant's fuse seen when it lands rather
-  than after a fixed `cast_time * 2`; `CombatConfigProvider.from_string`; and the
-  generator backend's unawaited round. On top of `e82212b` (`bartlebot-pin-20261018`) and
-  the feature branches before it, which `git log` and the earlier tags record.
+- **wizsprinter `3d21005`** (`bartlebot-pin-20261023`): the deck's card count read from
+  `Hand/DeckCounter/CountText` by its path, where a search of the whole UI by name read
+  another `CountText` and spent 2 s a call timing out to (0, 0), and each config text
+  parsed once however many providers are made from it. On top of `6f06c87`
+  (`bartlebot-pin-20261021`): its test suite, including copies of the `SprintyCombat`
+  tests in `tests/wizsprinter` here, which stay as this repo's guard on what it pins
+  while the forks have no CI; each card effect read once however many requirements ask
+  about it; an enchant's fuse seen when it lands rather than after a fixed
+  `cast_time * 2`; `CombatConfigProvider.from_string`; and the generator backend's
+  unawaited round. Earlier pins are in `git log` and the earlier tags.
 
 ## Remotes and identity
 
