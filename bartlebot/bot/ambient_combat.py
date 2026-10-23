@@ -315,6 +315,7 @@ class AmbientSession:
 
     async def _fight(self, run, centers, dsls: list[str], holds: dict, joins: dict) -> None:
         """Start each client's combat once it is in battle, until no one is and every task is done."""
+        await combat_runner.parse_strategies(dsls)
         while True:
             if self.machine.is_stopped:
                 return

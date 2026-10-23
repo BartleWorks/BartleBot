@@ -57,7 +57,8 @@ _WIZWALKER_LEVEL = logging.INFO
 #: wizwalker level above drops, so ``set_turn_trace`` is what lets it through.
 TURN_TRACE_LOGGER = "wizwalker.extensions.wizsprinter.turns"
 
-_FILE_FORMAT = "[%(asctime)s] [%(levelname)-7s] %(name)s: %(message)s"
+_FILE_FORMAT = "[%(asctime)s.%(msecs)03d] [%(levelname)-7s] %(name)s: %(message)s"
+_GUI_FORMAT = "[%(asctime)s] [%(levelname)-7s] %(name)s: %(message)s"
 
 
 class ShortNameFormatter(logging.Formatter):
@@ -231,7 +232,8 @@ def configure_logging() -> None:
     file_handler = logging.FileHandler(log_dir / session_name, encoding="utf-8")
     # The file carries the date. A session that starts at 21:49 and ends at 01:13 reads
     # as though it runs backwards without one, and a bare "%H:%M:%S" gives a line nothing
-    # to be lined up against anything outside the file.
+    # to be lined up against anything outside the file. The milliseconds let one line be
+    # timed against the next: a combat round lasts a few seconds.
     file_handler.setFormatter(ShortNameFormatter(_FILE_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
     file_handler.addFilter(GuiOnlyFilter())
     file_handler.addFilter(RepeatCollapsingFilter(file_handler))
@@ -239,8 +241,8 @@ def configure_logging() -> None:
     prune_session_logs(log_dir)
 
     # The widget is watched live, where the date is never in question and the column
-    # would cost width the message needs, so it keeps the time alone.
-    _gui_bridge.setFormatter(ShortNameFormatter(_FILE_FORMAT, datefmt="%H:%M:%S"))
+    # would cost width the message needs, so it keeps the time alone, to the second.
+    _gui_bridge.setFormatter(ShortNameFormatter(_GUI_FORMAT, datefmt="%H:%M:%S"))
     _gui_bridge.addFilter(RepeatCollapsingFilter(_gui_bridge))
 
     root = logging.getLogger()

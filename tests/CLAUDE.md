@@ -66,9 +66,10 @@ Two things make this less obvious than it looks:
   polls nominally cost, as `test_dungeon_warning_dialog_appears_late` now does.
 
 These bite only under load, so they pass locally and fail on a 2-core CI runner. CI runs
-`-n auto` rather than a fixed worker count for the same reason — a count picked on a
-16-core machine oversubscribes a runner 4:1 and stretches every wall-clock test until it
-breaks.
+serially, with no `-n` at all, for the same reason — even `-n auto` on a 2-core runner
+stretches the wall-clock tests until they break, and a CI run is worth more reliable than
+fast. Locally `-n auto` is still the quick gate; a failure that appears only there is a
+load flake to fix in the test.
 
 ## Not every CI-only failure is a timing one
 

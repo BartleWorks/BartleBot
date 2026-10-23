@@ -148,6 +148,45 @@ def test_missing_lists_only_clients_that_showed_nothing():
     assert result.missing(4) == [3]
 
 
+async def test_one_port_that_cannot_start_leaves_the_others_to_land():
+    """The first error used to end the whole start, and a player who had ported was
+    counted as not having started, then sent to travel there with the rest."""
+    sim = _sim()
+    landed, failed, also_landed = (
+        sim.player("Src", _FAR),
+        sim.player("Src", _FAR, port="fails"),
+        sim.player("Src", _FAR),
+    )
+
+    result = await _port(sim, [landed, failed, also_landed])
+
+    assert result.seen_loading == {0, 2}
+    assert result.unstarted == {1}
+    assert result.missing(3) == [1]
+    assert landed.where[0] == "Dst" and also_landed.where[0] == "Dst"
+
+
+async def test_no_port_that_can_start_raises():
+    sim = _sim()
+    movers = [sim.player("Src", _FAR, port="fails"), sim.player("Src", _FAR, port="fails")]
+
+    with pytest.raises(ValueError):
+        await _port(sim, movers)
+
+
+async def test_a_reissue_that_cannot_start_is_not_tried_again(fast):
+    sim = _sim()
+    straggler = sim.player("Src", _FAR, port="ignored")
+    other = sim.player("Src", _FAR)
+    sim.fail_from_call = 3  # both first ports start; the straggler's re-issue does not
+
+    result = await _port(sim, [straggler, other], ceiling=0.5)
+
+    assert result.unstarted == {0}
+    assert result.seen_loading == {1}
+    assert sim.times_ported(straggler) == 2
+
+
 # ---------------------------------------------------------------------------
 # gather_at_player
 # ---------------------------------------------------------------------------

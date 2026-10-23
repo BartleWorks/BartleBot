@@ -478,8 +478,14 @@ class TestCrownsShop:
         assert game.shop_open is False
         assert ("relog: closed the crowns shop the login opened", logging.INFO) in machine.logs
 
-    async def test_a_login_shop_that_shows_after_the_world_does_is_waited_for_and_closed(self, machine, games):
+    async def test_a_login_shop_that_shows_after_the_world_does_is_waited_for_and_closed(
+        self, machine, games, monkeypatch
+    ):
         """Read once, the moment the world was readable, this shop was missed."""
+        # The fixture's 50 ms ceiling holds the shop's six reads only at a 1 ms timer tick;
+        # on Windows' default 15.6 ms one, three fit and the shop was never seen. The wait
+        # ends when the shop shows, so a wide ceiling costs this test nothing.
+        monkeypatch.setattr(relog_node, "RELOG_SHOP_APPEAR_TIMEOUT", 2.0)
         clients, (game,) = games({"shop_on_login": True, "shop_login_lag": 5})
         assert await relog_node.run(machine, clients, {}) == "SUCCESS"
         assert game.shop_escapes == 1

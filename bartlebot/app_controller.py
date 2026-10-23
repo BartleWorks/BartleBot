@@ -15,7 +15,7 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.bot import variables
+from bartlebot.bot import run_trace, variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
 from bartlebot.clients import group_manager, recovery_readiness, run_probe
@@ -3065,13 +3065,14 @@ class AppController(QObject):
         self._window.left_sidebar.set_bot_running(True)
         self._hotkeys.set_armed(False)
         self._slot_hotkeys.set_armed(False)
+        run_trace.start(self._player_number)
         try:
             # A run walks at the game's own speed and fights through its own nodes.
             await self._authoring.suspend_for_run()
             # Inside the try so the finally still tears down if the user stops during
             # a slow apply, and after add_gui_callback so failures reach this run's
             # log panel rather than the previous run's. Its own task, so Stop can cancel it.
-            self._pre_run = asyncio.ensure_future(self._run_pre_run_setup())
+            self._pre_run = asyncio.ensure_future(run_trace.traced(self._run_pre_run_setup(), "pre_run"))
             try:
                 await self._pre_run
             except asyncio.CancelledError:
@@ -3096,6 +3097,7 @@ class AppController(QObject):
                 )
                 await machine.run()
         finally:
+            run_trace.stop()
             self._window.bot_canvas.set_idle()
             self._window.right_sidebar.clients.set_bot_running(False)
             self._window.left_sidebar.set_bot_running(False)
@@ -3115,10 +3117,19 @@ class AppController(QObject):
         either — this runs inside the _start_bot asyncio task, where a modal .exec()
         deadlocks the qasync loop under Python 3.13 (see CLAUDE.md).
         """
-        await self._exit_pre_run_freecam()
-        await self._apply_pre_run_decks()
-        states = await self._form_pre_run_group()
-        await self._survey_pre_run_ports(states)
+        with run_trace.span("pre_run.freecam"):
+            await self._exit_pre_run_freecam()
+        with run_trace.span("pre_run.decks"):
+            await self._apply_pre_run_decks()
+        with run_trace.span("pre_run.group"):
+            states = await self._form_pre_run_group()
+        with run_trace.span("pre_run.port_survey"):
+            await self._survey_pre_run_ports(states)
+
+    def _player_number(self, client) -> int | None:
+        """*client*'s player number, P1 first, or None for one not hooked. For the run trace."""
+        clients = self._client_manager.clients
+        return clients.index(client) + 1 if client in clients else None
 
     async def _exit_pre_run_freecam(self) -> None:
         """Put every player's camera back on them before anything drives a client.
@@ -3178,12 +3189,15 @@ class AppController(QObject):
             # Survey once and hand the result to form_group. Each survey opens and closes
             # the social window on every client, so letting form_group re-read would
             # double the slowest and most failure-prone part of this.
-            states = await group_manager.read_group_states(clients)
+            with run_trace.span("group.read_states"):
+                states = await group_manager.read_group_states(clients)
             if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
                 logger.debug("Skipping pre-run grouping — all clients are already in one group")
                 return states
-            names = await wizard_names.resolve_names(clients)
-            result = await group_manager.form_group(clients, names, states=states)
+            with run_trace.span("group.resolve_names"):
+                names = await wizard_names.resolve_names(clients)
+            with run_trace.span("group.form"):
+                result = await group_manager.form_group(clients, names, states=states)
             if result.success:
                 logger.info("Pre-run grouping: %s", result.summary())
             else:

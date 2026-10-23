@@ -162,7 +162,14 @@ keeps a pin reachable once the feature branch it was made on is deleted.
 
 Current pins, both on `main`:
 
-- **wizwalker `8783db0`** (`bartlebot-pin-20261021b`): its test suite, `utils.poll_until`,
+- **wizwalker `53929b7`** (`bartlebot-pin-20261023c`): windows found by their paths from
+  the UI Tree Browser, not by a search of the whole UI, which is about 30 ms of reads
+  a time and takes the first window with the name (`window_at_path`, `windows_at_path`;
+  wizsprinter imports them). The combat handler, the deck builder and the friend
+  teleport use them, falling back to the old search for a layout a path does not
+  describe. On top of `b9b0ff7` (`bartlebot-pin-20261023`), which reads the chat log from
+  its tail, past `MAX_STRING`, so drops are seen again once the log grows, and `8783db0`
+  (`bartlebot-pin-20261021b`): its test suite, `utils.poll_until`,
   and a review's fixes. The ones BartleBot meets: a port to a friend from a friends list
   left on a later page went to whoever sat in that row there; `in_battle()` never
   returned before the client hook had run; `DeckBuilder.open_deck_page` never recorded
@@ -172,13 +179,19 @@ Current pins, both on `main`:
   where they were fixed waits, and the round waits read the duel every 0.2 s, not 0.5 s.
   On top of `7900369` (`bartlebot-pin-20261021`), which polls for the friend-teleport
   confirmation.
-- **wizsprinter `6f06c87`** (`bartlebot-pin-20261021`): its test suite, including copies
-  of the `SprintyCombat` tests in `tests/wizsprinter` here, which stay as this repo's
-  guard on what it pins while the forks have no CI; each card effect read once
-  however many requirements ask about it; an enchant's fuse seen when it lands rather
-  than after a fixed `cast_time * 2`; `CombatConfigProvider.from_string`; and the
-  generator backend's unawaited round. On top of `e82212b` (`bartlebot-pin-20261018`) and
-  the feature branches before it, which `git log` and the earlier tags record.
+- **wizsprinter `7be91be`** (`bartlebot-pin-20261023c`): the Draw button and the pet card
+  found by their paths under the planning phase's window, where a grayed Draw found
+  first ended a draw that should have gone ahead; its suite runs against wizwalker
+  `53929b7`. On top of `3d21005` (`bartlebot-pin-20261023`): the deck's card count read from
+  `Hand/DeckCounter/CountText` by its path, where a search of the whole UI by name read
+  another `CountText` and spent 2 s a call timing out to (0, 0), and each config text
+  parsed once however many providers are made from it. On top of `6f06c87`
+  (`bartlebot-pin-20261021`): its test suite, including copies of the `SprintyCombat`
+  tests in `tests/wizsprinter` here, which stay as this repo's guard on what it pins
+  while the forks have no CI; each card effect read once however many requirements ask
+  about it; an enchant's fuse seen when it lands rather than after a fixed
+  `cast_time * 2`; `CombatConfigProvider.from_string`; and the generator backend's
+  unawaited round. Earlier pins are in `git log` and the earlier tags.
 
 ## Remotes and identity
 

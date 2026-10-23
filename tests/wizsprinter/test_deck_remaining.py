@@ -17,6 +17,7 @@ from types import SimpleNamespace
 
 import pytest
 from lark import Lark
+from wizwalker.extensions.wizsprinter import sprinty_combat
 from wizwalker.extensions.wizsprinter.combat_backends.combat_api import (
     ComparisonOp,
     Condition,
@@ -27,6 +28,7 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
     TreeToConfig,
     get_sprinty_grammar,
 )
+from wizwalker.extensions.wizsprinter.combat_backends.config_backend import CombatConfigProvider
 from wizwalker.extensions.wizsprinter.sprinty_combat import SprintyCombat, parse_card_count
 
 
@@ -65,22 +67,97 @@ def test_a_label_without_two_numbers_is_no_reading(text):
     assert parse_card_count(text) is None
 
 
+class _Window:
+    """A UI window: a name, its children, and the text it shows."""
+
+    def __init__(self, name: str, *children: _Window, text: str = ""):
+        self._name = name
+        self._children = list(children)
+        self.text = text
+        self.text_reads = 0
+
+    async def name(self):
+        return self._name
+
+    async def children(self):
+        return self._children
+
+    async def maybe_text(self):
+        self.text_reads += 1
+        return self.text
+
+    async def get_windows_with_name(self, name):
+        raise AssertionError(f"the whole UI was searched for {name}")
+
+
+def _ui(label: str, *, decoy: str = "<center>Pets</center>"):
+    """The planning phase's UI, with a decoy `CountText` ahead of the deck counter."""
+    counter = _Window("CountText", text=label)
+    hand = _Window("Hand", _Window("Card1"), _Window("DeckCounter", counter))
+    root = _Window(
+        "root",
+        _Window("PetCard", _Window("CountText", text=decoy)),
+        _Window(
+            "WorldView",
+            _Window(
+                "PlanningPhase",
+                _Window("Alignment", _Window("PlanningPhaseSubWindow", _Window("SpellSelection", hand))),
+            ),
+        ),
+    )
+    return root, counter
+
+
+def _combat_over(root) -> SprintyCombat:
+    return SprintyCombat(SimpleNamespace(root_window=root), SimpleNamespace(cast_time=0))
+
+
 async def test_get_card_counts_reads_a_french_label():
     """The regression end to end, through the window lookup get_card_counts makes."""
+    root, _counter = _ui("<center>Cartes</center>\n<center>13 sur 20</center>")
 
-    class _Window:
-        async def maybe_text(self):
-            return "<center>Cartes</center>\n<center>13 sur 20</center>"
+    assert await _combat_over(root).get_card_counts() == (13, 20)
 
-    class _Root:
-        async def get_windows_with_name(self, name):
-            assert name == "CountText"
-            return [_Window()]
 
-    combat = SprintyCombat.__new__(SprintyCombat)
-    combat.client = SimpleNamespace(root_window=_Root())
+async def test_the_count_is_read_from_the_deck_counter_and_not_another_count_text():
+    """A search of the whole UI read the first `CountText`, which held no count, and every
+    read waited two seconds for (0, 0). "2 of 9" is a 7-card deck with two treasure cards."""
+    root, counter = _ui("<center>Cards</center>\n<center>2 of 9</center>")
+    combat = _combat_over(root)
 
-    assert await combat.get_card_counts() == (13, 20)
+    assert await combat.get_card_counts() == (2, 9)
+    counter.text = "<center>Cards</center>\n<center>1 of 9</center>"
+    assert await combat.get_card_counts() == (1, 9)
+    assert counter.text_reads == 2
+
+
+async def test_a_label_that_will_not_read_answers_at_once_and_warns_once(caplog, monkeypatch):
+    monkeypatch.setattr(sprinty_combat, "CARD_COUNT_RETRY_INTERVAL", 0)
+    root, counter = _ui("<center>Cards</center>")
+    combat = _combat_over(root)
+
+    assert await combat.get_card_counts() == (0, 0)
+    assert await combat.get_card_counts() == (0, 0)
+    assert counter.text_reads == 2 * sprinty_combat.CARD_COUNT_READS
+    assert len([r for r in caplog.records if "card count" in r.getMessage()]) == 1
+
+
+async def test_a_path_that_branches_backs_out_of_the_branch_that_does_not_complete_it():
+    target = _Window("C")
+    root = _Window("root", _Window("A", _Window("B")), _Window("A", _Window("B", target)))
+
+    assert await sprinty_combat.window_at_path(root, ("A", "B", "C")) is target
+    assert await sprinty_combat.window_at_path(root, ("A", "X")) is None
+
+
+def test_a_config_text_is_parsed_once():
+    text = "{1} pass\npass"
+    first = CombatConfigProvider.from_string(text)
+    second = CombatConfigProvider.from_string(text, cast_time=0.5)
+
+    assert first.config is second.config
+    assert second.cast_time == 0.5
+    assert CombatConfigProvider.from_string("pass").config is not first.config
 
 
 # ---------------------------------------------------------------------------

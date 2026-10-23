@@ -1190,10 +1190,10 @@
   ],
   "variables": [
     {
-      "name": "Next Sword to Check",
+      "name": "Next Search Point",
       "type": "int",
       "initial": 1,
-      "description": "The index (1-based) of the next sword spawn location to check. Written after each time a location is checked."
+      "description": "The search point (1-4, A to D) to search next. It stays on a point that just gave up a sword, since that point may hold another, and moves to the next when a point has none."
     },
     {
       "name": "Swords Found",
@@ -1303,7 +1303,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 14960.0,
+        "x": 12760.0,
         "y": 0.0
       },
       "params": {
@@ -1373,28 +1373,23 @@
     },
     {
       "id": "state_12",
-      "node_type": "interact",
-      "label": "Check first sword location",
+      "node_type": "collect_item",
+      "label": "Search for a sword at point A",
       "position": {
         "x": 3960.0,
         "y": 0.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 2243.97,
-          "y": 2538.5,
-          "z": 244.1
-        },
-        "reset_xyz": {
-          "x": 2683.19,
-          "y": 2714.81,
+        "xyz": {
+          "x": 4405.64,
+          "y": 4958.34,
           "z": 243.83
         },
-        "interact_clients": [
-          1
+        "entity_names": [
+          "DM-ScholoDung-Swords-PU-*"
         ],
-        "has_dialogue": false
+        "collect_client": 1
       }
     },
     {
@@ -1402,7 +1397,7 @@
       "node_type": "interact",
       "label": "Add first sword to weapons rack",
       "position": {
-        "x": 7920.0,
+        "x": 5720.0,
         "y": 0.0
       },
       "params": {
@@ -1425,184 +1420,65 @@
     },
     {
       "id": "state_13",
-      "node_type": "interact",
-      "label": "Check second sword location",
+      "node_type": "collect_item",
+      "label": "Search for a sword at point B",
       "position": {
         "x": 4400.0,
         "y": 90.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 2526.0,
-          "y": 13652.0,
-          "z": 199.0
+        "xyz": {
+          "x": 3452.18,
+          "y": 15963.34,
+          "z": 199.63
         },
-        "reset_xyz": {
-          "x": 2101.89,
-          "y": 13113.0,
-          "z": 220.48
-        },
-        "interact_clients": [
-          1
+        "entity_names": [
+          "DM-ScholoDung-Swords-PU-*"
         ],
-        "has_dialogue": false
+        "collect_client": 1
       }
     },
     {
       "id": "state_14",
-      "node_type": "interact",
-      "label": "Check third sword location",
+      "node_type": "collect_item",
+      "label": "Search for a sword at point C",
       "position": {
         "x": 4840.0,
         "y": 180.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 4449.0,
-          "y": 17469.0,
-          "z": 199.0
+        "xyz": {
+          "x": 14074.92,
+          "y": 15300.05,
+          "z": -616.89
         },
-        "reset_xyz": {
-          "x": 4838.29,
-          "y": 17805.18,
-          "z": 199.63
-        },
-        "interact_clients": [
-          1
+        "entity_names": [
+          "DM-ScholoDung-Swords-PU-*"
         ],
-        "has_dialogue": false
+        "collect_client": 1
       }
     },
     {
       "id": "state_15",
-      "node_type": "interact",
-      "label": "Check fourth sword location",
+      "node_type": "collect_item",
+      "label": "Search for a sword at point D",
       "position": {
         "x": 5280.0,
         "y": 270.0
       },
       "params": {
         "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 7270.01,
-          "y": 6964.29,
-          "z": -617.34
+        "xyz": {
+          "x": 13041.44,
+          "y": 6054.73,
+          "z": 199.79
         },
-        "reset_xyz": {
-          "x": 7146.88,
-          "y": 6557.22,
-          "z": -618.1
-        },
-        "interact_clients": [
-          1
+        "entity_names": [
+          "DM-ScholoDung-Swords-PU-*"
         ],
-        "has_dialogue": false
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "interact",
-      "label": "Check fifth sword location",
-      "position": {
-        "x": 5720.0,
-        "y": 360.0
-      },
-      "params": {
-        "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 11921.0,
-          "y": 18383.0,
-          "z": 199.0
-        },
-        "reset_xyz": {
-          "x": 11811.82,
-          "y": 19067.36,
-          "z": 199.6
-        },
-        "interact_clients": [
-          1
-        ],
-        "has_dialogue": false
-      }
-    },
-    {
-      "id": "state_17",
-      "node_type": "interact",
-      "label": "Check sixth sword location",
-      "position": {
-        "x": 6160.0,
-        "y": 450.0
-      },
-      "params": {
-        "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 12358.0,
-          "y": 9294.0,
-          "z": 199.0
-        },
-        "reset_xyz": {
-          "x": 12636.49,
-          "y": 8695.62,
-          "z": 199.63
-        },
-        "interact_clients": [
-          1
-        ],
-        "has_dialogue": false
-      }
-    },
-    {
-      "id": "state_18",
-      "node_type": "interact",
-      "label": "Check seventh sword location",
-      "position": {
-        "x": 6600.0,
-        "y": 540.0
-      },
-      "params": {
-        "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 12978.0,
-          "y": 3366.0,
-          "z": 199.0
-        },
-        "reset_xyz": {
-          "x": 12672.84,
-          "y": 2686.74,
-          "z": 199.63
-        },
-        "interact_clients": [
-          1
-        ],
-        "has_dialogue": false
-      }
-    },
-    {
-      "id": "state_19",
-      "node_type": "interact",
-      "label": "Check eighth sword location",
-      "position": {
-        "x": 7040.0,
-        "y": 630.0
-      },
-      "params": {
-        "zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "interact_xyz": {
-          "x": 15765.0,
-          "y": 12500.0,
-          "z": -616.0
-        },
-        "reset_xyz": {
-          "x": 16338.19,
-          "y": 12872.75,
-          "z": -616.89
-        },
-        "interact_clients": [
-          1
-        ],
-        "has_dialogue": false
+        "collect_client": 1
       }
     },
     {
@@ -1610,7 +1486,7 @@
       "node_type": "interact",
       "label": "Add second sword to weapons rack",
       "position": {
-        "x": 8360.0,
+        "x": 6160.0,
         "y": 90.0
       },
       "params": {
@@ -1636,7 +1512,7 @@
       "node_type": "interact",
       "label": "Add third sword to weapons rack",
       "position": {
-        "x": 8800.0,
+        "x": 6600.0,
         "y": 180.0
       },
       "params": {
@@ -1662,7 +1538,7 @@
       "node_type": "interact",
       "label": "Add fourth sword to weapons rack",
       "position": {
-        "x": 9240.0,
+        "x": 7040.0,
         "y": 270.0
       },
       "params": {
@@ -1688,7 +1564,7 @@
       "node_type": "interact",
       "label": "Open gate",
       "position": {
-        "x": 9680.0,
+        "x": 7480.0,
         "y": 0.0
       },
       "params": {
@@ -1714,7 +1590,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Preceptor of Order",
       "position": {
-        "x": 10120.0,
+        "x": 7920.0,
         "y": 0.0
       },
       "params": {
@@ -1731,7 +1607,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Preceptor of Order",
       "position": {
-        "x": 10560.0,
+        "x": 8360.0,
         "y": 0.0
       },
       "params": {
@@ -1745,7 +1621,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11000.0,
+        "x": 8800.0,
         "y": 0.0
       },
       "params": {
@@ -1757,7 +1633,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 11440.0,
+        "x": 9240.0,
         "y": 0.0
       },
       "params": {
@@ -1774,7 +1650,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger cutscene",
       "position": {
-        "x": 11880.0,
+        "x": 9680.0,
         "y": 0.0
       },
       "params": {
@@ -1791,7 +1667,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 12320.0,
+        "x": 10120.0,
         "y": 0.0
       },
       "params": {
@@ -1803,7 +1679,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Balaur",
       "position": {
-        "x": 12760.0,
+        "x": 10560.0,
         "y": 0.0
       },
       "params": {
@@ -1818,7 +1694,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to first group of wisps",
       "position": {
-        "x": 13200.0,
+        "x": 11000.0,
         "y": 0.0
       },
       "params": {
@@ -1835,7 +1711,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 13640.0,
+        "x": 11440.0,
         "y": 0.0
       },
       "params": {
@@ -1852,7 +1728,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second group of wisps",
       "position": {
-        "x": 14080.0,
+        "x": 11880.0,
         "y": 0.0
       },
       "params": {
@@ -1869,7 +1745,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 14520.0,
+        "x": 12320.0,
         "y": 0.0
       },
       "params": {
@@ -1945,12 +1821,86 @@
     {
       "trigger": "advance",
       "source": "state_12",
-      "dest": "state_13",
-      "when": "FAILURE",
+      "dest": "state_21",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 1
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
     },
     {
       "trigger": "advance",
@@ -1963,10 +1913,123 @@
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Next Search Point",
           "op": "set",
           "value": 2
-        },
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 1
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR",
+      "assign": [
         {
           "variable": "Swords Found",
           "op": "add",
@@ -1982,11 +2045,18 @@
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
-      "flag_groups_op": "OR"
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Next Search Point",
+          "op": "set",
+          "value": 3
+        }
+      ]
     },
     {
       "trigger": "advance",
-      "source": "state_13",
+      "source": "state_14",
       "dest": "state_21",
       "when": "SUCCESS",
       "flags": [],
@@ -2006,10 +2076,33 @@
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 3
-        },
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
         {
           "variable": "Swords Found",
           "op": "add",
@@ -2019,7 +2112,35 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
+      "source": "state_14",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Swords Found",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Swords Found",
+          "op": "add",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
       "dest": "state_20",
       "when": "SUCCESS",
       "flags": [],
@@ -2027,11 +2148,6 @@
       "flag_groups": [],
       "flag_groups_op": "OR",
       "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 3
-        },
         {
           "variable": "Swords Found",
           "op": "add",
@@ -2047,105 +2163,14 @@
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_21",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 1
-            }
-          ],
-          "op": "AND"
-        }
-      ],
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
+          "variable": "Next Search Point",
           "op": "set",
           "value": 4
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
         }
       ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 2
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 4
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 4
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -2169,11 +2194,6 @@
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 5
-        },
-        {
           "variable": "Swords Found",
           "op": "add",
           "value": 1
@@ -2201,11 +2221,6 @@
       ],
       "flag_groups_op": "OR",
       "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 5
-        },
         {
           "variable": "Swords Found",
           "op": "add",
@@ -2235,11 +2250,6 @@
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 5
-        },
-        {
           "variable": "Swords Found",
           "op": "add",
           "value": 1
@@ -2257,11 +2267,6 @@
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 5
-        },
-        {
           "variable": "Swords Found",
           "op": "add",
           "value": 1
@@ -2270,428 +2275,20 @@
     },
     {
       "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_21",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 1
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 6
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 2
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 6
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_23",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 3
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 6
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 6
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_18",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_21",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 1
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 7
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 2
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 7
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_23",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 3
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 7
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 7
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_19",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 2
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 8
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_23",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 3
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 8
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 8
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_23",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Swords Found",
-              "compare": "==",
-              "value": 3
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 1
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR",
-      "assign": [
-        {
-          "variable": "Next Sword to Check",
-          "op": "set",
-          "value": 1
-        },
-        {
-          "variable": "Swords Found",
-          "op": "add",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
+      "source": "state_15",
       "dest": "state_12",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
-      "flag_groups_op": "OR"
+      "flag_groups_op": "OR",
+      "assign": [
+        {
+          "variable": "Next Search Point",
+          "op": "set",
+          "value": 1
+        }
+      ]
     },
     {
       "trigger": "advance",
@@ -2704,7 +2301,7 @@
         {
           "flags": [
             {
-              "variable": "Next Sword to Check",
+              "variable": "Next Search Point",
               "compare": "==",
               "value": 2
             }
@@ -2725,7 +2322,7 @@
         {
           "flags": [
             {
-              "variable": "Next Sword to Check",
+              "variable": "Next Search Point",
               "compare": "==",
               "value": 3
             }
@@ -2746,7 +2343,7 @@
         {
           "flags": [
             {
-              "variable": "Next Sword to Check",
+              "variable": "Next Search Point",
               "compare": "==",
               "value": 4
             }
@@ -2759,7 +2356,17 @@
     {
       "trigger": "advance",
       "source": "state_20",
-      "dest": "state_16",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2767,9 +2374,9 @@
         {
           "flags": [
             {
-              "variable": "Next Sword to Check",
+              "variable": "Next Search Point",
               "compare": "==",
-              "value": 5
+              "value": 2
             }
           ],
           "op": "AND"
@@ -2779,8 +2386,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_17",
+      "source": "state_21",
+      "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2788,14 +2395,118 @@
         {
           "flags": [
             {
-              "variable": "Next Sword to Check",
+              "variable": "Next Search Point",
               "compare": "==",
-              "value": 6
+              "value": 3
             }
           ],
           "op": "AND"
         }
       ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Search Point",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Search Point",
+              "compare": "==",
+              "value": 2
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Search Point",
+              "compare": "==",
+              "value": 3
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "variable": "Next Search Point",
+              "compare": "==",
+              "value": 4
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
@@ -2810,249 +2521,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_12",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 3
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_15",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 4
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_16",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 5
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 6
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 7
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_12",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_21",
       "dest": "state_22",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_15",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 4
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_16",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 5
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 6
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 7
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "variable": "Next Sword to Check",
-              "compare": "==",
-              "value": 8
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_12",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -3259,7 +2730,7 @@
       "flag_groups_op": "OR",
       "assign": [
         {
-          "variable": "Next Sword to Check",
+          "variable": "Next Search Point",
           "op": "set",
           "value": 1
         },
@@ -3402,18 +2873,14 @@
       "id": "e254af7e",
       "label": "Lesson of Swords",
       "members": [
-        "state_17",
         "state_22",
-        "state_19",
         "state_15",
         "state_23",
         "state_12",
         "state_13",
-        "state_16",
         "state_14",
         "state_20",
-        "state_21",
-        "state_18"
+        "state_21"
       ],
       "color": 3,
       "collapsed": true
@@ -3463,6 +2930,7 @@
     "version": 1
   },
   "history": [
+    "19cb58e0d342a3724571e786856b3fb553fdd4d50ec964076512ef5557b75db1",
     "68babe83e95bf94197831ed68a7bffd941bbaa4ea9e6073f16821bfd44706b06",
     "45f07f11f7f4e746ee3c02cee4ef0dcb7ee1b5617694687d52023c93d3ce4850",
     "9953e91dd9046ac6a4f93289ec69874ad165e4111c027ba085f3329a94b53af7",

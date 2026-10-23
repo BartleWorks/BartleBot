@@ -168,28 +168,54 @@ def test_extract_new_drops_reports_only_the_drops_added_after_a_trim():
 # ---------------------------------------------------------------------------
 
 
-async def test_snapshot_chat_caps_the_text_it_keeps():
-    """An hours-long session leaves thousands of lines; a baseline keeps only the tail."""
-    client = _client_with_chat()
-    log = "\n".join(f"line {i}" for i in range(drop_detection._SNAPSHOT_MAX_LINES * 3))
+def _chat_log(client) -> MagicMock:
+    """The chatLog window at the end of the path `_client_with_chat` builds."""
     window = client.root_window
     for _ in drop_detection._CHAT_PATH:
-        window = (await window.children())[0]
-    window.maybe_text = AsyncMock(return_value=log)
+        window = window.children.return_value[0]
+    return window
+
+
+def _hold(client, log: str) -> None:
+    """Make `client`'s chat log hold `log`, read the way wizwalker reads a tail."""
+
+    async def tail(chars: int, *, max_len: int) -> tuple[str, bool]:
+        if not 1 <= len(log) <= max_len:
+            return "", False
+        return log[-chars:], len(log) > chars
+
+    _chat_log(client).maybe_text_tail = tail
+
+
+async def test_snapshot_chat_reads_a_log_past_wizwalkers_string_bound():
+    """The chat log passes wizwalker's MAX_STRING (5,000) within a few dozen lines.
+
+    A read bounded there came back "" from then on, and every fight logged no drops.
+    """
+    client = _client_with_chat()
+    log = "\n".join(_drop_line(f"Item {i}") for i in range(200))
+    assert len(log) > 5_000
+    _hold(client, log)
+
+    assert await drop_detection.snapshot_chat(client) == log
+
+
+async def test_snapshot_chat_reads_only_the_tail_and_starts_on_a_whole_line():
+    """An hours-long session leaves thousands of lines; a baseline keeps only the tail."""
+    client = _client_with_chat()
+    log = "\n".join(f"line {i}" for i in range(drop_detection._SNAPSHOT_MAX_CHARS // 3))
+    _hold(client, log)
 
     snapshot = await drop_detection.snapshot_chat(client)
 
-    lines = snapshot.split("\n")
-    assert len(lines) == drop_detection._SNAPSHOT_MAX_LINES
-    assert lines[-1] == f"line {drop_detection._SNAPSHOT_MAX_LINES * 3 - 1}"
+    assert len(snapshot) < drop_detection._SNAPSHOT_MAX_CHARS
+    assert log.endswith("\n" + snapshot)
+    assert snapshot.split("\n")[-1] == f"line {drop_detection._SNAPSHOT_MAX_CHARS // 3 - 1}"
 
 
 async def test_snapshot_chat_leaves_a_short_log_alone():
     client = _client_with_chat()
-    window = client.root_window
-    for _ in drop_detection._CHAT_PATH:
-        window = (await window.children())[0]
-    window.maybe_text = AsyncMock(return_value="a\nb\nc")
+    _hold(client, "a\nb\nc")
 
     assert await drop_detection.snapshot_chat(client) == "a\nb\nc"
 
@@ -198,13 +224,15 @@ async def test_a_capped_baseline_still_diffs_against_the_next_snapshot():
     """The cap must not make consecutive snapshots look unrelated.
 
     Capping keeps the *tail*, and new announcements arrive at the tail, so the overlap
-    the diff needs is exactly the part that is kept.
+    the diff needs is exactly the part that is kept. Each read begins at a different
+    point in a line, which is why the partial line is left out.
     """
-    cap = drop_detection._SNAPSHOT_MAX_LINES
-    full_before = "\n".join(f"line {i}" for i in range(cap * 3))
-    full_after = "\n".join([*(f"line {i}" for i in range(cap * 3)), _drop_line("Mandrake")])
+    lines = [f"line {i}" for i in range(drop_detection._SNAPSHOT_MAX_CHARS // 3)]
+    client = _client_with_chat()
 
-    before = drop_detection._tail(full_before)
-    after = drop_detection._tail(full_after)
+    _hold(client, "\n".join(lines))
+    before = await drop_detection.snapshot_chat(client)
+    _hold(client, "\n".join([*lines, _drop_line("Mandrake")]))
+    after = await drop_detection.snapshot_chat(client)
 
     assert drop_detection.extract_new_drops(before, after) == ["Mandrake"]

@@ -33,6 +33,7 @@ class PortSim:
     * ``"ignored"`` -- never registers: no loading screen, no movement.
     * ``"ignored_once"`` -- the first does not register, the next does.
     * ``"lost"`` -- loads, and lands somewhere other than the target.
+    * ``"fails"`` -- cannot start: raises ValueError, as a friend not found does.
 
     Each player's entity list follows the simulation too, as the game's does (#130): it holds
     every player in its zone and realm within SIGHT_RANGE, and nobody while it is loading.
@@ -94,6 +95,8 @@ class PortSim:
         self.ported.append(client)
         if self.fail_from_call is not None and len(self.ported) >= self.fail_from_call:
             raise ValueError("Could not find friend matching the name")
+        if client.port == "fails":
+            raise ValueError("Go To Friend brought up no box")
         if client.port == "ignored":
             return
         if client.port == "ignored_once":
