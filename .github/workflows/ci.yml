@@ -34,9 +34,8 @@ jobs:
         run: uv run ruff format --check
 
       - name: Test
-        # -n auto, not a fixed count: GitHub runners have far fewer cores than a
-        # dev machine, and oversubscribing them stretches the suite's few
-        # wall-clock-sensitive tests until they fail.
+        # Serial, not -n auto: the suite's wall-clock-sensitive tests flake under
+        # parallel load, and a CI run is worth more reliable than fast.
         # Coverage is reported, not gated: the number is for reading, and no
         # threshold fails the run. Source and report settings are in pyproject.toml.
-        run: uv run pytest -n auto --cov
+        run: uv run pytest --cov

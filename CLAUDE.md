@@ -38,7 +38,7 @@ canvas that some other widget took instead of the viewport.
 uv sync                 # all deps including dev
 uv run pytest           # pytest-asyncio, asyncio_mode = "auto"
 uv run pytest -n auto   # same suite in parallel
-uv run pytest -n auto --cov   # plus a coverage report; what CI runs (reported, not gated)
+uv run pytest --cov     # serial plus a coverage report; what CI runs (reported, not gated)
 uv run ruff check       # lint
 uv run ruff format      # auto-format
 uv run --group site zensical serve -f site/zensical.toml   # preview the download site
