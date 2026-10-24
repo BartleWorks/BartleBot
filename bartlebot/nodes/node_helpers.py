@@ -19,9 +19,11 @@ from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    BACKPACK_CLOSE_BUTTON_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
     CROWNS_SHOP_WINDOW_PATH,
+    DECK_CONFIGURATION_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     FRIENDS_LIST_BUTTON_PATH,
@@ -1418,8 +1420,8 @@ async def click_until_gone(
     client,
     path: list[str],
     is_open=None,
-    timeout: float = WINDOW_CLOSE_TIMEOUT,
-    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+    timeout: float | None = None,
+    poll_interval: float | None = None,
 ) -> bool:
     """Click the button at `path` until the thing it closes is gone. Returns True once it is.
 
@@ -1447,7 +1449,14 @@ async def click_until_gone(
     how many of the clicks were never sent, because the button was missing or grayed. That
     separates the two ways a close can fail: none sent means a disabled button, all sent
     means something on top took them.
+
+    `timeout` and `poll_interval` default to WINDOW_CLOSE_TIMEOUT and
+    WINDOW_CLOSE_RETRY_INTERVAL, read when called, so a test can compress them.
     """
+    if timeout is None:
+        timeout = WINDOW_CLOSE_TIMEOUT
+    if poll_interval is None:
+        poll_interval = WINDOW_CLOSE_RETRY_INTERVAL
     if is_open is None:
 
         async def is_open():
@@ -1480,6 +1489,26 @@ async def click_until_gone(
             attempts,
         )
     return not still_open
+
+
+async def is_spellbook_open(client) -> bool:
+    """Whether the spellbook is open, on any of its pages: backpack, deck, settings, realms, housing.
+
+    Read from DeckConfiguration, the spellbook window itself. Its close button is no use for
+    this, since it keeps reading visible once the window is closed (see is_visible_by_path).
+    """
+    return await is_visible_by_path(client, DECK_CONFIGURATION_PATH)
+
+
+async def close_spellbook(client) -> bool:
+    """Click the spellbook's close button until the spellbook is gone. True once it is.
+
+    One click is not reliable: straight after a quicksell sale the game dropped it and the
+    backpack stayed open, with the node reporting success. An open spellbook covers the
+    screen and takes every click aimed behind it, so a caller that leaves one open breaks
+    whatever runs next. A spellbook already closed costs one read and no click.
+    """
+    return await click_until_gone(client, BACKPACK_CLOSE_BUTTON_PATH, is_open=lambda: is_spellbook_open(client))
 
 
 async def click_window(client, window) -> bool:
@@ -1555,8 +1584,8 @@ async def press_key_until_gone(
     client,
     key: Keycode,
     is_open,
-    timeout: float = WINDOW_CLOSE_TIMEOUT,
-    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+    timeout: float | None = None,
+    poll_interval: float | None = None,
 ) -> bool:
     """Press `key` until `is_open()` reports the panel has closed. Returns True once gone.
 
@@ -1571,8 +1600,12 @@ async def press_key_until_gone(
     one on an already-closed panel reopens it.
 
     As in click_until_gone, `poll_interval` bounds how soon the next press may go out, and
-    the gap is spent polling rather than slept through.
+    the gap is spent polling rather than slept through, and both default when called.
     """
+    if timeout is None:
+        timeout = WINDOW_CLOSE_TIMEOUT
+    if poll_interval is None:
+        poll_interval = WINDOW_CLOSE_RETRY_INTERVAL
 
     async def _gone():
         return not await is_open()

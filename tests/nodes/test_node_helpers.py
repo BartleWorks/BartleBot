@@ -815,6 +815,102 @@ async def test_click_until_gone_without_a_predicate_polls_the_button_and_times_o
     assert result is False
 
 
+async def test_click_until_gone_reads_its_default_timeout_when_called(monkeypatch):
+    """A default bound at definition time would ignore a compressed WINDOW_CLOSE_TIMEOUT,
+    and every test of a close that never takes would wait the full six seconds."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    loop = asyncio.get_event_loop()
+    started = loop.time()
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(return_value=True)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(return_value=True)),
+    ):
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"])
+
+    assert result is False
+    assert loop.time() - started < 1.0
+
+
+class _Spellbook:
+    """DeckConfiguration, open until a click on its close button lands; the first `dropped` are lost."""
+
+    def __init__(self, *, dropped: int = 0, open_: bool = True):
+        self.dropped = dropped
+        self.open = open_
+        self.clicks: list = []
+
+    async def visible(self, _client, path):
+        from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH, DECK_CONFIGURATION_PATH
+
+        if path == DECK_CONFIGURATION_PATH:
+            return self.open
+        return path == BACKPACK_CLOSE_BUTTON_PATH  # the trap: the button reads visible regardless
+
+    async def click(self, _client, path):
+        self.clicks.append(path)
+        if self.dropped:
+            self.dropped -= 1
+        else:
+            self.open = False
+        return True
+
+
+async def test_close_spellbook_clicks_again_until_the_spellbook_is_gone(monkeypatch):
+    """Straight after a quicksell sale the game dropped the one close click it got."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    book = _Spellbook(dropped=2)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is True
+
+    assert book.clicks == [BACKPACK_CLOSE_BUTTON_PATH] * 3
+    assert not book.open
+
+
+async def test_close_spellbook_leaves_a_closed_spellbook_alone():
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    book = _Spellbook(open_=False)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is True
+
+    assert book.clicks == []
+
+
+async def test_close_spellbook_is_false_when_the_spellbook_stays_open(monkeypatch):
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    book = _Spellbook(dropped=10**6)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is False
+
+    assert book.open
+
+
 # ---------------------------------------------------------------------------
 # open_friends_list and the two friends-list windows
 # ---------------------------------------------------------------------------

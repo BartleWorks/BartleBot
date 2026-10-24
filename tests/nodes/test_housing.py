@@ -25,7 +25,7 @@ def _page(rows: dict[int, tuple[str, bool]], pages: list[dict] | None = None):
     exercised without a game client.
     """
     remaining = list(pages or [])
-    current = {"rows": rows}
+    current = {"rows": rows, "spellbook": True}
 
     async def get_text(client, path):
         row = int(path[-1].removeprefix("Item_"))
@@ -33,6 +33,8 @@ def _page(rows: dict[int, tuple[str, bool]], pages: list[dict] | None = None):
         return name
 
     async def is_visible(client, path):
+        if path == nh.DECK_CONFIGURATION_PATH:
+            return current["spellbook"]
         if path[-1] == "fist":
             row = int(path[-2].removeprefix("Item_"))
             return current["rows"].get(row, ("", False))[1]
@@ -46,6 +48,8 @@ def _page(rows: dict[int, tuple[str, bool]], pages: list[dict] | None = None):
     async def click(client, path):
         if path[-1] == "rightscroll" and remaining:
             current["rows"] = remaining.pop(0)
+        elif path == housing.BACKPACK_CLOSE_BUTTON_PATH:
+            current["spellbook"] = False
         return True
 
     return (
@@ -303,28 +307,103 @@ async def test_open_page_gives_up_after_its_retries(monkeypatch):
     assert _keys(client).count(housing.Keycode.U) == housing.HOUSING_OPEN_RETRIES
 
 
-async def test_close_page_clicks_the_close_button_when_there_is_one():
-    client = FakeClient()
-    enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
-    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+class _Spellbook:
+    """The spellbook as close_page sees it: open until a close lands, after `dropped` are lost."""
 
-    with enabled, click as c:
+    def __init__(self, *, close_enabled: bool = True, dropped: float = 0):
+        self.close_enabled = close_enabled
+        self.dropped = dropped
+        self.open = True
+        self.clicks: list = []
+
+    async def _visible(self, _client, path):
+        return path == nh.DECK_CONFIGURATION_PATH and self.open
+
+    async def _enabled(self, _client, path):
+        return self.close_enabled
+
+    async def _click(self, _client, path):
+        self.clicks.append(path)
+        self._lands()
+        return True
+
+    async def _key(self, *_args):
+        self._lands()
+
+    def _lands(self):
+        if self.dropped > 0:
+            self.dropped -= 1
+        else:
+            self.open = False
+
+    def patches(self, client):
+        client.send_key.side_effect = self._key
+        return (
+            patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=self._visible)),
+            patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=self._enabled)),
+            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self._click)),
+        )
+
+
+def _fast_close(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001)
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.5)
+
+
+async def test_close_page_clicks_the_close_button_when_there_is_one(monkeypatch):
+    _fast_close(monkeypatch)
+    client = FakeClient()
+    book = _Spellbook()
+    visible, enabled, click = book.patches(client)
+
+    with visible, enabled, click:
         await housing.close_page(client)
 
-    c.assert_awaited_once_with(client, housing.BACKPACK_CLOSE_BUTTON_PATH)
+    assert book.clicks == [housing.BACKPACK_CLOSE_BUTTON_PATH]
+    assert not book.open
     client.send_key.assert_not_awaited()
 
 
-async def test_close_page_falls_back_to_esc():
+async def test_close_page_clicks_again_when_a_click_is_dropped(monkeypatch):
+    _fast_close(monkeypatch)
     client = FakeClient()
-    enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
-    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    book = _Spellbook(dropped=2)
+    visible, enabled, click = book.patches(client)
 
-    with enabled, click as c:
+    with visible, enabled, click:
         await housing.close_page(client)
 
-    c.assert_not_awaited()
+    assert book.clicks == [housing.BACKPACK_CLOSE_BUTTON_PATH] * 3
+    assert not book.open
+
+
+async def test_close_page_falls_back_to_esc(monkeypatch):
+    _fast_close(monkeypatch)
+    client = FakeClient()
+    book = _Spellbook(close_enabled=False)
+    visible, enabled, click = book.patches(client)
+
+    with visible, enabled, click:
+        await housing.close_page(client)
+
+    assert book.clicks == []
     assert _keys(client) == [housing.Keycode.ESC]
+    assert not book.open
+
+
+async def test_close_page_warns_and_returns_when_the_page_stays_open(monkeypatch, caplog):
+    """Callers check where they ended up themselves, so a stuck page is a warning, not a raise."""
+    _fast_close(monkeypatch)
+    client = FakeClient()
+    book = _Spellbook(dropped=float("inf"))
+    visible, enabled, click = book.patches(client)
+
+    with visible, enabled, click, caplog.at_level(logging.WARNING):
+        await housing.close_page(client)
+
+    assert book.open
+    assert any("still open" in r.getMessage() for r in caplog.records)
 
 
 async def test_select_castles_tab_clicks_the_tab_until_equip_item_shows():

@@ -66,7 +66,6 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import slots_in_battle
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
-    BACKPACK_CLOSE_BUTTON_PATH,
     REALM_CURRENT_NAME_PATH,
     SETTINGS_QUIT_BUTTON_PATH,
     SPELLBOOK_BUTTON_PATH,
@@ -237,8 +236,11 @@ async def _open_settings_page(machine, client) -> bool:
         ):
             if await node_helpers.is_visible_by_path(client, REALM_CURRENT_NAME_PATH) and attempt + 1 < _MENU_ATTEMPTS:
                 machine.log("relog: settings page opened on the Realms tab — reopening it", logging.DEBUG)
-                await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
-                await asyncio.sleep(POLL_INTERVAL)
+                # The reopen clicks the spellbook button, a toggle: on a spellbook still open
+                # it would close it instead, so the close has to have taken first.
+                if not await node_helpers.close_spellbook(client):
+                    machine.log("relog: the spellbook did not close to be reopened", logging.WARNING)
+                    return False
                 continue
             machine.log("relog: the Quit button never appeared on the settings page", logging.WARNING)
             return False

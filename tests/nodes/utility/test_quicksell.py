@@ -327,7 +327,7 @@ class _SellScreen:
             return self.dialogs_showing > 0
         if path == qs.QUICKSELL_CONFIRM_SELL_PATH:
             return self.confirm_appears and qs.QUICKSELL_SELL_BUTTON_PATH in self.clicks
-        if path == qs.DECK_CONFIGURATION_PATH:
+        if path == node_helpers.DECK_CONFIGURATION_PATH:
             return self.backpack_open
         return True
 
@@ -357,7 +357,8 @@ class _SellScreen:
             patch.object(qs, "_is_jewel_backpack_full", new=AsyncMock(return_value=False)),
             patch.object(qs, "POLL_INTERVAL", 0),
             patch.object(node_helpers, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
-            patch.object(node_helpers, "WINDOW_CLOSE_TIMEOUT", 1.0),
+            patch.object(node_helpers, "WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001),
+            patch.object(node_helpers, "WINDOW_CLOSE_TIMEOUT", 0.5),
         ):
             return await qs.run(machine, [_full_backpack()], {})
 

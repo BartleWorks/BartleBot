@@ -20,6 +20,7 @@ from bartlebot.nodes.paths import (
     REALM_GO_TO_BUTTON_PATH,
     REALM_NEXT_PAGE_PATH,
     REALM_PREV_PAGE_PATH,
+    SPELLBOOK_BUTTON_PATH,
     realm_button_path,
     realm_name_path,
 )
@@ -49,7 +50,13 @@ class _Panel:
         self.page = page
         self.arrows_work = arrows_work
         self.current_name_text = current_name_text
+        self.spellbook_open = True
         self.clicked: list = []
+
+    async def visible(self, _client, path):
+        if path == nh.DECK_CONFIGURATION_PATH:
+            return self.spellbook_open
+        return True
 
     async def text(self, _client, path):
         if path == REALM_CURRENT_NAME_PATH:
@@ -69,6 +76,10 @@ class _Panel:
 
     async def click(self, _client, path):
         self.clicked.append(path)
+        if path == BACKPACK_CLOSE_BUTTON_PATH:
+            self.spellbook_open = False
+        elif path == SPELLBOOK_BUTTON_PATH:
+            self.spellbook_open = True
         if self.arrows_work:
             if path == REALM_NEXT_PAGE_PATH and self.page < len(self.pages) - 1:
                 self.page += 1
@@ -81,7 +92,7 @@ class _Panel:
             patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=self.text)),
             patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=self.enabled)),
             patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self.click)),
-            patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
+            patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=self.visible)),
         )
 
 

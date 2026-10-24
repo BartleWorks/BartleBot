@@ -10,7 +10,6 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
-    DECK_CONFIGURATION_PATH,
     JEWEL_INVENTORY_SPACE_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
@@ -865,19 +864,12 @@ async def _is_jewel_backpack_full(client) -> bool:
 
 
 async def _close_backpack(machine, client) -> str:
-    """Click the backpack close button until the backpack is gone. "FAILURE" if it never goes.
+    """Close the backpack (``node_helpers.close_spellbook``). "FAILURE" if it never goes.
 
-    One click is not reliable: straight after a sale the game is still busy and drops it, and
-    the node used to wait out the Safety Delay for a backpack it had left open, then report
-    success. Openness is read from the spellbook window, not the close button, which keeps
-    reading visible once its window is closed (see ``node_helpers.is_visible_by_path``).
+    Straight after a sale the game is still busy and drops a click, and the node used to
+    wait out the Safety Delay for a backpack it had left open, then report success.
     """
-    closed = await node_helpers.click_until_gone(
-        client,
-        BACKPACK_CLOSE_BUTTON_PATH,
-        is_open=lambda: node_helpers.is_visible_by_path(client, DECK_CONFIGURATION_PATH),
-    )
-    if not closed:
+    if not await node_helpers.close_spellbook(client):
         machine.log("FAILURE: the backpack did not close", logging.WARNING)
         return "FAILURE"
     return "SUCCESS"

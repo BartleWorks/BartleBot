@@ -269,9 +269,7 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
 
     current_name = await realm_list.wait_for_current_realm_name(client, safety_delay)
     if current_name and realms.matches(favorite, current_name):
-        machine.log(f"SUCCESS: already on {current_name!r}")
-        await realm_list.close_spellbook(client)
-        return "SUCCESS"
+        return await _close_and_succeed(machine, client, f"SUCCESS: already on {current_name!r}")
 
     machine.log(f"{_TAG}: anchoring to page 1", logging.DEBUG)
     if not await realm_list.navigate_to_page_1(machine, client, TRIGGER_TIMEOUT, _TAG):
@@ -288,9 +286,7 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
             if not realms.matches(favorite, name):
                 continue
             if await realm_list.is_current_realm(client, row):
-                machine.log(f"SUCCESS: already on {name!r}")
-                await realm_list.close_spellbook(client)
-                return "SUCCESS"
+                return await _close_and_succeed(machine, client, f"SUCCESS: already on {name!r}")
             return await realm_list.hop_to_row(machine, client, row, _TAG)
 
         if not await realm_list.has_next_page(client):
@@ -306,6 +302,16 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
     )
     await realm_list.close_spellbook(client)
     return "FAILURE"
+
+
+async def _close_and_succeed(machine, client, message: str) -> str:
+    """Close the spellbook, then log *message* and succeed. FAILURE if the spellbook stays open,
+    since it would take every click the next node aims behind it."""
+    if not await realm_list.close_spellbook(client):
+        machine.log("FAILURE: the spellbook did not close", logging.WARNING)
+        return "FAILURE"
+    machine.log(message)
+    return "SUCCESS"
 
 
 @dataclass
@@ -502,7 +508,6 @@ async def _to_realm_after(machine, client, favorite: str, offset: int, safety_de
             await realm_list.close_spellbook(client)
             return "FAILURE"
     if await realm_list.is_current_realm(client, target):
-        machine.log(f"SUCCESS: already on {await realm_list.row_name(client, target)!r}")
-        await realm_list.close_spellbook(client)
-        return "SUCCESS"
+        name = await realm_list.row_name(client, target)
+        return await _close_and_succeed(machine, client, f"SUCCESS: already on {name!r}")
     return await realm_list.hop_to_row(machine, client, target, _TAG)
