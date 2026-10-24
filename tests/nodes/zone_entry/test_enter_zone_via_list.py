@@ -95,6 +95,23 @@ async def test_success_entry_on_first_page():
     assert result == "SUCCESS"
 
 
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = _ready_client()
+    client.zone_name.side_effect = [None, "TestZone", "DestZone"]
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+    ):
+        result = await evl.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+
+
 async def test_success_entry_on_second_page():
     """Entry not on page 1; after one page turn it appears on page 2 → SUCCESS."""
     client = _ready_client()

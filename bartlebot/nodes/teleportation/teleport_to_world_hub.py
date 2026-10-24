@@ -69,7 +69,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"teleport_to_world_hub: target zone {zone!r}")
 
     # 1. Skip if already in hub zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if all(node_helpers.zone_matches(z, zone) for z in zones):
         machine.log("SUCCESS: clients already in hub zone")

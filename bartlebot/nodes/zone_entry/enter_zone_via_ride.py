@@ -201,7 +201,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 1. Verify every client is somewhere this ride can start or finish from.
-    zones = list(await asyncio.gather(*[c.zone_name() for c in clients]))
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Current client zones: {zones}", logging.DEBUG)
     allowed = [zone for zone in (from_zone, ride_zone, to_zone) if zone]
     if wrong := [z for z in zones if not any(node_helpers.zone_matches(z, zone) for zone in allowed)]:

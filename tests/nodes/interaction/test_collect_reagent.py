@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from wizwalker import XYZ
 
 import bartlebot.nodes.interaction.collect_reagent as cr
-from tests.conftest import FakeClient, FakeEntity, FakeMachine
+from tests.conftest import FakeClient, FakeEntity, FakeMachine, zone_unreadable_at_first
 
 _ENTITY_NAME = "FungusWort"
 _PARAMS = {"zone": "TestZone", "entity_names": [_ENTITY_NAME]}
@@ -47,6 +47,18 @@ async def test_wrong_zone_fails():
 
     assert result == "FAILURE"
     client.teleport.assert_not_called()
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, _PARAMS["zone"])
+    machine = FakeMachine()
+
+    # Blank names fail the step after the zone check, which is what shows the check passed.
+    await cr.run(machine, [client], {**_PARAMS, "entity_names": []})
+
+    assert [msg for msg, _ in machine.logs if msg.startswith("FAILURE")] == ["FAILURE: entity_names is empty"]
 
 
 async def test_blank_entity_names_fails():

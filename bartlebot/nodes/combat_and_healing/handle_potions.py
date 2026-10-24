@@ -207,7 +207,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "SUCCESS"
 
     # 4. Check buying_clients zones.
-    zones = await asyncio.gather(*[c.zone_name() for c in buying_clients])
+    zones = await node_helpers.read_zones(buying_clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Buying client zones: {list(zones)}", logging.DEBUG)
 
     # 4a. Commons shortcut: all buying clients are already at Hilda's location —

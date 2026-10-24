@@ -6,6 +6,7 @@ is the case that used to toggle a freshly set mark straight off again.
 """
 
 import asyncio
+import logging
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, patch
 
@@ -15,7 +16,7 @@ from wizwalker import XYZ
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.mark_location as ml
 from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
 _PARAMS = {
@@ -151,6 +152,17 @@ async def test_wrong_zone_returns_failure():
 
     assert result == "FAILURE"
     client.teleport.assert_not_called()
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = _ready_client()
+    zone_unreadable_at_first(client, _ZONE)
+
+    with _game({client: _Hud(client)}):
+        result = await ml.run(_machine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
 
 
 async def test_one_client_wrong_zone_fails():
@@ -397,6 +409,28 @@ async def test_a_mark_is_remembered_for_the_rest_of_the_run():
     assert mark.zone == _ZONE
     assert (mark.position.x, mark.position.y, mark.position.z) == (0.0, 0.0, 0.0)
     assert ml.marked_at(machine, _ready_client()) is None
+
+
+async def test_a_mark_is_remembered_by_its_zone_once_that_is_readable():
+    """A mark kept with a None zone could never match a recall, so the zone is waited for (#282)."""
+    machine, client = _machine(), _ready_client()
+    zone_unreadable_at_first(client, _ZONE)
+
+    with _game({client: _Hud(client)}):
+        assert await ml.mark_client(machine, client) is True
+
+    assert ml.marked_at(machine, client).zone == _ZONE
+
+
+async def test_a_mark_whose_zone_never_turns_readable_is_not_remembered():
+    machine, client = _machine(), _ready_client()
+    client.zone_name.return_value = None
+
+    with _game({client: _Hud(client)}):
+        assert await ml.mark_client(machine, client) is False
+
+    assert ml.marked_at(machine, client) is None
+    assert any("zone could not be read" in msg and level == logging.WARNING for msg, level in machine.logs)
 
 
 async def test_a_spot_already_marked_this_run_is_not_marked_again():

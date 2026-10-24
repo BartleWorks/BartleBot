@@ -7,7 +7,7 @@ from wizwalker import Keycode
 
 import bartlebot.nodes.interaction.open_skeleton_key_door as door_node
 import bartlebot.nodes.node_helpers as _nh
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 
 _PARAMS = {
     "zone": "TestZone",
@@ -143,6 +143,13 @@ async def test_a_player_outside_the_zone_fails_before_moving_anyone():
     assert await _run(door) == "FAILURE"
     assert all(not c.teleport.called for c in door.clients)
     assert door.total_presses() == 0
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    door = _Door([5])
+    zone_unreadable_at_first(door.clients[0], _PARAMS["zone"])
+    assert await _run(door) == "SUCCESS"
 
 
 async def test_dialogue_the_door_opens_is_clicked_through():

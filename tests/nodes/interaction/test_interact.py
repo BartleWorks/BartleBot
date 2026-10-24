@@ -8,7 +8,7 @@ import pytest
 import bartlebot.nodes.interaction.interact as ix
 import bartlebot.nodes.node_helpers as _nh
 from bartlebot.nodes.paths import DECLINE_QUEST_PATH
-from tests.conftest import FakeClient, FakeMachine, prompt_at
+from tests.conftest import FakeClient, FakeMachine, prompt_at, zone_unreadable_at_first
 
 
 @pytest.fixture(autouse=True)
@@ -197,6 +197,17 @@ async def test_wrong_zone_fails():
 
     assert result == "FAILURE"
     client.teleport.assert_not_called()
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, _PARAMS["zone"])
+
+    # No interacting player, so the node succeeds as soon as its zone check passes.
+    result = await ix.run(FakeMachine(), [client], {**_PARAMS, "interact_clients": []})
+
+    assert result == "SUCCESS"
 
 
 async def test_one_client_wrong_zone_fails():

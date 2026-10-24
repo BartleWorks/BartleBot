@@ -95,7 +95,8 @@ from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEO
 
 async def _has_left_zone(client, zone: str) -> bool:
     # Through zone_matches, not !=: a client in a Challenge Mode copy of a literal from_zone,
-    # or in a zone a glob from_zone names, has not left it (#143).
+    # or in a zone a glob from_zone names, has not left it (#143). A None zone has left, as
+    # node_helpers.all_left_zone explains: this is only asked once the trigger has fired.
     return not node_helpers.zone_matches(await client.zone_name(), zone)
 
 
@@ -330,14 +331,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"enter_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in from_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, from_zone, POLL_INTERVAL):
         return "FAILURE"
 
     # A bot has to set reset_xyz, but the code paths and the zone navigation map call this

@@ -54,6 +54,17 @@ async def test_success_single_client():
     assert client.teleport.call_count == 2
 
 
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    client.zone_name.side_effect = [None, "Src", "Src", "Dst", "Dst"]
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(machine=FakeMachine(), clients=[client], params=_PARAMS)
+
+    assert result == "SUCCESS"
+
+
 async def test_success_multiple_clients():
     """All clients must teleport and arrive — verified with two clients."""
 

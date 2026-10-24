@@ -141,14 +141,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 3. Verify zone; teleport to xyz if needed.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     positions = await asyncio.gather(*[c.body.position() for c in to_mark])
@@ -228,7 +221,13 @@ async def mark_client(machine, client) -> bool:
         machine.log(f"RecallButton stayed grayed for {safety_delay}s after marking: no mark was set", logging.WARNING)
         return False
 
-    zone, position = await asyncio.gather(client.zone_name(), client.body.position())
+    # A mark kept with no zone could never be matched by a recall, so the zone is waited for.
+    (zone,), position = await asyncio.gather(
+        node_helpers.read_zones([client], poll_interval=POLL_INTERVAL), client.body.position()
+    )
+    if not zone:
+        machine.log("The mark was set, but this player's zone could not be read to remember it by", logging.WARNING)
+        return False
     _remember(machine, client, Mark(zone, position))
     return True
 

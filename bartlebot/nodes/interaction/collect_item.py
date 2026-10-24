@@ -94,13 +94,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"collect_item: zone={zone!r} entity_names={entity_names!r}")
 
     # 1. Zone check.
-    zones = await node_helpers.read_zones(clients)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     # 2. Validate params.

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_world_hub as gwh
 from bartlebot.nodes.paths import HUB_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
-from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.conftest import FakeClient, FakeMachine, message_box_patches, zone_unreadable_at_first
 
 _ZONE = "WizardCity/WC_Hub"
 _PARAMS = {"zone": _ZONE}
@@ -39,6 +39,19 @@ async def test_already_in_zone_returns_success():
 
     assert result == "SUCCESS"
     client.send_key.assert_not_called()
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_sent_to_the_hub():
+    """Just off a loading screen the zone reads None for a moment (#282): it is in the hub already."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, _ZONE)
+    click = AsyncMock(return_value=True)
+
+    with _BUTTON_ENABLED, patch.object(nh, "click_by_path", new=click):
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    click.assert_not_awaited()
 
 
 async def test_already_in_zone_multiple_clients():

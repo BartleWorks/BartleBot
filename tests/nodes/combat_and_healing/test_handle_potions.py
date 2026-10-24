@@ -10,7 +10,7 @@ import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.wizard_city as wc
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.zone_entry import enter_zone
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 
 # ── Zone aliases ─────────────────────────────────────────────────────────────
 DORM = hp.DORM_ZONE
@@ -177,6 +177,18 @@ async def test_everyone_has_potions_no_refill():
 async def test_mark_zone_correct_proceeds():
     """Buying client in the specified mark_zone → precondition passes → SUCCESS."""
     client = _depleted_client(zone="MyDungeon")
+    params = {**_PARAMS, "mark_zone": "MyDungeon"}
+
+    with _MARK_OK, _HOME_OK, _ZONES_OK, _SHOP_FN_OK, _BUY_OK, _RECALL_OK:
+        result = await hp.run(_machine(), [client], params)
+
+    assert result == "SUCCESS"
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = _depleted_client()
+    zone_unreadable_at_first(client, "MyDungeon")
     params = {**_PARAMS, "mark_zone": "MyDungeon"}
 
     with _MARK_OK, _HOME_OK, _ZONES_OK, _SHOP_FN_OK, _BUY_OK, _RECALL_OK:
