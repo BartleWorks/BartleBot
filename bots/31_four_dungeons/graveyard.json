@@ -1,7 +1,6 @@
 {
-  "id": "28180367-db5b-476b-8404-87048baa68d6",
+  "id": "6ba4a422-eaa1-4834-9c7a-b21242fc5201",
   "name": "Graveyard",
-  "description": "Endlessly farms Graveyard in Castle Darkmoor.",
   "version": "1.0",
   "clients": "all",
   "initial": "t_sync_players_1_state_2",
@@ -16,6 +15,14 @@
       "category": "Snacks"
     },
     {
+      "name": "Amber",
+      "category": "Reagents"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
       "name": "Angel Oak",
       "category": "Seeds"
     },
@@ -26,6 +33,38 @@
     {
       "name": "Animate Onyx",
       "category": "Jewels"
+    },
+    {
+      "name": "Arcana of Kan Davasi",
+      "category": "Decks"
+    },
+    {
+      "name": "Arcana of Neverwhere",
+      "category": "Decks"
+    },
+    {
+      "name": "Arcana of the Outer Void",
+      "category": "Decks"
+    },
+    {
+      "name": "Armament of the Grotesque",
+      "category": "Wands"
+    },
+    {
+      "name": "Armor of Carpathesian Fury",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of the Cold Hearted",
+      "category": "Robes"
+    },
+    {
+      "name": "Arms of the Ceaseless Watch",
+      "category": "Wands"
+    },
+    {
+      "name": "Array of the Daystar",
+      "category": "Decks"
     },
     {
       "name": "Astral Shard",
@@ -40,8 +79,20 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Balanceblade Talent Citrine",
+      "category": "Jewels"
+    },
+    {
       "name": "Banshee",
       "category": "Treasure Cards"
+    },
+    {
+      "name": "Battle Mage's Gear of Furor",
+      "category": "Robes"
+    },
+    {
+      "name": "Battle Mage's Helm of Furor",
+      "category": "Hats"
     },
     {
       "name": "Battlemage's Boots of Furor",
@@ -52,7 +103,15 @@
       "category": "Snacks"
     },
     {
+      "name": "Berry Poundcake",
+      "category": "Snacks"
+    },
+    {
       "name": "Big Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Big Rally Opal",
       "category": "Jewels"
     },
     {
@@ -74,6 +133,10 @@
     {
       "name": "Blackwater's Band",
       "category": "Rings"
+    },
+    {
+      "name": "Blade Flurry Amethyst",
+      "category": "Jewels"
     },
     {
       "name": "Blade of Kan Davasi",
@@ -100,12 +163,36 @@
       "category": "Reagents"
     },
     {
+      "name": "Boneplate of the Usurped",
+      "category": "Robes"
+    },
+    {
       "name": "Boom Stroganoff",
       "category": "Snacks"
     },
     {
       "name": "Boots of Carpathesian Fury",
       "category": "Boots"
+    },
+    {
+      "name": "Boots of Malistaire's Ire",
+      "category": "Boots"
+    },
+    {
+      "name": "Brace of Annihilation",
+      "category": "Wands"
+    },
+    {
+      "name": "Brace of the Burning Gaze",
+      "category": "Wands"
+    },
+    {
+      "name": "Braided Vine",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
       "name": "Bread Fruit Fruit",
@@ -128,12 +215,32 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Brimstone Torc of Darkmoor",
+      "category": "Amulets"
+    },
+    {
+      "name": "Bronze",
+      "category": "Reagents"
+    },
+    {
       "name": "Bronze Gear",
       "category": "Reagents"
     },
     {
       "name": "Canny Opal",
       "category": "Jewels"
+    },
+    {
+      "name": "Cards of the Blue Ague",
+      "category": "Decks"
+    },
+    {
+      "name": "Cards of the Walking Dead",
+      "category": "Decks"
+    },
+    {
+      "name": "Carpathesian Helm of Fury",
+      "category": "Hats"
     },
     {
       "name": "Castle Darkmoor Footwraps",
@@ -152,6 +259,10 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Chipped Mana Opal +11",
+      "category": "Jewels"
+    },
+    {
       "name": "Chipped PIP Opal +1%",
       "category": "Jewels"
     },
@@ -168,6 +279,30 @@
       "category": "Jewels"
     },
     {
+      "name": "Clear Damage Opal +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Defense Peridot +40",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Health Opal +84",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Health Opal +85",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clock Spider Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
       "name": "Cold Snap Peas",
       "category": "Snacks"
     },
@@ -178,6 +313,10 @@
     {
       "name": "Cornbread Fruit",
       "category": "Snacks"
+    },
+    {
+      "name": "Cowl of Undying Malistaire",
+      "category": "Hats"
     },
     {
       "name": "Cracked Defense Amethyst +12",
@@ -212,11 +351,19 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Dark Sprite Onyx",
+      "category": "Jewels"
+    },
+    {
       "name": "Dark Tribute",
       "category": "Treasure Cards"
     },
     {
       "name": "Darkmoor Armor of Delusion",
+      "category": "Robes"
+    },
+    {
+      "name": "Darkmoor Armor of Shivers",
       "category": "Robes"
     },
     {
@@ -228,6 +375,14 @@
       "category": "Boots"
     },
     {
+      "name": "Darkmoor Frost Collar",
+      "category": "Amulets"
+    },
+    {
+      "name": "Darkmoor Helmet of Shivers",
+      "category": "Hats"
+    },
+    {
       "name": "Darkmoor Herald's Gear",
       "category": "Robes"
     },
@@ -236,8 +391,40 @@
       "category": "Hats"
     },
     {
+      "name": "Darkmoor's Brimstone Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Darkmoor's Case of Scrutiny",
+      "category": "Decks"
+    },
+    {
       "name": "Dead Beet Risotto",
       "category": "Snacks"
+    },
+    {
+      "name": "Death Lord's Cloak of Woe",
+      "category": "Robes"
+    },
+    {
+      "name": "Death Lord's Greaves of Woe",
+      "category": "Boots"
+    },
+    {
+      "name": "Death Lord's Veil of Woe",
+      "category": "Hats"
+    },
+    {
+      "name": "Death Mask of the Usurped",
+      "category": "Hats"
+    },
+    {
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deck of Unchecked Passion",
+      "category": "Decks"
     },
     {
       "name": "Deep Mushroom",
@@ -260,6 +447,10 @@
       "category": "Robes"
     },
     {
+      "name": "Depths of Darkmoor Stalkers",
+      "category": "Boots"
+    },
+    {
       "name": "Desparagus Quiche",
       "category": "Snacks"
     },
@@ -272,6 +463,10 @@
       "category": "Jewels"
     },
     {
+      "name": "Dimwood Vale Case",
+      "category": "Decks"
+    },
+    {
       "name": "Dirk of Dimwood Vale",
       "category": "Athames"
     },
@@ -282,6 +477,10 @@
     {
       "name": "Discord Grape Jelly",
       "category": "Snacks"
+    },
+    {
+      "name": "Dogged Opal",
+      "category": "Jewels"
     },
     {
       "name": "Dr. Von's Monster",
@@ -300,16 +499,36 @@
       "category": "Athames"
     },
     {
+      "name": "Drape of the Exalted One",
+      "category": "Robes"
+    },
+    {
       "name": "Dumbfound Opal",
       "category": "Jewels"
+    },
+    {
+      "name": "Duplicitous Squire's Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Dyad of the Icy Stare",
+      "category": "Wands"
     },
     {
       "name": "Edge of the Raging Daystar",
       "category": "Athames"
     },
     {
+      "name": "Embodiment of Death Charm",
+      "category": "Amulets"
+    },
+    {
       "name": "Evil Magma Soup",
       "category": "Snacks"
+    },
+    {
+      "name": "Eye of the Storm Pair",
+      "category": "Wands"
     },
     {
       "name": "Fiery Boom Shroom",
@@ -360,6 +579,14 @@
       "category": "Snacks"
     },
     {
+      "name": "Grass Post Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Gummy Bees",
+      "category": "Snacks"
+    },
+    {
       "name": "Halt Leader Opal",
       "category": "Jewels"
     },
@@ -368,7 +595,15 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Helm of Castle Darkmoor",
+      "category": "Hats"
+    },
+    {
       "name": "Helm of the Living Dead",
+      "category": "Hats"
+    },
+    {
+      "name": "Helmet of Kan Davasi Law",
       "category": "Hats"
     },
     {
@@ -380,6 +615,10 @@
       "category": "Rings"
     },
     {
+      "name": "Herald of Darkmoor's Shoes",
+      "category": "Boots"
+    },
+    {
       "name": "Hex",
       "category": "Treasure Cards"
     },
@@ -388,11 +627,39 @@
       "category": "Seeds"
     },
     {
+      "name": "Honeycombs",
+      "category": "Snacks"
+    },
+    {
+      "name": "Honeycrisp Apples",
+      "category": "Snacks"
+    },
+    {
+      "name": "HoneyDon't Melon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hood of the Cold Hearted",
+      "category": "Hats"
+    },
+    {
+      "name": "Huckleberry Muffin",
+      "category": "Snacks"
+    },
+    {
       "name": "Huckleberry Pie",
       "category": "Snacks"
     },
     {
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
+    },
+    {
       "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Eye Sapphire",
       "category": "Jewels"
     },
     {
@@ -402,6 +669,22 @@
     {
       "name": "Iron",
       "category": "Reagents"
+    },
+    {
+      "name": "Kan Davasi Medallion",
+      "category": "Amulets"
+    },
+    {
+      "name": "Kan Davasi Victor's Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Kan Davasi Victor's Greaves",
+      "category": "Boots"
+    },
+    {
+      "name": "Kan Davasi Victor's Hood",
+      "category": "Hats"
     },
     {
       "name": "Keeper of the Flame",
@@ -432,8 +715,20 @@
       "category": "Boots"
     },
     {
+      "name": "Law of Kan Davasi Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Life-Giver Jade",
+      "category": "Jewels"
+    },
+    {
       "name": "Life-Proof Jade",
       "category": "Jewels"
+    },
+    {
+      "name": "Lord of Death's Dragonstaff",
+      "category": "Wands"
     },
     {
       "name": "Lord of Death's Razor",
@@ -464,12 +759,40 @@
       "category": "Wands"
     },
     {
+      "name": "Malistaire's Boots of Flux",
+      "category": "Boots"
+    },
+    {
+      "name": "Malistaire's Cloak of Flux",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Cowl of Flux",
+      "category": "Hats"
+    },
+    {
       "name": "Mana Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mantle of the Bitter Ghost",
+      "category": "Hats"
+    },
+    {
+      "name": "Masque of the Exalted One",
+      "category": "Hats"
+    },
+    {
+      "name": "Mega-Leech Opal",
       "category": "Jewels"
     },
     {
       "name": "Melting Cheese Tree",
       "category": "Seeds"
+    },
+    {
+      "name": "Merle's Whisker",
+      "category": "Reagents"
     },
     {
       "name": "Mist Wood",
@@ -478,6 +801,10 @@
     {
       "name": "Mithril",
       "category": "Reagents"
+    },
+    {
+      "name": "Mokompo Amethyst",
+      "category": "Jewels"
     },
     {
       "name": "Moon Flower",
@@ -490,6 +817,14 @@
     {
       "name": "Morning Star of Misery",
       "category": "Wands"
+    },
+    {
+      "name": "Mote of Eternity",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nerys Citrine",
+      "category": "Jewels"
     },
     {
       "name": "Nickel",
@@ -508,6 +843,10 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
+    },
+    {
       "name": "Opaque Accurate Opal +4%",
       "category": "Jewels"
     },
@@ -518,6 +857,10 @@
     {
       "name": "Orichalcum",
       "category": "Reagents"
+    },
+    {
+      "name": "Pendant of Love's Grace",
+      "category": "Amulets"
     },
     {
       "name": "Pink Dandelion",
@@ -532,6 +875,10 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Plate of the Bitter Ghost",
+      "category": "Robes"
+    },
+    {
       "name": "Plate of the Living Dead",
       "category": "Robes"
     },
@@ -540,7 +887,55 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Polished Accurate Hematite +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Accurate Jade +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Accurate Opal +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Accurate Ruby +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Accurate Sapphire +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Citrine +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Hematite +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Jade +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Onyx +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Opal +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Ruby +11",
+      "category": "Jewels"
+    },
+    {
       "name": "Polished Critical Citrine +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Citrine +12",
       "category": "Jewels"
     },
     {
@@ -552,7 +947,19 @@
       "category": "Jewels"
     },
     {
+      "name": "Polished Critical Peridot +12",
+      "category": "Jewels"
+    },
+    {
       "name": "Polished Critical Ruby +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Hematite +42",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Ruby +22",
       "category": "Jewels"
     },
     {
@@ -568,6 +975,10 @@
       "category": "Jewels"
     },
     {
+      "name": "Polished Defense Hematite +44",
+      "category": "Jewels"
+    },
+    {
       "name": "Polished Defense Jade +43",
       "category": "Jewels"
     },
@@ -576,7 +987,27 @@
       "category": "Jewels"
     },
     {
+      "name": "Polished Defense Opal +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Opal +22",
+      "category": "Jewels"
+    },
+    {
       "name": "Polished Defense Peridot +43",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Peridot +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Ruby +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Sapphire +44",
       "category": "Jewels"
     },
     {
@@ -600,7 +1031,19 @@
       "category": "Jewels"
     },
     {
+      "name": "Polished Piercing Hematite +5%",
+      "category": "Jewels"
+    },
+    {
       "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Opal +3%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Peridot +6%",
       "category": "Jewels"
     },
     {
@@ -620,6 +1063,10 @@
       "category": "Jewels"
     },
     {
+      "name": "Power-Taker Ruby",
+      "category": "Jewels"
+    },
+    {
       "name": "Prickly Bear Punch",
       "category": "Snacks"
     },
@@ -628,8 +1075,20 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Punk Rock Candy",
+      "category": "Snacks"
+    },
+    {
       "name": "Pyrite",
       "category": "Reagents"
+    },
+    {
+      "name": "Pyrosaurus Rex Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Quarterstaff of Cold Fury",
+      "category": "Wands"
     },
     {
       "name": "Raging Blackwater's Boots",
@@ -644,12 +1103,20 @@
       "category": "Robes"
     },
     {
+      "name": "Raiment of Castle Darkmoor",
+      "category": "Robes"
+    },
+    {
       "name": "Red Huckleberries",
       "category": "Seeds"
     },
     {
       "name": "Red Mandrake",
       "category": "Reagents"
+    },
+    {
+      "name": "Relic of the Fetid Lagoon",
+      "category": "Amulets"
     },
     {
       "name": "Reliquary",
@@ -664,11 +1131,19 @@
       "category": "Rings"
     },
     {
+      "name": "Robes of Malistaire's Ire",
+      "category": "Robes"
+    },
+    {
       "name": "Rye Bread Fruit",
       "category": "Snacks"
     },
     {
       "name": "Sabatons of Frozen Furor",
+      "category": "Boots"
+    },
+    {
+      "name": "Sabatons of the Exalted One",
       "category": "Boots"
     },
     {
@@ -700,6 +1175,10 @@
       "category": "Jewels"
     },
     {
+      "name": "Set of the Malicious Spirit",
+      "category": "Wands"
+    },
+    {
       "name": "Sharp Edge of the Void",
       "category": "Athames"
     },
@@ -712,6 +1191,14 @@
       "category": "Jewels"
     },
     {
+      "name": "Shoes of the Cold Hearted",
+      "category": "Boots"
+    },
+    {
+      "name": "Shroud of Malistaire's Ire",
+      "category": "Hats"
+    },
+    {
       "name": "Signet of the Howling Wolf",
       "category": "Rings"
     },
@@ -721,6 +1208,10 @@
     },
     {
       "name": "Siphon Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sir Lamorak Ruby",
       "category": "Jewels"
     },
     {
@@ -748,6 +1239,18 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Spirit of Darkmoor's Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Spirit of Darkmoor's Hand",
+      "category": "Decks"
+    },
+    {
+      "name": "Spirit of Darkmoor's Helm",
+      "category": "Hats"
+    },
+    {
       "name": "Spirit of Darkmoor's Shoes",
       "category": "Boots"
     },
@@ -760,8 +1263,40 @@
       "category": "Jewels"
     },
     {
+      "name": "Staff of Malistaire's Frenzy",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of the Dragon's Maw",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of the Twisted Mind",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of the Undying Heart",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of the Void Stalker",
+      "category": "Wands"
+    },
+    {
+      "name": "Steal Health Talent Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
       "name": "Stone Block",
       "category": "Reagents"
+    },
+    {
+      "name": "Stone Skeleton Key",
+      "category": "Housing Items"
     },
     {
       "name": "Storm Owl",
@@ -788,6 +1323,10 @@
       "category": "Reagents"
     },
     {
+      "name": "Super-Dizzy Opal",
+      "category": "Jewels"
+    },
+    {
       "name": "Supercharge Opal",
       "category": "Jewels"
     },
@@ -806,6 +1345,10 @@
     {
       "name": "Thunderclap Spike",
       "category": "Athames"
+    },
+    {
+      "name": "Thunderous Darkmoor Hand",
+      "category": "Decks"
     },
     {
       "name": "Titanium",
@@ -828,8 +1371,24 @@
       "category": "Jewels"
     },
     {
+      "name": "Undying Malistaire's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Undying Malistaire's Tunic",
+      "category": "Robes"
+    },
+    {
       "name": "Vampire",
       "category": "Treasure Cards"
+    },
+    {
+      "name": "Vial From the Fetid Lagoon",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vine",
+      "category": "Reagents"
     },
     {
       "name": "Virge of the Bitter Ghost",
@@ -842,6 +1401,10 @@
     {
       "name": "Von Shane Family Signet",
       "category": "Rings"
+    },
+    {
+      "name": "Von Shane's Hand of Doom",
+      "category": "Decks"
     },
     {
       "name": "Water Elemental Amethyst",
@@ -868,6 +1431,10 @@
       "category": "Rings"
     },
     {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    },
+    {
       "name": "Wrath's Grape Juice",
       "category": "Snacks"
     }
@@ -875,8 +1442,7 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Dungeon",
-    "Team-Up"
+    "Dungeon"
   ],
   "options": [
     {
@@ -889,7 +1455,14 @@
         "=Wolf's Lancet of Shivers",
         "=Spirit of Darkmoor's Thorn",
         "=Dirk of Dimwood Vale",
-        "=Dragon's Talon of Tumult"
+        "=Dragon's Talon of Tumult",
+        "Flux",
+        "Victor",
+        "Undying Malistaire",
+        "Cold Hearted",
+        "Malistaire's Ire",
+        "Woe",
+        "Exalted"
       ]
     }
   ],
@@ -899,8 +1472,8 @@
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": 0.0,
-        "y": 0.0
+        "x": 1759.999938308534,
+        "y": 0.00021952501634925348
       },
       "params": {
         "relog_clients": [
@@ -916,11 +1489,28 @@
       "node_type": "sync_in_zone",
       "label": "Sync in zone",
       "position": {
-        "x": 440.0,
-        "y": 90.0
+        "x": 2199.999938308534,
+        "y": 90.00021952501635
       },
       "params": {
         "zone": "G14_DM/DM_Z06_Bridge"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_DM/DM_Z06_Bridge",
+        "xyz": {
+          "x": -32.65,
+          "y": 1962.71,
+          "z": 0.7
+        }
       }
     },
     {
@@ -928,7 +1518,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
+        "x": 2640.0,
         "y": 0.0
       },
       "params": {
@@ -942,7 +1532,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 880,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {}
@@ -952,14 +1542,12 @@
       "node_type": "enter_dungeon",
       "label": "Enter Graveyard",
       "position": {
-        "x": 1760,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z06_Bridge",
         "dungeon_zone": "G14_DM/DM_Z07_Graveyard",
-        "offers_challenge_mode": false,
-        "offers_team_up": true,
         "dungeon_name": "Graveyard",
         "sigil_xyz": {
           "x": -222.0,
@@ -967,18 +1555,79 @@
           "z": 0.7
         },
         "reset_xyz": {
-          "x": -14.68,
-          "y": 1966.77,
+          "x": -32.65,
+          "y": 1962.71,
           "z": 0.7
-        }
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": false
       }
     },
     {
-      "id": "t_4",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_DM/DM_Z01_CastleDarkmoor"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
       "node_type": "handle_combat",
       "label": "Defeat Yevgeny Nightcreeper",
       "position": {
-        "x": 2200,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -989,11 +1638,11 @@
       }
     },
     {
-      "id": "t_5",
+      "id": "state_4",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2640,
+        "x": 5280.0,
         "y": 0.0
       },
       "params": {
@@ -1006,65 +1655,241 @@
       }
     },
     {
-      "id": "t_6",
-      "node_type": "enter_zone",
-      "label": "Exit Graveyard",
+      "id": "state_5",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
       "position": {
-        "x": 3080,
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Enter Mausoleum",
+      "position": {
+        "x": 5720.0,
         "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z07_Graveyard",
-        "to_zone": "G14_DM/DM_Z06_Bridge",
-        "stagger": false,
+        "to_zone": "G14_DM/Interiors/DM_Z08_I02_Mausoleum_Lower",
         "xyz": {
-          "x": -11.86,
-          "y": -3439.66,
+          "x": -11.19,
+          "y": 3109.05,
           "z": 0.52
         },
         "reset_xyz": {
-          "x": 0.56,
-          "y": -2957.34,
+          "x": -0.61,
+          "y": 2700.58,
           "z": 0.52
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_DM/Interiors/DM_Z08_I02_Mausoleum_Lower",
+        "xyz": {
+          "x": 89.1,
+          "y": 1497.99,
+          "z": 63.18
         }
       }
     },
     {
-      "id": "t_7",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
+      "id": "state_8",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
       "position": {
-        "x": 1320,
+        "x": 6600.0,
         "y": 0.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat Shane von Shane",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-DM-ArmoredVonShane_Boss",
+        "wiki_page": "Creature:Shane von Shane (Star)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_zone",
+      "label": "Enter final room",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_DM/Interiors/DM_Z08_I02_Mausoleum_Lower",
+        "to_zone": "G14_DM/Interiors/DM_Z08_I01_MausoleumTop",
+        "xyz": {
+          "x": 15.26,
+          "y": 2983.55,
+          "z": 200.95
+        },
+        "reset_xyz": {
+          "x": 0.68,
+          "y": 2646.66,
+          "z": 200.95
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
       }
     },
     {
       "id": "state_12",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
+      "node_type": "handle_combat",
+      "label": "Defeat Malistaire the Undying",
       "position": {
-        "x": 3520,
+        "x": 8360.0,
         "y": 0.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "enemy": "G14-DM-Malistaire_Boss",
+        "wiki_page": "Creature:Malistaire the Undying (Shadow)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
       }
     }
   ],
   "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
     {
       "trigger": "advance",
       "source": "t_1",
@@ -1077,17 +1902,7 @@
     },
     {
       "trigger": "advance",
-      "source": "t_3",
-      "dest": "t_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_4",
+      "source": "t_2",
       "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
@@ -1097,8 +1912,8 @@
     },
     {
       "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_6",
+      "source": "t_3",
+      "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1108,8 +1923,68 @@
     {
       "trigger": "advance",
       "source": "t_5",
-      "dest": "t_6",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1128,57 +2003,7 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "state_12",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "t_1",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1218,17 +2043,52 @@
           }
         },
         "anchor": {
-          "x": 0.0,
-          "y": 0.0
+          "x": 1759.999938308534,
+          "y": 0.00021952501634925348
         }
       }
+    },
+    {
+      "id": "a3041c49",
+      "label": "Yevgeny Nightcreeper",
+      "members": [
+        "state_6",
+        "state_4",
+        "state_3",
+        "state_5"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "2d8829fd",
+      "label": "Shane von Shane",
+      "members": [
+        "state_9",
+        "state_8",
+        "state_10",
+        "state_7"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "2704bc54",
+      "label": "Malistaire the Undying",
+      "members": [
+        "state_12",
+        "state_11"
+      ],
+      "color": 3,
+      "collapsed": true
     }
   ],
   "template": {
-    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
   },
   "history": [
-    "92e96e2d1f3a5f4459bda5a93881536a1c4e2dcf2bd22d52f358e38202ed471a"
+    "e2f27aba7634631dbf1faa615ab8e85de075392dc2240006816dbda078115dd5",
+    "a382145bbebc974454d1999d1acd5353c294550fef775bc44c7a2af250378bc1"
   ]
 }

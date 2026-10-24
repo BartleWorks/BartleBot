@@ -1218,7 +1218,7 @@
           "y": 316.0,
           "z": 351.08
         },
-        "stagger": true
+        "stagger": false
       }
     },
     {
@@ -1491,15 +1491,18 @@
       "params": {
         "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
         "interact_xyz": {
-          "x": -545.19,
-          "y": -236.15,
-          "z": 400.2
+          "x": -465.43,
+          "y": 172.02,
+          "z": 378.16
         },
         "reset_xyz": {
-          "x": -431.05,
-          "y": 470.83,
-          "z": 315.13
+          "x": -436.84,
+          "y": 445.27,
+          "z": 322.88
         }
+      },
+      "stops": {
+        "FAILURE": "No players have a skeleton key in their inventory"
       }
     }
   ],
@@ -1508,6 +1511,16 @@
       "trigger": "advance",
       "source": "state_10",
       "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1921,16 +1934,6 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -2028,6 +2031,10 @@
     "version": 1
   },
   "history": [
+    "b1e8ffc21e24e1963d3018a1d29c63a22831f802e78106af8d3839ebddf4e0e1",
+    "a85dce5ea75970b9a3e1c3cd06f9eddd92c105b491fd7a00a6c4ebdab34164eb",
+    "5c91f910bb17048c85a8879670edd9a9269141729934f01d55b25904aa294215",
+    "2bbd6f27bd9bb3643745ff3a1591f58ccd35d0ac1aae8ab15ad729156ffeca86",
     "7fd1c634f741b2ae91ef8973239bf6d6bd4f588c52b7d815aadab2c9c25ad074",
     "ce05fd395b40bfdea90f022abbb05b65428151c01639a479d59f098283b915a5",
     "61d1cf36bf90e1d3845411267579f0dec25d8c6292ee523d9d73cbd561327553",
