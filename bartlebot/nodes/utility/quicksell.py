@@ -10,6 +10,7 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
+    DECK_CONFIGURATION_PATH,
     JEWEL_INVENTORY_SPACE_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
@@ -611,10 +612,12 @@ async def run(machine, clients: list, params: dict) -> str:
       13. Click the Sell button; wait for the sell confirmation dialog; confirm it.
       14. Dismiss up to 3 post-sell dialogs (crowns confirm, pets confirm, gold limit
           warning) by clicking the center/YES button each time.
-      15. Wait for the backpack close button to reappear, then close the backpack.
+      15. Wait for the backpack close button to reappear, then close the backpack,
+          clicking again until it is gone.
 
     FAILURE: quicksell open button did not appear; shop UI did not appear;
-    sell confirmation dialog did not appear.
+    sell confirmation dialog did not appear; the backpack stayed open after the close
+    button had been clicked for ``WINDOW_CLOSE_TIMEOUT`` (a sale already made stands).
     """
     # The one place the option layer is read. Everything below sees plain values;
     # which level answered each one is already in the log, written once per run by
@@ -670,8 +673,7 @@ async def _process_client(machine, client, keep_list: list[str], sell_pets: bool
 
     # If nothing is full, return early
     if not inventory_full and not jewel_full:
-        await _close_backpack(client, safety_delay)
-        return "SUCCESS"
+        return await _close_backpack(machine, client)
 
     full_desc = " and ".join(t for t, f in [("inventory", inventory_full), ("jewel", jewel_full)] if f)
     machine.log(f"quicksell: {full_desc} backpack full — opening quicksell UI")
@@ -771,8 +773,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool,
             POLL_INTERVAL,
         )
         await node_helpers.click_by_path(client, QUICKSELL_CLOSE_BUTTON_PATH)
-        await _close_backpack(client, safety_delay)
-        return "SUCCESS"
+        return await _close_backpack(machine, client)
 
     await node_helpers.click_by_path(client, QUICKSELL_SELL_BUTTON_PATH)
 
@@ -803,7 +804,8 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool,
         POLL_INTERVAL,
     )
     machine.log(f"quicksell: backpack close button {'appeared' if backpack_visible else 'timed out'}", logging.DEBUG)
-    await _close_backpack(client, safety_delay)
+    if await _close_backpack(machine, client) == "FAILURE":
+        return "FAILURE"
     machine.log("quicksell: sell complete")
     return "SUCCESS"
 
@@ -862,16 +864,20 @@ async def _is_jewel_backpack_full(client) -> bool:
         return False
 
 
-async def _close_backpack(client, safety_delay: float) -> None:
-    """Click the backpack close button and wait for it to disappear."""
-    await node_helpers.poll_until(
-        lambda: node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH),
-        safety_delay,
-        POLL_INTERVAL,
+async def _close_backpack(machine, client) -> str:
+    """Click the backpack close button until the backpack is gone. "FAILURE" if it never goes.
+
+    One click is not reliable: straight after a sale the game is still busy and drops it, and
+    the node used to wait out the Safety Delay for a backpack it had left open, then report
+    success. Openness is read from the spellbook window, not the close button, which keeps
+    reading visible once its window is closed (see ``node_helpers.is_visible_by_path``).
+    """
+    closed = await node_helpers.click_until_gone(
+        client,
+        BACKPACK_CLOSE_BUTTON_PATH,
+        is_open=lambda: node_helpers.is_visible_by_path(client, DECK_CONFIGURATION_PATH),
     )
-    await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
-
-    async def _backpack_closed():
-        return not await node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
-
-    await node_helpers.poll_until(_backpack_closed, safety_delay, POLL_INTERVAL)
+    if not closed:
+        machine.log("FAILURE: the backpack did not close", logging.WARNING)
+        return "FAILURE"
+    return "SUCCESS"

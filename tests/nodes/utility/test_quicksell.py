@@ -312,9 +312,13 @@ async def test_returns_failure_when_quicksell_ui_never_opens():
 class _SellScreen:
     """The quicksell window from the Sell button onwards, as the node can see it."""
 
-    def __init__(self, *, confirm_appears: bool = True, post_sell_dialogs: int = 0):
+    def __init__(self, *, confirm_appears: bool = True, post_sell_dialogs: int = 0, close_clicks_dropped: float = 0):
         self.confirm_appears = confirm_appears
         self.post_sell_dialogs = post_sell_dialogs
+        # How many clicks on the backpack's close button the game drops before one lands;
+        # infinity is a backpack that never closes.
+        self.close_clicks_dropped = close_clicks_dropped
+        self.backpack_open = True
         self.dialogs_showing = 0
         self.clicks: list[list[str]] = []
 
@@ -323,6 +327,8 @@ class _SellScreen:
             return self.dialogs_showing > 0
         if path == qs.QUICKSELL_CONFIRM_SELL_PATH:
             return self.confirm_appears and qs.QUICKSELL_SELL_BUTTON_PATH in self.clicks
+        if path == qs.DECK_CONFIGURATION_PATH:
+            return self.backpack_open
         return True
 
     async def _is_enabled(self, _client, path):
@@ -335,6 +341,11 @@ class _SellScreen:
             self.dialogs_showing = self.post_sell_dialogs
         elif path == qs.MESSAGE_BOX_CENTER and self.dialogs_showing:
             self.dialogs_showing -= 1
+        elif path == qs.BACKPACK_CLOSE_BUTTON_PATH:
+            if self.close_clicks_dropped > 0:
+                self.close_clicks_dropped -= 1
+            else:
+                self.backpack_open = False
         return True
 
     async def sell(self, machine) -> str:
@@ -345,6 +356,8 @@ class _SellScreen:
             patch.object(node_helpers, "get_text_by_path", new=AsyncMock(return_value="")),
             patch.object(qs, "_is_jewel_backpack_full", new=AsyncMock(return_value=False)),
             patch.object(qs, "POLL_INTERVAL", 0),
+            patch.object(node_helpers, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
+            patch.object(node_helpers, "WINDOW_CLOSE_TIMEOUT", 1.0),
         ):
             return await qs.run(machine, [_full_backpack()], {})
 
@@ -360,6 +373,27 @@ async def test_a_full_backpack_is_sold_and_the_backpack_closed():
     assert result == "SUCCESS"
     assert screen.clicks_after(qs.QUICKSELL_SELL_BUTTON_PATH)[0] == qs.QUICKSELL_CONFIRM_SELL_PATH
     assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [qs.BACKPACK_CLOSE_BUTTON_PATH]
+
+
+async def test_a_dropped_close_click_is_sent_again_until_the_backpack_is_gone():
+    """The game drops clicks sent while it is busy after a sale; one click left the backpack open."""
+    screen = _SellScreen(close_clicks_dropped=2)
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [qs.BACKPACK_CLOSE_BUTTON_PATH] * 3
+    assert not screen.backpack_open
+
+
+async def test_a_backpack_that_stays_open_fails_the_node_and_says_so():
+    screen = _SellScreen(close_clicks_dropped=float("inf"))
+    machine = _machine()
+
+    result = await screen.sell(machine)
+
+    assert result == "FAILURE"
+    assert any(level == logging.WARNING and "did not close" in msg for msg, level in machine.logs)
 
 
 async def test_every_post_sell_dialog_is_confirmed_before_the_backpack_closes():
