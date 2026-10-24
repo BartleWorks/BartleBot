@@ -1038,6 +1038,12 @@ async def all_left_zone(clients: list, zone: str) -> bool:
     zone may be a glob pattern (e.g. "WizardCity/*"); see zone_matches().
     Note: if the pattern is broad enough to encompass the destination zone,
     this helper will never return True until clients leave that zone family too.
+
+    An unreadable (None) zone counts as left, on purpose. Every caller asks this after the
+    trigger has fired, and a zone that goes unreadable then is the old zone being torn down.
+    Waiting for the new one instead would outlast the Safety Delay these checks run under,
+    and the client would be reset as stuck while it was on its way (#70). A client that is
+    logged out reads None too, and is the health monitor's to catch.
     """
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     return all(not zone_matches(z, zone) for z in zones)
@@ -1065,7 +1071,7 @@ async def wait_for_zone(
 
 
 async def read_zones(
-    clients: list, timeout: float = ZONE_READABLE_TIMEOUT, poll_interval: float = POLL_INTERVAL
+    clients: list, timeout: float | None = None, poll_interval: float = POLL_INTERVAL
 ) -> list[str | None]:
     """Every client's zone_name(), waiting up to *timeout* for each to be readable.
 
@@ -1073,7 +1079,12 @@ async def read_zones(
     nothing about where it is going, so a comparison against it (or against another None)
     proves nothing and is waited out here instead. Returns the last read; a client that is
     still None after *timeout* is still unreadable, and the caller decides what that means.
+
+    *timeout* defaults to ZONE_READABLE_TIMEOUT, read here rather than in the signature so it
+    stays tunable.
     """
+    if timeout is None:
+        timeout = ZONE_READABLE_TIMEOUT
     zones: list[str | None] = []
 
     async def readable() -> bool:
@@ -1082,6 +1093,25 @@ async def read_zones(
 
     await poll_until(readable, timeout, poll_interval)
     return zones
+
+
+async def in_expected_zone(machine, clients: list, zone: str, poll_interval: float = POLL_INTERVAL) -> bool:
+    """Whether every client is in *zone*, read once each zone is readable. False having logged why.
+
+    The check a node makes before it acts. It reads through read_zones, since a client just off
+    a loading screen reads None for a moment, and a None never matches: read at once, it would
+    fail a node whose players were where it expected.
+    """
+    zones = await read_zones(clients, poll_interval=poll_interval)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
+    if all(zone_matches(z, zone) for z in zones):
+        return True
+    wrong = [z for z in zones if not zone_matches(z, zone)]
+    machine.log(
+        f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
+        logging.WARNING,
+    )
+    return False
 
 
 import contextlib  # noqa: E402 -- beside the one switch that uses them
@@ -1170,7 +1200,9 @@ async def wait_for_zone_with_recovery(
     non-loading straggler gets to start loading before it counts as one. The grace re-arms
     every time a straggler is seen loading, which also keeps the timeout verdict honest:
     a client mid-transition is never reported as one that failed to arrive. An endless
-    loading screen is ClientHealthMonitor's to call, not this loop's.
+    loading screen is ClientHealthMonitor's to call, not this loop's. Nobody is ported while
+    a client's zone reads None either: one just off its loading screen reads None for a
+    moment before it reads the zone it reached.
 
     A straggler held at an instance prompt is not stuck either, and nothing else would press
     it: leaving a dungeon asks first, and until the question is answered the zone change never
@@ -1215,6 +1247,9 @@ async def wait_for_zone_with_recovery(
             and not recovery_tried
             and now >= settled_after
             and any(zone_matches(z, zone) for z in zones)
+            # A None zone is a client just off its loading screen, or one that is not logged in:
+            # the first may be about to read the destination, and a port would undo that (#70).
+            and None not in zones
         ):
             recovery_tried = True
             await _attempt_zone_recovery(machine, clients, zone, zones, poll_interval)
@@ -2247,7 +2282,7 @@ async def gather_at_player(
     beside = {
         i
         for i, (zone, pos) in enumerate(zip(zones, positions))
-        if zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
+        if _same_zone(zone, target_zone) and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
     }
     machine.log(
         f"Porting player(s) {numbers} to P{target_no}; already beside it: {[numbers[i] for i in sorted(beside)]}",
@@ -2290,9 +2325,8 @@ async def gather_at_player(
 
     if await poll_until(lambda: _all_beside(machine, target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
-    target_zone = await target.zone_name()
-    zones = await asyncio.gather(*[c.zone_name() for c in movers])
-    if all(z == target_zone for z in zones):
+    target_zone, *zones = await read_zones([target, *movers], poll_interval=poll_interval)
+    if all(_same_zone(z, target_zone) for z in zones):
         machine.log(
             f"FAILURE: not every player ended up with P{target_no}: all are in its zone, but not all "
             "beside it and on its realm",
@@ -2314,11 +2348,16 @@ async def _all_beside(machine, target, movers: list) -> bool:
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
     positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
     if not all(
-        zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
+        _same_zone(zone, target_zone) and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
         for zone, pos in zip(zones, positions)
     ):
         return False
     return (await read_sightings([target, *movers], machine)).all_together()
+
+
+def _same_zone(a: str | None, b: str | None) -> bool:
+    """Whether two zone reads name one zone. Two unreadable (None) zones name nothing."""
+    return a is not None and a == b
 
 
 async def open_friend_profile(client, name: str):
@@ -2694,14 +2733,7 @@ async def reach_sigil_prompt(
     Returns False having already logged the reason, so a caller's failure path is a
     bare ``return "FAILURE"``.
     """
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await in_expected_zone(machine, clients, from_zone, poll_interval):
         return False
 
     return await reach_prompt(machine, clients, sigil, reset, DUNGEON_ENTRANCE_PROMPT, safety_delay, poll_interval)

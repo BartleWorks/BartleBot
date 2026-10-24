@@ -76,6 +76,20 @@ async def test_success_single_client():
     client.send_key.assert_called()
 
 
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    client.zone_name.side_effect = [None, "Hub", "Hub", "Dungeon", "Dungeon"]
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
+        result = await ed.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+
+
 async def test_success_multiple_clients():
     """All clients must go through the full flow — verified with two clients."""
     clients = [_happy_client(), _happy_client()]

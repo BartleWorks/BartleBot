@@ -32,7 +32,15 @@ from bartlebot.nodes.paths import (
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
 )
-from tests.conftest import FakeClient, FakeEntity, FakeMachine, ModalScreen, message_box_patches, prompt_at
+from tests.conftest import (
+    FakeClient,
+    FakeEntity,
+    FakeMachine,
+    ModalScreen,
+    message_box_patches,
+    prompt_at,
+    zone_unreadable_at_first,
+)
 
 
 @pytest.mark.parametrize(
@@ -2101,6 +2109,37 @@ async def test_a_straggler_that_stays_put_through_the_grace_is_still_recovered()
     recovery.assert_awaited_once()
 
 
+async def test_a_straggler_whose_zone_is_unreadable_is_not_ported():
+    """Just off its loading screen a client reads None before the zone it reached (#282).
+    Past the grace that read is no reason to port it: the port would undo the arrival."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain([None] * 3, itertools.repeat("Dst")))
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 1.0, 0, settle_grace=0
+        )
+
+    assert result is None
+    recovery.assert_not_awaited()
+
+
+async def test_a_zone_that_never_turns_readable_still_ends_the_wait():
+    """A client logged out reads None for good: nobody is ported, and the deadline still ends the wait."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    gone = FakeClient()
+    gone.zone_name.return_value = None
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [arrived, gone], "Dst", 0.02, 0, settle_grace=0)
+
+    assert result == ["Dst", None]
+    recovery.assert_not_awaited()
+
+
 # ---------------------------------------------------------------------------
 # skip_while_loading
 # ---------------------------------------------------------------------------
@@ -2513,6 +2552,57 @@ async def test_read_zones_gives_back_none_for_a_zone_that_never_turns_readable()
     gone.zone_name = AsyncMock(return_value=None)
 
     assert await nh.read_zones([ready, gone], 0.05, 0.01) == ["Alpha/Hub", None]
+
+
+# ── in_expected_zone ─────────────────────────────────────────────────────────
+
+
+async def test_in_expected_zone_waits_out_a_zone_just_off_its_loading_screen():
+    """A None read at once would fail a node whose players were where it expected (#282)."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, "Alpha/Hub", reads=2)
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is True
+    assert not any(level >= logging.WARNING for _, level in machine.logs)
+
+
+async def test_in_expected_zone_fails_a_zone_that_never_turns_readable():
+    client = FakeClient()
+    client.zone_name.return_value = None
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is False
+    assert ("FAILURE: clients not in expected zone (expected='Alpha/Hub', unexpected=[None])", logging.WARNING) in (
+        machine.logs
+    )
+
+
+async def test_in_expected_zone_fails_a_player_somewhere_else():
+    client = FakeClient()
+    client.zone_name.return_value = "Beta/Hub"
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is False
+    assert any("unexpected=['Beta/Hub']" in msg for msg, _ in machine.logs)
+
+
+# ── _all_beside ──────────────────────────────────────────────────────────────
+
+
+async def test_two_unreadable_zones_are_not_beside_each_other():
+    """None == None names no zone: a mover and target that both read None are not together (#282)."""
+    target, mover = FakeClient(), FakeClient()
+    target.zone_name.return_value = None
+    mover.zone_name.return_value = None
+
+    assert await nh._all_beside(FakeMachine(), target, [mover]) is False
+
+
+async def test_a_mover_in_the_targets_zone_and_beside_it_is_beside():
+    target, mover = FakeClient(), FakeClient()
+
+    assert await nh._all_beside(FakeMachine(), target, [mover]) is True
 
 
 # ── pick_up ──────────────────────────────────────────────────────────────────

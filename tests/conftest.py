@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from contextlib import ExitStack
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import DEFAULT, AsyncMock, MagicMock, patch
 
 import pytest
 from wizwalker import XYZ
@@ -203,6 +203,18 @@ def prompt_at(client: "FakeClient", *points, initially: bool = False) -> None:
         return tuple(client.teleport.call_args_list[-1].args[0]) in wanted
 
     client.is_in_npc_range.side_effect = _showing
+
+
+def zone_unreadable_at_first(client: "FakeClient", zone: str = "TestZone", reads: int = 1) -> None:
+    """Make *client*'s zone read None for its next *reads* reads, then *zone*.
+
+    That is a client just off a loading screen: the zone turns readable a moment after the
+    screen is gone (#282). After that the read is ``zone_name.return_value``, so a fake that
+    moves the client by setting it still does.
+    """
+    client.zone_name = AsyncMock(
+        return_value=zone, side_effect=lambda: None if client.zone_name.await_count <= reads else DEFAULT
+    )
 
 
 def see_each_other(*clients: "FakeClient") -> None:
@@ -595,6 +607,20 @@ def _fast_zone_settle_grace(monkeypatch):
     from bartlebot.nodes import node_helpers
 
     monkeypatch.setattr(node_helpers, "ZONE_SETTLE_GRACE", 0.05)
+
+
+@pytest.fixture(autouse=True)
+def _fast_zone_readable_timeout(monkeypatch):
+    """Compress how long read_zones waits for a None zone to turn readable.
+
+    ZONE_READABLE_TIMEOUT is ten seconds of real time, paid by every node test whose client
+    reads None for good: a client that is not logged in, or a test's stand-in for one outside
+    the zone. read_zones reads it at call time, so patching the module attribute reaches it.
+    A test whose subject is the wait passes ``timeout`` explicitly, or patches it back.
+    """
+    from bartlebot.nodes import node_helpers
+
+    monkeypatch.setattr(node_helpers, "ZONE_READABLE_TIMEOUT", 0.05)
 
 
 # ---------------------------------------------------------------------------

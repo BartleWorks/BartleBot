@@ -304,6 +304,7 @@ async def test_a_port_is_not_judged_while_the_movers_zone_is_unreadable(monkeypa
     arrived = b.zone_name.side_effect
     b.zone_name = AsyncMock(side_effect=lambda: None if b.zone_name.await_count <= 2 else arrived())
     machine = FakeMachine()
+    monkeypatch.setattr(node_helpers, "ZONE_READABLE_TIMEOUT", 10.0)  # the wait is the subject
 
     assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == []
     assert pm.routes(b, a) == ["friend"]
