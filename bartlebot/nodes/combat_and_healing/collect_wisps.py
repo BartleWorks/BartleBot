@@ -7,9 +7,9 @@ from wizwalker import XYZ
 
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.help_text import seconds
-from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
+from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances, poll_until
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -77,6 +77,7 @@ NODE_SPEC = NodeSpec(
         "route to a potion node."
     ),
     params=PARAM_SCHEMA,
+    required_bot_options=[SAFETY_DELAY_OPTION],
     returns=[
         ReturnSpec("SUCCESS", "Every player is at or above both fail thresholds."),
         ReturnSpec(
@@ -89,6 +90,12 @@ NODE_SPEC = NodeSpec(
         (
             "Players move together, teleporting to the same wisp, so a player who's already full "
             "passes through without using it up."
+        )
+        + "\n\n"
+        + (
+            "Place it right after a fight or a teleport. Wisps take a moment to appear, so when "
+            "none is in sight and a player is below a fail threshold, the node waits up to Safety "
+            "Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait."
         )
         + "\n\n"
         + (
@@ -110,7 +117,11 @@ async def run(machine, clients: list, params: dict) -> str:
          if_health_below, mana wisps if any is below if_mana_below. If neither is wanted,
          stop — nobody moves.
       2. List the wanted wisps not visited yet, drop any within SAFE_RADIUS of an
-         enemy (when only_safe), and pick the one nearest the group.
+         enemy (when only_safe), and pick the one nearest the group. On the first hop,
+         when nothing qualifies and a client is below a fail threshold for a wanted
+         resource, keep scanning for up to Safety Delay: wisps spawn after a fight and
+         load in after a teleport, and failing before they do sends the group to the
+         potion route for health a wisp was about to give.
       3. Teleport every client to it at once. Stop when no wisp is left or the timeout
          expires.
       4. Re-check all ratios. Return FAILURE if any client's health is still below
@@ -129,15 +140,27 @@ async def run(machine, clients: list, params: dict) -> str:
     fail_if_health_below: float = params.get("fail_if_health_below", 0.5)
     fail_if_mana_below: float = params.get("fail_if_mana_below", 0.5)
     only_safe: bool = params.get("only_safe", True)
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     scaled_to = scaled_ratios.challenge_level(machine)
 
     machine.log(
         f"collect_wisps: collect_health<{if_health_below}, collect_mana<{if_mana_below}, "
         f"timeout={timeout_raw}, fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}, "
-        f"only_safe={only_safe}, scaled_to={scaled_to}"
+        f"only_safe={only_safe}, scaled_to={scaled_to}, safety_delay={safety_delay}"
     )
 
-    await collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe, scaled_to)
+    await collect_as_group(
+        machine,
+        clients,
+        if_health_below,
+        if_mana_below,
+        timeout_val,
+        only_safe,
+        scaled_to,
+        fail_if_health_below=fail_if_health_below,
+        fail_if_mana_below=fail_if_mana_below,
+        safety_delay=safety_delay,
+    )
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
@@ -183,6 +206,10 @@ async def collect_as_group(
     timeout_val: float | None,
     only_safe: bool,
     scaled_to: int | None = None,
+    *,
+    fail_if_health_below: float = 0.0,
+    fail_if_mana_below: float = 0.0,
+    safety_delay: float = 0.0,
 ) -> None:
     """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.
 
@@ -194,6 +221,9 @@ async def collect_as_group(
 
     `scaled_to` is the Challenge Mode level the ratios are read against (scaled_ratios), or
     None for the plain ratios.
+
+    The fail thresholds and `safety_delay` decide whether the first scan waits for wisps to
+    appear. Their defaults never wait, which is what a caller with no fail threshold wants.
     """
     loop = asyncio.get_running_loop()
     start = loop.time()
@@ -210,7 +240,14 @@ async def collect_as_group(
             machine.log(f"collect_wisps: timed out after {timeout_val}s", logging.DEBUG)
             return
 
-        pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+        short_of_fail = (
+            want_health and 0.0 < fail_if_health_below and any(h < fail_if_health_below for h in health)
+        ) or (want_mana and 0.0 < fail_if_mana_below and any(m < fail_if_mana_below for m in mana))
+        if short_of_fail and safety_delay > 0.0 and not visited:
+            machine.log(f"collect_wisps: no wisp in sight yet, waiting up to {safety_delay}s", logging.DEBUG)
+            pick = await _await_wisp(clients, want_health, want_mana, visited, only_safe, safety_delay)
+        else:
+            pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
         if pick is None:
             machine.log("collect_wisps: no wanted wisp left to collect", logging.DEBUG)
             return
@@ -224,6 +261,22 @@ async def collect_as_group(
         )
         await asyncio.gather(*[c.teleport(location) for c in clients])
         await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
+
+
+async def _await_wisp(
+    clients: list, want_health: bool, want_mana: bool, visited: set[int], only_safe: bool, safety_delay: float
+) -> tuple[int, XYZ, str] | None:
+    """Scan for a wanted wisp until one qualifies or `safety_delay` seconds pass, and return it or None."""
+    found: list[tuple[int, XYZ, str]] = []
+
+    async def _seen() -> bool:
+        pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+        if pick is not None:
+            found.append(pick)
+        return pick is not None
+
+    await poll_until(_seen, safety_delay, POLL_INTERVAL)
+    return found[0] if found else None
 
 
 async def _pick_wisp(

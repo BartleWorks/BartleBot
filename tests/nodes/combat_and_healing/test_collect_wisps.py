@@ -24,7 +24,7 @@ _ids = count(1)
 
 @pytest.fixture(autouse=True)
 def _no_delay():
-    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0), patch.object(cw, "POLL_INTERVAL", 0.002):
         yield
 
 
@@ -166,7 +166,7 @@ async def test_no_wisps_above_fail_threshold_succeeds():
 
 
 async def test_no_wisps_below_fail_threshold_fails():
-    """No wisps and still below the fail threshold → FAILURE, routing to potions."""
+    """No wisps, even after the wait, and still below the fail threshold → FAILURE, routing to potions."""
     client = _client(health=0.3)
 
     result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
@@ -194,6 +194,111 @@ async def test_mana_failure_fails():
     result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
+
+
+# ---------------------------------------------------------------------------
+# Waiting for wisps to appear (#283)
+# ---------------------------------------------------------------------------
+
+
+def _patient(seconds: float) -> FakeMachine:
+    """A machine whose Safety Delay is `seconds`."""
+    return FakeMachine(options={"Safety Delay": seconds})
+
+
+async def test_wisp_that_appears_late_is_collected():
+    """Below the fail threshold and no wisp yet → the node scans again and takes the one that spawns."""
+    client = _client(health=0.3)
+    wisp = _entity(300)
+    client.get_health_wisps.side_effect = [[], [], [wisp]] + [[]] * 50
+    _refill_on_teleport(client, health=1.0)
+
+    result = await cw.run(_patient(2.0), [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert _teleport_targets(client) == [(300, 0, 0)]
+
+
+async def test_waits_the_safety_delay_then_fails_when_no_wisp_comes():
+    """No wisp ever spawns and a player is below the fail threshold → it scans for the delay, then FAILURE."""
+    client = _client(health=0.3)
+
+    result = await cw.run(_patient(0.1), [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert client.get_health_wisps.call_count > 2
+    client.teleport.assert_not_called()
+
+
+async def test_below_full_but_above_the_fail_threshold_does_not_wait():
+    """Mana at 98% wants a wisp but nobody is below a fail threshold → one scan, then SUCCESS."""
+    client = _client(health=0.8, mana=0.98)
+
+    result = await cw.run(_patient(2.0), [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    client.get_health_wisps.assert_called_once()
+    client.get_mana_wisps.assert_called_once()
+
+
+async def test_zero_fail_threshold_never_waits():
+    """A fail threshold of 0 means that resource never fails, so it never earns a wait."""
+    client = _client(health=0.1)
+
+    params = {**_DEFAULT_PARAMS, "fail_if_health_below": 0.0}
+    result = await cw.run(_patient(2.0), [client], params)
+
+    assert result == "SUCCESS"
+    client.get_health_wisps.assert_called_once()
+
+
+async def test_a_resource_not_collected_does_not_earn_a_wait():
+    """Health is below its fail threshold but health wisps aren't wanted; mana is fine → no wait."""
+    client = _client(health=0.1, mana=0.8)
+
+    params = {**_DEFAULT_PARAMS, "if_health_below": 0.0}
+    result = await cw.run(_patient(2.0), [client], params)
+
+    assert result == "FAILURE"  # health still fails the post-collection check
+    client.get_health_wisps.assert_not_called()
+    client.get_mana_wisps.assert_called_once()
+
+
+async def test_waits_only_before_the_first_hop():
+    """Once a wisp has been collected, running out of them ends the node: no second wait."""
+    client = _client(health=0.3)
+    _serve_once(client.get_health_wisps, [_entity(100)])
+    _refill_on_teleport(client, health=0.4)  # still below the fail threshold
+
+    result = await cw.run(_patient(0.2), [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert client.get_health_wisps.call_count == 2
+
+
+async def test_a_wait_ends_as_soon_as_a_wisp_is_in_sight():
+    """The first scan finds a wisp → no polling at all."""
+    client = _client(health=0.3)
+    client.get_health_wisps.return_value = [_entity(300)]
+    _refill_on_teleport(client, health=1.0)
+
+    await cw.run(_patient(2.0), [client], _DEFAULT_PARAMS)
+
+    client.get_health_wisps.assert_called_once()
+    client.teleport.assert_called_once()
+
+
+async def test_a_direct_call_without_fail_thresholds_never_waits():
+    """The ambient watcher calls collect_as_group with neither fail thresholds nor a delay."""
+    client = _client(health=0.1)
+
+    await cw.collect_as_group(FakeMachine(), [client], 1.0, 1.0, None, True)
+
+    client.get_health_wisps.assert_called_once()
+
+
+def test_the_node_declares_safety_delay():
+    assert [option.name for option in cw.NODE_SPEC.required_bot_options] == ["Safety Delay"]
 
 
 # ---------------------------------------------------------------------------
