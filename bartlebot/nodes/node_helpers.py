@@ -2559,6 +2559,7 @@ async def reach_prompt(
     numbers: list[int] | None = None,
     fail_on_miss: bool = True,
     clear_first: bool = True,
+    any_client: bool = False,
 ) -> bool:
     """Get every client standing at *point* with *prompt* showing.
 
@@ -2576,9 +2577,22 @@ async def reach_prompt(
     passes False and logs its own outcome, and finds every client still at *point*
     rather than reset after the last attempt. Such a caller must tell a miss from step 1
     failing, so it runs ``clear_stale_prompt`` itself and passes *clear_first* False.
+
+    With *any_client* the wait ends as soon as the prompt shows on one client rather than
+    all of them, for an object only one client needs to use and that raises the prompt
+    only for those who can (a skeleton key door: a player with no key never sees it). The
+    caller reads which clients got it. Without it, a client that can never get the prompt
+    costs every attempt its full ``safety_delay``.
+
     Logs under the running node, since it is called from one — see ``machine.log`` in
     the node conventions.
     """
+
+    async def _reached() -> bool:
+        if not any_client:
+            return await prompt.all_showing(clients)
+        return any(await asyncio.gather(*[prompt.showing(c) for c in clients]))
+
     if clear_first and not await clear_stale_prompt(
         machine, clients, reset, prompt, safety_delay, poll_interval, numbers
     ):
@@ -2589,7 +2603,7 @@ async def reach_prompt(
         await asyncio.gather(*[c.teleport(point) for c in clients])
 
         machine.log(f"Waiting for {prompt.name}…", logging.DEBUG)
-        if await poll_until(lambda: prompt.all_showing(clients), safety_delay, poll_interval):
+        if await poll_until(_reached, safety_delay, poll_interval):
             return True
 
         if attempt == MAX_RETRIES and not fail_on_miss:
