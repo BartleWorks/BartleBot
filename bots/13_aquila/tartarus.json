@@ -856,7 +856,7 @@
     {
       "id": "state_7",
       "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Coordinates0",
+      "label": "Teleport to Coordinates",
       "position": {
         "x": 6160.0,
         "y": 0.0
@@ -881,7 +881,7 @@
       "params": {
         "enemy": "AQ-Satyr-Death",
         "wiki_page": "",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
@@ -1262,7 +1262,7 @@
       "params": {
         "enemy": "AQ-Minotaur-Death",
         "wiki_page": "",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
@@ -1465,7 +1465,7 @@
       "params": {
         "enemy": "AQ-Cerberus-B",
         "wiki_page": "Creature:Cerberus (Balance)",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
@@ -1534,7 +1534,7 @@
       "params": {
         "enemy": "AQ-Immortal-Hades",
         "wiki_page": "Creature:Hades the Unseen (Tartarus)",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
@@ -2612,6 +2612,7 @@
     "version": 1
   },
   "history": [
+    "9000a0af06dc9cc8fe0982504b727fd7f23f198e855de2829d5d0b4ee86e2482",
     "98fefb55f4e830e198e5101a2c07ef70b9d078e73321ed67d73c34e72d04df70",
     "f1809fe077190bae2213031d47c2dcbb7cb288fef811d63864bfab520f1881a6",
     "9b4c77a2bb63f5b1dbc619e60b29a8c31c49769232f375f2294aa2ac7b8c3892",
