@@ -298,6 +298,9 @@ QUICKSELL_JEWEL_OPEN_PATH = [
 JEWEL_INVENTORY_SPACE_PATH = ["WorldView", "DeckConfiguration", "JewelSpellbookPage", "inventorySpace"]
 
 # Shared quicksell shopGUI paths — same UI regardless of which page opened it
+# The shop window itself, read to tell whether it is still open: its exit button keeps
+# reading visible once the window has closed, as every control inside a window does.
+QUICKSELL_SHOP_PATH = ["WorldView", "shopGUI"]
 QUICKSELL_ALL_TAB_PATH = ["WorldView", "shopGUI", "BackpackStuff", "ShopCategory_All"]
 QUICKSELL_PET_TAB_PATH = ["WorldView", "shopGUI", "BackpackStuff", "ShopCategory_Pet"]
 QUICKSELL_ALL_BUTTON_PATH = ["WorldView", "shopGUI", "buyWindow", "AllAction"]

@@ -1,18 +1,22 @@
 """Node: quicksell backpack items when full, keeping items that match a keyword list."""
 
 import asyncio
+import enum
 import logging
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from wizwalker import Keycode
 
+from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     JEWEL_INVENTORY_SPACE_PATH,
-    MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_LEFT,
+    MESSAGE_BOX_RIGHT,
     QUICKSELL_ALL_BUTTON_PATH,
     QUICKSELL_ALL_TAB_PATH,
     QUICKSELL_CLOSE_BUTTON_PATH,
@@ -21,6 +25,7 @@ from bartlebot.nodes.paths import (
     QUICKSELL_NEXT_PAGE_PATH,
     QUICKSELL_PET_TAB_PATH,
     QUICKSELL_SELL_BUTTON_PATH,
+    QUICKSELL_SHOP_PATH,
     quicksell_item_checkbox_path,
     quicksell_item_title_path,
 )
@@ -601,7 +606,7 @@ async def run(machine, clients: list, params: dict) -> str:
       6. Wait for the shop UI to appear (QUICKSELL_ALL_BUTTON).
       7. Click the "All" tab to see all item types.
       8. Click "Select All" to check every item.
-      9. Handle the crowns dialog if it appears: always confirm (YES) to include all crowns items.
+      9. Answer "include Crowns Items?" if it comes up: always yes, to include them.
       10. If sell_pets is False, switch to the Pet tab, click All to deselect pets,
           then return to the All tab.
       11. Page through the quicksell list and uncheck any item the keep list keeps
@@ -609,10 +614,10 @@ async def run(machine, clients: list, params: dict) -> str:
       12. If the Sell button is grayed out (all items unchecked), close the shop and
           backpack and return SUCCESS.
       13. Click the Sell button; wait for the sell confirmation dialog; confirm it.
-      14. Dismiss up to 3 post-sell dialogs (crowns confirm, pets confirm, gold limit
-          warning) by clicking the center/YES button each time.
-      15. Wait for the backpack close button to reappear, then close the backpack,
-          clicking again until it is gone.
+      14. Answer each dialog until the backpack is back (QUICKSELL_COMPLETE_TIMEOUT): the
+          sale's own questions (Crowns items, pets, the gold limit) are confirmed, since No
+          cancels the sale, and anything else is cancelled. Each is clicked until it goes.
+      15. Close the backpack, clicking again until it is gone.
 
     FAILURE: quicksell open button did not appear; shop UI did not appear;
     sell confirmation dialog did not appear; the backpack stayed open after the close
@@ -725,19 +730,16 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool,
     await node_helpers.click_by_path(client, QUICKSELL_ALL_BUTTON_PATH)
     await asyncio.sleep(POLL_INTERVAL)
 
-    # Dismiss the "sell Crowns items?" dialog if it appears after selecting all items.
-    # Always confirm (YES) so all items are guaranteed checked before the keep_list page loop.
-    machine.log("quicksell: waiting for crowns select dialog (optional)", logging.DEBUG)
-    crowns_dialog = await node_helpers.poll_until(
-        lambda: node_helpers.is_visible_by_path(client, MESSAGE_BOX_CENTER),
-        safety_delay,
-        POLL_INTERVAL,
+    # Answer "include Crowns Items?" if it comes up after selecting all items. Always yes, so
+    # every item is checked before the keep_list page loop.
+    machine.log("quicksell: waiting for the Crowns items question (optional)", logging.DEBUG)
+    outcome = await _answer_dialogs(
+        machine, client, done=_never, timeout=safety_delay, stop_after=dialog_captions.QUICKSELL_INCLUDE_CROWNS
     )
-    if crowns_dialog:
-        machine.log("quicksell: crowns select dialog appeared — including crowns items", logging.DEBUG)
-        await node_helpers.click_by_path(client, MESSAGE_BOX_CENTER)
-    else:
-        machine.log("quicksell: crowns select dialog not present, skipping", logging.DEBUG)
+    if outcome is _Dialogs.STUCK:
+        return "FAILURE"
+    if outcome is _Dialogs.TIMED_OUT:
+        machine.log("quicksell: no Crowns items question, skipping", logging.DEBUG)
 
     # If pets should not be sold, switch to the Pet tab and click "All" to deselect them all.
     # This avoids the post-sell pets confirmation dialog, which would cancel the entire sale
@@ -766,12 +768,15 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool,
     # If the sell button is grayed out, all items matched the keep list — nothing to sell.
     if not await node_helpers.is_enabled_by_path(client, QUICKSELL_SELL_BUTTON_PATH):
         machine.log("quicksell: all items matched keep list — closing shop and backpack")
-        await node_helpers.poll_until(
-            lambda: node_helpers.is_visible_by_path(client, QUICKSELL_CLOSE_BUTTON_PATH),
-            safety_delay,
-            POLL_INTERVAL,
-        )
-        await node_helpers.click_by_path(client, QUICKSELL_CLOSE_BUTTON_PATH)
+        # Until the shop is gone the backpack's close button is behind it, so its clicks
+        # would land on the shop.
+        if not await node_helpers.click_until_gone(
+            client,
+            QUICKSELL_CLOSE_BUTTON_PATH,
+            is_open=lambda: node_helpers.is_visible_by_path(client, QUICKSELL_SHOP_PATH),
+        ):
+            machine.log("FAILURE: the quicksell window did not close", logging.WARNING)
+            return "FAILURE"
         return await _close_backpack(machine, client)
 
     await node_helpers.click_by_path(client, QUICKSELL_SELL_BUTTON_PATH)
@@ -788,47 +793,120 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool,
         return "FAILURE"
     await node_helpers.click_by_path(client, QUICKSELL_CONFIRM_SELL_PATH)
 
-    # Dismiss any post-sell message boxes (crowns confirm, gold limit warning).
-    await _dismiss_post_sell_dialogs(machine, client, safety_delay)
-
-    # Wait to return to the main backpack view and close it.
-    # Use QUICKSELL_COMPLETE_TIMEOUT rather than safety_delay here: selling a full
-    # backpack triggers a server-side transaction that can cause noticeable lag,
-    # and the close button may take longer than safety_delay to reappear even on
-    # a successful sale.
-    machine.log("quicksell: waiting for backpack close button", logging.DEBUG)
-    backpack_visible = await node_helpers.poll_until(
-        lambda: node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH),
-        QUICKSELL_COMPLETE_TIMEOUT,
-        POLL_INTERVAL,
+    # Answer the questions the sale raises (Crowns items, pets, the gold limit) until the
+    # backpack is back. QUICKSELL_COMPLETE_TIMEOUT rather than safety_delay: selling a full
+    # backpack is a server-side transaction that can lag well past it on a successful sale.
+    machine.log("quicksell: waiting for the sale to finish", logging.DEBUG)
+    outcome = await _answer_dialogs(
+        machine, client, done=lambda: _backpack_is_back(client), timeout=QUICKSELL_COMPLETE_TIMEOUT
     )
-    machine.log(f"quicksell: backpack close button {'appeared' if backpack_visible else 'timed out'}", logging.DEBUG)
+    if outcome is _Dialogs.STUCK:
+        return "FAILURE"
+    if outcome is _Dialogs.TIMED_OUT:
+        machine.log(
+            f"FAILURE: the backpack did not come back within {QUICKSELL_COMPLETE_TIMEOUT:.0f}s of the sale",
+            logging.WARNING,
+        )
+        return "FAILURE"
     if await _close_backpack(machine, client) == "FAILURE":
         return "FAILURE"
     machine.log("quicksell: sell complete")
     return "SUCCESS"
 
 
-async def _dismiss_post_sell_dialogs(machine, client, safety_delay: float) -> None:
-    """Dismiss message boxes that appear after confirming the sale.
+class _Dialogs(enum.Enum):
+    """How _answer_dialogs ended."""
 
-    Handles up to 3 dialogs in sequence (Crowns items confirmation, Pets confirmation,
-    gold limit warning). All are answered YES / OK — clicking No on any post-sell dialog
-    cancels the entire sale. Unwanted item types are excluded before selling (e.g. pets
-    are deselected via the Pet tab), so those dialogs will not appear in practice.
+    DONE = enum.auto()  # done() held with no dialog up, or stop_after was answered
+    TIMED_OUT = enum.auto()  # the timeout passed first
+    STUCK = enum.auto()  # a dialog would not go, or more came than any sale raises; logged
+
+
+# More than a sale raises (Crowns items, pets and the gold limit, plus the odd stray box),
+# so reaching it means something keeps putting dialogs up.
+_MAX_DIALOGS = 10
+
+
+async def _never() -> bool:
+    return False
+
+
+async def _backpack_is_back(client) -> bool:
+    """The sale has finished: the shop is gone and the backpack shows again.
+
+    Read from the backpack's close button, which is hidden while the shop is up and comes
+    back with the backpack. Whether the backpack itself is still open afterwards is the
+    spellbook's own read, which _close_backpack makes.
     """
-    for _ in range(3):
-        visible = await node_helpers.poll_until(
-            lambda: node_helpers.is_visible_by_path(client, MESSAGE_BOX_CENTER),
-            safety_delay,
-            POLL_INTERVAL,
-        )
-        if not visible:
-            break
-        text = await node_helpers.get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
-        machine.log(f"quicksell: post-sell dialog {text!r} — dismissing", logging.DEBUG)
-        await node_helpers.click_by_path(client, MESSAGE_BOX_CENTER)
+    return await node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+
+
+async def _answer_dialogs(machine, client, *, done, timeout: float, stop_after: str | None = None) -> _Dialogs:
+    """Answer each dialog as it comes up, until done() holds with none showing.
+
+    A fixed count of dialogs is what this replaced: a sale raised exactly as many as it
+    allowed for, so one more, or one dropped click, left a dialog up. ``done`` is read only
+    while no dialog shows, since a dialog covers whatever it would read. ``stop_after`` ends
+    the wait as soon as that dialog has been answered.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    answered = 0
+    while True:
+        if await node_helpers.modal_showing(client):
+            if answered >= _MAX_DIALOGS:
+                machine.log(f"FAILURE: more than {_MAX_DIALOGS} dialogs came up during the quicksell", logging.WARNING)
+                return _Dialogs.STUCK
+            answer = await _answer_dialog(machine, client)
+            if not answer.closed:
+                return _Dialogs.STUCK
+            answered += 1
+            if stop_after is not None and answer.key == stop_after:
+                return _Dialogs.DONE
+            continue
+        if await done():
+            return _Dialogs.DONE
+        if loop.time() >= deadline:
+            return _Dialogs.TIMED_OUT
         await asyncio.sleep(POLL_INTERVAL)
+
+
+class _Answer(NamedTuple):
+    key: str | None  # the dialog's lang key, None if unrecognized
+    closed: bool
+
+
+async def _answer_dialog(machine, client) -> _Answer:
+    """Answer the dialog showing, clicking until it has gone.
+
+    A sale's own question is confirmed: No on any of them cancels the whole sale. Anything
+    else, such as an invitation that arrived mid-sale, is cancelled the way clear_modals
+    backs out of a dialog, and the sale goes on. A disconnect is left for the health
+    monitor. Logged by key, never by caption, which can carry a wizard's name.
+    """
+    key = await node_helpers.identify_modal(client)
+    if key in dialog_captions.DISCONNECTS:
+        machine.log(f"FAILURE: the client was disconnected ({dialog_captions.describe(key)})", logging.WARNING)
+        return _Answer(key, closed=False)
+    if key in dialog_captions.QUICKSELL_QUESTIONS:
+        machine.log(f"quicksell: confirming {dialog_captions.describe(key)}", logging.DEBUG)
+        button = MESSAGE_BOX_CENTER
+    else:
+        machine.log("quicksell: cancelling a dialog the sale did not raise", logging.INFO)
+        button = await _cancel_button(client)
+    if button is not None and await node_helpers.click_until_dialog_gone(client, button):
+        return _Answer(key, closed=True)
+    what = dialog_captions.describe(key) if key else "one this build does not recognize"
+    machine.log(f"FAILURE: a dialog would not close during the quicksell ({what})", logging.WARNING)
+    return _Answer(key, closed=False)
+
+
+async def _cancel_button(client) -> list[str] | None:
+    """The button that backs out of the dialog showing: right, else center (a lone OK), else left."""
+    for button in (MESSAGE_BOX_RIGHT, MESSAGE_BOX_CENTER, MESSAGE_BOX_LEFT):
+        if await node_helpers.is_visible_by_path(client, button):
+            return button
+    return None
 
 
 async def _process_quicksell_pages(client, keep_list: list[str]) -> None:

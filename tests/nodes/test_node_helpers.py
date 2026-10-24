@@ -836,6 +836,71 @@ async def test_click_until_gone_reads_its_default_timeout_when_called(monkeypatc
     assert loop.time() - started < 1.0
 
 
+class _DialogStack:
+    """Message boxes, top first, read by caption; the first `dropped` clicks are lost."""
+
+    def __init__(self, captions: list[str], *, dropped: int = 0):
+        self.captions = list(captions)
+        self.dropped = dropped
+        self.clicks: list = []
+
+    async def text(self, _client, path):
+        return self.captions[0] if self.captions and path == MESSAGE_BOX_CAPTION_PATH else ""
+
+    async def click(self, _client, path):
+        self.clicks.append(path)
+        if self.dropped:
+            self.dropped -= 1
+        elif self.captions:
+            self.captions.pop(0)
+        return True
+
+    def patches(self):
+        return (
+            patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=self.text)),
+            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self.click)),
+        )
+
+
+async def test_click_until_dialog_gone_clicks_again_when_the_click_is_dropped(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    stack = _DialogStack(["Are you sure?"], dropped=2)
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == [MESSAGE_BOX_CENTER] * 3
+
+
+async def test_click_until_dialog_gone_stops_at_the_next_dialog_behind_it():
+    """A different caption is the next box, which is the caller's to read and answer."""
+    stack = _DialogStack(["Are you sure?", "Something else entirely."])
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == [MESSAGE_BOX_CENTER]
+    assert stack.captions == ["Something else entirely."]
+
+
+async def test_click_until_dialog_gone_clicks_nothing_with_no_dialog_up():
+    stack = _DialogStack([])
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == []
+
+
+async def test_click_until_dialog_gone_is_false_when_the_dialog_stays(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    stack = _DialogStack(["Are you sure?"], dropped=10**6)
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is False
+
+
 class _Spellbook:
     """DeckConfiguration, open until a click on its close button lands; the first `dropped` are lost."""
 

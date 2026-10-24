@@ -1491,6 +1491,25 @@ async def click_until_gone(
     return not still_open
 
 
+async def click_until_dialog_gone(client, button: list[str]) -> bool:
+    """Click `button` on the dialog showing until that dialog has gone. True once it has.
+
+    Gone means the caption changed: the box closed, or another one came up in its place.
+    Every modal is the same window, so the caption is the only way to tell the dialog
+    answered from the one queued behind it, which this leaves for the caller to read and
+    answer. A second box with the very same caption gets the same click, which is the
+    answer the caller chose for that caption. Nothing showing costs one read and no click.
+    """
+    caption = await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
+    if not caption:
+        return True
+
+    async def still_up() -> bool:
+        return await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH) == caption
+
+    return await click_until_gone(client, button, is_open=still_up)
+
+
 async def is_spellbook_open(client) -> bool:
     """Whether the spellbook is open, on any of its pages: backpack, deck, settings, realms, housing.
 
