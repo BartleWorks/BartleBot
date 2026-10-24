@@ -6,6 +6,7 @@ therefore drive everything through a fake that models that UI.
 """
 
 import asyncio
+import json
 import logging
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
@@ -15,6 +16,7 @@ from wizwalker import Keycode
 
 import bartlebot.clients.group_manager as gm
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.game import dialog_captions
 from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
@@ -27,6 +29,7 @@ from bartlebot.nodes.paths import (
     INVITE_TO_GROUP_BUTTON_PATH,
     LARGE_FRIENDS_LIST_PATH,
     LEAVE_GROUP_BUTTON_PATH,
+    MESSAGE_BOX_CAPTION_PATH,
     SOCIAL_BUTTON_PATH,
     SOCIAL_GROUP_TAB_PATH,
     SOCIAL_WINDOW_PATH,
@@ -35,6 +38,11 @@ from bartlebot.nodes.paths import (
 from tests.conftest import FakeClient
 
 # Captured before any patching so the fake can delegate to the real retry loops.
+# The game's own en-US text for "that player is already in a group", as the snapshot holds it.
+_ALREADY_IN_GROUP_CAPTION = json.loads(dialog_captions.CAPTIONS_PATH.read_text(encoding="utf-8"))["captions"][
+    dialog_captions.ALREADY_IN_GROUP
+]["en-US"]
+
 _REAL_CLICK_UNTIL_GONE = nh.click_until_gone
 _REAL_PRESS_KEY_UNTIL_GONE = nh.press_key_until_gone
 
@@ -206,6 +214,9 @@ class FakeUI:
         roster read that happens after the window is closed, or before the page loads, shows
         up as an empty roster rather than passing.
         """
+        if path == MESSAGE_BOX_CAPTION_PATH:
+            # The refusal popup is a message box, read by its caption like any other.
+            return _ALREADY_IN_GROUP_CAPTION if self.popup_showing.get(client, False) else ""
         pending = self._load_pending.get(client)
         if pending is not None:
             if pending <= 0:
@@ -370,7 +381,8 @@ class FakeUI:
                 self._set_social_open(leader, True)
             return True
         if path == ALREADY_IN_GROUP_DISMISS_PATH:
-            self.popup_showing[client] = False
+            if not self._swallow(client, path):
+                self.popup_showing[client] = False
             return True
         if path == GROUP_WINDOW_CLOSE_PATH:
             self.closed_group_window_on.append(client)
@@ -1109,6 +1121,18 @@ async def test_already_in_group_popup_is_dismissed(ui):
     leader = ui.make_client("Alice Ashblade")
     joiner = ui.make_client("Bob Battlecaster")
     ui.already_in_other_group.add(joiner)
+
+    await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
+
+    assert ui.popup_showing.get(leader) is False
+
+
+async def test_already_in_group_popup_is_dismissed_through_a_swallowed_click(ui):
+    """One dismiss click used to be all it got, and a dropped one left the popup up."""
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+    ui.already_in_other_group.add(joiner)
+    ui.swallow_closes = 1
 
     await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 

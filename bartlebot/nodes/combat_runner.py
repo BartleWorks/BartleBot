@@ -754,7 +754,7 @@ async def _carries_damage_over_time(participants: list) -> bool:
 async def _flee(combat, watch: FightWatch) -> None:
     """Click Flee and confirm it. A miss is logged, and retried at the next planning phase."""
     from bartlebot.nodes import node_helpers  # noqa: PLC0415
-    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH  # noqa: PLC0415
+    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH  # noqa: PLC0415
 
     client = combat.client
     number = watch.number(client)
@@ -774,6 +774,16 @@ async def _flee(combat, watch: FightWatch) -> None:
         watch.log(f"P{number}: clicked Flee, but no confirmation appeared; trying again next round", logging.DEBUG)
         return
     await node_helpers.click_by_path(client, FLEE_CONFIRM_PATH)
+
+    async def _confirm_closed() -> bool:
+        return not await node_helpers.is_visible_by_path(client, FLEE_CONFIRM_WINDOW_PATH)
+
+    # Counted only once the confirmation has gone. A dropped click leaves it up, and the next
+    # planning phase finds it showing and clicks it again; counting it now would end the
+    # fight as fled even if the others went on to win it.
+    if not await node_helpers.poll_until(_confirm_closed, FLEE_CONFIRM_TIMEOUT):
+        watch.log(f"P{number}: confirmed the flee, but the confirmation stayed; trying again next round", logging.DEBUG)
+        return
     watch.note_fled(client)
     watch.log(f"P{number}: fled", logging.INFO)
 

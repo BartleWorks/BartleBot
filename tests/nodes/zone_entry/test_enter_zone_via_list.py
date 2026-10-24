@@ -6,6 +6,8 @@ is what these params are.
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 import bartlebot.nodes.zone_entry.enter_zone_via_list as evl
 from tests.conftest import FakeClient, FakeMachine, prompt_at
 
@@ -18,6 +20,42 @@ _PARAMS = {
 }
 
 _NH = "bartlebot.nodes.zone_entry.enter_zone_via_list.node_helpers"
+
+
+@pytest.fixture(autouse=True)
+def _short_window_close(monkeypatch):
+    """Most fakes here answer every visibility read with True, so a cancelled list never
+    reads closed and each cancel would retry for the full WINDOW_CLOSE_TIMEOUT. The cancel's
+    outcome changes nothing those tests assert; the one test of the cancel itself is below."""
+    import bartlebot.nodes.node_helpers as nh
+
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+
+
+async def test_a_cancel_is_clicked_again_until_the_list_is_gone():
+    """Cancel is only sent on a failing path, but a list left up is on screen for the next turn."""
+    open_list = {"clicks_to_close": 3}
+    clicked: list = []
+
+    async def _visible(_client, path):
+        if path == evl.UNIVERSE_LIST_PATH:
+            return open_list["clicks_to_close"] > 0
+        return True
+
+    async def _click(_client, path):
+        clicked.append(path)
+        if path == evl.UNIVERSE_CANCEL_BUTTON:
+            open_list["clicks_to_close"] -= 1
+        return True
+
+    with (
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(side_effect=_visible)),
+        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+    ):
+        await evl._cancel_list(FakeClient())
+
+    assert clicked == [evl.UNIVERSE_CANCEL_BUTTON] * 3
 
 
 def _ready_client(zone: str = "TestZone") -> FakeClient:

@@ -100,6 +100,9 @@ FLEE_CONFIRM_PATH = [
     "Layout",
     "centerButton",
 ]
+# The flee confirmation itself, read to tell whether it has closed: its button keeps reading
+# visible once it has, as every control inside a window does.
+FLEE_CONFIRM_WINDOW_PATH = ["WorldView", "PlanningPhase", "MessageBoxModalWindow"]
 
 # The "You Are Idle" popup (GUI:CombatAFKTitle / CombatAFKMessage, #203). The game raises it once
 # a player has let two planning phases in a row run out without choosing a card or passing, and
@@ -143,6 +146,19 @@ TEAMUP_4_PLAYER_CHECKBOX = [
     "TeamSize4CheckBox",
 ]
 ENTER_TEAMUP_BUTTON_PATH = ["WorldView", "TeamUpConfirmationWindow", "TeamUpConfirmationBackground", "TeamUpButton"]
+# The confirmation window itself, read to tell whether it is still up: its buttons keep
+# reading visible once it has closed, as every control inside a window does.
+TEAMUP_CONFIRMATION_WINDOW_PATH = ["WorldView", "TeamUpConfirmationWindow"]
+# The HUD's team-up label, visible only while the player waits in the Team-Up queue. The
+# last player to make a team never waits: the dungeon loads at once, and this never shows.
+TEAMUP_QUEUED_PATH = [
+    "WorldView",
+    "windowHUD",
+    "windowForTopRowButtons",
+    "containerForTeamUp",
+    "btnTeamUp",
+    "txtTeamUp",
+]
 
 # Sigil entrance mode toggle. Dungeons that offer Challenge Mode show this button on the
 # entrance prompt; it cycles the sigil's mode. The prompt title is what says which mode is
@@ -513,6 +529,9 @@ UNIVERSE_NEXT_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionW
 UNIVERSE_PREV_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "leftButton"]
 UNIVERSE_TELEPORT_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "teleportButton"]
 UNIVERSE_CANCEL_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "cancelButton"]
+# The zone list window itself, read to tell whether it has closed: its buttons keep reading
+# visible once it has, as every control inside a window does.
+UNIVERSE_LIST_PATH = ["WorldView", "", "messageBoxBG"]
 # The list window's title: "Spiral Map" on a World Gate (worlds.is_world_gate_title).
 UNIVERSE_TITLE = ["WorldView", "", "messageBoxBG", "ControlSprite", "title"]
 

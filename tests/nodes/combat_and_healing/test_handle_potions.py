@@ -470,27 +470,54 @@ async def test_navigate_reports_failure_when_the_shop_will_not_open():
         assert await hp.navigate_to_potion_vendor(_machine(), [client]) is False
 
 
+def _shop(clicks_to_close: float):
+    """The potion shop, open until `clicks_to_close` clicks on Exit have landed."""
+    shop = {"left": clicks_to_close, "clicks": 0}
+
+    async def visible(_client, path):
+        return path == hp.POTION_SHOP_BASE_PATH and shop["left"] > 0
+
+    async def click(_client, path):
+        shop["clicks"] += 1
+        shop["left"] -= 1
+        return True
+
+    patches = (
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=visible)),
+        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
+        patch.object(hp, "SHOP_EXIT_CLICK_INTERVAL", 0.001),
+    )
+    return shop, patches
+
+
 async def test_close_potion_shop_clicks_until_the_window_is_gone():
     """One click can be swallowed mid-animation, so it repeats until the shop reports closed."""
-    client = FakeClient()
-    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, True, False]))
-    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    shop, (visible, click, interval) = _shop(clicks_to_close=2)
 
-    with visible, click as c, patch.object(hp, "SHOP_EXIT_CLICK_INTERVAL", 0):
-        await hp.close_potion_shop(client)
+    with visible, click, interval:
+        assert await hp.close_potion_shop(FakeClient()) is True
 
-    assert c.await_count == 2
+    assert shop["clicks"] == 2
 
 
 async def test_close_potion_shop_does_nothing_when_already_closed():
-    client = FakeClient()
-    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
-    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    shop, (visible, click, interval) = _shop(clicks_to_close=0)
 
-    with visible, click as c:
-        await hp.close_potion_shop(client)
+    with visible, click, interval:
+        assert await hp.close_potion_shop(FakeClient()) is True
 
-    c.assert_not_awaited()
+    assert shop["clicks"] == 0
+
+
+async def test_close_potion_shop_gives_up_on_a_shop_that_never_closes(monkeypatch):
+    """It used to click for as long as the shop read open: forever, for one that always does."""
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    shop, (visible, click, interval) = _shop(clicks_to_close=float("inf"))
+
+    with visible, click, interval:
+        assert await hp.close_potion_shop(FakeClient()) is False
+
+    assert shop["clicks"] > 1
 
 
 # ══════════════════════════════════════════════════════════════════════════════

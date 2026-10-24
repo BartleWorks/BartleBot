@@ -1,6 +1,7 @@
 """Unit tests for the enter_dungeon node."""
 
 import asyncio
+import contextlib
 import itertools
 from unittest.mock import AsyncMock, patch
 
@@ -14,6 +15,8 @@ from bartlebot.nodes.paths import (
     TEAMUP_2_PLAYER_CHECKBOX,
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
+    TEAMUP_CONFIRMATION_WINDOW_PATH,
+    TEAMUP_QUEUED_PATH,
 )
 from tests.conftest import FakeClient, FakeGidEntity, FakeMachine
 
@@ -454,79 +457,149 @@ def _teamup_machine(**options) -> FakeMachine:
     return FakeMachine(options={**_TEAMUP_ON, **options})
 
 
-async def _visible_for_teamup_window_only(_client, path):
-    """True only for the team-up confirmation window; False for the stale-prompt check."""
-    return path == ENTER_TEAMUP_BUTTON_PATH
+class _TeamUpScreen:
+    """The sigil's Team-Up flow as the node sees it, for any number of clients.
+
+    Team-Up opens the confirmation window, and an Enter click that lands closes it; the
+    first `dropped` per client are lost. The player then either waits in the queue, with
+    the HUD's label showing, until the dungeon loads after `queue_reads` zone reads, or,
+    as the last player to make a team, is in the dungeon at once (`instant`). With
+    `ignored`, a landed click closes the window and nothing else happens. The dungeon is
+    `lands_in`, and `loads` puts one loading screen in front of it.
+
+    Like every control, the Enter button keeps reading visible once its window has closed.
+    """
+
+    def __init__(
+        self,
+        *,
+        window_appears=True,
+        instant=False,
+        dropped=0,
+        queue_reads=2,
+        ignored=False,
+        lands_in="Dungeon",
+        loads=False,
+    ):
+        self.window_appears = window_appears
+        self.lands_in = lands_in
+        self.loads = loads
+        self.instant = instant
+        self.dropped = dropped
+        self.queue_reads = queue_reads
+        self.ignored = ignored
+        self.state: dict[FakeClient, dict] = {}
+        self.clicked: list = []
+
+    def client(self) -> FakeClient:
+        c = FakeClient()
+        self.state[c] = {
+            "window": False,
+            "opened": False,
+            "queued": False,
+            "zone": "Hub",
+            "reads": 0,
+            "dropped": self.dropped,
+            "loading": False,
+        }
+        c.zone_name.side_effect = lambda: self._zone(c)
+        c.is_loading.side_effect = lambda: self._loading(c)
+        return c
+
+    def _arrive(self, st) -> None:
+        st["queued"], st["zone"], st["loading"] = False, self.lands_in, self.loads
+
+    def _loading(self, client) -> bool:
+        st = self.state[client]
+        loading, st["loading"] = st["loading"], False
+        return loading
+
+    def _zone(self, client) -> str:
+        st = self.state[client]
+        if st["queued"]:
+            st["reads"] += 1
+            if st["reads"] > self.queue_reads:
+                self._arrive(st)
+        return st["zone"]
+
+    async def visible(self, client, path):
+        st = self.state[client]
+        if path == ENTER_TEAMUP_BUTTON_PATH:
+            return st["opened"]
+        if path == TEAMUP_CONFIRMATION_WINDOW_PATH:
+            return st["window"]
+        if path == TEAMUP_QUEUED_PATH:
+            return st["queued"]
+        return False  # no stale prompt
+
+    async def click(self, client, path):
+        st = self.state[client]
+        self.clicked.append((client, path, st["window"]))
+        if path == ed.DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH and self.window_appears:
+            st["window"] = st["opened"] = True
+        elif path == ENTER_TEAMUP_BUTTON_PATH and st["window"]:
+            if st["dropped"]:
+                st["dropped"] -= 1
+            else:
+                st["window"] = False
+                if self.ignored:
+                    pass
+                elif self.instant:
+                    self._arrive(st)
+                else:
+                    st["queued"] = True
+        return True
+
+    async def run(self, clients, machine=None, patches=(), **options) -> str:
+        with contextlib.ExitStack() as stack:
+            for p in (
+                patch.object(ed, "POLL_INTERVAL", 0),
+                patch.object(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
+                patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+                patch.object(nh, "is_visible_by_path", side_effect=self.visible),
+                patch.object(nh, "click_by_path", side_effect=self.click),
+                *patches,
+            ):
+                stack.enter_context(p)
+            return await ed.run(machine or _teamup_machine(**options), clients, _TEAMUP_PARAMS)
+
+    def paths_clicked(self) -> list:
+        return [path for _c, path, _window in self.clicked]
 
 
 async def test_teamup_success_single_client():
     """Happy path: one client queues at the sigil and lands in the dungeon."""
-    client = _happy_client()
+    screen = _TeamUpScreen()
+    client = screen.client()
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
-
-    assert result == "SUCCESS"
+    assert await screen.run([client]) == "SUCCESS"
     # Reset first, whether or not a prompt showed (#152), then the one teleport to the sigil.
     assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
 
 
 async def test_teamup_success_multiple_clients():
     """All clients queue independently — verified with two."""
-    clients = [_happy_client(), _happy_client()]
+    screen = _TeamUpScreen()
+    clients = [screen.client(), screen.client()]
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-    ):
-        result = await ed.run(_teamup_machine(), clients, _TEAMUP_PARAMS)
-
-    assert result == "SUCCESS"
+    assert await screen.run(clients) == "SUCCESS"
     for c in clients:
         assert [call.args[0].x for call in c.teleport.call_args_list] == [1.0, 0.0]
 
 
 async def test_teamup_window_never_appears_fails():
     """FAILURE when the team-up confirmation window never opens."""
-    client = _happy_client()
+    screen = _TeamUpScreen(window_appears=False)
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False)),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
-
-    assert result == "FAILURE"
+    assert await screen.run([screen.client()]) == "FAILURE"
 
 
 async def _clicked_paths_for(team_size):
     """Run a team-up entry with *team_size* and return every path that was clicked."""
-    client = _happy_client()
-    clicked: list = []
+    screen = _TeamUpScreen()
 
-    async def record_click(_c, path):
-        clicked.append(path)
-        return True
-
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", side_effect=record_click),
-    ):
-        result = await ed.run(_teamup_machine(**{ed.OPTION_MINIMUM_TEAM_SIZE: team_size}), [client], _TEAMUP_PARAMS)
-
-    assert result == "SUCCESS"
-    return clicked
+    assert await screen.run([screen.client()], **{ed.OPTION_MINIMUM_TEAM_SIZE: team_size}) == "SUCCESS"
+    return screen.paths_clicked()
 
 
 async def test_team_size_2_checkbox_clicked():
@@ -556,7 +629,41 @@ async def test_enter_teamup_button_clicked():
     """The queue is actually joined, not merely configured."""
     clicked = await _clicked_paths_for(2)
 
-    assert ENTER_TEAMUP_BUTTON_PATH in clicked
+    assert clicked.count(ENTER_TEAMUP_BUTTON_PATH) == 1
+
+
+async def test_a_dropped_enter_click_is_sent_again_until_the_player_is_queued():
+    """One dropped click used to leave the node waiting an hour in a queue nobody had joined."""
+    screen = _TeamUpScreen(dropped=2)
+
+    assert await screen.run([screen.client()]) == "SUCCESS"
+    assert screen.paths_clicked().count(ENTER_TEAMUP_BUTTON_PATH) == 3
+
+
+async def test_the_last_player_to_make_a_team_goes_straight_in():
+    """The final joiner never waits in the queue, so its label never shows."""
+    screen = _TeamUpScreen(instant=True)
+
+    assert await screen.run([screen.client()]) == "SUCCESS"
+    assert screen.paths_clicked().count(ENTER_TEAMUP_BUTTON_PATH) == 1
+
+
+async def test_enter_is_never_clicked_once_the_window_has_gone():
+    """Its button still reads visible then, and a click on it would land on the world."""
+    screen = _TeamUpScreen(dropped=1)
+
+    await screen.run([screen.client()])
+
+    assert all(window for _c, path, window in screen.clicked if path == ENTER_TEAMUP_BUTTON_PATH)
+
+
+async def test_a_player_who_never_joins_fails_without_waiting_out_the_queue():
+    machine = _teamup_machine()
+    screen = _TeamUpScreen(ignored=True)
+
+    assert await screen.run([screen.client()], machine=machine) == "FAILURE"
+    assert any("did not join the Team-Up queue" in msg for msg, _level in machine.logs)
+    assert not any("Waiting for team-up zone change" in msg for msg, _level in machine.logs)
 
 
 async def test_invalid_team_size_fails_without_queueing():
@@ -566,44 +673,18 @@ async def test_invalid_team_size_fails_without_queueing():
     bot file rather than anything the UI can produce — which is the case ``minimum`` and
     ``maximum`` cannot catch on their own.
     """
-    client = _happy_client()
-    click_by_path_mock = AsyncMock(return_value=True)
+    screen = _TeamUpScreen()
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", click_by_path_mock),
-    ):
-        result = await ed.run(_teamup_machine(**{ed.OPTION_MINIMUM_TEAM_SIZE: 5}), [client], _TEAMUP_PARAMS)
-
-    assert result == "FAILURE"
-    click_by_path_mock.assert_not_awaited()
+    assert await screen.run([screen.client()], **{ed.OPTION_MINIMUM_TEAM_SIZE: 5}) == "FAILURE"
+    assert screen.clicked == []
 
 
 async def test_antiafk_sent_during_queue_wait():
     """The anti-AFK keypress fires while the queue is still matching."""
-    client = FakeClient()
-    call_count = 0
+    screen = _TeamUpScreen(queue_reads=3)
+    client = screen.client()
 
-    async def zone_sequence():
-        nonlocal call_count
-        call_count += 1
-        # First call is the pre-check; the rest are the queue wait loop. Stay in Hub
-        # long enough for the AFK timer to fire, then leave.
-        return "Hub" if call_count <= 3 else "Dungeon"
-
-    client.zone_name.side_effect = zone_sequence
-
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(ed, "AFK_INTERVAL", 0.0),  # trigger immediately
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=None)),
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
+    result = await screen.run([client], patches=(patch.object(ed, "AFK_INTERVAL", 0.0),))
 
     assert result == "SUCCESS"
     a_key_calls = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.A]
@@ -612,51 +693,30 @@ async def test_antiafk_sent_during_queue_wait():
 
 async def test_teamup_queue_timeout_fails():
     """FAILURE when the queue never matches within TEAMUP_QUEUE_TIMEOUT."""
-    client = FakeClient()
-    client.zone_name.return_value = "Hub"
+    screen = _TeamUpScreen(queue_reads=float("inf"))
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(ed, "TEAMUP_QUEUE_TIMEOUT", 0.01),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
+    result = await screen.run([screen.client()], patches=(patch.object(ed, "TEAMUP_QUEUE_TIMEOUT", 0.01),))
 
     assert result == "FAILURE"
 
 
 async def test_teamup_loading_screen_awaited():
     """The loading screen is waited out before the final zone is checked."""
-    client = _happy_client()
-    client.is_loading.side_effect = [True, False]
+    screen = _TeamUpScreen(loads=True)
+    client = screen.client()
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
-
-    assert result == "SUCCESS"
+    assert await screen.run([client]) == "SUCCESS"
     assert client.is_loading.call_count >= 2
 
 
 async def test_teamup_wrong_destination_zone_fails():
     """Post-condition failure: the queue matched, but into the wrong zone."""
-    client = FakeClient()
-    client.zone_name.side_effect = ["Hub", "Hub", "WrongZone"]
+    screen = _TeamUpScreen(lands_in="WrongZone")
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["WrongZone"])),
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
+    result = await screen.run(
+        [screen.client()],
+        patches=(patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["WrongZone"])),),
+    )
 
     assert result == "FAILURE"
 
@@ -786,16 +846,10 @@ async def test_a_stranger_who_entered_with_the_team_fails_the_node():
 
 
 async def test_a_stranger_through_team_up_is_expected():
-    client = _happy_client()
+    screen = _TeamUpScreen()
+    count = AsyncMock(return_value=1)
 
-    with (
-        patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "count_strangers", new=AsyncMock(return_value=1)) as count,
-    ):
-        result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
+    result = await screen.run([screen.client()], patches=(patch.object(nh, "count_strangers", new=count),))
 
     assert result == "SUCCESS"
     count.assert_not_awaited()

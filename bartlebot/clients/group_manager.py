@@ -999,8 +999,10 @@ async def _send_invite(leader, target, name: str, label: str, log, social_window
         if refused:
             # The game rejects the invite outright if that player is already in a group —
             # someone else's, since form_group skips clients known to be in one. Dismiss the
-            # popup so it does not block the next invite, and stop: retrying cannot help.
-            await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
+            # popup so it does not block the next invite, clicking until it has gone, and
+            # stop: retrying cannot help.
+            if not await node_helpers.click_until_dialog_gone(leader, ALREADY_IN_GROUP_DISMISS_PATH):
+                log(f"The already-in-a-group notice for {label} would not close", logging.WARNING)
             raise AlreadyInAnotherGroup(f"{label} is already in another group")
         if not invited:
             log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)

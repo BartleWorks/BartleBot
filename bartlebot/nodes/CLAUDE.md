@@ -211,6 +211,29 @@ what it can do — a warning that fires once per loop pass is separated by every
 that pass logged, so it does not collapse. `=== pass N ===` is what makes that shape
 legible instead.
 
+## Closing a window, answering a dialog
+
+One click is never enough for anything expected to go away. The game drops clicks while it
+is busy, straight after a sale or mid-animation, and a modal takes every click aimed behind
+it. Quicksell once clicked the backpack's close button once, watched it for Safety Delay,
+and reported success over a backpack left open. So click until it is gone:
+
+- **A window:** `click_until_gone(client, button, is_open=…)`, with `is_open` reading the
+  window itself, never its button. A control keeps reading visible once its window has
+  closed (see `is_visible_by_path`). `close_spellbook` is this for the spellbook, on any page:
+  backpack, settings, realms, housing. `press_key_until_gone` is the same for a key toggle.
+- **A dialog:** `click_until_dialog_gone(client, button)`, which clicks until the caption
+  changes. A different caption is the next box in the stack, and it is the caller's to read
+  and answer. Decide the button from the caption (`identify_modal`) before each one.
+- **Check before every click.** Both helpers do. These buttons sit on toggles, and a click on
+  a window already gone lands on whatever is behind it.
+- **Give up at the timeout, and say so.** A node whose job ends with a window shut fails if
+  it stays open, since it takes every click the next node sends; a close that is only
+  tidying up (housing's) warns.
+- **A click that starts something with no window to watch** (joining the Team-Up queue,
+  confirming a flee) is confirmed by its effect instead, and repeated only while the window
+  holding its button is still up.
+
 ## Telling modal dialogs apart
 
 Every in-game modal is the same `MessageBoxModalWindow` tree, so "a modal is up"

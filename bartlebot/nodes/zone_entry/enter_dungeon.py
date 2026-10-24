@@ -17,6 +17,8 @@ from bartlebot.nodes.paths import (
     TEAMUP_2_PLAYER_CHECKBOX,
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
+    TEAMUP_CONFIRMATION_WINDOW_PATH,
+    TEAMUP_QUEUED_PATH,
 )
 from bartlebot.options import player_realms
 from bartlebot.options.option_groups import GROUP_DUNGEON, GROUP_TEAM
@@ -113,8 +115,8 @@ NODE_SPEC = NodeSpec(
             (
                 "A player wasn't in From Zone, the entrance prompt never appeared, not every player "
                 "reached Dungeon Zone, a player outside the team entered with them, the sigil couldn't "
-                "switch to Challenge Mode, or Team-Up didn't open or match in time. Team-Up runs skip the "
-                "check for outsiders."
+                "switch to Challenge Mode, or Team-Up didn't open, a player couldn't join its queue, or it "
+                "didn't match in time. Team-Up runs skip the check for outsiders."
             ),
         ),
     ],
@@ -312,7 +314,11 @@ async def _enter_teamup(machine, clients: list, from_zone: str, team_size: int, 
     await asyncio.gather(*[node_helpers.click_by_path(c, checkbox_path) for c in clients])
 
     machine.log("Clicking enter team-up button", logging.DEBUG)
-    await asyncio.gather(*[node_helpers.click_by_path(c, ENTER_TEAMUP_BUTTON_PATH) for c in clients])
+    joined = await asyncio.gather(*[_join_queue(c, from_zone, safety_delay) for c in clients])
+    if not all(joined):
+        missing = [number for number, ok in enumerate(joined, start=1) if not ok]
+        machine.log(f"FAILURE: player(s) {missing} did not join the Team-Up queue", logging.WARNING)
+        return False
 
     # Matchmaking can take a long time; a brief A keypress every AFK_INTERVAL seconds
     # keeps the character from going idle and being disconnected out of the queue.
@@ -334,6 +340,29 @@ async def _enter_teamup(machine, clients: list, from_zone: str, team_size: int, 
             await asyncio.gather(*[c.send_key(Keycode.A, 0.1) for c in clients])
             last_afk = now
         await asyncio.sleep(POLL_INTERVAL)
+
+
+async def _join_queue(client, from_zone: str, safety_delay: float) -> bool:
+    """Click Enter Team-Up until *client* is in the queue, or already on its way in. True once it is.
+
+    A dropped click used to cost the whole TEAMUP_QUEUE_TIMEOUT, an hour of waiting in a
+    queue nobody had joined. Joined is read three ways: the HUD's team-up label shows while
+    queued, and the last player to make a team skips the wait, loading straight in or
+    having already left the zone. The click is repeated only while the confirmation
+    window is still up, so a retry never lands on the world behind a window already gone.
+    """
+
+    async def joined() -> bool:
+        if await node_helpers.is_visible_by_path(client, TEAMUP_QUEUED_PATH) or await client.is_loading():
+            return True
+        return await node_helpers.all_left_zone([client], from_zone)
+
+    async def waiting_to_join() -> bool:
+        return await node_helpers.is_visible_by_path(client, TEAMUP_CONFIRMATION_WINDOW_PATH) and not await joined()
+
+    await node_helpers.click_until_gone(client, ENTER_TEAMUP_BUTTON_PATH, is_open=waiting_to_join)
+    # The window can close before the server's answer reaches the HUD.
+    return await node_helpers.poll_until(joined, safety_delay, POLL_INTERVAL)
 
 
 async def _all_seen(machine, clients: list) -> bool:
