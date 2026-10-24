@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 
 from wizwalker import XYZ
@@ -118,12 +119,59 @@ def _reset_point(data) -> XYZ | None:
     return reset if (reset.x, reset.y, reset.z) != (0.0, 0.0, 0.0) else None
 
 
-async def _transition_group(machine, group: list, from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]) -> str:
+def _players(numbers: list[int]) -> str:
+    return ", ".join(f"P{n}" for n in numbers) or "nobody"
+
+
+async def _observe(client) -> tuple[str | None, bool | None, XYZ | None]:
+    """A client's (zone, loading, position), each None when its read failed.
+
+    A client on a loading screen can raise on a read, and that is a fact worth logging
+    rather than an error: `_watch_group` shows it as the state it is in.
+    """
+
+    async def _read(read):
+        try:
+            return await read()
+        except Exception:
+            return None
+
+    return tuple(await asyncio.gather(_read(client.zone_name), _read(client.is_loading), _read(client.body.position)))
+
+
+async def _watch_group(machine, clients: list, numbers: list[int]) -> None:
+    """Log each client's zone and loading state every time either changes, with where it stood.
+
+    Diagnostic only. With Stagger on, one of the three followers sometimes never fires the
+    trigger, or arrives and is back out again, and the node's own lines say only how many
+    were left. This says who, in what order, and where each stood at the time, so a player
+    standing in an exit trigger shows up as a position. It reads outside the node's own
+    polls and decides nothing.
+    """
+    last: dict[int, tuple] = {}
+    while True:
+        observed = await asyncio.gather(*[_observe(c) for c in clients])
+        for number, (zone, loading, position) in zip(numbers, observed):
+            if last.get(number) == (zone, loading):
+                continue
+            last[number] = (zone, loading)
+            where = f"({position.x:.0f}, {position.y:.0f}, {position.z:.0f})" if position else "unreadable"
+            machine.log(
+                f"P{number}: zone={zone.rsplit('/', 1)[-1] if zone else 'unreadable'} loading={loading} at {where}",
+                logging.DEBUG,
+            )
+        await asyncio.sleep(POLL_INTERVAL)
+
+
+async def _transition_group(
+    machine, group: list, numbers: list[int], from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]
+) -> str:
     """Teleport `group` into the transition bounding box and wait for them to arrive in to_zone.
 
     Runs the full teleport → dismiss dungeon dialog → leave-from_zone (with reset retry) →
-    wait-for-loading → arrive-in-to_zone sequence for just the clients in `group`. `resets` is
-    each client's reset point, in `group` order. Returns "SUCCESS" or "FAILURE".
+    wait-for-loading → arrive-in-to_zone sequence for just the clients in `group`. `numbers` is
+    each client's player number and `resets` its reset point, both in `group` order. Returns
+    "SUCCESS" or "FAILURE".
 
     A client that never triggers the transition at all is not failed here: the arrival check
     at the end runs regardless, and wait_for_zone_with_recovery can still port a client stuck
@@ -193,6 +241,11 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
 
         stuck = [group[i] for i in range(len(group)) if i not in seen_left]
         left = [group[i] for i in range(len(group)) if i in seen_left]
+        machine.log(
+            f"Left {from_zone!r}: {_players([numbers[i] for i in sorted(seen_left)])}; "
+            f"still in it: {_players([numbers[i] for i in range(len(group)) if i not in seen_left])}",
+            logging.DEBUG,
+        )
 
         # A groupmate who already reached to_zone is a better recovery path than another
         # reset_xyz retry: stop burning attempts on a trigger that keeps failing and let
@@ -235,7 +288,10 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
             machine, group, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
         )
     ) is not None:
-        machine.log(f"Zones after transition: {actual}", logging.DEBUG)
+        machine.log(
+            "Zones after transition: " + ", ".join(f"P{n} {z}" for n, z in zip(numbers, actual)),
+            logging.DEBUG,
+        )
         machine.log(
             f"FAILURE: clients not in expected zone after transition (expected={to_zone!r}, got={list(set(actual))})",
             logging.WARNING,
@@ -295,16 +351,25 @@ async def run(machine, clients: list, params: dict) -> str:
     # Who shares whose realm, for straggler recovery in a Separate bot.
     await node_helpers.note_realm_peers(machine, clients)
 
-    if stagger:
-        machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)
-        lead_result = await _transition_group(machine, clients[:1], from_zone, to_zone, target, resets[:1])
-        if lead_result == "FAILURE":
-            machine.log("FAILURE: lead client failed to transition during staggered entry", logging.WARNING)
-            return "FAILURE"
-        machine.log("enter_zone: lead client settled in destination zone, sending remaining clients", logging.DEBUG)
-        result = await _transition_group(machine, clients[1:], from_zone, to_zone, target, resets[1:])
-    else:
-        result = await _transition_group(machine, clients, from_zone, to_zone, target, resets)
+    numbers = list(range(1, len(clients) + 1))
+    watcher = asyncio.create_task(_watch_group(machine, clients, numbers))
+    try:
+        if stagger:
+            machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)
+            lead_result = await _transition_group(
+                machine, clients[:1], numbers[:1], from_zone, to_zone, target, resets[:1]
+            )
+            if lead_result == "FAILURE":
+                machine.log("FAILURE: lead client failed to transition during staggered entry", logging.WARNING)
+                return "FAILURE"
+            machine.log("enter_zone: lead client settled in destination zone, sending remaining clients", logging.DEBUG)
+            result = await _transition_group(machine, clients[1:], numbers[1:], from_zone, to_zone, target, resets[1:])
+        else:
+            result = await _transition_group(machine, clients, numbers, from_zone, to_zone, target, resets)
+    finally:
+        watcher.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await watcher
 
     if result == "SUCCESS":
         machine.log(f"SUCCESS: all clients in {to_zone!r}")
