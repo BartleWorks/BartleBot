@@ -162,7 +162,8 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Boss"
+    "Boss",
+    "Challenge Mode"
   ],
   "options": [],
   "states": [
@@ -595,6 +596,7 @@
     "version": 1
   },
   "history": [
+    "96cd0c0e5ad568a3953d004e4c27707e180c6ccb7233c663f72f7315503931c6",
     "583ff38c954906a99c063d97447e3e53663d01ed938ad2dd2b38ef9759b7f732"
   ]
 }
