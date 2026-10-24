@@ -226,7 +226,7 @@ async def _gather_at_hooked_player(machine, clients: list, target: TargetResolut
         await node_helpers.poll_until(
             lambda: node_helpers.none_loading([target_client]), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
         )
-        target_zone = await target_client.zone_name()
+        (target_zone,) = await node_helpers.read_zones([target_client], poll_interval=POLL_INTERVAL)
         if not node_helpers.zone_matches(target_zone, to_zone):
             machine.log(
                 f"FAILURE: the target ({target.source}) is in {target_zone!r}, not {to_zone!r}", logging.WARNING
@@ -292,7 +292,8 @@ async def _port_to_named_friend(machine, clients: list, target: TargetResolution
     # b. Nobody knows the friend's zone, but everyone who ported to them shares it.
     async def _together() -> bool:
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
-        if len(set(zones)) != 1 or (to_zone and not node_helpers.zone_matches(zones[0], to_zone)):
+        # All None is one set too, and says nothing: a zone just off a loading screen is unread.
+        if None in zones or len(set(zones)) != 1 or (to_zone and not node_helpers.zone_matches(zones[0], to_zone)):
             return False
         # One zone is not one realm. Everyone ported onto the friend, so everyone is standing
         # together, where seeing each other is the proof (#130).

@@ -378,6 +378,20 @@ async def test_the_target_player_is_never_asked_to_teleport_to_itself():
     assert mover.where == sim.target.where
 
 
+async def test_players_whose_zones_never_turn_readable_are_not_together(monkeypatch):
+    """All None is one set of zones, and says nothing: it names no zone they share (#282)."""
+    monkeypatch.setattr(ttf, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _friend_sim()
+    clients = [sim.player(_HOUSE, _AT_FRIEND), sim.player(_HOUSE, _AT_FRIEND)]
+    for c in clients:
+        c.zone_name = AsyncMock(return_value=None)
+
+    result, machine = await _run(sim, clients)
+
+    assert result == "FAILURE"
+    assert any("did not end up together" in msg for msg, _ in machine.logs)
+
+
 async def test_a_blank_to_zone_follows_the_target_wherever_it_is():
     sim = _hooked_sim("Anywhere/At_All")
     mover = sim.player(_HUB, _FAR)
@@ -398,6 +412,19 @@ async def test_a_target_outside_to_zone_fails_before_anyone_ports():
     assert result == "FAILURE"
     assert sim.ported == []
     assert any("not" in msg and _HOUSE in msg for msg, _ in machine.logs)
+
+
+async def test_a_target_whose_zone_is_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the target's zone reads None for a moment (#282)."""
+    sim = _hooked_sim()
+    mover = sim.player(_HUB, _FAR)
+    target = sim.target
+    target.zone_name = AsyncMock(side_effect=lambda: None if target.zone_name.await_count <= 1 else target.where[0])
+
+    result, _ = await _run(sim, [sim.target, mover], {**_HOOKED, "to_zone": _HOUSE})
+
+    assert result == "SUCCESS"
+    assert mover.where[0] == _HOUSE
 
 
 async def test_a_player_already_in_to_zone_is_still_ported_to_the_target():

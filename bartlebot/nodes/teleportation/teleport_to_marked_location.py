@@ -116,7 +116,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 7. Verify all clients are in the expected zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Zones after recall: {list(zones)}", logging.DEBUG)
     if len(set(expected_zones)) == 1:
         expected = expected_zones[0]

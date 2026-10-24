@@ -11,7 +11,7 @@ import bartlebot.nodes.utility.handle_level_scaling as hls
 from bartlebot.game import scales
 from bartlebot.nodes.teleportation import mark_location
 from bartlebot.nodes.zone_navigation import Outcome
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 
 _FARM = "Farm/Zone"
 _FARM_SPOT = XYZ(100.0, 200.0, 0.0)
@@ -326,6 +326,20 @@ async def test_players_in_a_challenge_mode_dungeon_are_left_alone():
     assert world.calls == []
 
 
+async def test_a_challenge_mode_zone_unreadable_at_first_is_still_left_alone():
+    """A None is no Challenge Mode zone: read at once, it sent them out of the instance (#282)."""
+    clients = [FakeClient(), FakeClient()]
+    world = _World(clients)
+    for client in clients:
+        zone_unreadable_at_first(client, "Aquila/AQ_Z03_Tartarus_Hard")
+
+    with world.patched():
+        result = await hls.run(_machine([1, 2]), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert world.calls == []
+
+
 async def test_one_player_outside_the_challenge_dungeon_still_makes_the_trip():
     clients = [FakeClient(), FakeClient()]
     world = _World(clients)
@@ -430,6 +444,46 @@ async def test_a_recall_that_lands_somewhere_else_forgets_that_mark():
         assert await hls.run(machine, [client], _PARAMS) == "FAILURE"
 
     assert mark_location.marked_at(machine, client) is None
+
+
+async def test_a_zone_unreadable_at_the_scales_is_waited_for_not_failed():
+    """Off the sigil's loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    world = _World([client])
+    enter = world.enter_dungeon
+
+    async def enter_then_unreadable(machine, clients, params):
+        result = await enter(machine, clients, params)
+        zone_unreadable_at_first(client, params["dungeon_zone"])
+        return result
+
+    world.enter_dungeon = enter_then_unreadable
+
+    with world.patched():
+        assert await hls.run(_machine([1]), [client], _PARAMS) == "SUCCESS"
+
+    assert "apply" in world.calls
+
+
+async def test_a_zone_unreadable_off_the_recall_is_waited_for_and_the_mark_kept():
+    """Off the recall's loading screen the zone reads None for a moment (#282). Read at once,
+    it counted as a miss, and the mark was forgotten."""
+    machine, client = _machine([1]), FakeClient()
+    world = _World([client])
+    mark_location._remember(machine, client, mark_location.Mark(_FARM, _FARM_SPOT))
+    recall = world.recall
+
+    async def recall_then_unreadable(machine, clients):
+        landed = await recall(machine, clients)
+        zone_unreadable_at_first(client, world.recall_zone)
+        return landed
+
+    world.recall = recall_then_unreadable
+
+    with world.patched():
+        assert await hls.run(machine, [client], _PARAMS) == "SUCCESS"
+
+    assert mark_location.marked_at(machine, client) is not None
 
 
 async def test_an_elixir_that_landed_on_the_way_is_not_applied_again():
