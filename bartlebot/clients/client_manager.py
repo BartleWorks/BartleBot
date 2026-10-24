@@ -1494,8 +1494,9 @@ class ClientManager(QObject):
 
         machine.suspend_health_checks_for([c.window_handle for c in clients], watch_disconnects=True)
         logger.info("Logging out %d player(s) so the whole team starts again together", len(clients))
+        pacing = relog_node.RelogPacing()
         outcomes = await asyncio.gather(
-            *[relog_node.log_out_and_in(machine, c, in_battle=True) for c in clients],
+            *[relog_node.log_out_and_in(machine, c, in_battle=True, pacing=pacing) for c in clients],
             return_exceptions=True,
         )
         back = [c for c, outcome in zip(clients, outcomes) if outcome == relog_node.BACK]

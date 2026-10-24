@@ -337,6 +337,11 @@ DECK_FUSION_CLOSE_SETTLE = 0.5
 
 LAUNCH_STAGGER_DELAY = 1.0
 
+# The least gap between one client's Quit press and the next's, and between one's first Play
+# press and the next's, when a team relogs together. Pressed at once, the fourth login
+# gets dropped, the same rejection LAUNCH_STAGGER_DELAY spaces launch logins against.
+RELOG_STAGGER_DELAY = 1.0
+
 # How long one launch stage may run before its pending tile starts showing how long it has
 # been in it. Below this the number is noise -- every stage takes some seconds and a
 # counter on all of them reads as a stopwatch rather than as a warning. Above it the

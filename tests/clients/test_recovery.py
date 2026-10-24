@@ -569,7 +569,7 @@ class TestLogOutStrandedFighters:
         """Stands in for relog.log_out_and_in. An abandoned player is queued, as recovery would."""
         from bartlebot.nodes.utility import relog as relog_node
 
-        async def _log_out_and_in(_machine, client, *, in_battle=False):
+        async def _log_out_and_in(_machine, client, *, in_battle=False, pacing=None):
             assert in_battle, "only Esc reaches Quit in a fight"
             outcome = by_hwnd[client.window_handle]
             if outcome == relog_node.ABANDONED:

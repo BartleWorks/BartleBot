@@ -921,3 +921,38 @@ class TestDisconnected:
         assert await relog_node.run(machine, [client], {}) == "FAILURE"
         assert any("lost its connection" in msg for msg, _ in machine.logs)
         assert not any("still in the world" in msg for msg, _ in machine.logs)
+
+
+class TestRelogPacing:
+    async def test_presses_of_one_kind_are_spaced_apart(self):
+        pacing = relog_node.RelogPacing(delay=0.05)
+        loop = asyncio.get_running_loop()
+        times: list[float] = []
+
+        async def press():
+            await pacing.turn("quit")
+            times.append(loop.time())
+
+        await asyncio.gather(*[press() for _ in range(3)])
+
+        gaps = [b - a for a, b in zip(times, times[1:])]
+        assert all(gap >= 0.03 for gap in gaps)
+
+    async def test_the_first_press_does_not_wait(self):
+        pacing = relog_node.RelogPacing(delay=5.0)
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+
+        await pacing.turn("play")
+
+        assert loop.time() - started < 1.0
+
+    async def test_quit_and_play_keep_their_own_clocks(self):
+        pacing = relog_node.RelogPacing(delay=5.0)
+        loop = asyncio.get_running_loop()
+        await pacing.turn("quit")
+        started = loop.time()
+
+        await pacing.turn("play")
+
+        assert loop.time() - started < 1.0

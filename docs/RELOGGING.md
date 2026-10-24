@@ -73,6 +73,14 @@ What must not be broken:
   because a window is only noticed missing on the next `_client_loop` poll. Clients
   wanting *different* resolutions still cannot share a batch -- the game reads one
   config.xml at startup -- so those are grouped and launched in turn.
+- **Stagger the team's Quit and Play presses.** Relogging every player at once puts their logins
+  on the server in a tight burst, and the fourth was dropped: the same rejection that makes a
+  launch space its logins by `LAUNCH_STAGGER_DELAY`. `relog.RelogPacing` is shared by the players
+  relogging together and keeps `RELOG_STAGGER_DELAY` between one Quit press and the next, and
+  between one first Play press and the next. The logouts still overlap, so it costs seconds. A
+  Play re-press is the player's own retry and is not paced. Both callers of `log_out_and_in`, the
+  node and the in-battle logout, pass one; the hard path relaunches through `launch_accounts`,
+  which staggers already.
 - **A relog is not a disconnect in the log.** It travels the same removal path, and filing
   scheduled maintenance as a fault is the double-meaning the log-readability work exists to prevent --
   `_relogging_hwnds` is what keeps the wording honest.
