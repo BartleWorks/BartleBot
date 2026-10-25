@@ -48,6 +48,7 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
+from bartlebot.gui.debug.game_hang_trace import GameHangTracer
 from bartlebot.gui.debug.stall_trace import StallTracer
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
@@ -313,6 +314,14 @@ class AppController(QObject):
         self._stall_tracer = StallTracer() if dev_mode() else None
         if self._stall_tracer is not None:
             self._stall_tracer.start()
+        # A game window that stops answering, and what its thread was waiting on.
+        self._hang_tracer = GameHangTracer(self._hooked_windows) if dev_mode() else None
+        if self._hang_tracer is not None:
+            self._hang_tracer.start()
+
+    def _hooked_windows(self) -> list[tuple[str, int]]:
+        """Each hooked client's window, by player number, for the game hang tracer."""
+        return [(f"P{i + 1}", client.window_handle) for i, client in enumerate(self._client_manager.clients)]
 
     def _restore_game_display_settings(self) -> None:
         """Give the game back the display settings a previous session overwrote.
@@ -556,6 +565,8 @@ class AppController(QObject):
         self._app.aboutToQuit.connect(self._restore_game_display_settings)
         if self._stall_tracer is not None:
             self._app.aboutToQuit.connect(self._stall_tracer.stop)
+        if self._hang_tracer is not None:
+            self._app.aboutToQuit.connect(self._hang_tracer.stop)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 
