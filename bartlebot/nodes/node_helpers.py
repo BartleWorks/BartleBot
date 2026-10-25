@@ -2320,10 +2320,32 @@ async def gather_at_player(
         return False
     for i in sorted(result.presumed):
         machine.log(f"P{numbers[i]} neither loaded nor moved; it was already beside P{target_no}")
+    machine.log(
+        f"Ports started: loading {[numbers[i] for i in sorted(result.seen_loading)]}, "
+        f"moved {[numbers[i] for i in sorted(result.jumped)]}; waiting for every loading screen to clear",
+        logging.DEBUG,
+    )
 
-    await poll_until(lambda: none_loading(movers), None, poll_interval)
+    if not await poll_until(lambda: none_loading(movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+        machine.log(
+            f"FAILURE: a player was still on a loading screen {ZONE_CHANGE_TIMEOUT:.0f}s after porting", logging.WARNING
+        )
+        return False
+    machine.log(f"Loading screens cleared; waiting to see every player with P{target_no}", logging.DEBUG)
 
-    if await poll_until(lambda: _all_beside(machine, target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+    shortfall: list[str] = []
+
+    async def all_beside() -> bool:
+        missing = await _not_beside(machine, target, movers)
+        reasons = [f"P{numbers[i]} {why}" for i, why in missing]
+        if reasons != shortfall:
+            # Logged when the reasons change, not every poll: a wait that never ends says why once.
+            shortfall[:] = reasons
+            if reasons:
+                machine.log(f"Not yet with P{target_no}: {'; '.join(reasons)}", logging.DEBUG)
+        return not missing
+
+    if await poll_until(all_beside, ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
     target_zone, *zones = await read_zones([target, *movers], poll_interval=poll_interval)
     if all(_same_zone(z, target_zone) for z in zones):
@@ -2340,19 +2362,36 @@ async def gather_at_player(
     return False
 
 
-async def _all_beside(machine, target, movers: list) -> bool:
-    """Whether every mover is in the target's zone, within POSITION_MARGIN of it, and seen with it."""
+async def _not_beside(machine, target, movers: list) -> list[tuple[int, str]]:
+    """Each mover not yet in the target's zone, within POSITION_MARGIN of it and seen with it, and why.
+
+    Indices into *movers*. Zones are named by their last part, positions by distance, so the
+    reasons can go in a log. Seen is asked only once every mover is beside the target.
+    """
     target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
     if target_pos is None:
-        return False
+        return [(i, "cannot be judged: the target's position is unreadable") for i in range(len(movers))]
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
     positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
-    if not all(
-        _same_zone(zone, target_zone) and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
-        for zone, pos in zip(zones, positions)
-    ):
-        return False
-    return (await read_sightings([target, *movers], machine)).all_together()
+    missing = []
+    for i, (zone, pos) in enumerate(zip(zones, positions)):
+        if not _same_zone(zone, target_zone):
+            missing.append((i, f"is in {_zone_tail(zone)}, not {_zone_tail(target_zone)}"))
+        elif pos is None:
+            missing.append((i, "has an unreadable position"))
+        elif (gap := distance(pos, target_pos)) > POSITION_MARGIN:
+            missing.append((i, f"is {gap:.0f} units away"))
+    if missing:
+        return missing
+    # The target's group, not its own sightings: a mover seen with one who is seen with the
+    # target is with it, as all_together() counts it.
+    with_target = set((await read_sightings([target, *movers], machine)).group_of(0))
+    return [(i, "is not seen with it") for i in range(len(movers)) if i + 1 not in with_target]
+
+
+def _zone_tail(zone: str | None) -> str:
+    """A zone's last part for a log line (``DM_Z06_Bridge``), or ``an unreadable zone``."""
+    return zone.rsplit("/", 1)[-1] if zone else "an unreadable zone"
 
 
 def _same_zone(a: str | None, b: str | None) -> bool:

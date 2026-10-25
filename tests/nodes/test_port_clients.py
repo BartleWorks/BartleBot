@@ -5,6 +5,8 @@ player's position jumps onto the target instead, and a port onto someone already
 nothing at all (#14, #69).
 """
 
+import asyncio
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -224,6 +226,39 @@ async def test_gather_fails_when_a_player_lands_somewhere_else(fast, monkeypatch
         assert not await nh.gather_at_player(machine, [sim.target, lost], 0, _NAME, poll_interval=0.001)
 
     assert any("not every player ended up with P1" in msg for msg, _ in machine.logs)
+
+
+async def test_gather_says_why_a_player_is_not_with_the_target_once_while_it_waits(fast, monkeypatch):
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _sim()
+    lost = sim.player("Src", _FAR, port="lost")
+    machine = FakeMachine()
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)):
+        assert not await nh.gather_at_player(machine, [sim.target, lost], 0, _NAME, poll_interval=0.001)
+
+    waits = [msg for msg, _ in machine.logs if msg.startswith("Not yet with P1")]
+    assert waits == ["Not yet with P1: P2 is in Else, not Dst"], "said once, not every poll"
+
+
+async def test_gather_gives_up_on_a_loading_screen_that_never_clears(fast, monkeypatch):
+    """The wait for loading had no ceiling, and kept TP to player's button disabled for good."""
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _sim()
+    mover = sim.player("Src", _FAR)
+    machine = FakeMachine()
+
+    async def stuck(client, name_lower):
+        await sim.teleport(client, name_lower)
+        client.loading = 10**9
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=stuck)):
+        gathered = await asyncio.wait_for(
+            nh.gather_at_player(machine, [sim.target, mover], 0, _NAME, poll_interval=0.001), 5
+        )
+
+    assert not gathered
+    assert any("still on a loading screen" in msg for msg, level in machine.logs if level == logging.WARNING)
 
 
 async def test_gather_fails_when_a_player_beside_the_target_is_on_another_realm(fast, monkeypatch):
