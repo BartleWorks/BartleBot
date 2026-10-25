@@ -2587,38 +2587,37 @@ async def test_in_expected_zone_fails_a_player_somewhere_else():
     assert any("unexpected=['Beta/Hub']" in msg for msg, _ in machine.logs)
 
 
-# ── _not_beside ──────────────────────────────────────────────────────────────
+# ── _not_with ────────────────────────────────────────────────────────────────
 
 
-async def test_two_unreadable_zones_are_not_beside_each_other():
+async def test_two_unreadable_zones_are_not_with_each_other():
     """None == None names no zone: a mover and target that both read None are not together (#282)."""
     target, mover = FakeClient(), FakeClient()
     target.zone_name.return_value = None
     mover.zone_name.return_value = None
 
-    assert await nh._not_beside(FakeMachine(), target, [mover]) == [
+    assert await nh._not_with(FakeMachine(), target, [mover]) == [
         (0, "is in an unreadable zone, not an unreadable zone")
     ]
 
 
-async def test_a_mover_in_the_targets_zone_and_beside_it_is_beside():
+async def test_a_mover_seen_in_the_targets_zone_is_with_it_however_far():
+    """The target can be walked off after a port (TP to player): only the zone and the sighting count."""
     target, mover = FakeClient(), FakeClient()
+    mover.body.position.return_value = XYZ(400.0, 300.0, 0.0)
 
-    assert await nh._not_beside(FakeMachine(), target, [mover]) == []
+    assert await nh._not_with(FakeMachine(), target, [mover]) == []
 
 
-async def test_each_mover_not_beside_the_target_is_given_its_reason():
-    target, elsewhere, far, unreadable = FakeClient(), FakeClient(), FakeClient(), FakeClient()
-    target.zone_name.return_value = "WizardCity/WC_Hub"
+async def test_each_mover_in_another_zone_is_given_its_reason():
+    target, elsewhere, unreadable, here = FakeClient(), FakeClient(), FakeClient(), FakeClient()
+    target.zone_name.return_value = here.zone_name.return_value = "WizardCity/WC_Hub"
     elsewhere.zone_name.return_value = "WizardCity/WC_Ravenwood"
-    far.zone_name.return_value = unreadable.zone_name.return_value = "WizardCity/WC_Hub"
-    far.body.position.return_value = XYZ(40.0, 30.0, 0.0)
-    unreadable.body.position.side_effect = RuntimeError("loading")
+    unreadable.zone_name.return_value = None
 
-    assert await nh._not_beside(FakeMachine(), target, [elsewhere, far, unreadable]) == [
+    assert await nh._not_with(FakeMachine(), target, [elsewhere, unreadable, here]) == [
         (0, "is in WC_Ravenwood, not WC_Hub"),
-        (1, "is 50 units away"),
-        (2, "has an unreadable position"),
+        (1, "is in an unreadable zone, not WC_Hub"),
     ]
 
 

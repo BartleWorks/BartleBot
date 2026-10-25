@@ -10,6 +10,7 @@ import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 from bartlebot.game import wizard_names
@@ -239,6 +240,21 @@ async def test_gather_says_why_a_player_is_not_with_the_target_once_while_it_wai
 
     waits = [msg for msg, _ in machine.logs if msg.startswith("Not yet with P1")]
     assert waits == ["Not yet with P1: P2 is in Else, not Dst"], "said once, not every poll"
+
+
+async def test_gather_counts_players_with_a_target_walked_off_after_the_port(fast):
+    """TP to player leaves the target to the user, who walks it away once the others appear."""
+    sim = _sim()
+    mover = sim.player("Src", _FAR)
+    machine = FakeMachine()
+
+    async def then_walk_off(client, name_lower):
+        await sim.teleport(client, name_lower)
+        x, y, z = _AT
+        sim.target.where = ("Dst", XYZ(x + 900.0, y, z))
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=then_walk_off)):
+        assert await nh.gather_at_player(machine, [sim.target, mover], 0, _NAME, poll_interval=0.001)
 
 
 async def test_gather_gives_up_on_a_loading_screen_that_never_clears(fast, monkeypatch):

@@ -2251,9 +2251,12 @@ async def gather_at_player(
       it than to be wrong about skipping it.
     * A mover already in the target's zone within POSITION_MARGIN of it is the one case whose
       port shows nothing, so it is the only one passed to port_clients as `maybe_there`.
-    * Arrival is every mover in the target's zone, within POSITION_MARGIN of it, and seen with
-      it (#130): standing beside the target proves the zone, and only the sighting proves the
-      realm. A mover presumed already there has to be seen too (port_clients' `target`).
+    * Arrival is every mover in the target's zone and seen with it (#130): only the sighting
+      proves the realm and the instance. Not where the target stands: the editor's TP to
+      player leaves the target to the user, who walks it off once the others appear, and a
+      check against its live position then never passed. A sighting holds to ~3800 units
+      (`sightings.SIGHT_RANGE`). A mover presumed already there has to be seen too
+      (port_clients' `target`).
 
     Logs its own reasons, naming players by number and never by name, and returns False on any
     failure: a player still loading, a friend not found, a refusal, a port that never showed
@@ -2332,11 +2335,12 @@ async def gather_at_player(
         )
         return False
     machine.log(f"Loading screens cleared; waiting to see every player with P{target_no}", logging.DEBUG)
+    landed_at = await _position_or_none(target)
 
     shortfall: list[str] = []
 
-    async def all_beside() -> bool:
-        missing = await _not_beside(machine, target, movers)
+    async def all_with() -> bool:
+        missing = await _not_with(machine, target, movers)
         reasons = [f"P{numbers[i]} {why}" for i, why in missing]
         if reasons != shortfall:
             # Logged when the reasons change, not every poll: a wait that never ends says why once.
@@ -2345,13 +2349,20 @@ async def gather_at_player(
                 machine.log(f"Not yet with P{target_no}: {'; '.join(reasons)}", logging.DEBUG)
         return not missing
 
-    if await poll_until(all_beside, ZONE_CHANGE_TIMEOUT, poll_interval):
+    if await poll_until(all_with, ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
     target_zone, *zones = await read_zones([target, *movers], poll_interval=poll_interval)
     if all(_same_zone(z, target_zone) for z in zones):
+        now_at = await _position_or_none(target)
+        moved = (
+            f"; P{target_no} moved {distance(now_at, landed_at):.0f} units while it waited, and a player "
+            "too far from it cannot be seen"
+            if now_at is not None and landed_at is not None and distance(now_at, landed_at) > POSITION_MARGIN
+            else ""
+        )
         machine.log(
             f"FAILURE: not every player ended up with P{target_no}: all are in its zone, but not all "
-            "beside it and on its realm",
+            f"seen with it{moved}",
             logging.WARNING,
         )
         return False
@@ -2362,25 +2373,19 @@ async def gather_at_player(
     return False
 
 
-async def _not_beside(machine, target, movers: list) -> list[tuple[int, str]]:
-    """Each mover not yet in the target's zone, within POSITION_MARGIN of it and seen with it, and why.
+async def _not_with(machine, target, movers: list) -> list[tuple[int, str]]:
+    """Each mover not yet in the target's zone and seen with it, and why.
 
-    Indices into *movers*. Zones are named by their last part, positions by distance, so the
-    reasons can go in a log. Seen is asked only once every mover is beside the target.
+    Indices into *movers*. Zones are named by their last part, so the reasons can go in a
+    log. Seen is asked only once every mover is in the target's zone.
     """
-    target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
-    if target_pos is None:
-        return [(i, "cannot be judged: the target's position is unreadable") for i in range(len(movers))]
+    target_zone = await target.zone_name()
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
-    positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
-    missing = []
-    for i, (zone, pos) in enumerate(zip(zones, positions)):
-        if not _same_zone(zone, target_zone):
-            missing.append((i, f"is in {_zone_tail(zone)}, not {_zone_tail(target_zone)}"))
-        elif pos is None:
-            missing.append((i, "has an unreadable position"))
-        elif (gap := distance(pos, target_pos)) > POSITION_MARGIN:
-            missing.append((i, f"is {gap:.0f} units away"))
+    missing = [
+        (i, f"is in {_zone_tail(zone)}, not {_zone_tail(target_zone)}")
+        for i, zone in enumerate(zones)
+        if not _same_zone(zone, target_zone)
+    ]
     if missing:
         return missing
     # The target's group, not its own sightings: a mover seen with one who is seen with the
