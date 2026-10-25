@@ -3256,9 +3256,9 @@ class AppController(QObject):
         # touches the foreground window. So the clients cannot interfere.
         #
         # The win is smaller than N: memory reads are synchronous ReadProcessMemory
-        # on the loop thread and SendMessageW blocks until the target game's message
-        # pump answers, so only the sleeps actually overlap. Measured at 1.88x for
-        # four clients.
+        # on the loop thread. Measured at 1.88x for four clients, from before
+        # wizwalker sent each window's messages from a thread of its own, when the
+        # waits for the games' answers held the loop too.
         #
         # Each task swallows its own failures, so no return_exceptions is needed and
         # one bad client cannot cancel the others' applies half-finished.
