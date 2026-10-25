@@ -505,9 +505,17 @@ async def test_the_watcher_logs_a_players_change_once_with_where_it_stood():
     moves.body.position.return_value = XYZ(1.4, -2.6, 3.0)
     machine = FakeMachine()
 
+    def logged_the_move() -> bool:
+        return any("zone=Dst" in message for message, _ in machine.logs)
+
     with patch.object(gtz, "POLL_INTERVAL", 0.001):
         task = asyncio.create_task(_REAL_WATCH_GROUP(machine, [stays, moves], [1, 3]))
-        await asyncio.sleep(0.05)
+        # Until the move is logged, not a fixed 50 ms: under -n auto the polls can miss one.
+        for _ in range(2000):
+            if logged_the_move():
+                break
+            await asyncio.sleep(0.001)
+        await asyncio.sleep(0.02)  # a few polls more, which must log nothing new
         task.cancel()
 
     logged = [message for message, level in machine.logs if level == logging.DEBUG]
