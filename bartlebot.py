@@ -11,6 +11,12 @@ def _self_check() -> int:
     return self_check.main()
 
 
+def _wiki_browser() -> int:
+    from bartlebot.game import wiki_browser  # noqa: PLC0415
+
+    return wiki_browser.main(sys.argv[1:])
+
+
 if __name__ == "__main__":
     # First of all: a launch that is one of Velopack's install, update or uninstall hooks
     # runs it and exits here, inside its time limit. A checkout returns at once.
@@ -19,6 +25,10 @@ if __name__ == "__main__":
     use_windows_backend()
     if "--self-check" in sys.argv[1:]:
         sys.exit(_self_check())
+    # A drop import's window for a page Cloudflare challenges (#278). Before the
+    # single-instance check, which would hand the URL to the running app and exit.
+    if "--wiki-browser" in sys.argv[1:]:
+        sys.exit(_wiki_browser())
 
     from PyQt6.QtWidgets import QApplication
 

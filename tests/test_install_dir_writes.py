@@ -22,7 +22,7 @@ from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import is_inside, resolve_bot_strategy_roots, resolve_roots, resolve_shared_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates.template_store import templates_dir
-from bartlebot.game import card_art
+from bartlebot.game import card_art, wiki_browser
 from bartlebot.gui.ui_state import UiState
 from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
@@ -45,6 +45,7 @@ def _default_write_paths() -> dict[str, Path]:
         "settings": SettingsManager.instance().settings_path,
         "ui state": UiState().path,
         "game art": card_art.art_dir(),
+        "wiki window profile": wiki_browser.profile_dir(),
         "accounts": vendor_dir(),
         "shared preferences": PreferenceStore().path,
         "session logs": session_log_dir(),

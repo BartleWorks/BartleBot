@@ -30,6 +30,7 @@ dependencies = [
     # Verifies the update feed's Ed25519 signature (bartlebot/updates/feed.py), and signs
     # it in release.yml (tools/sign_feed.py).
     "cryptography>=44",
+    "pywebview>=6.2.1",
 ]
 
 [dependency-groups]
