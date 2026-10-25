@@ -162,7 +162,14 @@ keeps a pin reachable once the feature branch it was made on is deleted.
 
 Current pins, both on `main`:
 
-- **wizwalker `53929b7`** (`bartlebot-pin-20261023c`): windows found by their paths from
+- **wizwalker `e73a736`** (`bartlebot-pin-20261024`): every click and key sent from a
+  worker thread of the window's own (`window_messages.send_message`), not the event
+  loop. `SendMessageW` waits for the game to handle the message, and one client that
+  took 6 s to answer a friend teleport's Go To Friend click held every other client and
+  the app's window with it. The caller still waits for the answer; nothing else does.
+  Messages to one window keep their order, and a cancelled send is still delivered, so a
+  release follows its press. `instance_login` still sends synchronously. On top of
+  `53929b7` (`bartlebot-pin-20261023c`): windows found by their paths from
   the UI Tree Browser, not by a search of the whole UI, which is about 30 ms of reads
   a time and takes the first window with the name (`window_at_path`, `windows_at_path`;
   wizsprinter imports them). The combat handler, the deck builder and the friend

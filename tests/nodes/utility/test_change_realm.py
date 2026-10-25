@@ -187,6 +187,20 @@ async def test_already_on_the_favorite_closes_the_spellbook_without_hopping():
     assert any("already on" in msg for msg, _lvl in machine.logs)
 
 
+async def test_already_on_the_favorite_fails_when_the_spellbook_will_not_close():
+    """An open spellbook takes every click the next node sends, so success needs it gone."""
+    client = FakeClient()
+    realm_list = _RealmList(_PAGES, current="Banshee")
+    machine = _machine("Banshee")
+
+    with _faked(realm_list), patch.object(rl, "close_spellbook", new=AsyncMock(return_value=False)):
+        result = await cr.to_realm(machine, client, "Banshee", 0.0)
+
+    assert result == "FAILURE"
+    assert not any(msg.startswith("SUCCESS") for msg, _lvl in machine.logs)
+    assert any("did not close" in msg for msg, _lvl in machine.logs)
+
+
 async def test_already_on_the_favorite_is_detected_from_txtyourrealmname_without_paging():
     """The current realm is read straight from the settings text, skipping the scan entirely."""
     client = FakeClient()
@@ -725,6 +739,13 @@ async def test_a_blank_txtyourrealmname_is_unknown():
         assert await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test") is None
 
     assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
+
+
+async def test_a_realm_read_whose_spellbook_will_not_close_is_unknown():
+    realm_list = _RealmList(_PAGES, current="Drake", current_name_text="Drake")
+
+    with _faked(realm_list), patch.object(rl, "close_spellbook", new=AsyncMock(return_value=False)):
+        assert await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test") is None
 
 
 async def test_a_spellbook_that_never_opens_is_unknown():

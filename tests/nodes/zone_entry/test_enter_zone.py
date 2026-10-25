@@ -2,8 +2,10 @@
 
 import asyncio
 import itertools
+import logging
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
@@ -13,6 +15,15 @@ from tests.conftest import FakeClient, FakeMachine, ModalScreen
 
 # Minimal params used across all tests.
 _PARAMS = {"from_zone": "Src", "to_zone": "Dst", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
+
+_REAL_WATCH_GROUP = gtz._watch_group
+
+
+@pytest.fixture(autouse=True)
+def _no_watcher():
+    """The watcher reads zone_name too, which would eat the scripted zone sequences below."""
+    with patch.object(gtz, "_watch_group", new=AsyncMock()):
+        yield
 
 
 async def test_wrong_source_zone_fails():
@@ -41,6 +52,17 @@ async def test_success_single_client():
     assert result == "SUCCESS"
     # teleport(target) called once in step 2, once by poll_each_until_seen for the straggler.
     assert client.teleport.call_count == 2
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    client.zone_name.side_effect = [None, "Src", "Src", "Dst", "Dst"]
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(machine=FakeMachine(), clients=[client], params=_PARAMS)
+
+    assert result == "SUCCESS"
 
 
 async def test_success_multiple_clients():
@@ -436,3 +458,82 @@ def test_reset_xyz_is_required_in_the_editor():
 
     assert field.required
     assert field.default is None
+
+
+# ---------------------------------------------------------------------------
+# Who was left behind, by player number
+#
+# With Stagger on, a follower sometimes never fires the trigger. The log has to say which
+# one, and where each player stood when it changed zone, or the cause stays a guess.
+# ---------------------------------------------------------------------------
+
+
+def _door_client(opens: bool):
+    """A client that moves to Dst when teleported to the trigger, if `opens`, and otherwise stays in Src."""
+    client = FakeClient()
+    state = {"zone": "Src"}
+    client.zone_name.side_effect = lambda: state["zone"]
+
+    async def _teleport(xyz):
+        if opens:
+            state["zone"] = "Dst"
+
+    client.teleport.side_effect = _teleport
+    return client
+
+
+async def test_the_player_left_behind_is_named_by_number():
+    clients = [_door_client(True), _door_client(True), _door_client(False), _door_client(True)]
+    machine = FakeMachine()
+
+    with (
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(side_effect=[None, ["Dst", "Src", "Dst"]])),
+    ):
+        result = await gtz.run(machine, clients, {**_PARAMS, "stagger": True})
+
+    assert result == "FAILURE"
+    logged = [message for message, _ in machine.logs]
+    assert "Left 'Src': P2, P4; still in it: P3" in logged
+    assert "Zones after transition: P2 Dst, P3 Src, P4 Dst" in logged
+
+
+async def test_the_watcher_logs_a_players_change_once_with_where_it_stood():
+    stays, moves = FakeClient(), FakeClient()
+    stays.zone_name.return_value = "World/Src"
+    moves.zone_name.side_effect = itertools.chain(["World/Src"] * 2, itertools.repeat("World/Dst"))
+    moves.body.position.return_value = XYZ(1.4, -2.6, 3.0)
+    machine = FakeMachine()
+
+    def logged_the_move() -> bool:
+        return any("zone=Dst" in message for message, _ in machine.logs)
+
+    with patch.object(gtz, "POLL_INTERVAL", 0.001):
+        task = asyncio.create_task(_REAL_WATCH_GROUP(machine, [stays, moves], [1, 3]))
+        # Until the move is logged, not a fixed 50 ms: under -n auto the polls can miss one.
+        for _ in range(2000):
+            if logged_the_move():
+                break
+            await asyncio.sleep(0.001)
+        await asyncio.sleep(0.02)  # a few polls more, which must log nothing new
+        task.cancel()
+
+    logged = [message for message, level in machine.logs if level == logging.DEBUG]
+    assert logged.count("P1: zone=Src loading=False at (0, 0, 0)") == 1
+    assert logged.count("P3: zone=Src loading=False at (1, -3, 3)") == 1
+    assert logged.count("P3: zone=Dst loading=False at (1, -3, 3)") == 1
+
+
+async def test_the_watcher_reports_a_client_it_cannot_read_instead_of_raising():
+    loading = FakeClient()
+    loading.zone_name.side_effect = RuntimeError("loading")
+    loading.is_loading.side_effect = RuntimeError("loading")
+    loading.body.position.side_effect = RuntimeError("loading")
+    machine = FakeMachine()
+
+    with patch.object(gtz, "POLL_INTERVAL", 0.001):
+        task = asyncio.create_task(_REAL_WATCH_GROUP(machine, [loading], [2]))
+        await asyncio.sleep(0.02)
+        task.cancel()
+
+    assert [m for m, _ in machine.logs] == ["P2: zone=unreadable loading=None at unreadable"]

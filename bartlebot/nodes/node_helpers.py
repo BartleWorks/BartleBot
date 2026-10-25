@@ -19,9 +19,11 @@ from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    BACKPACK_CLOSE_BUTTON_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
     CROWNS_SHOP_WINDOW_PATH,
+    DECK_CONFIGURATION_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     FRIENDS_LIST_BUTTON_PATH,
@@ -1036,6 +1038,12 @@ async def all_left_zone(clients: list, zone: str) -> bool:
     zone may be a glob pattern (e.g. "WizardCity/*"); see zone_matches().
     Note: if the pattern is broad enough to encompass the destination zone,
     this helper will never return True until clients leave that zone family too.
+
+    An unreadable (None) zone counts as left, on purpose. Every caller asks this after the
+    trigger has fired, and a zone that goes unreadable then is the old zone being torn down.
+    Waiting for the new one instead would outlast the Safety Delay these checks run under,
+    and the client would be reset as stuck while it was on its way (#70). A client that is
+    logged out reads None too, and is the health monitor's to catch.
     """
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     return all(not zone_matches(z, zone) for z in zones)
@@ -1063,7 +1071,7 @@ async def wait_for_zone(
 
 
 async def read_zones(
-    clients: list, timeout: float = ZONE_READABLE_TIMEOUT, poll_interval: float = POLL_INTERVAL
+    clients: list, timeout: float | None = None, poll_interval: float = POLL_INTERVAL
 ) -> list[str | None]:
     """Every client's zone_name(), waiting up to *timeout* for each to be readable.
 
@@ -1071,7 +1079,12 @@ async def read_zones(
     nothing about where it is going, so a comparison against it (or against another None)
     proves nothing and is waited out here instead. Returns the last read; a client that is
     still None after *timeout* is still unreadable, and the caller decides what that means.
+
+    *timeout* defaults to ZONE_READABLE_TIMEOUT, read here rather than in the signature so it
+    stays tunable.
     """
+    if timeout is None:
+        timeout = ZONE_READABLE_TIMEOUT
     zones: list[str | None] = []
 
     async def readable() -> bool:
@@ -1080,6 +1093,25 @@ async def read_zones(
 
     await poll_until(readable, timeout, poll_interval)
     return zones
+
+
+async def in_expected_zone(machine, clients: list, zone: str, poll_interval: float = POLL_INTERVAL) -> bool:
+    """Whether every client is in *zone*, read once each zone is readable. False having logged why.
+
+    The check a node makes before it acts. It reads through read_zones, since a client just off
+    a loading screen reads None for a moment, and a None never matches: read at once, it would
+    fail a node whose players were where it expected.
+    """
+    zones = await read_zones(clients, poll_interval=poll_interval)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
+    if all(zone_matches(z, zone) for z in zones):
+        return True
+    wrong = [z for z in zones if not zone_matches(z, zone)]
+    machine.log(
+        f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
+        logging.WARNING,
+    )
+    return False
 
 
 import contextlib  # noqa: E402 -- beside the one switch that uses them
@@ -1168,7 +1200,9 @@ async def wait_for_zone_with_recovery(
     non-loading straggler gets to start loading before it counts as one. The grace re-arms
     every time a straggler is seen loading, which also keeps the timeout verdict honest:
     a client mid-transition is never reported as one that failed to arrive. An endless
-    loading screen is ClientHealthMonitor's to call, not this loop's.
+    loading screen is ClientHealthMonitor's to call, not this loop's. Nobody is ported while
+    a client's zone reads None either: one just off its loading screen reads None for a
+    moment before it reads the zone it reached.
 
     A straggler held at an instance prompt is not stuck either, and nothing else would press
     it: leaving a dungeon asks first, and until the question is answered the zone change never
@@ -1213,6 +1247,9 @@ async def wait_for_zone_with_recovery(
             and not recovery_tried
             and now >= settled_after
             and any(zone_matches(z, zone) for z in zones)
+            # A None zone is a client just off its loading screen, or one that is not logged in:
+            # the first may be about to read the destination, and a port would undo that (#70).
+            and None not in zones
         ):
             recovery_tried = True
             await _attempt_zone_recovery(machine, clients, zone, zones, poll_interval)
@@ -1418,8 +1455,8 @@ async def click_until_gone(
     client,
     path: list[str],
     is_open=None,
-    timeout: float = WINDOW_CLOSE_TIMEOUT,
-    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+    timeout: float | None = None,
+    poll_interval: float | None = None,
 ) -> bool:
     """Click the button at `path` until the thing it closes is gone. Returns True once it is.
 
@@ -1447,7 +1484,14 @@ async def click_until_gone(
     how many of the clicks were never sent, because the button was missing or grayed. That
     separates the two ways a close can fail: none sent means a disabled button, all sent
     means something on top took them.
+
+    `timeout` and `poll_interval` default to WINDOW_CLOSE_TIMEOUT and
+    WINDOW_CLOSE_RETRY_INTERVAL, read when called, so a test can compress them.
     """
+    if timeout is None:
+        timeout = WINDOW_CLOSE_TIMEOUT
+    if poll_interval is None:
+        poll_interval = WINDOW_CLOSE_RETRY_INTERVAL
     if is_open is None:
 
         async def is_open():
@@ -1480,6 +1524,45 @@ async def click_until_gone(
             attempts,
         )
     return not still_open
+
+
+async def click_until_dialog_gone(client, button: list[str]) -> bool:
+    """Click `button` on the dialog showing until that dialog has gone. True once it has.
+
+    Gone means the caption changed: the box closed, or another one came up in its place.
+    Every modal is the same window, so the caption is the only way to tell the dialog
+    answered from the one queued behind it, which this leaves for the caller to read and
+    answer. A second box with the very same caption gets the same click, which is the
+    answer the caller chose for that caption. Nothing showing costs one read and no click.
+    """
+    caption = await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
+    if not caption:
+        return True
+
+    async def still_up() -> bool:
+        return await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH) == caption
+
+    return await click_until_gone(client, button, is_open=still_up)
+
+
+async def is_spellbook_open(client) -> bool:
+    """Whether the spellbook is open, on any of its pages: backpack, deck, settings, realms, housing.
+
+    Read from DeckConfiguration, the spellbook window itself. Its close button is no use for
+    this, since it keeps reading visible once the window is closed (see is_visible_by_path).
+    """
+    return await is_visible_by_path(client, DECK_CONFIGURATION_PATH)
+
+
+async def close_spellbook(client) -> bool:
+    """Click the spellbook's close button until the spellbook is gone. True once it is.
+
+    One click is not reliable: straight after a quicksell sale the game dropped it and the
+    backpack stayed open, with the node reporting success. An open spellbook covers the
+    screen and takes every click aimed behind it, so a caller that leaves one open breaks
+    whatever runs next. A spellbook already closed costs one read and no click.
+    """
+    return await click_until_gone(client, BACKPACK_CLOSE_BUTTON_PATH, is_open=lambda: is_spellbook_open(client))
 
 
 async def click_window(client, window) -> bool:
@@ -1555,8 +1638,8 @@ async def press_key_until_gone(
     client,
     key: Keycode,
     is_open,
-    timeout: float = WINDOW_CLOSE_TIMEOUT,
-    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+    timeout: float | None = None,
+    poll_interval: float | None = None,
 ) -> bool:
     """Press `key` until `is_open()` reports the panel has closed. Returns True once gone.
 
@@ -1571,8 +1654,12 @@ async def press_key_until_gone(
     one on an already-closed panel reopens it.
 
     As in click_until_gone, `poll_interval` bounds how soon the next press may go out, and
-    the gap is spent polling rather than slept through.
+    the gap is spent polling rather than slept through, and both default when called.
     """
+    if timeout is None:
+        timeout = WINDOW_CLOSE_TIMEOUT
+    if poll_interval is None:
+        poll_interval = WINDOW_CLOSE_RETRY_INTERVAL
 
     async def _gone():
         return not await is_open()
@@ -2164,9 +2251,12 @@ async def gather_at_player(
       it than to be wrong about skipping it.
     * A mover already in the target's zone within POSITION_MARGIN of it is the one case whose
       port shows nothing, so it is the only one passed to port_clients as `maybe_there`.
-    * Arrival is every mover in the target's zone, within POSITION_MARGIN of it, and seen with
-      it (#130): standing beside the target proves the zone, and only the sighting proves the
-      realm. A mover presumed already there has to be seen too (port_clients' `target`).
+    * Arrival is every mover in the target's zone and seen with it (#130): only the sighting
+      proves the realm and the instance. Not where the target stands: the editor's TP to
+      player leaves the target to the user, who walks it off once the others appear, and a
+      check against its live position then never passed. A sighting holds to ~3800 units
+      (`sightings.SIGHT_RANGE`). A mover presumed already there has to be seen too
+      (port_clients' `target`).
 
     Logs its own reasons, naming players by number and never by name, and returns False on any
     failure: a player still loading, a friend not found, a refusal, a port that never showed
@@ -2195,7 +2285,7 @@ async def gather_at_player(
     beside = {
         i
         for i, (zone, pos) in enumerate(zip(zones, positions))
-        if zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
+        if _same_zone(zone, target_zone) and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
     }
     machine.log(
         f"Porting player(s) {numbers} to P{target_no}; already beside it: {[numbers[i] for i in sorted(beside)]}",
@@ -2233,17 +2323,46 @@ async def gather_at_player(
         return False
     for i in sorted(result.presumed):
         machine.log(f"P{numbers[i]} neither loaded nor moved; it was already beside P{target_no}")
+    machine.log(
+        f"Ports started: loading {[numbers[i] for i in sorted(result.seen_loading)]}, "
+        f"moved {[numbers[i] for i in sorted(result.jumped)]}; waiting for every loading screen to clear",
+        logging.DEBUG,
+    )
 
-    await poll_until(lambda: none_loading(movers), None, poll_interval)
+    if not await poll_until(lambda: none_loading(movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+        machine.log(
+            f"FAILURE: a player was still on a loading screen {ZONE_CHANGE_TIMEOUT:.0f}s after porting", logging.WARNING
+        )
+        return False
+    machine.log(f"Loading screens cleared; waiting to see every player with P{target_no}", logging.DEBUG)
+    landed_at = await _position_or_none(target)
 
-    if await poll_until(lambda: _all_beside(machine, target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+    shortfall: list[str] = []
+
+    async def all_with() -> bool:
+        missing = await _not_with(machine, target, movers)
+        reasons = [f"P{numbers[i]} {why}" for i, why in missing]
+        if reasons != shortfall:
+            # Logged when the reasons change, not every poll: a wait that never ends says why once.
+            shortfall[:] = reasons
+            if reasons:
+                machine.log(f"Not yet with P{target_no}: {'; '.join(reasons)}", logging.DEBUG)
+        return not missing
+
+    if await poll_until(all_with, ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
-    target_zone = await target.zone_name()
-    zones = await asyncio.gather(*[c.zone_name() for c in movers])
-    if all(z == target_zone for z in zones):
+    target_zone, *zones = await read_zones([target, *movers], poll_interval=poll_interval)
+    if all(_same_zone(z, target_zone) for z in zones):
+        now_at = await _position_or_none(target)
+        moved = (
+            f"; P{target_no} moved {distance(now_at, landed_at):.0f} units while it waited, and a player "
+            "too far from it cannot be seen"
+            if now_at is not None and landed_at is not None and distance(now_at, landed_at) > POSITION_MARGIN
+            else ""
+        )
         machine.log(
             f"FAILURE: not every player ended up with P{target_no}: all are in its zone, but not all "
-            "beside it and on its realm",
+            f"seen with it{moved}",
             logging.WARNING,
         )
         return False
@@ -2254,19 +2373,35 @@ async def gather_at_player(
     return False
 
 
-async def _all_beside(machine, target, movers: list) -> bool:
-    """Whether every mover is in the target's zone, within POSITION_MARGIN of it, and seen with it."""
-    target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
-    if target_pos is None:
-        return False
+async def _not_with(machine, target, movers: list) -> list[tuple[int, str]]:
+    """Each mover not yet in the target's zone and seen with it, and why.
+
+    Indices into *movers*. Zones are named by their last part, so the reasons can go in a
+    log. Seen is asked only once every mover is in the target's zone.
+    """
+    target_zone = await target.zone_name()
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
-    positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
-    if not all(
-        zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
-        for zone, pos in zip(zones, positions)
-    ):
-        return False
-    return (await read_sightings([target, *movers], machine)).all_together()
+    missing = [
+        (i, f"is in {_zone_tail(zone)}, not {_zone_tail(target_zone)}")
+        for i, zone in enumerate(zones)
+        if not _same_zone(zone, target_zone)
+    ]
+    if missing:
+        return missing
+    # The target's group, not its own sightings: a mover seen with one who is seen with the
+    # target is with it, as all_together() counts it.
+    with_target = set((await read_sightings([target, *movers], machine)).group_of(0))
+    return [(i, "is not seen with it") for i in range(len(movers)) if i + 1 not in with_target]
+
+
+def _zone_tail(zone: str | None) -> str:
+    """A zone's last part for a log line (``DM_Z06_Bridge``), or ``an unreadable zone``."""
+    return zone.rsplit("/", 1)[-1] if zone else "an unreadable zone"
+
+
+def _same_zone(a: str | None, b: str | None) -> bool:
+    """Whether two zone reads name one zone. Two unreadable (None) zones name nothing."""
+    return a is not None and a == b
 
 
 async def open_friend_profile(client, name: str):
@@ -2559,6 +2694,7 @@ async def reach_prompt(
     numbers: list[int] | None = None,
     fail_on_miss: bool = True,
     clear_first: bool = True,
+    any_client: bool = False,
 ) -> bool:
     """Get every client standing at *point* with *prompt* showing.
 
@@ -2576,9 +2712,22 @@ async def reach_prompt(
     passes False and logs its own outcome, and finds every client still at *point*
     rather than reset after the last attempt. Such a caller must tell a miss from step 1
     failing, so it runs ``clear_stale_prompt`` itself and passes *clear_first* False.
+
+    With *any_client* the wait ends as soon as the prompt shows on one client rather than
+    all of them, for an object only one client needs to use and that raises the prompt
+    only for those who can (a skeleton key door: a player with no key never sees it). The
+    caller reads which clients got it. Without it, a client that can never get the prompt
+    costs every attempt its full ``safety_delay``.
+
     Logs under the running node, since it is called from one — see ``machine.log`` in
     the node conventions.
     """
+
+    async def _reached() -> bool:
+        if not any_client:
+            return await prompt.all_showing(clients)
+        return any(await asyncio.gather(*[prompt.showing(c) for c in clients]))
+
     if clear_first and not await clear_stale_prompt(
         machine, clients, reset, prompt, safety_delay, poll_interval, numbers
     ):
@@ -2589,7 +2738,7 @@ async def reach_prompt(
         await asyncio.gather(*[c.teleport(point) for c in clients])
 
         machine.log(f"Waiting for {prompt.name}…", logging.DEBUG)
-        if await poll_until(lambda: prompt.all_showing(clients), safety_delay, poll_interval):
+        if await poll_until(_reached, safety_delay, poll_interval):
             return True
 
         if attempt == MAX_RETRIES and not fail_on_miss:
@@ -2628,14 +2777,7 @@ async def reach_sigil_prompt(
     Returns False having already logged the reason, so a caller's failure path is a
     bare ``return "FAILURE"``.
     """
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await in_expected_zone(machine, clients, from_zone, poll_interval):
         return False
 
     return await reach_prompt(machine, clients, sigil, reset, DUNGEON_ENTRANCE_PROMPT, safety_delay, poll_interval)

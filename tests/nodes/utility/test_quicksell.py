@@ -7,7 +7,6 @@ import bartlebot.nodes.utility.quicksell as qs
 from bartlebot.bot.schema import BotConfig, BotOptionModel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
-    QUICKSELL_CLOSE_BUTTON_PATH,
     QUICKSELL_JEWEL_OPEN_PATH,
     QUICKSELL_NEXT_PAGE_PATH,
     QUICKSELL_PET_TAB_PATH,
@@ -168,27 +167,6 @@ async def test_quicksells_once_when_both_full():
     assert len(jewel_open_clicks) == 1
 
 
-async def test_closes_shop_gui_when_all_items_kept():
-    """All items match the keep list (sell button grayed) → shop GUI closed before backpack."""
-    client = FakeClient()
-    client.backpack_space.return_value = (100, 100)
-
-    p = _make_patchers(is_jewel_full_returns=False, is_enabled_by_path_returns=False)
-    with (
-        p["poll_until"],
-        p["click_by_path"] as mock_click,
-        p["is_enabled"],
-        p["get_text"],
-        p["jewel_full"],
-        p["poll_interval"],
-    ):
-        result = await qs.run(_machine(keep_list=["hat"]), [client], {})
-
-    assert result == "SUCCESS"
-    clicked_paths = [c.args[1] for c in mock_click.call_args_list]
-    assert QUICKSELL_CLOSE_BUTTON_PATH in clicked_paths
-
-
 async def test_keeps_items_matching_keyword():
     """Row 0 contains 'Rare Hat' and keep_list=['hat'] → row 0 checkbox is clicked to uncheck."""
     client = FakeClient()
@@ -309,47 +287,121 @@ async def test_returns_failure_when_quicksell_ui_never_opens():
 # ---------------------------------------------------------------------------
 
 
-class _SellScreen:
-    """The quicksell window from the Sell button onwards, as the node can see it."""
+# The captions a real sale showed, as the client read them.
+_CROWNS = "<center>You are selling 3 Crowns Items. Are you sure you want to sell these Crowns Items?</center>"
+_PET = "<center>You are selling a Pet. Are you sure you want to sell a Pet?</center>"
+_GOLD = (
+    "<center>You are close to the gold limit! <br>13534 gold from this sale will be lost! <br><br>"
+    "Are you sure that you want to SELL for 19221 gold?</center>"
+)
+_INCLUDE_CROWNS = "Would you like to include Crowns Items in the selected items?"
+# Something no sale raises, standing in for an invitation that arrives mid-sale.
+_STRANGER = "<center>Someone has invited you to be their friend.</center>"
 
-    def __init__(self, *, confirm_appears: bool = True, post_sell_dialogs: int = 0):
+
+class _SellScreen:
+    """The quicksell window from Select All onwards, as the node can see it.
+
+    Dialogs are read by caption, as the node reads them. `dialogs` come up after the sale
+    is confirmed, one at a time; `dropped` says how many clicks on each path the game
+    loses before one lands. The backpack's close button is hidden while the shop is up.
+    """
+
+    def __init__(
+        self,
+        *,
+        confirm_appears: bool = True,
+        dialogs: tuple[str, ...] = (),
+        include_crowns_question: bool = False,
+        keep_everything: bool = False,
+        dropped: dict | None = None,
+    ):
         self.confirm_appears = confirm_appears
-        self.post_sell_dialogs = post_sell_dialogs
-        self.dialogs_showing = 0
+        self.pending_dialogs = list(dialogs)
+        self.include_crowns_question = include_crowns_question
+        self.keep_everything = keep_everything
+        self.dropped = dict(dropped or {})
+        self.dialogs: list[str] = []
+        self.shop_open = True
+        self.sold = False
+        self.backpack_open = True
         self.clicks: list[list[str]] = []
 
     async def _is_visible(self, _client, path):
-        if path == qs.MESSAGE_BOX_CENTER:
-            return self.dialogs_showing > 0
+        if path in (qs.MESSAGE_BOX_CENTER, qs.MESSAGE_BOX_RIGHT):
+            return bool(self.dialogs)
+        if path == qs.MESSAGE_BOX_LEFT:
+            return False
         if path == qs.QUICKSELL_CONFIRM_SELL_PATH:
             return self.confirm_appears and qs.QUICKSELL_SELL_BUTTON_PATH in self.clicks
+        if path == qs.QUICKSELL_SHOP_PATH:
+            return self.shop_open
+        if path == qs.BACKPACK_CLOSE_BUTTON_PATH:
+            return not self.shop_open
+        if path == node_helpers.DECK_CONFIGURATION_PATH:
+            return self.backpack_open
         return True
 
     async def _is_enabled(self, _client, path):
-        # One page of items, and something on it left to sell.
-        return path == qs.QUICKSELL_SELL_BUTTON_PATH
+        # One page of items, and something on it left to sell unless everything is kept.
+        return path == qs.QUICKSELL_SELL_BUTTON_PATH and not self.keep_everything
+
+    async def _text(self, _client, path):
+        if path == node_helpers.MESSAGE_BOX_CAPTION_PATH:
+            return self.dialogs[0] if self.dialogs else ""
+        return ""
+
+    def _lands(self, path) -> bool:
+        key = tuple(path)
+        if self.dropped.get(key, 0) > 0:
+            self.dropped[key] -= 1
+            return False
+        return True
 
     async def _click(self, _client, path):
         self.clicks.append(path)
-        if path == qs.QUICKSELL_CONFIRM_SELL_PATH:
-            self.dialogs_showing = self.post_sell_dialogs
-        elif path == qs.MESSAGE_BOX_CENTER and self.dialogs_showing:
-            self.dialogs_showing -= 1
+        if not self._lands(path):
+            return True
+        if path == qs.QUICKSELL_ALL_BUTTON_PATH and self.include_crowns_question:
+            self.include_crowns_question = False
+            self.dialogs.append(_INCLUDE_CROWNS)
+        elif path == qs.QUICKSELL_CONFIRM_SELL_PATH:
+            self.dialogs.extend(self.pending_dialogs)
+            self._finish_if_answered()
+        elif path in (qs.MESSAGE_BOX_CENTER, qs.MESSAGE_BOX_RIGHT) and self.dialogs:
+            self.dialogs.pop(0)
+            self._finish_if_answered()
+        elif path == qs.QUICKSELL_CLOSE_BUTTON_PATH:
+            self.shop_open = False
+        elif path == qs.BACKPACK_CLOSE_BUTTON_PATH:
+            self.backpack_open = False
         return True
 
-    async def sell(self, machine) -> str:
+    def _finish_if_answered(self):
+        if qs.QUICKSELL_CONFIRM_SELL_PATH in self.clicks and not self.dialogs:
+            self.sold, self.shop_open = True, False
+
+    async def sell(self, machine, *, complete_timeout: float = 1.0) -> str:
         with (
             patch.object(node_helpers, "is_visible_by_path", new=AsyncMock(side_effect=self._is_visible)),
             patch.object(node_helpers, "is_enabled_by_path", new=AsyncMock(side_effect=self._is_enabled)),
             patch.object(node_helpers, "click_by_path", new=AsyncMock(side_effect=self._click)),
-            patch.object(node_helpers, "get_text_by_path", new=AsyncMock(return_value="")),
+            patch.object(node_helpers, "get_text_by_path", new=AsyncMock(side_effect=self._text)),
             patch.object(qs, "_is_jewel_backpack_full", new=AsyncMock(return_value=False)),
             patch.object(qs, "POLL_INTERVAL", 0),
+            patch.object(qs, "QUICKSELL_COMPLETE_TIMEOUT", complete_timeout),
+            patch.object(node_helpers, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
+            patch.object(node_helpers, "WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001),
+            patch.object(node_helpers, "WINDOW_CLOSE_TIMEOUT", 0.5),
         ):
             return await qs.run(machine, [_full_backpack()], {})
 
     def clicks_after(self, path) -> list[list[str]]:
         return self.clicks[self.clicks.index(path) + 1 :]
+
+
+def _warned(machine, text: str) -> bool:
+    return any(level == logging.WARNING and text in msg for msg, level in machine.logs)
 
 
 async def test_a_full_backpack_is_sold_and_the_backpack_closed():
@@ -362,9 +414,31 @@ async def test_a_full_backpack_is_sold_and_the_backpack_closed():
     assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [qs.BACKPACK_CLOSE_BUTTON_PATH]
 
 
-async def test_every_post_sell_dialog_is_confirmed_before_the_backpack_closes():
-    """Answering No to any of them cancels the whole sale, so each one gets the center button."""
-    screen = _SellScreen(post_sell_dialogs=2)
+async def test_a_dropped_close_click_is_sent_again_until_the_backpack_is_gone():
+    """The game drops clicks sent while it is busy after a sale; one click left the backpack open."""
+    screen = _SellScreen(dropped={tuple(qs.BACKPACK_CLOSE_BUTTON_PATH): 2})
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [qs.BACKPACK_CLOSE_BUTTON_PATH] * 3
+    assert not screen.backpack_open
+
+
+async def test_a_backpack_that_stays_open_fails_the_node_and_says_so():
+    screen = _SellScreen(dropped={tuple(qs.BACKPACK_CLOSE_BUTTON_PATH): float("inf")})
+    machine = _machine()
+
+    result = await screen.sell(machine)
+
+    assert result == "FAILURE"
+    assert _warned(machine, "did not close")
+
+
+async def test_every_question_the_sale_raises_is_confirmed_before_the_backpack_closes():
+    """Answering No to any of them cancels the whole sale, so each one gets the center button.
+    These three are the ones a real sale raised, which was every one the old loop allowed for."""
+    screen = _SellScreen(dialogs=(_CROWNS, _PET, _GOLD))
 
     result = await screen.sell(_machine())
 
@@ -372,8 +446,78 @@ async def test_every_post_sell_dialog_is_confirmed_before_the_backpack_closes():
     assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [
         qs.MESSAGE_BOX_CENTER,
         qs.MESSAGE_BOX_CENTER,
+        qs.MESSAGE_BOX_CENTER,
         qs.BACKPACK_CLOSE_BUTTON_PATH,
     ]
+
+
+async def test_a_dropped_answer_is_clicked_again_until_that_dialog_goes():
+    screen = _SellScreen(dialogs=(_CROWNS, _PET, _GOLD), dropped={tuple(qs.MESSAGE_BOX_CENTER): 1})
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert screen.sold
+    assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH).count(qs.MESSAGE_BOX_CENTER) == 4
+
+
+async def test_a_dialog_the_sale_did_not_raise_is_cancelled_and_the_sale_goes_on():
+    machine = _machine()
+    screen = _SellScreen(dialogs=(_CROWNS, _STRANGER, _GOLD))
+
+    result = await screen.sell(machine)
+
+    assert result == "SUCCESS"
+    assert screen.sold
+    assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH)[:3] == [
+        qs.MESSAGE_BOX_CENTER,
+        qs.MESSAGE_BOX_RIGHT,
+        qs.MESSAGE_BOX_CENTER,
+    ]
+    # Named by what it is, never by its caption, which can carry a wizard's name.
+    assert not any("invited" in msg for msg, _level in machine.logs)
+
+
+async def test_a_dialog_that_will_not_close_fails_the_sale():
+    machine = _machine()
+    screen = _SellScreen(dialogs=(_GOLD,), dropped={tuple(qs.MESSAGE_BOX_CENTER): float("inf")})
+
+    result = await screen.sell(machine)
+
+    assert result == "FAILURE"
+    assert _warned(machine, "would not close")
+    assert qs.BACKPACK_CLOSE_BUTTON_PATH not in screen.clicks
+
+
+async def test_endless_dialogs_fail_the_sale_rather_than_answer_forever():
+    machine = _machine()
+    # Alternating: the same caption twice running is one dialog answered twice, as it should be.
+    screen = _SellScreen(dialogs=(_CROWNS, _PET) * qs._MAX_DIALOGS)
+
+    result = await screen.sell(machine)
+
+    assert result == "FAILURE"
+    assert _warned(machine, "dialogs came up")
+
+
+async def test_a_backpack_that_never_comes_back_after_the_sale_fails():
+    machine = _machine()
+    screen = _SellScreen(dialogs=(_GOLD,))
+    screen._finish_if_answered = lambda: None  # the shop never goes
+
+    result = await screen.sell(machine, complete_timeout=0.05)
+
+    assert result == "FAILURE"
+    assert _warned(machine, "did not come back")
+
+
+async def test_the_crowns_question_after_select_all_is_answered_yes():
+    screen = _SellScreen(include_crowns_question=True)
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert screen.clicks_after(qs.QUICKSELL_ALL_BUTTON_PATH)[0] == qs.MESSAGE_BOX_CENTER
 
 
 async def test_a_sale_the_game_never_asks_to_confirm_fails():
@@ -383,6 +527,32 @@ async def test_a_sale_the_game_never_asks_to_confirm_fails():
 
     assert result == "FAILURE"
     assert screen.clicks[-1] == qs.QUICKSELL_SELL_BUTTON_PATH
+
+
+async def test_with_everything_kept_the_shop_is_closed_until_gone_before_the_backpack():
+    """The backpack's close button is behind the shop until the shop is gone."""
+    screen = _SellScreen(keep_everything=True, dropped={tuple(qs.QUICKSELL_CLOSE_BUTTON_PATH): 1})
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert qs.QUICKSELL_SELL_BUTTON_PATH not in screen.clicks
+    assert screen.clicks_after(qs.QUICKSELL_ALL_BUTTON_PATH)[-3:] == [
+        qs.QUICKSELL_CLOSE_BUTTON_PATH,
+        qs.QUICKSELL_CLOSE_BUTTON_PATH,
+        qs.BACKPACK_CLOSE_BUTTON_PATH,
+    ]
+
+
+async def test_with_everything_kept_a_shop_that_will_not_close_fails():
+    machine = _machine()
+    screen = _SellScreen(keep_everything=True, dropped={tuple(qs.QUICKSELL_CLOSE_BUTTON_PATH): float("inf")})
+
+    result = await screen.sell(machine)
+
+    assert result == "FAILURE"
+    assert _warned(machine, "quicksell window did not close")
+    assert qs.BACKPACK_CLOSE_BUTTON_PATH not in screen.clicks
 
 
 async def test_handles_multiple_clients():

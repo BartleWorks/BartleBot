@@ -337,6 +337,11 @@ DECK_FUSION_CLOSE_SETTLE = 0.5
 
 LAUNCH_STAGGER_DELAY = 1.0
 
+# The least gap between one client's Quit press and the next's, and between one's first Play
+# press and the next's, when a team relogs together. Pressed at once, the fourth login
+# gets dropped, the same rejection LAUNCH_STAGGER_DELAY spaces launch logins against.
+RELOG_STAGGER_DELAY = 1.0
+
 # How long one launch stage may run before its pending tile starts showing how long it has
 # been in it. Below this the number is noise -- every stage takes some seconds and a
 # counter on all of them reads as a stopwatch rather than as a warning. Above it the
@@ -695,10 +700,6 @@ RELOG_FIGHT_TIMEOUT = AMBIENT_COMBAT_MAX_DURATION + FLEE_TIMEOUT
 # How long the relog node waits for a fight to end before logging out, and again before
 # re-forming the group (#203). The ambient combat watcher fights it meanwhile, and flees it at
 # AMBIENT_COMBAT_MAX_DURATION, so a fight still going past this is one nothing will end.
-
-POSITION_STABILIZE_TIMEOUT = 5.0
-# Seconds to wait for the server-reported position to match a teleport target. The client
-# moves first and the server confirms after, so this covers the gap.
 
 HOME_LOADING_TIMEOUT = 15.0
 # Seconds to wait for a loading screen to appear after HOME. Longer than TRIGGER_TIMEOUT

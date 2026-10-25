@@ -66,7 +66,6 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import slots_in_battle
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
-    BACKPACK_CLOSE_BUTTON_PATH,
     REALM_CURRENT_NAME_PATH,
     SETTINGS_QUIT_BUTTON_PATH,
     SPELLBOOK_BUTTON_PATH,
@@ -79,7 +78,9 @@ from bartlebot.nodes.timing import (
     RELOG_FIGHT_TIMEOUT,
     RELOG_IN_GAME_TIMEOUT,
     RELOG_SHOP_APPEAR_TIMEOUT,
+    RELOG_STAGGER_DELAY,
     TRIGGER_TIMEOUT,
+    jitter,
 )
 from bartlebot.settings_manager import SettingsManager
 
@@ -237,8 +238,11 @@ async def _open_settings_page(machine, client) -> bool:
         ):
             if await node_helpers.is_visible_by_path(client, REALM_CURRENT_NAME_PATH) and attempt + 1 < _MENU_ATTEMPTS:
                 machine.log("relog: settings page opened on the Realms tab — reopening it", logging.DEBUG)
-                await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
-                await asyncio.sleep(POLL_INTERVAL)
+                # The reopen clicks the spellbook button, a toggle: on a spellbook still open
+                # it would close it instead, so the close has to have taken first.
+                if not await node_helpers.close_spellbook(client):
+                    machine.log("relog: the spellbook did not close to be reopened", logging.WARNING)
+                    return False
                 continue
             machine.log("relog: the Quit button never appeared on the settings page", logging.WARNING)
             return False
@@ -315,10 +319,36 @@ def _abandon(machine, client, reason: str) -> str:
     return FAILED
 
 
-async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
+class RelogPacing:
+    """Spaces a team's Quit presses, and its first Play presses, RELOG_STAGGER_DELAY apart.
+
+    One instance is shared by every client relogging together. Each press takes a turn under
+    its lock, so a slow client never holds the others to its own clock: a turn waits only for
+    the gap since the previous press of the same kind.
+    """
+
+    def __init__(self, delay: float = RELOG_STAGGER_DELAY) -> None:
+        self._delay = delay
+        self._locks = {"quit": asyncio.Lock(), "play": asyncio.Lock()}
+        self._last: dict[str, float | None] = {"quit": None, "play": None}
+
+    async def turn(self, kind: str) -> None:
+        """Wait for *kind*'s ("quit" or "play") turn, then claim it."""
+        loop = asyncio.get_running_loop()
+        async with self._locks[kind]:
+            last = self._last[kind]
+            if last is not None:
+                wait = last + jitter(self._delay) - loop.time()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            self._last[kind] = loop.time()
+
+
+async def log_out_and_in(machine, client, *, in_battle: bool = False, pacing: RelogPacing | None = None) -> str:
     """Take one client out to character select and back into the world: BACK, FAILED or ABANDONED.
 
     *in_battle* reaches Quit with Esc rather than the spellbook, which will not open in battle.
+    *pacing* is shared by the clients relogging together and staggers their Quit and Play presses.
     Crash recovery uses it to log players out of a fight a relaunched player could not get back
     into. The caller holds health checks off for *client* throughout, as :func:`run` does, all
     but the disconnect dialog watcher.
@@ -329,7 +359,7 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     function gave up on itself.
     """
     try:
-        result = await _log_out_and_in(machine, client, in_battle=in_battle)
+        result = await _log_out_and_in(machine, client, in_battle=in_battle, pacing=pacing)
     except Exception:
         if machine.is_handed_to_recovery(client):
             return ABANDONED
@@ -339,7 +369,7 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     return result
 
 
-async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
+async def _log_out_and_in(machine, client, *, in_battle: bool, pacing: RelogPacing | None = None) -> str:
     """The steps of :func:`log_out_and_in`, which stop early once *client* is handed to recovery."""
     if await _disconnected(client):
         return _abandon(machine, client, _DISCONNECTED)
@@ -353,6 +383,8 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
         # A connection lost while the menu was being opened is recovery's, not a failure in the world.
         return _abandon(machine, client, _DISCONNECTED) if await _disconnected(client) else FAILED
 
+    if pacing:
+        await pacing.turn("quit")
     await node_helpers.click_by_path(client, SETTINGS_QUIT_BUTTON_PATH)
 
     # Quit usually goes straight to character select, but inside a dungeon, or with Dungeon
@@ -408,6 +440,7 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
     loop = asyncio.get_event_loop()
     deadline = loop.time() + RELOG_IN_GAME_TIMEOUT
     loading_since: float | None = None
+    play_paced = pacing is None
     while (now := loop.time()) < deadline:
         if machine.is_handed_to_recovery(client):
             return ABANDONED
@@ -421,6 +454,10 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
             return BACK
         if await auto_select.at_character_select(client):
             loading_since = None
+            if not play_paced:
+                # Only the first press waits for its turn; a re-press is this client's own retry.
+                await pacing.turn("play")
+                play_paced = True
             await auto_select.press_character_select_play(client.window_handle)
         elif loading_since is None:
             loading_since = now
@@ -551,9 +588,10 @@ async def run(machine, clients: list, params: dict) -> str:
     hwnds = [c.window_handle for c in targets]
     machine.suspend_health_checks_for(hwnds, watch_disconnects=True)
     results: list = []
+    pacing = RelogPacing()
     try:
         results = await asyncio.gather(
-            *[log_out_and_in(machine, c) for c in targets],
+            *[log_out_and_in(machine, c, pacing=pacing) for c in targets],
             return_exceptions=True,
         )
     finally:

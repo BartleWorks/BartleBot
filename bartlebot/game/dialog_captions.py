@@ -90,6 +90,31 @@ REALM_DOES_NOT_EXIST = "Error_RealmDoesNotExist"
 FRIEND_NOT_ON_LIST = "GoToFriendFail"
 """'You failed to teleport to this friend. Perhaps he or she is not your friend anymore.'"""
 
+# Quicksell's own questions. Each is confirmed: No on any of them cancels the whole sale.
+# Kept out of CONFIRM_TO_PROCEED, so no other node's wait ever answers yes to a sale.
+QUICKSELL_INCLUDE_CROWNS = "GUI2:00001001"
+"""'Would you like to include Crowns Items in the selected items?' After Select All."""
+
+SELL_CROWNS_ITEM = "GUI2:00000986"
+"""'You are selling a Crowns Item. Are you sure you want to sell a Crowns Item?'"""
+
+SELL_CROWNS_ITEMS = "GUI2:00000987"
+"""'You are selling $COUNT$ Crowns Items. Are you sure you want to sell these Crowns Items?'"""
+
+SELL_PET = "GUI2:00000988"
+"""'You are selling a Pet. Are you sure you want to sell a Pet?'"""
+
+SELL_PETS = "GUI2:00000989"
+"""'You are selling $COUNT$ Pets. Are you sure you want to sell these Pets?'"""
+
+SELL_NEAR_GOLD_LIMIT = "GUI2:00000239"
+"""'You are close to the gold limit! $LOST$ gold from this sale will be lost!' and a question.
+
+The game has four wordings (00000239, 00000240, 00000456, 00000457) for one item, several,
+none named and treasure cards. They share the literal run this one is recognized by, so
+this key stands for all four, and adding the others would only make --verify report them
+as colliding."""
+
 # The client has fallen out of the game. Nothing to click -- ClientHealthMonitor kills the
 # process and lets the relaunch/re-hook path recover it.
 DISCONNECTED_IDLE = "ConnectionAFK"
@@ -140,6 +165,12 @@ KNOWN_KEYS: tuple[str, ...] = (
     DISCONNECTED_MAINTENANCE,
     CONNECT_FAILED,
     LOGIN_LOCKED,
+    QUICKSELL_INCLUDE_CROWNS,
+    SELL_CROWNS_ITEM,
+    SELL_CROWNS_ITEMS,
+    SELL_PET,
+    SELL_PETS,
+    SELL_NEAR_GOLD_LIMIT,
 )
 
 # ---------------------------------------------------------------------------
@@ -192,6 +223,18 @@ DISCONNECTS = frozenset(
 can usefully click, so resolve_modal leaves these alone and ClientHealthMonitor kills the
 process instead, letting the relaunch and re-hook path recover it."""
 
+QUICKSELL_QUESTIONS = frozenset(
+    {
+        QUICKSELL_INCLUDE_CROWNS,
+        SELL_CROWNS_ITEM,
+        SELL_CROWNS_ITEMS,
+        SELL_PET,
+        SELL_PETS,
+        SELL_NEAR_GOLD_LIMIT,
+    }
+)
+"""Quicksell's questions, confirmed by the node that raised them and by nothing else."""
+
 UNRECOGNIZED_REFUSAL = "<unrecognized>"
 """Not a lang key: a dismiss-only dialog whose caption the snapshot does not know.
 
@@ -213,6 +256,12 @@ REASONS: dict[str, str] = {
     REALM_DOES_NOT_EXIST: "the chosen realm no longer exists",
     FRIEND_NOT_ON_LIST: "that wizard is no longer on the friends list",
     ALREADY_IN_GROUP: "that player is already in a group",
+    QUICKSELL_INCLUDE_CROWNS: "whether to include Crowns items",
+    SELL_CROWNS_ITEM: "selling a Crowns item",
+    SELL_CROWNS_ITEMS: "selling Crowns items",
+    SELL_PET: "selling a pet",
+    SELL_PETS: "selling pets",
+    SELL_NEAR_GOLD_LIMIT: "the sale passing the gold limit",
     UNRECOGNIZED_REFUSAL: (
         "the game refused with a dialog this build does not recognize — if this is "
         "reproducible, add its lang key to KNOWN_KEYS and re-run tools/dump_dialog_captions.py"

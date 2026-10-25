@@ -207,7 +207,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "SUCCESS"
 
     # 4. Check buying_clients zones.
-    zones = await asyncio.gather(*[c.zone_name() for c in buying_clients])
+    zones = await node_helpers.read_zones(buying_clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Buying client zones: {list(zones)}", logging.DEBUG)
 
     # 4a. Commons shortcut: all buying clients are already at Hilda's location —
@@ -330,14 +330,19 @@ async def navigate_to_potion_vendor(machine, clients: list) -> bool:
     return True
 
 
-async def close_potion_shop(client) -> None:
-    """Click Exit until the potion shop window is gone.
+async def close_potion_shop(client) -> bool:
+    """Click Exit until the potion shop window is gone. True once it is.
 
     One click is not enough: the button can be swallowed while the shop is mid-animation.
+    Gives up after WINDOW_CLOSE_TIMEOUT with a warning, where it used to click for as long
+    as the shop read open, which a window that never reads closed would make forever.
     """
-    while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
-        await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-        await asyncio.sleep(SHOP_EXIT_CLICK_INTERVAL)
+    return await node_helpers.click_until_gone(
+        client,
+        POTION_EXIT_PATH,
+        is_open=lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
+        poll_interval=SHOP_EXIT_CLICK_INTERVAL,
+    )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────

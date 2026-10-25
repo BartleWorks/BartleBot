@@ -9,7 +9,7 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import MAX_RETRIES
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -74,14 +74,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"teleport_to_coordinates: {zone!r} → XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     # 2. Teleport all clients to the target XYZ.
@@ -102,7 +95,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.sleep(safety_delay)
 
-        zones = await asyncio.gather(*[clients[i].zone_name() for i in off_target])
+        zones = await node_helpers.read_zones([clients[i] for i in off_target], poll_interval=POLL_INTERVAL)
         left = [i for i, z in zip(off_target, zones) if not node_helpers.zone_matches(z, zone)]
         if left:
             machine.log(f"FAILURE: client(s) {left} left {zone!r} before reaching target XYZ", logging.WARNING)

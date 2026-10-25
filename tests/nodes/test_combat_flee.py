@@ -266,18 +266,29 @@ async def test_only_castable_damage_cards_count():
 def ui(monkeypatch):
     """The two UI reads/clicks _flee uses, with the confirmation showing once Flee is clicked."""
     from bartlebot.nodes import node_helpers
-    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH
+    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH
 
-    state = SimpleNamespace(clicks=[], flee_clickable=True, confirm_appears=True)
+    state = SimpleNamespace(clicks=[], flee_clickable=True, confirm_appears=True, confirm_drops=0)
 
     async def click(_client, path):
         if path == FLEE_BUTTON_PATH and not state.flee_clickable:
             return False
         state.clicks.append("flee" if path == FLEE_BUTTON_PATH else "confirm")
+        if path == FLEE_CONFIRM_PATH and state.confirm_drops:
+            state.confirm_drops -= 1
+            state.clicks[-1] = "confirm (dropped)"
         return True
 
+    def confirm_up() -> bool:
+        return state.confirm_appears and "flee" in state.clicks and "confirm" not in state.clicks
+
     async def visible(_client, path):
-        return path == FLEE_CONFIRM_PATH and state.confirm_appears and "flee" in state.clicks
+        # The button keeps reading visible once its window has closed; the window does not.
+        if path == FLEE_CONFIRM_PATH:
+            return state.confirm_appears and "flee" in state.clicks
+        if path == FLEE_CONFIRM_WINDOW_PATH:
+            return confirm_up()
+        return False
 
     monkeypatch.setattr(node_helpers, "click_by_path", click)
     monkeypatch.setattr(node_helpers, "is_visible_by_path", visible)
@@ -301,6 +312,23 @@ async def test_a_flee_with_no_confirmation_is_left_for_the_next_round(ui, monkey
 
     assert ui.clicks == ["flee"]
     assert watch.fled == set()
+
+
+async def test_a_dropped_confirm_is_not_counted_as_a_flee(ui, monkeypatch):
+    """The next planning phase clicks it again; counting it now would call a won fight fled."""
+    monkeypatch.setattr(combat_runner, "FLEE_CONFIRM_TIMEOUT", 0.05)
+    ui.confirm_drops = 1
+    watch, (client,), log = await _watch(11)
+    await combat_runner._flee(_combat(client), watch)
+
+    assert ui.clicks == ["flee", "confirm (dropped)"]
+    assert watch.fled == set()
+    assert ("P1: fled", logging.INFO) not in log.lines
+
+    await combat_runner._flee(_combat(client), watch)
+
+    assert ui.clicks[-1] == "confirm"
+    assert watch.fled == {1}
 
 
 async def test_a_defeated_player_flees_from_its_defeat_panel(ui):

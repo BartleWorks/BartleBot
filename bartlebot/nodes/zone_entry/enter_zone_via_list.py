@@ -22,6 +22,7 @@ from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     UNIVERSE_CANCEL_BUTTON,
+    UNIVERSE_LIST_PATH,
     UNIVERSE_NEXT_PAGE,
     UNIVERSE_TELEPORT_BUTTON,
     universe_zone_option_path,
@@ -99,6 +100,18 @@ async def _search_pages(client, safety_delay: float, match: Callable[[str], bool
         await node_helpers.poll_until(lambda s=snapshot: page_changed(s), safety_delay, POLL_INTERVAL)
 
     return False
+
+
+async def _cancel_list(client) -> None:
+    """Close the zone list with Cancel, clicking until it is gone. Best effort.
+
+    Only failing paths cancel, so the node fails either way; a list that stays open is left
+    to the warning the retry logs, and to the next client's turn, which starts from the
+    object again.
+    """
+    await node_helpers.click_until_gone(
+        client, UNIVERSE_CANCEL_BUTTON, is_open=lambda: node_helpers.is_visible_by_path(client, UNIVERSE_LIST_PATH)
+    )
 
 
 def _substring_match(text: str, queries_lower: list[str]) -> bool:
@@ -181,7 +194,7 @@ async def _use_list_sequentially(
         if not await _select_zone(client, zone_list_entry, safety_delay, aliases):
             # Leave the object as we found it, or the next client's turn starts with
             # somebody else's list still on screen.
-            await node_helpers.click_by_path(client, UNIVERSE_CANCEL_BUTTON)
+            await _cancel_list(client)
             return False
 
         await node_helpers.click_by_path(client, UNIVERSE_TELEPORT_BUTTON)
@@ -289,14 +302,7 @@ async def run(machine, clients: list, params: dict) -> str:
     )
 
     # 1. Zone check.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     # Who shares whose realm, for straggler recovery in a Separate bot.
@@ -339,7 +345,7 @@ async def run(machine, clients: list, params: dict) -> str:
             f"FAILURE: zone list entry {zone_list_entry!r} not found on any page",
             logging.WARNING,
         )
-        await asyncio.gather(*[node_helpers.click_by_path(c, UNIVERSE_CANCEL_BUTTON) for c in clients])
+        await asyncio.gather(*[_cancel_list(c) for c in clients])
         return "FAILURE"
 
     machine.log(f"Entry {zone_list_entry!r} selected; clicking teleport button", logging.DEBUG)

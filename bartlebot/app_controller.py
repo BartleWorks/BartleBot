@@ -48,6 +48,8 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
+from bartlebot.gui.debug.game_hang_trace import GameHangTracer
+from bartlebot.gui.debug.stall_trace import StallTracer
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage, needs_asking, setup_pages
@@ -306,6 +308,20 @@ class AppController(QObject):
         self._app.installEventFilter(self._share_drops)
         self._wire_updates()
         QTimer.singleShot(0, self._after_window_shown)
+        # A frozen window: every thread's stack, taken while the loop is held. Last, so
+        # start-up's own work is not taken for a freeze, but before the loop first runs,
+        # so the window's first maximized frames are watched.
+        self._stall_tracer = StallTracer() if dev_mode() else None
+        if self._stall_tracer is not None:
+            self._stall_tracer.start()
+        # A game window that stops answering, and what its thread was waiting on.
+        self._hang_tracer = GameHangTracer(self._hooked_windows) if dev_mode() else None
+        if self._hang_tracer is not None:
+            self._hang_tracer.start()
+
+    def _hooked_windows(self) -> list[tuple[str, int]]:
+        """Each hooked client's window, by player number, for the game hang tracer."""
+        return [(f"P{i + 1}", client.window_handle) for i, client in enumerate(self._client_manager.clients)]
 
     def _restore_game_display_settings(self) -> None:
         """Give the game back the display settings a previous session overwrote.
@@ -547,6 +563,10 @@ class AppController(QObject):
         # launch that retiled them gives them back here. Synchronous, so they still run
         # at this point.
         self._app.aboutToQuit.connect(self._restore_game_display_settings)
+        if self._stall_tracer is not None:
+            self._app.aboutToQuit.connect(self._stall_tracer.stop)
+        if self._hang_tracer is not None:
+            self._app.aboutToQuit.connect(self._hang_tracer.stop)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 
@@ -3247,9 +3267,9 @@ class AppController(QObject):
         # touches the foreground window. So the clients cannot interfere.
         #
         # The win is smaller than N: memory reads are synchronous ReadProcessMemory
-        # on the loop thread and SendMessageW blocks until the target game's message
-        # pump answers, so only the sleeps actually overlap. Measured at 1.88x for
-        # four clients.
+        # on the loop thread. Measured at 1.88x for four clients, from before
+        # wizwalker sent each window's messages from a thread of its own, when the
+        # waits for the games' answers held the loop too.
         #
         # Each task swallows its own failures, so no return_exceptions is needed and
         # one bad client cannot cancel the others' applies half-finished.

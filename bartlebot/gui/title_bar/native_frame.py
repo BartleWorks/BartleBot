@@ -28,7 +28,7 @@ whenever any button hint is set). But Qt also drops ``WS_MINIMIZEBOX``, ``WS_MAX
 ``WS_SYSMENU`` and ``WS_CAPTION`` with them, which takes click-the-taskbar-to-minimize,
 Win+Arrow and the animations away. :meth:`NativeFrame.restore_styles` puts them back;
 Windows draws no caption for them, because ``WM_NCCALCSIZE`` is never left to Windows:
-Qt answers it, or, maximized, we do.
+Qt answers it.
 
 **Qt's overlay.** The flag also makes Qt create a ``_q_titlebar`` layered child window over
 the top ~30px, to draw its own caption into, and redraw it at the full width of the window
@@ -43,13 +43,15 @@ bottom (#271). :meth:`NativeFrame.set_border_color` paints it in a theme color t
 no such attribute, so ``BottomEdge`` (``title_bar/bottom_edge.py``) draws the bottom one
 itself whenever this one is not there.
 
-**The maximized client area.** Qt's ``WM_NCCALCSIZE`` answer for a maximized window runs
-a physical pixel past the monitor's work area on every side, so the window's last row
-sat under the taskbar and hid the bottom rule outright. Insetting the contents instead
-left a dark row between the rule and the taskbar's own top line, because a logical-pixel
-margin cannot say "one physical pixel" at 125%. So while the window is zoomed,
-:meth:`NativeFrame.native_event` answers ``WM_NCCALCSIZE`` itself with the work area,
-exactly, and the window simply ends where the taskbar starts. Restored, Qt still answers.
+**The maximized client area is Qt's, and must stay Qt's.** Qt's ``WM_NCCALCSIZE`` answer
+for a maximized window runs a physical pixel past the monitor's work area on every side,
+so the window's last row sits under the taskbar. For five days the window answered it
+itself, with the work area exactly (#271). That froze the window opened maximized on a 4K
+screen at 125%: Windows had the client at the full work area while Qt's geometry stayed the
+restored window's, and nothing on screen updated, game tiles included, until the window
+was dragged out of maximized. The input still worked, so the event loop was never held.
+Qt keeps its own record of the client area, and an answer it did not make leaves that
+record wrong, so the overhang is the price. Do not answer ``WM_NCCALCSIZE`` again.
 
 All of it is Windows-only and switched on only on the ``windows`` platform plugin, so a
 test run on another one builds the same window with Qt's ordinary frame.
@@ -68,7 +70,6 @@ from PyQt6.QtWidgets import QMainWindow
 
 logger = logging.getLogger(__name__)
 
-WM_NCCALCSIZE = 0x0083
 WM_NCHITTEST = 0x0084
 WM_NCRBUTTONUP = 0x00A5
 WM_SYSCOMMAND = 0x0112
@@ -109,16 +110,6 @@ _OVERLAY_CLASS = "_q_titlebar"
 
 #: Windows 11 (build 22000) and later; Windows 10 answers ``E_INVALIDARG``.
 _DWMWA_BORDER_COLOR = 34
-
-_MONITOR_DEFAULTTONEAREST = 2
-
-
-class _NCCALCSIZE_PARAMS(ctypes.Structure):  # noqa: N801 - the Win32 name
-    _fields_ = [("rgrc", wt.RECT * 3), ("lppos", ctypes.c_void_p)]
-
-
-class _MONITORINFO(ctypes.Structure):  # noqa: N801 - the Win32 name
-    _fields_ = [("cbSize", wt.DWORD), ("rcMonitor", wt.RECT), ("rcWork", wt.RECT), ("dwFlags", wt.DWORD)]
 
 
 FRAME_FLAGS = (
@@ -195,10 +186,6 @@ class NativeFrame:
         self._user32.DefWindowProcW.restype = ctypes.c_ssize_t
         self._user32.DefWindowProcW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
         self._user32.TrackPopupMenu.restype = ctypes.c_int
-        self._user32.MonitorFromWindow.restype = wt.HMONITOR
-        self._user32.MonitorFromWindow.argtypes = [wt.HWND, wt.DWORD]
-        self._user32.GetMonitorInfoW.argtypes = [wt.HMONITOR, ctypes.c_void_p]
-        self._user32.IsZoomed.argtypes = [wt.HWND]
         self._dwmapi = ctypes.WinDLL("dwmapi")
         self._dwmapi.DwmSetWindowAttribute.restype = ctypes.c_long
         self._dwmapi.DwmSetWindowAttribute.argtypes = [wt.HWND, wt.DWORD, ctypes.c_void_p, wt.DWORD]
@@ -222,33 +209,12 @@ class NativeFrame:
         if not self._active:
             return False, 0
         msg = wt.MSG.from_address(int(message))
-        if msg.message == WM_NCCALCSIZE and msg.wParam and self._user32.IsZoomed(msg.hWnd):
-            work = self.work_area(msg.hWnd)
-            if work is not None:
-                _NCCALCSIZE_PARAMS.from_address(msg.lParam).rgrc[0] = work
-                return True, 0
         if msg.message == WM_NCHITTEST:
             return True, self._hit_test(msg.hWnd, msg.wParam, msg.lParam)
         if msg.message == WM_NCRBUTTONUP and msg.wParam == HTCAPTION:
             self._show_system_menu(msg.lParam)
             return True, 0
         return False, 0
-
-    def work_area(self, hwnd: int | None = None) -> wt.RECT | None:
-        """The work area of the monitor the window is on, in physical pixels, or ``None``.
-
-        *hwnd* defaults to the window's own. Read afresh each time, since the taskbar can
-        move, hide itself or change size while the window is maximized.
-        """
-        if not self._active:
-            return None
-        if hwnd is None:
-            hwnd = int(self._window.winId())
-        monitor = self._user32.MonitorFromWindow(hwnd, _MONITOR_DEFAULTTONEAREST)
-        info = _MONITORINFO(cbSize=ctypes.sizeof(_MONITORINFO))
-        if not monitor or not self._user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
-            return None
-        return info.rcWork
 
     def _hit_test(self, hwnd, wparam: int, lparam: int) -> int:
         x, y = _lparam_point(lparam)

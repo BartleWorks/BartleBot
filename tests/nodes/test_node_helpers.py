@@ -32,7 +32,15 @@ from bartlebot.nodes.paths import (
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
 )
-from tests.conftest import FakeClient, FakeEntity, FakeMachine, ModalScreen, message_box_patches, prompt_at
+from tests.conftest import (
+    FakeClient,
+    FakeEntity,
+    FakeMachine,
+    ModalScreen,
+    message_box_patches,
+    prompt_at,
+    zone_unreadable_at_first,
+)
 
 
 @pytest.mark.parametrize(
@@ -813,6 +821,167 @@ async def test_click_until_gone_without_a_predicate_polls_the_button_and_times_o
         result = await nh_mod.click_until_gone(None, ["Some", "Close"], timeout=0.05, poll_interval=0.01)
 
     assert result is False
+
+
+async def test_click_until_gone_reads_its_default_timeout_when_called(monkeypatch):
+    """A default bound at definition time would ignore a compressed WINDOW_CLOSE_TIMEOUT,
+    and every test of a close that never takes would wait the full six seconds."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    loop = asyncio.get_event_loop()
+    started = loop.time()
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(return_value=True)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(return_value=True)),
+    ):
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"])
+
+    assert result is False
+    assert loop.time() - started < 1.0
+
+
+class _DialogStack:
+    """Message boxes, top first, read by caption; the first `dropped` clicks are lost."""
+
+    def __init__(self, captions: list[str], *, dropped: int = 0):
+        self.captions = list(captions)
+        self.dropped = dropped
+        self.clicks: list = []
+
+    async def text(self, _client, path):
+        return self.captions[0] if self.captions and path == MESSAGE_BOX_CAPTION_PATH else ""
+
+    async def click(self, _client, path):
+        self.clicks.append(path)
+        if self.dropped:
+            self.dropped -= 1
+        elif self.captions:
+            self.captions.pop(0)
+        return True
+
+    def patches(self):
+        return (
+            patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=self.text)),
+            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self.click)),
+        )
+
+
+async def test_click_until_dialog_gone_clicks_again_when_the_click_is_dropped(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    stack = _DialogStack(["Are you sure?"], dropped=2)
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == [MESSAGE_BOX_CENTER] * 3
+
+
+async def test_click_until_dialog_gone_stops_at_the_next_dialog_behind_it():
+    """A different caption is the next box, which is the caller's to read and answer."""
+    stack = _DialogStack(["Are you sure?", "Something else entirely."])
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == [MESSAGE_BOX_CENTER]
+    assert stack.captions == ["Something else entirely."]
+
+
+async def test_click_until_dialog_gone_clicks_nothing_with_no_dialog_up():
+    stack = _DialogStack([])
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == []
+
+
+async def test_click_until_dialog_gone_is_false_when_the_dialog_stays(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    stack = _DialogStack(["Are you sure?"], dropped=10**6)
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is False
+
+
+class _Spellbook:
+    """DeckConfiguration, open until a click on its close button lands; the first `dropped` are lost."""
+
+    def __init__(self, *, dropped: int = 0, open_: bool = True):
+        self.dropped = dropped
+        self.open = open_
+        self.clicks: list = []
+
+    async def visible(self, _client, path):
+        from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH, DECK_CONFIGURATION_PATH
+
+        if path == DECK_CONFIGURATION_PATH:
+            return self.open
+        return path == BACKPACK_CLOSE_BUTTON_PATH  # the trap: the button reads visible regardless
+
+    async def click(self, _client, path):
+        self.clicks.append(path)
+        if self.dropped:
+            self.dropped -= 1
+        else:
+            self.open = False
+        return True
+
+
+async def test_close_spellbook_clicks_again_until_the_spellbook_is_gone(monkeypatch):
+    """Straight after a quicksell sale the game dropped the one close click it got."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    book = _Spellbook(dropped=2)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is True
+
+    assert book.clicks == [BACKPACK_CLOSE_BUTTON_PATH] * 3
+    assert not book.open
+
+
+async def test_close_spellbook_leaves_a_closed_spellbook_alone():
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    book = _Spellbook(open_=False)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is True
+
+    assert book.clicks == []
+
+
+async def test_close_spellbook_is_false_when_the_spellbook_stays_open(monkeypatch):
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    book = _Spellbook(dropped=10**6)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is False
+
+    assert book.open
 
 
 # ---------------------------------------------------------------------------
@@ -1940,6 +2109,37 @@ async def test_a_straggler_that_stays_put_through_the_grace_is_still_recovered()
     recovery.assert_awaited_once()
 
 
+async def test_a_straggler_whose_zone_is_unreadable_is_not_ported():
+    """Just off its loading screen a client reads None before the zone it reached (#282).
+    Past the grace that read is no reason to port it: the port would undo the arrival."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain([None] * 3, itertools.repeat("Dst")))
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 1.0, 0, settle_grace=0
+        )
+
+    assert result is None
+    recovery.assert_not_awaited()
+
+
+async def test_a_zone_that_never_turns_readable_still_ends_the_wait():
+    """A client logged out reads None for good: nobody is ported, and the deadline still ends the wait."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    gone = FakeClient()
+    gone.zone_name.return_value = None
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [arrived, gone], "Dst", 0.02, 0, settle_grace=0)
+
+    assert result == ["Dst", None]
+    recovery.assert_not_awaited()
+
+
 # ---------------------------------------------------------------------------
 # skip_while_loading
 # ---------------------------------------------------------------------------
@@ -2352,6 +2552,73 @@ async def test_read_zones_gives_back_none_for_a_zone_that_never_turns_readable()
     gone.zone_name = AsyncMock(return_value=None)
 
     assert await nh.read_zones([ready, gone], 0.05, 0.01) == ["Alpha/Hub", None]
+
+
+# ── in_expected_zone ─────────────────────────────────────────────────────────
+
+
+async def test_in_expected_zone_waits_out_a_zone_just_off_its_loading_screen():
+    """A None read at once would fail a node whose players were where it expected (#282)."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, "Alpha/Hub", reads=2)
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is True
+    assert not any(level >= logging.WARNING for _, level in machine.logs)
+
+
+async def test_in_expected_zone_fails_a_zone_that_never_turns_readable():
+    client = FakeClient()
+    client.zone_name.return_value = None
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is False
+    assert ("FAILURE: clients not in expected zone (expected='Alpha/Hub', unexpected=[None])", logging.WARNING) in (
+        machine.logs
+    )
+
+
+async def test_in_expected_zone_fails_a_player_somewhere_else():
+    client = FakeClient()
+    client.zone_name.return_value = "Beta/Hub"
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is False
+    assert any("unexpected=['Beta/Hub']" in msg for msg, _ in machine.logs)
+
+
+# ── _not_with ────────────────────────────────────────────────────────────────
+
+
+async def test_two_unreadable_zones_are_not_with_each_other():
+    """None == None names no zone: a mover and target that both read None are not together (#282)."""
+    target, mover = FakeClient(), FakeClient()
+    target.zone_name.return_value = None
+    mover.zone_name.return_value = None
+
+    assert await nh._not_with(FakeMachine(), target, [mover]) == [
+        (0, "is in an unreadable zone, not an unreadable zone")
+    ]
+
+
+async def test_a_mover_seen_in_the_targets_zone_is_with_it_however_far():
+    """The target can be walked off after a port (TP to player): only the zone and the sighting count."""
+    target, mover = FakeClient(), FakeClient()
+    mover.body.position.return_value = XYZ(400.0, 300.0, 0.0)
+
+    assert await nh._not_with(FakeMachine(), target, [mover]) == []
+
+
+async def test_each_mover_in_another_zone_is_given_its_reason():
+    target, elsewhere, unreadable, here = FakeClient(), FakeClient(), FakeClient(), FakeClient()
+    target.zone_name.return_value = here.zone_name.return_value = "WizardCity/WC_Hub"
+    elsewhere.zone_name.return_value = "WizardCity/WC_Ravenwood"
+    unreadable.zone_name.return_value = None
+
+    assert await nh._not_with(FakeMachine(), target, [elsewhere, unreadable, here]) == [
+        (0, "is in WC_Ravenwood, not WC_Hub"),
+        (1, "is in an unreadable zone, not WC_Hub"),
+    ]
 
 
 # ── pick_up ──────────────────────────────────────────────────────────────────

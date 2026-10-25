@@ -6731,7 +6731,7 @@
           "from": "G14_DM/DM_Z01_CastleDarkmoor",
           "to": "G14_DM/DM_Z04_LandingZone2",
           "interact_xyz": {"x": -5036.67, "y": -1508.1, "z": -119.1},
-          "reset_xyz": {"x": -5012.84, "y": -1713.36, "z": -117.97},
+          "reset_xyz": {"x": -5084.43, "y": -1916.26, "z": -117.27},
           "verified": true,
           "source": "recorded"
         },

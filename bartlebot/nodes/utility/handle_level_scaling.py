@@ -204,19 +204,6 @@ async def _lacking(clients: list, numbers: Sequence[int]) -> list[int]:
     return [n for n in numbers if n not in have]
 
 
-async def _zones(clients: list) -> list[str] | None:
-    """Every client's zone, once none is between zones. None if one stays unreadable."""
-    zones: list[str] = []
-
-    async def readable() -> bool:
-        zones[:] = await asyncio.gather(*[c.zone_name() for c in clients])
-        return all(zones)
-
-    if not await node_helpers.poll_until(readable, LOADING_SCREEN_TIMEOUT, POLL_INTERVAL):
-        return None
-    return zones
-
-
 # ---------------------------------------------------------------------------
 # The node
 # ---------------------------------------------------------------------------
@@ -269,7 +256,8 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # Challenge Mode scales its players itself, shows no elixir for it, and has no Scales inside.
     # Leaving to fetch an elixir would give the instance up for one nobody needs.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    # Read once each is readable: a None is no Challenge Mode zone, and would send them out of one.
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     if marks is None and zones and all(zone_names.challenge_variant_of(zone) for zone in zones):
         machine.log("SUCCESS: the players are in a Challenge Mode dungeon, which level scales them itself")
         return "SUCCESS"
@@ -294,8 +282,8 @@ def _kept_marks(machine, clients: list) -> list[Mark] | None:
 
 
 async def _scale(machine, clients: list, entry: scales.Scales, numbers: list[int], marks: list[Mark] | None) -> str:
-    zones = await _zones(clients)
-    if zones is None:
+    zones = await node_helpers.read_zones(clients, LOADING_SCREEN_TIMEOUT, POLL_INTERVAL)
+    if not all(zones):
         machine.log(f"FAILURE: a client's zone could not be read for {LOADING_SCREEN_TIMEOUT:.0f}s", logging.WARNING)
         return "FAILURE"
     trip = plan_trip(entry, zones)
@@ -373,7 +361,7 @@ async def _travel(machine, clients: list, entry: scales.Scales, trip: Trip) -> b
             )
         if result != "SUCCESS":
             return False
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     if not all(zone and node_helpers.zone_matches(zone, entry.zone) for zone in zones):
         machine.log(
             f"FAILURE: not every client is in the Scales' zone (expected={entry.zone!r}, got={list(zones)})",
@@ -386,13 +374,18 @@ async def _travel(machine, clients: list, entry: scales.Scales, trip: Trip) -> b
 async def _return_to_marks(machine, clients: list, marks: list[Mark]) -> str:
     if not await teleport_to_marked_location.recall(machine, clients):
         return "FAILURE"
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    # Read once each is readable: a zone just off the recall's loading screen reads None, which
+    # would count as a miss and have the mark forgotten.
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     positions = await asyncio.gather(*[c.body.position() for c in clients])
     if missed := recall_mismatches(marks, zones, positions):
         machine.log(
             f"FAILURE: client(s) {missed} did not land where they marked (margin={POSITION_MARGIN})",
             logging.WARNING,
         )
+        # The record would otherwise have Mark Location pass them by, with the mark elsewhere.
+        for number in missed:
+            mark_location.forget(machine, clients[number - 1])
         return "FAILURE"
     machine.log("SUCCESS: level scaling applied and every client is back on its mark")
     return "SUCCESS"

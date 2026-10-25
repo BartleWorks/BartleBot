@@ -1,7 +1,7 @@
 """Unit tests for the check_zone condition node."""
 
 import bartlebot.nodes.control_flow.check_zone as cz
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 
 # ---------------------------------------------------------------------------
 # Basic zone matching
@@ -14,6 +14,14 @@ async def test_all_clients_in_zone_returns_true():
     clients[0].zone_name.return_value = "WizardCity/WC_Ravenwood"
     clients[1].zone_name.return_value = "WizardCity/WC_Ravenwood"
     result = await cz.run(FakeMachine(), clients, {"zone": "WizardCity/WC_Ravenwood"})
+    assert result == "TRUE"
+
+
+async def test_a_zone_unreadable_at_first_takes_the_true_edge():
+    """Just off a loading screen the zone reads None for a moment (#282): not a reason to branch FALSE."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, "WizardCity/WC_Ravenwood")
+    result = await cz.run(FakeMachine(), [client], {"zone": "WizardCity/WC_Ravenwood", "clients_to_check": [1]})
     assert result == "TRUE"
 
 

@@ -10,7 +10,7 @@ import bartlebot.nodes.teleportation.mark_location as ml
 import bartlebot.nodes.teleportation.teleport_to_marked_location as rtm
 from bartlebot.game import dialog_captions
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT, RECALL_BUTTON_PATH
-from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.conftest import FakeClient, FakeMachine, message_box_patches, zone_unreadable_at_first
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
 _PARAMS = {
@@ -331,6 +331,56 @@ async def test_blank_params_with_an_unmarked_client_fail_before_anyone_recalls()
     assert result == "FAILURE"
     marked.mouse_handler.click_window.assert_not_called()
     unmarked.mouse_handler.click_window.assert_not_called()
+
+
+async def test_a_client_that_lands_off_its_mark_has_it_forgotten():
+    """The mark was set somewhere else; kept, the record would have Mark Location pass it by."""
+    machine, on, off = FakeMachine(), _ready_client(), _ready_client()
+    _marked(machine, on, 0.0)
+    _marked(machine, off, 300.0)  # lands at the fake's (0, 0, 0)
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        assert await rtm.run(machine, [on, off], _OWN_MARKS) == "FAILURE"
+
+    assert ml.marked_at(machine, off) is None
+    assert ml.marked_at(machine, on) is not None
+
+
+async def test_a_client_that_lands_in_another_zone_has_its_mark_forgotten():
+    machine, there, lost = FakeMachine(), _ready_client(), _ready_client()
+    _marked(machine, there)
+    _marked(machine, lost)
+    lost.zone_name.return_value = "WrongZone"
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        assert await rtm.run(machine, [there, lost], _PARAMS) == "FAILURE"
+
+    assert ml.marked_at(machine, lost) is None
+    assert ml.marked_at(machine, there) is not None
+
+
+async def test_a_zone_unreadable_off_the_recall_is_waited_for_and_the_marks_kept():
+    """Off the recall's loading screen a zone reads None for a moment (#282). Two marks in two
+    zones are checked one by one, and a None there failed the node and forgot the mark."""
+    machine, a, b = FakeMachine(), _ready_client(), _ready_client()
+    _marked(machine, a)
+    ml._remember(machine, b, ml.Mark("OtherZone", XYZ(0.0, 0.0, 0.0)))
+    zone_unreadable_at_first(b, "OtherZone")
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        assert await rtm.run(machine, [a, b], _OWN_MARKS) == "SUCCESS"
+
+    assert ml.marked_at(machine, b) is not None
+
+
+async def test_a_recall_that_lands_keeps_every_mark():
+    machine, client = FakeMachine(), _ready_client()
+    _marked(machine, client)
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        assert await rtm.run(machine, [client], _OWN_MARKS) == "SUCCESS"
+
+    assert ml.marked_at(machine, client) is not None
 
 
 async def test_a_named_spot_still_wins_over_the_record():

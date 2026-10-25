@@ -16,7 +16,7 @@ than returning a FAILURE the run would count and possibly stop on.
 
 import asyncio
 import logging
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from wizwalker import Keycode
@@ -25,6 +25,7 @@ from wizwalker.errors import ClientClosedError
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     CROWNS_SHOP_WINDOW_PATH,
+    DECK_CONFIGURATION_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
@@ -131,7 +132,7 @@ class FakeGame:
             return self.shop_open
         if self.over_world and path in (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT):
             return path in self.over_world[1]
-        if path == SPELLBOOK_PREFERENCES_TAB_PATH:
+        if path in (SPELLBOOK_PREFERENCES_TAB_PATH, DECK_CONFIGURATION_PATH):
             return self.screen in ("spellbook", "settings")
         if path == SETTINGS_QUIT_BUTTON_PATH:
             return self.screen == "settings" and not self.opens_on_realms
@@ -364,6 +365,16 @@ class TestRealmsTabGuard:
         assert game.opens == 2  # closed and reopened, rather than clicking around the tabs
         assert BACKPACK_CLOSE_BUTTON_PATH in game.clicks
         assert game.clicks[-1] == SETTINGS_QUIT_BUTTON_PATH
+
+    async def test_a_spellbook_that_will_not_close_is_not_reopened(self, machine, games):
+        """The reopen clicks a toggle, which on a spellbook still open would close it instead."""
+        import bartlebot.nodes.node_helpers as nh
+
+        clients, (game,) = games({"opens_on_realms": True})
+        with patch.object(nh, "close_spellbook", new=AsyncMock(return_value=False)):
+            assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert game.opens == 1
+        assert SETTINGS_QUIT_BUTTON_PATH not in game.clicks
 
 
 # The game's own en-US text for the two logout warnings, as the snapshot holds it.
@@ -910,3 +921,38 @@ class TestDisconnected:
         assert await relog_node.run(machine, [client], {}) == "FAILURE"
         assert any("lost its connection" in msg for msg, _ in machine.logs)
         assert not any("still in the world" in msg for msg, _ in machine.logs)
+
+
+class TestRelogPacing:
+    async def test_presses_of_one_kind_are_spaced_apart(self):
+        pacing = relog_node.RelogPacing(delay=0.05)
+        loop = asyncio.get_running_loop()
+        times: list[float] = []
+
+        async def press():
+            await pacing.turn("quit")
+            times.append(loop.time())
+
+        await asyncio.gather(*[press() for _ in range(3)])
+
+        gaps = [b - a for a, b in zip(times, times[1:])]
+        assert all(gap >= 0.03 for gap in gaps)
+
+    async def test_the_first_press_does_not_wait(self):
+        pacing = relog_node.RelogPacing(delay=5.0)
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+
+        await pacing.turn("play")
+
+        assert loop.time() - started < 1.0
+
+    async def test_quit_and_play_keep_their_own_clocks(self):
+        pacing = relog_node.RelogPacing(delay=5.0)
+        loop = asyncio.get_running_loop()
+        await pacing.turn("quit")
+        started = loop.time()
+
+        await pacing.turn("play")
+
+        assert loop.time() - started < 1.0

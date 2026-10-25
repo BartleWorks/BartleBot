@@ -113,6 +113,37 @@ def test_every_caption_identifies_as_its_own_key():
     assert not wrong, f"captions matched the wrong key: {wrong}"
 
 
+@pytest.mark.parametrize(
+    ("text", "key"),
+    [
+        (
+            "<center>You are selling 3 Crowns Items. Are you sure you want to sell these Crowns Items?</center>",
+            dc.SELL_CROWNS_ITEMS,
+        ),
+        ("<center>You are selling a Pet. Are you sure you want to sell a Pet?</center>", dc.SELL_PET),
+        (
+            "<center>You are close to the gold limit! <br>13534 gold from this sale will be lost! <br><br>"
+            "Are you sure that you want to SELL for 19221 gold?</center>",
+            dc.SELL_NEAR_GOLD_LIMIT,
+        ),
+        (
+            "<center>You are close to the gold limit! <br>12 gold from this sale will be lost! <br><br>"
+            "Are you sure that you want to SELL 4 items for 900 gold?</center>",
+            dc.SELL_NEAR_GOLD_LIMIT,
+        ),
+    ],
+)
+def test_quicksells_questions_are_identified_as_a_sale_shows_them(text, key):
+    """The first three are a real sale's, as the client read them; the gold limit's other
+    wordings share the run its one key is recognized by."""
+    assert dc.identify_caption(text) == key
+
+
+def test_no_other_nodes_wait_answers_a_sale_question():
+    """resolve_modal confirms CONFIRM_TO_PROCEED for every node; a sale is Quicksell's alone."""
+    assert not dc.QUICKSELL_QUESTIONS & (dc.CONFIRM_TO_PROCEED | dc.REFUSALS | dc.DISCONNECTS)
+
+
 def test_no_two_keys_share_a_fingerprint():
     """A shared fingerprint makes one of the two dialogs unreachable."""
     owners: dict[str, set[str]] = {}

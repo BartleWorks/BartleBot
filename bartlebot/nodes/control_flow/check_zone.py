@@ -34,7 +34,7 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name() (via node_helpers.all_in_zone())
+    APIs: client.zone_name() (via node_helpers.read_zones())
 
     Flow:
       1. Validate the zone param; return FALSE immediately if empty.
@@ -56,7 +56,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     check_clients = [clients[i] for i in check_indices]
 
-    if await node_helpers.all_in_zone(check_clients, zone):
+    # Read once each is readable: a None would take the FALSE edge for a player in the zone.
+    zones = await node_helpers.read_zones(check_clients)
+    if all(node_helpers.zone_matches(z, zone) for z in zones):
         machine.log(f"check_zone: TRUE — all checked clients in {zone!r}")
         return "TRUE"
 
