@@ -1,0 +1,881 @@
+{
+  "id": "6f83bb17-7241-4de0-b210-8ecae89e44bf",
+  "name": "Don Manzana",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Abstract Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Abstract Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Amazing Blocking Citrine +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Blocking Jade +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Blocking Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Blocking Ruby +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Blocking Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Blocking Sapphire +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Amethyst +63",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Amethyst +64",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Citrine +63",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Jade +63",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Jade +64",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Onyx +63",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Onyx +64",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Opal +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Opal +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Peridot +63",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Ruby +64",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Defense Sapphire +64",
+      "category": "Jewels"
+    },
+    {
+      "name": "Azoth",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Balance Crushing Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (150)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Disabling Pin (160)"
+    },
+    {
+      "name": "Balance Punishing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (150)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (160)"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Crystalline Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Crystalline Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Crushing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (150)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Death Crushing Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Death Disabling Pin (160)"
+    },
+    {
+      "name": "Death Punishing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (150)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (160)"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dreamscape Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Dreamscape Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fire Crushing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (150)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Crushing Pin (160)"
+    },
+    {
+      "name": "Fire Punishing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (150)"
+    },
+    {
+      "name": "Fire Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (160)"
+    },
+    {
+      "name": "Flawless Archmastery Opal +15 (Square)",
+      "category": "Jewels",
+      "match_name": "Flawless Archmastery Opal +15"
+    },
+    {
+      "name": "Flawless Blocking Amethyst +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Amethyst +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Jade +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Jade +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Onyx +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Onyx +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Ruby +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Sapphire +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Blocking Sapphire +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Amethyst +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Citrine +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Jade +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Jade +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Onyx +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Onyx +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Opal +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Opal +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Peridot +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Peridot +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Ruby +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Sapphire +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Defense Sapphire +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fractal Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Fractal Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grrnadier",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Crushing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (150)"
+    },
+    {
+      "name": "Ice Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Crushing Pin (160)"
+    },
+    {
+      "name": "Ice Disabling Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (150)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Disabling Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (150)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (160)"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Inspired Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Inspired Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Life Crushing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (150)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Crushing Pin (160)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Disabling Pin (160)"
+    },
+    {
+      "name": "Life Punishing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (150)"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Macabre Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Macabre Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Myth Crushing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (150)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Crushing Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (150)"
+    },
+    {
+      "name": "Myth Disabling Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (150)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Disabling Pin (160)"
+    },
+    {
+      "name": "Myth Punishing Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (150)"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pixels",
+      "category": "Reagents"
+    },
+    {
+      "name": "Primordial Aeon Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Primordial Masterpiece Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Crushing Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Storm Crushing Pin (150)"
+    },
+    {
+      "name": "Storm Disabling Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (150)"
+    },
+    {
+      "name": "Storm Disabling Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Storm Disabling Pin (160)"
+    },
+    {
+      "name": "Storm Punishing Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (150)"
+    },
+    {
+      "name": "Storm Punishing Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Storm Punishing Pin (160)"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Aeon"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Governor's Saferoom",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Novus/NV_Z03_PuertoNuovo_VA",
+        "dungeon_zone": "Novus/Interiors/NV_Z03_Safehouse",
+        "dungeon_name": "Governor's Saferoom",
+        "sigil_xyz": {
+          "x": -10550.47,
+          "y": 21152.23,
+          "z": -1656.44
+        },
+        "reset_xyz": {
+          "x": -11102.88,
+          "y": 21000.03,
+          "z": -1656.42
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat Don Manzana",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "NV_Monkey_Noble_A_01",
+        "wiki_page": "Creature:Don Manzana",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Novus/Interiors/NV_Z03_Safehouse",
+        "to_zone": "Novus/NV_Z03_PuertoNuovo_VA",
+        "xyz": {
+          "x": -146.05,
+          "y": -4381.4,
+          "z": -86.14
+        },
+        "reset_xyz": {
+          "x": -93.5,
+          "y": -4048.88,
+          "z": -86.14
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "Novus/NV_Z03_PuertoNuovo_VA"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Novus/NV_Z03_PuertoNuovo_VA"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  },
+  "history": [
+    "47dbeb3f380e107f8dd6f1a43a31f03a8b383c4d52d75fa6af72d4d97c773789"
+  ]
+}

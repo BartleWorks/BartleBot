@@ -1,0 +1,1210 @@
+{
+  "id": "e7b1bb10-9ac4-491b-b1bb-6df34179752f",
+  "name": "Dasein Duelist",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "2 Pixels",
+      "category": "Reagents"
+    },
+    {
+      "name": "3 Pixels",
+      "category": "Reagents"
+    },
+    {
+      "name": "Abstract Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Abstract Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Abstract Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Abstract Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Amazing Critical Amethyst +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Amethyst +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Citrine +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Citrine +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Jade +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Jade +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Onyx +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Onyx +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Peridot +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Ruby +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Sapphire +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Critical Sapphire +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Amethyst +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Amethyst +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Citrine +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Citrine +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Jade +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Jade +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Onyx +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Onyx +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Peridot +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Peridot +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Ruby +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Ruby +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Sapphire +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Amazing Damage Sapphire +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Azoth",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Death)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balance Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balance Resist Pin (140, Death)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Crystalline Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Crystalline Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Crystalline Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Crystalline Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Resist Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Death Resist Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Death Resist Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dreamscape Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dreamscape Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dreamscape Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dreamscape Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Resist Pin (120, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (120)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Flawless Critical Amethyst +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Amethyst +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Citrine +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Citrine +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Jade +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Jade +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Onyx +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Onyx +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Peridot +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Peridot +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Ruby +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Ruby +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Sapphire +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Sapphire +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Amethyst +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Amethyst +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Citrine +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Citrine +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Jade +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Jade +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Onyx +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Onyx +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Peridot +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Peridot +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Ruby +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Ruby +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Sapphire +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Damage Sapphire +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Mending Opal +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fractal Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fractal Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Fractal Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fractal Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grrnadier",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Inspired Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Inspired Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Inspired Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Inspired Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Life Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Resist Pin (140, Death)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Macabre Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Macabre Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Macabre Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Macabre Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (160)"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pixels",
+      "category": "Reagents"
+    },
+    {
+      "name": "Polished Piercing Amethyst +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Citrine +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Jade +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Peridot +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Ruby +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Sapphire +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Primordial Aeon Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Primordial Aeon Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Primordial Masterpiece Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Primordial Masterpiece Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Blocking Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (150)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Resist Pin (130, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (130, Death)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (150)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Aeon"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Dueling Space",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Novus/NV_Z06_NucleusGallery",
+        "dungeon_zone": "Novus/Interiors/NV_Z06_NucleusDuelingSpace",
+        "dungeon_name": "Dueling Space",
+        "sigil_xyz": {
+          "x": -45.66,
+          "y": -5911.76,
+          "z": -1.0
+        },
+        "reset_xyz": {
+          "x": -95.17,
+          "y": -5405.66,
+          "z": -25.39
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat Dasein Duelist",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "NV_Dino_AberrantUndead_A_01",
+        "wiki_page": "Creature:Dasein Duelist",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Novus/Interiors/NV_Z06_NucleusDuelingSpace",
+        "to_zone": "Novus/NV_Z06_NucleusGallery",
+        "xyz": {
+          "x": 3.94,
+          "y": -15062.92,
+          "z": -10.19
+        },
+        "reset_xyz": {
+          "x": -9.69,
+          "y": -14294.44,
+          "z": 0.47
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "Novus/NV_Z06_NucleusGallery"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Novus/Interiors/NV_Z06_NucleusDuelingSpace",
+        "xyz": {
+          "x": 25.57,
+          "y": -4323.16,
+          "z": 0.47
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Novus/NV_Z06_NucleusGallery"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  },
+  "history": [
+    "f1301315e5054370228001f0836e17e321866de8e2d12bff38ee0651e634eeb2"
+  ]
+}
