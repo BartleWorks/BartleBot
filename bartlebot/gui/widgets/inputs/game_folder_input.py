@@ -13,17 +13,17 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QWidget
 
 from bartlebot.gui.widgets.buttons.action_button import ActionButton
-from bartlebot.shared.game_install import CLIENT, is_install
+from bartlebot.shared.game_install import is_install
 
 BROWSE = "Browse…"
-BROWSE_TITLE = "Choose the Wizard101 folder"
+BROWSE_TITLE = "Choose Wizard101 Folder"
 PLACEHOLDER = "The folder holding Wizard101's Bin folder"
 
 #: Under the field, for each state of the folder in it.
-FOLDER_EMPTY = "Choose the folder to continue."
+FOLDER_EMPTY = "Choose the Wizard101 folder."
 FOLDER_FOUND = "Found in {source}."
 FOLDER_OK = "Wizard101 is installed here."
-FOLDER_MISSING = f"Wizard101 isn't in this folder: it has no {CLIENT}."
+FOLDER_MISSING = "Wizard101 isn't in this folder. Choose the one that holds the Bin folder."
 
 
 def folder_status(path: str, found_path: Path | None, found_source: str = "") -> tuple[str, bool]:

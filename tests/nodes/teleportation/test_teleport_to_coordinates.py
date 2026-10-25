@@ -3,7 +3,7 @@
 from wizwalker import XYZ
 
 import bartlebot.nodes.teleportation.teleport_to_coordinates as gxyz
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 
 _ZONE = "WizardCity/WC_Hub"
 _TARGET = {"x": 100.0, "y": 200.0, "z": 0.0}
@@ -50,6 +50,15 @@ async def test_success_single_client():
     client.teleport.assert_called_once()
     arg = client.teleport.call_args[0][0]
     assert (arg.x, arg.y, arg.z) == (100.0, 200.0, 0.0)
+
+
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, _ZONE)
+    client.body.position.return_value = _TARGET_XYZ
+
+    assert await gxyz.run(FakeMachine(), [client], _PARAMS) == "SUCCESS"
 
 
 async def test_success_multiple_clients():
@@ -137,6 +146,18 @@ async def test_client_leaving_zone_during_retry_returns_failure():
 
     assert result == "FAILURE"
     client.teleport.assert_called_once()
+
+
+async def test_a_zone_unreadable_at_retry_time_is_not_read_as_leaving():
+    """A None at the retry's zone read is waited out, not taken for a client that left (#282)."""
+    client = FakeClient()
+    client.zone_name.side_effect = [_ZONE, None, _ZONE]
+    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), _TARGET_XYZ]
+
+    result = await gxyz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert client.teleport.call_count == 2
 
 
 async def test_loading_client_is_not_teleported_on_retry():

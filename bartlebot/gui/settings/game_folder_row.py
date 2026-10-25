@@ -34,13 +34,12 @@ logger = logging.getLogger(__name__)
 TITLE = "Game folder"
 DETECT = "Detect"
 #: The row's line: what it is, then the state of the folder shown.
-SUMMARY = "Where BartleBot starts Wizard101 from. {status}"
-NOT_FOUND = "Not found: choose the folder, or launching fails."
+SUMMARY = "Where Wizard101 is installed. {status}"
+NOT_FOUND = "Not found. Choose the folder to launch the game."
 CHOSEN = "Chosen by you."
 DETAILS = (
-    "Detected unless you choose one: the KingsIsle launcher's folder, its install record, every "
-    "Steam library, then the game if it is running, whose folder is kept once found. Detect "
-    "forgets the folder chosen and looks again. BartleBuddy launches from the same folder."
+    "BartleBot looks in the KingsIsle launcher's folder, your Steam libraries and the running game. "
+    "Detect clears your choice and looks again."
 )
 
 

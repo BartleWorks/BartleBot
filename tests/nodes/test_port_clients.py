@@ -5,9 +5,12 @@ player's position jumps onto the target instead, and a port onto someone already
 nothing at all (#14, #69).
 """
 
+import asyncio
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 from bartlebot.game import wizard_names
@@ -148,6 +151,45 @@ def test_missing_lists_only_clients_that_showed_nothing():
     assert result.missing(4) == [3]
 
 
+async def test_one_port_that_cannot_start_leaves_the_others_to_land():
+    """The first error used to end the whole start, and a player who had ported was
+    counted as not having started, then sent to travel there with the rest."""
+    sim = _sim()
+    landed, failed, also_landed = (
+        sim.player("Src", _FAR),
+        sim.player("Src", _FAR, port="fails"),
+        sim.player("Src", _FAR),
+    )
+
+    result = await _port(sim, [landed, failed, also_landed])
+
+    assert result.seen_loading == {0, 2}
+    assert result.unstarted == {1}
+    assert result.missing(3) == [1]
+    assert landed.where[0] == "Dst" and also_landed.where[0] == "Dst"
+
+
+async def test_no_port_that_can_start_raises():
+    sim = _sim()
+    movers = [sim.player("Src", _FAR, port="fails"), sim.player("Src", _FAR, port="fails")]
+
+    with pytest.raises(ValueError):
+        await _port(sim, movers)
+
+
+async def test_a_reissue_that_cannot_start_is_not_tried_again(fast):
+    sim = _sim()
+    straggler = sim.player("Src", _FAR, port="ignored")
+    other = sim.player("Src", _FAR)
+    sim.fail_from_call = 3  # both first ports start; the straggler's re-issue does not
+
+    result = await _port(sim, [straggler, other], ceiling=0.5)
+
+    assert result.unstarted == {0}
+    assert result.seen_loading == {1}
+    assert sim.times_ported(straggler) == 2
+
+
 # ---------------------------------------------------------------------------
 # gather_at_player
 # ---------------------------------------------------------------------------
@@ -185,6 +227,54 @@ async def test_gather_fails_when_a_player_lands_somewhere_else(fast, monkeypatch
         assert not await nh.gather_at_player(machine, [sim.target, lost], 0, _NAME, poll_interval=0.001)
 
     assert any("not every player ended up with P1" in msg for msg, _ in machine.logs)
+
+
+async def test_gather_says_why_a_player_is_not_with_the_target_once_while_it_waits(fast, monkeypatch):
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _sim()
+    lost = sim.player("Src", _FAR, port="lost")
+    machine = FakeMachine()
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)):
+        assert not await nh.gather_at_player(machine, [sim.target, lost], 0, _NAME, poll_interval=0.001)
+
+    waits = [msg for msg, _ in machine.logs if msg.startswith("Not yet with P1")]
+    assert waits == ["Not yet with P1: P2 is in Else, not Dst"], "said once, not every poll"
+
+
+async def test_gather_counts_players_with_a_target_walked_off_after_the_port(fast):
+    """TP to player leaves the target to the user, who walks it away once the others appear."""
+    sim = _sim()
+    mover = sim.player("Src", _FAR)
+    machine = FakeMachine()
+
+    async def then_walk_off(client, name_lower):
+        await sim.teleport(client, name_lower)
+        x, y, z = _AT
+        sim.target.where = ("Dst", XYZ(x + 900.0, y, z))
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=then_walk_off)):
+        assert await nh.gather_at_player(machine, [sim.target, mover], 0, _NAME, poll_interval=0.001)
+
+
+async def test_gather_gives_up_on_a_loading_screen_that_never_clears(fast, monkeypatch):
+    """The wait for loading had no ceiling, and kept TP to player's button disabled for good."""
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _sim()
+    mover = sim.player("Src", _FAR)
+    machine = FakeMachine()
+
+    async def stuck(client, name_lower):
+        await sim.teleport(client, name_lower)
+        client.loading = 10**9
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=stuck)):
+        gathered = await asyncio.wait_for(
+            nh.gather_at_player(machine, [sim.target, mover], 0, _NAME, poll_interval=0.001), 5
+        )
+
+    assert not gathered
+    assert any("still on a loading screen" in msg for msg, level in machine.logs if level == logging.WARNING)
 
 
 async def test_gather_fails_when_a_player_beside_the_target_is_on_another_realm(fast, monkeypatch):

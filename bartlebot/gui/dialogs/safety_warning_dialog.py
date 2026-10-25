@@ -76,6 +76,9 @@ def _settings():
     return SettingsManager.instance()
 
 
+#: Where the game keeps the option the friends list nodes need off.
+QUICK_FRIEND_TELEPORT_SETTING = "Options → Gameplay Options 4 → Dblclick Go To Friend: No"
+
 #: The check box under quicksell's explanation.
 QUICKSELL_OPT_OUT_LABEL = "Don't show this quicksell explanation again"
 
@@ -130,7 +133,7 @@ def _quicksell_message(config, states, clients, message: str) -> str | SafetyWar
     value, keep it on a list — is the same for every bot, so the way out of it is one
     answer for the whole app, not one per bot: per bot, it would ask the same question
     eighty times. It is shown before each run until the user ticks the check box under
-    it, which turns off Show Quicksell explanation before each run in Settings → Bot.
+    it, which turns off Quicksell reminder in Settings › Bot.
 
     That switch does not reach a bot selling more than the user's own settings would,
     which only its file can do (``quicksell.declared_sales``). That is the case this
@@ -232,7 +235,7 @@ def _teleport_to_friend_details(config, states, clients) -> tuple[list[tuple[str
             if target.source == "the Friend Name option" and not outranks_app_setting:
                 editable = ("Friend Name", teleport_to_friend.APP_SETTING_KEY)
         details.append((f"{prefix}Destination Zone", state.params.get("to_zone", "")))
-    details.append(("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"))
+    details.append(("Required Game Setting", QUICK_FRIEND_TELEPORT_SETTING))
     return details, editable
 
 
@@ -341,8 +344,45 @@ def level_scaling_warning(elixir_players: Sequence[int]) -> SafetyWarning | None
     )
 
 
+def uses_friends_list(config: BotConfig, client_count: int) -> bool:
+    """Whether this run will work the friends list, and so needs Dblclick Go To Friend off.
+
+    Every run with more than one player does: forming the group invites through it, and
+    every port to another player goes through it. A solo run does only for a Teleport To
+    Friend node.
+    """
+    return client_count > 1 or any(state.node_type == "teleport_to_friend" for state in config.states)
+
+
+def quick_friend_teleport_warning(players: Sequence[int]) -> SafetyWarning | None:
+    """The warning for a run whose players' game has Dblclick Go To Friend on.
+
+    BartleBot turns the option off in config.xml for the clients it launches, and the game
+    reads that file only at startup, so a client started by hand keeps the user's own
+    setting. With it on, a click on a friends list row closes the list instead of opening
+    the friend's profile, and grouping and every port to a friend fail as if the friend
+    were not on the list, which is all the log can say then. Only the game can turn it off
+    in a running client, so the warning says where.
+    """
+    if not players:
+        return None
+    who = ", ".join(f"Player {n}" for n in players)
+    return SafetyWarning(
+        message=(
+            "The game's Dblclick Go To Friend option is on for the players below. With it on, clicking a "
+            "friend in the friends list closes the list instead of opening their profile, so forming the "
+            "group and porting to a friend fail as if the friend were not on the list. BartleBot turns it "
+            "off only in the clients it launches. Turn it off in game before running."
+        ),
+        details=[("Dblclick Go To Friend on", who), ("Required Game Setting", QUICK_FRIEND_TELEPORT_SETTING)],
+    )
+
+
 def collect_safety_warnings(
-    config: BotConfig, clients: list | None = None, elixir_players: Sequence[int] = ()
+    config: BotConfig,
+    clients: list | None = None,
+    elixir_players: Sequence[int] = (),
+    quick_teleport_players: Sequence[int] = (),
 ) -> list[SafetyWarning]:
     """Return a list of SafetyWarning for every risky node type present in *config*.
 
@@ -360,7 +400,8 @@ def collect_safety_warnings(
     optional so the collection stays callable from tests without any.
 
     *elixir_players* is who among ``level_scaling_players`` showed an elixir when the run
-    was requested. Reading that is async, so the caller reads it and hands it in.
+    was requested. Reading that is async, so the caller reads it and hands it in, and
+    *quick_teleport_players*, whose game has Dblclick Go To Friend on, the same way.
     """
     states_by_type: dict[str, list] = {}
     for state in config.states:
@@ -390,6 +431,8 @@ def collect_safety_warnings(
 
     if elixir_warning := level_scaling_warning(elixir_players):
         warnings.append(elixir_warning)
+    if quick_teleport_warning := quick_friend_teleport_warning(quick_teleport_players):
+        warnings.append(quick_teleport_warning)
     return warnings
 
 

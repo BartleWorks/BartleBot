@@ -1,11 +1,13 @@
-"""Tests for bartlebot.nodes.combat_runner.resolve_combat."""
+"""Tests for bartlebot.nodes.combat_runner: resolve_combat, and parsing a fight's strategies."""
 
+import threading
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
+from bartlebot.nodes import combat_runner
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
 from bartlebot.shared.combat_defaults import LAST_RESORT_DSL, SHIPPED_DEFAULT_SUPPORT_ID, SHIPPED_TEAM_HITTER_ID
 from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
@@ -501,3 +503,28 @@ def test_nothing_to_resolve_comes_back_as_the_last_resort():
     assert resolve_combat(machine, True, 1).level is Level.LAST_RESORT
     with patch("bartlebot.combat.combat_resolution.resolve_fight", side_effect=RuntimeError("unreadable")):
         assert resolve_combat(_make_machine(), True, 1).level is Level.LAST_RESORT
+
+
+# ---------------------------------------------------------------------------
+# Parsing a fight's strategies ahead of it
+# ---------------------------------------------------------------------------
+
+
+async def test_each_distinct_strategy_is_parsed_once_off_the_event_loop(monkeypatch):
+    parsed = []
+
+    def provider(dsl, cast_time=0.2):
+        parsed.append((dsl, threading.current_thread() is threading.main_thread()))
+
+    monkeypatch.setattr(combat_runner, "_combat_provider", provider)
+    await combat_runner.parse_strategies(["{1} shatter @ boss", "pass", "{1} shatter @ boss", "pass"])
+
+    assert parsed == [("{1} shatter @ boss", False), ("pass", False)]
+
+
+async def test_a_strategy_that_does_not_parse_is_left_to_the_fight(monkeypatch):
+    def provider(dsl, cast_time=0.2):
+        raise ValueError("no parse")
+
+    monkeypatch.setattr(combat_runner, "_combat_provider", provider)
+    await combat_runner.parse_strategies(["not a strategy"])

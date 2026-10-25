@@ -6,16 +6,17 @@ import logging
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import MAX_RETRIES
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name all players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -23,21 +24,20 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Target XYZ",
-        help="Coordinates within zone to teleport players to.",
+        help="Where in Zone to teleport players to.",
         default=None,
         required=True,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports all players to a specific XYZ coordinate within the current zone.",
+    description="Teleports every player to a spot in the current zone.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now at the target XYZ within the expected zone."),
+        ReturnSpec("SUCCESS", "Every player is at Target XYZ."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in the expected zone at the start, or not all players "
-            "reached the target XYZ after several teleports a Safety Delay apart.",
+            "A player wasn't in Zone at the start, or didn't reach Target XYZ after several tries.",
         ),
     ],
     required_bot_options=[SAFETY_DELAY_OPTION],
@@ -74,14 +74,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"teleport_to_coordinates: {zone!r} → XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     # 2. Teleport all clients to the target XYZ.
@@ -102,7 +95,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.sleep(safety_delay)
 
-        zones = await asyncio.gather(*[clients[i].zone_name() for i in off_target])
+        zones = await node_helpers.read_zones([clients[i] for i in off_target], poll_interval=POLL_INTERVAL)
         left = [i for i, z in zip(off_target, zones) if not node_helpers.zone_matches(z, zone)]
         if left:
             machine.log(f"FAILURE: client(s) {left} left {zone!r} before reaching target XYZ", logging.WARNING)

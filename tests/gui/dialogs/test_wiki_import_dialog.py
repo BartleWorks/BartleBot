@@ -82,6 +82,83 @@ async def test_closing_during_a_fetch_shows_nothing_it_returns(qapp, monkeypatch
     assert dlg._status_lbl.text() == "Fetching…"
 
 
+PAGE_HTML = """
+<div id="mw-content-text">
+  <p>Hats</p>
+  <div class="drop-category"><a href="/wiki/Hat:Cap_of_Doom">Cap of Doom</a></div>
+</div>
+"""
+
+
+class FakeBrowser:
+    """Stands in for ``BrowserFetch``: answers *html* once *release* is set."""
+
+    instances: list[FakeBrowser] = []
+
+    def __init__(self, url, html=PAGE_HTML, release=None):
+        self.url = url
+        self.html = html
+        self.release = release
+        self.cancelled = False
+        FakeBrowser.instances.append(self)
+
+    def run(self):
+        if self.release is not None:
+            self.release.wait(5)
+        return None if self.cancelled else self.html
+
+    def cancel(self):
+        self.cancelled = True
+
+
+@pytest.fixture
+def challenged(monkeypatch):
+    def fetch(url):
+        raise wiki_import_dialog.WikiChallenged("HTTP 403")
+
+    monkeypatch.setattr(wiki_import_dialog, "_fetch_drops", fetch)
+    FakeBrowser.instances = []
+
+
+async def test_a_challenged_fetch_loads_the_page_in_a_window(qapp, monkeypatch, challenged):
+    monkeypatch.setattr(wiki_import_dialog, "BrowserFetch", FakeBrowser)
+    dlg = WikiImportDialog()
+
+    await _start(dlg)
+
+    assert [b.url for b in FakeBrowser.instances] == [URL]
+    assert dlg._status_lbl.text() == "Found 1 item(s) across 1 category."
+    assert dlg._tree.topLevelItemCount() == 1
+
+
+async def test_a_window_closed_first_says_so_and_lets_the_user_try_again(qapp, monkeypatch, challenged):
+    monkeypatch.setattr(wiki_import_dialog, "BrowserFetch", lambda url: FakeBrowser(url, html=None))
+    dlg = WikiImportDialog()
+
+    await _start(dlg)
+
+    assert dlg._status_lbl.text().startswith("The wiki window was closed before the page loaded.")
+    assert dlg._status_error
+    assert dlg._btn_fetch.isEnabled()
+
+
+async def test_closing_the_dialog_closes_the_window(qapp, monkeypatch, challenged):
+    release = threading.Event()
+    monkeypatch.setattr(wiki_import_dialog, "BrowserFetch", lambda url: FakeBrowser(url, release=release))
+    dlg = WikiImportDialog()
+    task = _start(dlg)
+    while not FakeBrowser.instances:
+        await asyncio.sleep(0.01)
+
+    dlg.close()
+    release.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert FakeBrowser.instances[0].cancelled
+    assert dlg._tree.topLevelItemCount() == 0
+
+
 def _names_qthread(source: str) -> bool:
     """Whether the code imports or names ``QThread``; a docstring saying why it doesn't is fine."""
     for node in ast.walk(ast.parse(source)):

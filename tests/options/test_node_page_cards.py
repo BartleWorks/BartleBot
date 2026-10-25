@@ -113,7 +113,7 @@ def test_each_returns_description_is_behind_its_rows_question_mark(qapp):
     panel = _panel(qapp)
 
     descriptions = [lbl.text() for lbl in panel._conn_body.findChildren(type(panel._idle_lbl)) if lbl.wordWrap()]
-    assert "All players are now in dungeon_zone." in descriptions
+    assert "Every player is in Dungeon Zone." in descriptions
 
 
 def test_notes_fold_to_their_first_line(qapp):

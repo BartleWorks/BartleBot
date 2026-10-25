@@ -12,6 +12,7 @@ import os
 import re
 import subprocess
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 
 from wizwalker.utils import (
     get_all_wizard_handles,
@@ -122,6 +123,10 @@ def _patch_xml_fields(path, updates: dict[str, str]) -> None:
         raise
 
 
+#: The config.xml tag behind the game's Options → Gameplay Options 4 → Dblclick Go To Friend.
+QUICK_FRIEND_TELEPORT_TAG = "QuickFriendTeleport"
+
+
 def _launch_config_updates() -> dict[str, str]:
     """The config.xml settings to force before launch, beyond window placement.
 
@@ -133,7 +138,31 @@ def _launch_config_updates() -> dict[str, str]:
     """
     if not SettingsManager.instance().disable_quick_friend_teleport:
         return {}
-    return {"QuickFriendTeleport": "0"}
+    return {QUICK_FRIEND_TELEPORT_TAG: "0"}
+
+
+def quick_friend_teleport_on(install: Path) -> bool:
+    """Whether the game installed at *install* has Dblclick Go To Friend on, by its ``Bin/config.xml``.
+
+    The run-start check for a client this app did not launch, which keeps whatever the
+    file said when it started (:func:`_launch_config_updates` only reaches the clients
+    launched here). The game writes the option back to the file: after it was turned off
+    in game on the Test realm, the file read 0. Whether it does so at once or only when
+    the client closes is not checked yet; if only on close, a user who turns it off in
+    game is warned again until that client restarts. The file also misses a client
+    started before a later launch from this app patched it off.
+
+    False when the file cannot be read or has no such tag: the check only warns, and a
+    warning about a setting nobody could read would be one the user learns to click away.
+    """
+    try:
+        text = (install / "Bin" / "config.xml").read_text(encoding="utf-8")
+    except OSError:
+        logger.warning("Could not read config.xml under %s to check Dblclick Go To Friend", install, exc_info=True)
+        return False
+    tag = QUICK_FRIEND_TELEPORT_TAG
+    match = re.search(rf"<{tag}\b[^>]*>([^<]*)</\s*{tag}\s*>", text)
+    return match is not None and match.group(1).strip() not in ("", "0")
 
 
 # The tag holding the game's UI scale. It lives in config.xml *only* -- preferences.xml

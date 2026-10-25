@@ -16,12 +16,16 @@ from bartlebot.nodes.control_flow.set_variables import NODE_SPEC as _set_variabl
 from bartlebot.nodes.control_flow.set_variables import run as set_variables_run
 from bartlebot.nodes.interaction.click_path import NODE_SPEC as _click_path_spec
 from bartlebot.nodes.interaction.click_path import run as click_path_run
+from bartlebot.nodes.interaction.collect_item import NODE_SPEC as _collect_item_spec
+from bartlebot.nodes.interaction.collect_item import run as collect_item_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
 from bartlebot.nodes.interaction.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
 from bartlebot.nodes.interaction.interact import run as interact_run
 from bartlebot.nodes.interaction.interact_menu import NODE_SPEC as _interact_menu_spec
 from bartlebot.nodes.interaction.interact_menu import run as interact_menu_run
+from bartlebot.nodes.interaction.open_skeleton_key_door import NODE_SPEC as _open_skeleton_key_door_spec
+from bartlebot.nodes.interaction.open_skeleton_key_door import run as open_skeleton_key_door_run
 from bartlebot.nodes.interaction.wait_for_dialogue import NODE_SPEC as _wait_for_dialogue_spec
 from bartlebot.nodes.interaction.wait_for_dialogue import run as wait_for_dialogue_run
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
@@ -68,9 +72,11 @@ NODE_REGISTRY: dict = {
     "enter_gauntlet": enter_gauntlet_run,
     "interact": interact_run,
     "interact_menu": interact_menu_run,
+    "open_skeleton_key_door": open_skeleton_key_door_run,
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
     "handle_combat": handle_combat_run,
+    "collect_item": collect_item_run,
     "collect_reagent": collect_reagent_run,
     "check_health_and_mana": check_health_and_mana_run,
     "collect_wisps": collect_wisps_run,
@@ -99,9 +105,11 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "enter_gauntlet": _enter_gauntlet_spec,
     "interact": _interact_spec,
     "interact_menu": _interact_menu_spec,
+    "open_skeleton_key_door": _open_skeleton_key_door_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
     "handle_combat": _handle_combat_spec,
+    "collect_item": _collect_item_spec,
     "collect_reagent": _collect_reagent_spec,
     "check_health_and_mana": _check_health_and_mana_spec,
     "collect_wisps": _collect_wisps_spec,
@@ -122,14 +130,20 @@ NODE_SPECS: dict[str, NodeSpec] = {
 NODE_PARAM_SCHEMAS: dict[str, list[ParamField]] = {k: v.params for k, v in NODE_SPECS.items()}
 
 
+#: Words a node name keeps lowercase after its first word, as Unreal's node names do
+#: (docs/UI_TEXT.md, N3).
+_SMALL_WORDS = frozenset({"a", "an", "and", "at", "by", "for", "in", "of", "on", "or", "the", "to", "via"})
+
+
 def node_display_name(node_type: str) -> str:
     """What the node browser calls a node type, and the label a new node of it starts with.
 
     Examples:
-        enter_zone_via_list → "Enter Zone Via List"
+        enter_zone_via_list → "Enter Zone via List"
         handle_combat       → "Handle Combat"
     """
-    return node_type.replace("_", " ").title()
+    words = node_type.split("_")
+    return " ".join(w if i and w in _SMALL_WORDS else w.capitalize() for i, w in enumerate(words))
 
 
 # Ordered category groupings used by the GUI dropdown.
@@ -167,9 +181,11 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Interaction",
         [
             "click_path",
+            "collect_item",
             "collect_reagent",
             "interact",
             "interact_menu",
+            "open_skeleton_key_door",
             "wait_for_dialogue",
         ],
     ),

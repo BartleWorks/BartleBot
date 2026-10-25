@@ -75,11 +75,18 @@ async def open_page(client) -> bool:
 
 
 async def close_page(client) -> None:
-    """Close the housing page. Best effort — nothing downstream depends on it being shut."""
+    """Close the housing page, retrying until the spellbook is gone. Never fails the caller.
+
+    Callers check where they ended up for themselves, so a page that will not close is left
+    to the warning the retry logs. With the close button grayed, ESC is pressed instead, and
+    only while the spellbook is still open, since on an empty screen ESC opens the game menu.
+    """
     if await node_helpers.is_enabled_by_path(client, BACKPACK_CLOSE_BUTTON_PATH):
-        await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+        await node_helpers.close_spellbook(client)
     else:
-        await client.send_key(Keycode.ESC, 0.1)
+        await node_helpers.press_key_until_gone(
+            client, Keycode.ESC, is_open=lambda: node_helpers.is_spellbook_open(client)
+        )
 
 
 async def select_castles_tab(client) -> bool:

@@ -9,6 +9,7 @@ import pytest
 from wizwalker import XYZ, MemoryReadError
 
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.game import dialog_captions
 from bartlebot.nodes.node_helpers import (
     _get_window_from_path,
     all_in_zone,
@@ -23,8 +24,23 @@ from bartlebot.nodes.node_helpers import (
     window_text_matches,
     zone_matches,
 )
-from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
-from tests.conftest import FakeClient, FakeEntity, FakeMachine, message_box_patches, prompt_at
+from bartlebot.nodes.paths import (
+    CHARACTER_PROFILE_CLOSE_PATH,
+    CHARACTER_PROFILE_PATH,
+    GO_TO_FRIEND_BUTTON_PATH,
+    MESSAGE_BOX_CAPTION_PATH,
+    MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_RIGHT,
+)
+from tests.conftest import (
+    FakeClient,
+    FakeEntity,
+    FakeMachine,
+    ModalScreen,
+    message_box_patches,
+    prompt_at,
+    zone_unreadable_at_first,
+)
 
 
 @pytest.mark.parametrize(
@@ -752,6 +768,29 @@ async def test_press_key_until_gone_returns_as_soon_as_the_panel_goes():
     assert elapsed < 1.0, f"waited out the retry interval after the panel had already closed ({elapsed:.2f}s)"
 
 
+async def test_press_key_until_gone_presses_a_keycode_as_itself():
+    """ESC is no player's to rebind, so it skips the key bindings and goes to send_key unchanged."""
+    from wizwalker import Keycode
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    panel = _Closeable(clicks_needed=1)
+
+    async def send_key(_key, _seconds=0):
+        panel.clicks += 1
+
+    client = FakeClient()
+    client.send_key = AsyncMock(side_effect=send_key)
+
+    async def is_open():
+        return panel.visible
+
+    result = await nh_mod.press_key_until_gone(client, Keycode.ESC, is_open=is_open, timeout=5, poll_interval=2.0)
+
+    assert result is True
+    client.send_key.assert_awaited_once_with(Keycode.ESC, 0.1)
+
+
 async def test_click_until_gone_uses_the_supplied_predicate_not_the_button():
     """A close button reports visible=True even inside a hidden window, so polling the
     button never terminates. The caller must be able to poll the window instead."""
@@ -808,70 +847,406 @@ async def test_click_until_gone_without_a_predicate_polls_the_button_and_times_o
     assert result is False
 
 
+async def test_click_until_gone_reads_its_default_timeout_when_called(monkeypatch):
+    """A default bound at definition time would ignore a compressed WINDOW_CLOSE_TIMEOUT,
+    and every test of a close that never takes would wait the full six seconds."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    loop = asyncio.get_event_loop()
+    started = loop.time()
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(return_value=True)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(return_value=True)),
+    ):
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"])
+
+    assert result is False
+    assert loop.time() - started < 1.0
+
+
+class _DialogStack:
+    """Message boxes, top first, read by caption; the first `dropped` clicks are lost."""
+
+    def __init__(self, captions: list[str], *, dropped: int = 0):
+        self.captions = list(captions)
+        self.dropped = dropped
+        self.clicks: list = []
+
+    async def text(self, _client, path):
+        return self.captions[0] if self.captions and path == MESSAGE_BOX_CAPTION_PATH else ""
+
+    async def click(self, _client, path):
+        self.clicks.append(path)
+        if self.dropped:
+            self.dropped -= 1
+        elif self.captions:
+            self.captions.pop(0)
+        return True
+
+    def patches(self):
+        return (
+            patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=self.text)),
+            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self.click)),
+        )
+
+
+async def test_click_until_dialog_gone_clicks_again_when_the_click_is_dropped(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    stack = _DialogStack(["Are you sure?"], dropped=2)
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == [MESSAGE_BOX_CENTER] * 3
+
+
+async def test_click_until_dialog_gone_stops_at_the_next_dialog_behind_it():
+    """A different caption is the next box, which is the caller's to read and answer."""
+    stack = _DialogStack(["Are you sure?", "Something else entirely."])
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == [MESSAGE_BOX_CENTER]
+    assert stack.captions == ["Something else entirely."]
+
+
+async def test_click_until_dialog_gone_clicks_nothing_with_no_dialog_up():
+    stack = _DialogStack([])
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is True
+
+    assert stack.clicks == []
+
+
+async def test_click_until_dialog_gone_is_false_when_the_dialog_stays(monkeypatch):
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    stack = _DialogStack(["Are you sure?"], dropped=10**6)
+    text, click = stack.patches()
+    with text, click:
+        assert await nh.click_until_dialog_gone(None, MESSAGE_BOX_CENTER) is False
+
+
+class _Spellbook:
+    """DeckConfiguration, open until a click on its close button lands; the first `dropped` are lost."""
+
+    def __init__(self, *, dropped: int = 0, open_: bool = True):
+        self.dropped = dropped
+        self.open = open_
+        self.clicks: list = []
+
+    async def visible(self, _client, path):
+        from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH, DECK_CONFIGURATION_PATH
+
+        if path == DECK_CONFIGURATION_PATH:
+            return self.open
+        return path == BACKPACK_CLOSE_BUTTON_PATH  # the trap: the button reads visible regardless
+
+    async def click(self, _client, path):
+        self.clicks.append(path)
+        if self.dropped:
+            self.dropped -= 1
+        else:
+            self.open = False
+        return True
+
+
+async def test_close_spellbook_clicks_again_until_the_spellbook_is_gone(monkeypatch):
+    """Straight after a quicksell sale the game dropped the one close click it got."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    book = _Spellbook(dropped=2)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is True
+
+    assert book.clicks == [BACKPACK_CLOSE_BUTTON_PATH] * 3
+    assert not book.open
+
+
+async def test_close_spellbook_leaves_a_closed_spellbook_alone():
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    book = _Spellbook(open_=False)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is True
+
+    assert book.clicks == []
+
+
+async def test_close_spellbook_is_false_when_the_spellbook_stays_open(monkeypatch):
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh_mod, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    book = _Spellbook(dropped=10**6)
+    with (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=book.visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=book.click)),
+    ):
+        assert await nh_mod.close_spellbook(None) is False
+
+    assert book.open
+
+
 # ---------------------------------------------------------------------------
 # open_friends_list and the two friends-list windows
 # ---------------------------------------------------------------------------
 
 
-async def _open_friends_list_with(visible_names: set[str]) -> list[str]:
-    """Run open_friends_list against a fake tree and return the actions it took."""
-    from contextlib import ExitStack
+class _HudWindow:
+    """A window of the HUD: a name, its children, and whether it shows."""
+
+    def __init__(self, name: str, *children, visible: bool = True):
+        self._name, self._children, self.visible = name, list(children), visible
+
+    async def name(self):
+        return self._name
+
+    async def children(self):
+        return self._children
+
+    async def is_visible(self):
+        return self.visible
+
+    async def is_control_grayed(self):
+        return False
+
+    async def get_windows_with_name(self, name):
+        raise AssertionError(f"the whole UI was searched for {name}")
+
+
+def _hud(visible_names: set[str], *, compact_exists: bool = True):
+    """The HUD's friends lists and button; the windows named in `visible_names` show."""
+    lists = [_HudWindow("wndFriendsList", visible="wndFriendsList" in visible_names)]
+    if compact_exists:
+        lists.append(_HudWindow("NewFriendsListWindow", visible="NewFriendsListWindow" in visible_names))
+    hud = _HudWindow("windowHUD", _HudWindow("windowForTopRowButtons", _HudWindow("btnFriends")), *lists)
+    root = _HudWindow(
+        "root",
+        # Windows of the same names elsewhere, which a search by name could find first
+        _HudWindow("NewFriendsListWindow", visible=False),
+        _HudWindow("btnFriends"),
+        _HudWindow("WorldView", hud),
+    )
+    return root, hud
+
+
+async def _open_friends_list_with(visible_names: set[str], *, compact_exists: bool = True):
+    """Run open_friends_list against a fake tree; the actions it took, and the window it returned."""
     from unittest.mock import MagicMock, patch
 
     import bartlebot.nodes.node_helpers as nh_mod
 
     actions: list[str] = []
     client = MagicMock()
-    client.root_window = MagicMock()
-
-    compact = MagicMock()
-    compact.is_visible = AsyncMock(return_value="NewFriendsListWindow" in visible_names)
-
-    async def named_visible(_client, name):
-        return name in visible_names
+    client.root_window, hud = _hud(visible_names, compact_exists=compact_exists)
 
     async def closer(_client):
         actions.append("close")
-        visible_names.clear()
-        compact.is_visible = AsyncMock(return_value=False)
+        for window in hud._children:
+            window.visible = False
         return True
 
-    async def maybe_get(_root, name):
-        return compact if name == "NewFriendsListWindow" else MagicMock()
-
-    async def click_window(_btn):
-        actions.append("click btnFriends")
+    async def click_window(btn):
+        # The button under the HUD, not the decoy at the root
+        assert btn in hud._children[0]._children
+        actions.append(f"click {btn._name}")
+        if not compact_exists:
+            hud._children.append(_HudWindow("NewFriendsListWindow"))
 
     client.mouse_handler.click_window = AsyncMock(side_effect=click_window)
 
-    with ExitStack() as stack:
-        stack.enter_context(patch.object(nh_mod, "is_named_window_visible", new=AsyncMock(side_effect=named_visible)))
-        stack.enter_context(patch.object(nh_mod, "close_friends_list", new=AsyncMock(side_effect=closer)))
-        stack.enter_context(
-            patch("wizwalker.extensions.scripting.utils._maybe_get_named_window", new=AsyncMock(side_effect=maybe_get))
-        )
-        await nh_mod.open_friends_list(client)
+    with patch.object(nh_mod, "close_friends_list", new=AsyncMock(side_effect=closer)):
+        window = await nh_mod.open_friends_list(client)
 
-    return actions
+    return actions, window
 
 
 async def test_open_friends_list_closes_the_large_list_first():
     """Visibility is judged from the compact window alone, so from the LARGE list
     this read "closed" and clicked btnFriends anyway — and what the game does with that
     click was never established. Close first, so the state is known."""
-    actions = await _open_friends_list_with({"wndFriendsList"})
+    actions, _ = await _open_friends_list_with({"wndFriendsList"})
     assert actions == ["close", "click btnFriends"]
 
 
 async def test_open_friends_list_does_not_touch_a_list_that_is_already_compact():
     """The normal path must stay one read and no input: the list is reused between invites."""
-    actions = await _open_friends_list_with({"NewFriendsListWindow"})
+    actions, window = await _open_friends_list_with({"NewFriendsListWindow"})
     assert actions == []
+    assert window._name == "NewFriendsListWindow" and window.visible
 
 
 async def test_open_friends_list_clicks_when_nothing_is_open():
-    actions = await _open_friends_list_with(set())
+    actions, window = await _open_friends_list_with(set())
     assert actions == ["click btnFriends"]
+    assert window._name == "NewFriendsListWindow"
+
+
+async def test_open_friends_list_finds_a_list_that_exists_only_once_opened():
+    actions, window = await _open_friends_list_with(set(), compact_exists=False)
+    assert actions == ["click btnFriends"]
+    assert window._name == "NewFriendsListWindow"
+
+
+@pytest.mark.parametrize(
+    "visible_names, open_",
+    [(set(), False), ({"NewFriendsListWindow"}, True), ({"wndFriendsList"}, True)],
+)
+async def test_the_friends_list_is_open_while_either_list_shows(visible_names, open_):
+    from unittest.mock import MagicMock
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    client = MagicMock()
+    client.root_window, _ = _hud(visible_names)
+    assert await nh_mod.is_friends_list_open(client) is open_
+
+
+# ---------------------------------------------------------------------------
+# The friend profile popup's buttons: the #280 diagnostic
+# ---------------------------------------------------------------------------
+
+
+class _Rect:
+    def __init__(self, x1, y1, x2, y2):
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+
+
+class _Win:
+    def __init__(self, name, rect=(0, 0, 1, 1), visible=True, children=()):
+        self._name, self._rect, self._visible, self._children = name, rect, visible, list(children)
+
+    async def name(self):
+        return self._name
+
+    async def children(self):
+        return self._children
+
+    async def is_visible(self):
+        return self._visible
+
+    async def scale_to_client(self):
+        return _Rect(*self._rect)
+
+
+class _RootHolder:
+    def __init__(self, root_window):
+        self.root_window = root_window
+
+
+def _profile_tree():
+    invite = _Win("btnInvite", (439, 133, 464, 158))
+    wishlist = _Win("btnCharacterWishlistInspection", (439, 199, 464, 224), visible=False)
+    layout = _Win("ButtonLayout", children=[invite, wishlist])
+    other_layout = _Win("ButtonLayout")
+    popup = _Win("wndCharacter", (400, 90, 500, 300), children=[other_layout, layout, _Win("lblCharacterName")])
+    root = _Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])])
+    return _RootHolder(root)
+
+
+async def test_profile_buttons_reports_each_button_with_its_rectangle_and_visibility():
+    text = await nh.friend_profile_buttons(_profile_tree())
+    assert text == (
+        "popup@(400,90,500,300), btnInvite@(439,133,464,158), btnCharacterWishlistInspection hidden@(439,199,464,224)"
+    )
+
+
+async def test_profile_buttons_says_so_when_the_popup_is_not_open():
+    assert await nh.friend_profile_buttons(_RootHolder(_Win("root"))) == "popup missing"
+
+
+async def test_profile_buttons_never_raises():
+    class Broken:
+        @property
+        def root_window(self):
+            raise RuntimeError("memory read failed")
+
+    assert (await nh.friend_profile_buttons(Broken())).startswith("<unreadable:")
+
+
+# ---------------------------------------------------------------------------
+# Waiting for the profile buttons to settle (#280)
+# ---------------------------------------------------------------------------
+
+
+class _MovingWin(_Win):
+    """A window whose rectangle is read from a list, one entry per read, the last repeated."""
+
+    def __init__(self, name, rects):
+        super().__init__(name, rects[0])
+        self._rects = list(rects)
+
+    async def scale_to_client(self):
+        rect = self._rects.pop(0) if len(self._rects) > 1 else self._rects[0]
+        return _Rect(*rect)
+
+
+class _AlwaysMovingWin(_Win):
+    async def scale_to_client(self):
+        self._rect = (self._rect[0], self._rect[1] + 1, self._rect[2], self._rect[3] + 1)
+        return _Rect(*self._rect)
+
+
+def _profile_with(invite):
+    layout = _Win("ButtonLayout", children=[invite])
+    popup = _Win("wndCharacter", (431, 0, 615, 359), children=[layout])
+    return _RootHolder(_Win("root", children=[_Win("WorldView", children=[_Win("windowHUD", children=[popup])])]))
+
+
+_STALE = (439, 199, 464, 224)
+_SETTLED = (439, 133, 464, 158)
+
+
+async def _settle(client, timeout=1.0):
+    with patch.object(nh, "POLL_INTERVAL", 0), patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", timeout):
+        return await nh.await_settled_friend_profile(client)
+
+
+async def test_the_settle_wait_outlasts_a_layout_still_moving():
+    """What #280 caught: the first read had Invite two slots low, over the wishlist's spot."""
+    layout, reads = await _settle(_profile_with(_MovingWin("btnInvite", [_STALE, _SETTLED])))
+
+    assert nh.profile_button_rect(layout, "btnInvite") == _SETTLED
+    assert reads == 3
+
+
+async def test_a_popup_already_laid_out_settles_in_two_reads():
+    layout, reads = await _settle(_profile_with(_Win("btnInvite", _SETTLED)))
+
+    assert nh.profile_button_rect(layout, "btnInvite") == _SETTLED
+    assert reads == 2
+
+
+async def test_the_settle_wait_gives_up_on_a_layout_that_never_stops():
+    layout, _ = await _settle(_profile_with(_AlwaysMovingWin("btnInvite", _SETTLED)), timeout=0.05)
+    assert layout is None
+
+
+async def test_a_missing_popup_never_counts_as_settled():
+    """Two reads that both found nothing agree, and must not pass for a laid-out popup."""
+    layout, _ = await _settle(_RootHolder(_Win("root")), timeout=0.05)
+    assert layout is None
 
 
 # ---------------------------------------------------------------------------
@@ -1098,6 +1473,132 @@ async def test_answer_instance_prompts_reports_one_clients_refusal_for_the_group
         refusal = await nh_mod.answer_instance_prompts([ok, blocked], delay=0.01, poll_interval=0)
 
     assert refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE
+
+
+# ---------------------------------------------------------------------------
+# teleport_via_friends_list: Go To Friend, once the profile has settled
+# ---------------------------------------------------------------------------
+
+_GO_STALE = (439, 166, 464, 191)  # where Friend Finder settles: what the misclick hit
+_GO_SETTLED = (439, 68, 464, 92)
+
+
+def _go_layout(rect):
+    return (("popup", True, (431, 0, 615, 359)), ("btnGoToFriend", True, rect))
+
+
+class _ProfileScreen:
+    """A friend's profile popup and the box Go To Friend raises, answering what node_helpers sends.
+
+    The profile's buttons are read from `layouts`, one per read, the last repeated. The box
+    asks only after the Go To Friend clicks numbered in `box_on`: a click that lands brings
+    it up, and one that misses brings nothing.
+    """
+
+    def __init__(self, layouts, *, box_on=(1,)):
+        self.layouts = list(layouts)
+        self.box_on = set(box_on)
+        self.reads = 0
+        self.go_clicks = 0
+        self.opened = []
+        self.events = []
+        self.profile_open = False
+        self.caption = None
+
+    async def open_profile(self, _client, name):
+        self.opened.append(name)
+        self.events.append("open profile")
+        self.profile_open = True
+
+    async def read(self, _client):
+        layout = self.layouts[min(self.reads, len(self.layouts) - 1)]
+        self.reads += 1
+        return layout, nh.profile_layout_text(layout)
+
+    async def visible(self, _client, path):
+        return path == CHARACTER_PROFILE_PATH and self.profile_open
+
+    async def click(self, _client, path):
+        self.events.append((path[-1], self.reads))
+        if path == GO_TO_FRIEND_BUTTON_PATH:
+            self.go_clicks += 1
+            if self.go_clicks in self.box_on:
+                self.caption = "Teleport to your friend?"
+        elif path == MESSAGE_BOX_CENTER:
+            self.caption = None
+        elif path == CHARACTER_PROFILE_CLOSE_PATH:
+            self.profile_open = False
+        return True
+
+    async def text(self, _client, path):
+        return self.caption if path == MESSAGE_BOX_CAPTION_PATH else None
+
+    def clicked(self) -> list[str]:
+        return [event[0] for event in self.events if isinstance(event, tuple)]
+
+
+async def _teleport(screen: _ProfileScreen, *, identify=None):
+    from contextlib import ExitStack
+
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(nh, "POLL_INTERVAL", 0))
+        stack.enter_context(patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", 1.0))
+        stack.enter_context(patch.object(nh, "FRIEND_TELEPORT_CONFIRM_TIMEOUT", 0.05))
+        stack.enter_context(patch.object(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0))
+        stack.enter_context(patch.object(nh, "open_friend_profile", new=AsyncMock(side_effect=screen.open_profile)))
+        stack.enter_context(patch.object(nh, "read_friend_profile", new=AsyncMock(side_effect=screen.read)))
+        stack.enter_context(patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=screen.visible)))
+        stack.enter_context(patch.object(nh, "click_by_path", new=AsyncMock(side_effect=screen.click)))
+        stack.enter_context(patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=screen.text)))
+        if identify is not None:
+            stack.enter_context(patch.object(nh, "identify_modal", new=AsyncMock(return_value=identify)))
+        await nh.teleport_via_friends_list(FakeClient(), "wizardfriend")
+
+
+async def test_go_to_friend_is_clicked_only_once_the_profile_buttons_settle():
+    """Clicked the moment the profile showed, it landed on Friend Finder below, or on nothing."""
+    screen = _ProfileScreen([_go_layout(_GO_STALE), _go_layout(_GO_SETTLED)])
+
+    await _teleport(screen)
+
+    go = next(event for event in screen.events if isinstance(event, tuple) and event[0] == "btnGoToFriend")
+    assert go == ("btnGoToFriend", 3)  # the stale read, then the two that agreed
+    assert screen.clicked() == ["btnGoToFriend", "centerButton", "btnCharacterClose"]
+    assert screen.opened == ["wizardfriend"]
+
+
+async def test_a_go_to_friend_that_brings_up_no_box_is_tried_again_from_a_fresh_profile():
+    screen = _ProfileScreen([_go_layout(_GO_SETTLED)], box_on=(2,))
+
+    await _teleport(screen)
+
+    assert screen.opened == ["wizardfriend", "wizardfriend"]
+    assert screen.clicked() == [
+        "btnGoToFriend",
+        "btnCharacterClose",
+        "btnGoToFriend",
+        "centerButton",
+        "btnCharacterClose",
+    ]
+
+
+async def test_go_to_friend_that_never_brings_up_the_box_cannot_start():
+    screen = _ProfileScreen([_go_layout(_GO_SETTLED)], box_on=())
+
+    with pytest.raises(ValueError) as raised:
+        await _teleport(screen)
+
+    assert screen.go_clicks == nh.FRIEND_TELEPORT_ATTEMPTS
+    assert "wizardfriend" not in str(raised.value)
+    assert not screen.profile_open
+
+
+async def test_a_refusal_after_go_to_friend_is_left_for_port_clients_to_report():
+    screen = _ProfileScreen([_go_layout(_GO_SETTLED)])
+
+    await _teleport(screen, identify=dialog_captions.FRIEND_BUSY)
+
+    assert screen.clicked() == ["btnGoToFriend"]
 
 
 # ---------------------------------------------------------------------------
@@ -1632,6 +2133,37 @@ async def test_a_straggler_that_stays_put_through_the_grace_is_still_recovered()
     recovery.assert_awaited_once()
 
 
+async def test_a_straggler_whose_zone_is_unreadable_is_not_ported():
+    """Just off its loading screen a client reads None before the zone it reached (#282).
+    Past the grace that read is no reason to port it: the port would undo the arrival."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain([None] * 3, itertools.repeat("Dst")))
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 1.0, 0, settle_grace=0
+        )
+
+    assert result is None
+    recovery.assert_not_awaited()
+
+
+async def test_a_zone_that_never_turns_readable_still_ends_the_wait():
+    """A client logged out reads None for good: nobody is ported, and the deadline still ends the wait."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    gone = FakeClient()
+    gone.zone_name.return_value = None
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [arrived, gone], "Dst", 0.02, 0, settle_grace=0)
+
+    assert result == ["Dst", None]
+    recovery.assert_not_awaited()
+
+
 # ---------------------------------------------------------------------------
 # skip_while_loading
 # ---------------------------------------------------------------------------
@@ -1827,3 +2359,314 @@ async def test_a_wildcard_fight_name_matches_as_written():
     client = FakeClient()
     world = _world(client, ("AQ-Piranha-Guard_StandIn", 5.0), ("AQ-Piranha-Guard", 300.0))
     assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard*") is world["AQ-Piranha-Guard_StandIn"]
+
+
+# ---------------------------------------------------------------------------
+# clear_modals — back out of whatever is up, never confirm it
+# ---------------------------------------------------------------------------
+
+
+async def _clear(screen: ModalScreen, timeout: float = 0.2):
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    a, b, c = screen.patches()
+    with a, b, c:
+        return await nh_mod.clear_modals(FakeClient(), timeout, 0.001)
+
+
+async def test_clear_modals_with_nothing_up_clicks_nothing():
+    screen = ModalScreen()
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == ()
+    assert screen.clicked == []
+
+
+async def test_clear_modals_cancels_a_question_instead_of_confirming_it():
+    """Confirming the exit prompt would leave the dungeon; the caller wanted a menu, not that."""
+    from bartlebot.game import dialog_captions
+
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == (dialog_captions.INSTANCE_EXIT,)
+    assert screen.clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_clear_modals_closes_a_one_button_dialog_with_its_center():
+    screen = ModalScreen(("Your friend is busy right now.", [MESSAGE_BOX_CENTER]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert screen.clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_clear_modals_closes_a_dialog_the_snapshot_does_not_know():
+    screen = ModalScreen(("A dialog nobody has cataloged", [MESSAGE_BOX_RIGHT]))
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert result.dismissed == (None,)
+
+
+async def test_clear_modals_closes_every_dialog_in_a_stack():
+    screen = ModalScreen(
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+        ("Your friend is busy right now.", [MESSAGE_BOX_RIGHT]),
+    )
+    result = await _clear(screen)
+
+    assert result.cleared is True
+    assert len(result.dismissed) == 2
+    assert screen.modals == []
+
+
+async def test_clear_modals_gives_up_on_a_dialog_that_stays_and_names_it():
+    from bartlebot.game import dialog_captions
+
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]), stubborn=True)
+    result = await _clear(screen, timeout=0.05)
+
+    assert result.cleared is False
+    assert result.disconnected is False
+    assert result.key == dialog_captions.INSTANCE_EXIT
+
+
+async def test_clear_modals_leaves_a_disconnect_alone():
+    """Nothing on a disconnect modal helps, and the health monitor recovers the client."""
+    screen = ModalScreen(("Connection Lost!", [MESSAGE_BOX_CENTER]))
+    result = await _clear(screen)
+
+    assert result.cleared is False
+    assert result.disconnected is True
+    assert screen.clicked == []
+
+
+# ---------------------------------------------------------------------------
+# wait_for_zone_with_recovery — a straggler at an instance prompt gets it answered (#281)
+# ---------------------------------------------------------------------------
+
+_BUSY_CAPTION = "Your friend is busy right now."
+
+
+def _client_in_zone_once_answered(screen: ModalScreen, zone: str = "Dst"):
+    """A client that stays in Src until every modal over it has been answered, then reads as in `zone`."""
+    client = FakeClient()
+    client.zone_name = AsyncMock(side_effect=lambda: "Src" if screen.modals else zone)
+    return client
+
+
+async def _wait_for_dst(screen: ModalScreen, client, timeout: float = 0.5, machine=None):
+    with screen.apply():
+        return await nh.wait_for_zone_with_recovery(
+            machine or FakeMachine(), [client], "Dst", timeout, 0.001, settle_grace=0
+        )
+
+
+async def test_a_wait_for_the_zone_confirms_an_exit_prompt_that_is_still_up():
+    """The prompt was left unanswered, and nothing leaves a dungeon until it is."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen)) is None
+    assert screen.clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_a_wait_for_the_zone_answers_each_prompt_in_a_stack():
+    screen = ModalScreen(
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+        (_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]),
+    )
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen)) is None
+    assert screen.clicked == [MESSAGE_BOX_CENTER, MESSAGE_BOX_CENTER]
+
+
+async def test_a_wait_for_the_zone_leaves_a_dialog_it_does_not_know_alone():
+    """Answering whatever shows would decline an invitation or confirm a request nobody asked about."""
+    screen = ModalScreen(("A dialog nobody has cataloged", [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen), timeout=0.02) == ["Src"]
+    assert screen.clicked == []
+
+
+async def test_a_wait_for_the_zone_ends_at_once_on_a_refusal_and_says_why():
+    screen = ModalScreen((_BUSY_CAPTION, [MESSAGE_BOX_RIGHT]))
+    machine = FakeMachine()
+    started = asyncio.get_running_loop().time()
+
+    result = await _wait_for_dst(screen, _client_in_zone_once_answered(screen), timeout=5.0, machine=machine)
+
+    assert result == ["Src"]
+    assert asyncio.get_running_loop().time() - started < 1.0
+    assert any("refused the zone change" in msg for msg, _ in machine.logs)
+    assert screen.clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_a_wait_for_the_zone_leaves_a_loading_clients_prompt_alone():
+    """A client on a loading screen has its answer in flight already; a click now lands on nothing."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    client = _client_in_zone_once_answered(screen)
+    client.is_loading = AsyncMock(return_value=True)
+
+    with screen.apply():
+        task = asyncio.ensure_future(nh.wait_for_zone_with_recovery(FakeMachine(), [client], "Dst", 0.5, 0.001, 0))
+        await asyncio.sleep(0.05)
+        task.cancel()
+
+    assert screen.clicked == []
+
+
+async def test_a_wait_with_no_time_left_answers_nothing():
+    """The checks that wait zero seconds, as teleport_to_marked_location's does, only read."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+
+    assert await _wait_for_dst(screen, _client_in_zone_once_answered(screen), timeout=0) == ["Src"]
+    assert screen.clicked == []
+
+
+async def test_a_prompt_answered_late_restarts_the_settle_grace():
+    """The loading screen the answer opens has not started yet, so the clock for it restarts."""
+    screen = ModalScreen((_EXIT_CAPTION, [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]))
+    client = FakeClient()
+    answered_at: list[float] = []
+
+    async def _zone():
+        loop = asyncio.get_running_loop()
+        if screen.modals:
+            return "Src"
+        answered_at.append(answered_at[0] if answered_at else loop.time())
+        # Reads Src for a while after the answer, as a client does before its screen starts.
+        return "Dst" if loop.time() - answered_at[0] > 0.05 else "Src"
+
+    client.zone_name = _zone
+    with screen.apply():
+        # The deadline is shorter than the grace, so only the restart keeps the wait alive past it.
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [client], "Dst", 0.01, 0.001, 0.1)
+
+    assert result is None
+
+
+async def test_a_recovery_port_that_times_out_is_logged_not_raised():
+    """#281: a modal blocks the Friends button, the wait for the list times out, and the run took it for a dead client."""
+    from wizwalker import ExceptionalTimeout
+
+    machine = FakeMachine()
+    with patch.object(nh, "port_to_friend", new=AsyncMock(side_effect=ExceptionalTimeout("friends list"))):
+        await nh._port_stragglers(machine, 0, "someone", [FakeClient()], "Dst", 0)
+
+    assert any("timed out" in msg and "friends list" in msg for msg, _ in machine.logs)
+
+
+# ── read_zones ───────────────────────────────────────────────────────────────
+
+
+async def test_read_zones_waits_until_every_zone_is_readable():
+    ready, slow = FakeClient(), FakeClient()
+    ready.zone_name = AsyncMock(return_value="Alpha/Hub")
+    slow.zone_name = AsyncMock(side_effect=[None, None, "Beta/Hub"])
+
+    assert await nh.read_zones([ready, slow], 1.0, 0.01) == ["Alpha/Hub", "Beta/Hub"]
+
+
+async def test_read_zones_gives_back_none_for_a_zone_that_never_turns_readable():
+    ready, gone = FakeClient(), FakeClient()
+    ready.zone_name = AsyncMock(return_value="Alpha/Hub")
+    gone.zone_name = AsyncMock(return_value=None)
+
+    assert await nh.read_zones([ready, gone], 0.05, 0.01) == ["Alpha/Hub", None]
+
+
+# ── in_expected_zone ─────────────────────────────────────────────────────────
+
+
+async def test_in_expected_zone_waits_out_a_zone_just_off_its_loading_screen():
+    """A None read at once would fail a node whose players were where it expected (#282)."""
+    client = FakeClient()
+    zone_unreadable_at_first(client, "Alpha/Hub", reads=2)
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is True
+    assert not any(level >= logging.WARNING for _, level in machine.logs)
+
+
+async def test_in_expected_zone_fails_a_zone_that_never_turns_readable():
+    client = FakeClient()
+    client.zone_name.return_value = None
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is False
+    assert ("FAILURE: clients not in expected zone (expected='Alpha/Hub', unexpected=[None])", logging.WARNING) in (
+        machine.logs
+    )
+
+
+async def test_in_expected_zone_fails_a_player_somewhere_else():
+    client = FakeClient()
+    client.zone_name.return_value = "Beta/Hub"
+    machine = FakeMachine()
+
+    assert await nh.in_expected_zone(machine, [client], "Alpha/Hub", 0) is False
+    assert any("unexpected=['Beta/Hub']" in msg for msg, _ in machine.logs)
+
+
+# ── _not_with ────────────────────────────────────────────────────────────────
+
+
+async def test_two_unreadable_zones_are_not_with_each_other():
+    """None == None names no zone: a mover and target that both read None are not together (#282)."""
+    target, mover = FakeClient(), FakeClient()
+    target.zone_name.return_value = None
+    mover.zone_name.return_value = None
+
+    assert await nh._not_with(FakeMachine(), target, [mover]) == [
+        (0, "is in an unreadable zone, not an unreadable zone")
+    ]
+
+
+async def test_a_mover_seen_in_the_targets_zone_is_with_it_however_far():
+    """The target can be walked off after a port (TP to player): only the zone and the sighting count."""
+    target, mover = FakeClient(), FakeClient()
+    mover.body.position.return_value = XYZ(400.0, 300.0, 0.0)
+
+    assert await nh._not_with(FakeMachine(), target, [mover]) == []
+
+
+async def test_each_mover_in_another_zone_is_given_its_reason():
+    target, elsewhere, unreadable, here = FakeClient(), FakeClient(), FakeClient(), FakeClient()
+    target.zone_name.return_value = here.zone_name.return_value = "WizardCity/WC_Hub"
+    elsewhere.zone_name.return_value = "WizardCity/WC_Ravenwood"
+    unreadable.zone_name.return_value = None
+
+    assert await nh._not_with(FakeMachine(), target, [elsewhere, unreadable, here]) == [
+        (0, "is in WC_Ravenwood, not WC_Hub"),
+        (1, "is in an unreadable zone, not WC_Hub"),
+    ]
+
+
+# ── pick_up ──────────────────────────────────────────────────────────────────
+
+
+async def test_pick_up_presses_x_at_the_prompt_and_waits_for_it_to_clear():
+    client = FakeClient()
+    client.is_in_npc_range.side_effect = [True, False]
+    spot = XYZ(1.0, 2.0, 3.0)
+
+    assert await nh.pick_up(client, spot, 1.0, 0) is nh.Pickup.COLLECTED
+    client.teleport.assert_called_once_with(spot)
+    client.send_key.assert_called_once()
+
+
+async def test_pick_up_without_a_prompt_presses_nothing():
+    client = FakeClient()
+
+    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NO_PROMPT
+    client.send_key.assert_not_called()
+
+
+async def test_pick_up_whose_prompt_stays_is_not_collected():
+    client = FakeClient()
+    client.is_in_npc_range.return_value = True
+
+    assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_DISMISSED

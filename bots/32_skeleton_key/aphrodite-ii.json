@@ -1,0 +1,946 @@
+{
+  "id": "c0ceea97-6af1-45a1-b5d7-0a9e0c58e1e8",
+  "name": "Aphrodite II",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Aether",
+      "category": "Reagents"
+    },
+    {
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Amplify Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Aphrodite's Barb of Veracity",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite's Barb of Vexing",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite's Bedlam Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Blistering Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Burning Thistle",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite's Deadwood Stave",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Evergreen Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Flamebranch",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Frostbite Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Greenbrier Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Hardfreeze Seal",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Poisonthorn",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite's Poisonvine Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Rainstick",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Ring of Cunning",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Ring of Reaction",
+      "category": "Rings"
+    },
+    {
+      "name": "Aphrodite's Stave of Guile",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Storm of Thorns",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite's Stoutroot Staff\u200e",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Tanglevine Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Aphrodite's Wildroot Spike",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite's Winterspine",
+      "category": "Athames"
+    },
+    {
+      "name": "Aphrodite\u2019s Stinging Nettle",
+      "category": "Athames"
+    },
+    {
+      "name": "Baby Sunbird",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Band of the Chilling Light",
+      "category": "Rings"
+    },
+    {
+      "name": "Bee Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Black Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Blazing Oak Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blood Moss",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brilliant Beams",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bullheaded Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clock Spider Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Energy Opal +1",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Downpour",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Draconium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Enfeeblement Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Face Palm",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Blossom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Flood",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Flute Symphony",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Freddo Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Giant Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Grendelweed",
+      "category": "Reagents"
+    },
+    {
+      "name": "Infector Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Kelp",
+      "category": "Reagents"
+    },
+    {
+      "name": "Lava Lily",
+      "category": "Reagents"
+    },
+    {
+      "name": "Law of Kan Davasi Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Lord of Death's Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Malduit Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Massive Pest Zapper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mend Minion Talent Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Miniature Bloodbats",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mokompo Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mote of Eternity",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Orichalcum",
+      "category": "Reagents"
+    },
+    {
+      "name": "Pest Bomb",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Pink Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Polished Accurate Hematite +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Opal +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Amethyst +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Citrine +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Hematite +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Jade +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Onyx +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Peridot +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Ruby +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Amethyst +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Citrine +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Jade +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Onyx +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Sapphire +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Opal +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +94",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Health Opal +95",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Hematite +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Hematite +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Red Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ring of the Chaotic Heart",
+      "category": "Rings"
+    },
+    {
+      "name": "Ring of the Usurper",
+      "category": "Rings"
+    },
+    {
+      "name": "Saw Palmetto",
+      "category": "Seeds"
+    },
+    {
+      "name": "Signet of Carpathes",
+      "category": "Rings"
+    },
+    {
+      "name": "Signet of the Fire King",
+      "category": "Rings"
+    },
+    {
+      "name": "Silver Trumpet Vine",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sir Bedevere Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sir Lamorak Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spartan Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spirit Armor Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Staff of Aphrodite's Song",
+      "category": "Wands"
+    },
+    {
+      "name": "Sugar Khrystal",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sunion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Supreme Sunburst",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ultra Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra King Parsley",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Snow Apples",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Tiger Lily",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ultra Trumpet Vine",
+      "category": "Seeds"
+    },
+    {
+      "name": "Uncanny Magic",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Vassanji Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vine",
+      "category": "Reagents"
+    },
+    {
+      "name": "White Tiger Lily",
+      "category": "Seeds"
+    },
+    {
+      "name": "Zounds...Bees!",
+      "category": "Treasure Cards"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Reagents",
+    "Seeds",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Aphrodite",
+        "Ultra",
+        "=Band of the Chilling Light",
+        "=Law of Kan Davasi Band",
+        "=Lord of Death's Coil",
+        "=Ring of the Chaotic Heart",
+        "=Ring of the Usurper",
+        "=Signet of Carpathes",
+        "=Signet of the Fire King"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "G14_DM/DM_Z06_Bridge"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Graveyard",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_DM/DM_Z06_Bridge",
+        "dungeon_zone": "G14_DM/DM_Z07_Graveyard",
+        "dungeon_name": "Graveyard",
+        "sigil_xyz": {
+          "x": -222.0,
+          "y": 2474.73,
+          "z": 0.7
+        },
+        "reset_xyz": {
+          "x": -5.01,
+          "y": 1918.83,
+          "z": 0.7
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Aphrodite II",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-DM-PlantMonster-Vine-*",
+        "wiki_page": "Creature:Death Tendril",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_DM/DM_Z07_Graveyard",
+        "to_zone": "G14_DM/DM_Z06_Bridge",
+        "xyz": {
+          "x": 4.79,
+          "y": -3440.24,
+          "z": 0.52
+        },
+        "reset_xyz": {
+          "x": 0.55,
+          "y": -2942.94,
+          "z": 0.52
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "open_skeleton_key_door",
+      "label": "Open Skeleton Key Door",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_DM/DM_Z07_Graveyard",
+        "interact_xyz": {
+          "x": -2877.92,
+          "y": -24.27,
+          "z": 0.52
+        },
+        "reset_xyz": {
+          "x": -2387.73,
+          "y": -27.13,
+          "z": 0.52
+        }
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Enter Skeleton Key room",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_DM/DM_Z07_Graveyard",
+        "to_zone": "G14_DM/Interiors/DM_Z08_I03_SkeletonKey2",
+        "xyz": {
+          "x": -3353.11,
+          "y": -21.51,
+          "z": 0.52
+        },
+        "reset_xyz": {
+          "x": -2877.92,
+          "y": -24.27,
+          "z": 0.52
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Exit Skeleton Key room",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_DM/Interiors/DM_Z08_I03_SkeletonKey2",
+        "to_zone": "G14_DM/DM_Z07_Graveyard",
+        "xyz": {
+          "x": 18.26,
+          "y": -844.78,
+          "z": -28.26
+        },
+        "reset_xyz": {
+          "x": 26.74,
+          "y": -309.04,
+          "z": -28.26
+        },
+        "stagger": false
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "G14_DM/DM_Z06_Bridge"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  },
+  "history": [
+    "82329ed814533df993ae6649f028523f0b672b39d8d0ed96a8ff0f01509f1fcb",
+    "b05d505db35204c4f24d05d9ead2ab5545c7409a40625549b82a68f25179eb79"
+  ]
+}

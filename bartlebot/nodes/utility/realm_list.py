@@ -18,7 +18,6 @@ import logging
 from bartlebot.game import dialog_captions, realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
-    BACKPACK_CLOSE_BUTTON_PATH,
     REALM_CURRENT_NAME_PATH,
     REALM_GO_TO_BUTTON_PATH,
     REALM_NEXT_PAGE_PATH,
@@ -73,19 +72,25 @@ async def wait_for_current_realm_name(client, timeout: float) -> str:
 async def read_current_realm(machine, client, safety_delay: float, tag: str) -> str | None:
     """The key of the realm *client* is on, read from its spellbook, or None if it cannot be told.
 
-    Read from txtYourRealmName, so no page is turned. Opens and closes the spellbook.
+    Read from txtYourRealmName, so no page is turned. Opens and closes the spellbook, and
+    reports None if it would not close, since a spellbook left open takes the next node's clicks.
     """
     if not await open_realm_list(machine, client, safety_delay, tag):
         return None
+    closed = False
     try:
         shown = await wait_for_current_realm_name(client, safety_delay)
     finally:
-        await close_spellbook(client)
+        closed = await close_spellbook(client)
+    if not closed:
+        machine.log(f"{tag}: the spellbook did not close after reading the realm", logging.WARNING)
+        return None
     return realms.key_for(shown) if shown else None
 
 
-async def close_spellbook(client) -> None:
-    await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+async def close_spellbook(client) -> bool:
+    """Close the spellbook until it is gone (``node_helpers.close_spellbook``). True once it is."""
+    return await node_helpers.close_spellbook(client)
 
 
 async def _content_changed(client, before: str) -> bool:

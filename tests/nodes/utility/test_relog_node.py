@@ -16,13 +16,16 @@ than returning a FAILURE the run would count and possibly stop on.
 
 import asyncio
 import logging
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from wizwalker import Keycode
 from wizwalker.errors import ClientClosedError
 
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
+    DECK_CONFIGURATION_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
@@ -50,9 +53,19 @@ class FakeGame:
     goes unreadable instead. ``ignores_play_for`` is a character select that takes that
     many seconds to accept Play.
 
+    ``over_world`` is a dialog the game left up over the world before the node began, as it
+    leaves the dungeon exit prompt of a player that never left: its caption and buttons. It
+    swallows every click but its own buttons, which close it unless ``stubborn``. With
+    ``dialog_on_open`` the dialog comes up on the first spellbook click instead, taking it.
+
     ``disconnects`` is a lost connection: ``"before"`` the node starts or ``"on_quit"``. The
     client then sits on "Connection Lost!", where nothing it is sent does anything, and goes
     on answering zone_name() with the zone it was in, as the game does.
+
+    ``shop`` is the crowns shop left up over the world before the node began, as a wishlist
+    misclick leaves it (#280), and ``shop_on_login`` one the login opens, which shows
+    ``shop_login_lag`` reads after the world does, as the first login of the day's can. Like
+    a dialog it swallows every click; ESC closes it unless ``shop_stubborn``.
     """
 
     def __init__(
@@ -69,7 +82,23 @@ class FakeGame:
         load_seconds: float | None = None,
         escape_opens: bool = True,
         disconnects: str | None = None,
+        over_world: tuple[str, tuple] | None = None,
+        dialog_on_open: tuple[str, tuple] | None = None,
+        stubborn: bool = False,
+        shop: bool = False,
+        shop_on_login: bool = False,
+        shop_stubborn: bool = False,
+        shop_login_lag: int = 0,
     ):
+        self.shop_open = shop
+        self.shop_on_login = shop_on_login
+        self.shop_login_lag = shop_login_lag
+        self._shop_due: int | None = None
+        self.shop_stubborn = shop_stubborn
+        self.shop_escapes = 0
+        self.over_world = over_world
+        self.dialog_on_open = dialog_on_open
+        self.stubborn = stubborn
         self.disconnects = disconnects
         self.escape_opens = escape_opens
         self.escapes = 0
@@ -94,7 +123,16 @@ class FakeGame:
 
     # --- what the node reads -------------------------------------------------
     def is_visible(self, path: list[str]) -> bool:
-        if path == SPELLBOOK_PREFERENCES_TAB_PATH:
+        if path == CROWNS_SHOP_WINDOW_PATH:
+            if self._shop_due is not None:
+                if self._shop_due <= 0:
+                    self.shop_open, self._shop_due = True, None
+                else:
+                    self._shop_due -= 1
+            return self.shop_open
+        if self.over_world and path in (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT):
+            return path in self.over_world[1]
+        if path in (SPELLBOOK_PREFERENCES_TAB_PATH, DECK_CONFIGURATION_PATH):
             return self.screen in ("spellbook", "settings")
         if path == SETTINGS_QUIT_BUTTON_PATH:
             return self.screen == "settings" and not self.opens_on_realms
@@ -105,6 +143,8 @@ class FakeGame:
         return False
 
     def text(self, path: list[str]) -> str:
+        if path == MESSAGE_BOX_CAPTION_PATH and self.over_world:
+            return self.over_world[0]
         if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "dialog":
             return self.quit_dialog[0]
         if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "disconnected":
@@ -128,6 +168,15 @@ class FakeGame:
     # --- what the node does --------------------------------------------------
     def click(self, path: list[str]) -> None:
         self.clicks.append(list(path))
+        if self.shop_open:
+            return
+        if self.over_world:
+            if path in self.over_world[1] and not self.stubborn:
+                self.over_world = None
+            return
+        if path == SPELLBOOK_BUTTON_PATH and self.screen == "world" and self.dialog_on_open:
+            self.over_world, self.dialog_on_open = self.dialog_on_open, None
+            return
         if path == SPELLBOOK_BUTTON_PATH and self.screen == "world":
             self.opens += 1
             self.screen = "spellbook"
@@ -159,6 +208,12 @@ class FakeGame:
         elif self.screen == "settings":
             self.screen = "world"
 
+    def send_key(self, key) -> None:
+        """A key sent to the client itself: ESC closes the crowns shop."""
+        if key is Keycode.ESC and self.shop_open:
+            self.shop_escapes += 1
+            self.shop_open = self.shop_stubborn
+
     def press_play(self) -> None:
         self.plays += 1
         if self.screen != "char_select":
@@ -184,6 +239,8 @@ class FakeGame:
                 done = self._loading_ticks >= 2
             if done:
                 self.screen = "world"
+                if self.shop_on_login:
+                    self._shop_due = self.shop_login_lag
 
 
 @pytest.fixture
@@ -221,6 +278,12 @@ def games(monkeypatch):
     monkeypatch.setattr(auto_select, "at_character_select", _at_char_select)
     monkeypatch.setattr(auto_select, "press_character_select_play", _press_play)
     monkeypatch.setattr(auto_select, "press_escape", _press_escape)
+    real_press_key_until_gone = nh.press_key_until_gone
+
+    async def _press_key_until_gone(client, key, is_open, **_):
+        return await real_press_key_until_gone(client, key, is_open=is_open, timeout=0.05, poll_interval=0.0)
+
+    monkeypatch.setattr(nh, "press_key_until_gone", _press_key_until_gone)
     # Cadences, never ceilings — the fakes count polls, not seconds.
     monkeypatch.setattr(relog_node, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(relog_node, "TRIGGER_TIMEOUT", 0.2)
@@ -229,6 +292,7 @@ def games(monkeypatch):
     # A third of the overall deadline, as the real minute is of three, so a stuck loading
     # screen is caught by its own clock with room to spare.
     monkeypatch.setattr(relog_node, "LOADING_SCREEN_TIMEOUT", 0.15)
+    monkeypatch.setattr(relog_node, "RELOG_SHOP_APPEAR_TIMEOUT", 0.05)
 
     def _make(*game_kwargs) -> tuple[list, list[FakeGame]]:
         clients, made = [], []
@@ -238,6 +302,11 @@ def games(monkeypatch):
             registry[client.window_handle] = game
             client.is_loading = game.is_loading
             client.zone_name = game.zone_name
+
+            async def _send_key(key, _seconds=0, game=game):
+                game.send_key(key)
+
+            client.send_key = _send_key
             clients.append(client)
             made.append(game)
         return clients, made
@@ -297,6 +366,16 @@ class TestRealmsTabGuard:
         assert BACKPACK_CLOSE_BUTTON_PATH in game.clicks
         assert game.clicks[-1] == SETTINGS_QUIT_BUTTON_PATH
 
+    async def test_a_spellbook_that_will_not_close_is_not_reopened(self, machine, games):
+        """The reopen clicks a toggle, which on a spellbook still open would close it instead."""
+        import bartlebot.nodes.node_helpers as nh
+
+        clients, (game,) = games({"opens_on_realms": True})
+        with patch.object(nh, "close_spellbook", new=AsyncMock(return_value=False)):
+            assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert game.opens == 1
+        assert SETTINGS_QUIT_BUTTON_PATH not in game.clicks
+
 
 # The game's own en-US text for the two logout warnings, as the snapshot holds it.
 CONNECTION_LOST_CAPTION = "Connection Lost!"
@@ -325,6 +404,115 @@ class TestLogoutWarnings:
         assert MESSAGE_BOX_CENTER not in game.clicks
         assert any("refused the logout" in msg for msg, _ in machine.logs)
         assert not any("never appeared" in msg for msg, _ in machine.logs)
+
+
+DUNGEON_EXIT_CAPTION = (
+    "If you leave a Dungeon you will lose all your progress in the Dungeon and will have to start over at the "
+    "beginning.<br>Are you sure you want to leave now?"
+)
+FRIEND_BUSY_CAPTION = "Your friend is busy right now."
+
+
+class TestDialogOverTheScreen:
+    """#281: a modal swallows the spellbook click, so recovery's relog failed behind a dungeon exit prompt."""
+
+    async def test_the_exit_prompt_is_cancelled_not_confirmed_and_the_relog_carries_on(self, machine, games):
+        clients, (game,) = games({"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[0] == MESSAGE_BOX_RIGHT
+        assert MESSAGE_BOX_CENTER not in game.clicks[:2]
+        assert game.clicks[1] == SPELLBOOK_BUTTON_PATH
+
+    async def test_a_one_button_dialog_is_closed_with_its_center_button(self, machine, games):
+        clients, (game,) = games({"over_world": (FRIEND_BUSY_CAPTION, (MESSAGE_BOX_CENTER,))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[0] == MESSAGE_BOX_CENTER
+
+    async def test_a_dialog_nobody_cataloged_is_closed_too(self, machine, games):
+        clients, (game,) = games({"over_world": ("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[0] == MESSAGE_BOX_RIGHT
+
+    async def test_a_dialog_that_opens_over_the_spellbook_is_closed_and_the_menu_reopened(self, machine, games):
+        clients, (game,) = games({"dialog_on_open": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[:3] == [SPELLBOOK_BUTTON_PATH, MESSAGE_BOX_RIGHT, SPELLBOOK_BUTTON_PATH]
+
+    async def test_a_dialog_that_will_not_close_fails_naming_it_and_the_player_stays_in_the_world(self, machine, games):
+        clients, (game,) = games(
+            {"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT)), "stubborn": True}
+        )
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert SPELLBOOK_BUTTON_PATH not in game.clicks
+        assert any("would not close" in msg and "InstanceExit" in msg for msg, _ in machine.logs)
+        assert machine.abandoned == []
+
+    async def test_an_unknown_dialog_that_will_not_close_says_so_without_quoting_it(self, machine, games):
+        clients, _ = games({"over_world": ("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,)), "stubborn": True})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert any("does not recognize" in msg for msg, _ in machine.logs)
+        assert not any("nobody has cataloged" in msg for msg, _ in machine.logs)
+
+    async def test_the_esc_route_closes_a_dialog_first_too(self, machine, games):
+        clients, (game,) = games({"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.log_out_and_in(machine, clients[0], in_battle=True) == relog_node.BACK
+        assert game.clicks[0] == MESSAGE_BOX_RIGHT
+
+    async def test_the_dialog_is_closed_for_each_player_that_has_one(self, machine, games):
+        clients, (blocked, clear) = games(
+            {"over_world": (DUNGEON_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))}, {}
+        )
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert blocked.screen == clear.screen == "world"
+
+
+class TestCrownsShop:
+    """#280: a shop a wishlist misclick left up kept the spellbook shut until the bot stopped."""
+
+    async def test_a_shop_over_the_world_is_closed_with_esc_before_the_spellbook(self, machine, games):
+        clients, (game,) = games({"shop": True})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_escapes == 1
+        assert game.clicks[0] == SPELLBOOK_BUTTON_PATH
+        assert ("relog: closed the crowns shop over the menu", logging.INFO) in machine.logs
+
+    async def test_a_shop_that_will_not_close_fails_and_the_player_stays_in_the_world(self, machine, games):
+        clients, (game,) = games({"shop": True, "shop_stubborn": True})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert SPELLBOOK_BUTTON_PATH not in game.clicks
+        assert ("relog: the crowns shop over the menu would not close", logging.WARNING) in machine.logs
+        assert machine.abandoned == []
+
+    async def test_a_shop_the_login_opened_is_closed(self, machine, games):
+        clients, (game,) = games({"shop_on_login": True})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_open is False
+        assert ("relog: closed the crowns shop the login opened", logging.INFO) in machine.logs
+
+    async def test_a_login_shop_that_shows_after_the_world_does_is_waited_for_and_closed(
+        self, machine, games, monkeypatch
+    ):
+        """Read once, the moment the world was readable, this shop was missed."""
+        # The fixture's 50 ms ceiling holds the shop's six reads only at a 1 ms timer tick;
+        # on Windows' default 15.6 ms one, three fit and the shop was never seen. The wait
+        # ends when the shop shows, so a wide ceiling costs this test nothing.
+        monkeypatch.setattr(relog_node, "RELOG_SHOP_APPEAR_TIMEOUT", 2.0)
+        clients, (game,) = games({"shop_on_login": True, "shop_login_lag": 5})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_escapes == 1
+        assert game.shop_open is False
+
+    async def test_a_login_shop_that_stays_open_is_logged_but_the_relog_succeeds(self, machine, games):
+        """The player is back either way; the shop costs the next node's clicks, not this relog."""
+        clients, _ = games({"shop_on_login": True, "shop_stubborn": True})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert ("relog: the crowns shop the login opened would not close", logging.WARNING) in machine.logs
+
+    async def test_no_esc_is_sent_without_a_shop(self, machine, games):
+        """On a clear screen ESC opens the game menu."""
+        clients, (game,) = games({})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.shop_escapes == 0
 
 
 class TestFailurePaths:
@@ -733,3 +921,38 @@ class TestDisconnected:
         assert await relog_node.run(machine, [client], {}) == "FAILURE"
         assert any("lost its connection" in msg for msg, _ in machine.logs)
         assert not any("still in the world" in msg for msg, _ in machine.logs)
+
+
+class TestRelogPacing:
+    async def test_presses_of_one_kind_are_spaced_apart(self):
+        pacing = relog_node.RelogPacing(delay=0.05)
+        loop = asyncio.get_running_loop()
+        times: list[float] = []
+
+        async def press():
+            await pacing.turn("quit")
+            times.append(loop.time())
+
+        await asyncio.gather(*[press() for _ in range(3)])
+
+        gaps = [b - a for a, b in zip(times, times[1:])]
+        assert all(gap >= 0.03 for gap in gaps)
+
+    async def test_the_first_press_does_not_wait(self):
+        pacing = relog_node.RelogPacing(delay=5.0)
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+
+        await pacing.turn("play")
+
+        assert loop.time() - started < 1.0
+
+    async def test_quit_and_play_keep_their_own_clocks(self):
+        pacing = relog_node.RelogPacing(delay=5.0)
+        loop = asyncio.get_running_loop()
+        await pacing.turn("quit")
+        started = loop.time()
+
+        await pacing.turn("play")
+
+        assert loop.time() - started < 1.0

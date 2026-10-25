@@ -6,81 +6,64 @@ import logging
 from wizwalker import XYZ
 
 from bartlebot.nodes.combat_and_healing import scaled_ratios
-from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
+from bartlebot.nodes.help_text import seconds
+from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances, poll_until
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="if_health_below",
         type="ratio",
         label="Collect Health Wisps If Below",
-        help=(
-            "Teleport to the closest health wisp while the player's health is below "
-            "this percentage. Set to 0% to skip "
-            "health wisp collection entirely."
-        ),
+        help="Players below this share of their health collect health wisps. At 0%, health wisps are skipped.",
         default=1.0,
-        default_hint="collect health wisps whenever not at full health",
+        default_hint="below full health",
     ),
     ParamField(
         key="if_mana_below",
         type="ratio",
         label="Collect Mana Wisps If Below",
-        help=(
-            "Teleport to the closest mana wisp while the player's mana is below "
-            "this percentage. Set to 0% to skip "
-            "mana wisp collection entirely."
-        ),
+        help="Players below this share of their mana collect mana wisps. At 0%, mana wisps are skipped.",
         default=1.0,
-        default_hint="collect mana wisps whenever not at full mana",
+        default_hint="below full mana",
     ),
     ParamField(
         key="timeout",
         type="float",
-        label="Timeout (seconds, 0 = no limit)",
-        help=(
-            "Maximum seconds to spend collecting wisps. Bounds the collection loop in case a "
-            "stale or bugged health/mana ratio reading never crosses the threshold. Set to 0 "
-            "to wait indefinitely."
-        ),
+        label="Timeout (s)",
+        help="The longest to spend collecting. 0 means no limit.",
         default=WISP_COLLECT_TIMEOUT,
-        default_hint="10s",
+        default_hint=seconds(WISP_COLLECT_TIMEOUT),
     ),
     ParamField(
         key="fail_if_health_below",
         type="ratio",
         label="Fail If Health Still Below",
         help=(
-            "After wisp collection, if any player's health is still below this "
-            "percentage, the node returns FAILURE. "
-            "Useful for routing to a potion node when wisps are insufficient. "
-            "Set to 0% to never fail on health."
+            "After collecting, the node fails if any player's health is still below this. At 0%, it "
+            "never fails on health."
         ),
         default=0.5,
-        default_hint="FAILURE if any player is still below 50% health",
+        default_hint="50%",
     ),
     ParamField(
         key="fail_if_mana_below",
         type="ratio",
         label="Fail If Mana Still Below",
         help=(
-            "After wisp collection, if any player's mana is still below this "
-            "percentage, the node returns FAILURE. "
-            "Useful for routing to a potion node when wisps are insufficient. "
-            "Set to 0% to never fail on mana."
+            "After collecting, the node fails if any player's mana is still below this. At 0%, it never fails on mana."
         ),
         default=0.5,
-        default_hint="FAILURE if any player is still below 50% mana",
+        default_hint="50%",
     ),
     ParamField(
         key="only_safe",
         type="bool",
         label="Only Collect Safe Wisps",
         help=(
-            f"Skip wisps that are within {SAFE_RADIUS:.0f} units of an enemy. Prevents "
-            "accidentally entering combat while collecting wisps after a fight. Disable only "
-            "if you need to collect wisps in areas where enemies are always nearby."
+            f"When on, skips wisps within {SAFE_RADIUS:.0f} units of an enemy, so collecting doesn't start a fight. "
+            "Turn off only where enemies are always nearby."
         ),
         default=True,
         default_hint="skip wisps near enemies",
@@ -89,26 +72,37 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Collects health and mana wisps after combat if players are below specified "
-        "thresholds. The players move as one group, all teleporting to the same wisp at "
-        "once, so a player who is already full passes through without using it up and nobody "
-        "is left behind on their own. Repeats until every player meets its thresholds, no "
-        "wisp is left, or the timeout expires. "
-        f"By default, skips wisps within {SAFE_RADIUS:.0f} units of an enemy to avoid "
-        "re-entering combat. Returns FAILURE if any player is still below the configured fail "
-        "thresholds after collection — useful for routing to a potion fallback node. "
-        "With Challenge Mode on, a player outside the dungeon is measured against the max its "
-        "next entry scales it to, as handle_potions does."
+        "Collects health and mana wisps after a fight, until every player meets its thresholds or "
+        "no wisps are left. Fails if a player is still below the fail thresholds, so you can "
+        "route to a potion node."
     ),
     params=PARAM_SCHEMA,
+    required_bot_options=[SAFETY_DELAY_OPTION],
     returns=[
-        ReturnSpec("SUCCESS", "All players are at or above both fail thresholds after collection."),
+        ReturnSpec("SUCCESS", "Every player is at or above both fail thresholds."),
         ReturnSpec(
             "FAILURE",
-            "At least one player is still below a fail threshold after wisps were exhausted.",
+            "A player is still below a fail threshold.",
         ),
     ],
     max_consecutive_retries=15,
+    usage_notes=(
+        (
+            "Players move together, teleporting to the same wisp, so a player who's already full "
+            "passes through without using it up."
+        )
+        + "\n\n"
+        + (
+            "Place it right after a fight or a teleport. Wisps take a moment to appear, so when "
+            "none is in sight and a player is below a fail threshold, the node waits up to Safety "
+            "Delay for one before it gives up. If nobody is below a fail threshold, it doesn't wait."
+        )
+        + "\n\n"
+        + (
+            "With Challenge Mode on, a player outside the dungeon is measured against the lower "
+            "maximum its next entry scales it to, as in Handle Potions."
+        )
+    ),
 )
 
 
@@ -123,7 +117,11 @@ async def run(machine, clients: list, params: dict) -> str:
          if_health_below, mana wisps if any is below if_mana_below. If neither is wanted,
          stop — nobody moves.
       2. List the wanted wisps not visited yet, drop any within SAFE_RADIUS of an
-         enemy (when only_safe), and pick the one nearest the group.
+         enemy (when only_safe), and pick the one nearest the group. On the first hop,
+         when nothing qualifies and a client is below a fail threshold for a wanted
+         resource, keep scanning for up to Safety Delay: wisps spawn after a fight and
+         load in after a teleport, and failing before they do sends the group to the
+         potion route for health a wisp was about to give.
       3. Teleport every client to it at once. Stop when no wisp is left or the timeout
          expires.
       4. Re-check all ratios. Return FAILURE if any client's health is still below
@@ -142,15 +140,27 @@ async def run(machine, clients: list, params: dict) -> str:
     fail_if_health_below: float = params.get("fail_if_health_below", 0.5)
     fail_if_mana_below: float = params.get("fail_if_mana_below", 0.5)
     only_safe: bool = params.get("only_safe", True)
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     scaled_to = scaled_ratios.challenge_level(machine)
 
     machine.log(
         f"collect_wisps: collect_health<{if_health_below}, collect_mana<{if_mana_below}, "
         f"timeout={timeout_raw}, fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}, "
-        f"only_safe={only_safe}, scaled_to={scaled_to}"
+        f"only_safe={only_safe}, scaled_to={scaled_to}, safety_delay={safety_delay}"
     )
 
-    await collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe, scaled_to)
+    await collect_as_group(
+        machine,
+        clients,
+        if_health_below,
+        if_mana_below,
+        timeout_val,
+        only_safe,
+        scaled_to,
+        fail_if_health_below=fail_if_health_below,
+        fail_if_mana_below=fail_if_mana_below,
+        safety_delay=safety_delay,
+    )
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
@@ -196,6 +206,10 @@ async def collect_as_group(
     timeout_val: float | None,
     only_safe: bool,
     scaled_to: int | None = None,
+    *,
+    fail_if_health_below: float = 0.0,
+    fail_if_mana_below: float = 0.0,
+    safety_delay: float = 0.0,
 ) -> None:
     """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.
 
@@ -207,6 +221,9 @@ async def collect_as_group(
 
     `scaled_to` is the Challenge Mode level the ratios are read against (scaled_ratios), or
     None for the plain ratios.
+
+    The fail thresholds and `safety_delay` decide whether the first scan waits for wisps to
+    appear. Their defaults never wait, which is what a caller with no fail threshold wants.
     """
     loop = asyncio.get_running_loop()
     start = loop.time()
@@ -223,7 +240,14 @@ async def collect_as_group(
             machine.log(f"collect_wisps: timed out after {timeout_val}s", logging.DEBUG)
             return
 
-        pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+        short_of_fail = (
+            want_health and 0.0 < fail_if_health_below and any(h < fail_if_health_below for h in health)
+        ) or (want_mana and 0.0 < fail_if_mana_below and any(m < fail_if_mana_below for m in mana))
+        if short_of_fail and safety_delay > 0.0 and not visited:
+            machine.log(f"collect_wisps: no wisp in sight yet, waiting up to {safety_delay}s", logging.DEBUG)
+            pick = await _await_wisp(clients, want_health, want_mana, visited, only_safe, safety_delay)
+        else:
+            pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
         if pick is None:
             machine.log("collect_wisps: no wanted wisp left to collect", logging.DEBUG)
             return
@@ -237,6 +261,22 @@ async def collect_as_group(
         )
         await asyncio.gather(*[c.teleport(location) for c in clients])
         await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
+
+
+async def _await_wisp(
+    clients: list, want_health: bool, want_mana: bool, visited: set[int], only_safe: bool, safety_delay: float
+) -> tuple[int, XYZ, str] | None:
+    """Scan for a wanted wisp until one qualifies or `safety_delay` seconds pass, and return it or None."""
+    found: list[tuple[int, XYZ, str]] = []
+
+    async def _seen() -> bool:
+        pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+        if pick is not None:
+            found.append(pick)
+        return pick is not None
+
+    await poll_until(_seen, safety_delay, POLL_INTERVAL)
+    return found[0] if found else None
 
 
 async def _pick_wisp(

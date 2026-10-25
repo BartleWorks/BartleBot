@@ -174,7 +174,8 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Boss"
+    "Boss",
+    "Challenge Mode"
   ],
   "options": [],
   "states": [
@@ -259,8 +260,6 @@
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/AQ_Z03_Tartarus",
-        "offers_challenge_mode": false,
-        "offers_team_up": false,
         "dungeon_name": "Tartarus",
         "sigil_xyz": {
           "x": 7633.61,
@@ -271,7 +270,9 @@
           "x": 8140.0,
           "y": 12616.0,
           "z": -1648.14
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
       }
     },
     {
@@ -353,7 +354,8 @@
           "x": 2064.44,
           "y": 6023.46,
           "z": 1763.64
-        }
+        },
+        "stagger": true
       }
     },
     {
@@ -404,86 +406,6 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_3",
       "dest": "state_5",
       "when": "SUCCESS",
@@ -504,8 +426,38 @@
     },
     {
       "trigger": "advance",
+      "source": "state_6",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_7",
       "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -524,8 +476,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -537,6 +509,16 @@
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -556,6 +538,26 @@
       "trigger": "advance",
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -604,5 +606,10 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "fa8f090c4369ac310d0a1a03507bf2792a088b73be73063af2bb097b63795c97",
+    "0138280daa0e10fc2f839cb0d30c330e2a7d3b6cced7843d99e68b0845166b0d",
+    "090f1157d39802e385b3dde01b33bf19f1a23802d9510ded45fdcee6a0a4fa8c"
+  ]
 }

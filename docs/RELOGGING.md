@@ -52,6 +52,15 @@ What must not be broken:
   It parks at once only because `abandon_client` told it the client is gone: the same
   errors from a client nobody handed over are waited on for `DEAD_CLIENT_CONFIRM_TIMEOUT`,
   for the client to leave the list, and are the node's FAILURE if it never does.
+- **Clear the screen before the menu.** Every modal swallows clicks on what is behind it, and the
+  spellbook is behind them all. A player that failed to leave a dungeon is looking at its exit prompt
+  when recovery sends the bot to the Relog node (#281), and the click on the spellbook did nothing.
+  `node_helpers.clear_modals` closes whatever is up first, and again if one opens over the spellbook.
+  It **cancels** (right button, else center) where `resolve_modal` confirms: confirming leaves the
+  dungeon or enters another, and Quit asks its own question about a dungeon, answered after the click.
+  A dialog that will not close is a FAILURE naming it, the player still in the world. A disconnect
+  modal is not clicked: it is handed to recovery. Esc cannot stand in: it opens the settings page
+  behind the modal, where Quit is just as unreachable.
 - **Close, never unhook.** Killing the process sidesteps `HookHandler._rewrite_autobot`'s
   fixed 0.5 s sleep, which is a hazard on exactly the lagging clients this exists for.
 - **Recover the fleet as one batch, not a client at a time.** A relog closes every
@@ -64,6 +73,14 @@ What must not be broken:
   because a window is only noticed missing on the next `_client_loop` poll. Clients
   wanting *different* resolutions still cannot share a batch -- the game reads one
   config.xml at startup -- so those are grouped and launched in turn.
+- **Stagger the team's Quit and Play presses.** Relogging every player at once puts their logins
+  on the server in a tight burst, and the fourth was dropped: the same rejection that makes a
+  launch space its logins by `LAUNCH_STAGGER_DELAY`. `relog.RelogPacing` is shared by the players
+  relogging together and keeps `RELOG_STAGGER_DELAY` between one Quit press and the next, and
+  between one first Play press and the next. The logouts still overlap, so it costs seconds. A
+  Play re-press is the player's own retry and is not paced. Both callers of `log_out_and_in`, the
+  node and the in-battle logout, pass one; the hard path relaunches through `launch_accounts`,
+  which staggers already.
 - **A relog is not a disconnect in the log.** It travels the same removal path, and filing
   scheduled maintenance as a fault is the double-meaning the log-readability work exists to prevent --
   `_relogging_hwnds` is what keeps the wording honest.

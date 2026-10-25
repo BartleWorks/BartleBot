@@ -27,8 +27,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Teleport to a Hooked Player",
         help=(
-            "On: port to one of this bot's own players, whose wizard name is read from the game at run "
-            "time. Off: port to the Friend Name bot option, which you set in Options."
+            "When on, players teleport to one of the bot's own players. When off, they teleport to "
+            "the wizard in the Friend Name option."
         ),
         default=True,
         required=False,
@@ -37,11 +37,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="target_player",
         type="player_slot",
         label="Target Player",
-        help=(
-            "Which of this bot's players the others port to. That player must already be at the "
-            "destination, and is never asked to port to itself. Both accounts still have to be in-game "
-            "friends — this reads the friends list, it does not port through the party."
-        ),
+        help="Which of the bot's players the others teleport to. That player must already be at the destination.",
         default=0,
         enabled_by="target_hooked_player",
         required=False,
@@ -51,38 +47,34 @@ PARAM_SCHEMA: list[ParamField] = [
         type="zone",
         label="Destination Zone",
         help=(
-            "Optional. Where the target is expected to be. With a hooked player, the node fails before "
-            "anyone ports if that player is somewhere else. With a friend, every player must arrive "
-            "here. Leave it blank when you cannot know — a friend's house, say — and the node checks "
-            "only that everyone ended up together."
+            "Where the target should be. With a hooked player, the node fails before anyone teleports "
+            "if the target is elsewhere. Leave it empty when you can't know, such as a friend's "
+            "house."
         ),
         default="",
         required=False,
+        default_hint="anywhere, as long as everyone ends up together",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Teleports players to a target using the in-game friends list. The target is either one of "
-        "this bot's own players — its wizard name is read from the game, so nothing is stored — or "
-        "the Friend Name option, valued on this machine. Every player but a hooked target is sent: "
-        "being in the same zone says nothing about realm, and a port within the same zone and realm "
-        "is quick. Handles the friend-busy error dialog and verifies that everyone arrived."
+        "Teleports players through the friends list to one of the bot's own players, or to the "
+        "wizard in the Friend Name option. Checks that everyone arrived."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "Every player is with the target: standing on a hooked player, or in the same zone as "
-            "each other (and in to_zone, if set) for a friend.",
+            "Every player is with the target, and in Destination Zone if it's set.",
         ),
         ReturnSpec(
             "FAILURE",
-            "No teleport target could be resolved (no friend name configured, or the target "
-            "player's wizard name has not been detected yet); a hooked target is not in to_zone; "
-            "friend not found or not online; the friend-busy dialog appeared (friend has teleports "
-            "off, or is somewhere you cannot follow them into); a player showed no sign of porting; "
-            "or not every player ended up with the target.",
+            (
+                "The friend isn't online or has teleports off, no target is set or detected yet, a hooked "
+                "target isn't in Destination Zone, a player didn't teleport, or not every player reached "
+                "the target."
+            ),
         ),
     ],
     merges_players=True,
@@ -98,28 +90,28 @@ NODE_SPEC = NodeSpec(
             # hooked player gets no Options row for a name it will not use.
             required_unless="target_hooked_player",
             description=(
-                "Wizard name to search for in the friends list (case-insensitive). Must be online "
-                "and on each player's friends list. This is your value, not the bot's \u2014 it is "
-                "stored on this machine and never written to a bot file. Only used when the node "
-                "is not targeting one of this bot's own players."
+                "The wizard to teleport to, when the node doesn't target one of the bot's own players. "
+                "The wizard must be online and on every player's friends list, and the name is stored on "
+                "this computer, never in the bot file."
             ),
         ),
     ],
     max_consecutive_retries=5,
     usage_notes=(
-        "Both accounts must be in-game friends even in hooked-player mode: this drives the friends "
-        "list, it does not port through the party. The target player is expected to already be at "
-        "the destination and is never asked to port to itself. "
-        "A port within the same zone and realm shows no loading screen, and one onto a player you "
-        "are already beside shows nothing at all; both are accepted, and a player that shows nothing "
-        "is logged as presumed already there. "
-        "In friend-name mode the name is a bot option valued on this machine, not in the bot file, so a bot can be "
-        "shared without carrying anyone's character name and each user points it at their own idler."
+        (
+            "Every account must be on the target's friends list, even when the target is one of the "
+            "bot's own players. The node teleports through the friends list."
+        )
+        + "\n\n"
+        + (
+            "A teleport within the same zone and realm shows no loading screen, and one onto a player "
+            "already beside you shows nothing. Both count as arrived."
+        )
     ),
     safety_warning=(
-        "This bot teleports you to another wizard. In friend-name mode that wizard must be on "
-        "every player's friends list and online — set the name here, in Options, or in Settings "
-        "if it is wrong."
+        "This bot teleports your players to another wizard, who must be online and on every "
+        "player's friends list. If the name is wrong, change it here, in this bot's Options, or "
+        "in Settings › Bot."
     ),
 )
 
@@ -234,7 +226,7 @@ async def _gather_at_hooked_player(machine, clients: list, target: TargetResolut
         await node_helpers.poll_until(
             lambda: node_helpers.none_loading([target_client]), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
         )
-        target_zone = await target_client.zone_name()
+        (target_zone,) = await node_helpers.read_zones([target_client], poll_interval=POLL_INTERVAL)
         if not node_helpers.zone_matches(target_zone, to_zone):
             machine.log(
                 f"FAILURE: the target ({target.source}) is in {target_zone!r}, not {to_zone!r}", logging.WARNING
@@ -300,7 +292,8 @@ async def _port_to_named_friend(machine, clients: list, target: TargetResolution
     # b. Nobody knows the friend's zone, but everyone who ported to them shares it.
     async def _together() -> bool:
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
-        if len(set(zones)) != 1 or (to_zone and not node_helpers.zone_matches(zones[0], to_zone)):
+        # All None is one set too, and says nothing: a zone just off a loading screen is unread.
+        if None in zones or len(set(zones)) != 1 or (to_zone and not node_helpers.zone_matches(zones[0], to_zone)):
             return False
         # One zone is not one realm. Everyone ported onto the friend, so everyone is standing
         # together, where seeing each other is the proof (#130).

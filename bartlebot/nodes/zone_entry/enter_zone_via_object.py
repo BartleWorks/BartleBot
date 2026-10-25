@@ -9,6 +9,18 @@ from bartlebot.clients import game_keys
 from bartlebot.game import dialog_captions
 from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import (
+    ARRIVAL_NOTE,
+    INTERACT_XYZ,
+    OBJECT_USE_DELAY_HELP,
+    RESET_XYZ,
+    SEQUENTIAL_INTERACTION,
+    SEQUENTIAL_INTERACTION_HINT,
+    SEQUENTIAL_INTERACTION_NOTE,
+    ZONE_AT_END,
+    ZONE_AT_START,
+    seconds,
+)
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import (
     MAX_RETRIES,
@@ -24,7 +36,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="zone",
         label="From Zone",
-        help="Zone name players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -32,7 +44,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="zone",
         label="To Zone",
-        help="Zone name players must be in after this node completes.",
+        help=ZONE_AT_END,
         default="",
         required=True,
     ),
@@ -40,7 +52,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
-        help=("Coordinates of the object to interact with. The interact prompt should appear when standing here."),
+        help=(INTERACT_XYZ),
         default=None,
         required=True,
     ),
@@ -48,10 +60,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="reset_xyz",
         type="xyz",
         label="Reset XYZ",
-        help=(
-            "Coordinates used to dismiss the interact prompt and reset state. "
-            "The prompt must NOT appear when standing here."
-        ),
+        help=(RESET_XYZ),
         default=None,
         required=True,
     ),
@@ -59,51 +68,33 @@ PARAM_SCHEMA: list[ParamField] = [
         key="sequential",
         type="bool",
         label="Sequential Interaction",
-        help=(
-            "Have players use the object one at a time instead of together. Zone teleporters "
-            "in particular often serve only one player at a time, and a second player "
-            "interacting while the first is mid-interaction has their keypress swallowed. "
-            "Each player waits at Reset XYZ, takes its turn, and is released as soon as its "
-            "loading screen starts — the others do not wait for it to finish loading, and all "
-            "players are still confirmed in the destination zone together at the end."
-        ),
+        help=(SEQUENTIAL_INTERACTION),
         default=False,
-        default_hint="All players interact at once.",
+        default_hint=SEQUENTIAL_INTERACTION_HINT,
         required=False,
     ),
     ParamField(
         key="object_use_delay",
         type="float",
         label="Delay Between Object Uses (s)",
-        help=(
-            "Seconds to leave between one player finishing at the object and the next player starting "
-            "on it, in Sequential Interaction. The object becoming free again has no readable signal, "
-            "so this is the only cover for it — raise it for a teleporter that takes several seconds "
-            "to reset between uses. Ignored unless Sequential Interaction is on."
-        ),
+        help=(OBJECT_USE_DELAY_HELP),
         default=OBJECT_USE_DELAY,
         minimum=0.0,
-        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
+        default_hint=seconds(OBJECT_USE_DELAY),
         required=False,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Interacts with an NPC or world object that triggers a zone change (e.g., "
-        "a snowglobe or portal). Teleports players to the interact point, waits for "
-        "the prompt, presses X for all players, and re-presses X for any player that "
-        "hasn't started loading — until all players are in the destination zone."
+        "Interacts with an object that changes zone, such as a snow globe or portal, until every player is in To Zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now in to_zone."),
+        ReturnSpec("SUCCESS", "Every player is in To Zone."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in from_zone at the start, the interact prompt never appeared "
-            "for any player after retries, or not all players arrived in to_zone (see usage "
-            "notes — a player whose prompt or loading screen never came still gets a "
-            "recovery attempt before this is reported).",
+            "A player wasn't in From Zone, no player got the interact prompt, or not every player reached To Zone.",
         ),
     ],
     required_bot_options=[
@@ -111,15 +102,7 @@ NODE_SPEC = NodeSpec(
         SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=10,
-    usage_notes=(
-        "Turn on Sequential Interaction when the object only serves one player at a time — the "
-        "symptom is that one player transitions and the others' X press does nothing, "
-        "intermittently rather than every run. Zone teleporters are the common case.\n\n"
-        "If some but not all players reach to_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
-    ),
+    usage_notes=(SEQUENTIAL_INTERACTION_NOTE + " Zone teleporters are the usual case." + "\n\n" + ARRIVAL_NOTE),
 )
 
 
@@ -271,14 +254,7 @@ async def run(machine, clients: list, params: dict) -> str:
     )
 
     # 1. Verify all clients are in from_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, from_zone, POLL_INTERVAL):
         return "FAILURE"
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)

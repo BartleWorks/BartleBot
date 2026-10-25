@@ -100,6 +100,9 @@ FLEE_CONFIRM_PATH = [
     "Layout",
     "centerButton",
 ]
+# The flee confirmation itself, read to tell whether it has closed: its button keeps reading
+# visible once it has, as every control inside a window does.
+FLEE_CONFIRM_WINDOW_PATH = ["WorldView", "PlanningPhase", "MessageBoxModalWindow"]
 
 # The "You Are Idle" popup (GUI:CombatAFKTitle / CombatAFKMessage, #203). The game raises it once
 # a player has let two planning phases in a row run out without choosing a card or passing, and
@@ -143,6 +146,19 @@ TEAMUP_4_PLAYER_CHECKBOX = [
     "TeamSize4CheckBox",
 ]
 ENTER_TEAMUP_BUTTON_PATH = ["WorldView", "TeamUpConfirmationWindow", "TeamUpConfirmationBackground", "TeamUpButton"]
+# The confirmation window itself, read to tell whether it is still up: its buttons keep
+# reading visible once it has closed, as every control inside a window does.
+TEAMUP_CONFIRMATION_WINDOW_PATH = ["WorldView", "TeamUpConfirmationWindow"]
+# The HUD's team-up label, visible only while the player waits in the Team-Up queue. The
+# last player to make a team never waits: the dungeon loads at once, and this never shows.
+TEAMUP_QUEUED_PATH = [
+    "WorldView",
+    "windowHUD",
+    "windowForTopRowButtons",
+    "containerForTeamUp",
+    "btnTeamUp",
+    "txtTeamUp",
+]
 
 # Sigil entrance mode toggle. Dungeons that offer Challenge Mode show this button on the
 # entrance prompt; it cycles the sigil's mode. The prompt title is what says which mode is
@@ -173,6 +189,8 @@ CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]
 
 # Realm selection UI — accessed via Spellbook > Preferences > Realms tab
 SPELLBOOK_BUTTON_PATH = ["WorldView", "windowHUD", "btnSpellbook"]
+# The spellbook itself, whichever page it is on. It leaves the tree when it closes.
+DECK_CONFIGURATION_PATH = ["WorldView", "DeckConfiguration"]
 SPELLBOOK_PREFERENCES_TAB_PATH = ["WorldView", "DeckConfiguration", "Preferences"]
 SPELLBOOK_REALMS_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "TabWindow", "RealmsButton"]
 REALM_CURRENT_NAME_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "txtYourRealmName"]
@@ -272,8 +290,11 @@ def archmastery_school_path(school: str) -> list[str]:
     return [*ARCHMASTERY_PANEL_PATH, f"SC_{school}"]
 
 
-# Crowns shop modal (sometimes opens automatically on login)
-CROWNS_SHOP_PATH = ["WorldView", "PermanentShopModalWindow", "permanentShop"]
+# Crowns shop modal. It opens by itself on the first login of the day, and the wishlist
+# button on a friend's profile opens it too (#280). ESC closes it. It is not in the window
+# tree at all while it is closed.
+CROWNS_SHOP_WINDOW_PATH = ["WorldView", "PermanentShopModalWindow"]
+CROWNS_SHOP_PATH = [*CROWNS_SHOP_WINDOW_PATH, "permanentShop"]
 
 # Backpack / Quicksell UI
 BACKPACK_CLOSE_BUTTON_PATH = ["WorldView", "DeckConfiguration", "Close_Button"]
@@ -293,6 +314,9 @@ QUICKSELL_JEWEL_OPEN_PATH = [
 JEWEL_INVENTORY_SPACE_PATH = ["WorldView", "DeckConfiguration", "JewelSpellbookPage", "inventorySpace"]
 
 # Shared quicksell shopGUI paths — same UI regardless of which page opened it
+# The shop window itself, read to tell whether it is still open: its exit button keeps
+# reading visible once the window has closed, as every control inside a window does.
+QUICKSELL_SHOP_PATH = ["WorldView", "shopGUI"]
 QUICKSELL_ALL_TAB_PATH = ["WorldView", "shopGUI", "BackpackStuff", "ShopCategory_All"]
 QUICKSELL_PET_TAB_PATH = ["WorldView", "shopGUI", "BackpackStuff", "ShopCategory_Pet"]
 QUICKSELL_ALL_BUTTON_PATH = ["WorldView", "shopGUI", "buyWindow", "AllAction"]
@@ -317,10 +341,13 @@ def quicksell_item_checkbox_path(row: int) -> list[str]:
 # The profile popup (wndCharacter) is opened by clicking a friend's row in the
 # friends list — see node_helpers.open_friend_profile(). Its ButtonLayout holds
 # the per-player actions (go to friend, add/remove friend, add to group, …).
-FRIENDS_LIST_BUTTON_PATH = ["WorldView", "windowHUD", "btnFriends"]
+FRIENDS_LIST_BUTTON_PATH = ["WorldView", "windowHUD", "windowForTopRowButtons", "btnFriends"]
 CHARACTER_PROFILE_PATH = ["WorldView", "windowHUD", "wndCharacter"]
 CHARACTER_PROFILE_NAME_PATH = ["WorldView", "windowHUD", "wndCharacter", "lblCharacterName"]
 CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCharacterClose"]
+# Go To Friend, in a ButtonLayout as Invite to Group is: the profile layout group_manager
+# logs (node_helpers.read_friend_profile) lists both among ButtonLayout's children.
+GO_TO_FRIEND_BUTTON_PATH = ["WorldView", "windowHUD", "wndCharacter", "ButtonLayout", "btnGoToFriend"]
 
 # The game has TWO entirely separate friends-list windows, each its own UI subtree. Only
 # one is ever on screen, which is what made this confusing to diagnose:
@@ -332,7 +359,7 @@ CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCh
 #                         pressing F again, or clicking its "More Friends" button.
 #
 # F cycles: closed -> NewFriendsListWindow -> wndFriendsList -> closed. So "the friends
-# list is open" means EITHER window is visible — see FRIENDS_LIST_WINDOW_NAMES, which
+# list is open" means EITHER window is visible — see FRIENDS_LIST_PATHS, which
 # node_helpers.close_friends_list() presses F against until both are gone.
 #
 # There is NO close-button path constant here on purpose. The obvious candidate,
@@ -341,9 +368,9 @@ CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCh
 # compact list open through a full retry cycle. It seemed to work in earlier testing only
 # because both windows place a close button in the same spot, so the click sometimes hit
 # whichever list happened to be showing. Verified with tools/probe_friends_list.py.
-FRIENDS_LIST_WINDOW_NAME = "NewFriendsListWindow"
-LARGE_FRIENDS_LIST_WINDOW_NAME = "wndFriendsList"
-FRIENDS_LIST_WINDOW_NAMES = (FRIENDS_LIST_WINDOW_NAME, LARGE_FRIENDS_LIST_WINDOW_NAME)
+FRIENDS_LIST_PATH = ["WorldView", "windowHUD", "NewFriendsListWindow"]
+LARGE_FRIENDS_LIST_PATH = ["WorldView", "windowHUD", "wndFriendsList"]
+FRIENDS_LIST_PATHS = (FRIENDS_LIST_PATH, LARGE_FRIENDS_LIST_PATH)
 
 # Group invite button in the friends-list profile popup.
 #
@@ -502,6 +529,9 @@ UNIVERSE_NEXT_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionW
 UNIVERSE_PREV_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "leftButton"]
 UNIVERSE_TELEPORT_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "teleportButton"]
 UNIVERSE_CANCEL_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "cancelButton"]
+# The zone list window itself, read to tell whether it has closed: its buttons keep reading
+# visible once it has, as every control inside a window does.
+UNIVERSE_LIST_PATH = ["WorldView", "", "messageBoxBG"]
 # The list window's title: "Spiral Map" on a World Gate (worlds.is_world_gate_title).
 UNIVERSE_TITLE = ["WorldView", "", "messageBoxBG", "ControlSprite", "title"]
 

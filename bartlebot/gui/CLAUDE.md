@@ -170,10 +170,11 @@ docstring has each one and the spike that found it. The rules:
 - **The window's edge is drawn once, and never by a status bar** (#271). Windows' 1px border
   wears `edge_color` (`title_bar/bottom_edge.py`), which is `border`. Where Windows draws
   none (maximized, full screen, before Windows 11), `BottomEdge` draws the bottom one as a
-  splitter handle is drawn, so it reads as one more divider. Maximized, `NativeFrame`
-  answers `WM_NCCALCSIZE` with the monitor's work area: Qt's own answer runs a physical
-  pixel past it, which put the rule under the taskbar, and a logical-pixel inset to make up
-  for it left a dark row between the rule and the taskbar's line.
+  splitter handle is drawn, so it reads as one more divider. Maximized, Qt's client area
+  runs a physical pixel past the work area, so the rule's last pixel row can sit under the
+  taskbar. **Never answer `WM_NCCALCSIZE` to fix that**: answering it with the work area
+  left Qt's geometry at the restored size and froze the whole window, opened maximized on a
+  4K screen at 125%, until it was dragged out. `native_frame.py`'s docstring has it.
 - **Probing it from another process needs per-monitor DPI awareness.** A DPI-unaware sender
   has the coordinates it sends scaled by the display scale, so at 125% every answer lands
   1.25x inside where it should, and a posted click misses the window. Call
@@ -1459,7 +1460,7 @@ the list. Four rules:
   The rule is `quicksell.matching_keyword`, so a row shown is a row the node would spare,
   and the list is the *effective* one — a socket wrench kept by a `sell_*` bool shows up
   beside what was typed. The checkbox is disabled, not hidden, for a bot that never sells
-  (no quicksell node, or Enable Quicksell off): there the filter can only hide everything,
+  (no quicksell node, or Quicksell off): there the filter can only hide everything,
   and a control that appears for some bots is one nobody finds. The keep list is a bot
   option edited over in Option Values and nothing reports here, so `DropSection.refresh_keep_list`
   re-resolves it when the Drops tab comes forward.
@@ -1496,11 +1497,11 @@ already has.
   - **Card headers have no option gutter; rows keep theirs.** A header holding only a
     title would carry fifty pixels of empty gutter before it, while every row's revert
     and `?` still sit in one column.
-  - **Enable Quicksell is a switch in the Quicksell band, not a row** (`heads_group`).
+  - **Quicksell is a switch in the Quicksell band, not a row** (`heads_group`).
     A switch turns a feature on or off; a check box is an option in a form. It has no
     revert — flipping a two-state control back to the inherited value already drops the
     override — and no `?`: its description is its tooltip, and the top of the card while
-    descriptions are shown. Options has no switch, since Enable Quicksell is user-owned.
+    descriptions are shown. Options has no switch, since Quicksell is user-owned.
   - **Collapse all and Expand all are drawn, not shown, on hover.** `HeadingAction`
     blanks its glyph rather than hiding, because a hidden widget leaves the Tab order and
     could never be focused into view. Hidden outright only while the section is folded.
@@ -1654,7 +1655,7 @@ already has.
   it carries `type` and the bounds — derived, never persisted, and dropped when
   the named parent is not in this graph, because a row indented under a row that
   is not there reads as a child of whatever precedes it. Quicksell's three sell
-  flags are the case: with `Enable Quicksell` off nothing is sold, so there is
+  flags are the case: with `Quicksell` off nothing is sold, so there is
   nothing for them to spare, and they were three live tick boxes that could not
   affect the run and gave no sign of it.
 
@@ -1662,7 +1663,7 @@ already has.
   this surface follows:
 
   - **Only Option Values indents, and only under a parent that is a row.** Options edits
-    declarations, and `Enable Quicksell` is user-owned, so the parent has no row there
+    declarations, and `Quicksell` is user-owned, so the parent has no row there
     to be a child of. On Option Values the sell flags are not indented either: their parent is
     the switch heading their card, and the card already says what they belong to.
     Minimum Team Size, under Team-Up, is the child that is. A row whose parent heads

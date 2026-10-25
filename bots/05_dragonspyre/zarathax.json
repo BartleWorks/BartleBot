@@ -1,0 +1,1128 @@
+{
+  "id": "0e20ded6-4034-48bc-b3e2-96ebe9dfd36c",
+  "name": "Zarathax",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Adroit Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Attentive Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance-Giver Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance-It Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balefrost Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bananas! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Banshee",
+      "category": "Spellements"
+    },
+    {
+      "name": "Big Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Amethyst +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Jade +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Onyx +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Sapphire +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +41",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +42",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished PIP Opal +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blight Hound",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boots of the Hurricane",
+      "category": "Boots"
+    },
+    {
+      "name": "Brimstone Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Canny Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cap of Ancient Winter",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Archivist",
+      "category": "Hats"
+    },
+    {
+      "name": "Catch Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Centaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Centaur Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cheeky Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cloak of Mortality",
+      "category": "Robes"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Colossus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cowl of the Necromancer",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of the Zephyr",
+      "category": "Hats"
+    },
+    {
+      "name": "Crimson Dragonspyre Banner",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cyclone Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Cyclone Coif",
+      "category": "Hats"
+    },
+    {
+      "name": "Cyclops",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cyclops Minion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Darkwind Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Death-Proof Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dependable Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Determined Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dirk of the Daring",
+      "category": "Athames"
+    },
+    {
+      "name": "Donate Power Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Doom and Gloom Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dragonspyre Ruins",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Dragontooth Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Drape of the Lost Archive",
+      "category": "Robes"
+    },
+    {
+      "name": "Dull Blocking Opal +1",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Amethyst +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Citrine +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Jade +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Onyx +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Peridot +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Ruby +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Sapphire +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Amethyst +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Citrine +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Jade +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Onyx +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Peridot +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Ruby +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Defense Sapphire +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Health Opal +49",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Health Opal +50",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Mana Opal +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Earth Walker",
+      "category": "Spellements"
+    },
+    {
+      "name": "Effective Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Effervescent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Spellements"
+    },
+    {
+      "name": "Exhausted Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire-Giver Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fireflower Footgear",
+      "category": "Boots"
+    },
+    {
+      "name": "Flaming Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flawed Healing Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Footgear of Plenty",
+      "category": "Boots"
+    },
+    {
+      "name": "Footgear of the Forgotten",
+      "category": "Boots"
+    },
+    {
+      "name": "Footwraps of the Whirlwind",
+      "category": "Boots"
+    },
+    {
+      "name": "Forceful Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Forest Lord's Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Frostflower Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Gardener's Smock",
+      "category": "Robes"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gleaming Seal",
+      "category": "Rings"
+    },
+    {
+      "name": "Glimmering Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Goat Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gummy Humongofrog",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hat of the Ever Watchful",
+      "category": "Hats"
+    },
+    {
+      "name": "Headdress of the Grove",
+      "category": "Hats"
+    },
+    {
+      "name": "Headdress of the Phoenix",
+      "category": "Hats"
+    },
+    {
+      "name": "Headgear of the Absolute",
+      "category": "Hats"
+    },
+    {
+      "name": "Hearty Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Helephant",
+      "category": "Spellements"
+    },
+    {
+      "name": "Hood of Ashes",
+      "category": "Hats"
+    },
+    {
+      "name": "Hood of the Tempest",
+      "category": "Hats"
+    },
+    {
+      "name": "Huge Rally Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hydra",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice-Giver Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Proof Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Icefire Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Immolate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Indomitable Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Inferno Marker",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Keeper of the Flame",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "King Banana",
+      "category": "Snacks"
+    },
+    {
+      "name": "Kraken",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lavastone Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leprechaun",
+      "category": "Spellements"
+    },
+    {
+      "name": "Librarian's Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Mantle of Growth",
+      "category": "Hats"
+    },
+    {
+      "name": "Mantle of Imagination",
+      "category": "Hats"
+    },
+    {
+      "name": "Mega-Upset Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Minotaur Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mocassins of the Embers",
+      "category": "Boots"
+    },
+    {
+      "name": "Mocassins of the Healer",
+      "category": "Boots"
+    },
+    {
+      "name": "Mocassins of the Polar Ice",
+      "category": "Boots"
+    },
+    {
+      "name": "Myth-Away Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mythmaker Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Nature's Wrath",
+      "category": "Spellements"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "No Passing Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Phoenix",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoenix Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pink Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Quick-Witted Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ring of Legend",
+      "category": "Rings"
+    },
+    {
+      "name": "Robe of the Conflagration",
+      "category": "Robes"
+    },
+    {
+      "name": "Robes of the Ice Queen",
+      "category": "Robes"
+    },
+    {
+      "name": "Rugged Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sandals of Sleet",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of the Remortal",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of the Shaman",
+      "category": "Boots"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Seraph",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shush! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Slick-N-Slide Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Slippers of the Hallowed Halls",
+      "category": "Boots"
+    },
+    {
+      "name": "Slippers of the Quiet",
+      "category": "Boots"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sorcerer's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Spectral Blast",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stone Colossus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stonewall Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm-Away Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stormzilla",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stupefy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sturdy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sunwalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Super-Sap Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Supercharge Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Talespinner's Footgear",
+      "category": "Boots"
+    },
+    {
+      "name": "Throne-Treading Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Triton",
+      "category": "Spellements"
+    },
+    {
+      "name": "Troll",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tunic of Arden's Vale",
+      "category": "Robes"
+    },
+    {
+      "name": "Ultra Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ultra Hurry Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unbreakable Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vampire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Veil of the Guardian",
+      "category": "Hats"
+    },
+    {
+      "name": "Verdant Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Vestment of Fable",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Howling Wind",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Phoenix",
+      "category": "Robes"
+    },
+    {
+      "name": "Weakenizer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Wise Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wraith",
+      "category": "Spellements"
+    },
+    {
+      "name": "Wyrmkin Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Zarathax's Headgear of Hubris",
+      "category": "Hats"
+    },
+    {
+      "name": "Zarathax's Subtle Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Zarathax's Turncoat",
+      "category": "Robes"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Jewels",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Darkwind Amethyst",
+        "=Donate Power Citrine"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Zarathax's Tower",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower",
+        "dungeon_zone": "DragonSpire/DS_A1_Knowledge/Interiors/DS_ToK_T11",
+        "dungeon_name": "Zarathax's Tower",
+        "sigil_xyz": {
+          "x": 16757.34,
+          "y": -14506.19,
+          "z": 934.26
+        },
+        "reset_xyz": {
+          "x": 16138.31,
+          "y": -14171.83,
+          "z": 933.84
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat Zarathax",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Draconian-Caster-Blue-Boss-R7",
+        "wiki_page": "Creature:Zarathax",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A1_Knowledge/Interiors/DS_ToK_T11",
+        "to_zone": "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower",
+        "xyz": {
+          "x": -19.02,
+          "y": 1374.33,
+          "z": 0.12
+        },
+        "reset_xyz": {
+          "x": -19.02,
+          "y": 1141.83,
+          "z": 0.12
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  },
+  "history": [
+    "7cb217cd387ac8c11913da7203a1b0c079dbb02ec53e3264aee8eadac98c24e7"
+  ]
+}

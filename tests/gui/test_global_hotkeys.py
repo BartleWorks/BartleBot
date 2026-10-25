@@ -160,9 +160,11 @@ def test_a_handler_that_raises_does_not_escape_the_filter(qapp):
 def test_a_binding_problem_names_the_action():
     assert binding_problems({"xyz_sync": "F1", "tp_to_focused": "F2"}) == []
     assert binding_problems({"xyz_sync": "Space"}) == [
-        "XYZ Sync: Space cannot be bound — use F1–F24, a letter or a digit."
+        "XYZ sync: Space can't be used. Choose F1–F24, a letter or a digit."
     ]
-    assert binding_problems({"xyz_sync": "F1", "toggle_speed": "F1"}) == ["Speed and XYZ Sync are both on F1."]
+    assert binding_problems({"xyz_sync": "F1", "toggle_speed": "F1"}) == [
+        "Speed and XYZ sync both use F1. Choose another key for one of them."
+    ]
 
 
 def test_the_hotkey_settings_fill_in_an_action_the_file_does_not_mention():
@@ -198,7 +200,7 @@ def test_the_buttons_are_off_during_a_run_and_the_moves_need_two_players():
 
 def test_a_tooltip_names_the_button_its_key_and_whether_it_is_on():
     assert authoring_tooltip(AuthoringAction.TOGGLE_SPEED, "F3", on=True).startswith("Speed (on) [F3] — ")
-    assert authoring_tooltip(AuthoringAction.XYZ_SYNC, "").startswith("XYZ Sync — ")
+    assert authoring_tooltip(AuthoringAction.XYZ_SYNC, "").startswith("XYZ sync — ")
 
 
 def test_only_a_key_that_differs_from_its_default_is_stored():

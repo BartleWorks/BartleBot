@@ -156,7 +156,7 @@ def test_the_switch_tooltip_says_its_state_and_what_it_does(qapp, settings):
     tip = _switch(section).toolTip()
 
     assert tip.startswith(f"{qs.OPTION_ENABLED}: on")
-    assert "shared bank" in tip
+    assert "character's bank" in tip
     _switch(section).setChecked(False)
     assert _switch(section).toolTip().startswith(f"{qs.OPTION_ENABLED}: off")
 

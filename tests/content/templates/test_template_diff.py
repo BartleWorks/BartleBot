@@ -258,8 +258,8 @@ def test_every_other_unit_is_a_change_of_its_own():
         "Add 'Collect'",
         "Remove 'Old'",
         "Rename 'Start'",
-        "Start · Duration (seconds)",
-        "Wait · Duration (seconds)",
+        "Start · Duration (s)",
+        "Wait · Duration (s)",
     ]
 
 
@@ -595,7 +595,7 @@ def test_changes_are_listed_under_the_release_that_made_them(tmp_path):
 
     assert (found.name, found.base_version, found.latest_version) == ("Fixture Farmer", 1, 3)
     titles = {version: sorted(c.title for c in changes) for version, _note, changes in found.sections}
-    assert titles[2] == ["Remove 'Old'", "Rename 'Start'", "Start · Duration (seconds)", "Wait · Duration (seconds)"]
+    assert titles[2] == ["Remove 'Old'", "Rename 'Start'", "Start · Duration (s)", "Wait · Duration (s)"]
     # Collect arrived in v2, but v3 touched it again: it is listed where it was last changed.
     assert titles[3] == ["Add 'Collect'", "Add 'Extra'"]
     assert [note for _version, note, _changes in found.sections] == ["Release 2", "Release 3"]

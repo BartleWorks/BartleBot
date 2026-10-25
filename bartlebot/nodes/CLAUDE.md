@@ -9,7 +9,12 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 3. Register in `bartlebot/nodes/registry.py` — add to both `NODE_REGISTRY` and `NODE_SPECS`
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
-6. Every `BotOptionSpec` in `required_bot_options` names its `group` — the card it is drawn
+6. Write the spec's text for the bot author: description, usage notes, param help and
+   hints, returns, and the safety warning. `docs/UI_TEXT.md`, *Node help*, has the form
+   of each. A param or note another node already has takes its text from
+   `bartlebot/nodes/help_text.py` (Zone, Reset XYZ, the note on players who don't arrive), and
+   `tests/nodes/test_help_text.py` checks it does
+7. Every `BotOptionSpec` in `required_bot_options` names its `group` — the card it is drawn
    in on Option Values and Options (`bartlebot/options/option_groups.py`). Reuse the group an existing
    declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`
    fails otherwise
@@ -150,6 +155,18 @@ number. Realm cannot be read without opening the spellbook, so never skip portin
 sharing the target's zone or coordinates. When the target is one of ours, use
 `gather_at_player`, which checks arrival against the target's own zone and position.
 
+### A teleport reaches the server late
+
+`client.teleport()` moves the client at once, and the server hears of it a moment later.
+`body.position()` reads the client's side, so it matches the target the instant the teleport
+returns and proves nothing about the server. An action the server places by where it thinks the
+player stands, with no prompt to confirm it, waits Safety Delay after any teleport before it is
+sent, whether or not this node did the teleporting. Mark is the one today: clicked half a second
+after a teleport, it sometimes landed where the player had stood before, and the recall missed by
+the length of the jump. `mark_location.mark_client` waits, and a recall that misses forgets the
+mark (`mark_location.forget`), since the run's record of it is the client's position too.
+Interactions need no wait: the prompt they wait for is the confirmation.
+
 ## Comparing a zone a bot names with one a client is in
 
 Always through `node_helpers.zone_matches`, never `==` or `!=`. Besides globs, it treats every
@@ -203,6 +220,29 @@ what it can do — a warning that fires once per loop pass is separated by every
 that pass logged, so it does not collapse. `=== pass N ===` is what makes that shape
 legible instead.
 
+## Closing a window, answering a dialog
+
+One click is never enough for anything expected to go away. The game drops clicks while it
+is busy, straight after a sale or mid-animation, and a modal takes every click aimed behind
+it. Quicksell once clicked the backpack's close button once, watched it for Safety Delay,
+and reported success over a backpack left open. So click until it is gone:
+
+- **A window:** `click_until_gone(client, button, is_open=…)`, with `is_open` reading the
+  window itself, never its button. A control keeps reading visible once its window has
+  closed (see `is_visible_by_path`). `close_spellbook` is this for the spellbook, on any page:
+  backpack, settings, realms, housing. `press_key_until_gone` is the same for a key toggle.
+- **A dialog:** `click_until_dialog_gone(client, button)`, which clicks until the caption
+  changes. A different caption is the next box in the stack, and it is the caller's to read
+  and answer. Decide the button from the caption (`identify_modal`) before each one.
+- **Check before every click.** Both helpers do. These buttons sit on toggles, and a click on
+  a window already gone lands on whatever is behind it.
+- **Give up at the timeout, and say so.** A node whose job ends with a window shut fails if
+  it stays open, since it takes every click the next node sends; a close that is only
+  tidying up (housing's) warns.
+- **A click that starts something with no window to watch** (joining the Team-Up queue,
+  confirming a flee) is confirmed by its effect instead, and repeated only while the window
+  holding its button is still up.
+
 ## Telling modal dialogs apart
 
 Every in-game modal is the same `MessageBoxModalWindow` tree, so "a modal is up"
@@ -229,9 +269,23 @@ Pick by the shape of the wait that follows:
 | a *sticky* condition (left the zone, arrived) | `await_instance_prompt()`, or `answer_instance_prompts()` for a whole group |
 | one-off, mid-loop | `resolve_modal()` directly |
 
+`await_instance_prompt()` answers once, within the Safety Delay, so a prompt that comes up later or
+is missed stays open with nothing left to press it (#281: a client left at the dungeon exit). The waits
+that follow keep answering instead. `wait_for_zone_with_recovery` confirms the prompt of each client not
+yet in the zone and not loading, every poll until its deadline, and ends at once on a refusal; the
+straggler in `enter_zone`'s leave-zone poll is `ModalAwareRetry`'s. Both pass `recognized_only`, so a
+wait that lasts half a minute never confirms or declines a dialog the snapshot does not know, such as
+an invitation.
+
 Never answer a dialog with a blocking wait ahead of an `is_loading()` check: it
 costs the full Safety Delay whenever no dialog appears, and three seconds spent
 before watching for a loading screen can miss it entirely.
+
+A node that must click through a menu (the spellbook) while a dialog may be up it did not
+raise calls `clear_modals(client, timeout, poll_interval)` first. It *cancels* whatever is up (the right
+button, else the center, else the left), where `resolve_modal` confirms questions: confirming a
+dialog the node never asked about leaves a dungeon or enters one. It rereads after each click for a
+stack, says which dialog stayed when it gives up, and leaves a disconnect alone (#281).
 
 Do **not** infer identity from which buttons are showing. That only works while no
 two dialogs a node can hit share a layout, and it already broke once: the dungeon

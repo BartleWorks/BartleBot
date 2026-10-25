@@ -52,6 +52,7 @@ from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT, TRIGG
 from bartlebot.nodes.utility import realm_list
 from bartlebot.nodes.utility.realm_list import REALMS_PER_PAGE
 from bartlebot.options import player_realms
+from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION
 from bartlebot.options.option_groups import GROUP_GENERAL
 
 _TAG = "change_realm"
@@ -80,13 +81,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Use Favorite Realm",
         help=(
-            "On: switch to the Favorite Realm — set in Settings → Bot, or overridden for this bot "
-            "in Options.\n\n"
-            "Off: switch to the next realm after the current one, cycling through the quieter "
-            "pages of the realm list. Useful where a fresh realm means fresh spawns, as with "
-            "reagent farming.\n\n"
-            "Whether the players share the new realm is the bot's Player Realms option: Together, "
-            "they all end on one; Separate, each gets a realm of its own."
+            "When on, players switch to the Favorite Realm, set in Settings › Bot or this bot's "
+            "Options.\n\nWhen off, players move to the next realm, through the quieter pages of the "
+            "list. Use this where a fresh realm means fresh spawns, as in reagent farming."
         ),
         default=True,
     ),
@@ -94,25 +91,22 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Switches the players' realm: to the Favorite Realm, or to the next realm in the list. With "
-        "Player Realms set to Together they all end on one realm and are checked to be together; "
-        "with Separate each gets a realm of its own. Opens the spellbook to the Realms tab, finds the "
-        "target row, and hops to it, waiting out the realm-hop cooldown if needed. A player already "
-        "on its target realm is left alone."
+        "Switches every player to the Favorite Realm, or to the next realm in the list. A player "
+        "already on its target realm is left alone."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "Every player is on its target realm, whether it hopped or was already there -- and, "
-            "Together, seen with the others.",
+            "Every player is on its target realm, and with Player Realms set to Together, beside the others.",
         ),
         ReturnSpec(
             "FAILURE",
-            "Favorite mode with no favorite realm set; the spellbook or realms panel did not open; the "
-            "realm was not found on any page; the realm-hop timer did not expire within the timeout; the "
-            "game refused the switch (a dungeon, gauntlet or house); a loading screen was not detected; "
-            "or, Together, a player could not be brought to the others afterwards.",
+            (
+                "The game refused the change, no favorite realm is set, the spellbook or realm list "
+                "didn't open, the realm wasn't found, the realm-change cooldown didn't end in time, or a "
+                "player couldn't be brought to the others."
+            ),
         ),
     ],
     required_bot_options=[
@@ -125,20 +119,14 @@ NODE_SPEC = NodeSpec(
             # Null, always: the author has no opinion about which realm you farm in, and
             # cannot have one. The level below is your app setting.
             default=None,
-            description=(
-                "The realm every player is switched to. This is your value, not the bot's — it "
-                "is stored on this machine (Settings → Bot) and never written to a bot file."
-            ),
+            description=FAVORITE_REALM_DESCRIPTION,
             required_when=PARAM_USE_FAVORITE_REALM,
         ),
     ],
     max_consecutive_retries=5,
     usage_notes=(
-        "Realms can only be switched from an open-world zone: a dungeon, gauntlet or house refuses with "
-        '"You are not allowed to switch Realms from this location", and the node fails. Place it before '
-        "entering the dungeon, or after leaving it. With a favorite realm set, every launched player also "
-        "has the game's Remember Realm option turned on, so a relogged player comes back to the realm it "
-        "left."
+        "Place this node before entering a dungeon, or after leaving it. The game refuses a realm "
+        "change in a dungeon, gauntlet or house, and the node fails."
     ),
 )
 
@@ -281,9 +269,7 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
 
     current_name = await realm_list.wait_for_current_realm_name(client, safety_delay)
     if current_name and realms.matches(favorite, current_name):
-        machine.log(f"SUCCESS: already on {current_name!r}")
-        await realm_list.close_spellbook(client)
-        return "SUCCESS"
+        return await _close_and_succeed(machine, client, f"SUCCESS: already on {current_name!r}")
 
     machine.log(f"{_TAG}: anchoring to page 1", logging.DEBUG)
     if not await realm_list.navigate_to_page_1(machine, client, TRIGGER_TIMEOUT, _TAG):
@@ -300,9 +286,7 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
             if not realms.matches(favorite, name):
                 continue
             if await realm_list.is_current_realm(client, row):
-                machine.log(f"SUCCESS: already on {name!r}")
-                await realm_list.close_spellbook(client)
-                return "SUCCESS"
+                return await _close_and_succeed(machine, client, f"SUCCESS: already on {name!r}")
             return await realm_list.hop_to_row(machine, client, row, _TAG)
 
         if not await realm_list.has_next_page(client):
@@ -318,6 +302,16 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
     )
     await realm_list.close_spellbook(client)
     return "FAILURE"
+
+
+async def _close_and_succeed(machine, client, message: str) -> str:
+    """Close the spellbook, then log *message* and succeed. FAILURE if the spellbook stays open,
+    since it would take every click the next node aims behind it."""
+    if not await realm_list.close_spellbook(client):
+        machine.log("FAILURE: the spellbook did not close", logging.WARNING)
+        return "FAILURE"
+    machine.log(message)
+    return "SUCCESS"
 
 
 @dataclass
@@ -514,7 +508,6 @@ async def _to_realm_after(machine, client, favorite: str, offset: int, safety_de
             await realm_list.close_spellbook(client)
             return "FAILURE"
     if await realm_list.is_current_realm(client, target):
-        machine.log(f"SUCCESS: already on {await realm_list.row_name(client, target)!r}")
-        await realm_list.close_spellbook(client)
-        return "SUCCESS"
+        name = await realm_list.row_name(client, target)
+        return await _close_and_succeed(machine, client, f"SUCCESS: already on {name!r}")
     return await realm_list.hop_to_row(machine, client, target, _TAG)

@@ -926,13 +926,13 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "Carpathes",
-        "Chaplet",
-        "Betrayed",
-        "Werewolf",
-        "Lovelorn",
-        "Deception",
-        "Unchecked"
+        "=Vial of the Unchecked Ego",
+        "=Squire's Torc of Deception",
+        "=Lovelorn Spirit's Amulet",
+        "=Howling Werewolf's Collar",
+        "=Collar of the Betrayed",
+        "=Chaplet of the Death Knight",
+        "=Ampul of Carpathes"
       ]
     }
   ],
@@ -1038,7 +1038,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to the entrance",
       "position": {
-        "x": 13200,
+        "x": 11880.0,
         "y": 0.0
       },
       "params": {
@@ -1143,19 +1143,8 @@
           "x": -38.76,
           "y": 3531.13,
           "z": 506.14
-        }
-      }
-    },
-    {
-      "id": "state_13",
-      "node_type": "wait_for_dialogue",
-      "label": "Wait for dialogue",
-      "position": {
-        "x": 4840,
-        "y": 0.0
-      },
-      "params": {
-        "timeout": 60.0
+        },
+        "stagger": true
       }
     },
     {
@@ -1163,7 +1152,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Blackwater",
       "position": {
-        "x": 5280,
+        "x": 4840.0,
         "y": 0.0
       },
       "params": {
@@ -1177,7 +1166,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 5720,
+        "x": 5280.0,
         "y": 0.0
       },
       "params": {
@@ -1189,7 +1178,7 @@
       "node_type": "enter_zone",
       "label": "Enter staircase",
       "position": {
-        "x": 6160,
+        "x": 5720.0,
         "y": 0.0
       },
       "params": {
@@ -1204,33 +1193,8 @@
           "x": 1.15,
           "y": 2822.98,
           "z": 1.89
-        }
-      }
-    },
-    {
-      "id": "state_18",
-      "node_type": "interact",
-      "label": "P1 unlock Stone Skeleton Key door",
-      "position": {
-        "x": 6600,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
-        "interact_xyz": {
-          "x": -545.19,
-          "y": -236.15,
-          "z": 400.2
         },
-        "reset_xyz": {
-          "x": -431.05,
-          "y": 470.83,
-          "z": 315.13
-        },
-        "interact_clients": [
-          1
-        ],
-        "has_dialogue": true
+        "stagger": true
       }
     },
     {
@@ -1238,8 +1202,8 @@
       "node_type": "enter_zone",
       "label": "Enter Stone Skeleton Key room",
       "position": {
-        "x": 7480,
-        "y": 0.0
+        "x": 6600.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
@@ -1253,16 +1217,17 @@
           "x": -483.15,
           "y": 316.0,
           "z": 351.08
-        }
+        },
+        "stagger": false
       }
     },
     {
       "id": "state_19",
       "node_type": "interact",
-      "label": "P1 open Treasure Chest",
+      "label": "Open Treasure Chest",
       "position": {
-        "x": 7920,
-        "y": 0.0
+        "x": 7040.0,
+        "y": 90.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
@@ -1277,35 +1242,15 @@
           "z": 0.2
         },
         "interact_clients": [
-          1
+          1,
+          2,
+          3,
+          4
         ],
-        "has_dialogue": false
-      }
-    },
-    {
-      "id": "state_30",
-      "node_type": "interact",
-      "label": "P2 open Treasure Chest",
-      "position": {
-        "x": 8360,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
-        "interact_xyz": {
-          "x": 6.74,
-          "y": -410.64,
-          "z": 0.2
-        },
-        "reset_xyz": {
-          "x": -23.96,
-          "y": -877.51,
-          "z": 0.2
-        },
-        "interact_clients": [
-          2
-        ],
-        "has_dialogue": false
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": true,
+        "object_use_delay": 2.0
       }
     },
     {
@@ -1313,8 +1258,8 @@
       "node_type": "enter_zone",
       "label": "Exit Stone Skeleton Key room",
       "position": {
-        "x": 8800,
-        "y": 0.0
+        "x": 7480.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
@@ -1336,8 +1281,8 @@
       "node_type": "enter_zone",
       "label": "Enter Observatory",
       "position": {
-        "x": 9240,
-        "y": 0.0
+        "x": 7920.0,
+        "y": 180.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
@@ -1351,7 +1296,8 @@
           "x": -582.11,
           "y": 15.69,
           "z": 1100.2
-        }
+        },
+        "stagger": true
       }
     },
     {
@@ -1359,8 +1305,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger dialogue",
       "position": {
-        "x": 9680,
-        "y": 0.0
+        "x": 8360.0,
+        "y": 180.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -1376,8 +1322,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 10120,
-        "y": 0.0
+        "x": 8800.0,
+        "y": 180.0
       },
       "params": {
         "timeout": 60.0
@@ -1388,8 +1334,8 @@
       "node_type": "interact",
       "label": "Collect Crimson Lens",
       "position": {
-        "x": 10560,
-        "y": 0.0
+        "x": 9240.0,
+        "y": 180.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -1404,12 +1350,12 @@
           "z": -11.34
         },
         "interact_clients": [
-          1,
-          2,
-          3,
-          4
+          1
         ],
-        "has_dialogue": true
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
       }
     },
     {
@@ -1417,8 +1363,8 @@
       "node_type": "interact",
       "label": "Activate Neutral Density Filter",
       "position": {
-        "x": 11000,
-        "y": 0.0
+        "x": 9680.0,
+        "y": 180.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -1433,12 +1379,12 @@
           "z": 170.47
         },
         "interact_clients": [
-          1,
-          2,
-          3,
-          4
+          1
         ],
-        "has_dialogue": true
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
       }
     },
     {
@@ -1446,8 +1392,8 @@
       "node_type": "sleep",
       "label": "Wait for puzzle to complete",
       "position": {
-        "x": 11440,
-        "y": 0.0
+        "x": 10120.0,
+        "y": 180.0
       },
       "params": {
         "duration": 1.0
@@ -1458,8 +1404,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11880,
-        "y": 0.0
+        "x": 10560.0,
+        "y": 180.0
       },
       "params": {
         "timeout": 60.0
@@ -1470,8 +1416,8 @@
       "node_type": "enter_zone",
       "label": "Exit Observatory",
       "position": {
-        "x": 12320,
-        "y": 0.0
+        "x": 11000.0,
+        "y": 180.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -1493,8 +1439,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 12760,
-        "y": 0.0
+        "x": 11440.0,
+        "y": 180.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1503,32 +1449,6 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_34",
-      "node_type": "interact",
-      "label": "P2 unlock Stone Skeleton Key door",
-      "position": {
-        "x": 7040,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
-        "interact_xyz": {
-          "x": -545.19,
-          "y": -236.15,
-          "z": 400.2
-        },
-        "reset_xyz": {
-          "x": -431.05,
-          "y": 470.83,
-          "z": 315.13
-        },
-        "interact_clients": [
-          2
-        ],
-        "has_dialogue": true
       }
     },
     {
@@ -1559,89 +1479,34 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true
       }
+    },
+    {
+      "id": "state_30",
+      "node_type": "open_skeleton_key_door",
+      "label": "Open Skeleton Key Door",
+      "position": {
+        "x": 6160.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "interact_xyz": {
+          "x": -465.43,
+          "y": 172.02,
+          "z": 378.16
+        },
+        "reset_xyz": {
+          "x": -436.84,
+          "y": 445.27,
+          "z": 322.88
+        }
+      },
+      "stops": {
+        "FAILURE": "No players have a skeleton key in their inventory"
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_10",
@@ -1655,7 +1520,7 @@
     {
       "trigger": "advance",
       "source": "state_11",
-      "dest": "state_13",
+      "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1677,16 +1542,6 @@
       "source": "state_12",
       "dest": "state_11",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1715,11 +1570,69 @@
     {
       "trigger": "advance",
       "source": "state_16",
-      "dest": "state_18",
+      "dest": "state_30",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Open Treasure Chest",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Open Treasure Chest",
+              "negate": true
+            },
+            {
+              "option": "Skip Observatory puzzle",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Open Treasure Chest",
+              "negate": true
+            },
+            {
+              "option": "Skip Observatory puzzle",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -1734,28 +1647,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_19",
-      "dest": "state_30",
+      "dest": "state_20",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1765,11 +1658,41 @@
     {
       "trigger": "advance",
       "source": "state_20",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Skip Observatory puzzle",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
       "dest": "state_21",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Skip Observatory puzzle",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -1854,8 +1777,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_30",
-      "dest": "state_20",
+      "source": "state_29",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1864,7 +1787,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_34",
+      "source": "state_30",
       "dest": "state_17",
       "when": "SUCCESS",
       "flags": [],
@@ -1894,6 +1817,26 @@
     },
     {
       "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_3",
       "dest": "state_8",
       "when": "SUCCESS",
@@ -1904,32 +1847,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Open Treasure Chest",
-              "negate": true
-            },
-            {
-              "option": "Skip Observatory puzzle",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1938,26 +1857,22 @@
     },
     {
       "trigger": "advance",
-      "source": "state_30",
-      "dest": "t_7",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Open Treasure Chest",
-              "negate": false
-            },
-            {
-              "option": "Skip Observatory puzzle",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
+      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
@@ -1965,6 +1880,16 @@
       "source": "t_6",
       "dest": "t_8",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1984,6 +1909,26 @@
       "trigger": "advance",
       "source": "t_9",
       "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2033,23 +1978,22 @@
       "label": "Sir Blackwater",
       "members": [
         "state_15",
-        "state_14",
-        "state_13"
+        "state_14"
       ],
-      "color": 2
+      "color": 2,
+      "collapsed": true
     },
     {
       "id": "744b87ee",
       "label": "Stone Skeleton Key",
       "members": [
-        "state_18",
-        "state_16",
         "state_17",
         "state_20",
         "state_19",
-        "state_34"
+        "state_30"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
     },
     {
       "id": "4aef3142",
@@ -2065,11 +2009,40 @@
         "state_28",
         "state_24"
       ],
-      "color": 4
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "d22d9b97",
+      "label": "Howling Chaney",
+      "members": [
+        "state_10",
+        "state_9",
+        "state_11",
+        "state_8",
+        "state_12"
+      ],
+      "color": 1,
+      "collapsed": true
     }
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "b1e8ffc21e24e1963d3018a1d29c63a22831f802e78106af8d3839ebddf4e0e1",
+    "a85dce5ea75970b9a3e1c3cd06f9eddd92c105b491fd7a00a6c4ebdab34164eb",
+    "5c91f910bb17048c85a8879670edd9a9269141729934f01d55b25904aa294215",
+    "2bbd6f27bd9bb3643745ff3a1591f58ccd35d0ac1aae8ab15ad729156ffeca86",
+    "7fd1c634f741b2ae91ef8973239bf6d6bd4f588c52b7d815aadab2c9c25ad074",
+    "ce05fd395b40bfdea90f022abbb05b65428151c01639a479d59f098283b915a5",
+    "61d1cf36bf90e1d3845411267579f0dec25d8c6292ee523d9d73cbd561327553",
+    "a10293275d1c474b046f66e46d8575c0a8b31a8c330b1f5f7f63de5a0b8016b7",
+    "8d7b36016a95201142030e9056082457f1473c453eee6701cfc873bb0744f3fa",
+    "c708da00aba7a08907e124746712dea083e65fb58b8b89e0b3b656578685c59b",
+    "6face95d36755cdc4a9ae27bcf0bce8eff30977f2f9b9a75d2a110c21fc72acf",
+    "22ba826fd818931e382d19a283555c98a8d739addda6ac931a70b750e249568e",
+    "793854477094e93702d9ab82a271c378e6b0fbe03112f27bdc1d70e5e14115c1"
+  ]
 }

@@ -126,6 +126,17 @@ async def test_the_dragon_is_boarded_by_interacting_then_skipped():
         assert [call.args[0].x for call in rider.teleport.call_args_list] == [_BOARD["x"]]
 
 
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    rider = _Rider()
+    where = rider.zone_name.side_effect
+    rider.zone_name = AsyncMock(side_effect=lambda: None if rider.zone_name.await_count <= 1 else where())
+
+    assert await _run([rider], _params()) == "SUCCESS"
+
+    assert rider.where == _TO
+
+
 async def test_an_airship_is_boarded_through_its_gate():
     rider = _Rider(board="walk")
 

@@ -23,11 +23,11 @@ class CanvasTab(SettingsForm):
         self._minimap_cb.setChecked(sm.get("canvas", "minimap_visible", default=True))
         self.add_row(
             SettingRow(
-                "Enable minimap",
-                "The overview in the canvas corner.",
+                "Show minimap",
+                "Show an overview of the bot in the canvas corner.",
                 self._minimap_cb,
                 default=_default("minimap_visible"),
-                details="Click or drag inside it to jump the camera.",
+                details="Click or drag in the minimap to move the view.",
             )
         )
 
@@ -42,7 +42,6 @@ class CanvasTab(SettingsForm):
                 "Below this zoom, nodes show their label only.",
                 self._lod_sb,
                 default=_default("lod_compact_threshold"),
-                details="Lower keeps full detail longer; higher goes compact sooner.",
             )
         )
 
@@ -57,7 +56,7 @@ class CanvasTab(SettingsForm):
                 "How far one wheel tick zooms.",
                 self._zoom_sb,
                 default=_default("zoom_step"),
-                details="Smaller gives finer control, which suits trackpads; larger moves faster.",
+                details="Smaller steps suit trackpads.",
             )
         )
 
@@ -69,11 +68,10 @@ class CanvasTab(SettingsForm):
         self._pan_sb.setValue(sm.get("canvas", "pan_animation_ms", default=300))
         self.add_row(
             SettingRow(
-                "Pan animation speed",
+                "Pan animation time",
                 "How long the camera takes to glide to a node.",
                 self._pan_sb,
                 default=_default("pan_animation_ms"),
-                details="0 (Instant) turns the animation off.",
             )
         )
 
@@ -86,7 +84,6 @@ class CanvasTab(SettingsForm):
             "Align a dragged node to the grid.",
             self._snap_cb,
             default=_default("snap_to_grid"),
-            details="Instead of leaving it where it was dropped.",
         )
 
         self._grid_combo = QComboBox()
@@ -96,10 +93,9 @@ class CanvasTab(SettingsForm):
         self._grid_combo.setCurrentIndex(max(self._grid_combo.findData(current), 0))
         grid = SettingRow(
             "Grid style",
-            "Dots, lines, or no grid behind the nodes.",
+            "Which grid to draw behind the nodes.",
             self._grid_combo,
             default=_default("grid_style"),
-            details="Only drawn while snap is on.",
         )
         self.add_group(SettingGroup("grid", snap, [grid]))
 

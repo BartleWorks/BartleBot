@@ -7,6 +7,7 @@ from wizwalker import XYZ
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ARRIVAL_NOTE, ZONE_AT_END
 from bartlebot.nodes.node_helpers import POSITION_MARGIN, TRIGGER_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH
@@ -19,53 +20,45 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Zone",
-        help=(
-            "Zone name all players must be in after this node completes. Blank: the zone each "
-            "player marked in earlier in this run."
-        ),
+        help=(ZONE_AT_END),
         default="",
         required=False,
+        default_hint="each player's mark zone",
     ),
     ParamField(
         key="xyz",
         type="xyz",
         label="Mark XYZ",
-        help=(
-            "Expected XYZ coordinates after recalling. Used to verify arrival. Blank: where each "
-            "player marked earlier in this run."
-        ),
+        help="Where players should be after recalling.",
         default=None,
         required=False,
+        default_hint="each player's mark",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description=(
-        "Recalls all players to an existing marked location by clicking the RecallButton. "
-        "Handles the loading screen and verifies arrival zone and position."
-    ),
+    description="Recalls every player to their mark and checks that they arrived.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players recalled and arrived at the expected zone and XYZ."),
+        ReturnSpec("SUCCESS", "Every player recalled to Zone and Mark XYZ."),
         ReturnSpec(
             "FAILURE",
-            "One or more players had no mana; the RecallButton was not enabled within the "
-            "timeout (no mark set); the game refused the recall (most often because the marked "
-            "dungeon's timer ended and it has been reset); players did not move or enter a "
-            "loading screen within the trigger timeout; or not all players arrived in the "
-            "expected zone and position after recalling.",
+            (
+                "A player had no mana or no mark, the game refused the recall (usually because the marked "
+                "dungeon has reset), a player never started loading, or not every player arrived."
+            ),
         ),
     ],
     required_bot_options=[player_realms.SPEC],
     max_consecutive_retries=5,
     usage_notes=(
-        "Leave Zone and Mark XYZ blank to check each player against the mark it set earlier in "
-        "this run, through Mark Location or Handle Level Scaling: a bot that marks and recalls "
-        "then names the spot once. With them blank, a player that has not marked in this run "
-        "fails the node before anyone recalls.\n\n"
-        "If some but not all players end up in the expected zone, the node first tries "
-        "teleporting the stragglers to whichever player did arrive before reporting "
-        "FAILURE. That needs every player to already be mutual in-game friends."
+        (
+            "Leave Zone and Mark XYZ empty to check each player against the mark it set earlier in "
+            "this run, with Mark Location or Handle Level Scaling. A player with no mark from this "
+            "run then fails the node before anyone recalls."
+        )
+        + "\n\n"
+        + ARRIVAL_NOTE
     ),
 )
 
@@ -89,7 +82,8 @@ async def run(machine, clients: list, params: dict) -> str:
       6. Wait for all loading screens to finish.
       7. Verify all clients are in zone and within POSITION_MARGIN of xyz. Return FAILURE if not.
          A blank zone or xyz is each client's own mark from this run (mark_location.marked_at),
-         and a client with none fails the node before step 1.
+         and a client with none fails the node before step 1. A client that misses has its
+         mark forgotten (mark_location.forget), so the next Mark Location sets it again.
 
     FAILURE: any client has no mana; RecallButton not enabled within timeout (no mark set);
     recall not triggered within TRIGGER_TIMEOUT; not all clients arrived at expected zone/XYZ;
@@ -122,7 +116,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 7. Verify all clients are in the expected zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Zones after recall: {list(zones)}", logging.DEBUG)
     if len(set(expected_zones)) == 1:
         expected = expected_zones[0]
@@ -132,9 +126,15 @@ async def run(machine, clients: list, params: dict) -> str:
                 f"FAILURE: not all clients in expected zone (expected={expected!r}, got={list(set(actual))})",
                 logging.WARNING,
             )
+            _forget_marks(
+                machine, clients, [i for i, z in enumerate(actual) if not node_helpers.zone_matches(z, expected)]
+            )
             return "FAILURE"
-    elif wrong := [i + 1 for i, (z, e) in enumerate(zip(zones, expected_zones)) if not node_helpers.zone_matches(z, e)]:
-        machine.log(f"FAILURE: client(s) {wrong} did not land in the zone they marked in", logging.WARNING)
+    elif wrong := [i for i, (z, e) in enumerate(zip(zones, expected_zones)) if not node_helpers.zone_matches(z, e)]:
+        machine.log(
+            f"FAILURE: client(s) {[i + 1 for i in wrong]} did not land in the zone they marked in", logging.WARNING
+        )
+        _forget_marks(machine, clients, wrong)
         return "FAILURE"
 
     # 8. Verify all clients are at the expected XYZ.
@@ -148,9 +148,10 @@ async def run(machine, clients: list, params: dict) -> str:
     ]
     if off_target:
         machine.log(
-            f"FAILURE: client(s) {off_target} not at expected XYZ after recall (margin={POSITION_MARGIN})",
+            f"FAILURE: client(s) {[i + 1 for i in off_target]} not at expected XYZ after recall (margin={POSITION_MARGIN})",
             logging.WARNING,
         )
+        _forget_marks(machine, clients, off_target)
         return "FAILURE"
 
     machine.log(f"SUCCESS: all clients recalled to {zone!r}")
@@ -242,6 +243,22 @@ async def recall(machine, clients: list) -> bool:
     machine.log("Waiting for any loading screens to clear…", logging.DEBUG)
     await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
     return True
+
+
+def _forget_marks(machine, clients: list, missed: list[int]) -> None:
+    """Drop the run's record of each mark a recall missed, by 0-based index, so it is set again.
+
+    A mark set before the server heard of a teleport sits where the client stood before it,
+    while the record says it is where the client stands now. Kept, the record has Mark Location
+    pass the client by and every recall after miss the same way.
+    """
+    for i in missed:
+        mark_location.forget(machine, clients[i])
+    if missed:
+        machine.log(
+            f"Forgot the marks of client(s) {[i + 1 for i in missed]}; the next Mark Location marks them again",
+            logging.DEBUG,
+        )
 
 
 def _point(data) -> XYZ | None:

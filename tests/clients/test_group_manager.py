@@ -6,6 +6,7 @@ therefore drive everything through a fake that models that UI.
 """
 
 import asyncio
+import json
 import logging
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
@@ -15,15 +16,20 @@ from wizwalker import Keycode
 
 import bartlebot.clients.group_manager as gm
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.game import dialog_captions
 from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
+    FRIENDS_LIST_PATH,
     GROUP_INVITE_ACCEPT_PATH,
     GROUP_ROSTER_LINES,
     GROUP_WINDOW_CLOSE_PATH,
     INVITE_TO_GROUP_BUTTON_PATH,
+    LARGE_FRIENDS_LIST_PATH,
     LEAVE_GROUP_BUTTON_PATH,
+    MESSAGE_BOX_CAPTION_PATH,
     SOCIAL_BUTTON_PATH,
     SOCIAL_GROUP_TAB_PATH,
     SOCIAL_WINDOW_PATH,
@@ -32,6 +38,11 @@ from bartlebot.nodes.paths import (
 from tests.conftest import FakeClient
 
 # Captured before any patching so the fake can delegate to the real retry loops.
+# The game's own en-US text for "that player is already in a group", as the snapshot holds it.
+_ALREADY_IN_GROUP_CAPTION = json.loads(dialog_captions.CAPTIONS_PATH.read_text(encoding="utf-8"))["captions"][
+    dialog_captions.ALREADY_IN_GROUP
+]["en-US"]
+
 _REAL_CLICK_UNTIL_GONE = nh.click_until_gone
 _REAL_PRESS_KEY_UNTIL_GONE = nh.press_key_until_gone
 
@@ -120,12 +131,22 @@ class FakeUI:
         self.accept_clicks: list[FakeClient] = []
         # Accept clicks the game ignores, per client: the prompt goes, but nobody joins.
         self.drop_accepts: dict[FakeClient, int] = {}
-        # When the social window opens on the leader by itself: on the join that forms the
-        # group ("accept"), or on sending the first invitation ("send"). Both are modeled,
-        # so the leader's cleanup is proven against either.
-        self.leader_social_opens_on = "accept"
+        # When the social window opens on the leader by itself: on sending the first
+        # invitation ("send", what the game does), a moment after it ("delayed", the read
+        # that beats it now that wizwalker is fast), or on the join that forms the group
+        # ("accept", which the game does not, kept to model a window that never shows up
+        # while the first invitation waits for it).
+        self.leader_social_opens_on = "send"
         self.lookups_under_social_window: list[FakeClient] = []
         self._pending_name: str | None = None
+        # The crowns shop is a modal over everything: while it is up, every click lands on
+        # it and does nothing else. ESC closes it unless `shop_closes` is False. The next
+        # `invite_misclicks` invite clicks hit the profile's wishlist button instead, which
+        # opens the shop, as in #280.
+        self.shop_open: dict[FakeClient, bool] = {}
+        self.shop_closes = True
+        self.invite_misclicks = 0
+        self.esc_presses: list[FakeClient] = []
 
     def _set_social_open(self, client, value: bool) -> None:
         if value != self.social_open.get(client, False):
@@ -193,6 +214,9 @@ class FakeUI:
         roster read that happens after the window is closed, or before the page loads, shows
         up as an empty roster rather than passing.
         """
+        if path == MESSAGE_BOX_CAPTION_PATH:
+            # The refusal popup is a message box, read by its caption like any other.
+            return _ALREADY_IN_GROUP_CAPTION if self.popup_showing.get(client, False) else ""
         pending = self._load_pending.get(client)
         if pending is not None:
             if pending <= 0:
@@ -232,6 +256,10 @@ class FakeUI:
         _NEXT_STAGE = {"closed": "compact", "compact": "large", "large": "closed"}
 
         async def send_key(key, _seconds=0):
+            if key is Keycode.ESC:
+                self.esc_presses.append(client)
+                if self.shop_closes:
+                    self.shop_open[client] = False
             # F cycles through the two friends-list windows, as in the game.
             if key is Keycode.F:
                 self.friends_list_close_clicks += 1
@@ -255,8 +283,16 @@ class FakeUI:
         # fake; it is what the game does (tools/probe_friends_list.py).
         if path in (CHARACTER_PROFILE_CLOSE_PATH, GROUP_WINDOW_CLOSE_PATH):
             return True
+        # The two friends lists are different windows, so a caller that asks about just one
+        # of them will see "closed" while the other is still on screen.
+        if path == FRIENDS_LIST_PATH:
+            return self.friends_list_stage.get(client, "closed") == "compact"
+        if path == LARGE_FRIENDS_LIST_PATH:
+            return self.friends_list_stage.get(client, "closed") == "large"
         if path == CHARACTER_PROFILE_PATH:
             return self.profile_open.get(client, False)
+        if path == CROWNS_SHOP_WINDOW_PATH:
+            return self.shop_open.get(client, False)
         if path == SOCIAL_WINDOW_PATH:
             return self.social_open.get(client, False)
         if path == LEAVE_GROUP_BUTTON_PATH:
@@ -275,6 +311,12 @@ class FakeUI:
         return True
 
     async def click_by_path(self, client, path) -> bool:
+        if self.shop_open.get(client, False):
+            return True
+        if path == INVITE_TO_GROUP_BUTTON_PATH and self.invite_misclicks:
+            self.invite_misclicks -= 1
+            self.shop_open[client] = True
+            return True
         if path == INVITE_TO_GROUP_BUTTON_PATH:
             self.invite_sent = True
             self.events.append(("invite", self._by_name.get(self._pending_name)))
@@ -311,6 +353,8 @@ class FakeUI:
                 first = not self.grouped.get(client, False) and client not in self._awaiting.values()
                 if first and self.leader_social_opens_on == "send":
                     self._set_social_open(client, True)
+                elif first and self.leader_social_opens_on == "delayed":
+                    asyncio.get_running_loop().call_later(0.05, self._set_social_open, client, True)
                 self._awaiting[target] = client
             return True
         if path == GROUP_INVITE_ACCEPT_PATH and client in self._awaiting:
@@ -337,7 +381,8 @@ class FakeUI:
                 self._set_social_open(leader, True)
             return True
         if path == ALREADY_IN_GROUP_DISMISS_PATH:
-            self.popup_showing[client] = False
+            if not self._swallow(client, path):
+                self.popup_showing[client] = False
             return True
         if path == GROUP_WINDOW_CLOSE_PATH:
             self.closed_group_window_on.append(client)
@@ -365,16 +410,7 @@ class FakeUI:
         return None
 
     async def _is_named_window_visible(self, client, name: str) -> bool:
-        """Stands in for is_named_window_visible; only the friends lists are modeled.
-
-        The two lists answer to different names, so a caller that asks about just one of
-        them will see "closed" while the other is still on screen.
-        """
-        stage = self.friends_list_stage.get(client, "closed")
-        if name == "NewFriendsListWindow":
-            return stage == "compact"
-        if name == "wndFriendsList":
-            return stage == "large"
+        """Stands in for is_named_window_visible: no message box is ever up."""
         return False
 
     async def _stub_close_friends_list(self, client) -> bool:
@@ -422,7 +458,10 @@ class FakeUI:
             patch.object(gm, "POLL_INTERVAL", 0),
             patch.object(gm, "GROUP_INVITE_TIMEOUT", 0.05),
             patch.object(gm, "GROUP_VERIFY_TIMEOUT", 0.05),
-            patch.object(gm, "GROUP_PROFILE_TIMEOUT", 0.05),
+            patch.object(gm, "FRIEND_PROFILE_TIMEOUT", 0.05),
+            # The fake clients have no window tree, so the popup's buttons never read as
+            # settled; the wait is skipped rather than timed out on every invite.
+            patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", 0),
             patch.object(gm, "GROUP_JOIN_HINT_TIMEOUT", 0.05),
             patch.object(gm, "TRIGGER_TIMEOUT", 0.05),
         )
@@ -1088,6 +1127,18 @@ async def test_already_in_group_popup_is_dismissed(ui):
     assert ui.popup_showing.get(leader) is False
 
 
+async def test_already_in_group_popup_is_dismissed_through_a_swallowed_click(ui):
+    """One dismiss click used to be all it got, and a dropped one left the popup up."""
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+    ui.already_in_other_group.add(joiner)
+    ui.swallow_closes = 1
+
+    await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
+
+    assert ui.popup_showing.get(leader) is False
+
+
 async def test_friend_not_in_list_fails_without_retrying(ui):
     leader = ui.make_client("Alice Ashblade")
     joiner = ui.make_client("Bob Battlecaster")
@@ -1128,7 +1179,7 @@ async def test_every_invitation_is_sent_before_any_is_accepted(ui):
     assert kinds == ["invite"] * 3 + ["accept"] * 3, f"an invitation was accepted mid-send: {ui.events}"
 
 
-@pytest.mark.parametrize("opens_on", ["accept", "send"])
+@pytest.mark.parametrize("opens_on", ["send", "delayed"])
 async def test_the_leader_never_looks_up_a_friend_under_its_social_window(ui, opens_on):
     """Whichever moment the game opens it, the window is cleared before the next lookup.
 
@@ -1389,6 +1440,59 @@ async def test_profile_close_is_attempted_only_once_the_social_window_is_gone(ui
 
     assert "social" in order and "profile" in order, f"expected both closes on the leader, got {order}"
     assert order.index("social") < order.index("profile"), f"profile closed before the social window: {order}"
+
+
+# --- The crowns shop a wishlist misclick opens (#280) --------------------------------------
+
+
+async def test_a_wishlist_misclick_is_closed_and_the_invite_retried(ui):
+    """The run #280 stopped: the shop the misclick opened took every click after it."""
+    ui.invite_misclicks = 1
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
+
+    assert result.success is True
+    assert result.added == ["P2"]
+    assert ui.shop_open[leader] is False
+    assert ui.profile_open[leader] is False, "the profile behind the shop was left open"
+
+
+async def test_the_crowns_shop_is_closed_before_the_windows_under_it(ui):
+    """The shop takes the clicks that close the other two, so it has to go first."""
+    leader = ui.make_client("Alice Ashblade")
+    ui.shop_open[leader] = True
+    ui.profile_open[leader] = True
+    ui._set_social_open(leader, True)
+
+    await _run_with(ui, lambda: gm._close_overlapping_windows(leader))
+
+    assert ui.shop_open[leader] is False
+    assert ui.social_open[leader] is False
+    assert ui.profile_open[leader] is False
+
+
+async def test_no_esc_is_pressed_when_the_shop_is_not_open(ui):
+    """On a clear screen ESC opens the game menu, which would cover the HUD in turn."""
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
+
+    assert ui.esc_presses == []
+
+
+async def test_a_crowns_shop_that_will_not_close_is_warned_about(ui, caplog):
+    leader = ui.make_client("Alice Ashblade")
+    ui.shop_open[leader] = True
+    ui.shop_closes = False
+
+    with caplog.at_level(logging.WARNING, logger=gm.logger.name):
+        await _run_with(ui, lambda: gm._close_overlapping_windows(leader))
+
+    assert "The crowns shop would not close" in caplog.text
+    assert ui.esc_presses, "ESC was never tried"
 
 
 async def test_a_profile_that_will_not_close_is_followed_by_what_was_showing(ui, caplog):
@@ -1798,3 +1902,115 @@ async def test_already_grouped_client_is_not_reinvited(ui):
     assert result.success is True
     assert result.added == ["P3"]
     assert ui.invited_names == ["Carol Cloudrider"]
+
+
+_PAIR = ("Alice Ashblade", "Bob Battlecaster")
+
+
+async def test_the_first_invitation_waits_for_the_social_window_it_opens(ui):
+    """The window opens a moment after the invite; a close that ran at once would miss it."""
+    ui.leader_social_opens_on = "delayed"
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    result = await _run_with(ui, lambda: gm.form_group([leader, joiner], list(_PAIR), safety_delay=2.0))
+
+    assert result.success is True
+    assert ui.closed_group_window_on.count(leader) >= 1
+    assert ui.social_open[leader] is False, "the leader's social window was left open"
+
+
+async def test_the_wait_for_the_social_window_gives_up_after_the_safety_delay(ui):
+    """A window that never opens costs the safety delay once, and the group still forms."""
+    ui.leader_social_opens_on = "accept"
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    result = await _run_with(ui, lambda: gm.form_group([leader, joiner], list(_PAIR), safety_delay=0.3))
+
+    assert result.success is True
+    assert loop.time() - started >= 0.3
+
+
+async def test_a_leader_already_in_a_group_does_not_wait_for_the_social_window(ui):
+    """Inviting into an existing group opens no window on the leader, so nothing is waited for."""
+    ui.leader_social_opens_on = "accept"
+    leader = ui.make_client("Alice Ashblade")
+    member = ui.make_client("Bob Battlecaster")
+    joiner = ui.make_client("Carol Cloudweaver")
+    ui.put_in_group(leader, member)
+    names = ["Alice Ashblade", "Bob Battlecaster", "Carol Cloudweaver"]
+
+    result = await asyncio.wait_for(
+        _run_with(ui, lambda: gm.form_group([leader, member, joiner], names, safety_delay=30.0)), timeout=10
+    )
+
+    assert result.success is True
+    assert result.added == ["P3"]
+
+
+# --- The invite waits for the profile buttons to settle (#280) -----------------------------
+# node_helpers.await_settled_friend_profile is tested in tests/nodes/test_node_helpers.py.
+
+_STALE = (439, 199, 464, 224)
+_SETTLED = (439, 133, 464, 158)
+
+
+def _layout(invite_rect):
+    return (("popup", True, (431, 0, 615, 359)), ("btnInvite", True, invite_rect))
+
+
+async def _invite_with_reads(ui, layouts):
+    """Form a two-client group with the profile reads scripted, and report what happened.
+
+    Returns the result, the log lines with their levels, and how many reads had been taken
+    when Invite to Group was clicked.
+    """
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+    reads = []
+    reads_at_click = []
+    lines = []
+
+    async def read_profile(_client):
+        layout = layouts[min(len(reads), len(layouts) - 1)]
+        reads.append(layout)
+        return layout, nh.profile_layout_text(layout)
+
+    async def click_by_path(client, path):
+        if path == INVITE_TO_GROUP_BUTTON_PATH:
+            reads_at_click.append(len(reads))
+        return await ui.click_by_path(client, path)
+
+    with ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(nh, "FRIEND_PROFILE_SETTLE_TIMEOUT", 1.0))
+        stack.enter_context(patch.object(nh, "read_friend_profile", new=read_profile))
+        stack.enter_context(patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click_by_path)))
+        result = await gm.form_group(
+            [leader, joiner], ["Alice Ashblade", "Bob Battlecaster"], log=lambda m, level: lines.append((m, level))
+        )
+    return result, lines, reads_at_click
+
+
+async def test_the_invite_is_clicked_only_once_the_profile_buttons_settle(ui):
+    result, lines, reads_at_click = await _invite_with_reads(ui, [_layout(_STALE), _layout(_SETTLED)])
+
+    assert result.added == ["P2"]
+    # The stale read, then the two that agreed.
+    assert reads_at_click == [3]
+    assert any("moved after the popup showed" in m for m, _ in lines)
+    assert not any("moved under the click" in m for m, _ in lines)
+
+
+async def test_an_invite_button_that_moves_under_the_click_is_warned_about(ui):
+    _, lines, _ = await _invite_with_reads(ui, [_layout(_SETTLED), _layout(_SETTLED), _layout(_STALE)])
+
+    warnings = [m for m, level in lines if level == logging.WARNING and "moved under the click" in m]
+    assert warnings == [
+        "Invite to Group moved under the click for P2, from (439,133,464,158) to (439,199,464,224), "
+        "so the click may have hit another button"
+    ]

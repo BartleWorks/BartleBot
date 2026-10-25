@@ -148,7 +148,9 @@ async def _press_home_until_dorm(machine, clients: list) -> bool:
         # Wait for ALL clients to settle (includes clients already in dorm from a prior attempt).
         await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
-        zones = await asyncio.gather(*[c.zone_name() for c in needs_home])
+        # Read once each is readable: a zone just off the loading screen reads None, and a
+        # client already in the dorm would be sent home again.
+        zones = await node_helpers.read_zones(needs_home, poll_interval=POLL_INTERVAL)
         machine.log(f"Zones after HOME press {attempt}: {list(zones)}", logging.DEBUG)
         needs_home = [c for c, z in zip(needs_home, zones) if z != DORM_ZONE]
 

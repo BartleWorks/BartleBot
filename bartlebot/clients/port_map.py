@@ -23,6 +23,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 
+from bartlebot.bot import run_trace
 from bartlebot.clients import group_manager
 from bartlebot.game import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
@@ -150,8 +151,11 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     if len(clients) < 2:
         return PortMap()
     if names is None:
-        names = await wizard_names.resolve_names(clients)
-    friends = list(await asyncio.gather(*(_online_friends(c) for c in clients)))
+        with run_trace.span("port_survey.resolve_names"):
+            names = await wizard_names.resolve_names(clients)
+    friends = list(
+        await asyncio.gather(*(run_trace.traced(_online_friends(c), "port_survey.friends", client=c) for c in clients))
+    )
     no_rosters = [() for _ in clients]
     if PortMap.from_survey(names, friends, no_rosters).friends_everywhere(names):
         return PortMap.from_survey(names, friends, no_rosters)
@@ -238,9 +242,17 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
         machine.log(f"Port to player {to} refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
 
     await node_helpers.poll_until(lambda: node_helpers.none_loading(movers), None, POLL_INTERVAL)
-    goal = await target.zone_name()
-    zones = await asyncio.gather(*(c.zone_name() for c in movers))
-    in_zone = [c for c, zone in zip(movers, zones) if zone == goal]
+    # The screen clearing is not the zone being readable, and None == None would count as a match.
+    goal, *zones = await node_helpers.read_zones([target, *movers])
+    machine.log(
+        f"Port to player {to}: its zone is {goal!r}; "
+        + ", ".join(f"player {number(c)}'s is {zone!r}" for c, zone in zip(movers, zones)),
+        logging.DEBUG,
+    )
+    in_zone = [c for c, zone in zip(movers, zones) if goal is not None and zone == goal]
+    if len(in_zone) < len(movers):
+        unplaced = [number(c) for c in movers if not any(c is z for z in in_zone)]
+        machine.log(f"Player(s) {unplaced} did not end up in player {to}'s zone after the port", logging.WARNING)
 
     async def all_seen() -> bool:
         check = await node_helpers.read_sightings([target, *in_zone], machine)

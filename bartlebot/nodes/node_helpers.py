@@ -11,8 +11,7 @@ from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from wizwalker import Keycode, MemoryReadError
-from wizwalker.extensions.scripting import teleport_to_friend_from_list
+from wizwalker import ExceptionalTimeout, Keycode, MemoryReadError
 
 from bartlebot.clients import game_keys
 from bartlebot.game.key_bindings import GameAction, action_label
@@ -23,15 +22,23 @@ from bartlebot.clients import sightings
 from bartlebot.game import dialog_captions, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    BACKPACK_CLOSE_BUTTON_PATH,
+    CHARACTER_PROFILE_CLOSE_PATH,
+    CHARACTER_PROFILE_PATH,
+    CROWNS_SHOP_WINDOW_PATH,
+    DECK_CONFIGURATION_PATH,
     DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
-    FRIENDS_LIST_WINDOW_NAME,
-    FRIENDS_LIST_WINDOW_NAMES,
+    FRIENDS_LIST_BUTTON_PATH,
+    FRIENDS_LIST_PATH,
+    FRIENDS_LIST_PATHS,
     GAUNTLET_ENTRANCE_PATH,
+    GO_TO_FRIEND_BUTTON_PATH,
     HUB_BUTTON_PATH,
-    LARGE_FRIENDS_LIST_WINDOW_NAME,
+    LARGE_FRIENDS_LIST_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_LEFT,
     MESSAGE_BOX_RIGHT,
     TELEPORT_TIMER_PATH,
 )
@@ -39,6 +46,10 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
     DIALOG_PAGE_SETTLE,
     DIALOG_TIMEOUT,
+    FRIEND_PROFILE_SETTLE_TIMEOUT,
+    FRIEND_PROFILE_TIMEOUT,
+    FRIEND_TELEPORT_ATTEMPTS,
+    FRIEND_TELEPORT_CONFIRM_TIMEOUT,
     MAX_RETRIES,
     OBJECT_USE_DELAY,
     POLL_INTERVAL,
@@ -49,6 +60,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
+    ZONE_READABLE_TIMEOUT,
     ZONE_SETTLE_GRACE,
 )
 from bartlebot.options import player_realms
@@ -245,7 +257,7 @@ class ModalOutcome(NamedTuple):
 _NOTHING = ModalOutcome(answered=False)
 
 
-async def resolve_modal(client) -> ModalOutcome:
+async def resolve_modal(client, *, recognized_only: bool = False) -> ModalOutcome:
     """Answer whatever modal is on screen.
 
     The one call a node needs while waiting for something the game may be holding behind a
@@ -265,10 +277,16 @@ async def resolve_modal(client) -> ModalOutcome:
     Refusals are dismissed with the right button where it exists and the center otherwise:
     a one-button refusal puts OK in the center, and a two-button one puts cancel on the
     right, which is the answer that leaves the game alone.
+
+    `recognized_only` answers only a dialog the snapshot knows, and leaves any other alone.
+    It is for a wait that goes on answering for as long as it lasts, which would otherwise
+    confirm or decline whatever the game raises meanwhile: an invitation, a request.
     """
     key = await identify_modal(client)
 
     if key is None:
+        if recognized_only:
+            return _NOTHING
         if await is_visible_by_path(client, MESSAGE_BOX_CENTER):
             await click_by_path(client, MESSAGE_BOX_CENTER)
             return ModalOutcome(answered=True)
@@ -278,10 +296,12 @@ async def resolve_modal(client) -> ModalOutcome:
         return _NOTHING
 
     if key in dialog_captions.CONFIRM_TO_PROCEED:
+        logger.debug("resolve_modal: confirming %s", key)
         await click_by_path(client, MESSAGE_BOX_CENTER)
         return ModalOutcome(answered=True)
 
     if key in dialog_captions.REFUSALS:
+        logger.debug("resolve_modal: dismissing %s", key)
         if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
             await click_by_path(client, MESSAGE_BOX_RIGHT)
         else:
@@ -291,6 +311,62 @@ async def resolve_modal(client) -> ModalOutcome:
     # Recognized, but somebody else's dialog — leave it alone rather than click blind.
     logger.debug("resolve_modal: leaving %s to its own handler", key)
     return _NOTHING
+
+
+class ModalClearance(NamedTuple):
+    """What clear_modals() found, and did.
+
+    `cleared` says nothing is blocking the screen now. Otherwise `disconnected` says the
+    client is out of the game, which is crash recovery's to deal with and was left alone, and
+    `key` names the dialog still up when the wait ran out (None for one the snapshot does not
+    know). `dismissed` is the key of every dialog it closed along the way, None for an unknown
+    one: keys only, never the caption, which can carry a wizard's name.
+    """
+
+    cleared: bool
+    disconnected: bool = False
+    key: str | None = None
+    dismissed: tuple[str | None, ...] = ()
+
+
+async def clear_modals(
+    client, timeout: float = TRIGGER_TIMEOUT, poll_interval: float = POLL_INTERVAL
+) -> ModalClearance:
+    """Close every modal on screen the way a player backs out of one, so a menu can be reached.
+
+    A modal swallows every click aimed at the screen behind it, so a node about to click
+    through a menu (the spellbook) fails on whichever dialog the game left up: the dungeon
+    exit prompt of a player that never left, a stale invitation, a refusal nobody answered.
+    The caption does not matter to this, which is the difference from resolve_modal(): that
+    one *answers* a dialog the node is waiting on, confirming a question so the action
+    proceeds. Here the node wants none of the actions, and confirming one would leave a
+    dungeon, enter another or port across realms. Cancel is always safe, so the right button
+    is pressed where the dialog has one, else the center (a one-button OK), else the left.
+
+    Rereads the caption after each click, since a box takes a moment to close and another may
+    be queued behind it. Gives up after `timeout` and says which dialog was left, so the node
+    can fail with the reason instead of a menu that "did not open". A disconnect modal is not
+    clicked: nothing on it helps, and it is the health monitor's to recover.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    dismissed: list[str | None] = []
+    while True:
+        text = await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
+        if not text:
+            return ModalClearance(cleared=True, dismissed=tuple(dismissed))
+        key = dialog_captions.identify_caption(text)
+        if key in dialog_captions.DISCONNECTS:
+            return ModalClearance(cleared=False, disconnected=True, key=key, dismissed=tuple(dismissed))
+        if loop.time() >= deadline:
+            return ModalClearance(cleared=False, key=key, dismissed=tuple(dismissed))
+        for button in (MESSAGE_BOX_RIGHT, MESSAGE_BOX_CENTER, MESSAGE_BOX_LEFT):
+            if await is_visible_by_path(client, button):
+                await click_by_path(client, button)
+                if not dismissed or dismissed[-1] != key:
+                    dismissed.append(key)
+                break
+        await asyncio.sleep(poll_interval)
 
 
 class ModalAwareRetry:
@@ -314,12 +390,13 @@ class ModalAwareRetry:
     turn a successful teleport into a timeout.
     """
 
-    def __init__(self, action_fn):
+    def __init__(self, action_fn, *, recognized_only: bool = False):
         self._action_fn = action_fn
+        self._recognized_only = recognized_only
         self.refusal: str | None = None
 
     async def __call__(self, client) -> None:
-        outcome = await resolve_modal(client)
+        outcome = await resolve_modal(client, recognized_only=self._recognized_only)
         if outcome.refusal:
             self.refusal = outcome.refusal
             return
@@ -418,8 +495,9 @@ async def is_visible_by_path(client, path: list[str]) -> bool:
 async def is_named_window_visible(client, name: str) -> bool:
     """Return True if any window with this name is visible.
 
-    For windows that are located by name rather than by a fixed path — the friends list
-    is opened and read as "NewFriendsListWindow", whose parent chain is not recorded.
+    A search of the whole UI, about 30 ms of reads on the event loop, so only for a window
+    whose path is not known or that lives in several places, such as MessageBoxModalWindow,
+    and never in a poll. A window with a known path is read by is_visible_by_path.
     """
     try:
         windows = await client.root_window.get_windows_with_name(name)
@@ -899,6 +977,33 @@ async def find_entities_by_name(client, pattern: str) -> list:
     return await client.get_base_entities_with_predicate(entity_name_predicate(pattern))
 
 
+class Pickup(enum.Enum):
+    """How one attempt at picking up an entity in the world ended."""
+
+    #: The prompt showed, X was pressed, and the prompt went away.
+    COLLECTED = "collected"
+    #: Standing on the entity brought up no interact prompt.
+    NO_PROMPT = "no prompt"
+    #: X was pressed, and the prompt stayed.
+    NOT_DISMISSED = "not dismissed"
+
+
+async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_INTERVAL) -> Pickup:
+    """Teleport *client* onto *xyz*, press Interact at the prompt there, and wait for the prompt to clear.
+
+    The step collect_reagent and collect_item share. Each waits *safety_delay* for the prompt
+    and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
+    is its own case to log.
+    """
+    await client.teleport(xyz)
+    if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
+        return Pickup.NO_PROMPT
+    await game_keys.press(client, GameAction.INTERACT, 0.1)
+    if not await poll_until(lambda: none_in_npc_range([client]), safety_delay, poll_interval):
+        return Pickup.NOT_DISMISSED
+    return Pickup.COLLECTED
+
+
 def zone_matches(actual: str, pattern: str) -> bool:
     """Return True when actual matches pattern.
 
@@ -936,6 +1041,12 @@ async def all_left_zone(clients: list, zone: str) -> bool:
     zone may be a glob pattern (e.g. "WizardCity/*"); see zone_matches().
     Note: if the pattern is broad enough to encompass the destination zone,
     this helper will never return True until clients leave that zone family too.
+
+    An unreadable (None) zone counts as left, on purpose. Every caller asks this after the
+    trigger has fired, and a zone that goes unreadable then is the old zone being torn down.
+    Waiting for the new one instead would outlast the Safety Delay these checks run under,
+    and the client would be reset as stuck while it was on its way (#70). A client that is
+    logged out reads None too, and is the health monitor's to catch.
     """
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     return all(not zone_matches(z, zone) for z in zones)
@@ -960,6 +1071,50 @@ async def wait_for_zone(
     if await poll_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
         return None
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
+
+
+async def read_zones(
+    clients: list, timeout: float | None = None, poll_interval: float = POLL_INTERVAL
+) -> list[str | None]:
+    """Every client's zone_name(), waiting up to *timeout* for each to be readable.
+
+    A client between zones, or not logged in, has no zone: zone_name() is None. That says
+    nothing about where it is going, so a comparison against it (or against another None)
+    proves nothing and is waited out here instead. Returns the last read; a client that is
+    still None after *timeout* is still unreadable, and the caller decides what that means.
+
+    *timeout* defaults to ZONE_READABLE_TIMEOUT, read here rather than in the signature so it
+    stays tunable.
+    """
+    if timeout is None:
+        timeout = ZONE_READABLE_TIMEOUT
+    zones: list[str | None] = []
+
+    async def readable() -> bool:
+        zones[:] = await asyncio.gather(*[c.zone_name() for c in clients])
+        return all(zones)
+
+    await poll_until(readable, timeout, poll_interval)
+    return zones
+
+
+async def in_expected_zone(machine, clients: list, zone: str, poll_interval: float = POLL_INTERVAL) -> bool:
+    """Whether every client is in *zone*, read once each zone is readable. False having logged why.
+
+    The check a node makes before it acts. It reads through read_zones, since a client just off
+    a loading screen reads None for a moment, and a None never matches: read at once, it would
+    fail a node whose players were where it expected.
+    """
+    zones = await read_zones(clients, poll_interval=poll_interval)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
+    if all(zone_matches(z, zone) for z in zones):
+        return True
+    wrong = [z for z in zones if not zone_matches(z, zone)]
+    machine.log(
+        f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
+        logging.WARNING,
+    )
+    return False
 
 
 import contextlib  # noqa: E402 -- beside the one switch that uses them
@@ -1048,10 +1203,19 @@ async def wait_for_zone_with_recovery(
     non-loading straggler gets to start loading before it counts as one. The grace re-arms
     every time a straggler is seen loading, which also keeps the timeout verdict honest:
     a client mid-transition is never reported as one that failed to arrive. An endless
-    loading screen is ClientHealthMonitor's to call, not this loop's.
+    loading screen is ClientHealthMonitor's to call, not this loop's. Nobody is ported while
+    a client's zone reads None either: one just off its loading screen reads None for a
+    moment before it reads the zone it reached.
+
+    A straggler held at an instance prompt is not stuck either, and nothing else would press
+    it: leaving a dungeon asks first, and until the question is answered the zone change never
+    fires (#281). Every poll before the deadline answers the prompt of a client that is not
+    loading, as many times as it shows, and re-arms the settle grace for the screen it opens.
+    Only dialogs the snapshot knows are answered. A refusal ends the wait at once, with the
+    zones as they are, since the game has said no.
 
     Returns None on success (whether or not recovery was needed), or the list of actual
-    zone names if the deadline passed with some clients still not in `zone`.
+    zone names if the deadline passed with some clients still not in `zone`, or the game refused.
     """
     if settle_grace is None:
         settle_grace = ZONE_SETTLE_GRACE  # read here, not in the signature, so it stays tunable
@@ -1068,7 +1232,17 @@ async def wait_for_zone_with_recovery(
         behind = [c for c, z in zip(clients, zones) if not zone_matches(z, zone)]
         now = loop.time()
         # Mid-transition, not stuck: let the screen clear and re-read before judging it.
-        arriving = any(await asyncio.gather(*[c.is_loading() for c in behind]))
+        loading = await asyncio.gather(*[c.is_loading() for c in behind])
+        arriving = any(loading)
+        prompts = await _answer_waiting_prompts(
+            machine, [c for c, busy in zip(behind, loading) if not busy], now, deadline
+        )
+        if prompts is None:
+            return zones
+        if prompts:
+            settled_after = loop.time() + settle_grace
+            await asyncio.sleep(poll_interval)
+            continue
         if arriving:
             settled_after = now + settle_grace
         elif (
@@ -1076,6 +1250,9 @@ async def wait_for_zone_with_recovery(
             and not recovery_tried
             and now >= settled_after
             and any(zone_matches(z, zone) for z in zones)
+            # A None zone is a client just off its loading screen, or one that is not logged in:
+            # the first may be about to read the destination, and a port would undo that (#70).
+            and None not in zones
         ):
             recovery_tried = True
             await _attempt_zone_recovery(machine, clients, zone, zones, poll_interval)
@@ -1084,6 +1261,23 @@ async def wait_for_zone_with_recovery(
         if not arriving and now >= deadline and now >= settled_after:
             return zones
         await asyncio.sleep(poll_interval)
+
+
+async def _answer_waiting_prompts(machine, clients: list, now: float, deadline: float) -> bool | None:
+    """Answer the instance prompt on each of `clients` that has one, while a zone wait has time left.
+
+    True when a prompt was answered, False when there was nothing to answer, None when the game
+    refused (logged here): the wait cannot succeed and should end. A read that fails is the
+    client's own business and means no prompt was answered, as a client loading in raises.
+    """
+    if not clients or now >= deadline:
+        return False
+    outcomes = await asyncio.gather(*[resolve_modal(c, recognized_only=True) for c in clients], return_exceptions=True)
+    answered = [o for o in outcomes if isinstance(o, ModalOutcome) and o.answered]
+    if refusal := next((o.refusal for o in answered if o.refusal), None):
+        machine.log(f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}", logging.WARNING)
+        return None
+    return bool(answered)
 
 
 @dataclass(frozen=True)
@@ -1201,6 +1395,16 @@ async def _port_stragglers(machine, index: int, name: str, stragglers: list, zon
         # The message names the player it could not find, so it stays out of the log.
         machine.log(f"Recovery teleport to P{index + 1} failed: it is not on every straggler's friends list")
         return
+    except ExceptionalTimeout:
+        # A straggler that cannot open its friends list is not a dead client: a dialog over the
+        # screen swallows the click on the Friends button (#281). Raised out of here it parked
+        # the run for DEAD_CLIENT_CONFIRM_TIMEOUT. A client that did die fails the caller's next
+        # read with its own error, and is handled as one.
+        machine.log(
+            f"Recovery teleport to P{index + 1} timed out: a window may be blocking a straggler's friends list",
+            logging.WARNING,
+        )
+        return
 
     if result.refusal:
         machine.log(f"Recovery teleport refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
@@ -1254,8 +1458,8 @@ async def click_until_gone(
     client,
     path: list[str],
     is_open=None,
-    timeout: float = WINDOW_CLOSE_TIMEOUT,
-    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+    timeout: float | None = None,
+    poll_interval: float | None = None,
 ) -> bool:
     """Click the button at `path` until the thing it closes is gone. Returns True once it is.
 
@@ -1283,7 +1487,14 @@ async def click_until_gone(
     how many of the clicks were never sent, because the button was missing or grayed. That
     separates the two ways a close can fail: none sent means a disabled button, all sent
     means something on top took them.
+
+    `timeout` and `poll_interval` default to WINDOW_CLOSE_TIMEOUT and
+    WINDOW_CLOSE_RETRY_INTERVAL, read when called, so a test can compress them.
     """
+    if timeout is None:
+        timeout = WINDOW_CLOSE_TIMEOUT
+    if poll_interval is None:
+        poll_interval = WINDOW_CLOSE_RETRY_INTERVAL
     if is_open is None:
 
         async def is_open():
@@ -1316,6 +1527,45 @@ async def click_until_gone(
             attempts,
         )
     return not still_open
+
+
+async def click_until_dialog_gone(client, button: list[str]) -> bool:
+    """Click `button` on the dialog showing until that dialog has gone. True once it has.
+
+    Gone means the caption changed: the box closed, or another one came up in its place.
+    Every modal is the same window, so the caption is the only way to tell the dialog
+    answered from the one queued behind it, which this leaves for the caller to read and
+    answer. A second box with the very same caption gets the same click, which is the
+    answer the caller chose for that caption. Nothing showing costs one read and no click.
+    """
+    caption = await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
+    if not caption:
+        return True
+
+    async def still_up() -> bool:
+        return await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH) == caption
+
+    return await click_until_gone(client, button, is_open=still_up)
+
+
+async def is_spellbook_open(client) -> bool:
+    """Whether the spellbook is open, on any of its pages: backpack, deck, settings, realms, housing.
+
+    Read from DeckConfiguration, the spellbook window itself. Its close button is no use for
+    this, since it keeps reading visible once the window is closed (see is_visible_by_path).
+    """
+    return await is_visible_by_path(client, DECK_CONFIGURATION_PATH)
+
+
+async def close_spellbook(client) -> bool:
+    """Click the spellbook's close button until the spellbook is gone. True once it is.
+
+    One click is not reliable: straight after a quicksell sale the game dropped it and the
+    backpack stayed open, with the node reporting success. An open spellbook covers the
+    screen and takes every click aimed behind it, so a caller that leaves one open breaks
+    whatever runs next. A spellbook already closed costs one read and no click.
+    """
+    return await click_until_gone(client, BACKPACK_CLOSE_BUTTON_PATH, is_open=lambda: is_spellbook_open(client))
 
 
 async def click_window(client, window) -> bool:
@@ -1359,12 +1609,12 @@ async def open_friends_list(client):
     """Open the compact friends list if it is not already open, and return its window.
 
     Opens NewFriendsListWindow specifically. The game's other friends list, wndFriendsList,
-    is a separate window reached from this one — see paths.FRIENDS_LIST_WINDOW_NAMES. The
+    is a separate window reached from this one — see paths.FRIENDS_LIST_PATHS. The
     name/profile code reads the compact list, so this deliberately opens only that one.
 
     Raises ValueError if the window cannot be found even after clicking the button.
     """
-    from wizwalker.extensions.scripting.utils import _maybe_get_named_window  # noqa: PLC0415
+    from wizwalker.extensions.scripting.utils import _maybe_get_window_at_path  # noqa: PLC0415
 
     # The large list has to be cleared, not clicked past. Visibility is judged below from
     # NewFriendsListWindow alone, so from the large list this reads "closed" and clicks
@@ -1372,31 +1622,32 @@ async def open_friends_list(client):
     # Closing first replaces an unknown with the known-good closed state, at
     # the cost of one extra toggle in a case that only arises when a list was left open by
     # hand.
-    if await is_named_window_visible(client, LARGE_FRIENDS_LIST_WINDOW_NAME):
+    if await is_visible_by_path(client, LARGE_FRIENDS_LIST_PATH):
         logger.debug("Large friends list is open; closing it before opening the compact one")
         await close_friends_list(client)
 
-    try:
-        friends_window = await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
-        if not await friends_window.is_visible():
-            btn = await _maybe_get_named_window(client.root_window, "btnFriends")
-            await client.mouse_handler.click_window(btn)
+    friends_window = await _get_window_from_path(client.root_window, FRIENDS_LIST_PATH)
+    if friends_window is not None and await friends_window.is_visible():
         return friends_window
-    except ValueError:
-        # The window does not exist at all until the list has been opened once.
-        btn = await _maybe_get_named_window(client.root_window, "btnFriends")
-        await client.mouse_handler.click_window(btn)
-        return await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
+    btn = await _maybe_get_window_at_path(client.root_window, FRIENDS_LIST_BUTTON_PATH)
+    await client.mouse_handler.click_window(btn)
+    if friends_window is not None:
+        return friends_window
+    # The window does not exist at all until the list has been opened once.
+    return await _maybe_get_window_at_path(client.root_window, FRIENDS_LIST_PATH)
 
 
 async def press_key_until_gone(
     client,
-    action: GameAction,
+    action: GameAction | Keycode,
     is_open,
-    timeout: float = WINDOW_CLOSE_TIMEOUT,
-    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+    timeout: float | None = None,
+    poll_interval: float | None = None,
 ) -> bool:
     """Press `action`'s key until `is_open()` reports the panel has closed. Returns True once gone.
+
+    A GameAction is pressed by the key the player's account has it on; a Keycode as itself,
+    which is only for a key no player can rebind, such as ESC.
 
     The keyboard counterpart to click_until_gone, and preferable for panels that have a
     keyboard toggle: a keypress goes to the client as a whole, so unlike a click it cannot
@@ -1409,8 +1660,12 @@ async def press_key_until_gone(
     one on an already-closed panel reopens it.
 
     As in click_until_gone, `poll_interval` bounds how soon the next press may go out, and
-    the gap is spent polling rather than slept through.
+    the gap is spent polling rather than slept through, and both default when called.
     """
+    if timeout is None:
+        timeout = WINDOW_CLOSE_TIMEOUT
+    if poll_interval is None:
+        poll_interval = WINDOW_CLOSE_RETRY_INTERVAL
 
     async def _gone():
         return not await is_open()
@@ -1420,7 +1675,10 @@ async def press_key_until_gone(
     while True:
         if await _gone():
             return True
-        await game_keys.press(client, action, 0.1)
+        if isinstance(action, GameAction):
+            await game_keys.press(client, action, 0.1)
+        else:
+            await client.send_key(action, 0.1)
         if loop.time() >= deadline:
             break
         if await poll_until(_gone, timeout=poll_interval, poll_interval=WINDOW_CLOSE_CONFIRM_INTERVAL):
@@ -1428,20 +1686,63 @@ async def press_key_until_gone(
 
     still_open = await is_open()
     if still_open:
-        logger.warning("Panel toggled by %s is still open after %.0fs of retries", action_label(action), timeout)
+        label = action_label(action) if isinstance(action, GameAction) else action.name
+        logger.warning("Panel toggled by %s is still open after %.0fs of retries", label, timeout)
     return not still_open
+
+
+class ShopClosure(NamedTuple):
+    """What close_crowns_shop() found, and did: whether the shop was open, and whether it is shut now."""
+
+    was_open: bool
+    closed: bool
+
+
+async def close_crowns_shop(client, appear_timeout: float = 0.0, poll_interval: float = POLL_INTERVAL) -> ShopClosure:
+    """Close the crowns shop if it is open, with ESC. Never raises.
+
+    The shop is a modal over everything, so while it is up it takes every click: the
+    spellbook's, the friends list's, every close button's. It opens by itself on the first
+    login of the day, and from the wishlist button on a friend's profile, which an invite
+    click can land on (#280). ESC rather than a click, since a keypress goes to the client as
+    a whole and nothing over the shop can take it. A shop that is not open costs a read and
+    no ESC, which on an empty screen would open the game menu instead.
+
+    `appear_timeout` watches that long for a shop that is on its way, as one is just after
+    a login; the default checks once. The shop is not in the window tree at all while it is
+    closed, so a read that finds it is one that is up.
+
+    A read that fails reports the shop as not open, so the caller carries on as it would have.
+    """
+
+    async def _shown() -> bool:
+        return await is_visible_by_path(client, CROWNS_SHOP_WINDOW_PATH)
+
+    try:
+        shown = (
+            await poll_until(_shown, timeout=appear_timeout, poll_interval=poll_interval)
+            if appear_timeout > 0
+            else await _shown()
+        )
+        if not shown:
+            return ShopClosure(was_open=False, closed=True)
+        closed = await press_key_until_gone(client, Keycode.ESC, is_open=_shown)
+        return ShopClosure(was_open=True, closed=closed)
+    except Exception:
+        logger.debug("Could not close the crowns shop", exc_info=True)
+        return ShopClosure(was_open=False, closed=True)
 
 
 async def is_friends_list_open(client) -> bool:
     """Return True if EITHER friends-list window is showing.
 
-    There are two independent friends-list windows (see paths.FRIENDS_LIST_WINDOW_NAMES):
+    There are two independent friends-list windows (see paths.FRIENDS_LIST_PATHS):
     the compact NewFriendsListWindow and the larger wndFriendsList. Only one is on screen
-    at a time, and F cycles between them, so a check against a single name will report the
+    at a time, and F cycles between them, so a check against a single one will report the
     list closed while the other one is still up.
     """
-    for name in FRIENDS_LIST_WINDOW_NAMES:
-        if await is_named_window_visible(client, name):
+    for path in FRIENDS_LIST_PATHS:
+        if await is_visible_by_path(client, path):
             return True
     return False
 
@@ -1513,18 +1814,30 @@ async def resolve_friend_name(client, friend_name_lower: str) -> str:
     raise ValueError("Could not find friend in the online friends list")
 
 
+_GO_TO_FRIEND = GO_TO_FRIEND_BUTTON_PATH[-1]
+
+
 async def teleport_via_friends_list(client, friend_name_lower: str) -> None:
-    """Resolve the exact-case friend name, then teleport via the in-game friends list.
+    """Teleport to a friend through the in-game friends list: their profile, then Go To Friend.
 
-    teleport_to_friend_from_list uses a case-sensitive string comparison internally, so the
-    exact-case name is looked up first. The mouse handler context is activated here because
-    both the resolution step and WizWalker's click chain require it.
+    WizWalker's teleport_to_friend_from_list did this, and clicked Go To Friend the moment
+    the profile showed, before its buttons had settled. Here open_friend_profile opens the
+    profile, matching the name case-insensitively, and _click_go_to_friend waits for the
+    buttons. A click that brings up no box missed: the profile (and the crowns shop, should
+    the click have opened it) is closed, and the whole is tried again, up to
+    FRIEND_TELEPORT_ATTEMPTS times.
 
-    Raises ValueError if no friends are online or the name is not found.
+    Raises ValueError if no friends are online, the name is not found, or no click brought
+    up the box. The message never names the friend.
     """
     async with client.mouse_handler:
-        exact_name = await resolve_friend_name(client, friend_name_lower)
-        await teleport_to_friend_from_list(client, name=exact_name)
+        for attempt in range(1, FRIEND_TELEPORT_ATTEMPTS + 1):
+            await open_friend_profile(client, friend_name_lower)
+            if await _click_go_to_friend(client):
+                return
+            logger.debug("Go To Friend missed (attempt %d of %d)", attempt, FRIEND_TELEPORT_ATTEMPTS)
+            await close_friend_profile(client)
+    raise ValueError(f"Go To Friend brought up no box in {FRIEND_TELEPORT_ATTEMPTS} attempts")
 
 
 TRIGGER_MARGIN = 5.0
@@ -1672,8 +1985,10 @@ class PortToFriendResult(NamedTuple):
       where it is going. A port onto a player you are standing beside does nothing visible.
 
     `refusal` is set when the game refused the port outright for one client — pair it with
-    dialog_captions.describe(); `refused_index` says which client hit it. `missing()` is what
-    is left over: clients that showed nothing at all by the ceiling.
+    dialog_captions.describe(); `refused_index` says which client hit it. `unstarted` holds
+    the clients whose port could not begin (their `initiate` raised), which are not waited
+    for. `missing()` is what is left over: those, and clients that showed nothing at all by
+    the ceiling.
     """
 
     seen_loading: set[int]
@@ -1681,6 +1996,7 @@ class PortToFriendResult(NamedTuple):
     refused_index: int | None = None
     jumped: frozenset[int] = frozenset()
     presumed: frozenset[int] = frozenset()
+    unstarted: frozenset[int] = frozenset()
 
     def missing(self, count: int) -> list[int]:
         """Indices below `count` that neither loaded, jumped, nor were presumed already there."""
@@ -1709,8 +2025,10 @@ async def port_to_friend(
     at `ceiling`. Only how the target and the surrounding zone check are resolved differs
     between callers, and that stays with them.
 
-    Raises ValueError if the initial teleport, or a straggler's retry, cannot resolve the
-    friend (not found, or not online) — the same error teleport_via_friends_list raises.
+    Raises ValueError if no client's teleport could begin (the friend not found, not online,
+    or Go To Friend bringing up no box) — the error teleport_via_friends_list raises. A
+    client whose own start or re-issue fails while others' begin is left out of the wait and
+    reported in the result's `unstarted`.
 
     None of the waiting here is bounded by Safety Delay: a caller using this as a fast
     fallback rather than as the whole point of the node should size `ceiling` accordingly
@@ -1765,7 +2083,11 @@ async def port_clients(
     realm, where the port would have loaded, so it goes back to being re-issued like any
     other quiet client.
 
-    Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
+    Each client's port starts on its own: one whose `initiate` raises is left out of the wait
+    (the result's `unstarted`), and the others' ports carry on. Raises what `initiate` raised
+    only when no client's port began, since then there is nothing to wait for; both starters
+    raise ValueError when they cannot begin. A re-issue that raises joins `unstarted` too,
+    and is not re-issued again.
     """
     if quiet_grace is None:
         quiet_grace = PORT_QUIET_GRACE  # read here, not in the signature, so it stays tunable
@@ -1775,7 +2097,12 @@ async def port_clients(
 
     # Positions are read before the port, or a jump that happens during initiate goes unseen.
     start_positions = await asyncio.gather(*[_position_or_none(c) for c in clients_to_move])
-    await asyncio.gather(*[initiate(c) for c in clients_to_move])
+    starts = await _start_each(initiate, clients_to_move)
+    unstarted = {i for i, error in enumerate(starts) if error is not None}
+    if count and len(unstarted) == count:
+        raise starts[0]
+    for i in sorted(unstarted):
+        logger.debug("Client %d of %d: its port could not start (%s)", i + 1, count, type(starts[i]).__name__)
 
     seen_loading: set[int] = set()
     jumped: set[int] = set()
@@ -1785,11 +2112,13 @@ async def port_clients(
     reissued = [False] * count
 
     def result(refusal: str | None = None, refused_index: int | None = None) -> PortToFriendResult:
-        return PortToFriendResult(seen_loading, refusal, refused_index, frozenset(jumped), frozenset(presumed))
+        return PortToFriendResult(
+            seen_loading, refusal, refused_index, frozenset(jumped), frozenset(presumed), frozenset(unstarted)
+        )
 
     while True:
         for i in range(count):
-            if i in seen_loading or i in jumped or i in presumed:
+            if i in seen_loading or i in jumped or i in presumed or i in unstarted:
                 continue
             outcome = await resolve_modal(clients_to_move[i])
             if outcome.refusal:
@@ -1804,7 +2133,8 @@ async def port_clients(
                 seen_loading.add(i)
 
         # A loading client still reports the position it left, so only the rest are read.
-        unsettled = [i for i in range(count) if i not in seen_loading and i not in jumped and i not in presumed]
+        done = seen_loading | jumped | presumed | unstarted
+        unsettled = [i for i in range(count) if i not in done]
         positions = await asyncio.gather(*[_position_or_none(clients_to_move[i]) for i in unsettled])
         quiet: list[int] = []
         for i, pos in zip(unsettled, positions):
@@ -1827,17 +2157,32 @@ async def port_clients(
                 maybe_there.discard(i)
             due.append(i)
 
-        if len(seen_loading | jumped | presumed) == count or now - loop_start > ceiling:
+        if len(seen_loading | jumped | presumed | unstarted) == count or now - loop_start > ceiling:
             return result()
 
         if due:
-            await asyncio.gather(*[initiate(clients_to_move[i]) for i in due])
+            errors = await _start_each(initiate, [clients_to_move[i] for i in due])
+            unstarted.update(i for i, error in zip(due, errors) if error is not None)
             after = loop.time()
             for i in due:
                 last_attempt[i] = after
                 reissued[i] = True
 
         await asyncio.sleep(poll_interval)
+
+
+async def _start_each(initiate, clients: list) -> list[Exception | None]:
+    """Start every client's port at once; what each raised, or None for one that began.
+
+    One client's failure must not cut the others' ports short: a plain gather raises the
+    first error, and the caller never learns which ports had begun. Only an Exception is
+    caught; a cancel goes through.
+    """
+    outcomes = await asyncio.gather(*[initiate(c) for c in clients], return_exceptions=True)
+    for outcome in outcomes:
+        if isinstance(outcome, BaseException) and not isinstance(outcome, Exception):
+            raise outcome
+    return [outcome if isinstance(outcome, Exception) else None for outcome in outcomes]
 
 
 class TogetherOutcome(enum.Enum):
@@ -1916,9 +2261,12 @@ async def gather_at_player(
       it than to be wrong about skipping it.
     * A mover already in the target's zone within POSITION_MARGIN of it is the one case whose
       port shows nothing, so it is the only one passed to port_clients as `maybe_there`.
-    * Arrival is every mover in the target's zone, within POSITION_MARGIN of it, and seen with
-      it (#130): standing beside the target proves the zone, and only the sighting proves the
-      realm. A mover presumed already there has to be seen too (port_clients' `target`).
+    * Arrival is every mover in the target's zone and seen with it (#130): only the sighting
+      proves the realm and the instance. Not where the target stands: the editor's TP to
+      player leaves the target to the user, who walks it off once the others appear, and a
+      check against its live position then never passed. A sighting holds to ~3800 units
+      (`sightings.SIGHT_RANGE`). A mover presumed already there has to be seen too
+      (port_clients' `target`).
 
     Logs its own reasons, naming players by number and never by name, and returns False on any
     failure: a player still loading, a friend not found, a refusal, a port that never showed
@@ -1947,7 +2295,7 @@ async def gather_at_player(
     beside = {
         i
         for i, (zone, pos) in enumerate(zip(zones, positions))
-        if zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
+        if _same_zone(zone, target_zone) and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
     }
     machine.log(
         f"Porting player(s) {numbers} to P{target_no}; already beside it: {[numbers[i] for i in sorted(beside)]}",
@@ -1985,17 +2333,46 @@ async def gather_at_player(
         return False
     for i in sorted(result.presumed):
         machine.log(f"P{numbers[i]} neither loaded nor moved; it was already beside P{target_no}")
+    machine.log(
+        f"Ports started: loading {[numbers[i] for i in sorted(result.seen_loading)]}, "
+        f"moved {[numbers[i] for i in sorted(result.jumped)]}; waiting for every loading screen to clear",
+        logging.DEBUG,
+    )
 
-    await poll_until(lambda: none_loading(movers), None, poll_interval)
+    if not await poll_until(lambda: none_loading(movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+        machine.log(
+            f"FAILURE: a player was still on a loading screen {ZONE_CHANGE_TIMEOUT:.0f}s after porting", logging.WARNING
+        )
+        return False
+    machine.log(f"Loading screens cleared; waiting to see every player with P{target_no}", logging.DEBUG)
+    landed_at = await _position_or_none(target)
 
-    if await poll_until(lambda: _all_beside(machine, target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+    shortfall: list[str] = []
+
+    async def all_with() -> bool:
+        missing = await _not_with(machine, target, movers)
+        reasons = [f"P{numbers[i]} {why}" for i, why in missing]
+        if reasons != shortfall:
+            # Logged when the reasons change, not every poll: a wait that never ends says why once.
+            shortfall[:] = reasons
+            if reasons:
+                machine.log(f"Not yet with P{target_no}: {'; '.join(reasons)}", logging.DEBUG)
+        return not missing
+
+    if await poll_until(all_with, ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
-    target_zone = await target.zone_name()
-    zones = await asyncio.gather(*[c.zone_name() for c in movers])
-    if all(z == target_zone for z in zones):
+    target_zone, *zones = await read_zones([target, *movers], poll_interval=poll_interval)
+    if all(_same_zone(z, target_zone) for z in zones):
+        now_at = await _position_or_none(target)
+        moved = (
+            f"; P{target_no} moved {distance(now_at, landed_at):.0f} units while it waited, and a player "
+            "too far from it cannot be seen"
+            if now_at is not None and landed_at is not None and distance(now_at, landed_at) > POSITION_MARGIN
+            else ""
+        )
         machine.log(
             f"FAILURE: not every player ended up with P{target_no}: all are in its zone, but not all "
-            "beside it and on its realm",
+            f"seen with it{moved}",
             logging.WARNING,
         )
         return False
@@ -2006,19 +2383,35 @@ async def gather_at_player(
     return False
 
 
-async def _all_beside(machine, target, movers: list) -> bool:
-    """Whether every mover is in the target's zone, within POSITION_MARGIN of it, and seen with it."""
-    target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
-    if target_pos is None:
-        return False
+async def _not_with(machine, target, movers: list) -> list[tuple[int, str]]:
+    """Each mover not yet in the target's zone and seen with it, and why.
+
+    Indices into *movers*. Zones are named by their last part, so the reasons can go in a
+    log. Seen is asked only once every mover is in the target's zone.
+    """
+    target_zone = await target.zone_name()
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
-    positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
-    if not all(
-        zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
-        for zone, pos in zip(zones, positions)
-    ):
-        return False
-    return (await read_sightings([target, *movers], machine)).all_together()
+    missing = [
+        (i, f"is in {_zone_tail(zone)}, not {_zone_tail(target_zone)}")
+        for i, zone in enumerate(zones)
+        if not _same_zone(zone, target_zone)
+    ]
+    if missing:
+        return missing
+    # The target's group, not its own sightings: a mover seen with one who is seen with the
+    # target is with it, as all_together() counts it.
+    with_target = set((await read_sightings([target, *movers], machine)).group_of(0))
+    return [(i, "is not seen with it") for i in range(len(movers)) if i + 1 not in with_target]
+
+
+def _zone_tail(zone: str | None) -> str:
+    """A zone's last part for a log line (``DM_Z06_Bridge``), or ``an unreadable zone``."""
+    return zone.rsplit("/", 1)[-1] if zone else "an unreadable zone"
+
+
+def _same_zone(a: str | None, b: str | None) -> bool:
+    """Whether two zone reads name one zone. Two unreadable (None) zones name nothing."""
+    return a is not None and a == b
 
 
 async def open_friend_profile(client, name: str):
@@ -2042,6 +2435,7 @@ async def open_friend_profile(client, name: str):
         _cycle_to_online_friends,
         _friend_list_entry,
         _maybe_get_named_window,
+        _maybe_get_window_at_path,
     )
 
     friends_window = await open_friends_list(client)
@@ -2076,7 +2470,150 @@ async def open_friend_profile(client, name: str):
         raise ValueError("Could not find friend in the online friends list")
 
     await _click_on_friend(client, friends_list, friend_index)
-    return await _maybe_get_named_window(client.root_window, "wndCharacter")
+    return await _maybe_get_window_at_path(client.root_window, CHARACTER_PROFILE_PATH)
+
+
+# The friend profile popup's buttons as (name, shown, (x1, y1, x2, y2)), the popup itself
+# first under the name "popup". The names are the game's control names, never a player's.
+ProfileLayout = tuple[tuple[str, bool, tuple[int, int, int, int]], ...]
+
+
+async def read_friend_profile(client) -> tuple[ProfileLayout | None, str]:
+    """Read where each of the friend profile popup's buttons is and whether it shows. Never raises.
+
+    Returns the layout, None when the popup is not open or could not be read, and the text
+    the logs show for it. The buttons sit in ButtonLayouts, and the layout can still be
+    moving when the popup first reads as visible (#280): two reads that disagree show it
+    moved, and one shows which button covered the point that was clicked.
+    """
+    try:
+        popups = await find_windows_by_path(client.root_window, CHARACTER_PROFILE_PATH)
+        if not popups:
+            return None, profile_layout_text(None)
+        popup = popups[0]
+        entries = [("popup", True, _rect_tuple(await popup.scale_to_client()))]
+        for child in await popup.children():
+            if await child.name() != "ButtonLayout":
+                continue
+            for button in await child.children():
+                entries.append(
+                    (await button.name(), await button.is_visible(), _rect_tuple(await button.scale_to_client()))
+                )
+        layout = tuple(entries)
+        return layout, profile_layout_text(layout)
+    except Exception as exc:
+        return None, f"<unreadable: {exc!r}>"
+
+
+async def friend_profile_buttons(client) -> str:
+    """Describe the friend profile popup's buttons for a log line. Never raises."""
+    return (await read_friend_profile(client))[1]
+
+
+async def await_settled_friend_profile(client) -> tuple[ProfileLayout | None, int]:
+    """Wait for the profile popup's buttons to stop moving, and return where they settled.
+
+    Returns the settled layout, or None if no two reads in a row agreed within
+    FRIEND_PROFILE_SETTLE_TIMEOUT, with the number of reads taken. A popup already laid out
+    settles in two. The reads are spaced a POLL_INTERVAL apart, because two taken back to
+    back can both come before the game's next layout pass and agree while still wrong.
+    An unreadable popup never counts as settled.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + FRIEND_PROFILE_SETTLE_TIMEOUT
+    previous, _ = await read_friend_profile(client)
+    reads = 1
+    while loop.time() < deadline:
+        await asyncio.sleep(POLL_INTERVAL)
+        current, _ = await read_friend_profile(client)
+        reads += 1
+        if current is not None and current == previous:
+            return current, reads
+        previous = current
+    return None, reads
+
+
+def profile_button_rect(layout: ProfileLayout | None, name: str) -> tuple[int, int, int, int] | None:
+    """Where the named button is in a layout read, or None if the read has no such button."""
+    return next((rect for button, _shown, rect in layout or () if button == name), None)
+
+
+def profile_layout_text(layout: ProfileLayout | None) -> str:
+    if layout is None:
+        return "popup missing"
+    return ", ".join(f"{name}{'' if shown else ' hidden'}@{rect_text(rect)}" for name, shown, rect in layout)
+
+
+def _rect_tuple(rect) -> tuple[int, int, int, int]:
+    return (rect.x1, rect.y1, rect.x2, rect.y2)
+
+
+def rect_text(rect: tuple[int, int, int, int]) -> str:
+    x1, y1, x2, y2 = rect
+    return f"({x1},{y1},{x2},{y2})"
+
+
+async def close_friend_profile(client) -> bool:
+    """Close the friend profile popup, and the crowns shop a click on its wishlist button opens.
+
+    Returns True once neither is up. Never raises. The shop goes first: it is a modal over
+    everything, and the profile's close button cannot be clicked under it.
+    """
+    try:
+        shop = await close_crowns_shop(client)
+        closed = await click_until_gone(
+            client,
+            CHARACTER_PROFILE_CLOSE_PATH,
+            is_open=lambda: is_visible_by_path(client, CHARACTER_PROFILE_PATH),
+        )
+        return shop.closed and closed
+    except Exception:
+        logger.debug("Could not close the friend profile popup", exc_info=True)
+        return False
+
+
+async def _click_go_to_friend(client) -> bool:
+    """Click Go To Friend on the open profile popup and answer the box that asks. True if one came.
+
+    The click waits for the popup's buttons to settle, as Invite to Group's does (#280):
+    sent the moment the popup showed, it landed on Friend Finder below, or on nothing, and
+    no box came. A refusal (dialog_captions.REFUSALS) is left up for port_clients to
+    report; anything else is confirmed, and the profile closed during the teleport's
+    animation, which takes about a second.
+    """
+    if not await poll_until(
+        lambda: is_visible_by_path(client, CHARACTER_PROFILE_PATH),
+        timeout=FRIEND_PROFILE_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
+    ):
+        logger.debug("The friend profile did not appear within %.0fs", FRIEND_PROFILE_TIMEOUT)
+        return False
+    settled, reads = await await_settled_friend_profile(client)
+    if settled is None:
+        logger.debug("Profile buttons still moving after %.0fs; clicking anyway", FRIEND_PROFILE_SETTLE_TIMEOUT)
+    elif reads > 2:
+        logger.debug("Profile buttons moved after the popup showed; settled after %d reads", reads)
+    before = settled or (await read_friend_profile(client))[0]
+    if not await click_by_path(client, GO_TO_FRIEND_BUTTON_PATH):
+        logger.debug("Go To Friend unavailable: %s", await diagnose_path(client, GO_TO_FRIEND_BUTTON_PATH))
+        return False
+
+    if not await poll_until(
+        lambda: modal_showing(client), timeout=FRIEND_TELEPORT_CONFIRM_TIMEOUT, poll_interval=POLL_INTERVAL
+    ):
+        _, after_text = await read_friend_profile(client)
+        logger.debug(
+            "No box asked to teleport within %.0fs of Go To Friend, aimed at %s; profile buttons then: %s",
+            FRIEND_TELEPORT_CONFIRM_TIMEOUT,
+            rect_text(aimed) if (aimed := profile_button_rect(before, _GO_TO_FRIEND)) else "?",
+            after_text,
+        )
+        return False
+    if await identify_modal(client) in dialog_captions.REFUSALS:
+        return True
+    await click_by_path(client, MESSAGE_BOX_CENTER)
+    await click_by_path(client, CHARACTER_PROFILE_CLOSE_PATH)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -2167,6 +2704,7 @@ async def reach_prompt(
     numbers: list[int] | None = None,
     fail_on_miss: bool = True,
     clear_first: bool = True,
+    any_client: bool = False,
 ) -> bool:
     """Get every client standing at *point* with *prompt* showing.
 
@@ -2184,9 +2722,22 @@ async def reach_prompt(
     passes False and logs its own outcome, and finds every client still at *point*
     rather than reset after the last attempt. Such a caller must tell a miss from step 1
     failing, so it runs ``clear_stale_prompt`` itself and passes *clear_first* False.
+
+    With *any_client* the wait ends as soon as the prompt shows on one client rather than
+    all of them, for an object only one client needs to use and that raises the prompt
+    only for those who can (a skeleton key door: a player with no key never sees it). The
+    caller reads which clients got it. Without it, a client that can never get the prompt
+    costs every attempt its full ``safety_delay``.
+
     Logs under the running node, since it is called from one — see ``machine.log`` in
     the node conventions.
     """
+
+    async def _reached() -> bool:
+        if not any_client:
+            return await prompt.all_showing(clients)
+        return any(await asyncio.gather(*[prompt.showing(c) for c in clients]))
+
     if clear_first and not await clear_stale_prompt(
         machine, clients, reset, prompt, safety_delay, poll_interval, numbers
     ):
@@ -2197,7 +2748,7 @@ async def reach_prompt(
         await asyncio.gather(*[c.teleport(point) for c in clients])
 
         machine.log(f"Waiting for {prompt.name}…", logging.DEBUG)
-        if await poll_until(lambda: prompt.all_showing(clients), safety_delay, poll_interval):
+        if await poll_until(_reached, safety_delay, poll_interval):
             return True
 
         if attempt == MAX_RETRIES and not fail_on_miss:
@@ -2236,14 +2787,7 @@ async def reach_sigil_prompt(
     Returns False having already logged the reason, so a caller's failure path is a
     bare ``return "FAILURE"``.
     """
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await in_expected_zone(machine, clients, from_zone, poll_interval):
         return False
 
     return await reach_prompt(machine, clients, sigil, reset, DUNGEON_ENTRANCE_PROMPT, safety_delay, poll_interval)

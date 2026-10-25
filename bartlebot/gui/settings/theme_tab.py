@@ -36,14 +36,14 @@ logger = logging.getLogger(__name__)
 _SECTIONS: list[tuple[str, list[str]]] = [
     ("Core", ["bg", "surface", "text", "accent", "border"]),
     ("Semantic", ["error", "warning", "success"]),
-    ("Text Variants", ["text_muted", "text_subtle"]),
-    ("Node: Neutral", ["node_fill", "node_fill_hover", "node_fill_selected", "node_border"]),
-    ("Node: Active", ["node_fill_active", "node_fill_active_dim", "node_border_active"]),
-    ("Node: Error", ["node_fill_error", "node_fill_error_hover"]),
-    ("Node: Warning", ["node_fill_warning", "node_fill_warning_hover"]),
-    ("Edges & Ports", ["edge_color", "edge_hover", "edge_selected", "port_color"]),
+    ("Text variants", ["text_muted", "text_subtle"]),
+    ("Node: neutral", ["node_fill", "node_fill_hover", "node_fill_selected", "node_border"]),
+    ("Node: active", ["node_fill_active", "node_fill_active_dim", "node_border_active"]),
+    ("Node: error", ["node_fill_error", "node_fill_error_hover"]),
+    ("Node: warning", ["node_fill_warning", "node_fill_warning_hover"]),
+    ("Edges and ports", ["edge_color", "edge_hover", "edge_selected", "port_color"]),
     (
-        "Status & Pills",
+        "Status and pills",
         ["status_paused", "pill_warning_hover", "pill_neutral_bg", "pill_activity_bg", "pill_this_bot_bg", "pill_text"],
     ),
     ("Search", ["search_match_current", "search_match_other"]),
@@ -67,13 +67,13 @@ _SECTIONS: list[tuple[str, list[str]]] = [
 # Human-readable label overrides (token_name → display label)
 _LABELS: dict[str, str] = {
     "bg": "Background",
-    "surface": "Surface / panels",
+    "surface": "Panels",
     "text": "Primary text",
-    "accent": "Accent / links",
-    "border": "Border / dividers",
+    "accent": "Accent and links",
+    "border": "Borders and dividers",
     "error": "Error",
     "warning": "Warning",
-    "success": "Success / running",
+    "success": "Success and running",
     "text_muted": "Muted text",
     "text_subtle": "Subtle text",
     "node_fill": "Fill",
@@ -81,7 +81,7 @@ _LABELS: dict[str, str] = {
     "node_fill_selected": "Fill (selected)",
     "node_border": "Border",
     "node_fill_active": "Fill (active)",
-    "node_fill_active_dim": "Fill (active dim)",
+    "node_fill_active_dim": "Fill (active, dimmed)",
     "node_border_active": "Border (active)",
     "node_fill_error": "Fill",
     "node_fill_error_hover": "Fill (hover)",
@@ -99,7 +99,7 @@ _LABELS: dict[str, str] = {
     "pill_text": "Pill text",
     "search_match_current": "Current match",
     "search_match_other": "Other matches",
-    "minimap_viewport": "Viewport rect",
+    "minimap_viewport": "Visible area",
     "region_1": "Region 1",
     "region_2": "Region 2",
     "region_3": "Region 3",
@@ -118,13 +118,13 @@ _LABELS: dict[str, str] = {
 
 # Contrast pairs to check: (text_token, background_token, display_name)
 _CONTRAST_PAIRS: list[tuple[str, str, str]] = [
-    ("text", "bg", "text on bg"),
-    ("text", "surface", "text on surface"),
-    ("text_muted", "bg", "muted text on bg"),
-    ("text_subtle", "bg", "subtle text on bg"),
-    ("text_muted", "surface", "muted text on surface"),
-    ("pill_text", "error", "pill text on error"),
-    ("pill_text", "warning", "pill text on warning"),
+    ("text", "bg", "Text on background"),
+    ("text", "surface", "Text on panels"),
+    ("text_muted", "bg", "Muted text on background"),
+    ("text_subtle", "bg", "Subtle text on background"),
+    ("text_muted", "surface", "Muted text on panels"),
+    ("pill_text", "error", "Pill text on error"),
+    ("pill_text", "warning", "Pill text on warning"),
 ]
 
 _WCAG_AA_NORMAL = 4.5  # minimum for normal-size text
@@ -213,12 +213,12 @@ class ThemeTab(QWidget):
         mode_form.add_row(
             SettingRow(
                 "Theme",
-                "System follows the Windows light or dark setting.",
+                "Which colors BartleBot uses.",
                 self._theme_combo,
                 default=default_for("general", "theme"),
                 details=(
-                    "It re-reads that setting while the app is open. Custom starts from whichever of "
-                    "Light or Dark Windows is on now, and reveals the color list below."
+                    "System changes along with Windows' light or dark setting. Custom starts from the current "
+                    "colors and lets you edit each one."
                 ),
             )
         )
@@ -231,7 +231,7 @@ class ThemeTab(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(6)
 
-        self._reset_btn = QPushButton("Reset to System Default")
+        self._reset_btn = QPushButton("Reset to system default")
         # Hardcoded style so the button is always visible regardless of any
         # custom colors the user may have applied to the running theme.
         self._reset_btn.setStyleSheet(
@@ -335,7 +335,7 @@ class ThemeTab(QWidget):
 
     def _pick_color(self, token: str) -> None:
         current = QColor(self._colors[token])
-        chosen = QColorDialog.getColor(current, self, f"Choose color for '{token}'")
+        chosen = QColorDialog.getColor(current, self, f"Choose Color for {_LABELS.get(token, token)}")
         if not chosen.isValid():
             return
         hex_val = chosen.name().lower()
@@ -416,9 +416,7 @@ class ThemeTab(QWidget):
                 failures.append(f"{label} ({ratio:.1f}:1)")
 
         if failures:
-            self._contrast_label.setText(
-                f"⚠ Low contrast: {', '.join(failures[:2])}" + (" (hover for details)" if len(failures) > 2 else "")
-            )
+            self._contrast_label.setText(f"⚠ Low contrast: {', '.join(failures)}")
             self._contrast_label.setStyleSheet("color: #cc6600; font-weight: bold;")
         else:
             self._contrast_label.setText("✓ All contrast ratios meet WCAG AA (4.5:1)")

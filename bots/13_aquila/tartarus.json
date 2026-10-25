@@ -1,0 +1,2627 @@
+{
+  "id": "65fd1928-7d90-478b-add2-c616d987f909",
+  "name": "Tartarus",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "30 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "31 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "32 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "35 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "45 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Amulet of Divine Influence",
+      "category": "Amulets"
+    },
+    {
+      "name": "Ares' Cyclone Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Numbing Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Scalding Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Guile",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Nerve",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Wits",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Stout Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Armor of a Sorrowful Life",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of Unknown Tartarus",
+      "category": "Robes"
+    },
+    {
+      "name": "Armor of Zeus' Law",
+      "category": "Robes"
+    },
+    {
+      "name": "Blackthunder Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Blackthunder Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Blackthunder Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Bolt of Zeus' Justice",
+      "category": "Wands"
+    },
+    {
+      "name": "Boots of the Uncharted Sea",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of Unknown Tartarus",
+      "category": "Boots"
+    },
+    {
+      "name": "Clangor from Olympus Brim",
+      "category": "Hats"
+    },
+    {
+      "name": "Fires of Mars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Footgear of the Afterlife",
+      "category": "Boots"
+    },
+    {
+      "name": "Frigid Skeleturion",
+      "category": "Pets"
+    },
+    {
+      "name": "Grim Skeleturion",
+      "category": "Pets"
+    },
+    {
+      "name": "Hades' Armor of Conscience",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Armor of Mortality",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Armor of Tartarus",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Armor of the Abyss",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Armor of Torment",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Blackrain Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Boots of Justice",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Brimstone Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Crown of Blazes",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Darkness Trekkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Firestriders",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Flamemaker",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Frost-Bound Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Frozen Over Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Furtive Stalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Helm of Dread",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Helm of Justice",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Helm of Penance",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Helm of Retribution",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Helm of the Abyss",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Helm of Torment",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Helmet of Shivers",
+      "category": "Hats"
+    },
+    {
+      "name": "Hades' Inferno Plate",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Raiment of Justice",
+      "category": "Robes"
+    },
+    {
+      "name": "Hades' Soul Scythe",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Staff of Awakening",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Staff of Eternity",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Staff of Frostbite",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Staff of Reckoning",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Staff of Tempests",
+      "category": "Wands"
+    },
+    {
+      "name": "Hades' Striders of Torment",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Tartarus Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hades' Veil of Woe",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of the Frozen Wave",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of the Heavens",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Unknown Tartarus",
+      "category": "Hats"
+    },
+    {
+      "name": "Helmet of Tranquil Seas",
+      "category": "Hats"
+    },
+    {
+      "name": "Jupiter's Might",
+      "category": "Spellements"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Poseidon's Armor of Ages",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Armor of Depths",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Armor of Fervor",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Backdraft Stave",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Boots of Vapors",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Brim of Ardor",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Cowl of Flares",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Crest Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Doldrums Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Engulfing Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Firestream Garb",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Glacial Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Icebound Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Maelstrom Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Numbing Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Open Seas Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Sea Spray Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Staff of Zeal",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Torrential Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Waterskimmers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Wavemaker",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Wavewalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Whirlpool Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Raiment of Hades' Ruin",
+      "category": "Robes"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Senator's Frostfall Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Frostfall Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Frostfall Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Laurel of Demise",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Laurel of Sparks",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Laurel of Wisdom",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Monsoon Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Monsoon Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Monsoon Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Noble Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Noble Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Noble Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Shoes of Demise",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Shoes of Wisdom",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Sparking Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Spirited Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Spirited Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Spirited Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Toga of Demise",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Toga of Sparks",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Toga of Wisdom",
+      "category": "Robes"
+    },
+    {
+      "name": "Staff of Poseidon's Angst",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of Zeus' Curses",
+      "category": "Wands"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    },
+    {
+      "name": "Trident of Shock Waves",
+      "category": "Wands"
+    },
+    {
+      "name": "Unseen Lord's Chill Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Unseen Lord's Chill Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Unseen Lord's Chill Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Unseen Lord's Cinder Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Unseen Lord's Cinder Crown",
+      "category": "Hats"
+    },
+    {
+      "name": "Unseen Lord's Cinder Plate",
+      "category": "Robes"
+    },
+    {
+      "name": "Walkers of a Sorrowful Life",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Bolt of Genius",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Boots of Ambition",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Cloud Stalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Divine Right Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Eternal Flame Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Frozen Skies Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Garb of Mischief",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Hailstone Bolt",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Helm of Kings",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Helm of the Moribund",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Helmet of Blizzards",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Majestic Skyriders",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Ominous Skies Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Scepter of Creation",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Skyforged Plate",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Smoke Cloud Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Soulless Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Striders of Vitality",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Thunderstrike Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' War Eagle Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Wicked Ploy Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus's Flamewalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus's Iceshelf Striders",
+      "category": "Boots"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Pets",
+    "Dungeon",
+    "Challenge Mode"
+  ],
+  "options": [
+    {
+      "name": "Defeat Stheno",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to fail the urn puzzle and defeat Stheno, an optional boss that drops the Frigid Skeleturion."
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.999938308534,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999938308534,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub",
+        "xyz": {
+          "x": 8230.8,
+          "y": 12554.57,
+          "z": -1643.23
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Tartarus",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z03_Tartarus",
+        "dungeon_name": "Tartarus",
+        "sigil_xyz": {
+          "x": 7633.61,
+          "y": 12837.84,
+          "z": -1659.61
+        },
+        "reset_xyz": {
+          "x": 8230.8,
+          "y": 12554.57,
+          "z": -1643.23
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 25960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "handle_level_scaling",
+      "label": "Handle Level Scaling",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": "tartarus"
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Interact with Orpheus",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -2069.84,
+          "y": 5285.33,
+          "z": 1140.77
+        },
+        "reset_xyz": {
+          "x": -1998.39,
+          "y": 5847.81,
+          "z": 1137.35
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Enter House of Faun",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z03_Tartarus",
+        "to_zone": "Aquila/Interiors/AQ_Z03_HouseOfFaun",
+        "xyz": {
+          "x": 902.71,
+          "y": 1862.39,
+          "z": 572.89
+        },
+        "reset_xyz": {
+          "x": 466.13,
+          "y": 2212.82,
+          "z": 572.53
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_HouseOfFaun",
+        "xyz": {
+          "x": -32.92,
+          "y": -1660.94,
+          "z": 22.26
+        }
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Death Satyr",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Satyr-Death",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Interact with Death Satyr",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_HouseOfFaun",
+        "interact_xyz": {
+          "x": 30.21,
+          "y": 807.38,
+          "z": 22.17
+        },
+        "reset_xyz": {
+          "x": 49.23,
+          "y": 183.67,
+          "z": 22.19
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Exit House of Faun",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z03_HouseOfFaun",
+        "to_zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -1.07,
+          "y": -3316.79,
+          "z": 22.32
+        },
+        "reset_xyz": {
+          "x": 0.62,
+          "y": -2482.79,
+          "z": 22.29
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact",
+      "label": "Interact with Charon",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -5365.19,
+          "y": -4308.15,
+          "z": -1290.43
+        },
+        "reset_xyz": {
+          "x": -5335.53,
+          "y": -3738.92,
+          "z": -1325.2
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Interact with Petrified Wood",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -2542.81,
+          "y": -1990.53,
+          "z": 278.29
+        },
+        "reset_xyz": {
+          "x": -2852.48,
+          "y": -1818.99,
+          "z": 342.91
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "interact",
+      "label": "Interact with Petrified Wood",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -1786.45,
+          "y": -3026.34,
+          "z": -647.18
+        },
+        "reset_xyz": {
+          "x": -1415.1,
+          "y": -3251.99,
+          "z": -710.72
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "interact",
+      "label": "Interact with Petrified Wood",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -446.84,
+          "y": 1109.41,
+          "z": 572.53
+        },
+        "reset_xyz": {
+          "x": -600.94,
+          "y": 747.89,
+          "z": 578.61
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "interact",
+      "label": "Interact with Petrified Wood",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -3873.32,
+          "y": 2200.15,
+          "z": 1184.38
+        },
+        "reset_xyz": {
+          "x": -3550.43,
+          "y": 2148.52,
+          "z": 1253.9
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "interact",
+      "label": "Interact with Petrified Wood",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -1656.29,
+          "y": 3417.96,
+          "z": 568.65
+        },
+        "reset_xyz": {
+          "x": -1312.6,
+          "y": 3614.67,
+          "z": 574.22
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "interact",
+      "label": "Interact with Petrified Wood",
+      "position": {
+        "x": 11440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": 3013.03,
+          "y": -2342.37,
+          "z": -594.51
+        },
+        "reset_xyz": {
+          "x": 3221.59,
+          "y": -2021.99,
+          "z": -594.51
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "interact",
+      "label": "Interact with Charon",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -5368.79,
+          "y": -4480.68,
+          "z": -1290.43
+        },
+        "reset_xyz": {
+          "x": -5355.55,
+          "y": -3928.84,
+          "z": -1305.03
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Charon's Boat",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -5352.0,
+          "y": -6595.57,
+          "z": -1393.54
+        }
+      }
+    },
+    {
+      "id": "state_23",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Garden of Statues",
+      "position": {
+        "x": 12760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -20311.24,
+          "y": -30642.73,
+          "z": -2901.18
+        }
+      }
+    },
+    {
+      "id": "state_24",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 13200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_25",
+      "node_type": "handle_combat",
+      "label": "Defeat Death Minotaur",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Minotaur-Death",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_26",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 14080.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_27",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 14520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "enter_zone",
+      "label": "Enter Temple of Longing",
+      "position": {
+        "x": 14960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z03_Tartarus",
+        "to_zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": -20152.83,
+          "y": -35702.29,
+          "z": -2785.7
+        },
+        "reset_xyz": {
+          "x": -20192.0,
+          "y": -34957.52,
+          "z": -2927.76
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "interact",
+      "label": "Interact with Stheno",
+      "position": {
+        "x": 15400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "interact_xyz": {
+          "x": -7.8,
+          "y": 623.37,
+          "z": 1.96
+        },
+        "reset_xyz": {
+          "x": -5.31,
+          "y": -1209.61,
+          "z": 13.93
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_34",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 17600.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": -5.31,
+          "y": -1209.61,
+          "z": 13.93
+        }
+      }
+    },
+    {
+      "id": "state_40",
+      "node_type": "enter_zone",
+      "label": "Exit Temple of Longing",
+      "position": {
+        "x": 21120.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "to_zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -0.2,
+          "y": 1415.35,
+          "z": 106.83
+        },
+        "reset_xyz": {
+          "x": -6.68,
+          "y": 1136.42,
+          "z": 1.94
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_41",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 21560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -23970.25,
+          "y": -37436.36,
+          "z": -218.02
+        }
+      }
+    },
+    {
+      "id": "state_42",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 22000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -22009.06,
+          "y": -38367.01,
+          "z": -202.52
+        }
+      }
+    },
+    {
+      "id": "state_43",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 22440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "xyz": {
+          "x": -20289.12,
+          "y": -40279.02,
+          "z": -214.5
+        }
+      }
+    },
+    {
+      "id": "state_44",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 22880.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_45",
+      "node_type": "handle_combat",
+      "label": "Defeat Cerberus",
+      "position": {
+        "x": 23320.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Cerberus-B",
+        "wiki_page": "Creature:Cerberus (Balance)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_46",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of Hades",
+      "position": {
+        "x": 23760.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z03_Tartarus",
+        "to_zone": "Aquila/Interiors/AQ_Z03_HallOfHades",
+        "xyz": {
+          "x": -20147.62,
+          "y": -41147.05,
+          "z": 36.33
+        },
+        "reset_xyz": {
+          "x": -20130.68,
+          "y": -40404.42,
+          "z": -214.5
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_47",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 24200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_HallOfHades",
+        "xyz": {
+          "x": -102.16,
+          "y": -1538.93,
+          "z": 2.97
+        }
+      }
+    },
+    {
+      "id": "state_48",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 24640.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_49",
+      "node_type": "handle_combat",
+      "label": "Defeat Hades the Unseen",
+      "position": {
+        "x": 25080.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Immortal-Hades",
+        "wiki_page": "Creature:Hades the Unseen (Tartarus)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_50",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 25520.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_51",
+      "node_type": "collect_item",
+      "label": "Collect first urn piece",
+      "position": {
+        "x": 15840.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": 12991.5,
+          "y": 12713.15,
+          "z": 2.2
+        },
+        "entity_names": [
+          "AQ-TART-UrnPiece1-Maze"
+        ],
+        "collect_client": 1
+      }
+    },
+    {
+      "id": "state_52",
+      "node_type": "collect_item",
+      "label": "Collect second urn piece",
+      "position": {
+        "x": 16280.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": 12930.13,
+          "y": -12574.21,
+          "z": 2.2
+        },
+        "entity_names": [
+          "AQ-TART-UrnPiece2-Maze"
+        ],
+        "collect_client": 1
+      }
+    },
+    {
+      "id": "state_53",
+      "node_type": "collect_item",
+      "label": "Collect third urn piece",
+      "position": {
+        "x": 16720.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": -12999.23,
+          "y": -12593.6,
+          "z": 2.2
+        },
+        "entity_names": [
+          "AQ-TART-UrnPiece3-Maze"
+        ],
+        "collect_client": 1
+      }
+    },
+    {
+      "id": "state_54",
+      "node_type": "collect_item",
+      "label": "Collect fourth urn piece",
+      "position": {
+        "x": 17160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": -13027.89,
+          "y": 13382.62,
+          "z": 2.2
+        },
+        "entity_names": [
+          "AQ-TART-UrnPiece4-Maze"
+        ],
+        "collect_client": 1
+      }
+    },
+    {
+      "id": "state_55",
+      "node_type": "collect_item",
+      "label": "Collect Lion's Tail Leaves",
+      "position": {
+        "x": 20680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "xyz": {
+          "x": 12991.5,
+          "y": 12713.15,
+          "z": 2.2
+        },
+        "entity_names": [
+          "AQ-TAR-Liontail"
+        ],
+        "collect_client": 1
+      }
+    },
+    {
+      "id": "state_56",
+      "node_type": "interact",
+      "label": "Assemble first urn piece",
+      "position": {
+        "x": 18040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "interact_xyz": {
+          "x": 783.77,
+          "y": 770.69,
+          "z": 1.75
+        },
+        "reset_xyz": {
+          "x": -5.31,
+          "y": -1209.61,
+          "z": 13.93
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_57",
+      "node_type": "interact",
+      "label": "Assemble third urn piece",
+      "position": {
+        "x": 18920.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "interact_xyz": {
+          "x": -810.67,
+          "y": -816.3,
+          "z": 1.73
+        },
+        "reset_xyz": {
+          "x": -5.31,
+          "y": -1209.61,
+          "z": 13.93
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_58",
+      "node_type": "interact",
+      "label": "Assemble second urn piece",
+      "position": {
+        "x": 18480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "interact_xyz": {
+          "x": 790.74,
+          "y": -825.11,
+          "z": 1.75
+        },
+        "reset_xyz": {
+          "x": -5.31,
+          "y": -1209.61,
+          "z": 13.93
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_59",
+      "node_type": "interact",
+      "label": "Assemble fourth urn piece",
+      "position": {
+        "x": 19360.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z03_TempleOfLonging",
+        "interact_xyz": {
+          "x": -792.72,
+          "y": 798.8,
+          "z": 1.74
+        },
+        "reset_xyz": {
+          "x": -5.31,
+          "y": -1209.61,
+          "z": 13.93
+        },
+        "interact_clients": [
+          4
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_60",
+      "node_type": "handle_combat",
+      "label": "Defeat Stheno",
+      "position": {
+        "x": 19800.0,
+        "y": 90.0
+      },
+      "params": {
+        "enemy": "AQ-Gorgon-Stheno",
+        "wiki_page": "Creature:Stheno",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_61",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 20240.0,
+        "y": 90.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_51",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_59",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_56",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_43",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_44",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_45",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_46",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_47",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_48",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_49",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "state_50",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_50",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_51",
+      "dest": "state_52",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_52",
+      "dest": "state_53",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_53",
+      "dest": "state_54",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_55",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_56",
+      "dest": "state_58",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_57",
+      "dest": "state_59",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_58",
+      "dest": "state_57",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_60",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Stheno",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_60",
+      "dest": "state_61",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_61",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Aquila/AQ_Z00_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.999938308534,
+          "y": 0.00021952501634925348
+        }
+      }
+    },
+    {
+      "id": "c17b172b",
+      "label": "Death Satyr",
+      "members": [
+        "state_7",
+        "state_10",
+        "state_9",
+        "state_8",
+        "state_5",
+        "state_6",
+        "state_11",
+        "state_4"
+      ],
+      "color": 3,
+      "collapsed": true
+    },
+    {
+      "id": "6c23f495",
+      "label": "Charon",
+      "members": [
+        "state_20",
+        "state_18",
+        "state_14",
+        "state_17",
+        "state_22",
+        "state_13",
+        "state_21",
+        "state_15",
+        "state_19",
+        "state_16"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "35c420fb",
+      "label": "Death Minotaur",
+      "members": [
+        "state_24",
+        "state_23",
+        "state_25",
+        "state_28",
+        "state_27",
+        "state_26"
+      ],
+      "color": 2,
+      "collapsed": true
+    },
+    {
+      "id": "9c7882ef",
+      "label": "Stheno",
+      "members": [
+        "state_40",
+        "state_29",
+        "state_34",
+        "state_51",
+        "state_56",
+        "state_54",
+        "state_53",
+        "state_59",
+        "state_57",
+        "state_52",
+        "state_58",
+        "state_55",
+        "state_61",
+        "state_60"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "4f5264d7",
+      "label": "Cerberus",
+      "members": [
+        "state_41",
+        "state_42",
+        "state_43",
+        "state_45",
+        "state_44",
+        "state_46"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "7c5ef8ed",
+      "label": "Hades",
+      "members": [
+        "state_48",
+        "state_50",
+        "state_49",
+        "state_47"
+      ],
+      "color": 6,
+      "collapsed": true
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  },
+  "history": [
+    "9000a0af06dc9cc8fe0982504b727fd7f23f198e855de2829d5d0b4ee86e2482",
+    "98fefb55f4e830e198e5101a2c07ef70b9d078e73321ed67d73c34e72d04df70",
+    "f1809fe077190bae2213031d47c2dcbb7cb288fef811d63864bfab520f1881a6",
+    "9b4c77a2bb63f5b1dbc619e60b29a8c31c49769232f375f2294aa2ac7b8c3892",
+    "189d16f448bbfe071dc3000bb15895969bb368fc44f4e9a1d1aa3f73036f62cb",
+    "5749fb87a7b839a455c4523150a906b389a8cea901ce6b7d25c06cf69cd5bdb6",
+    "6609fa8ef7161487f7aeeca6f108f9c782cbd6dbe763174e2931a9c52da937b9",
+    "0d5f80692128537b16d590064377137d83d24c9c25e9111ee9101c37c1da7898",
+    "9958d838f6f5fb2a77474745e26cb467849d14e256366027bcaafd1180b78830",
+    "4bda097e9cbbefdd7af43a32cce25d939dc947d3b7a817c69ecb8324cfac2e57",
+    "5b9636b37917e7507203f3302afb8b785e39324df71932af34077d61e9eee302"
+  ]
+}

@@ -20,7 +20,10 @@ then waits up to the switch interval to get it back each time. Measured on the s
 dialog with nothing cached: no parse on the GUI thread at all, and the dialog took 5.4 s
 to build instead of 0.8 s, because building it reads the strategy folders. A separate
 process shares no lock. One, started on first use and kept: it costs a second or so to
-start, in the background, and its imports stay loaded for the next check.
+start, in the background, and its imports stay loaded for the next check. It is never shut
+down, and the quit skips the Python teardown that would have told it to leave, so it
+watches the app's process and ends with it (``combat/dsl_check_worker.py``). Before that, every
+session that started one left it running after the app had gone.
 
 The child only parses (``combat_runner.check_dsl_uncached``); the answer comes back here
 and is stored in this process's caches, so the two never write the cache file at once.
@@ -32,12 +35,14 @@ from __future__ import annotations
 
 import logging
 import multiprocessing
+import os
 from collections.abc import Callable, Hashable
 from concurrent.futures import Executor, Future, ProcessPoolExecutor, ThreadPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
+from bartlebot.combat.dsl_check_worker import exit_with_parent
 from bartlebot.combat.strategy_summary import Validate
 from bartlebot.nodes.combat_runner import DslCheck, check_dsl_uncached, known_dsl_check, store_dsl_check
 
@@ -74,7 +79,12 @@ class DslChecker(QObject):
 
     def _submit(self, dsl: str) -> None:
         if self._executor is None:
-            self._executor = ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"))
+            self._executor = ProcessPoolExecutor(
+                max_workers=1,
+                mp_context=multiprocessing.get_context("spawn"),
+                initializer=exit_with_parent,
+                initargs=(os.getpid(),),
+            )
         try:
             future = self._executor.submit(check_dsl_uncached, dsl)
         except (BrokenProcessPool, RuntimeError, OSError):

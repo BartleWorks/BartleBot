@@ -293,3 +293,57 @@ async def test_a_client_with_no_route_is_left_without_an_attempt(monkeypatch):
 
     assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], PortMap()) == [b]
     port.assert_not_awaited()
+
+
+async def test_a_port_is_not_judged_while_the_movers_zone_is_unreadable(monkeypatch):
+    """The loading screen is gone but the zone is not yet readable: wait for it, don't count the port failed."""
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
+    port, _ = _fake_port([a, b])
+    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    arrived = b.zone_name.side_effect
+    b.zone_name = AsyncMock(side_effect=lambda: None if b.zone_name.await_count <= 2 else arrived())
+    machine = FakeMachine()
+    monkeypatch.setattr(node_helpers, "ZONE_READABLE_TIMEOUT", 10.0)  # the wait is the subject
+
+    assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == []
+    assert pm.routes(b, a) == ["friend"]
+
+
+async def test_two_unreadable_zones_are_not_a_match(monkeypatch):
+    """None == None must not count as arriving: a mover whose zone never turns readable has not landed."""
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
+    port, _ = _fake_port([a, b])
+    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    monkeypatch.setattr(node_helpers, "read_zones", _quick(node_helpers.read_zones))
+    a.zone_name = AsyncMock(return_value=None)
+    b.zone_name = AsyncMock(return_value=None)
+    machine = FakeMachine()
+
+    assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == [b]
+    assert any("did not end up in player 1's zone" in msg for msg, _ in machine.logs)
+
+
+async def test_a_judged_port_logs_the_zones_it_compared(monkeypatch):
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
+    monkeypatch.setattr(
+        node_helpers, "port_to_friend", AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading={0}))
+    )
+    machine = FakeMachine()
+
+    assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == [b]
+    logged = [msg for msg, _ in machine.logs]
+    assert any("its zone is 'Alpha/S1'" in msg and "player 2's is 'Beta/Hub'" in msg for msg in logged)
+    assert any("did not end up in player 1's zone" in msg for msg in logged)
+    assert _A.casefold() not in " ".join(logged).casefold()
+
+
+def _quick(read_zones):
+    """read_zones with a short wait, so a zone that never turns readable does not hold the suite for ten seconds."""
+
+    async def read(clients):
+        return await read_zones(clients, 0.05, 0.01)
+
+    return read

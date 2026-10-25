@@ -13,6 +13,7 @@ from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.options import player_realms
+from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION
 from bartlebot.options.option_groups import GROUP_GENERAL
 
 PARAM_KEEP_CURRENT_REALM = "keep_current_realm"
@@ -23,10 +24,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="nav_zone",
         label="Zone",
         help=(
-            "The zone to take every player to. The list is grouped by world; type part of a zone's "
-            "name, its world or its zone id to narrow it.\n\n"
-            "Players can start anywhere, another world included: the route is planned from wherever "
-            "they are when the node runs."
+            "The zone to bring every player to. Type part of a zone's name, world or ID to narrow the "
+            "list. Players can start anywhere, even in another world."
         ),
         default="",
         required=True,
@@ -36,11 +35,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Keep Current Realm",
         help=(
-            "Off: the leader changes to your Favorite Realm on arrival, and everyone joins it there.\n\n"
-            "On: nobody opens a spellbook, and everyone joins the leader on the realm it is already on. "
-            "For a leg partway through a bot that left the Favorite Realm on purpose.\n\n"
-            "Either way every player ends on one realm, unless the bot's Player Realms is Separate: "
-            "then nobody changes realm at all."
+            "When on, nobody changes realm, and everyone joins the leader on the realm it's on. Use "
+            "it partway through a bot that left the Favorite Realm on purpose.\n\nWhen off, the leader "
+            "changes to your Favorite Realm on arrival."
         ),
         default=False,
     ),
@@ -48,19 +45,20 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Brings every player to the chosen zone, on one realm and beside one another, from wherever they "
-        "are. One player leads: it travels, changes to the Favorite Realm, and everyone it cannot see ports "
-        "to it. Routes run through walks, teleporters, zone lists, rides, World Gates, the hub button and HOME."
+        "Brings every player to the chosen zone, together and on one realm, from wherever they "
+        "are. One player leads, and the others teleport to it."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Every player is in the zone, on one realm, and seen beside the leader."),
+        ReturnSpec("SUCCESS", "Every player is in Zone, on one realm, beside the leader."),
         ReturnSpec(
             "FAILURE",
-            "The zone is not on the navigation map; there is no route from where the players are "
-            "(most often a world or teleporter the character has not unlocked); a step failed and no "
-            "other route was left; a player is in a restricted zone; the leader could not change realm; "
-            "or a player could not be brought to the leader.",
+            (
+                "There's no route from where players are, usually because a world or teleporter isn't "
+                "unlocked yet. Or a step failed with no other route left, Zone isn't on the navigation "
+                "map, a player is in a restricted zone, the leader couldn't change realm, or a player "
+                "couldn't reach the leader."
+            ),
         ),
     ],
     required_bot_options=[
@@ -73,26 +71,26 @@ NODE_SPEC = NodeSpec(
             # Null, always: the author has no opinion about which realm you farm in, and
             # cannot have one. The level below is your app setting.
             default=None,
-            description=(
-                "The realm the leader changes to, and everyone joins it on. This is your value, not the "
-                "bot's — it is stored on this machine (Settings → Bot) and never written to a bot file. "
-                "Left unset, nobody changes realm, and everyone joins the leader on its own."
-            ),
+            description=FAVORITE_REALM_DESCRIPTION,
             required_unless=PARAM_KEEP_CURRENT_REALM,
         ),
     ],
     max_consecutive_retries=3,
     usage_notes=(
-        "Players arrive wherever the last zone change puts them, which is not a fixed spot — follow "
-        "this node with Teleport To Coordinates when the position matters.\n\n"
-        "Players already together in the zone are left where they are, so this is cheap at the top of a "
-        "bot: one look at who sees whom, and one spellbook read by the leader when it has a realm to check.\n\n"
-        "A short route is traveled together. For a longer one, or one through a teleporter, the leader "
-        "travels and the others port to it when it arrives, through the friends list or else the group: a "
-        "port is one loading screen for everybody, and it puts the porter on the leader's realm. A player "
-        "who cannot port travels on its own, then changes to the leader's realm. The leader cannot change "
-        "realm in Eerem Palace, so bound there it changes on the way.\n\n"
-        "With Player Realms set to Separate, every player travels, and nobody ports or changes realm."
+        (
+            "Follow this node with Teleport to Coordinates when the exact spot matters. Players "
+            "arrive wherever the last zone change puts them."
+        )
+        + "\n\n"
+        + ("Players already together in the zone stay where they are, so the node is cheap at the top of a bot.")
+        + "\n\n"
+        + (
+            "On a long route, or one through a teleporter, the leader travels and the others teleport "
+            "to it on arrival. A player who can't teleport travels alone, then changes to the "
+            "leader's realm."
+        )
+        + "\n\n"
+        + ("With Player Realms set to Separate, every player travels on its own and nobody changes realm.")
     ),
     see_also=["teleport_to_world_hub", "change_realm"],
 )

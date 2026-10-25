@@ -28,6 +28,16 @@ recovery's Esc → Quit or this node itself left it outside any instance on a fr
 nothing has moved it since. Nearly every shipped bot's recovery state is this node, and without
 the skip it logged out a team recovery had just logged in.
 
+**A dialog over the screen is closed first (#281).** Every modal swallows clicks on whatever is behind it,
+and the spellbook is behind them all. A player that failed to leave a dungeon is still looking at its exit
+prompt when recovery sends the bot here, so ``node_helpers.clear_modals`` closes whatever is up before the
+spellbook is clicked, and again if one opens over it. It *cancels*: the right button, else the center. Confirming
+would leave the dungeon or enter another, and Quit raises its own question about a dungeon, which is
+confirmed after the click. A dialog that will not close fails the node, naming it. A disconnect modal is left
+alone and the player is handed to crash recovery. The crowns shop is closed with ESC before any dialog: it is no
+dialog, but it takes every click the same way (#280). It is watched for again on logging back in, since the first
+login of the day opens it a moment after the world loads, but there one that stays open is only logged.
+
 **Where the character comes back.** Not where it logged out. Quitting from inside a dungeon
 or a house puts the character back where it stood before entering. Put this node somewhere
 the bot can carry on from — typically just before it travels somewhere — rather than in the
@@ -56,7 +66,6 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import slots_in_battle
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
-    BACKPACK_CLOSE_BUTTON_PATH,
     REALM_CURRENT_NAME_PATH,
     SETTINGS_QUIT_BUTTON_PATH,
     SPELLBOOK_BUTTON_PATH,
@@ -68,14 +77,18 @@ from bartlebot.nodes.timing import (
     RELOG_CHAR_SELECT_TIMEOUT,
     RELOG_FIGHT_TIMEOUT,
     RELOG_IN_GAME_TIMEOUT,
+    RELOG_SHOP_APPEAR_TIMEOUT,
+    RELOG_STAGGER_DELAY,
     TRIGGER_TIMEOUT,
+    jitter,
 )
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
 
-# How many times to reopen the spellbook when it comes up on the Realms tab, which is the
-# one tab that hides the Quit button. Two is already paranoid: a fresh open shows it.
+# How many times to try the menu: reopening the spellbook when it comes up on the Realms tab,
+# which is the one tab that hides the Quit button (a fresh open shows it), or when a dialog
+# opened over it. Two is already paranoid.
 _MENU_ATTEMPTS = 2
 
 # How one player's relog ended, as log_out_and_in returns it. BACK is in the world again;
@@ -91,59 +104,108 @@ PARAM_SCHEMA: list[ParamField] = [
         type="player_list",
         label="Players to Relog",
         help=(
-            "Which players log out and back in. All of them by default.\n\n"
-            "Relogging the whole group at once is usually what you want: the players are "
-            "logged out for the same few seconds, and the group is re-formed once at the end "
-            "rather than after each one."
+            "Which players log out and back in. Relogging everyone at once is usually best, since the "
+            "group re-forms once at the end."
         ),
         default=[],
         required=False,
-        default_hint="Empty means every player.",
+        default_hint="every player",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Logs players out to the character select screen and immediately plays the same "
-        "character back in, without closing the game. Clears the slowdown that builds up over "
-        "a long session in seconds rather than the minutes a full relaunch costs."
+        "Logs players out to character select and straight back in, which clears the slowdown of "
+        "a long session in seconds."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "Every selected player logged out and is back in the world."),
         ReturnSpec(
             "FAILURE",
-            "A fight did not end in time, the spellbook or its settings page did not open, the "
-            "game refused the logout, or Quit did not take effect. In every case the player is "
-            "still in the world.",
+            (
+                "A fight didn't end in time, a dialog or the Crowns Shop wouldn't close, the spellbook or its settings page "
+                "didn't open, or the game refused to log out. The player is still in the world in every case."
+            ),
         ),
     ],
     max_consecutive_retries=2,
     usage_notes=(
-        "Players come back where they were BEFORE entering their current dungeon or house — "
-        "logging out leaves an instance. Place this node where the bot can carry on from "
-        "whatever the character's position turns out to be, normally just before it travels "
-        "somewhere.\n\n"
-        "The group is lost on logout and re-formed afterwards when 'Automatically group "
-        "players' is enabled in Settings.\n\n"
-        "Nobody is logged out while any player is in a fight, and the group is not re-formed "
-        "until a fight the players logged back into is over. The bot fights it in the meantime.\n\n"
-        "A player that logs out but cannot get back in (character select never appears, or "
-        "it is still loading a minute after leaving character select) is closed and "
-        "relaunched as though its game had crashed, and the bot carries on from its recovery "
-        "state. If that player cannot be relaunched, because no account is linked or no "
-        "password is saved, the bot stops and says so. A player that has lost its connection "
-        "to the game, before Quit or after, is closed and relaunched the same way.\n\n"
-        "A player that has only just logged in, because crash recovery or a scheduled relog "
-        "brought it back, is skipped until something moves it: a login has already done what "
-        "this node does. That is what keeps a Relog recovery state from logging the team out "
-        "again straight after recovery.\n\n"
-        "You may not need this node at all: Settings → Bot → 'Relog interval' does "
-        "the same job on a timer, and can also bring back a player too broken to use its own "
-        "menu. Use the node when the moment matters — after a fixed number of passes, or on a "
-        "FAILURE transition as a last resort before giving up."
+        (
+            "Place this node just before the bot travels. Players come back where they were before "
+            "entering their current dungeon or house."
+        )
+        + "\n\n"
+        + (
+            "Settings › Bot › Relog interval does the same on a timer. Use this node when the moment "
+            "matters, such as after a set number of loops, or on a FAILURE edge as a last resort."
+        )
+        + "\n\n"
+        + (
+            "The group is lost on logout, and re-formed afterward when Automatically group players is "
+            "on in Settings › Bot."
+        )
+        + "\n\n"
+        + ("Nobody logs out during a fight, and the group re-forms only after any fight the players log back into.")
+        + "\n\n"
+        + (
+            "A dialog left open on a player, such as the prompt for leaving a dungeon, is closed first "
+            "with Cancel or OK, so nothing it asks for happens. So is the Crowns Shop, before logging out "
+            "and again after logging back in."
+        )
+        + "\n\n"
+        + (
+            "A player that can't log back in is closed and relaunched as after a crash, and the bot "
+            "continues from its recovery state. If that player has no account or saved password, the "
+            "bot stops."
+        )
+        + "\n\n"
+        + ("A player that just logged in, after crash recovery or a scheduled relog, is skipped until it moves.")
     ),
 )
+
+
+async def _clear_modals(machine, client) -> bool:
+    """Close any dialog over the screen, which would swallow every click on the menu behind it.
+
+    A player that failed to leave a dungeon is left looking at its exit prompt, and recovery
+    sends the bot here from exactly that state (#281). Cancelled rather than confirmed, so
+    nothing the dialog asks for happens: Quit asks about a dungeon itself, and that one is
+    confirmed after the click. False when a dialog would not close, or the client is
+    disconnected, which the caller sorts out.
+
+    The crowns shop goes first. It is not a dialog, but it takes every click the same way,
+    and one a misclick opened while the group formed kept a run's spellbook shut until the
+    bot stopped (#280).
+    """
+    if not await _close_crowns_shop(machine, client, "over the menu"):
+        return False
+    result = await node_helpers.clear_modals(client, TRIGGER_TIMEOUT, POLL_INTERVAL)
+    if result.dismissed:
+        machine.log(f"relog: closed {len(result.dismissed)} dialog(s) over the menu — {_named(result.dismissed)}")
+    if result.cleared or result.disconnected:
+        return result.cleared
+    machine.log(f"relog: a dialog is blocking the menu and would not close — {_named((result.key,))}", logging.WARNING)
+    return False
+
+
+async def _close_crowns_shop(machine, client, where: str, appear_timeout: float = 0.0) -> bool:
+    """Close the crowns shop if it is open, saying so. False only when it was open and stayed open.
+
+    *where* finishes the log lines, after "the crowns shop". *appear_timeout* watches that
+    long for one still on its way.
+    """
+    shop = await node_helpers.close_crowns_shop(client, appear_timeout, POLL_INTERVAL)
+    if shop.was_open and shop.closed:
+        machine.log(f"relog: closed the crowns shop {where}")
+    elif shop.was_open:
+        machine.log(f"relog: the crowns shop {where} would not close", logging.WARNING)
+    return shop.closed
+
+
+def _named(keys) -> str:
+    """The dialogs a log line speaks of, by what a player would have read, never by their text."""
+    return ", ".join(dialog_captions.describe(key) if key else "one this build does not recognize" for key in keys)
 
 
 async def _open_settings_page(machine, client) -> bool:
@@ -154,12 +216,17 @@ async def _open_settings_page(machine, client) -> bool:
     around, which needs no knowledge of what the other tabs are called.
     """
     for attempt in range(_MENU_ATTEMPTS):
+        if not await _clear_modals(machine, client):
+            return False
         await node_helpers.click_by_path(client, SPELLBOOK_BUTTON_PATH)
         if not await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, SPELLBOOK_PREFERENCES_TAB_PATH),
             TRIGGER_TIMEOUT,
             POLL_INTERVAL,
         ):
+            if attempt + 1 < _MENU_ATTEMPTS and await node_helpers.modal_showing(client):
+                machine.log("relog: a dialog opened over the spellbook — closing it", logging.DEBUG)
+                continue
             machine.log("relog: spellbook did not open", logging.WARNING)
             return False
 
@@ -171,8 +238,11 @@ async def _open_settings_page(machine, client) -> bool:
         ):
             if await node_helpers.is_visible_by_path(client, REALM_CURRENT_NAME_PATH) and attempt + 1 < _MENU_ATTEMPTS:
                 machine.log("relog: settings page opened on the Realms tab — reopening it", logging.DEBUG)
-                await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
-                await asyncio.sleep(POLL_INTERVAL)
+                # The reopen clicks the spellbook button, a toggle: on a spellbook still open
+                # it would close it instead, so the close has to have taken first.
+                if not await node_helpers.close_spellbook(client):
+                    machine.log("relog: the spellbook did not close to be reopened", logging.WARNING)
+                    return False
                 continue
             machine.log("relog: the Quit button never appeared on the settings page", logging.WARNING)
             return False
@@ -188,6 +258,8 @@ async def _open_settings_page_in_battle(machine, client) -> bool:
     on an open page closes it. Not while "You Are Idle" is up, which blocks it.
     """
     for _attempt in range(_MENU_ATTEMPTS):
+        if not await _clear_modals(machine, client):
+            return False
         await auto_select.press_escape(client.window_handle)
         if await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, SETTINGS_QUIT_BUTTON_PATH),
@@ -247,10 +319,36 @@ def _abandon(machine, client, reason: str) -> str:
     return FAILED
 
 
-async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
+class RelogPacing:
+    """Spaces a team's Quit presses, and its first Play presses, RELOG_STAGGER_DELAY apart.
+
+    One instance is shared by every client relogging together. Each press takes a turn under
+    its lock, so a slow client never holds the others to its own clock: a turn waits only for
+    the gap since the previous press of the same kind.
+    """
+
+    def __init__(self, delay: float = RELOG_STAGGER_DELAY) -> None:
+        self._delay = delay
+        self._locks = {"quit": asyncio.Lock(), "play": asyncio.Lock()}
+        self._last: dict[str, float | None] = {"quit": None, "play": None}
+
+    async def turn(self, kind: str) -> None:
+        """Wait for *kind*'s ("quit" or "play") turn, then claim it."""
+        loop = asyncio.get_running_loop()
+        async with self._locks[kind]:
+            last = self._last[kind]
+            if last is not None:
+                wait = last + jitter(self._delay) - loop.time()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            self._last[kind] = loop.time()
+
+
+async def log_out_and_in(machine, client, *, in_battle: bool = False, pacing: RelogPacing | None = None) -> str:
     """Take one client out to character select and back into the world: BACK, FAILED or ABANDONED.
 
     *in_battle* reaches Quit with Esc rather than the spellbook, which will not open in battle.
+    *pacing* is shared by the clients relogging together and staggers their Quit and Play presses.
     Crash recovery uses it to log players out of a fight a relaunched player could not get back
     into. The caller holds health checks off for *client* throughout, as :func:`run` does, all
     but the disconnect dialog watcher.
@@ -261,7 +359,7 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     function gave up on itself.
     """
     try:
-        result = await _log_out_and_in(machine, client, in_battle=in_battle)
+        result = await _log_out_and_in(machine, client, in_battle=in_battle, pacing=pacing)
     except Exception:
         if machine.is_handed_to_recovery(client):
             return ABANDONED
@@ -271,7 +369,7 @@ async def log_out_and_in(machine, client, *, in_battle: bool = False) -> str:
     return result
 
 
-async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
+async def _log_out_and_in(machine, client, *, in_battle: bool, pacing: RelogPacing | None = None) -> str:
     """The steps of :func:`log_out_and_in`, which stop early once *client* is handed to recovery."""
     if await _disconnected(client):
         return _abandon(machine, client, _DISCONNECTED)
@@ -282,8 +380,11 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
         else await _open_settings_page(machine, client)
     )
     if not opened:
-        return FAILED
+        # A connection lost while the menu was being opened is recovery's, not a failure in the world.
+        return _abandon(machine, client, _DISCONNECTED) if await _disconnected(client) else FAILED
 
+    if pacing:
+        await pacing.turn("quit")
     await node_helpers.click_by_path(client, SETTINGS_QUIT_BUTTON_PATH)
 
     # Quit usually goes straight to character select, but inside a dungeon, or with Dungeon
@@ -339,14 +440,24 @@ async def _log_out_and_in(machine, client, *, in_battle: bool) -> str:
     loop = asyncio.get_event_loop()
     deadline = loop.time() + RELOG_IN_GAME_TIMEOUT
     loading_since: float | None = None
+    play_paced = pacing is None
     while (now := loop.time()) < deadline:
         if machine.is_handed_to_recovery(client):
             return ABANDONED
         if await _back_in_world(client):
             machine.note_logged_in([client.window_handle])
+            # The shop opens by itself on the first login of the day, a moment after the
+            # world is readable, so it is watched for rather than read once. Back in the
+            # world is back, open or not, so a shop that stays up is only logged; the next
+            # node's clicks are what it would cost.
+            await _close_crowns_shop(machine, client, "the login opened", RELOG_SHOP_APPEAR_TIMEOUT)
             return BACK
         if await auto_select.at_character_select(client):
             loading_since = None
+            if not play_paced:
+                # Only the first press waits for its turn; a re-press is this client's own retry.
+                await pacing.turn("play")
+                play_paced = True
             await auto_select.press_character_select_play(client.window_handle)
         elif loading_since is None:
             loading_since = now
@@ -400,7 +511,9 @@ async def _regroup(machine, clients: list) -> None:
         return
     try:
         names = await wizard_names.resolve_names(clients)
-        result = await group_manager.form_group(clients, names, log=machine.log)
+        result = await group_manager.form_group(
+            clients, names, log=machine.log, safety_delay=machine.get_option("Safety Delay", 3.0)
+        )
         if result.success:
             machine.log(f"relog: group re-formed — {result.summary()}")
         else:
@@ -413,6 +526,7 @@ async def _regroup(machine, clients: list) -> None:
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: node_helpers.click_by_path(), node_helpers.poll_until(), node_helpers.resolve_modal(),
+          node_helpers.clear_modals(),
           node_helpers.is_visible_by_path(), auto_select.at_character_select(),
           auto_select.press_character_select_play(), client.is_loading(), client.zone_name(),
           machine.suspend_health_checks_for() / resume_health_checks_for(),
@@ -424,15 +538,16 @@ async def run(machine, clients: list, params: dict) -> str:
          fails zone_name() and shows loading screens, which is indistinguishable from the
          crash those watchers exist to catch — without this the monitor force-closes a
          client that is relogging perfectly well.
-      2. Open the spellbook, open Preferences, and make sure the Quit button is showing.
+      2. Close the crowns shop and any dialog over the screen, open the spellbook, open
+         Preferences, and make sure the Quit button is showing.
       3. Click Quit and wait for the character select screen, confirming the warning the
          game raises when logging out of a dungeon or with Dungeon Recall open.
       4. Press Play, and keep pressing while the screen is still up.
-      5. Wait for the world to be readable again.
+      5. Wait for the world to be readable again, and close the crowns shop if the login opened it.
       6. Put health monitoring back, then re-form the group once no player is in a fight.
 
-    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; the spellbook
-    or its settings page did not open; the game refused the logout; or Quit did not take
+    FAILURE: a fight was still going RELOG_FIGHT_TIMEOUT after the node started; a dialog or the
+    crowns shop over the screen would not close; the spellbook or its settings page did not open; the game refused the logout; or Quit did not take
     effect. The player is still in the world each time.
 
     Past Quit, a player that does not make it back (character select never appears, a
@@ -473,9 +588,10 @@ async def run(machine, clients: list, params: dict) -> str:
     hwnds = [c.window_handle for c in targets]
     machine.suspend_health_checks_for(hwnds, watch_disconnects=True)
     results: list = []
+    pacing = RelogPacing()
     try:
         results = await asyncio.gather(
-            *[log_out_and_in(machine, c) for c in targets],
+            *[log_out_and_in(machine, c, pacing=pacing) for c in targets],
             return_exceptions=True,
         )
     finally:

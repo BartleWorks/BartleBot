@@ -98,8 +98,8 @@ def test_a_hotkey_on_a_game_key_is_flagged_and_its_modifiers_matter():
     # The defaults: F4 is free, since the game's F4 binding is Alt+F4.
     assert binding_problems({"xyz_sync": "F1", "toggle_combat": "F4"}, game) == []
     assert binding_problems({"toggle_speed": "F12"}, game) == [
-        "Speed: F12 is the game's own key for Print Screen, which will not work inside the game while this is bound."
+        "Speed: F12 is the game's key for Print Screen, which won't work in the game while this is set."
     ]
     assert binding_problems({"toggle_speed": "Shift+Ctrl+Q"}, game)[0].startswith(
-        "Speed: Shift+Ctrl+Q is the game's own key for Find Nearest Active Quest"
+        "Speed: Shift+Ctrl+Q is the game's key for Find Nearest Active Quest"
     )

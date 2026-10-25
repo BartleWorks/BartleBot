@@ -127,8 +127,8 @@ def test_the_bot_tab_writes_what_it_was_given(qapp):
     """Round trip through the settings singleton, which is the tab's only output."""
     tab = BotTab()
     _field(tab, "Default Safety Delay").setValue(7.5)
-    _field(tab, "Enable Quicksell").setChecked(False)
-    _field(tab, "Friend teleport target").setText("  Spare Idler  ")
+    _field(tab, "Quicksell").setChecked(False)
+    _field(tab, "Friend Name").setText("  Spare Idler  ")
 
     tab.apply()
 
@@ -160,7 +160,7 @@ def test_the_users_own_keep_list_is_written_from_what_was_typed(qapp):
     assert SettingsManager.instance().get_general("quicksell_keep_list") == ["Amber", "Pearl"]
 
 
-_SHOW_EXPLANATION = "Show Quicksell explanation before each run"
+_SHOW_EXPLANATION = "Quicksell reminder"
 
 
 def test_the_quicksell_explanation_is_shown_on_a_fresh_install(qapp):

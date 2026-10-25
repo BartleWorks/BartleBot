@@ -5,6 +5,7 @@ import logging
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ARRIVAL_NOTE
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
@@ -15,34 +16,28 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="zone",
         label="Hub Zone",
-        help="The hub zone name players must be in when this node completes. "
-        "If all players are already in this zone, the node returns SUCCESS immediately.",
+        help=(
+            "The hub zone every player must be in when the node ends. If every player is already "
+            "there, the node succeeds at once."
+        ),
         default="",
         required=True,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports all players to the hub zone for their current world by clicking the hub teleport button in the HUD compass.",
+    description="Teleports every player to their world's hub with the compass's hub button.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now in the hub zone."),
+        ReturnSpec("SUCCESS", "Every player is in Hub Zone."),
         ReturnSpec(
             "FAILURE",
-            "The hub teleport button did not become enabled within the timeout, "
-            "or not all players arrived in the expected hub zone (see usage notes — a "
-            "player who never entered a loading screen still gets a recovery attempt "
-            "before this is reported).",
+            "The hub button stayed grayed, or not every player reached Hub Zone.",
         ),
     ],
     required_bot_options=[player_realms.SPEC],
     max_consecutive_retries=10,
-    usage_notes=(
-        "If some but not all players reach the hub zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
-    ),
+    usage_notes=(ARRIVAL_NOTE),
 )
 
 
@@ -74,7 +69,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"teleport_to_world_hub: target zone {zone!r}")
 
     # 1. Skip if already in hub zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if all(node_helpers.zone_matches(z, zone) for z in zones):
         machine.log("SUCCESS: clients already in hub zone")

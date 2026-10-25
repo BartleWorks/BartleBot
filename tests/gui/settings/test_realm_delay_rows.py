@@ -1,4 +1,4 @@
-"""The Default Safety Delay and Favorite realm rows, built once for Settings › Bot and setup (#231)."""
+"""The Default Safety Delay and Favorite Realm rows, built once for Settings › Bot and setup (#231)."""
 
 from __future__ import annotations
 

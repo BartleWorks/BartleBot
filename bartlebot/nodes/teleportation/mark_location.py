@@ -8,18 +8,18 @@ from enum import Enum, auto
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
-from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, POSITION_STABILIZE_TIMEOUT
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
         type="zone",
         label="Zone",
-        help="Zone name all players must be in when this node executes. "
-        "If players are in the correct zone but at the wrong XYZ, they will be teleported.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -27,7 +27,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Mark XYZ",
-        help="Coordinates to teleport players to before marking, if not already there.",
+        help="Where to mark. Players elsewhere in Zone teleport here first.",
         default=None,
         required=True,
     ),
@@ -35,36 +35,40 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Marks the current in-game location by clicking the MarkButton in the compass HUD. "
-        "A player who already marked this spot earlier in the run is left alone, so a bot can "
-        "pass through this node every loop. Handles the edge case where marking the same "
-        "location as an existing mark clears it rather than resetting it."
+        "Marks every player's location. A player who already marked this spot in this run is left "
+        "alone, so a loop can pass through the node every time."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players have a mark here: set now, or set earlier in this run."),
+        ReturnSpec("SUCCESS", "Every player has a mark here, set now or earlier in this run."),
         ReturnSpec(
             "FAILURE",
-            "One or more players could not mark (MarkButton grayed: no mana, in combat, or a zone "
-            "that refuses marks); players were not in the expected zone; or the game did not "
-            "answer a click within the Safety Delay.",
+            (
+                "A player wasn't in Zone, had no mana, was in a fight or a zone that refuses marks, or "
+                "the game didn't answer within Safety Delay."
+            ),
         ),
     ],
     required_bot_options=[SAFETY_DELAY_OPTION],
     max_consecutive_retries=5,
     usage_notes=(
-        "Marking has no cooldown, but it costs mana, and a drop in mana is how the node knows a "
-        "click landed. The timer under the Recall button is recall's own 30-second cooldown, "
-        "separate from the one the hub button and HOME share. While it runs the Recall button is "
-        "grayed and cannot show whether a mark is set, so the node waits it out first.\n\n"
-        "Raise Safety Delay if marks fail on a slow connection: it is how long the node waits "
-        "for the game to answer each click."
+        (
+            "Marking costs mana, so a player with no mana can't mark. If recall is on cooldown, the "
+            "node waits for it first."
+        )
+        + "\n\n"
+        + (
+            "Each player waits Safety Delay before marking, so the game knows where the player now "
+            "stands. A mark set sooner can land where the player stood before the last teleport. Raise "
+            "Safety Delay on a slow connection if marks fail or a recall lands somewhere else."
+        )
     ),
 )
 
 #: Where each client last marked in this run, in ``machine.node_scratch``. Every mark goes
 #: through :func:`mark_client`, handle_level_scaling's included, so the record never names a
-#: mark that has since been replaced.
+#: mark that has since been replaced. A recall that lands elsewhere drops it (:func:`forget`):
+#: the record is the client's own position, which cannot show where the game put the mark.
 MARKS_KEY = "marks"
 
 
@@ -84,9 +88,19 @@ def marked_at(machine, client) -> Mark | None:
     return None
 
 
+def forget(machine, client) -> None:
+    """Drop `client` from the run's record of marks, so the next Mark Location marks it again.
+
+    For a recall that did not bring `client` back to its mark. The game set that mark where the
+    server last had the client, and the record holds where the client itself stood.
+    """
+    if marks := machine.node_scratch.get(MARKS_KEY):
+        machine.node_scratch[MARKS_KEY] = [(c, m) for c, m in marks if c is not client]
+
+
 def _remember(machine, client, mark: Mark) -> None:
-    kept = [(c, m) for c, m in machine.node_scratch.get(MARKS_KEY, ()) if c is not client]
-    machine.node_scratch[MARKS_KEY] = [*kept, (client, mark)]
+    forget(machine, client)
+    machine.node_scratch[MARKS_KEY] = [*machine.node_scratch.get(MARKS_KEY, ()), (client, mark)]
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -100,10 +114,10 @@ async def run(machine, clients: list, params: dict) -> str:
          once if that is every client.
       2. Verify the rest can mark: MarkButton enabled. Return FAILURE if any cannot.
       3. Verify all clients are in zone. Return FAILURE if not.
-      4. Teleport any of the rest not already at xyz to the mark position, then wait for the
-         server-reported position to stabilize before marking.
-      5. Mark each of the rest (:func:`mark_client`), which reads whether it had a mark before
-         clicking and re-marks only once it has seen the click clear one.
+      4. Teleport any of the rest not already at xyz to the mark position.
+      5. Mark each of the rest (:func:`mark_client`), which gives the server Safety Delay to
+         hear where the client now stands, reads whether it had a mark before clicking, and
+         re-marks only once it has seen the click clear one.
 
     FAILURE: any client left to mark cannot; clients not in zone; a mark was not confirmed.
     """
@@ -127,14 +141,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 3. Verify zone; teleport to xyz if needed.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, zone, POLL_INTERVAL):
         return "FAILURE"
 
     positions = await asyncio.gather(*[c.body.position() for c in to_mark])
@@ -145,13 +152,9 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(target) for c in away])
-        # Wait for the server-reported position to stabilize before pressing PAGE_DOWN.
-        # Without this, a sigil's NPC range event can fire between the teleport write and
-        # the PAGE_DOWN, causing the mark to be set at the server's adjusted position.
-        machine.log("Waiting for client positions to stabilize after teleport…", logging.DEBUG)
-        await asyncio.gather(*[_wait_stabilized(machine, c, target) for c in away])
 
-    # 5. Mark each client, handling the same-spot edge case.
+    # 5. Mark each client, handling the same-spot edge case. mark_client waits for the server
+    #    to catch up with the teleport before it clicks.
     results = await asyncio.gather(*[mark_client(machine, c) for c in to_mark])
     if not all(results):
         machine.log("FAILURE: one or more clients failed to set a mark", logging.WARNING)
@@ -180,6 +183,13 @@ async def mark_client(machine, client) -> bool:
     Public: handle_level_scaling marks each client wherever it is, with no recorded spot. A mark
     that is set is remembered for the rest of the run (:func:`marked_at`).
 
+    The game sets a mark where the *server* last had the client, and a teleport reaches the
+    server a moment after the client has moved, so the first click waits until Safety Delay has
+    passed since this began. Nothing readable says when the server has caught up, and the
+    client may have been teleported by the node before, so the wait is never skipped. A click
+    too soon sets the mark where the client stood before the teleport, and nothing here can see
+    that: only a recall shows it.
+
     Every mark and every clear costs mana, so a drop in mana is the sign a click landed. Whether
     the client had a mark before the click says which change to look for: a client standing on
     its mark clears it, and only a clear that has been seen earns a second click. A click is
@@ -189,10 +199,16 @@ async def mark_client(machine, client) -> bool:
         machine.log(_CANNOT_MARK, logging.WARNING)
         return False
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
+    loop = asyncio.get_running_loop()
+    caught_up_at = loop.time() + safety_delay
 
+    # Recall's cooldown, when there is one, counts toward the wait.
     had_mark = await _had_mark(machine, client, safety_delay)
     if had_mark is None:
         return False
+    if (remaining := caught_up_at - loop.time()) > 0:
+        machine.log(f"Giving the server {remaining:.1f}s to catch up with this player before marking…", logging.DEBUG)
+        await asyncio.sleep(remaining)
     click = await _click_mark(client, had_mark, safety_delay)
     if click is _Click.CLEARED:
         machine.log("Marking cleared the mark this player stood on; marking again…", logging.DEBUG)
@@ -205,7 +221,13 @@ async def mark_client(machine, client) -> bool:
         machine.log(f"RecallButton stayed grayed for {safety_delay}s after marking: no mark was set", logging.WARNING)
         return False
 
-    zone, position = await asyncio.gather(client.zone_name(), client.body.position())
+    # A mark kept with no zone could never be matched by a recall, so the zone is waited for.
+    (zone,), position = await asyncio.gather(
+        node_helpers.read_zones([client], poll_interval=POLL_INTERVAL), client.body.position()
+    )
+    if not zone:
+        machine.log("The mark was set, but this player's zone could not be read to remember it by", logging.WARNING)
+        return False
     _remember(machine, client, Mark(zone, position))
     return True
 
@@ -272,23 +294,6 @@ async def _still_marked_here(machine, client, zone: str, target: XYZ) -> bool:
     # Cleared by hand, or by a same-spot click outside this run's record. A running recall
     # timer grays the button too, but only because a recall just used the mark, which keeps it.
     return await _recall_enabled(client) or await node_helpers.is_visible_by_path(client, RECALL_TIMER_PATH)
-
-
-async def _wait_stabilized(machine, client, target: XYZ) -> None:
-    """Poll until the server-reported position is within 1.0 unit of target."""
-    if not await node_helpers.poll_until(
-        lambda: _position_near(client, target), POSITION_STABILIZE_TIMEOUT, POLL_INTERVAL
-    ):
-        machine.log(
-            f"Position did not stabilize within {POSITION_STABILIZE_TIMEOUT}s after teleport",
-            logging.DEBUG,
-        )
-
-
-async def _position_near(client, target: XYZ) -> bool:
-    """Return True when the server-reported position is within 1.0 unit of target."""
-    pos = await client.body.position()
-    return _distance(pos, target) < 1.0
 
 
 def _distance(a: XYZ, b: XYZ) -> float:

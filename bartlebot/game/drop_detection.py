@@ -37,21 +37,31 @@ _DROP_TYPES = {
 }
 
 
-# How much of the chat log a snapshot keeps. Snapshots are carried between fights as
-# diff baselines, and the game's log holds thousands of lines after a long session, so
-# an uncapped snapshot makes every later diff and every stored baseline grow with
-# session length. Keeping the *tail* is what the diff needs: new announcements
-# arrive at the end, and a trim only ever removes lines from the front, so a capped
-# baseline survives a trim strictly longer than a full one does. The cap only has to
-# exceed what can arrive between two consecutive snapshots — a poll interval or a
-# single fight, on the order of tens of lines.
-_SNAPSHOT_MAX_LINES = 500
+# How much of the chat log a snapshot reads, in characters. Snapshots are carried
+# between fights as diff baselines, and the game's log holds thousands of lines after a
+# long session, so an uncapped snapshot makes every later diff, every stored baseline
+# and every read grow with session length. Only the *tail* is read, which is what the
+# diff needs: new announcements arrive at the end, and a trim only ever removes lines
+# from the front, so a capped baseline survives a trim strictly longer than a full one
+# does. The cap only has to exceed what can arrive between two consecutive snapshots —
+# a poll interval or a single fight, on the order of tens of lines, where this is
+# several hundred.
+_SNAPSHOT_MAX_CHARS = 100_000
+
+# The longest chat log a read believes. wizwalker reads any string past its
+# MAX_STRING (5,000 characters) as "", and the chat log passes that within a few dozen
+# lines, after which every snapshot was empty and no drop was ever found. The bound is
+# there to refuse a length read from a stale address; since only the tail is read, a
+# generous one costs nothing.
+_CHAT_LOG_MAX_CHARS = 10_000_000
 
 
 async def snapshot_chat(client) -> str:
     """Return the tail of the current chat log text for a client.
 
-    At most ``_SNAPSHOT_MAX_LINES`` lines are kept; see that constant for why.
+    At most ``_SNAPSHOT_MAX_CHARS`` characters are read; see that constant for why.
+    When the log is longer, the line the read began partway through is left out, so
+    every snapshot starts on a whole line and the next one's diff can line them up.
 
     Returns an empty string if the chat window is not visible or not found.
     """
@@ -61,15 +71,10 @@ async def snapshot_chat(client) -> str:
         return ""
     if not await window.is_visible():
         return ""
-    return _tail(await window.maybe_text() or "")
-
-
-def _tail(text: str) -> str:
-    """Return the last ``_SNAPSHOT_MAX_LINES`` lines of `text`."""
-    lines = text.split("\n")
-    if len(lines) <= _SNAPSHOT_MAX_LINES:
-        return text
-    return "\n".join(lines[-_SNAPSHOT_MAX_LINES:])
+    text, cut = await window.maybe_text_tail(_SNAPSHOT_MAX_CHARS, max_len=_CHAT_LOG_MAX_CHARS)
+    if cut:
+        text = text.partition("\n")[2]
+    return text
 
 
 async def chat_available(client) -> bool:

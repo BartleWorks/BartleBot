@@ -53,6 +53,13 @@ PORT_QUIET_GRACE = 5.0
 # Sized like ZONE_SETTLE_GRACE: long enough for a cross-realm port's loading screen to appear,
 # since re-issuing a port that was about to start is what undoes an arrival (#70).
 
+ZONE_READABLE_TIMEOUT = 10.0
+# Seconds read_zones waits for every client's zone to be readable. zone_name() is None while a
+# client is between zones or not logged in, and it turns readable a moment after the loading
+# screen is gone, so this covers that moment, not a slow load: a caller waits out the loading
+# screen itself first. Comparing a None zone proves nothing, so the zone is waited for rather
+# than judged.
+
 SIGHTING_SETTLE_TIMEOUT = 3.0
 # Seconds an arrival check waits for players who have landed together to see each other in
 # their entity lists (#130). The probe saw arrivals 1-2 s before their own loading screen
@@ -163,7 +170,7 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 COMBAT_DROP_MESSAGE_POLL = 0.5
 # How often to re-read the chat log while waiting for a combat drop announcement.
 # Coarser than the reagent poll on purpose: each read is a synchronous
-# ReadProcessMemory of the whole chat log on the event loop thread, and these
+# ReadProcessMemory of the chat log's tail, up to 200 KB, on the event loop thread, and these
 # reads land during the end-of-fight lag spike they are waiting out. Since the
 # poll returns on the first hit, a coarser interval costs latency, never a drop.
 
@@ -236,6 +243,13 @@ RELOG_IN_GAME_TIMEOUT = 180.0
 # Matched to the launch path's patience rather than to a healthy client's: this node exists
 # for clients that have become slow, and giving up early on one strands the fleet a player
 # short.
+
+RELOG_SHOP_APPEAR_TIMEOUT = 5.0
+# How long the relog node watches for the crowns shop once a character is back in the world.
+# The game opens it on the first login of the day, and not always at once: a read taken the
+# moment the world is readable can come before it and miss it. Every relog pays this, since
+# a login that will not open the shop looks the same as one that has not yet; the players
+# relog in parallel, so it is paid once per relog, not once per player.
 
 RELOG_WATCH_INTERVAL = 60.0
 # How often a running bot checks whether a relog is due and samples each client's
@@ -322,6 +336,11 @@ DECK_FUSION_CLOSE_SETTLE = 0.5
 # card came from goes away.
 
 LAUNCH_STAGGER_DELAY = 1.0
+
+# The least gap between one client's Quit press and the next's, and between one's first Play
+# press and the next's, when a team relogs together. Pressed at once, the fourth login
+# gets dropped, the same rejection LAUNCH_STAGGER_DELAY spaces launch logins against.
+RELOG_STAGGER_DELAY = 1.0
 
 # How long one launch stage may run before its pending tile starts showing how long it has
 # been in it. Below this the number is noise -- every stage takes some seconds and a
@@ -495,10 +514,26 @@ GROUP_VERIFY_TIMEOUT = 15.0
 # invitation is accepted, which is the game's own signal that the join went through. The
 # join is a server round-trip, so this covers more than a local UI update.
 
-GROUP_PROFILE_TIMEOUT = 6.0
+FRIEND_PROFILE_TIMEOUT = 6.0
 # Ceiling on waiting for a friend's profile popup to appear after their row is clicked in
 # the friends list. Polled rather than slept through: the popup is drawn locally with no
 # server round-trip, so it is normally up within a frame or two and the wait ends there.
+
+FRIEND_PROFILE_SETTLE_TIMEOUT = 2.0
+# Ceiling on waiting for the profile popup's buttons to stop moving before one is clicked:
+# Invite to Group (#280) or Go To Friend. The popup reads as visible before its ButtonLayout
+# has closed up the gaps its hidden buttons leave, so the first positions read can be a slot
+# or more low, and a click aimed at them lands on the button below, or on nothing. Two reads
+# a POLL_INTERVAL apart that agree end the wait; a settled popup costs one interval. On
+# timeout the click goes ahead.
+
+FRIEND_TELEPORT_CONFIRM_TIMEOUT = 3.0
+# Seconds to wait for the box asking whether to teleport, after Go To Friend is clicked. It
+# is drawn locally; one that never shows means the click missed the button.
+
+FRIEND_TELEPORT_ATTEMPTS = 2
+# Times Go To Friend is clicked, each from a freshly opened profile, before the port is
+# given up as unable to start.
 
 GROUP_JOIN_HINT_TIMEOUT = 3.0
 # Ceiling on waiting for the game to open the social window by itself on an invited client
@@ -610,7 +645,14 @@ FLEE_VOTE_TIMEOUT = 5.0
 # Seconds a player waits, at the start of a planning phase, for the rest of our players in
 # its fight to report whether they can still deal damage. A report that has not arrived by
 # then counts as "can", so a slow read never causes a flee. Well inside the 30s planning
-# timer, which is spent only once the wait is over.
+# timer, which is spent only once the wait is over. A player whose own report cannot be read
+# abstains rather than staying silent, so the others are not kept waiting this long for it.
+
+ROUND_REPORT_READS = 3
+ROUND_REPORT_RETRY_INTERVAL = 0.1
+# Tries at a player's round report, and the pause between them, before it abstains. A read
+# can catch a combatant mid-rebuild at the start of a planning phase (MemoryInvalidated), and
+# a moment later reads cleanly.
 
 FLEE_CONFIRM_TIMEOUT = 3.0
 # Seconds to wait for the flee confirmation to appear after clicking Flee. A miss is retried
@@ -658,10 +700,6 @@ RELOG_FIGHT_TIMEOUT = AMBIENT_COMBAT_MAX_DURATION + FLEE_TIMEOUT
 # How long the relog node waits for a fight to end before logging out, and again before
 # re-forming the group (#203). The ambient combat watcher fights it meanwhile, and flees it at
 # AMBIENT_COMBAT_MAX_DURATION, so a fight still going past this is one nothing will end.
-
-POSITION_STABILIZE_TIMEOUT = 5.0
-# Seconds to wait for the server-reported position to match a teleport target. The client
-# moves first and the server confirms after, so this covers the gap.
 
 HOME_LOADING_TIMEOUT = 15.0
 # Seconds to wait for a loading screen to appear after HOME. Longer than TRIGGER_TIMEOUT

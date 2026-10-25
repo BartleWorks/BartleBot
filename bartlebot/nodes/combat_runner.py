@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import TYPE_CHECKING, NamedTuple
 
+from bartlebot.bot import run_trace
 from bartlebot.game import drop_detection
 from bartlebot.nodes.timing import (
     COMBAT_DROP_MESSAGE_POLL,
@@ -23,6 +24,8 @@ from bartlebot.nodes.timing import (
     FLEE_TIMEOUT,
     FLEE_VOTE_TIMEOUT,
     POLL_INTERVAL,
+    ROUND_REPORT_READS,
+    ROUND_REPORT_RETRY_INTERVAL,
 )
 from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
 
@@ -164,6 +167,23 @@ def _combat_provider(dsl: str, cast_time: float = 0.2):
     )
 
     return CombatConfigProvider.from_string(dsl, cast_time)
+
+
+async def parse_strategies(dsls: list[str]) -> None:
+    """Parse each distinct DSL in a worker thread, before a fight makes its providers from them.
+
+    wizsprinter keeps each text's parse, so the provider each player's combat makes then
+    costs nothing, in this fight and every later one. Left to those providers, a long
+    strategy was parsed once per player on the event loop: Preceptor of Order's held it
+    2.3 s at the start of every fight, and the players started 0.8 s apart. In a thread
+    the loop keeps running, sharing the interpreter lock with the parse.
+    Never raises: a DSL that does not parse fails in the fight's own provider, as before.
+    """
+    for dsl in dict.fromkeys(dsls):
+        try:
+            await asyncio.to_thread(_combat_provider, dsl)
+        except Exception:
+            logger.debug("A strategy did not parse ahead of its fight", exc_info=True)
 
 
 class DslError(NamedTuple):
@@ -515,8 +535,14 @@ class _Ballot:
 
     expected: frozenset[int]
     votes: dict[int, RoundReport] = field(default_factory=dict)
+    abstained: set[int] = field(default_factory=set)
+    """Players whose report could not be read. Each counts as able to deal damage."""
     complete: asyncio.Event = field(default_factory=asyncio.Event)
     settled: bool = False
+
+    def check(self) -> None:
+        if self.expected <= self.votes.keys() | self.abstained:
+            self.complete.set()
 
 
 class FightWatch:
@@ -538,6 +564,8 @@ class FightWatch:
 
     Every doubt counts against fleeing: a report that cannot be read, or that has not arrived
     within FLEE_VOTE_TIMEOUT, is read as "can still deal damage" and breaks the run of rounds.
+    A player whose own report cannot be read abstains, which says so at once: staying silent
+    left everyone else waiting out the timeout for it, 5 s of every round it happened in.
     """
 
     def __init__(self, numbers: dict, log: Callable[..., None]):
@@ -545,6 +573,7 @@ class FightWatch:
         self.log = log
         self._gids: dict = {}  # client -> global id; empty when any was unreadable
         self._ballots: dict[tuple[int, frozenset[int]], _Ballot] = {}
+        self._abstentions: dict[int, set[int]] = {}  # round -> players who abstained in it
         self._streaks: dict[frozenset[int], int] = {}
         self._fleeing: list[frozenset[int]] = []
         self._flee_all_reason: str | None = None
@@ -586,17 +615,37 @@ class FightWatch:
             return True
         report = await _round_report(combat, gid, frozenset(self._gids.values()))
         if report is None:
-            # The others wait out FLEE_VOTE_TIMEOUT for this player and read it as "can".
+            self._abstain(gid, await _readable_round(combat))
             return False
         key = (report.round, report.ours_here)
-        ballot = self._ballots.setdefault(key, _Ballot(report.ours_here))
+        ballot = self._ballot(key)
         ballot.votes[gid] = report
-        if ballot.expected.issubset(ballot.votes):
-            ballot.complete.set()
+        ballot.check()
         with contextlib.suppress(TimeoutError):
             await asyncio.wait_for(ballot.complete.wait(), FLEE_VOTE_TIMEOUT)
         self._settle(key, ballot)
         return self._flees(gid)
+
+    def _ballot(self, key: tuple[int, frozenset[int]]) -> _Ballot:
+        """The ballot for *key*, made with any abstentions already cast in its round."""
+        ballot = self._ballots.get(key)
+        if ballot is None:
+            ballot = self._ballots[key] = _Ballot(key[1])
+            ballot.abstained |= self._abstentions.get(key[0], set()) & ballot.expected
+        return ballot
+
+    def _abstain(self, gid: int, round_num: int | None) -> None:
+        """Count *gid* as able to deal damage in its fight this planning phase, so no one waits for it.
+
+        Recorded against the round, for a ballot the others have not opened yet, and cast on
+        every open ballot expecting it. With the round unreadable too, on every open one.
+        """
+        if round_num is not None:
+            self._abstentions.setdefault(round_num, set()).add(gid)
+        for (ballot_round, _ours), ballot in self._ballots.items():
+            if gid in ballot.expected and not ballot.settled and round_num in (None, ballot_round):
+                ballot.abstained.add(gid)
+                ballot.check()
 
     def _flees(self, gid: int) -> bool:
         return any(gid in fight for fight in self._fleeing)
@@ -607,8 +656,10 @@ class FightWatch:
             return
         ballot.settled = True
         fight = ballot.expected
-        hopeless = ballot.complete.is_set() and not any(
-            vote.has_damage or vote.dot_on_enemies for vote in ballot.votes.values()
+        hopeless = (
+            ballot.complete.is_set()
+            and not ballot.abstained
+            and not any(vote.has_damage or vote.dot_on_enemies for vote in ballot.votes.values())
         )
         if not hopeless:
             self._streaks[fight] = 0
@@ -628,26 +679,49 @@ class FightWatch:
 
 
 async def _round_report(combat, own_gid: int, our_gids: frozenset[int]) -> RoundReport | None:
-    """What *combat*'s player sees at the start of this planning phase, or None if unreadable."""
-    try:
-        round_num = await combat.client.duel.round_num()
-        members = [(member, await member.owner_id()) for member in await combat.get_members()]
-        me = next((member for member, owner in members if owner == own_gid), None)
-        if me is None:
-            return None
-        my_team = await (await me.get_participant()).team_id()
-        enemies = []
-        for member, _owner in members:
-            participant = await member.get_participant()
-            if await participant.team_id() != my_team:
-                enemies.append(participant)
-        has_damage = not await me.is_dead() and await _holds_castable_damage(combat)
-        dot_on_enemies = await _carries_damage_over_time(enemies)
-    except Exception as exc:
-        logger.debug("Fight watch: round report unreadable (%r)", exc)
+    """What *combat*'s player sees at the start of this planning phase, or None if unreadable.
+
+    Read from the duel's own participant list, never the combatant windows: the game rebuilds
+    those at the start of every planning phase, and the first player there read 4 of a duel's
+    8 (so its report named a different fight) or one mid-rebuild (MemoryInvalidated). Tried up
+    to ROUND_REPORT_READS times.
+    """
+    for attempt in range(ROUND_REPORT_READS):
+        if attempt:
+            await asyncio.sleep(ROUND_REPORT_RETRY_INTERVAL)
+        try:
+            report = await _read_round_report(combat, own_gid, our_gids)
+        except Exception as exc:
+            logger.debug("Fight watch: round report unreadable (%r)", exc)
+            continue
+        if report is not None:
+            return report
+        logger.debug("Fight watch: the player is not among its duel's participants")
+    return None
+
+
+async def _read_round_report(combat, own_gid: int, our_gids: frozenset[int]) -> RoundReport | None:
+    duel = combat.client.duel
+    round_num = await duel.round_num()
+    participants = [(p, int(await p.owner_id_full())) for p in await duel.participant_list()]
+    me = next((p for p, owner in participants if owner == own_gid), None)
+    if me is None:
         return None
-    ours_here = frozenset(owner for _member, owner in members if owner in our_gids)
+    my_team = await me.team_id()
+    enemies = [p for p, _owner in participants if await p.team_id() != my_team]
+    defeated = await (await me.game_stats()).current_hitpoints() == 0
+    has_damage = not defeated and await _holds_castable_damage(combat)
+    dot_on_enemies = await _carries_damage_over_time(enemies)
+    ours_here = frozenset(owner for _p, owner in participants if owner in our_gids)
     return RoundReport(round_num, ours_here, has_damage, dot_on_enemies)
+
+
+async def _readable_round(combat) -> int | None:
+    """The duel's round number, or None if it cannot be read."""
+    try:
+        return await combat.client.duel.round_num()
+    except Exception:
+        return None
 
 
 async def _holds_castable_damage(combat) -> bool:
@@ -680,7 +754,7 @@ async def _carries_damage_over_time(participants: list) -> bool:
 async def _flee(combat, watch: FightWatch) -> None:
     """Click Flee and confirm it. A miss is logged, and retried at the next planning phase."""
     from bartlebot.nodes import node_helpers  # noqa: PLC0415
-    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH  # noqa: PLC0415
+    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH  # noqa: PLC0415
 
     client = combat.client
     number = watch.number(client)
@@ -700,6 +774,16 @@ async def _flee(combat, watch: FightWatch) -> None:
         watch.log(f"P{number}: clicked Flee, but no confirmation appeared; trying again next round", logging.DEBUG)
         return
     await node_helpers.click_by_path(client, FLEE_CONFIRM_PATH)
+
+    async def _confirm_closed() -> bool:
+        return not await node_helpers.is_visible_by_path(client, FLEE_CONFIRM_WINDOW_PATH)
+
+    # Counted only once the confirmation has gone. A dropped click leaves it up, and the next
+    # planning phase finds it showing and clicks it again; counting it now would end the
+    # fight as fled even if the others went on to win it.
+    if not await node_helpers.poll_until(_confirm_closed, FLEE_CONFIRM_TIMEOUT):
+        watch.log(f"P{number}: confirmed the flee, but the confirmation stayed; trying again next round", logging.DEBUG)
+        return
     watch.note_fled(client)
     watch.log(f"P{number}: fled", logging.INFO)
 
@@ -713,16 +797,47 @@ def _watched_combat_class():
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 
     class _WatchedCombat(SprintyCombat):
+        # The run_trace spans split each round into what the game took (the waits) and
+        # what we took (the round itself: each priority tried, each condition, each cast).
         def __init__(self, client, provider, watch: FightWatch, *, log_tag: str = ""):
             super().__init__(client, provider, log_tag=log_tag)
             self.watch = watch
+            self._tries = 0  # priorities tried this round, for the trace
+
+        async def handle_combat(self):
+            with run_trace.span("combat.fight", client=self.client):
+                await super().handle_combat()
+
+        async def wait_for_planning_phase(self, *args, **kwargs):
+            with run_trace.span("combat.wait_planning"):
+                await super().wait_for_planning_phase(*args, **kwargs)
+
+        async def wait_until_next_round(self, current_round: int, *args, **kwargs):
+            with run_trace.span("combat.wait_next_round", round=current_round):
+                await super().wait_until_next_round(current_round, *args, **kwargs)
 
         async def handle_round(self):
-            # Outside SprintyCombat's own mouse_handler block: the flee's clicks take it themselves.
-            if await self.watch.should_flee(self):
-                await _flee(self, self.watch)
-                return
-            await super().handle_round()
+            with run_trace.span("combat.round"):
+                if run_trace.active():
+                    run_trace.note(round=await self.round_number())
+                self._tries = 0
+                # Outside SprintyCombat's own mouse_handler block: the flee's clicks take it themselves.
+                if await self.watch.should_flee(self):
+                    run_trace.note(fled=True)
+                    await _flee(self, self.watch)
+                    return
+                await super().handle_round()
+
+        async def try_execute_config(self, move_config, willcasted: bool = False):
+            self._tries += 1
+            with run_trace.span("combat.priority", n=self._tries):
+                result = await super().try_execute_config(move_config, willcasted)
+                run_trace.note(result=repr(result))
+                return result
+
+        async def evaluate_condition(self, condition) -> bool:
+            with run_trace.span("combat.condition"):
+                return await super().evaluate_condition(condition)
 
     return _WatchedCombat
 
@@ -839,6 +954,7 @@ async def run_fight(
     """
     if not clients:
         return FightResult(FightEnd.FINISHED, [])
+    await parse_strategies(dsls)
     run = CombatRun(dict(zip(clients, numbers)), log, time_limit)
     await run.identify()
     for client, dsl in zip(clients, dsls):

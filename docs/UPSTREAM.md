@@ -165,7 +165,21 @@ keeps a pin reachable once the feature branch it was made on is deleted.
 
 Current pins, both on `main`:
 
-- **wizwalker `8783db0`** (`bartlebot-pin-20261021b`): its test suite, `utils.poll_until`,
+- **wizwalker `e73a736`** (`bartlebot-pin-20261024`): every click and key sent from a
+  worker thread of the window's own (`window_messages.send_message`), not the event
+  loop. `SendMessageW` waits for the game to handle the message, and one client that
+  took 6 s to answer a friend teleport's Go To Friend click held every other client and
+  the app's window with it. The caller still waits for the answer; nothing else does.
+  Messages to one window keep their order, and a cancelled send is still delivered, so a
+  release follows its press. `instance_login` still sends synchronously. On top of
+  `53929b7` (`bartlebot-pin-20261023c`): windows found by their paths from
+  the UI Tree Browser, not by a search of the whole UI, which is about 30 ms of reads
+  a time and takes the first window with the name (`window_at_path`, `windows_at_path`;
+  wizsprinter imports them). The combat handler, the deck builder and the friend
+  teleport use them, falling back to the old search for a layout a path does not
+  describe. On top of `b9b0ff7` (`bartlebot-pin-20261023`), which reads the chat log from
+  its tail, past `MAX_STRING`, so drops are seen again once the log grows, and `8783db0`
+  (`bartlebot-pin-20261021b`): its test suite, `utils.poll_until`,
   and a review's fixes. The ones BartleBot meets: a port to a friend from a friends list
   left on a later page went to whoever sat in that row there; `in_battle()` never
   returned before the client hook had run; `DeckBuilder.open_deck_page` never recorded
@@ -175,13 +189,26 @@ Current pins, both on `main`:
   where they were fixed waits, and the round waits read the duel every 0.2 s, not 0.5 s.
   On top of `7900369` (`bartlebot-pin-20261021`), which polls for the friend-teleport
   confirmation.
-- **wizsprinter `6f06c87`** (`bartlebot-pin-20261021`): its test suite, including copies
-  of the `SprintyCombat` tests in `tests/wizsprinter` here, which stay as this repo's
-  guard on what it pins while the forks have no CI; each card effect read once
-  however many requirements ask about it; an enchant's fuse seen when it lands rather
-  than after a fixed `cast_time * 2`; `CombatConfigProvider.from_string`; and the
-  generator backend's unawaited round. On top of `e82212b` (`bartlebot-pin-20261018`) and
-  the feature branches before it, which `git log` and the earlier tags record.
+- **wizsprinter `088fc83`** (`bartlebot-pin-20261023d`): casts that land. Reads by path
+  are fast enough to catch the game mid-layout, and a Heretical Academy run lost five
+  casts in 173 rounds, three Balaur fights ending in the idle popup's flee. A fused card's
+  cast is now seen to leave the hand and is cast again when the game dropped it; the card
+  to cast after a fuse is found once the hand reads the same twice; each cast reads its
+  target again from fresh combatants, so a Balaur head rebuilt since the round began is
+  not clicked; and an enemy target missed while the fight reads empty is read again for
+  up to a second. On top of `7be91be` (`bartlebot-pin-20261023c`): the Draw button and
+  the pet card found by their paths under the planning phase's window, where a grayed
+  Draw found first ended a draw that should have gone ahead; its suite runs against
+  wizwalker `53929b7`. On top of `3d21005` (`bartlebot-pin-20261023`): the deck's card count read from
+  `Hand/DeckCounter/CountText` by its path, where a search of the whole UI by name read
+  another `CountText` and spent 2 s a call timing out to (0, 0), and each config text
+  parsed once however many providers are made from it. On top of `6f06c87`
+  (`bartlebot-pin-20261021`): its test suite, including copies of the `SprintyCombat`
+  tests in `tests/wizsprinter` here, which stay as this repo's guard on what it pins
+  while the forks have no CI; each card effect read once however many requirements ask
+  about it; an enchant's fuse seen when it lands rather than after a fixed
+  `cast_time * 2`; `CombatConfigProvider.from_string`; and the generator backend's
+  unawaited round. Earlier pins are in `git log` and the earlier tags.
 
 ## Remotes and identity
 

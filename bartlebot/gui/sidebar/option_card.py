@@ -32,7 +32,7 @@ A bordered card with a header band over a page-colored body::
   hide a problem would make folding unsafe.
 * While folded, the band carries a one-line summary of the card, warning parts in the
   warning color. It is hidden while expanded, so nothing is on screen twice.
-* At the right end, whatever the surface adds: Option Values puts Enable Quicksell's source
+* At the right end, whatever the surface adds: Option Values puts Quicksell's source
   caption and switch there.
 
 The header has **no option gutter**. The rows keep theirs, so every revert and ``?``

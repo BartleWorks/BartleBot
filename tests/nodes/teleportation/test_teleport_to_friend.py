@@ -21,15 +21,10 @@ _FRIEND = "WizardFriend"
 # option, without standing up the option resolution this file is not about.
 _PARAMS = {"friend_name": _FRIEND, "to_zone": ""}
 
-# Patch the WizWalker function at its imported reference in node_helpers, which owns the shared
-# "port to a friend" mechanics (node_helpers.port_to_friend / teleport_via_friends_list).
-_TELEPORT_OK = patch(
-    "bartlebot.nodes.node_helpers.teleport_to_friend_from_list",
-    new_callable=AsyncMock,
-)
-
-# Patch the shared friends-list resolver to bypass WizWalker internals.
-_RESOLVE_OK = patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value=_FRIEND))
+# node_helpers owns the shared "port to a friend" mechanics (port_to_friend /
+# teleport_via_friends_list); these stand in for the friends list and the profile's button.
+_OPEN_OK = patch.object(nh, "open_friend_profile", new=AsyncMock())
+_TELEPORT_OK = patch.object(nh, "_click_go_to_friend", new=AsyncMock(return_value=True))
 
 _NO_DIALOG = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
 
@@ -196,20 +191,20 @@ async def test_straggler_reissue_that_cannot_find_the_friend_fails():
 
 
 async def test_friend_name_is_lowercased():
-    """friend_name is lowercased before being passed to resolve_friend_name."""
+    """friend_name is lowercased before the friends list is searched for it."""
     client = _friend_sim().player(_HOUSE, _AT_FRIEND)
 
-    with _TELEPORT_OK, _NO_DIALOG, patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value=_FRIEND)) as rs:
+    with _TELEPORT_OK, _NO_DIALOG, patch.object(nh, "open_friend_profile", new=AsyncMock()) as profile:
         await ttf.run(FakeMachine(), [client], _PARAMS)
 
-    assert rs.call_args[0][1] == "wizardfriend"
+    assert profile.call_args[0][1] == "wizardfriend"
 
 
 async def test_mouse_handler_context_activated():
     """The mouse handler context manager is entered for each teleporting client."""
     client = _friend_sim().player(_HOUSE, _AT_FRIEND)
 
-    with _TELEPORT_OK, _RESOLVE_OK, _NO_DIALOG:
+    with _TELEPORT_OK, _OPEN_OK, _NO_DIALOG:
         await ttf.run(FakeMachine(), [client], _PARAMS)
 
     client.mouse_handler.__aenter__.assert_called()
@@ -383,6 +378,20 @@ async def test_the_target_player_is_never_asked_to_teleport_to_itself():
     assert mover.where == sim.target.where
 
 
+async def test_players_whose_zones_never_turn_readable_are_not_together(monkeypatch):
+    """All None is one set of zones, and says nothing: it names no zone they share (#282)."""
+    monkeypatch.setattr(ttf, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _friend_sim()
+    clients = [sim.player(_HOUSE, _AT_FRIEND), sim.player(_HOUSE, _AT_FRIEND)]
+    for c in clients:
+        c.zone_name = AsyncMock(return_value=None)
+
+    result, machine = await _run(sim, clients)
+
+    assert result == "FAILURE"
+    assert any("did not end up together" in msg for msg, _ in machine.logs)
+
+
 async def test_a_blank_to_zone_follows_the_target_wherever_it_is():
     sim = _hooked_sim("Anywhere/At_All")
     mover = sim.player(_HUB, _FAR)
@@ -403,6 +412,19 @@ async def test_a_target_outside_to_zone_fails_before_anyone_ports():
     assert result == "FAILURE"
     assert sim.ported == []
     assert any("not" in msg and _HOUSE in msg for msg, _ in machine.logs)
+
+
+async def test_a_target_whose_zone_is_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the target's zone reads None for a moment (#282)."""
+    sim = _hooked_sim()
+    mover = sim.player(_HUB, _FAR)
+    target = sim.target
+    target.zone_name = AsyncMock(side_effect=lambda: None if target.zone_name.await_count <= 1 else target.where[0])
+
+    result, _ = await _run(sim, [sim.target, mover], {**_HOOKED, "to_zone": _HOUSE})
+
+    assert result == "SUCCESS"
+    assert mover.where[0] == _HOUSE
 
 
 async def test_a_player_already_in_to_zone_is_still_ported_to_the_target():

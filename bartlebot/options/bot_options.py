@@ -80,9 +80,15 @@ SOURCE_LEVELS: tuple[str, ...] = (SOURCE_OVERRIDE, SOURCE_BOT_FILE, SOURCE_APP_S
 #: value after the bot-options split, and one value described twice is how two descriptions come to
 #: disagree -- ``test_the_safety_delay_setting_and_option_read_the_same`` is the guard.
 SAFETY_DELAY_DESCRIPTION = (
-    "Seconds to allow the game server to answer an action before treating it as failed: "
-    "a prompt or menu opening, a zone change, a mark. Increase on high-latency connections: "
-    "3 to 5 seconds in North America; 5 to 10 elsewhere, depending on location and connection quality."
+    "Raise the delay on a slow connection: 3 to 5 seconds in North America, 5 to 10 elsewhere. "
+    "The delay applies to prompts, menus, zone changes and marks."
+)
+
+#: What the Favorite Realm option is, on Change Realm, Sync in Zone and Settings alike: one value
+#: described once, for the same reason as the Safety Delay's.
+FAVORITE_REALM_DESCRIPTION = (
+    "The realm Change Realm and Sync in Zone send players to. It's stored on this computer, "
+    "never in the bot file, and set in Settings › Bot."
 )
 
 # Bot options that also exist as an app setting, and the ``general`` key holding it.
@@ -95,7 +101,7 @@ APP_SETTING_KEYS: dict[str, str] = {
     "Refill Potions": "default_refill_potions",
     # Quicksell: what to sell describes the user's tolerance for losing an item,
     # not the dungeon.  The keep list is the one part of it that is authorial.
-    "Enable Quicksell": "default_quicksell_enabled",
+    "Quicksell": "default_quicksell_enabled",
     "Sell Pets": "default_quicksell_sell_pets",
     "Sell Socket Wrenches": "default_quicksell_sell_socket_wrenches",
     "Sell Skeleton Keys": "default_quicksell_sell_skeleton_keys",
@@ -116,7 +122,7 @@ APP_SETTING_KEYS: dict[str, str] = {
 #                   would re-create the per-node pin the override-layer work removed, one level up.
 #   Friend Name     is a character name, so a declaration is a privacy leak and a
 #                   bot only its author can run.
-#   Enable Quicksell  is whether the user is willing to lose items at all.  An
+#   Quicksell  is whether the user is willing to lose items at all.  An
 #                   author who did not want selling would leave the node out.
 #   Favorite Realm  is where this user's characters farm.  A bot declaring one would
 #                   send everyone who runs it to the same realm -- the crowding the
@@ -136,7 +142,7 @@ APP_SETTING_KEYS: dict[str, str] = {
 # so: an author who really does know their dungeon scales only some players may
 # still say so, and unlike the three above a wrong answer here costs an elixir
 # rather than an item, a name, or a run.
-USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Enable Quicksell", "Favorite Realm"})
+USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Quicksell", "Favorite Realm"})
 
 
 def is_user_owned(name: str) -> bool:

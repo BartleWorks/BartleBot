@@ -15,7 +15,7 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.bot import variables
+from bartlebot.bot import run_trace, variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
 from bartlebot.clients import group_manager, recovery_readiness, run_probe
@@ -48,6 +48,8 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
+from bartlebot.gui.debug.game_hang_trace import GameHangTracer
+from bartlebot.gui.debug.stall_trace import StallTracer
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage, needs_asking, setup_pages
@@ -306,6 +308,20 @@ class AppController(QObject):
         self._app.installEventFilter(self._share_drops)
         self._wire_updates()
         QTimer.singleShot(0, self._after_window_shown)
+        # A frozen window: every thread's stack, taken while the loop is held. Last, so
+        # start-up's own work is not taken for a freeze, but before the loop first runs,
+        # so the window's first maximized frames are watched.
+        self._stall_tracer = StallTracer() if dev_mode() else None
+        if self._stall_tracer is not None:
+            self._stall_tracer.start()
+        # A game window that stops answering, and what its thread was waiting on.
+        self._hang_tracer = GameHangTracer(self._hooked_windows) if dev_mode() else None
+        if self._hang_tracer is not None:
+            self._hang_tracer.start()
+
+    def _hooked_windows(self) -> list[tuple[str, int]]:
+        """Each hooked client's window, by player number, for the game hang tracer."""
+        return [(f"P{i + 1}", client.window_handle) for i, client in enumerate(self._client_manager.clients)]
 
     def _restore_game_display_settings(self) -> None:
         """Give the game back the display settings a previous session overwrote.
@@ -547,6 +563,10 @@ class AppController(QObject):
         # launch that retiled them gives them back here. Synchronous, so they still run
         # at this point.
         self._app.aboutToQuit.connect(self._restore_game_display_settings)
+        if self._stall_tracer is not None:
+            self._app.aboutToQuit.connect(self._stall_tracer.stop)
+        if self._hang_tracer is not None:
+            self._app.aboutToQuit.connect(self._hang_tracer.stop)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 
@@ -2814,10 +2834,14 @@ class AppController(QObject):
             return
         if not self._check_variables():
             return
-        from bartlebot.gui.dialogs.safety_warning_dialog import level_scaling_players  # noqa: PLC0415
+        from bartlebot.gui.dialogs.safety_warning_dialog import (  # noqa: PLC0415
+            level_scaling_players,
+            uses_friends_list,
+        )
 
         clients = self._client_manager.clients
         players = level_scaling_players(self._loaded_config, len(clients))
+        friends_list = uses_friends_list(self._loaded_config, len(clients))
         # Who is in a fight, and whether a level scaling player already has an elixir, are
         # memory reads, which are async, and what they feed is a blocking dialog, which must
         # not open inside a task (see "qasync + Python 3.13" in bartlebot/gui/CLAUDE.md). So
@@ -2825,7 +2849,7 @@ class AppController(QObject):
         # which the loop calls outside any task.
         if self._run_probe is not None and not self._run_probe.done():
             return  # a second press while the first is still reading
-        self._run_probe = asyncio.create_task(run_probe.probe_before_run(clients, players))
+        self._run_probe = asyncio.create_task(run_probe.probe_before_run(clients, players, friends_list))
         self._run_probe.add_done_callback(self._on_run_probe_done)
 
     def _on_run_probe_done(self, probe: asyncio.Task) -> None:
@@ -2834,7 +2858,7 @@ class AppController(QObject):
             return
         if probe.exception() is not None:
             logger.warning("Could not read the players before the run", exc_info=probe.exception())
-            self._finish_run_request(())
+            self._finish_run_request((), ())
             return
         result: run_probe.RunProbe = probe.result()
         if result.fighting:
@@ -2843,7 +2867,7 @@ class AppController(QObject):
         if result.key_problems:
             self._refuse_unpressable_keys(result.key_problems)
             return
-        self._finish_run_request(result.elixir_players)
+        self._finish_run_request(result.elixir_players, result.quick_teleport_players)
 
     def _refuse_while_fighting(self, fighting: list[int]) -> None:
         """Refuse to start while a player is in a fight (#203).
@@ -2868,7 +2892,7 @@ class AppController(QObject):
             logger.warning("Refusing to run: %s", problem)
         QMessageBox.warning(self._window, "Run Bot", run_probe.key_refusal_text(problems))
 
-    def _finish_run_request(self, elixir_players) -> None:
+    def _finish_run_request(self, elixir_players, quick_teleport_players) -> None:
         """The rest of the run sequence: the dialogs that ask, then the run itself."""
         if not self._client_manager.clients or self._loaded_config is None:
             return
@@ -2877,7 +2901,9 @@ class AppController(QObject):
             collect_safety_warnings,
         )
 
-        safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients, elixir_players)
+        safety_warnings = collect_safety_warnings(
+            self._loaded_config, self._client_manager.clients, elixir_players, quick_teleport_players
+        )
         if safety_warnings:
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
             if not dlg.exec():
@@ -3073,13 +3099,14 @@ class AppController(QObject):
         self._window.left_sidebar.set_bot_running(True)
         self._hotkeys.set_armed(False)
         self._slot_hotkeys.set_armed(False)
+        run_trace.start(self._player_number)
         try:
             # A run walks at the game's own speed and fights through its own nodes.
             await self._authoring.suspend_for_run()
             # Inside the try so the finally still tears down if the user stops during
             # a slow apply, and after add_gui_callback so failures reach this run's
             # log panel rather than the previous run's. Its own task, so Stop can cancel it.
-            self._pre_run = asyncio.ensure_future(self._run_pre_run_setup())
+            self._pre_run = asyncio.ensure_future(run_trace.traced(self._run_pre_run_setup(), "pre_run"))
             try:
                 await self._pre_run
             except asyncio.CancelledError:
@@ -3104,6 +3131,7 @@ class AppController(QObject):
                 )
                 await machine.run()
         finally:
+            run_trace.stop()
             self._window.bot_canvas.set_idle()
             self._window.right_sidebar.clients.set_bot_running(False)
             self._window.left_sidebar.set_bot_running(False)
@@ -3123,10 +3151,19 @@ class AppController(QObject):
         either — this runs inside the _start_bot asyncio task, where a modal .exec()
         deadlocks the qasync loop under Python 3.13 (see CLAUDE.md).
         """
-        await self._exit_pre_run_freecam()
-        await self._apply_pre_run_decks()
-        states = await self._form_pre_run_group()
-        await self._survey_pre_run_ports(states)
+        with run_trace.span("pre_run.freecam"):
+            await self._exit_pre_run_freecam()
+        with run_trace.span("pre_run.decks"):
+            await self._apply_pre_run_decks()
+        with run_trace.span("pre_run.group"):
+            states = await self._form_pre_run_group()
+        with run_trace.span("pre_run.port_survey"):
+            await self._survey_pre_run_ports(states)
+
+    def _player_number(self, client) -> int | None:
+        """*client*'s player number, P1 first, or None for one not hooked. For the run trace."""
+        clients = self._client_manager.clients
+        return clients.index(client) + 1 if client in clients else None
 
     async def _exit_pre_run_freecam(self) -> None:
         """Put every player's camera back on them before anything drives a client.
@@ -3186,12 +3223,15 @@ class AppController(QObject):
             # Survey once and hand the result to form_group. Each survey opens and closes
             # the social window on every client, so letting form_group re-read would
             # double the slowest and most failure-prone part of this.
-            states = await group_manager.read_group_states(clients)
+            with run_trace.span("group.read_states"):
+                states = await group_manager.read_group_states(clients)
             if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
                 logger.debug("Skipping pre-run grouping — all clients are already in one group")
                 return states
-            names = await wizard_names.resolve_names(clients)
-            result = await group_manager.form_group(clients, names, states=states)
+            with run_trace.span("group.resolve_names"):
+                names = await wizard_names.resolve_names(clients)
+            with run_trace.span("group.form"):
+                result = await group_manager.form_group(clients, names, states=states)
             if result.success:
                 logger.info("Pre-run grouping: %s", result.summary())
             else:
@@ -3241,9 +3281,9 @@ class AppController(QObject):
         # touches the foreground window. So the clients cannot interfere.
         #
         # The win is smaller than N: memory reads are synchronous ReadProcessMemory
-        # on the loop thread and SendMessageW blocks until the target game's message
-        # pump answers, so only the sleeps actually overlap. Measured at 1.88x for
-        # four clients.
+        # on the loop thread. Measured at 1.88x for four clients, from before
+        # wizwalker sent each window's messages from a thread of its own, when the
+        # waits for the games' answers held the loop too.
         #
         # Each task swallows its own failures, so no return_exceptions is needed and
         # one bad client cannot cancel the others' applies half-finished.

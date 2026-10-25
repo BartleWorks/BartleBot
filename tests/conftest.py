@@ -6,7 +6,8 @@ import itertools
 import logging
 import os
 import sys
-from unittest.mock import AsyncMock, MagicMock, patch
+from contextlib import ExitStack
+from unittest.mock import DEFAULT, AsyncMock, MagicMock, patch
 
 import pytest
 from wizwalker import XYZ
@@ -207,6 +208,18 @@ def prompt_at(client: "FakeClient", *points, initially: bool = False) -> None:
     client.is_in_npc_range.side_effect = _showing
 
 
+def zone_unreadable_at_first(client: "FakeClient", zone: str = "TestZone", reads: int = 1) -> None:
+    """Make *client*'s zone read None for its next *reads* reads, then *zone*.
+
+    That is a client just off a loading screen: the zone turns readable a moment after the
+    screen is gone (#282). After that the read is ``zone_name.return_value``, so a fake that
+    moves the client by setting it still does.
+    """
+    client.zone_name = AsyncMock(
+        return_value=zone, side_effect=lambda: None if client.zone_name.await_count <= reads else DEFAULT
+    )
+
+
 def see_each_other(*clients: "FakeClient") -> None:
     """Make *clients* have each other loaded, and nobody else: one zone, realm and instance.
 
@@ -358,6 +371,47 @@ def message_box_patches(visible_buttons=()):
         patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
         patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
     ), clicked
+
+
+class ModalScreen:
+    """A stack of modals over a client, each a (caption, buttons) pair, closed by a click on one of its buttons.
+
+    Stands in for the game's modal message box: `patches()` replaces the three reads and the click
+    node_helpers makes, and `stubborn` makes a click that does nothing. `clicked` records every click.
+    """
+
+    def __init__(self, *modals, stubborn: bool = False):
+        self.modals = list(modals)
+        self.stubborn = stubborn
+        self.clicked: list[list[str]] = []
+
+    def patches(self):
+        import bartlebot.nodes.node_helpers as nh_mod
+        from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
+
+        async def _text(_client, path):
+            return self.modals[0][0] if self.modals and list(path) == MESSAGE_BOX_CAPTION_PATH else ""
+
+        async def _visible(_client, path):
+            return bool(self.modals) and list(path) in self.modals[0][1]
+
+        async def _click(_client, path):
+            self.clicked.append(list(path))
+            if self.modals and list(path) in self.modals[0][1] and not self.stubborn:
+                self.modals.pop(0)
+
+        return (
+            patch.object(nh_mod, "get_text_by_path", new=_text),
+            patch.object(nh_mod, "is_visible_by_path", new=_visible),
+            patch.object(nh_mod, "click_by_path", new=_click),
+        )
+
+    def apply(self) -> ExitStack:
+        """Enter every patch; use as `with screen.apply():`."""
+        stack = ExitStack()
+        for patcher in self.patches():
+            stack.enter_context(patcher)
+        return stack
 
 
 class FakeParamForm:
@@ -556,6 +610,20 @@ def _fast_zone_settle_grace(monkeypatch):
     from bartlebot.nodes import node_helpers
 
     monkeypatch.setattr(node_helpers, "ZONE_SETTLE_GRACE", 0.05)
+
+
+@pytest.fixture(autouse=True)
+def _fast_zone_readable_timeout(monkeypatch):
+    """Compress how long read_zones waits for a None zone to turn readable.
+
+    ZONE_READABLE_TIMEOUT is ten seconds of real time, paid by every node test whose client
+    reads None for good: a client that is not logged in, or a test's stand-in for one outside
+    the zone. read_zones reads it at call time, so patching the module attribute reaches it.
+    A test whose subject is the wait passes ``timeout`` explicitly, or patches it back.
+    """
+    from bartlebot.nodes import node_helpers
+
+    monkeypatch.setattr(node_helpers, "ZONE_READABLE_TIMEOUT", 0.05)
 
 
 # ---------------------------------------------------------------------------

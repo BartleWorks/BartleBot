@@ -162,7 +162,8 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Boss"
+    "Boss",
+    "Challenge Mode"
   ],
   "options": [],
   "states": [
@@ -247,8 +248,6 @@
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/AQ_Z01_MountOlympus",
-        "offers_challenge_mode": false,
-        "offers_team_up": false,
         "dungeon_name": "Mount Olympus",
         "sigil_xyz": {
           "x": -669.19,
@@ -259,7 +258,9 @@
           "x": -74.08,
           "y": 3670.58,
           "z": -122.43
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
       }
     },
     {
@@ -329,7 +330,8 @@
           "x": -13.57,
           "y": 6289.73,
           "z": -1671.38
-        }
+        },
+        "stagger": true
       }
     },
     {
@@ -592,5 +594,9 @@
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
     "version": 1
-  }
+  },
+  "history": [
+    "96cd0c0e5ad568a3953d004e4c27707e180c6ccb7233c663f72f7315503931c6",
+    "583ff38c954906a99c063d97447e3e53663d01ed938ad2dd2b38ef9759b7f732"
+  ]
 }

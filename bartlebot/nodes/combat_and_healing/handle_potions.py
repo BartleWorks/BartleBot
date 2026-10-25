@@ -56,7 +56,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="if_health_below",
         type="ratio",
         label="Use Potion If Health Below",
-        help=("Health percentage below which a player should use a potion. Set to 0% to skip health-based potion use."),
+        help="Players below this share of their health use a potion. At 0%, health is never checked.",
         default=0.5,
         required=True,
     ),
@@ -64,7 +64,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="if_mana_below",
         type="ratio",
         label="Use Potion If Mana Below",
-        help=("Mana percentage below which a player should use a potion. Set to 0% to skip mana-based potion use."),
+        help="Players below this share of their mana use a potion. At 0%, mana is never checked.",
         default=0.15,
         required=True,
     ),
@@ -73,10 +73,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="zone",
         label="Mark Zone",
         help=(
-            "Optional. If provided, all players that need to buy potions must already "
-            "be in this zone when handle_potions executes. Returns FAILURE if they are "
-            "not. Use this to ensure the mark is placed at a predictable location "
-            "(e.g., a dungeon entrance) rather than wherever players happen to be."
+            "The zone players must be in before leaving to buy potions, so the mark lands somewhere "
+            "predictable, such as a dungeon entrance. The node fails if they're elsewhere."
         ),
         default="",
         required=False,
@@ -86,21 +84,16 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Uses potions on players below health or mana thresholds. "
-        "With Challenge Mode on, a player's health and mana are measured against the max its "
-        "next entry scales it to, since it keeps what it left the dungeon with, so the same "
-        "thresholds serve both modes. "
-        "If Refill Potions is on and any player has no potion charges remaining, "
-        "marks the current location, navigates to Hilda Brewer in the Commons to buy "
-        "potions, then recalls back to the mark."
+        "Has each player below a health or mana threshold use a potion. With Refill Potions on, "
+        "players who run out mark their spot, buy more from Hilda Brewer in the Commons, and "
+        "recall."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Potions used and/or refilled as needed for all players."),
+        ReturnSpec("SUCCESS", "Every player who needed a potion used one, and players who ran out refilled."),
         ReturnSpec(
             "FAILURE",
-            "Buying players were not in mark_zone; mark failed; a navigation step failed; "
-            "or the potion shop could not be reached.",
+            "A player who needed to buy wasn't in Mark Zone, couldn't mark, or couldn't reach the potion shop.",
         ),
     ],
     required_bot_options=[
@@ -112,14 +105,17 @@ NODE_SPEC = NodeSpec(
             # which is what every bot did while this was a param.
             default=None,
             description=(
-                "Whether players who run out of potions go to Hilda Brewer in the Commons to buy "
-                "more, marking where they stood and recalling there afterward. Buying costs gold. "
-                "Off, they keep farming without potions."
+                "Buy potions from Hilda Brewer when a player runs out. Each refill costs gold and a trip "
+                "to the Commons, and players come back to where they were."
             ),
         ),
         SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=5,
+    usage_notes=(
+        "With Challenge Mode on, thresholds are measured against the lower maximums the next "
+        "entry scales players to, so the same thresholds work in both modes."
+    ),
 )
 
 
@@ -213,7 +209,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "SUCCESS"
 
     # 4. Check buying_clients zones.
-    zones = await asyncio.gather(*[c.zone_name() for c in buying_clients])
+    zones = await node_helpers.read_zones(buying_clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Buying client zones: {list(zones)}", logging.DEBUG)
 
     # 4a. Commons shortcut: all buying clients are already at Hilda's location —
@@ -336,14 +332,19 @@ async def navigate_to_potion_vendor(machine, clients: list) -> bool:
     return True
 
 
-async def close_potion_shop(client) -> None:
-    """Click Exit until the potion shop window is gone.
+async def close_potion_shop(client) -> bool:
+    """Click Exit until the potion shop window is gone. True once it is.
 
     One click is not enough: the button can be swallowed while the shop is mid-animation.
+    Gives up after WINDOW_CLOSE_TIMEOUT with a warning, where it used to click for as long
+    as the shop read open, which a window that never reads closed would make forever.
     """
-    while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
-        await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-        await asyncio.sleep(SHOP_EXIT_CLICK_INTERVAL)
+    return await node_helpers.click_until_gone(
+        client,
+        POTION_EXIT_PATH,
+        is_open=lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
+        poll_interval=SHOP_EXIT_CLICK_INTERVAL,
+    )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────

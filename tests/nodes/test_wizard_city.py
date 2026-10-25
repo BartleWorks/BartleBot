@@ -9,7 +9,7 @@ import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.wizard_city as wc
 from bartlebot.nodes.paths import GOTO_DORM_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from bartlebot.nodes.zone_entry import enter_zone
-from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.conftest import FakeClient, FakeMachine, message_box_patches, zone_unreadable_at_first
 
 DORM = wc.DORM_ZONE
 
@@ -36,6 +36,20 @@ async def test_home_lands_in_dorm_first_try():
         result = await wc._press_home_until_dorm(FakeMachine(), [client])
 
     assert result is True
+
+
+async def test_a_zone_unreadable_off_the_home_loading_screen_is_not_sent_home_again():
+    """Off HOME's loading screen the zone reads None for a moment (#282): it is in the dorm."""
+    client = _dorm_client()
+    zone_unreadable_at_first(client, DORM)
+    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
+    click = AsyncMock(return_value=True)
+
+    with none_load, patch.object(nh, "click_by_path", new=click), patch.object(wc, "POLL_INTERVAL", 0):
+        result = await wc._press_home_until_dorm(FakeMachine(), [client])
+
+    assert result is True
+    assert click.await_count == 1
 
 
 async def test_home_wrong_zone_dorm_button_wait_second_press_succeeds():

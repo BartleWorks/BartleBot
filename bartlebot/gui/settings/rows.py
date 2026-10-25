@@ -26,7 +26,7 @@ Every setting is a card of its own, a row in Windows 11's settings style::
 
 Borders go on each setting, not around a section: sections are ``RuleHeading``s, as
 they were. The one card holding several rows is a :class:`SettingGroup` -- a setting
-with settings that depend on it (Enable Quicksell and its five rows) -- which folds,
+with settings that depend on it (Quicksell and its five rows) -- which folds,
 the way Windows' ``SettingsExpander`` does and only where it does.
 
 A group's fold is a reading preference, so it lives in ``ui_state.json`` rather than in
@@ -427,7 +427,7 @@ class SettingRow(QWidget):
         described = self._binding.describe(self._default)
         self._revert.setToolTip(f"Reset to the default ({described})" if changed else f"At the default ({described})")
         if self._rolled_up and not changed:
-            self._bar.setToolTip("A setting inside has been changed")
+            self._bar.setToolTip("Changed inside this group")
         else:
             self._bar.setToolTip("Changed from the default" if changed else "")
 
@@ -569,7 +569,7 @@ class SettingGroup(SettingCard):
 
     def _refresh_gate(self, *_args) -> None:
         on = self._header.control.isChecked()
-        reason = f"{self._header.title} is off, so this has no effect."
+        reason = f"Turn on {self._header.title} to use this."
         for row in self._rows:
             row.set_available(on, reason)
 

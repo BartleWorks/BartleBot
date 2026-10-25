@@ -206,13 +206,8 @@ async def _zones(clients: list) -> list[str]:
     A client between zones has none -- zone_name() is None until the next one is set up -- and
     a route planned from None means nothing, so that is waited out rather than planned from.
     """
-    zones: list[str] = []
-
-    async def readable() -> bool:
-        zones[:] = await asyncio.gather(*[c.zone_name() for c in clients])
-        return all(zones)
-
-    if not await node_helpers.poll_until(readable, LOADING_SCREEN_TIMEOUT, POLL_INTERVAL):
+    zones = await node_helpers.read_zones(clients, LOADING_SCREEN_TIMEOUT, POLL_INTERVAL)
+    if not all(zones):
         raise _ZoneUnreadable(f"a client's zone could not be read for {LOADING_SCREEN_TIMEOUT:.0f}s: {zones}")
     return zones
 

@@ -24,39 +24,33 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Enemy ID",
         help=(
-            "ID of the enemy to initiate combat with: its internal object name, as Record and the "
-            "Entity Browser's ID column give it, not the name shown in game. An entity with exactly "
-            "this ID is preferred; failing that, any ID containing it, so advanced mode's 'Adv_' copy "
-            "is still found. A StandIn (the actor that speaks a pre-battle dialogue) and a boss's "
-            "'-mini' pet copy are never picked that way. Wildcards (* ? []) match the whole ID "
-            "instead, so use '*Bandit*' to match anywhere and 'Bandit*' to match only IDs "
-            "starting with it. Leave empty to use the closest available mob."
+            "The enemy's ID, as Record and the Entity Browser show it, not its in-game name. An exact "
+            "match wins, then any ID containing this, so an advanced-mode copy is still found. Use * "
+            "and ? to match a pattern, such as *Bandit*."
         ),
         default="",
-        default_hint="targets the closest available mob",
+        default_hint="the closest enemy",
     ),
     ParamField(
         key="wiki_page",
         type="wiki_page",
         label="Wiki Page",
         help=(
-            "Wizard101 Central Wiki page for the enemy this node fights, e.g. 'Creature:Lost Soul'. "
-            "Paste the page's URL and it will be stored as the title. Records where the bot's drop "
-            "table came from so it can be refreshed later — a dungeon with two bosses records one "
-            "page per fight. Not used while the bot runs."
+            "The Wizard101 Central Wiki page for this enemy, such as Creature:Lost Soul. Paste the "
+            "URL or the title. It records where the drop table came from, and isn't used while the "
+            "bot runs."
         ),
         default="",
         required=False,
-        default_hint="no source page recorded",
+        default_hint="none",
     ),
     ParamField(
         key="use_default_strategy",
         type="bool",
-        label="Use default strategy",
+        label="Use Default Strategy",
         help=(
-            "When unchecked, this fight node appears in the Combat Tab's State Assignments section "
-            "where you can assign a specific Duel Strategy to it. "
-            "When checked, the Bot Strategy's default Duel Strategy is used."
+            "When on, this fight uses the bot's default Duel Strategy. When off, the fight is listed "
+            "on the bot's Combat tab, where you can give it its own."
         ),
         default=True,
     ),
@@ -65,9 +59,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="float",
         label="Max Duration (s)",
         help=(
-            "If the entire combat node (target acquisition + waiting for battle + SprintyCombat) "
-            "exceeds this many seconds, exit early with FAILURE. A fight still going by then is fled "
-            "first. 0 = no limit."
+            "How long the whole node may take, finding the enemy included. A fight still going then "
+            "is fled, and the node fails. 0 means no limit."
         ),
         default=600.0,
     ),
@@ -75,17 +68,18 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Initiates and completes a combat encounter. Teleports all players to the "
-        "target enemy, waits for them to enter battle, and then runs SprintyCombat "
-        "until the duel ends. Detects item drops via chat during the encounter."
+        "Teleports every player to an enemy and fights until the battle ends. Drops are recorded "
+        "as chat announces them."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players have exited combat successfully."),
+        ReturnSpec("SUCCESS", "Every player finished the battle."),
         ReturnSpec(
             "FAILURE",
-            "No valid target found, a player had no mana, players failed to enter and complete combat "
-            "within the timeout, or the fight could not be won and was fled.",
+            (
+                "No enemy was found, a player had no mana, the battle didn't start or end in time, or the "
+                "fight was fled."
+            ),
         ),
     ],
     required_bot_options=[player_realms.SPEC],

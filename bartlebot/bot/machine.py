@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot.bot import variables
+from bartlebot.bot import run_trace, variables
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS, AssignmentModel, VariableModel
 from bartlebot.clients import sightings
@@ -798,9 +798,10 @@ class BotMachine:
                 # The node's own context, which every task it starts copies: log() files under it.
                 context = contextvars.copy_context()
                 context.run(_NODE_TYPE.set, node_type)
-                self._current_node_task = asyncio.create_task(
-                    node_fn(self, self.clients, state_def.get("params", {})), context=context
-                )
+                node_coro = node_fn(self, self.clients, state_def.get("params", {}))
+                if run_trace.active():
+                    node_coro = run_trace.traced(node_coro, f"node.{node_type}", state=state_id)
+                self._current_node_task = asyncio.create_task(node_coro, context=context)
                 try:
                     self.last_result = await self._current_node_task
                 except asyncio.CancelledError:

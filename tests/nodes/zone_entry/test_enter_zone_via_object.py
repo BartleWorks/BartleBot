@@ -68,6 +68,17 @@ async def test_success_single_client():
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
+async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
+    """Just off a loading screen the zone reads None for a moment (#282)."""
+    client = _ready_client()
+    client.zone_name.side_effect = [None, _FROM_ZONE, _TO_ZONE]
+
+    with patch.object(itz, "POLL_INTERVAL", 0):
+        result = await itz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+
+
 async def test_success_multiple_clients():
     """Both clients get prompt, press X, load, and arrive in to_zone."""
     clients = [_ready_client(), _ready_client()]

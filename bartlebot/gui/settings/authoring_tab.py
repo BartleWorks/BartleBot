@@ -25,32 +25,28 @@ from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SPEED_MULTIPLI
 _HOTKEY_TEXT: dict[AuthoringAction, tuple[str, str]] = {
     AuthoringAction.XYZ_SYNC: ("Move every other player in the zone onto the focused player.", ""),
     AuthoringAction.TP_TO_FOCUSED: (
-        "Port every other player to the focused player.",
-        "Through the friends list, across zones and realms.",
+        "Teleport every other player to the focused player.",
+        "Players teleport across zones and realms, through the friends list.",
     ),
-    AuthoringAction.TOGGLE_SPEED: ("Switch the speed multiplier above on and off for every player.", ""),
+    AuthoringAction.TOGGLE_SPEED: ("Turn Speed on or off for every player.", ""),
     AuthoringAction.TOGGLE_COMBAT: (
-        "Switch auto-combat on and off.",
-        "Fights use the open bot's default Duel Strategy, or the built-in one; PvP is never fought.",
+        "Turn auto-combat on or off.",
+        "Fights use the open bot's default Duel Strategy, or the built-in one. PvP is never fought.",
     ),
     AuthoringAction.TOGGLE_DIALOGUE: (
-        "Switch auto-dialogue on and off.",
-        "NPC dialogue is clicked through on every player as it opens, and a side quest offered on the "
-        "way is declined, never accepted.",
+        "Turn auto-dialogue on or off.",
+        "Auto-dialogue clicks through NPC dialogue on every player and declines side quests.",
     ),
     AuthoringAction.TOGGLE_SPEED_AUTHORING: (
-        "Keys 1–0 add a favorites-bar node while in Edit mode.",
-        "Switches speed-authoring on and off. While it is on and the canvas is in Edit mode, keys 1–0 in "
-        "a game window add that slot's favorites-bar node after the selected node, or at the first gap "
-        "from the start node, and start recording it from the player whose window you are in.",
+        "Turn speed-authoring on or off.",
+        "While speed-authoring is on and the canvas is in Edit mode, keys 1–0 in a game window add that "
+        "favorites-bar slot's node and start recording it.",
     ),
 }
 
 _HOTKEYS_NOTE = (
-    "The keys work only while a game window has the keyboard, so they never take a key from another "
-    "application or from BartleBot's own fields — but inside the game they replace whatever that key "
-    "did there, and a key the game binds itself is flagged below. The focused player is the game window "
-    "you are in; a button in the bar above the game windows uses the one you were last in."
+    "These keys work only while a game window has focus, and there they replace the game's own use of "
+    "the key. The focused player is the one whose window you're in."
 )
 
 
@@ -65,7 +61,7 @@ def slot_key_notes(game_bindings: Sequence[GameBinding]) -> str:
     if not taken:
         return ""
     uses = ", ".join(f"{gb.binding} ({gb.description})" for gb in taken)
-    return f"While speed-authoring is on, the game does not see these keys it binds: {uses}."
+    return f"While speed-authoring is on, these keys don't reach the game: {uses}."
 
 
 def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBinding] = ()) -> list[str]:
@@ -90,15 +86,15 @@ def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBindi
         combo = parse_binding(text)
         label = ACTION_LABELS[action]
         if combo is None:
-            problems.append(f"{label}: {text} cannot be bound — use F1–F24, a letter or a digit.")
+            problems.append(f"{label}: {text} can't be used. Choose F1–F24, a letter or a digit.")
         elif combo in seen:
-            problems.append(f"{label} and {seen[combo]} are both on {text}.")
+            problems.append(f"{label} and {seen[combo]} both use {text}. Choose another key for one of them.")
         else:
             seen[combo] = label
             if clash := game.get(combo):
                 problems.append(
-                    f"{label}: {text} is the game's own key for {clash.description}, which will not "
-                    "work inside the game while this is bound."
+                    f"{label}: {text} is the game's key for {clash.description}, which won't work in "
+                    "the game while this is set."
                 )
     return problems
 
@@ -122,10 +118,7 @@ class AuthoringTab(SettingsForm):
                 "How much faster players walk while Speed is on.",
                 self._speed_sb,
                 default=default_for("authoring", "speed_multiplier"),
-                details=(
-                    "It switches off when a bot starts, since a run walks at the game's own speed. A change "
-                    "applies the next time Speed is switched on."
-                ),
+                details="Speed turns off when a bot starts. A change applies the next time Speed is turned on.",
             )
         )
 

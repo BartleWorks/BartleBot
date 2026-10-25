@@ -254,11 +254,16 @@ def check_type_dump(_root: Path) -> str:
 
 
 def check_native(_root: Path) -> str:
-    """The native extensions loaded on demand: curl_cffi (wiki import), Pillow's DDS decoder (game art), Velopack,
-    and cryptography's Ed25519 (the update feed's signature)."""
+    """The native extensions loaded on demand: curl_cffi (wiki import), pywebview's WebView2 backend (the wiki
+    window, #278), Pillow's DDS decoder (game art), Velopack, and cryptography's Ed25519 (the update feed's
+    signature)."""
     import velopack  # noqa: F401, PLC0415
     from curl_cffi import requests  # noqa: F401, PLC0415
     from PIL import DdsImagePlugin, Image  # noqa: F401, PLC0415
+
+    # Starts .NET through pythonnet and loads the WebView2 assemblies pywebview ships, with
+    # no window: a build missing either would fail only once a user met a challenge.
+    from webview.platforms import edgechromium  # noqa: F401, PLC0415
 
     from bartlebot.nodes.combat_runner import check_dsl_uncached  # noqa: PLC0415
     from bartlebot.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
@@ -273,7 +278,7 @@ def check_native(_root: Path) -> str:
         not verify(b"{}", base64.b64encode(bytes(64))),
         "the update feed's signature check accepted a signature of zeros",
     )
-    return "curl_cffi, Pillow DDS, Velopack, combat DSL grammar, update signature"
+    return "curl_cffi, WebView2, Pillow DDS, Velopack, combat DSL grammar, update signature"
 
 
 def check_qt(_root: Path) -> str:

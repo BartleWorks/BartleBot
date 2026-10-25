@@ -1,10 +1,12 @@
 import asyncio
+import contextlib
 import logging
 
 from wizwalker import XYZ
 
 from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.help_text import ARRIVAL_NOTE, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.options import player_realms
 
@@ -13,7 +15,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="zone",
         label="From Zone",
-        help="Zone name players must currently be in when this node executes.",
+        help=ZONE_AT_START,
         default="",
         required=True,
     ),
@@ -21,7 +23,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="zone",
         label="To Zone",
-        help="Zone name players must be in after this node completes.",
+        help=ZONE_AT_END,
         default="",
         required=True,
     ),
@@ -29,10 +31,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Transition XYZ",
-        help=(
-            "A point inside the destination zone's transition bounding box. "
-            "Teleporting players here triggers the automatic zone change."
-        ),
+        help="A spot inside the zone change's trigger. Teleporting here starts the zone change.",
         default=None,
         required=True,
     ),
@@ -41,11 +40,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Reset XYZ",
         help=(
-            "Where players stand to re-arm the trigger: a spot clear of the transition "
-            "bounding box. When the zone change does not fire (e.g. a trigger that needs a "
-            "scripted event to finish first), the stuck players are teleported here and "
-            "back, up to 3 attempts, each waiting the user's Safety Delay for the trigger "
-            "to fire (see usage notes). Record captures it as the starting position."
+            "A spot clear of the trigger, where players step to re-arm it. A player whose zone change "
+            "doesn't fire is moved here and back, up to three times."
         ),
         default=None,
         required=True,
@@ -55,11 +51,8 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Stagger Players",
         help=(
-            "Send the first player through the transition alone and wait for it to fully "
-            "load into the destination zone before sending the rest. Prevents players from "
-            "being split across different realms of the destination zone. Only takes effect "
-            "when exactly 4 players are connected — with 3 or fewer this has not been observed "
-            "to be an issue."
+            "When on, the first player goes through alone, and the rest follow once it has loaded, so "
+            "all four end up on one realm. Applies only with four players."
         ),
         default=False,
     ),
@@ -67,21 +60,18 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Transitions all players from one zone to another by teleporting them "
-        "into the destination zone's transition bounding box. Optionally staggers "
-        "the transition (lead player first, then the rest) when 4 players are "
-        "connected, to avoid players landing in different realms."
+        "Moves every player to another zone by teleporting them into the spot that triggers the "
+        "zone change. Can send four players one at a time to keep them on one realm."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "All players are now in to_zone.",
+            "Every player is in To Zone.",
         ),
         ReturnSpec(
             "FAILURE",
-            "Players were not in from_zone at the start, or not all players reached "
-            "to_zone after the transition and its retries.",
+            "A player wasn't in From Zone at the start, or not every player reached To Zone.",
         ),
     ],
     required_bot_options=[
@@ -90,19 +80,13 @@ NODE_SPEC = NodeSpec(
     ],
     max_consecutive_retries=10,
     usage_notes=(
-        "reset_xyz is where players stand to re-arm the trigger, so it has to be clear of "
-        "the transition bounding box — anywhere in from_zone the trigger does not reach. "
-        "Record sets it to where the players stood when recording started. A caller that "
-        "passes none (a route the zone navigation map builds, say) resets each player to "
-        "where it stood when the node started instead.\n\n"
-        "A player whose trigger never fires is not failed on its own: once reset_xyz's "
-        "retries are exhausted, the node still waits for a loading screen and "
-        "checks arrival, so a groupmate who did transition gives the straggler a working "
-        "fallback — see the next paragraph.\n\n"
-        "If some but not all players reach to_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
+        (
+            "Keep Reset XYZ clear of the trigger. Record sets it to where players stood when "
+            "recording started. Left empty, each player resets to where it stood when the node "
+            "started."
+        )
+        + "\n\n"
+        + ARRIVAL_NOTE
     ),
 )
 
@@ -111,7 +95,8 @@ from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEO
 
 async def _has_left_zone(client, zone: str) -> bool:
     # Through zone_matches, not !=: a client in a Challenge Mode copy of a literal from_zone,
-    # or in a zone a glob from_zone names, has not left it (#143).
+    # or in a zone a glob from_zone names, has not left it (#143). A None zone has left, as
+    # node_helpers.all_left_zone explains: this is only asked once the trigger has fired.
     return not node_helpers.zone_matches(await client.zone_name(), zone)
 
 
@@ -135,12 +120,59 @@ def _reset_point(data) -> XYZ | None:
     return reset if (reset.x, reset.y, reset.z) != (0.0, 0.0, 0.0) else None
 
 
-async def _transition_group(machine, group: list, from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]) -> str:
+def _players(numbers: list[int]) -> str:
+    return ", ".join(f"P{n}" for n in numbers) or "nobody"
+
+
+async def _observe(client) -> tuple[str | None, bool | None, XYZ | None]:
+    """A client's (zone, loading, position), each None when its read failed.
+
+    A client on a loading screen can raise on a read, and that is a fact worth logging
+    rather than an error: `_watch_group` shows it as the state it is in.
+    """
+
+    async def _read(read):
+        try:
+            return await read()
+        except Exception:
+            return None
+
+    return tuple(await asyncio.gather(_read(client.zone_name), _read(client.is_loading), _read(client.body.position)))
+
+
+async def _watch_group(machine, clients: list, numbers: list[int]) -> None:
+    """Log each client's zone and loading state every time either changes, with where it stood.
+
+    Diagnostic only. With Stagger on, one of the three followers sometimes never fires the
+    trigger, or arrives and is back out again, and the node's own lines say only how many
+    were left. This says who, in what order, and where each stood at the time, so a player
+    standing in an exit trigger shows up as a position. It reads outside the node's own
+    polls and decides nothing.
+    """
+    last: dict[int, tuple] = {}
+    while True:
+        observed = await asyncio.gather(*[_observe(c) for c in clients])
+        for number, (zone, loading, position) in zip(numbers, observed):
+            if last.get(number) == (zone, loading):
+                continue
+            last[number] = (zone, loading)
+            where = f"({position.x:.0f}, {position.y:.0f}, {position.z:.0f})" if position else "unreadable"
+            machine.log(
+                f"P{number}: zone={zone.rsplit('/', 1)[-1] if zone else 'unreadable'} loading={loading} at {where}",
+                logging.DEBUG,
+            )
+        await asyncio.sleep(POLL_INTERVAL)
+
+
+async def _transition_group(
+    machine, group: list, numbers: list[int], from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]
+) -> str:
     """Teleport `group` into the transition bounding box and wait for them to arrive in to_zone.
 
     Runs the full teleport → dismiss dungeon dialog → leave-from_zone (with reset retry) →
-    wait-for-loading → arrive-in-to_zone sequence for just the clients in `group`. `resets` is
-    each client's reset point, in `group` order. Returns "SUCCESS" or "FAILURE".
+    wait-for-loading → arrive-in-to_zone sequence for just the clients in `group`. `numbers` is
+    each client's player number and `resets` its reset point, both in `group` order. Returns
+    "SUCCESS" or "FAILURE".
 
     A client that never triggers the transition at all is not failed here: the arrival check
     at the end runs regardless, and wait_for_zone_with_recovery can still port a client stuck
@@ -180,10 +212,17 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
         # retry is skipped for it: that teleport would be applied on arrival and drop the
         # client back at the bounding box in the zone it just reached (#70).
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
+        #
+        # The retry answers an instance prompt before it teleports: a prompt that came up late,
+        # or that the first answer missed, would otherwise sit there with the client reset
+        # around it, and nothing leaves a dungeon until it is answered (#281).
+        retry = node_helpers.ModalAwareRetry(
+            node_helpers.skip_while_loading(lambda c: c.teleport(target)), recognized_only=True
+        )
         seen_left = await node_helpers.poll_each_until_seen(
             group,
             check_fn=lambda c: _has_left_zone(c, from_zone),
-            action_fn=node_helpers.skip_while_loading(lambda c: c.teleport(target)),
+            action_fn=retry,
             timeout=safety_delay,
             poll_interval=POLL_INTERVAL,
             # Stop chasing the stragglers the moment a groupmate who already left from_zone
@@ -191,12 +230,23 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
             # immediately rather than waiting out the rest of this attempt's safety_delay.
             stop_fn=lambda left_clients: _any_confirmed_arrival(left_clients, to_zone),
         )
+        if retry.refusal:
+            machine.log(
+                f"FAILURE: the game refused the zone change — {dialog_captions.describe(retry.refusal)}",
+                logging.WARNING,
+            )
+            return "FAILURE"
         if len(seen_left) == len(group):
             # Zone change triggered for everyone — no more retries needed.
             break
 
         stuck = [group[i] for i in range(len(group)) if i not in seen_left]
         left = [group[i] for i in range(len(group)) if i in seen_left]
+        machine.log(
+            f"Left {from_zone!r}: {_players([numbers[i] for i in sorted(seen_left)])}; "
+            f"still in it: {_players([numbers[i] for i in range(len(group)) if i not in seen_left])}",
+            logging.DEBUG,
+        )
 
         # A groupmate who already reached to_zone is a better recovery path than another
         # reset_xyz retry: stop burning attempts on a trigger that keeps failing and let
@@ -239,7 +289,10 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
             machine, group, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
         )
     ) is not None:
-        machine.log(f"Zones after transition: {actual}", logging.DEBUG)
+        machine.log(
+            "Zones after transition: " + ", ".join(f"P{n} {z}" for n, z in zip(numbers, actual)),
+            logging.DEBUG,
+        )
         machine.log(
             f"FAILURE: clients not in expected zone after transition (expected={to_zone!r}, got={list(set(actual))})",
             logging.WARNING,
@@ -278,14 +331,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"enter_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in from_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
+    if not await node_helpers.in_expected_zone(machine, clients, from_zone, POLL_INTERVAL):
         return "FAILURE"
 
     # A bot has to set reset_xyz, but the code paths and the zone navigation map call this
@@ -299,16 +345,25 @@ async def run(machine, clients: list, params: dict) -> str:
     # Who shares whose realm, for straggler recovery in a Separate bot.
     await node_helpers.note_realm_peers(machine, clients)
 
-    if stagger:
-        machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)
-        lead_result = await _transition_group(machine, clients[:1], from_zone, to_zone, target, resets[:1])
-        if lead_result == "FAILURE":
-            machine.log("FAILURE: lead client failed to transition during staggered entry", logging.WARNING)
-            return "FAILURE"
-        machine.log("enter_zone: lead client settled in destination zone, sending remaining clients", logging.DEBUG)
-        result = await _transition_group(machine, clients[1:], from_zone, to_zone, target, resets[1:])
-    else:
-        result = await _transition_group(machine, clients, from_zone, to_zone, target, resets)
+    numbers = list(range(1, len(clients) + 1))
+    watcher = asyncio.create_task(_watch_group(machine, clients, numbers))
+    try:
+        if stagger:
+            machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)
+            lead_result = await _transition_group(
+                machine, clients[:1], numbers[:1], from_zone, to_zone, target, resets[:1]
+            )
+            if lead_result == "FAILURE":
+                machine.log("FAILURE: lead client failed to transition during staggered entry", logging.WARNING)
+                return "FAILURE"
+            machine.log("enter_zone: lead client settled in destination zone, sending remaining clients", logging.DEBUG)
+            result = await _transition_group(machine, clients[1:], numbers[1:], from_zone, to_zone, target, resets[1:])
+        else:
+            result = await _transition_group(machine, clients, numbers, from_zone, to_zone, target, resets)
+    finally:
+        watcher.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await watcher
 
     if result == "SUCCESS":
         machine.log(f"SUCCESS: all clients in {to_zone!r}")
