@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.game.wiki_browser import BrowserFetch, is_challenge
+from bartlebot.game.wiki_browser import BrowserFetch, WikiBrowserError, is_challenge
 from bartlebot.game.wiki_drops import match_name_for
 from bartlebot.game.wiki_pages import WIKI_HOST as _WIKI_HOST
 from bartlebot.game.wiki_pages import page_title, wiki_page_path
@@ -279,6 +279,15 @@ class WikiImportDialog(ThemedMixin, QDialog):
     # ------------------------------------------------------------------
 
     def closeEvent(self, event) -> None:
+        self._stop_fetch()
+        super().closeEvent(event)
+
+    def done(self, result: int) -> None:
+        # Cancel, Esc and Add end the dialog here, and none of them sends a closeEvent.
+        self._stop_fetch()
+        super().done(result)
+
+    def _stop_fetch(self) -> None:
         # The thread runs on to the end of its request, but nothing it returns is shown.
         self._closed = True
         # A window open for the wiki's check closes with the dialog.
@@ -287,7 +296,6 @@ class WikiImportDialog(ThemedMixin, QDialog):
         if self._task is not None:
             self._task.cancel()
             self._task = None
-        super().closeEvent(event)
 
     # ------------------------------------------------------------------
     # Fetch
@@ -322,6 +330,12 @@ class WikiImportDialog(ThemedMixin, QDialog):
             except WikiChallenged as exc:
                 logger.info("The wiki's Cloudflare check challenged the fetch of %s (%s); opening a window", url, exc)
                 drops = await self._fetch_in_window(url)
+        except WikiBrowserError as exc:
+            logger.warning("The wiki window failed for %s: %s", url, exc.detail or exc)
+            if not self._closed:
+                self._btn_fetch.setEnabled(True)
+                self._set_status(str(exc), error=True)
+            return
         except Exception as exc:
             logger.exception("Wiki fetch failed for %s", url)
             if not self._closed:

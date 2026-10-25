@@ -21,6 +21,9 @@ from bartlebot.game.wiki_browser import (
     EXIT_CLOSED,
     EXIT_FAILED,
     FLAG,
+    OPEN_FAILED,
+    READ_FAILED,
+    TIMED_OUT,
     BrowserFetch,
     WikiBrowserError,
     capture,
@@ -105,22 +108,28 @@ def test_a_window_closed_before_the_page_loaded_returns_none():
     assert BrowserFetch(URL, _child("raise SystemExit(1)")).run() is None
 
 
-def test_a_window_that_failed_says_why():
-    fetch = BrowserFetch(URL, _child("import json; out.write_text(json.dumps({'error': 'no WebView2 runtime'}))"))
-    with pytest.raises(WikiBrowserError, match="no WebView2 runtime"):
+def test_a_window_that_failed_says_what_happened_and_logs_why():
+    answer = {"error": OPEN_FAILED, "detail": "no WebView2 runtime"}
+    fetch = BrowserFetch(URL, _child(f"import json; out.write_text(json.dumps({answer!r}))"))
+    with pytest.raises(WikiBrowserError) as raised:
         fetch.run()
+    assert str(raised.value) == OPEN_FAILED
+    assert raised.value.detail == "no WebView2 runtime"
 
 
 def test_a_child_that_cannot_start_is_an_error():
     fetch = BrowserFetch(URL, lambda url, out: [str(Path("no") / "such" / "program.exe")])
-    with pytest.raises(WikiBrowserError, match="could not start"):
+    with pytest.raises(WikiBrowserError) as raised:
         fetch.run()
+    assert str(raised.value) == OPEN_FAILED
+    assert "could not start" in raised.value.detail
 
 
 def test_a_window_left_open_too_long_is_closed_and_an_error(monkeypatch):
     monkeypatch.setattr(wiki_browser, "WAIT_SECONDS", 0.2)
-    with pytest.raises(WikiBrowserError, match="too long"):
+    with pytest.raises(WikiBrowserError) as raised:
         BrowserFetch(URL, _child("import time; time.sleep(30)")).run()
+    assert str(raised.value) == TIMED_OUT
 
 
 def test_cancel_closes_an_open_window_and_returns_none():
@@ -284,4 +293,24 @@ def test_a_window_that_cannot_open_writes_why(monkeypatch, tmp_path):
     out = tmp_path / "page.json"
 
     assert run_window(URL, out) == EXIT_FAILED
-    assert "WebView2 runtime not found" in json.loads(out.read_text(encoding="utf-8"))["error"]
+    answer = json.loads(out.read_text(encoding="utf-8"))
+    assert answer["error"] == OPEN_FAILED
+    assert "WebView2 runtime not found" in answer["detail"]
+
+
+def test_a_page_that_cannot_be_read_writes_why(monkeypatch, tmp_path):
+    window = FakeWindow([(URL, True)])
+
+    def evaluate_js(script):
+        raise RuntimeError("script failed")
+
+    window.evaluate_js = evaluate_js
+    _fake_webview(monkeypatch, window, lambda **kwargs: window.events.loaded.fire())
+    out = tmp_path / "page.json"
+
+    assert run_window(URL, out) == EXIT_CAPTURED
+    assert window.destroyed
+    assert json.loads(out.read_text(encoding="utf-8")) == {
+        "error": READ_FAILED,
+        "detail": "RuntimeError: script failed",
+    }
