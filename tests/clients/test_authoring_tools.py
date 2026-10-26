@@ -33,6 +33,14 @@ def _speed_field(client: FakeClient, value: int) -> None:
     client.speed_state = state
     client.client_object.speed_multiplier = AsyncMock(side_effect=lambda: state["value"])
     client.client_object.write_speed_multiplier = AsyncMock(side_effect=lambda v: state.update(value=v))
+    client.client_object.maybe_read_type_name = AsyncMock(return_value="WizClientObject")
+
+
+def _log_out(client: FakeClient) -> None:
+    """Free *client*'s client object, as a logout does: the hook still points at the memory."""
+    client.client_object.maybe_read_type_name.return_value = ""
+    client.client_object.read_value_from_offset.return_value = 0xFFFFFFFFFFFFFFFF
+    client.speed_state["value"] = 0x1234
 
 
 def _tools(clients: list, *, multiplier: float = 5.0, config=None, on_change=None) -> AuthoringTools:
@@ -155,6 +163,73 @@ async def test_a_released_client_gets_its_speed_back_before_it_is_unhooked():
     await tools.release(client)
     assert client.speed_state["value"] == 10
     await tools.set_speed(False)
+
+
+async def test_speed_never_writes_to_a_logged_out_characters_freed_object():
+    client = FakeClient()
+    _speed_field(client, 0)
+    tools = _tools([client])
+    await tools.set_speed(True)
+    await _until(lambda: client.speed_state["value"] == 400)
+    writes = client.client_object.write_speed_multiplier.await_count
+
+    _log_out(client)
+    await asyncio.sleep(0.02)
+    await tools.set_speed(False)
+    assert client.client_object.write_speed_multiplier.await_count == writes
+    assert client.speed_state["value"] == 0x1234
+
+
+async def test_speed_never_writes_at_character_select(monkeypatch):
+    monkeypatch.setattr(authoring_tools, "at_character_select", AsyncMock(return_value=True))
+    client = FakeClient()
+    _speed_field(client, 0)
+    tools = _tools([client])
+    await tools.set_speed(True)
+    await asyncio.sleep(0.02)
+    await tools.set_speed(False)
+    client.client_object.write_speed_multiplier.assert_not_awaited()
+
+
+async def test_speed_never_writes_while_the_character_id_keeps_changing():
+    client = FakeClient()
+    _speed_field(client, 0)
+    ids = iter(range(1, 10_000))
+    client.client_object.read_value_from_offset = AsyncMock(side_effect=lambda *_: next(ids))
+    tools = _tools([client])
+    await tools.set_speed(True)
+    await asyncio.sleep(0.02)
+    await tools.set_speed(False)
+    client.client_object.write_speed_multiplier.assert_not_awaited()
+
+
+async def test_speed_boosts_a_new_character_and_gives_back_only_its_own_speed():
+    client = FakeClient()
+    _speed_field(client, 10)
+    tools = _tools([client])
+    await tools.set_speed(True)
+    await _until(lambda: client.speed_state["value"] == 400)
+
+    # The next character loads: the hook hands over its object, at its own speed.
+    client.client_object.read_value_from_offset.return_value = 777
+    client.speed_state["value"] = 0
+    await _until(lambda: client.speed_state["value"] == 400)
+
+    await tools.set_speed(False)
+    assert client.speed_state["value"] == 0
+
+
+async def test_speed_off_gives_nothing_back_to_a_different_character():
+    client = FakeClient()
+    _speed_field(client, 10)
+    tools = _tools([client])
+    await tools.set_speed(True)
+    await _until(lambda: client.speed_state["value"] == 400)
+
+    # Another character, whose field happens to hold our value.
+    client.client_object.read_value_from_offset.return_value = 777
+    await tools.set_speed(False)
+    assert client.speed_state["value"] == 400
 
 
 # ---------------------------------------------------------------------------
