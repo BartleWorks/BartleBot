@@ -24,7 +24,11 @@ landing on the arrival point of the same name; some wait on a quest. So a zone i
 between its pieces by those links, which the planner does not have yet.
 
 With links (2026-10-27): Triton Avenue's six pair as checked by hand, and four of them were
-walked live, each landing within 5 units of the arrival point its name paired it with.
+walked live, each landing within 5 units of the arrival point its name paired it with. Across
+every zone, though, volume links join only 2 of the 65 split zones: 295 all on one piece, 2
+joined by links, 63 still apart, 38 with a point off the grid. Most splits are joined by
+things pressed rather than stepped into (fast-travel stones, ziplines, ladders), whose
+destinations the client's files do not hold.
 
 HOW TO RUN
     uv run --with numpy python tools/probe_walk_zones.py                 # every zone

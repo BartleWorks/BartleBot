@@ -73,6 +73,15 @@ walk, the server moving the wizard 835 to 7,597 units and leaving it there; each
 5 units of the arrival point its name paired it with. Most fired at the volume's edge. Two
 stalls on the street, against something the collision file lacks, were recovered.
 
+Triton Avenue, interact links (--interact): its fast-travel stones are placed objects whose
+templates carry DeletedBehavior where the teleport is, so their destinations exist only on
+the server and are learned by pressing the interact key. All four were pressed: the hub's
+TeleporterA and TeleporterB land on "Target location Triton_A" and "Triton_B" (1 and 5 units
+off), and TeleporterA_ToMain and TeleporterB_ToMain on "Target location Hub Teleporter" (2
+off), each in one jump of 17,724 to 20,479 units, 0.2s after the press, settled by 1.2s. Every
+approach stalled once on the stone itself: a placed object's collision (its template's
+CollisionBehavior file) is not in collision.bcd, so the grid lacks it.
+
 What else it watches for:
   - a jump: the wizard moved faster than walking allows. A server reset (rubber-band) looks
     like this, and so would a battle pulling the wizard to a seat.
@@ -115,7 +124,16 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from probe_walk_route import REPO, WIZARD_SPEED, Planner, build_planner, render, resolve_point  # noqa: E402
+from probe_walk_route import (  # noqa: E402
+    REPO,
+    WIZARD_SPEED,
+    Deserializer,
+    Planner,
+    build_planner,
+    render,
+    resolve_point,
+)
+from zone_data import objects, zone_record  # noqa: E402
 
 TICK = 0.05
 # Waypoints are passed within this; the last one must be reached within ARRIVE_GOAL.
@@ -190,7 +208,13 @@ DETOUR_SLACK = 40.0
 DETOUR_EVERY = 1.0
 
 MOVE_ACTIONS = ("MoveForward", "MoveLeft", "MoveRight", "MoveBackward")
-DEFAULT_MOVE_KEYS = {"MoveForward": "W", "MoveLeft": "A", "MoveRight": "D", "MoveBackward": "S"}
+INTERACT_ACTION = "NPCInteract"
+DEFAULT_MOVE_KEYS = {"MoveForward": "W", "MoveLeft": "A", "MoveRight": "D", "MoveBackward": "S", INTERACT_ACTION: "X"}
+# --interact: after pressing the interact key, watch this long for the game to move the wizard,
+# and call it settled once it has moved under SETTLED_MOVE in the last SETTLED_FOR seconds.
+INTERACT_WAIT = 30.0
+SETTLED_MOVE = 20.0
+SETTLED_FOR = 1.0
 _NAMED_KEYS = {"up": 0x26, "down": 0x28, "left": 0x25, "right": 0x27, "space": 0x20}
 
 
@@ -223,7 +247,8 @@ def key_code(name: str) -> int | None:
 
 
 async def movement_keys(client) -> tuple[dict[str, int], str]:
-    """Each movement action's key, and where they came from."""
+    """Each movement action's key, and the interact key, and where they came from."""
+    wanted = (*MOVE_ACTIONS, INTERACT_ACTION)
     codes: dict[str, int] = {}
     source = "the defaults"
     try:
@@ -233,18 +258,18 @@ async def movement_keys(client) -> tuple[dict[str, int], str]:
 
         for binding in read_game_keybindings():
             action = binding.event.removesuffix("Start")
-            if binding.event.endswith("Start") and action in MOVE_ACTIONS and action not in codes:
+            if action in wanted and action not in codes:
                 if (code := key_code(binding.binding)) is not None:
                     codes[action] = code
         if codes:
             source = "Bin/config.xml"
     else:
         keys = await key_map(client)
-        for action in MOVE_ACTIONS:
+        for action in wanted:
             if (code := keys.choose(action).code) is not None:
                 codes[action] = code
         source = f"the client ({keys.source})"
-    for action in MOVE_ACTIONS:
+    for action in wanted:
         codes.setdefault(action, key_code(DEFAULT_MOVE_KEYS[action]))
     return codes, source
 
@@ -471,6 +496,53 @@ def choose(go: float, wait: float, back: float, waiting: bool) -> str:
     if go >= (RESUME_SLACK if waiting else 0.0):
         return "go"
     return "wait" if wait >= back or wait >= 0 else "back"
+
+
+# --- interact links ---------------------------------------------------------------------------
+
+
+async def interact_and_watch(client, keys: Keys, code: int, planner: Planner) -> None:
+    """Press the interact key where the wizard stands, and report what moved it: how soon, how
+    far, whether in one jump (a teleport) or many small steps (a ride, such as a zipline), and
+    which arrival point it settled nearest. Some interact links keep their destination only on
+    the server (the client's template has DeletedBehavior in its place), so this is how one is
+    learned."""
+    x0, y0, z0, _ = await read(client)
+    zone = await client.zone_name()
+    pressed = time.monotonic()
+    await keys.pulse(code, 0.1)
+    trail = [(0.0, x0, y0, z0)]
+    first = None
+    last_zone_check = 0.0
+    while time.monotonic() - pressed < INTERACT_WAIT:
+        await asyncio.sleep(TICK)
+        x, y, z, _ = await read(client)
+        t = time.monotonic() - pressed
+        trail.append((t, x, y, z))
+        if first is None and math.dist((x0, y0), (x, y)) > STALL_MIN_MOVE:
+            first = t
+        if t - last_zone_check >= BATTLE_POLL:
+            last_zone_check = t
+            if await client.zone_name() != zone:
+                print(f"  interact: the zone changed {t:.1f}s after pressing: a zone exit, not an in-zone link")
+                return
+        if first is not None and math.dist((x0, y0), (x, y)) > LINK_MOVED:
+            recent = [p for p in trail if p[0] >= t - SETTLED_FOR]
+            if recent[0][0] <= t - SETTLED_FOR + TICK and math.dist(recent[0][1:3], (x, y)) < SETTLED_MOVE:
+                break
+    if first is None:
+        print(f"  interact: pressed, and nothing moved the wizard in {INTERACT_WAIT:.0f}s")
+        return
+    t, x, y, z = trail[-1]
+    steps = [math.dist(a[1:3], b[1:3]) for a, b in zip(trail, trail[1:])]
+    travelled = sum(steps)
+    kind = "one jump" if max(steps) > LINK_MOVED else f"a ride over {sum(1 for s in steps if s > 5)} steps"
+    nearest = sorted((math.dist(p[:2], (x, y)), name) for name, p in planner.named.items())[:2]
+    print(
+        f"  interact: first moved {first:.1f}s after pressing, settled at {t:.1f}s, {math.dist((x0, y0), (x, y)):.0f} "
+        f"units from where it stood ({travelled:.0f} travelled, {kind}), at ({x:.0f}, {y:.0f}, {z:.0f})"
+    )
+    print("  landed nearest: " + "; ".join(f"{name} ({d:.0f} away)" for d, name in nearest))
 
 
 # --- the walk ------------------------------------------------------------------------------
@@ -881,7 +953,8 @@ async def main(args: argparse.Namespace) -> int:
         zone = await client.zone_name()
         print(f"client {args.client} is in {zone}; building its grid...")
         planner = await asyncio.to_thread(build_planner, zone, ignore_cylinders=args.test_stall)
-        goal_name, goal = resolve_point(args.to, planner.named)
+        placed = {f"object {tag}": xyz for tag, xyz in objects(zone_record(zone, Deserializer()))}
+        goal_name, goal = resolve_point(args.to, {**planner.named, **placed})
         x, y, z, _ = await read(client)
         path = planner.route((x, y, z), goal, avoid=not args.shortest)
         if path is None:
@@ -928,6 +1001,9 @@ async def main(args: argparse.Namespace) -> int:
         print(f"\nstopped: {result.stopped} after {result.seconds:.1f}s")
         if result.stopped == "reached the goal":
             print(f"  {result.miss:.0f} units from the goal")
+            if args.interact:
+                await asyncio.sleep(SETTLE)
+                await interact_and_watch(client, keys, codes[INTERACT_ACTION], planner)
         if result.speeds:
             print(f"  walked at {statistics.median(result.speeds):.0f} units/s", end="")
             print(f"; backed at {statistics.median(result.back_speeds):.0f}" if result.back_speeds else "")
@@ -968,7 +1044,11 @@ async def main(args: argparse.Namespace) -> int:
 
 def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--to", required=True, help="arrival point name (substring), or x,y or x,y,z, in the wizard's zone")
+    ap.add_argument(
+        "--to",
+        required=True,
+        help="arrival point or placed object (zone tag), by any unique substring, or x,y or x,y,z, in the wizard's zone",
+    )
     ap.add_argument("--client", type=int, default=1, help="which client, 1-based (default 1)")
     ap.add_argument("--dry-run", action="store_true", help="plan and draw the route; press nothing")
     ap.add_argument("--shortest", action="store_true", help="walk the shortest route, not the one avoiding patrols")
@@ -980,6 +1060,11 @@ def _parse_args() -> argparse.Namespace:
     ap.add_argument("--left", help="the turn left key, overriding the game's")
     ap.add_argument("--right", help="the turn right key, overriding the game's")
     ap.add_argument("--back", help="the move backward key, overriding the game's")
+    ap.add_argument(
+        "--interact",
+        action="store_true",
+        help="on arriving, press the interact key and report where the game moves the wizard",
+    )
     return ap.parse_args()
 
 
