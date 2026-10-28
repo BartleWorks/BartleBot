@@ -99,11 +99,17 @@ OBJECT = 1 << 0
 NON_MOVEMENT = (1 << 7) | (1 << 8) | (1 << 3) | (1 << 9)  # client object, trigger, hitscan, fog
 BOX, SPHERE, CYLINDER, MESH = 0, 2, 3, 6
 
-# When a solid walls off a foot at ground height z (Deimos' _collider_blocks_foot).
+# When a solid walls off a foot at ground height z (Deimos' _collider_blocks_foot): a solid
+# whose base is at or below the foot blocks once it rises Z_BOX_TOL above it; Deimos lets a
+# cylinder or sphere rise Z_EMBED_TOL, as a big one is often the coarse bounds of a whole
+# structure whose floor lies inside it. Only one ROUND_SHELL_MIN across or more is given that:
+# Mirage's hub has a rock, a cylinder of radius 143 rising 56 above the street, that the
+# planner walked through and a wizard cannot (it slid around holding 183 from its center).
 Z_BAND_UP = 50.0
 Z_BAND_DOWN = 8.0
 Z_EMBED_TOL = 75.0
 Z_BOX_TOL = 20.0
+ROUND_SHELL_MIN = 400.0
 
 # A triangle steeper than this is a cliff face, not floor.
 MIN_FLOOR_NORMAL_Z = 0.5
@@ -202,7 +208,7 @@ class Footprint:
     radius: float
     zlo: float
     zhi: float
-    is_box: bool
+    firm: bool  # blocks once it rises Z_BOX_TOL above the foot, not Z_EMBED_TOL
 
 
 def _convex_hull(points: np.ndarray) -> np.ndarray:
@@ -250,7 +256,7 @@ def blocking_footprints(solids: list[Solid]) -> list[Footprint]:
             continue
         if s.proxy != BOX and r > 0:
             x, y, z = s.location
-            out.append(Footprint(None, (x, y), r, z - half, z + half, False))
+            out.append(Footprint(None, (x, y), r, z - half, z + half, r < ROUND_SHELL_MIN))
     return out
 
 
@@ -444,7 +450,7 @@ class Grid:
             for layer in range(len(self.levels)):
                 z = self.levels[layer, j0 : j1 + 1, i0 : i1 + 1]
                 with np.errstate(invalid="ignore"):
-                    embedded = (f.zlo <= z) & ((f.zhi - z) >= (Z_BOX_TOL if f.is_box else Z_EMBED_TOL))
+                    embedded = (f.zlo <= z) & ((f.zhi - z) >= (Z_BOX_TOL if f.firm else Z_EMBED_TOL))
                     overhead = (z < f.zlo) & ((f.zlo - z) <= Z_BAND_UP)
                     hit = inside & ~np.isnan(z) & (z <= f.zhi + Z_BAND_DOWN) & (embedded | overhead)
                 if hit.any():
@@ -791,8 +797,11 @@ def _templates() -> dict[int, _Template]:
     return out
 
 
-def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, float, float]]) -> list[Link]:
-    """Each placed object pressed to move the wizard, with where it is taken to land, best source first."""
+def interact_candidates(
+    zone: str, wad, record, named: dict[str, tuple[float, float, float]], crosses=None
+) -> list[Link]:
+    """Each placed object pressed to move the wizard, with where it is taken to land, best source
+    first. *crosses*(a, b), when given, says whether two points are on different pieces of floor."""
     templates = _templates()
     placed = []
     for obj in record["m_objectList"] or []:
@@ -844,33 +853,35 @@ def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, fl
 
     nav = zone_nav.load(wad)
     if nav is not None:
-        for (tag, at), (landing, target) in _nav_links(nav, travel, points).items():
+        for (tag, at), (landing, target) in _nav_links(nav, travel, points, crosses).items():
             found.setdefault((tag, at), Link(tag, at, landing, target, "interact"))
     return list(found.values())
 
 
-def _nav_links(nav, sources, points) -> dict[tuple, tuple[str, tuple[float, float, float]]]:
-    """For each (name, position) of *sources* that a zone.nav link edge starts near, the nearest
-    such edge's landing: the arrival point nearest its far end, or the far end itself. Edges
-    starting about as near (within 100) go shortest first: the top of Mirage's Ladder 06 starts
-    both its 731-unit climb down and a 7,004-unit edge across the zone."""
+def _nav_links(nav, sources, points, crosses=None) -> dict[tuple, tuple[str, tuple[float, float, float]]]:
+    """For each (name, position) of *sources* that a zone.nav link edge starts near, the best
+    such edge's landing: the arrival point nearest its far end, or the far end itself. Best is,
+    in turn: landing on another piece of floor, by *crosses*(source, landing), as an edge whose
+    ends share a floor is a walk, not a link (Arcanum's lift foot starts one to the other lift's
+    foot); starting nearest, to within 100; then shortest (the top of Mirage's Ladder 06 starts
+    both its 731-unit climb down and a 7,004-unit edge across the zone)."""
     edges = []
     for a, b in nav.link_edges():
         near, far = nav.nodes[a], nav.nodes[b]
         for name, at in sources:
             reach = math.dist(at, near)
-            if reach <= NAV_OBJECT_REACH:
-                edges.append((round(reach / 100), math.dist(near, far), name, at, b, far))
+            if reach > NAV_OBJECT_REACH:
+                continue
+            landing, target = f"zone.nav node {b}", far
+            if points:
+                nearest = min(points, key=lambda n: math.dist(points[n], far))
+                if math.dist(points[nearest], far) <= NAV_OBJECT_REACH:
+                    landing, target = nearest, points[nearest]
+            walk = crosses is not None and not crosses(at, target)
+            edges.append((walk, round(reach / 100), math.dist(near, far), name, at, landing, target))
     out = {}
-    for *_, name, at, b, far in sorted(edges, key=lambda e: e[:2]):
-        if (name, at) in out:
-            continue
-        landing, target = f"zone.nav node {b}", far
-        if points:
-            nearest = min(points, key=lambda n: math.dist(points[n], far))
-            if math.dist(points[nearest], far) <= NAV_OBJECT_REACH:
-                landing, target = nearest, points[nearest]
-        out[name, at] = (landing, target)
+    for *_, name, at, landing, target in sorted(edges, key=lambda e: e[:3]):
+        out.setdefault((name, at), (landing, target))
     return out
 
 
@@ -893,6 +904,10 @@ def zone_links(zone: str, grid: Grid, passable: np.ndarray, label: np.ndarray, r
             return None
         return here, there
 
+    def crosses(a, b) -> bool:
+        here, there = nearest_node(grid, passable, *a), nearest_node(grid, passable, *b)
+        return here is not None and there is not None and label[here] != label[there]
+
     out = []
     joined = set()
     for link in by_name:
@@ -908,12 +923,12 @@ def zone_links(zone: str, grid: Grid, passable: np.ndarray, label: np.ndarray, r
             for n, p in every_volume
             if n not in joined and "cinematic" not in n.lower() and _MOVING_VOLUME.search(n)
         ]
-        for (name, at), (landing, target) in _nav_links(nav, unpaired, points).items():
+        for (name, at), (landing, target) in _nav_links(nav, unpaired, points, crosses).items():
             link = Link(name, at, landing, target)
             found = ends(link)
             if found and label[found[0]] != label[found[1]]:
                 out.append(link)
-    for link in interact_candidates(zone, wad, record, named):
+    for link in interact_candidates(zone, wad, record, named, crosses):
         found = ends(link)
         if found is None or any(math.dist(link.source[:2], v[1][:2]) <= PAD_REACH for v in every_volume):
             continue

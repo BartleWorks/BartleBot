@@ -67,7 +67,15 @@ blocks a foot follows Deimos' `src/collision_math.py` (GPL-3, as BartleBot is).
   (applied transposed, as Deimos does). Faces steeper than a normal z of 0.5 are cliff, not floor.
 - **Walls** are the boxes, cylinders and spheres, unless flagged client-object, trigger,
   hitscan or fog. A solid blocks a cell only where its height range meets the floor there
-  (Deimos' `_collider_blocks_foot`), which is what lets a ramp pass under a tall cylinder.
+  (Deimos' `_collider_blocks_foot`), which is what lets a ramp pass under a tall cylinder. A
+  solid based at or below the floor blocks once it rises 20 above it. Deimos lets a round one
+  rise 75, as a big cylinder is often the coarse bounds of a whole structure whose floor lies
+  inside it (Celestia's chamber, radius about 834); **only a round one 400 or more across is
+  given that.** Mirage's hub has a rock, a cylinder of radius 143 rising 56 above the street,
+  that a route went straight through: walked into, the wizard slid around it holding 182 to 183
+  units from its center, which fits radius 142.6 (and puts the wizard's own radius nearer 40
+  than 49). Counting small rounds as firm closed 0.7% of Mirage's hub and 0.1% of the other
+  zones checked, and changed no route walked before.
 - **A cylinder stores (length, radius), the reverse of how Deimos reads it.** Found by walking
   into a tree in Unicorn Way stored as (264.9, 85.7): the wizard slid around it holding exactly
   135 units from its center, which is radius 85.7 plus the wizard's own 49. Read Deimos' way
@@ -144,7 +152,9 @@ What the sources are:
   links are its edges no walk takes**, longer than 1,500 across the floor or rising more than
   500 more steeply than 1:1 (a ladder). Edges are stored both ways and say nothing of what they
   are, and an end can sit a few hundred units off, so an edge is only trusted next to a volume
-  or a travel object. Where two start about as near one, the shorter wins (the top of Mirage's
+  or a travel object. One landing on another piece of floor wins, as an edge whose ends share a
+  floor is a walk (Arcanum's lift foot starts one to the other lift's foot); of the rest, where
+  two start about as near one, the shorter wins (the top of Mirage's
   Ladder 06 starts its climb down and a 7,004-unit edge across the zone). It lacks some links:
   Triton's stones are not in it, nor Mirage's Ladder 04.
 - **A travel object** is a placed object whose template's prompt, from `GUI.lang` or its own
@@ -180,9 +190,9 @@ with two or more arrival points:
 | links used | all on one piece | joined by links | still apart (points) |
 |---|---|---|---|
 | volumes by name | 295 | 2 | 63 (299) |
-| all of the above | 295 | 21 | 44 (137) |
+| all of the above | 295 | 21 | 44 (135) |
 
-291 links in 56 zones: 187 volumes, 99 objects pressed, 5 rides. 38 zones have a point off
+295 links in 56 zones: 189 volumes, 101 objects pressed, 5 rides. 38 zones have a point off
 the grid, nearly all cinematic or marker spots. The worst left: Empyrea's Husk (14 points),
 Big Ben's counterweights and tower (levers and lifts), MooShu's Waterfall Cave, the Hive,
 Forlorn Taig, Dragonspire's Arena. Each has a map in `logs/walk_route/zones/`.
@@ -257,7 +267,8 @@ Results, all with no battle unless said:
 | Mirage's hub, up Ladder 02, pressing as it stopped | moved nobody: pressed before the prompt showed |
 | Mirage's hub, Ladder 02 down, Ladder 05 up, waiting for the prompt | each landed 1 off its arrival point |
 | Mirage's hub, Ladder 05's top to Ladder 01's | no ladder: the caravan roofs join, 5,695 units walked |
-| Mirage's hub, down Ladder 01 and up Ladder 07 in one route | 4 and 3 off; 0 off the goal in 23.3s, one stall recovered |
+| Mirage's hub, down Ladder 01 and up Ladder 07 in one route | 4 and 3 off; 0 off the goal in 23.3s, one stall recovered (on a rock the grid let through) |
+| Mirage's hub, the same stretch with small rounds firm | no stall; the route kept 333 from the rock's center |
 
 ## What is not done
 
