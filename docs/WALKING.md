@@ -45,12 +45,17 @@ about 0.7s earlier; players see the same rubber-banding. A walk that reads the p
 tick absorbs one by re-walking the stretch, at a cost under a second. Nothing about a reset
 needs handling beyond that.
 
+**The speed multiplier may be written, up to 2.0x.** The game engine is built to allow a 2.0x
+speed multiplier, so a walk may write the client's `speed_multiplier` (a percentage,
+`write_speed_multiplier` in wizwalker) up to 100. That field holds the whole bonus, a mount's
+included, so 100 is 2.0x in total and never 2.0x on top of a mount. If a wizard at 2.0x is
+reset more often than on a mount, the value comes down; it is never raised above 100 to find
+where the server's limit is.
+
 **Two things this project does not do, and the reasons stand:** it does not work out the
-server's tolerance to move faster than walking under it (sub-threshold teleports, or writing
-the speed multiplier), and it does not forge or replay movement. Both are beating a measure
-the developer added on purpose, a public repository doing either invites a takedown, and the
-tolerance is the developer's to tighten whenever it likes. A legitimate mount's speed is read,
-never written.
+server's tolerance for a teleport (sub-threshold teleports), and it does not forge or replay
+movement. Both are beating a measure the developer added on purpose, a public repository doing
+either invites a takedown, and the tolerance is the developer's to tighten whenever it likes.
 
 ## Planning a route from a zone's files
 
@@ -226,7 +231,8 @@ wizard stands.
 - **Speed.** Walking is horizontal only: a stair's height is free. On foot it measured 600 on
   flat ground (wizwalker's constant says 580); a mount multiplies it, most by 1.4 and the
   fastest by 1.55. The client's `speed_multiplier` (a percentage) is read to plan; once
-  walking, the measured speed takes over. On the +40% mount: 840 expected, 838 measured.
+  walking, the measured speed takes over. On the +40% mount: 840 expected, 838 measured. No
+  probe writes it yet; writing it up to 100 is allowed (above) and not yet measured.
 - **Following** a leg: hold forward, re-aim at the next waypoint each 50ms tick, pass a
   waypoint within 80 units or once past it along its leg, stop within 50 of the goal.
 - **Stalls** (forward held 1.5s, under 60 units moved): back off 150 units with the backward
