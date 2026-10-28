@@ -55,7 +55,7 @@ site = [
 
 # Ours, not upstream: these carry fixes the original projects do not have,
 # including the memory offsets bartlebot/combat/deck_io.py depends on. Pinned by exact
-# commit -- see docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
+# commit -- see bartleby-core/docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
 wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "e73a73635bedfc0e05f2730f277c43b49c24f113" }

@@ -2886,7 +2886,7 @@ class AppController(QObject):
 
         Tells rather than asks, as the fight refusal does: a node pressing that action would
         fail partway through the run, or type into the chat line, and only the player can
-        change a binding, in the game (``docs/KEY_BINDINGS.md``).
+        change a binding, in the game (``bartleby-core/docs/KEY_BINDINGS.md``).
         """
         for problem in problems:
             logger.warning("Refusing to run: %s", problem)

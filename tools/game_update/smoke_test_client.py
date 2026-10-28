@@ -19,7 +19,7 @@ WHAT IT CHECKS, AND THROUGH WHAT
 
 Close BartleBot first: two sets of hooks in one client corrupt each other (``tools/README.md``,
 *On live clients*). Run it with exactly one client open, in the world, and with the wizwalker
-to test installed (``docs/GAME_UPDATES.md``, *Running against the update*).
+to test installed (``bartleby-core/docs/GAME_UPDATES.md``, *Running against the update*).
 
 USAGE
     uv run --no-sync python tools/game_update/smoke_test_client.py

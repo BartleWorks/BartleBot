@@ -25,7 +25,7 @@ USAGE
     uvx --from wiztype==0.1.13 python tools/game_update/capture_type_dump.py
     uvx --from wiztype==0.1.13 python tools/game_update/capture_type_dump.py --reference <a live exe> --out-dir <folder>
 
-    It writes ``tools/r<rev>_WizardDev.json`` by default; ``docs/GAME_UPDATES.md`` says when it
+    It writes ``tools/r<rev>_WizardDev.json`` by default; ``bartleby-core/docs/GAME_UPDATES.md`` says when it
     moves to ``bartlebot/game/data/``.
 """
 

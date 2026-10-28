@@ -57,7 +57,7 @@ def test_the_names_found_in_game_press_the_keys_they_were_recorded_from():
 
 def test_comma_and_period_are_swapped_on_r811339():
     # The "." key is recorded as "comma" and the "," key as "period", and each presses the key
-    # it was recorded from. A recheck before the branch merges (docs/GAME_UPDATES.md).
+    # it was recorded from. A recheck before the branch merges (bartleby-core/docs/GAME_UPDATES.md).
     assert key_code("comma") == 0xBE
     assert key_code("period") == 0xBC
 

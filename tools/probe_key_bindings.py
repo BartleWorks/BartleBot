@@ -23,7 +23,7 @@ HOW IT WORKS
 
 HOW TO RUN
     Use a Test realm account whose bindings you don't mind changing, and the wizwalker the
-    Test realm needs (docs/GAME_UPDATES.md, *Running against the update*). Close BartleBot:
+    Test realm needs (bartleby-core/docs/GAME_UPDATES.md, *Running against the update*). Close BartleBot:
     the probe presses keys, and a running bot would too.
 
     1.  uv run --no-sync python tools/probe_key_bindings.py plan
@@ -463,7 +463,7 @@ async def run(redo: bool) -> int:
             print(
                 "\nThe installed wizwalker cannot hook this client: the pinned one is in, not the update's\n"
                 "branch. Something ran `uv sync` or a plain `uv run`. Reinstall the branch\n"
-                "(docs/GAME_UPDATES.md, *Running against the update*) and run again."
+                "(bartleby-core/docs/GAME_UPDATES.md, *Running against the update*) and run again."
             )
             return 2
         screen = Screen(client)

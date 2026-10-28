@@ -30,7 +30,7 @@ joined by links, 63 still apart, 38 with a point off the grid. Most splits are j
 things pressed rather than stepped into (fast-travel stones, ziplines, ladders), whose
 destinations the client's files do not hold.
 
-With every link source (2026-10-27; probe_walk_route.zone_links, docs/WALKING.md): volumes
+With every link source (2026-10-27; probe_walk_route.zone_links, bartleby-core/docs/WALKING.md): volumes
 paired by name or by zone.nav, rides' templates, stones' partners, X/X_B pairs, and zone.nav
 edges from travel objects. 295 links in 56 zones (189 volumes, 101 objects pressed, 5 rides):
 295 all on one piece, 21 joined by links, 44 still apart (135 points, from 299), 38 with a

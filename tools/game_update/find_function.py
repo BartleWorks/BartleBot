@@ -1,6 +1,6 @@
 """Find the function a broken pattern matched on the old build, and the same function on the new one.
 
-The first step of replacing a pattern (``docs/GAME_UPDATES.md``, *Replacing a broken
+The first step of replacing a pattern (``bartleby-core/docs/GAME_UPDATES.md``, *Replacing a broken
 pattern*). A patch that recompiles a function leaves little of its bytes, but most of what
 it refers to survives: the strings it names, chiefly. So:
 

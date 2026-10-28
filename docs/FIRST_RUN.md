@@ -133,7 +133,7 @@ stored Team default, as Next with no card selected does: otherwise a second acco
 later would open setup on the next launch for this question alone. Closing setup records
 nothing, as always. Settings › Combat is still where the Team default is changed. The
 other team question, Player Realms, is a bot option rather than a setup page, and is
-grayed on the Options tab instead (`docs/PLAYER_REALMS.md`).
+grayed on the Options tab instead (`bartleby-core/docs/PLAYER_REALMS.md`).
 
 ### The game folder
 

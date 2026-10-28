@@ -321,7 +321,7 @@ the rest take turns, and a warning names the link so it can be marked. The flag 
 because the planner only costs a teleporter per client when it is set.
 
 **One zone is not one realm (#133).** `sync_in_zone` ends with every player beside the leader,
-on one realm, confirmed by sight (`docs/PLAYER_REALMS.md`). The leader hops to the realm asked for
+on one realm, confirmed by sight (`bartleby-core/docs/PLAYER_REALMS.md`). The leader hops to the realm asked for
 (`navigate(realm=...)`, the Favorite Realm unless the node keeps the current one) once it arrives,
 or, when the target refuses a realm change (`"realm_change": false`, Eerem Palace), before the step
 into it: a door keeps each player's realm, so the hop carries through. Everyone the leader does not

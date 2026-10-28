@@ -4,7 +4,7 @@ Since r811339 a player can rebind keys in game. A binding names its action (``NP
 and its input as text (``keyboard.down.ctrl.shift.q``), and the bindings belong to the
 account: each client holds its own account's in memory, which ``clients/game_keys.py`` reads.
 This module is the part that needs no client: the names, the actions BartleBot presses, and
-which of an action's bindings a press can use. ``docs/KEY_BINDINGS.md`` has the whole story.
+which of an action's bindings a press can use. ``bartleby-core/docs/KEY_BINDINGS.md`` has the whole story.
 
 **How the game names a key.** A key in its table of names (``KEY_CODES``) is written by that
 name; any other is written as its own virtual-key code, one character, a letter lowercased:
@@ -67,7 +67,7 @@ KEY_CODES: dict[str, int] = {
     "question": 0xBF,  # the / key: it fired both times, but alongside the chat line it shares
     # SWAPPED on r811339: the game calls the "." key "comma" and the "," key "period", and each
     # name presses the key it was recorded from. Recheck on the live build before
-    # ahmarra-test-realm merges (docs/GAME_UPDATES.md); a fix there is these two lines.
+    # ahmarra-test-realm merges (bartleby-core/docs/GAME_UPDATES.md); a fix there is these two lines.
     "comma": 0xBE,  # in game
     "period": 0xBC,  # in game
     "equal": 0xBB,  # in game
@@ -281,7 +281,7 @@ class KeyMap:
         A slot it cannot use is passed over for the other, so an action on Ctrl+X with a bare
         second key still has a key. ``problem`` says where the action is when neither slot will
         do, as the rest of a sentence the caller starts with the action's name: "is on Ctrl+X."
-        It is shown to the user (``docs/UI_TEXT.md``), and names each key as the keyboard does.
+        It is shown to the user (``bartleby-core/docs/UI_TEXT.md``), and names each key as the keyboard does.
         """
         inputs = self.inputs(action)
         if not inputs:

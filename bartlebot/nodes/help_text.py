@@ -1,7 +1,7 @@
 """Node help text that several nodes share, written once so it reads the same on each.
 
 A param, a usage note or a hint that more than one node shows takes its text from here
-(``docs/UI_TEXT.md``, N9). Text that belongs to one node stays in that node's spec.
+(``bartleby-core/docs/UI_TEXT.md``, N9). Text that belongs to one node stays in that node's spec.
 """
 
 from __future__ import annotations

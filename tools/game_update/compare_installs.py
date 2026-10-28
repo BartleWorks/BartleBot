@@ -2,7 +2,7 @@
 
 The first thing to run when a patch reaches the Test realm. It says which game tables
 changed, so which snapshots, readers and hooks a patch can have broken
-(``docs/GAME_UPDATES.md`` maps each one to what depends on it).
+(``bartleby-core/docs/GAME_UPDATES.md`` maps each one to what depends on it).
 
 WHAT IT READS
     ``Bin/revision.dat``, every file in ``Bin/`` by size, the file list of

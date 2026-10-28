@@ -1,4 +1,4 @@
-"""Node help text: the shared wordings, and the rules docs/UI_TEXT.md sets for every node."""
+"""Node help text: the shared wordings, and the rules bartleby-core/docs/UI_TEXT.md sets for every node."""
 
 from __future__ import annotations
 

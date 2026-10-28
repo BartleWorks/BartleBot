@@ -747,7 +747,7 @@ already has.
   - **The pages reserve their scrollbar gutter, with no gap** (`gap=0`): a fold would
     otherwise jolt every card sideways (#112), and the page's own content margin already
     keeps the cards off the bar. The card's 14px of border and padding is on the left
-    sidebar's floor — see `docs/WINDOW_SIZING.md`.
+    sidebar's floor — see `bartleby-core/docs/WINDOW_SIZING.md`.
 - **Option Values writes `settings.json`, never the bot file.** `values_changed` is
   deliberately *not* wired to `config_changed`: an override is not an edit to
   the bot, and a shared bot must stay byte-identical however its users tune it.

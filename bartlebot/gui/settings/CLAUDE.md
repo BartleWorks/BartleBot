@@ -49,7 +49,7 @@ Two rules about the settings dialog itself:
   always on screen; anything the user needs in order to choose, and doesn't get from
   the line, goes in `details=` and folds behind the row's `?`. That means a cost, when
   the change applies, what overrides it, or what Off costs. The *why* goes in no row at
-  all. `docs/UI_TEXT.md` has the rules for all three layers. The page's *Show descriptions · Hide descriptions* open or
+  all. `bartleby-core/docs/UI_TEXT.md` has the rules for all three layers. The page's *Show descriptions · Hide descriptions* open or
   fold every row at once (#148); a form with no `details=` to open hides them
   (`SettingsForm.finish`). Before the description-row rework the Log, Layout
   and Auto-save rows had no explanation at all; after it every row carried a

@@ -18,7 +18,7 @@ tries again: the pre-run check does, before every run.
 
 **Pressed by action.** ``press(client, GameAction.INTERACT)`` sends whatever key that client's
 account has Interact on, never a fixed letter; ``test_game_keys_no_fixed_keys`` keeps a fixed
-one out. ``docs/KEY_BINDINGS.md``.
+one out. ``bartleby-core/docs/KEY_BINDINGS.md``.
 """
 
 from __future__ import annotations

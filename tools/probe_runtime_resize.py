@@ -2,7 +2,7 @@
 
 BartleBuddy wants the window the user plays in to be large and the followers' small, and
 the client that is played can change mid-session. BartleBot sizes a client only at launch,
-by patching ``preferences.xml`` and ``config.xml`` (docs/WINDOW_SIZING.md). This probe asks
+by patching ``preferences.xml`` and ``config.xml`` (bartleby-core/docs/WINDOW_SIZING.md). This probe asks
 what a running client allows, in three parts.
 
 FORCE (Deimos's resolution forcer, without its drag border)

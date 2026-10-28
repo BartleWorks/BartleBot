@@ -78,7 +78,7 @@ Players are named by number in every log line (P1, P2), never by name.
 
 1. **Group the fighters and find helpers.** `read_sightings` for every client. A client not in
    battle is a **helper** when it is proven to share a fighter's realm: it has the fighter loaded
-   now, or `machine.are_together` says so. `docs/PLAYER_REALMS.md` has how that is known.
+   now, or `machine.are_together` says so. `bartleby-core/docs/PLAYER_REALMS.md` has how that is known.
 2. **Port the rest (Phase B).** Every other client ports to the first fighter with `port_waves`,
    then joins like a helper, unless the bot is Separate (`player_realms.machine_is_separate`) or
    `machine.port_map` is None. Then they are left where they are. A refused port (a dungeon that

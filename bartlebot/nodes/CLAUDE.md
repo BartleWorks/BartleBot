@@ -14,7 +14,7 @@ logging and timing), are core's `bartleby/runtime/CLAUDE.md`, imported above.
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
 6. Write the spec's text for the bot author: description, usage notes, param help and
-   hints, returns, and the safety warning. `docs/UI_TEXT.md`, *Node help*, has the form
+   hints, returns, and the safety warning. `bartleby-core/docs/UI_TEXT.md`, *Node help*, has the form
    of each. A param or note another node already has takes its text from
    `bartlebot/nodes/help_text.py` (Zone, Reset XYZ, the note on players who don't arrive), and
    `tests/nodes/test_help_text.py` checks it does

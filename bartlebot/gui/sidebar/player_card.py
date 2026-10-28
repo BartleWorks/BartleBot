@@ -44,7 +44,7 @@ as a conservative bound until the window-sizing change it was waiting for arrive
 right sidebar's floor is now measured from the Log tab's header row, the widest row the
 panel still has, and the card sets no floor of its own at all. See
 ``screen_fit.right_sidebar_floor`` and "The sidebar floors are measured, not fixed" in
-docs/WINDOW_SIZING.md. ``test_the_player_card_fits_the_right_sidebar_under_every_available_style``
+bartleby-core/docs/WINDOW_SIZING.md. ``test_the_player_card_fits_the_right_sidebar_under_every_available_style``
 is what holds this card under that floor.
 
 THE REFRESH CONTRACT
