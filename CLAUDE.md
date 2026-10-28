@@ -105,7 +105,7 @@ read on purpose.
 | `tests/CLAUDE.md` | what a change ships with, keeping the suite fast, one QApplication per worker |
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
 | `docs/UI_TEXT.md` | writing anything a user reads: the three layers of a setting, voice, words, capitals, messages, and the rules of their own for setup's pages and the node help |
-| `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
+| `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, why an unfittable launch is refused, and resizing a running client (UI size, Deimos' forcer without its drag border, the window, the camera) |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and when its warning is shown |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels and how to name them, the two storage roots, a Bot Combat Strategy's own strategies and the own-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: a definition as a node type (inputs, ports, panels), an instance that sets inputs and nothing else, derived member ids, follow-latest with snapshot fallback, the authoring verbs, the two roots, categories, and what a signature change warns about |

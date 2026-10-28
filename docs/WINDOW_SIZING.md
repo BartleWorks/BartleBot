@@ -583,12 +583,15 @@ lower before Next. When setup closes, `screen_fit.fitted_layout` fits the global
 resolution, while it is still the shipped one or setup's own, and the canvas and sidebars
 to the launches: the one other place the layout is derived rather than configured.
 
-## Why not Deimos' runtime resize
+## Deimos' runtime resize: what was rejected, and what was kept
 
 Deimos added freeform client resizing (`src/client_resizing.py`, ~760 lines, plus two asm
 hooks in their vendored wizsprinter): a `WS_THICKFRAME` sizing border with a `WM_NCCALCSIZE`
 WndProc hook, two pattern-scanned asm hooks that force the engine's backbuffer at runtime,
-and camera-frustum correction so the 3D projection matches. Reviewed and **not adopted**.
+and camera-frustum correction so the 3D projection matches. Reviewed and **not adopted as
+it stands**, for BartleBot's launches. Its resolution forcer, without the drag border and
+paired with a runtime `UISize` write, is what a running client is resized with; the
+section after this one has the recipe.
 
 The two efforts solve complementary halves, and the half they solved is not the blocker:
 
@@ -633,8 +636,54 @@ Cheap lessons kept from that review:
 
 Runtime resolution change remains genuinely attractive — it would let
 `_group_by_resolution` and the launch-a-batch-per-resolution constraint go away, and let
-tiles resize on a splitter drag instead of requiring a relaunch. It is the expensive path
-and belongs in its own issue.
+tiles resize on a splitter drag instead of requiring a relaunch. It is the expensive path,
+and the next section is what a probe found it takes.
+
+## Resizing a running client
+
+Proven on live r806919 (2026-10-28) by `tools/probe_runtime_resize.py`, whose docstring has
+every offset, the config node's layout and what each step looked like. Not built yet:
+BartleBuddy needs it first, to swap which client gets the large tile when the user changes
+who they play, and it belongs in the shared library so BartleBot can follow.
+
+The two parts of Deimos' resize were each rejected for a reason, and the reasons are about
+those parts, not about resizing at runtime:
+
+- **The drag border** made every edge of every floating window a resize grip, so windows
+  resized by accident. Nothing here takes it: a size changes only when the app asks.
+- **The missing `UISize`** is why their small windows had a broken HUD. A running client
+  takes a new UI size through the same apply as a new resolution, Micro included.
+
+A resize is four steps, in this order, and takes about two seconds:
+
+1. **UI size**: write the int32 value of the live `UISize` node in the game's config. The
+   write alone changes nothing on screen; the apply in step 2 redraws the HUD. The node is
+   one of ~130,000 generic key/value objects sharing one vtable, found once per client by a
+   scan of about 3 s, as the key bindings are (`docs/KEY_BINDINGS.md`).
+2. **Resolution**: Deimos' two hooks. One overrides the width and height the engine's
+   set-mode is called with; the other captures the video manager, whose pending byte
+   (`+0x2229B`) starts the engine's own apply on its next frame. Hold them only for the
+   apply, and disarm the override after.
+3. **Window**: the apply leaves the window at its old size, so the frame is stretched until
+   it is resized. An embedded window is also taken out of its tile: the apply resets it to
+   a hidden top-level window. Embedding it again at the new size holds.
+4. **Camera**: the apply keeps the old frustum, so a 4:3 / 16:9 change stretches the 3D
+   view. Write the horizontal extent from the vertical one and the new aspect. Computing it
+   from the live vertical extent each time, never from a stored "native" value, is what
+   keeps the creep in the lesson above from happening.
+
+What stays true from the review above: the hooks patch game code that wizwalker's hook
+handler does not track, so they must be removed before a client is unhooked or closed, or
+it crashes on its next frame; their patterns need upkeep after a patch; one forcer per
+client. And the backbuffer still equals the client size after every resize, so the 1:1
+contract holds.
+
+Open: only the selected camera was corrected, while combat and the others keep their own
+frustums and a zone change may rebuild them; frames during an apply can be white or half
+laid out, so the tile should cover the swap; the game may save the written UI size to
+`config.xml` on exit, so the user's own is captured and given back as for launches; and
+`Resolution` is a string node too, so writing it with the pending byte might resize with no
+set-mode hook at all.
 
 ## Still open
 
