@@ -30,6 +30,12 @@ joined by links, 63 still apart, 38 with a point off the grid. Most splits are j
 things pressed rather than stepped into (fast-travel stones, ziplines, ladders), whose
 destinations the client's files do not hold.
 
+With every link source (2026-10-27; probe_walk_route.zone_links, docs/WALKING.md): volumes
+paired by name or by zone.nav, rides' templates, stones' partners, X/X_B pairs, and zone.nav
+edges from travel objects. 291 links in 56 zones (187 volumes, 99 objects pressed, 5 rides):
+295 all on one piece, 21 joined by links, 44 still apart (137 points, from 299), 38 with a
+point off the grid.
+
 HOW TO RUN
     uv run --with numpy python tools/probe_walk_zones.py                 # every zone
     uv run --with numpy python tools/probe_walk_zones.py --zone WizardCity/WC_Streets/WC_Unicorn
@@ -55,15 +61,14 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from probe_walk_route import (  # noqa: E402
-    LINK_REACH,
     REPO,
     Grid,
     blocking_footprints,
-    link_candidates,
     nearest_node,
     parse_collision,
     pieces,
     walkable_triangles,
+    zone_links,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "zone_graph"))
@@ -158,7 +163,7 @@ def draw(path: Path, zone: str, grid: Grid, passable: np.ndarray, label: np.ndar
         (ax, ay), (bx, by) = px(*link.source[:2]), px(*link.target[:2])
         pen.line((ax, ay, bx, by), fill=(255, 220, 0), width=2)
         pen.rectangle((ax - 4, ay - 4, ax + 4, ay + 4), outline=(255, 220, 0), width=2)
-        pen.text((ax + 7, ay + 4), link.volume.removeprefix("TeleportVol_"), fill=(255, 220, 0))
+        pen.text((ax + 7, ay + 4), link.name.removeprefix("TeleportVol_"), fill=(255, 220, 0))
     for name, (x, y, _), piece in points:
         cx = (x - grid.x0) / grid.cell * scale
         cy = (grid.ny - (y - grid.y0) / grid.cell) * scale
@@ -206,19 +211,17 @@ def survey(zone: str, why: list[str], deserialize: Deserializer) -> dict:
     label = pieces(grid, passable, MAX_RISE)
     sizes = np.bincount(label[label >= 0])
     try:
-        named = dict(locations(zone_record(zone, deserialize)))
+        record = zone_record(zone, deserialize)
+        named = dict(locations(record))
     except Exception:
-        named = {}
+        record, named = None, {}
     points = [(name, xyz, place(grid, passable, label, *xyz)) for name, xyz in named.items()]
     on = [p for *_, p in points if p is not None]
-    links, joins = [], {}
-    for link in link_candidates(zone_wad(zone), named):
+    links = zone_links(zone, grid, passable, label, record, named) if record is not None else []
+    joins: dict[int, set[int]] = {}
+    for link in links:
         here, there = nearest_node(grid, passable, *link.source), nearest_node(grid, passable, *link.target)
-        if here is None or there is None or math.dist(grid.world(*here)[:2], link.source[:2]) > LINK_REACH + CELL:
-            continue
-        if label[here] != label[there]:
-            links.append(link)
-            joins.setdefault(int(label[here]), set()).add(int(label[there]))
+        joins.setdefault(int(label[here]), set()).add(int(label[there]))
     reach = {piece: reachable(piece, joins) for piece in set(on)}
     # The piece most arrival points stand on; the rest count as joined when links go there and back.
     main_piece = max(set(on), key=on.count) if on else None
@@ -238,7 +241,7 @@ def survey(zone: str, why: list[str], deserialize: Deserializer) -> dict:
         arrivals=len(points),
         off_grid=sorted(name for name, _, p in points if p is None),
         arrival_pieces=len(set(on)),
-        links=[f"{link.volume} -> {link.landing}" for link in links],
+        links=[f"{link.kind} {link.name} -> {link.landing}" for link in links],
         apart=apart,
         seconds=round(time.perf_counter() - started, 2),
     )

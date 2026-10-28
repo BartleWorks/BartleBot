@@ -116,74 +116,81 @@ from a still or slow mob, 650 to 886 from one closing at 150 to 400 units a seco
 ### In-zone links
 
 Some zones are pieces of floor no walk joins. **A link is anything the game moves a wizard
-through**, and the server accepts its move because the move is its own. Two kinds are known.
+through**, and the server accepts its move because the move is its own. There are two ways to
+take one: **step into a volume**, or **press the interact key at a placed object** (a
+fast-travel stone, a zipline, a ladder, a rope). Every one taken so far, of either kind, set
+the wizard down within 5 units of one of the zone's named arrival points (`gamedata.bin`'s
+`m_locationList`), so a link is planned as *where it is taken* plus *which arrival point it
+lands on*. **No client file says where any link lands**: a volume's trigger names only the
+event it raises, and every world object's template has `DeletedBehavior` where the behavior
+that moves the wizard would be (`TeleportProximityBehaviorTemplate`, whose `m_locationName`
+is exactly that landing, survives only in housing and guild templates). So the landing is put
+together from what the files do keep, in this order (`probe_walk_route.py`'s `zone_links`):
 
-**Volume links** fire when the wizard walks in. `volumes.xml` gives each volume's name,
-position and (undecoded, a float near 177) radius, and marks it `STATIC_CLIENT_SERVER`; the
-trigger in `triggers.xml` names the event it raises. **Nothing decoded so far names where it
-lands**, so the planner pairs it by name with an arrival point (`gamedata.bin`'s
-`m_locationList`):
-
-- words shared between the names, "to" and "from" breaking a tie ("From Kraken Isle" lands at
-  "From_Kraken_Isle", not "To_Kraken_Isle"), and no link where two landings fit as well;
-- **a link must land on another piece of floor than it starts from.** This alone throws out
-  zone exits, whose names match an arrival point on their own piece ("Street4 to Cavern",
-  "Cavern to Street4");
-- cinematic triggers are left out on both sides.
-
-Triton Avenue's, all six found, four walked live:
-
-| volume | lands at | walked |
+| source | gives | where it holds |
 |---|---|---|
-| Tele Up | Target (Tele Up) | 2 units off, 835 jumped |
-| Tele Down | Target (Tele Down) | 4 off, 1,489 jumped |
-| To TempestNexus | Target Location (TempestNexus) | 1 off, 7,192 jumped |
-| High_Ledge | Target location From_High_Ledge | 5 off, 7,597 jumped |
-| From Kraken Isle | Target location From_Kraken_Isle | not walked |
-| Activator Volume To_Kraken (quest-gated) | Target location To_Kraken_Isle | not walked |
+| a volume's name | the arrival point sharing the most words, "to"/"from" breaking a tie, no link where two fit as well | Triton's six volumes (four walked, 1 to 5 off) |
+| `zone.nav` | for a volume the name leaves on its own piece, if its name says it moves the wizard (teleport, to), the far end of the quest arrow's edge starting at it | Lemuria's tower lifts, each named for the end it stands at; Krokotopia's Forgotten Tombs |
+| a ride's template | a zipline's `InteractableBehavior` holds its two ends as LOCATION records; it lands on the arrival point nearest the second (800 to 920 past it) | all four Floating Mountains ziplines; two pressed, 3 off each |
+| a stone's partner | a `TeleporterX` stone lands at the arrival point nearest `TeleporterX_ToMain`, and that one at the arrival point nearest the hub's stones | Triton's four (pressed, 1 to 5 off); Colossus, Cyclops, Firecat, nine Krokotopia zones and Hametsu give names like "StreetB", "Target_Arena", "BackToHub", "HamPorter2" |
+| an X / X_B pair | each at the arrival point nearest the other | Krokotopia's Forgotten Tombs teleporters |
+| `zone.nav` | for any other object whose prompt is a travel verb, the far end of the edge starting nearest it (within 700) | Tyrian Gorge's six ladders ("Ladder 01 top", ...), Mirage's caravan ladders, Novus's ropes, Krokotopia's hub teleporter |
 
-Most fired as the wizard crossed the volume's edge, not its center. The `Telepapad_01` to
-`_06` objects are only the pads drawn at these volumes.
+What the sources are:
 
-**Interact links** fire when the interact key is pressed near a placed object. **Their
-destinations are not in the client's files at all**: the object's template has
-`DeletedBehavior` where the behavior that moves the wizard would be (the client gets a stub;
-the server keeps the real one). So an interact link is learned by pressing it once
-(`probe_walk_input.py --interact`). Triton's fast-travel stones, all four pressed:
+- **`zone.nav`**, in every zone's wad, is the graph the quest arrow routes through
+  (`tools/zone_graph/zone_nav.py`): `zonemap.nav`'s layout without the name table, the 12 bytes
+  that are zero there holding each node's x, y, z. Most nodes sit on a 480-unit grid; **the
+  links are its edges no walk takes**, longer than 1,500 across the floor or rising more than
+  500 more steeply than 1:1 (a ladder). Edges are stored both ways and say nothing of what they
+  are, and an end can sit a few hundred units off, so an edge is only trusted next to a volume
+  or a travel object. It lacks some links: Triton's stones are not in it.
+- **A travel object** is a placed object whose template's prompt, from `GUI.lang` or its own
+  words in `WizardGameObjects.lang`, says Teleport, Ride, Climb, Descend, Ascend, Travel or
+  Exit (613 templates), or, with no prompt, whose name says teleport, rope, ladder, zipline,
+  boat, elevator, lift, cart, dinghy or portal.
+- **A volume link must join two pieces of floor**: that alone throws out zone exits, whose
+  names match an arrival point on their own piece ("Street4 to Cavern"). **An object link is
+  kept if it joins two pieces or moves the wizard 1,000 units or more**, as a stone is worth
+  pressing even where the far end can be walked to; the route's cost decides. An object within
+  300 of a volume is the pad drawn there (Triton's `Telepapad`s), not a link. Cinematic points
+  are left out.
 
-| pressed X at | lands at | off | jump |
+None of this is the server's word, so a link that moves nobody is dropped by the walk and the
+route replanned. That has already paid off: Floating Mountains has `AZ-ZipLine-3` and a
+`-3-Quest` copy at the same spot; the first moved nobody, and the walk took the second.
+
+**A zipline is a teleport, not a ride.** Pressed, it plays its ride, and 2.2s later the server
+moves the wizard in one tick (5,148 units) onto the arrival point; no reset either way.
+
+`probe_walk_input.py --interact` still learns an unknown one by pressing it: it walks to a
+placed object, presses, and reports how soon, how far, one jump or many steps, and the arrival
+point it settled nearest.
+
+`probe_walk_zones.py` across every zone on the zone map or named by a bot (455). Of the 387
+with two or more arrival points:
+
+| links used | all on one piece | joined by links | still apart (points) |
 |---|---|---|---|
-| `WC_Triton_TeleporterA` (hub) | Target location Triton_A | 1 | 20,479 |
-| `WC_Triton_TeleporterB` (hub) | Target location Triton_B | 5 | 17,982 |
-| `WC_Triton_TeleporterA_ToMain` (east end) | Target location Hub Teleporter | 2 | 20,295 |
-| `WC_Triton_TeleporterB_ToMain` (west end) | Target location Hub Teleporter | 2 | 17,724 |
+| volumes by name | 295 | 2 | 63 (299) |
+| all of the above | 295 | 21 | 44 (137) |
 
-Each moved the wizard 0.2s after the press, in one jump, settled by 1.2s, pressed from 26 to
-32 units off the nearest open floor to the stone. Here the pairing happens to follow the
-names (stone X to "Triton_X", `_ToMain` to "Hub Teleporter"); that is not known to hold
-elsewhere.
-
-**Ziplines** (Azteca's Floating Mountains: `AZ-ZipLine-1` to `-4`, and a `-3-Quest` copy) are
-interact links that carry the wizard over to another island rather than jumping it; their
-templates are also all `DeletedBehavior`. **Not tried yet.** `--interact` tells one jump from
-a ride and waits for the wizard to settle, so it is ready for one.
-
-`probe_walk_zones.py` across every zone on the zone map or named by a bot (455): of the 387
-with two or more arrival points, **295 have them all on one piece, 2 more are joined by volume
-links, and 63 are still apart**; 38 have a point off the grid, nearly all cinematic or marker
-spots. The names of the stranded points say what joins the rest: ladders ("Ladder01-Up"),
-lifts and levels (Big Ben, "Floor_02_to_01"), fast-travel stones, ziplines, gauntlet tents.
-**So most of the game's links are interact links, whose destinations have to be learned live.**
+291 links in 56 zones: 187 volumes, 99 objects pressed, 5 rides. 38 zones have a point off
+the grid, nearly all cinematic or marker spots. The worst left: Empyrea's Husk (14 points),
+Big Ben's counterweights and tower (levers and lifts), MooShu's Waterfall Cave, the Hive,
+Forlorn Taig, Dragonspire's Arena. Each has a map in `logs/walk_route/zones/`.
 
 ### Routes
 
 A* over the cells (8 neighbors, no cutting a wall's corner), with each link an extra edge from
-the floor within 100 units of its volume to the landing, costing 4 seconds of walking. The
+the floor near where it is taken (100 units of a volume's center, 150 of an object's) to the
+landing, costing 4 seconds of walking for a volume, 6 for a press, 20 for a ride. The
 heuristic does not know about links, so a route through one is found but not always the
 shortest. The route is then straightened: from each kept point, the furthest point still
 reachable in a straight line without coming nearer a patrol than the route itself did. That
 cuts 100 to 300 grid turns to 20 to 40. A route with links comes back as **legs**, each
-straightened alone and each but the last ending at the link's volume.
+straightened alone and each but the last ending at the link's volume, or on the floor beside
+the object to press.
 
 ## Walking a route
 
@@ -216,10 +223,12 @@ wizard stands.
   detour closing each mob out to that same room at three moments over the 2.5s, and only
   without one waits or backs off, for 30s at most. Detours plan with the patrol cost even on
   a shortest-path walk, so after one the rest of the leg follows the patrol-avoiding route.
-- **Links.** At the end of a leg the walk stands in the volume until moved, then replans from
-  wherever it landed; a jump near the pending link's landing is that link, taken early. Not
-  moved within 6s, the link is dropped and the walk replans: a wrong pairing and a quest gate
-  look the same.
+- **Links.** At the end of a leg the walk stands in the volume, or faces the object and
+  presses the account's interact key, until moved more than 300 units (rising counts, for a
+  ladder); after a press it waits for the wizard to be set down (under 20 units in 1s), then
+  replans from wherever it landed. A jump near the pending link's landing is that link, taken
+  early. Not moved within 6s, the link is dropped and the walk replans: a wrong pairing and a
+  quest gate look the same.
 - It stops on a battle, a zone change, the goal, or running out of time, and releases every
   key however it stops.
 
@@ -235,6 +244,8 @@ Results, all with no battle unless said:
 | Housing_FarmHouse, main floor to basement and back | 18 and 16 units off; two flights, z 3100 to 2300 |
 | Triton Avenue, two volume links in one route | both taken, landings 5 and 4 units off |
 | Triton Avenue, four fast-travel stones | all landed 1 to 5 units off their arrival point |
+| Floating Mountains, From3Points to Target-FromTurquoiseCave over ZipLine-3 | ZipLine-3 moved nobody and was dropped; -3-Quest landed 3 off "Target-ToMajorIsland"; 33 off the goal in 29.9s, two detours |
+| Floating Mountains, back over ZipLine-4 | landed 3 off "Target-FromMajorIsland", 2.2s after the press; 13 off the goal in 23.7s, one stall recovered |
 
 ## What is not done
 
@@ -242,22 +253,21 @@ In rough order of what a bot needs first.
 
 1. **Placed objects' collision.** Read each placed object's `CollisionBehavior` solid file into
    the grid, so a walk does not have to stall on a teleporter stone to find it.
-2. **Interact links as data.** Offline, find the interact-link candidates in every zone (placed
-   objects whose templates have a stripped behavior, or names like Teleporter, ZipLine,
-   Ladder); learn each destination once with `--interact`; keep the verified table checked in,
-   as `zone_nav.json` keeps verified gates. Then the planner takes them like volume links,
-   pressing the interact key at the end of the leg.
-3. **Ziplines and other rides**: try one, confirm `--interact` reads it right, and see whether
-   the server resets mid-ride.
-4. **The 63 zones still apart**: rerun `probe_walk_zones.py` once interact links exist; whatever
-   is still split is worth a look at its map in `logs/walk_route/zones/`.
+2. **Walk the new link kinds**: a ladder (Tyrian Gorge, Mirage's hub), a rope (Novus's Stone
+   of Heaven), a Lemuria tower lift, a Krokotopia stone pair, and one of each source the table
+   above lists that no walk has tried. How near an object a press must be is assumed (150);
+   whether facing it matters is not known (the walk faces it anyway).
+3. **The 44 zones still apart**: their maps, starting with the worst. Levers and lifts that
+   change state (Big Ben) may need the quest's state, not a link.
+4. **A checked-in table of verified links**, as `zone_nav.json` keeps verified gates, so a
+   pairing once walked is not re-derived, and one that moved nobody is not tried again.
 5. **Zone exits.** A walk's goal across zones is the zone map's route (`docs/ZONE_NAVIGATION.md`)
    with each crossing a link to walk to; today every crossing is reached by `client.teleport`.
 6. **Into the app.** A walk node, and every `client.teleport` replaced by walking to the spot
    (`nodes/node_helpers.py`'s interact loops, `teleport_to_coordinates`, `collect_*`,
    `enter_zone*`, `ambient_combat`, `handle_potions`), with the timing constants moved into
    `nodes/timing.py`, numpy added as a dependency, and the pure helpers (`room`, `choose`,
-   `along`, `key_code`, `link_candidates`, `_straight_ok`) given tests. Several clients walking
+   `along`, `key_code`, `link_candidates`, `zone_links`, `zone_nav.parse`, `_straight_ok`) given tests. Several clients walking
    together, and a grid built per zone in a worker thread, belong here too.
 7. **Smaller:** whether any of the 250 non-walkable meshes are walls; decoding a volume's radius
    and shape; whether a quest-gated link can be told from the client before stepping into it.

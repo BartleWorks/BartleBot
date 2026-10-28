@@ -82,6 +82,14 @@ off), each in one jump of 17,724 to 20,479 units, 0.2s after the press, settled 
 approach stalled once on the stone itself: a placed object's collision (its template's
 CollisionBehavior file) is not in collision.bcd, so the grid lacks it.
 
+Floating Mountains, pressed links in a route: the planner now has them (probe_walk_route's
+interact links), and a walk faces the object, presses the account's interact key and waits to
+be set down. From3Points to Target-FromTurquoiseCave: AZ-ZipLine-3 moved nobody and was
+dropped, the replan took AZ-ZipLine-3-Quest at the same spot, landing 3 units from
+"Target-ToMajorIsland"; 33 units from the goal in 29.9s. Back over AZ-ZipLine-4: moved 2.2s
+after the press, 5,148 units in one tick, 3 units from "Target-FromMajorIsland"; 13 from the
+goal in 23.7s. A zipline is the server's teleport after the ride is shown, not a ride.
+
 What else it watches for:
   - a jump: the wizard moved faster than walking allows. A server reset (rubber-band) looks
     like this, and so would a battle pulling the wizard to a seat.
@@ -545,6 +553,22 @@ async def interact_and_watch(client, keys: Keys, code: int, planner: Planner) ->
     print("  landed nearest: " + "; ".join(f"{name} ({d:.0f} away)" for d, name in nearest))
 
 
+async def settle(client) -> tuple[float, float, float, float]:
+    """Once a pressed link has begun moving the wizard, wait for it to put the wizard down: a
+    teleport at once, a ride (a zipline) once it ends. Settled is moving under SETTLED_MOVE
+    over SETTLED_FOR; returns where, and how long it took, giving up after INTERACT_WAIT."""
+    began = time.monotonic()
+    trail: list[tuple[float, float, float, float]] = []
+    while True:
+        x, y, z, _ = await read(client)
+        t = time.monotonic() - began
+        trail.append((t, x, y, z))
+        trail = [p for p in trail if p[0] >= t - SETTLED_FOR - TICK]
+        if t >= SETTLED_FOR and math.dist(trail[0][1:], (x, y, z)) < SETTLED_MOVE or t >= INTERACT_WAIT:
+            return x, y, z, t
+        await asyncio.sleep(TICK)
+
+
 # --- the walk ------------------------------------------------------------------------------
 
 
@@ -622,7 +646,7 @@ async def walk(client, planner: Planner, path, goal, args, keys: Keys, codes: di
     route, link = legs[0].waypoints, legs[0].link
     route[0] = (x, y, route[0][2])
     planned = sum(math.dist(a[:2], b[:2]) for leg in legs for a, b in zip(leg.waypoints, leg.waypoints[1:]))
-    budget = planned / expected * 3 + 20 + LINK_WAIT * (len(legs) - 1)
+    budget = planned / expected * 3 + 20 + sum(LINK_WAIT + leg.link.seconds for leg in legs if leg.link)
     history: list[tuple[float, float, float]] = []
     forward_since = math.inf
     target = 1
@@ -653,7 +677,7 @@ async def walk(client, planner: Planner, path, goal, args, keys: Keys, codes: di
             if step > JUMP_SPEED * gap and link is not None and math.dist((x, y), link.target[:2]) <= LINK_LANDED:
                 w.links_taken += 1
                 log(
-                    f"t={now:6.2f}s {link.volume} moved the wizard on the way in, {step:.0f} units to "
+                    f"t={now:6.2f}s {link.name} moved the wizard on the way in, {step:.0f} units to "
                     f"({x:.0f}, {y:.0f}), {math.dist((x, y), link.target[:2]):.0f} from {link.landing}"
                 )
                 await keys.release(forward)
@@ -714,24 +738,41 @@ async def walk(client, planner: Planner, path, goal, args, keys: Keys, codes: di
             if target >= len(route) and link is not None:
                 await keys.release(forward)
                 forward_since = math.inf
-                stepped_at, waiting_since = (x, y), time.monotonic()
-                moved = False
+                stepped_at, waiting_since = (x, y, z), time.monotonic()
+                pressed = link.kind != "volume"
+                if pressed:
+                    await client.body.write_yaw(heading_to(x, y, *link.source[:2]))
+                    await asyncio.sleep(TICK)
+                    await keys.pulse(codes[INTERACT_ACTION], 0.1)
+                moved, first_moved, biggest, before = False, None, 0.0, stepped_at
                 while time.monotonic() - waiting_since < LINK_WAIT:
                     await asyncio.sleep(TICK)
                     x, y, z, yaw = await read(client)
-                    if math.dist(stepped_at, (x, y)) > LINK_MOVED:
+                    biggest = max(biggest, math.dist(before, (x, y, z)))
+                    before = (x, y, z)
+                    if first_moved is None and math.dist(stepped_at, (x, y, z)) > STALL_MIN_MOVE:
+                        first_moved = time.monotonic() - waiting_since
+                    # Up counts: a ladder lifts the wizard more than it moves it across.
+                    if math.dist(stepped_at, (x, y, z)) > LINK_MOVED:
                         moved = True
                         break
+                if moved and pressed:
+                    x, y, z, carried = await settle(client)
+                    log(
+                        f"t={time.monotonic() - started:6.2f}s first moved {first_moved:.2f}s after the press, "
+                        f"largest step in a tick {biggest:.0f}, set down {carried:.1f}s after moving {LINK_MOVED:.0f}"
+                    )
                 now = time.monotonic() - started
+                how = "pressing" if pressed else "stepping into"
                 if moved:
                     w.links_taken += 1
                     log(
-                        f"t={now:6.2f}s {link.volume} moved the wizard {math.dist(stepped_at, (x, y)):.0f} units to "
-                        f"({x:.0f}, {y:.0f}), {math.dist((x, y), link.target[:2]):.0f} from {link.landing}"
+                        f"t={now:6.2f}s {how} {link.name} moved the wizard {math.dist(stepped_at, (x, y, z)):.0f} units "
+                        f"to ({x:.0f}, {y:.0f}, {z:.0f}), {math.dist((x, y), link.target[:2]):.0f} from {link.landing}"
                     )
                 else:
                     w.links_dropped += 1
-                    log(f"t={now:6.2f}s stood in {link.volume} for {LINK_WAIT:.0f}s and was not moved: dropping it")
+                    log(f"t={now:6.2f}s {how} {link.name} moved nobody in {LINK_WAIT:.0f}s: dropping it")
                     planner.drop(link)
                 new_path = planner.route((x, y, z), goal, avoid=not args.shortest)
                 if new_path is None:
@@ -974,7 +1015,8 @@ async def main(args: argparse.Namespace) -> int:
                 print(f"  {k:2}  ({wx:9.1f}, {wy:9.1f}, {wz:7.1f})  clearance {clearance_at(planner, wx, wy):6.0f}")
                 k += 1
             if leg.link:
-                print(f"      step into {leg.link.volume!r}, landing at {leg.link.landing!r}")
+                how = "step into" if leg.link.kind == "volume" else f"press ({leg.link.kind})"
+                print(f"      {how} {leg.link.name!r}, landing at {leg.link.landing!r}")
         if args.dry_run:
             png = out_dir / f"plan-{stamp}.png"
             render(png, planner, 250.0, [(goal_name, None, path, planner.turns(path))], np.empty((0, 2)))

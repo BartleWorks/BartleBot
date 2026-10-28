@@ -63,6 +63,7 @@ from __future__ import annotations
 import argparse
 import csv
 import dataclasses
+import functools
 import glob
 import heapq
 import math
@@ -79,7 +80,8 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "zone_graph"))
 
-from wad_common import Deserializer, root_wad, to_plain, volumes, zone_wad  # noqa: E402
+import zone_nav  # noqa: E402
+from wad_common import Deserializer, parse_lang, root_wad, text, to_plain, volumes, xyz, zone_wad  # noqa: E402
 from zone_data import locations, zone_record  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
@@ -630,6 +632,9 @@ def _runs(path: list[Node]) -> list[list[Node]]:
 LINK_REACH = 100.0  # floor this near a volume's center steps into it (Triton's are some 177 across)
 LINK_SECONDS = 4.0  # what taking a link costs a route, in seconds of walking: the move, and a margin
 _LINK_VOLUME = re.compile(r"teleport|activator", re.IGNORECASE)
+# zone.nav pairs only a volume whose name says it moves the wizard: an activator is as often a
+# quest's trigger (Triton's "Activator Volume Kraken" spawns the boss on Kraken Isle).
+_MOVING_VOLUME = re.compile(r"teleport|(?<![a-z])to(?![a-z])", re.IGNORECASE)
 _FILLER = {"target", "location", "teleport", "teleportvol", "activator", "volume", "the", "trigger"}
 _DIRECTIONS = {"to", "from"}
 
@@ -640,10 +645,21 @@ def _words(text: str) -> set[str]:
 
 @dataclass(frozen=True)
 class Link:
-    volume: str
-    source: tuple[float, float, float]  # the volume's center
+    name: str  # the volume's, or the placed object's zone tag
+    source: tuple[float, float, float]  # the volume's center, or the object's
     landing: str
-    target: tuple[float, float, float]  # the arrival point it lands on
+    target: tuple[float, float, float]  # where it lands: an arrival point, a ride's far end, a nav node
+    # "volume" is stepped into; "interact" and "ride" are pressed, "ride" carrying the wizard over.
+    kind: str = "volume"
+
+    @property
+    def reach(self) -> float:
+        """How near the source a wizard stands to take the link."""
+        return LINK_REACH if self.kind == "volume" else INTERACT_REACH
+
+    @property
+    def seconds(self) -> float:
+        return {"volume": LINK_SECONDS, "interact": INTERACT_SECONDS}.get(self.kind, RIDE_SECONDS)
 
 
 def link_candidates(wad, named: dict[str, tuple[float, float, float]]) -> list[Link]:
@@ -653,7 +669,7 @@ def link_candidates(wad, named: dict[str, tuple[float, float, float]]) -> list[L
     except KeyError:
         return []
     out = []
-    for name, xyz in found:
+    for name, center in found:
         words = _words(name)
         if not _LINK_VOLUME.search(name) or "cinematic" in words:
             continue
@@ -669,7 +685,238 @@ def link_candidates(wad, named: dict[str, tuple[float, float, float]]) -> list[L
         scored.sort(key=lambda row: row[0], reverse=True)
         if len(scored) > 1 and scored[1][0] == scored[0][0]:
             continue
-        out.append(Link(name, tuple(xyz), scored[0][1], tuple(scored[0][2])))
+        out.append(Link(name, tuple(center), scored[0][1], tuple(scored[0][2])))
+    return out
+
+
+# --- interact links ----------------------------------------------------------------------------
+#
+# Most of the game's in-zone links are not volumes but placed objects the wizard presses the
+# interact key at: Triton's fast-travel stones, Floating Mountains' ziplines, ropes, boats,
+# mine carts. The behavior that moves the wizard is stripped from the client's copy of every
+# one (DeletedBehavior), so where each lands is put together from what the files do keep:
+#
+#   - a ride's template (a zipline's) holds its two ends as LOCATION records: it lands on the
+#     arrival point nearest the second (both ziplines pressed live did, 3 units off);
+#   - a stone of a TeleporterX family lands at the arrival point nearest its partner: X at the
+#     one nearest X_ToMain, X_ToMain at the one nearest the hub's stones (Triton's four, pressed
+#     live, all did; Krokotopia's and Hametsu's land on names like "Target_Arena", "BackToHub");
+#   - a pair of travel objects named X and X_B: each at the arrival point nearest the other;
+#   - zone.nav, the quest arrow's graph, has an edge no walk takes for most links (zone_nav.py):
+#     one starting near a placed object whose prompt is a travel verb is that object's link, to
+#     the arrival point nearest the edge's far end, or the far end itself. zone_links does the
+#     same for a volume its name does not pair with another piece.
+#
+# None of these is the server's own word, so the walk drops a link it presses and is not moved
+# by, as it does a volume's.
+
+INTERACT_REACH = 150.0  # floor this near the object's center is near enough to press it
+INTERACT_SECONDS = 6.0  # the press, the teleport, a margin
+RIDE_SECONDS = 20.0  # a zipline's ride, before one is timed
+NAV_OBJECT_REACH = 700.0  # a zone.nav edge's end, or a ride's first end, this near an object is its
+RIDE_LANDING_REACH = 1000.0  # a ride lands on the arrival point this near its far end (800-920 seen)
+PAD_REACH = 300.0  # an object this near a volume is the pad drawn at it
+SHORTCUT_MIN = 1000.0  # a press that moves the wizard less than this, up included, is no link worth routing through
+_TRAVEL_PROMPT = re.compile(r"\b(teleport|ride|climb|descend|ascend|travel|exit)\b", re.IGNORECASE)
+# An object with no prompt the files resolve is taken by its template's name instead.
+_TRAVEL_NAME = re.compile(r"teleport|rope|ladder|zip.?line|boat|elevator|lift|cart|dingh?y|portal", re.IGNORECASE)
+_STONE = re.compile(r"Teleporter([A-F])(?![a-z])")  # not TeleporterArch
+_STONE_BACK = re.compile(r"To(Main|Hub)|BackToHub", re.IGNORECASE)
+# A template's InteractableBehavior: its prompt's GUI.lang key, and each LOCATION record's
+# name, position and zone, by property hash.
+_INTERACTABLE = b"InteractableBehavior"
+_PROMPT_KEY = re.compile(rb"([A-Za-z]+)_(\d{8})")
+_LOCATION_NAME = bytes.fromhex("cbdec46e")
+_LOCATION_XYZ = tuple(bytes.fromhex(h) for h in ("bffe5a5a", "c0fe5a5a", "c1fe5a5a"))
+_LOCATION_ZONE = bytes.fromhex("c122a8ba")
+
+
+@dataclass(frozen=True)
+class _Template:
+    name: str
+    prompt: str  # the interact prompt's English text, "" for none
+    ends: tuple[tuple[tuple[float, float, float], str], ...]  # each LOCATION record: position, zone
+
+
+def _short_string(data: bytes, at: int) -> str:
+    """A string whose length byte is twice its length, as these records store a short one."""
+    return data[at + 1 : at + 1 + (data[at] >> 1)].decode("latin-1")
+
+
+def _locations_in(data: bytes) -> tuple[tuple[tuple[float, float, float], str], ...]:
+    starts = [m.end() for m in re.finditer(re.escape(_LOCATION_NAME), data)]
+    out = []
+    for at, end in zip(starts, [*starts[1:], len(data)]):
+        record = data[at:end]
+        if b"LOCATION" not in record:
+            continue
+        found = [record.find(h) for h in _LOCATION_XYZ]
+        if min(found) < 0:
+            continue
+        x, y, z = (struct.unpack_from("<f", record, k + 4)[0] for k in found)
+        k = record.find(_LOCATION_ZONE)
+        out.append(((x, y, z), _short_string(record, k + 4) if k >= 0 else ""))
+    return tuple(out)
+
+
+@functools.cache
+def _templates() -> dict[int, _Template]:
+    """Every placed-object template that can be interacted with, by template id."""
+    root = root_wad()
+    langs: dict[str, dict[str, str]] = {}
+
+    def lang(stem: str, key: str) -> str:
+        if stem not in langs:
+            try:
+                langs[stem] = parse_lang(bytes(root[f"Locale/en-US/{stem}.lang"]))
+            except KeyError:
+                langs[stem] = {}
+        return langs[stem].get(key, "")
+
+    manifest = Deserializer()(bytes(root["TemplateManifest.xml"]))
+    out = {}
+    for entry in manifest["m_serializedTemplates"]:
+        try:
+            data = bytes(root[text(entry["m_filename"])])
+        except KeyError:
+            continue
+        at = data.find(_INTERACTABLE)
+        if at < 0:
+            continue
+        # The prompt is the first key there that resolves: "Press X to Teleport" from GUI.lang, or
+        # the object's own words ("Climb Rope", from WizardGameObjects.lang).
+        keys = (lang(k.group(1).decode(), k.group(2).decode()) for k in _PROMPT_KEY.finditer(data, at, at + 600))
+        prompt = next((words for words in keys if words), "")
+        out[int(entry["m_id"])] = _Template(Path(text(entry["m_filename"])).stem, prompt, _locations_in(data))
+    return out
+
+
+def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, float, float]]) -> list[Link]:
+    """Each placed object pressed to move the wizard, with where it is taken to land, best source first."""
+    templates = _templates()
+    placed = []
+    for obj in record["m_objectList"] or []:
+        template = templates.get(int(obj["m_templateID.m_full"])) if obj else None
+        if template is not None:
+            placed.append((text(obj["m_zoneTag"]) or template.name, xyz(obj["m_location"]), template))
+    points = {name: p for name, p in named.items() if "cinematic" not in name.lower()}
+    found: dict[str, Link] = {}
+
+    # A ride is shown, then the server sets the wizard down on the arrival point past its far
+    # end: ZipLine-3-Quest, pressed live, landed 3 units from "Target-ToMajorIsland", 800 past it.
+    for tag, at, template in placed:
+        ends = [p for p, where in template.ends if where == zone]
+        if len(ends) == 2 and math.dist(ends[0][:2], at[:2]) <= NAV_OBJECT_REACH:
+            landing, target = f"{template.name}'s far end", ends[1]
+            if points:
+                nearest = min(points, key=lambda n: math.dist(points[n][:2], ends[1][:2]))
+                if math.dist(points[nearest][:2], ends[1][:2]) <= RIDE_LANDING_REACH:
+                    landing, target = nearest, points[nearest]
+            found[tag] = Link(tag, at, landing, target, "ride")
+
+    stones = [
+        (tag, at, m.group(1), bool(_STONE_BACK.search(tag))) for tag, at, _ in placed if (m := _STONE.search(tag))
+    ]
+    hub = [at for _, at, _, back in stones if not back]
+    if hub and points:
+        center = tuple(sum(c) / len(hub) for c in zip(*hub))
+        for tag, at, letter, back in stones:
+            partner = center if back else next((p for _, p, kin, ret in stones if kin == letter and ret), None)
+            if partner is None:
+                continue
+            landing = min(points, key=lambda n: math.dist(points[n][:2], partner[:2]))
+            found.setdefault(tag, Link(tag, at, landing, points[landing], "interact"))
+
+    travel = [
+        (tag, at)
+        for tag, at, template in placed
+        if _TRAVEL_PROMPT.search(template.prompt) or (not template.prompt and _TRAVEL_NAME.search(template.name))
+    ]
+    # A pair named X and X_B (Krokotopia's Forgotten Tombs teleporters): each lands at the
+    # arrival point nearest the other.
+    by_name = {tag.split(" instance")[0]: (tag, at) for tag, at in travel}
+    if points:
+        for name, (tag, at) in by_name.items():
+            other = by_name.get(name.removesuffix("_B")) if name.endswith("_B") else by_name.get(name + "_B")
+            if other is not None:
+                landing = min(points, key=lambda n: math.dist(points[n][:2], other[1][:2]))
+                found.setdefault(tag, Link(tag, at, landing, points[landing], "interact"))
+
+    nav = zone_nav.load(wad)
+    if nav is not None:
+        for tag, (at, landing, target) in _nav_links(nav, travel, points).items():
+            found.setdefault(tag, Link(tag, at, landing, target, "interact"))
+    return list(found.values())
+
+
+def _nav_links(nav, sources, points) -> dict[str, tuple[tuple[float, float, float], str, tuple[float, float, float]]]:
+    """For each (name, position) of *sources* that a zone.nav link edge starts near, the nearest
+    such edge's landing: the arrival point nearest its far end, or the far end itself."""
+    edges = []
+    for a, b in nav.link_edges():
+        near, far = nav.nodes[a], nav.nodes[b]
+        for name, at in sources:
+            reach = math.dist(at, near)
+            if reach <= NAV_OBJECT_REACH:
+                edges.append((reach, name, at, b, far))
+    out = {}
+    for _, name, at, b, far in sorted(edges):
+        if name in out:
+            continue
+        landing, target = f"zone.nav node {b}", far
+        if points:
+            nearest = min(points, key=lambda n: math.dist(points[n], far))
+            if math.dist(points[nearest], far) <= NAV_OBJECT_REACH:
+                landing, target = nearest, points[nearest]
+        out[name] = (at, landing, target)
+    return out
+
+
+def zone_links(zone: str, grid: Grid, passable: np.ndarray, label: np.ndarray, record, named) -> list[Link]:
+    """The zone's links: each volume that joins one piece of its floor to another, and each
+    object pressed to move the wizard that joins pieces or is a shortcut worth its press. A
+    volume whose name pairs it with no landing on another piece (Lemuria's tower lifts, each
+    named for the end it stands at) takes its landing from zone.nav instead. An object standing
+    at a volume is the pad drawn there (Triton's Telepapads), not a link of its own."""
+    wad = zone_wad(zone)
+    by_name = link_candidates(wad, named)
+    try:
+        every_volume = [(n, tuple(p)) for n, p in volumes(bytes(wad["volumes.xml"])) if _LINK_VOLUME.search(n)]
+    except KeyError:
+        every_volume = []
+
+    def ends(link: Link) -> tuple[Node, Node] | None:
+        here, there = nearest_node(grid, passable, *link.source), nearest_node(grid, passable, *link.target)
+        if here is None or there is None or math.dist(grid.world(*here)[:2], link.source[:2]) > link.reach + grid.cell:
+            return None
+        return here, there
+
+    out = []
+    joined = set()
+    for link in by_name:
+        found = ends(link)
+        if found and label[found[0]] != label[found[1]]:
+            out.append(link)
+            joined.add(link.name)
+    nav = zone_nav.load(wad)
+    if nav is not None:
+        points = {n: p for n, p in named.items() if "cinematic" not in n.lower()}
+        unpaired = [
+            (n, p)
+            for n, p in every_volume
+            if n not in joined and "cinematic" not in n.lower() and _MOVING_VOLUME.search(n)
+        ]
+        for name, (at, landing, target) in _nav_links(nav, unpaired, points).items():
+            link = Link(name, at, landing, target)
+            found = ends(link)
+            if found and label[found[0]] != label[found[1]]:
+                out.append(link)
+    for link in interact_candidates(zone, wad, record, named):
+        found = ends(link)
+        if found is None or any(math.dist(link.source[:2], v[1][:2]) <= PAD_REACH for v in every_volume):
+            continue
+        if label[found[0]] != label[found[1]] or math.dist(link.source, link.target) >= SHORTCUT_MIN:
+            out.append(link)
     return out
 
 
@@ -775,7 +1022,7 @@ class Planner:
         return astar(self.grid, self.passable, cost, s, g, self.max_rise, self.portals())
 
     def portals(self) -> dict[int, list[tuple[int, float]]]:
-        """For astar: every passable spot within LINK_REACH of a link's volume, at about its
+        """For astar: every passable spot within a link's reach of its source, at about its
         height, leads to the spot nearest where the link lands."""
         layers, ny, nx = self.passable.shape
         plane = ny * nx
@@ -786,11 +1033,11 @@ class Planner:
             if landing is None:
                 continue
             to = landing[0] * plane + landing[1] * nx + landing[2]
-            near = (np.hypot(px - link.source[0], py - link.source[1]) <= LINK_REACH)[None] & self.passable
+            near = (np.hypot(px - link.source[0], py - link.source[1]) <= link.reach)[None] & self.passable
             with np.errstate(invalid="ignore"):
                 near &= np.abs(self.grid.levels - link.source[2]) <= LEVEL_GAP
             for layer, j, i in zip(*np.nonzero(near)):
-                out.setdefault(int(layer * plane + j * nx + i), []).append((to, LINK_SECONDS * WIZARD_SPEED))
+                out.setdefault(int(layer * plane + j * nx + i), []).append((to, link.seconds * WIZARD_SPEED))
         return out
 
     def turns(self, path: list[Node]) -> list[Node]:
@@ -808,7 +1055,8 @@ class Planner:
         return out, jumps
 
     def legs(self, path: list[Node]) -> list[Leg]:
-        """The path as stretches to walk, each but the last ending in the link that joins it to the next."""
+        """The path as stretches to walk, each but the last ending in the link that joins it to the
+        next: at a volume's center, or, for an object pressed, on the floor near it."""
         runs = _runs(path)
         out = []
         for k, run in enumerate(runs):
@@ -819,11 +1067,11 @@ class Planner:
                 lands_on = runs[k + 1][0]
                 ends_at = self.grid.world(*run[-1])
                 for candidate in self.links:
-                    near = math.dist(candidate.source[:2], ends_at[:2]) <= LINK_REACH + self.grid.cell
+                    near = math.dist(candidate.source[:2], ends_at[:2]) <= candidate.reach + self.grid.cell
                     if near and self.node(*candidate.target) == lands_on:
                         link = candidate
                         break
-                if link is not None:
+                if link is not None and link.kind == "volume":
                     points.append((link.source[0], link.source[1], points[-1][2]))
             out.append(Leg(points, link))
         return out
@@ -906,16 +1154,10 @@ def build_planner(
         f"  patrol {p.spawner!r}: {p.template} x{p.max_spawns}, {len(p.points)} nodes, trigger radius {p.proximity:.0f}"
         for p in patrols
     ]
-    named = dict(locations(zone_record(zone, deserialize)))
-    links = []
-    label = pieces(grid, passable, max_rise)
-    for link in link_candidates(zone_wad(zone), named):
-        here, there = nearest_node(grid, passable, *link.source), nearest_node(grid, passable, *link.target)
-        if here is None or there is None or math.dist(grid.world(*here)[:2], link.source[:2]) > LINK_REACH + cell:
-            continue
-        if label[here] != label[there]:
-            links.append(link)
-    lines += [f"  link {link.volume!r} -> {link.landing!r}" for link in links]
+    record = zone_record(zone, deserialize)
+    named = dict(locations(record))
+    links = zone_links(zone, grid, passable, pieces(grid, passable, max_rise), record, named)
+    lines += [f"  {link.kind} link {link.name!r} -> {link.landing!r}" for link in links]
     planner = Planner(zone, grid, passable, clearance, cost, patrols, named, soft, max_rise, "\n".join(lines))
     planner.links = links
     return planner
@@ -1027,8 +1269,8 @@ def render(
         x += panel.width + gap
     draw = ImageDraw.Draw(sheet)
     draw.rectangle((0, 0, 760, 16 * len(legend) + 8), fill=(255, 255, 255))
-    for k, text in enumerate(legend):
-        draw.text((6, 4 + 16 * k), text, fill=(0, 0, 0))
+    for k, line in enumerate(legend):
+        draw.text((6, 4 + 16 * k), line, fill=(0, 0, 0))
     out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out)
 
