@@ -103,7 +103,7 @@ recorded beside the code that depends on it.
 | `probe_same_place.py` | sightings: when one client has another loaded (`clients/sightings.py`, `bartleby-core/docs/PLAYER_REALMS.md`) |
 | `probe_untargetable.py` | wizsprinter skipping an untargetable enemy (#192) |
 
-Never commit what a probe records about a real account. The root `CLAUDE.md`, *No real
+Never commit what a probe records about a real account. Core's root `CLAUDE.md`, *No real
 player data*, lists where each one writes.
 
 ## Our own GUI
@@ -112,3 +112,8 @@ player data*, lists where each one writes.
 the event stream, paint damage. No game client. `CLAUDE.md` in this folder, *Our own
 widgets*, has how to use it. `export_logo.py` exports the logo's raster files from its
 SVG for places outside the app (#26).
+
+`render_sheet.py` renders BartleBot's surfaces offscreen in both themes, with sample accounts
+`P1` to `P4`, one PNG each, and `--compare` names every surface whose pixels differ between
+two runs. It is the visual gate of #167's stages: rendered on `master` before a stage and on
+its branch before the merge (core's `docs/ARCHITECTURE.md`).
