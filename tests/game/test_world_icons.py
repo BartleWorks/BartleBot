@@ -25,7 +25,7 @@ from bartlebot.game.worlds import DUNGEON_WORLDS, SPIRAL_DOOR_WORLDS
 
 
 def test_every_world_on_the_map_has_an_emblem():
-    """The 26/26 guard. A world added to the nav map with no entry here loses its icon
+    """The 25/25 guard. A world added to the nav map with no entry here loses its icon
     silently, which is exactly the kind of gap a header full of captions hides."""
     nav = zone_nav.load()
 

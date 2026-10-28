@@ -6649,12 +6649,6 @@
         "source": "recorded"
       }
     },
-    "Ahmarra": {
-      "hub": "Ahmarra/AH_Z00_BaleFlotilla",
-      "door": "Ahmarra/AH_Z00_BaleFlotilla",
-      "zones": {"Ahmarra/AH_Z00_BaleFlotilla": {}},
-      "links": []
-    },
     "Aquila": {
       "hub": "Aquila/AQ_Z00_Hub",
       "entered_from": "WizardCity",

@@ -15,6 +15,12 @@ it goes live: rerun the steps below against the live install (the Test realm bui
 change before release), merge the library branches into `dev`, promote and pin them
 (`docs/UPSTREAM.md`), then merge this branch.
 
+r811339 is the one exception so far. `ahmarra-test-realm` reached `master` early, inside
+`walk-planner` (Stage 1 of epic #167), because the shared library needed the key-binding
+reader it holds before Ahmarra went live. The merge reverted the branch's game data and
+its type dump on `master` (the record below lists them), and they stay on
+`ahmarra-test-realm` until the live day, when the rerun replaces them anyway.
+
 The Test realm installs to `C:\ProgramData\KingsIsle Entertainment\Wizard101 Test` and
 **downloads zone wads on demand**, so it holds a third of live's. Anything that reads every
 zone's wad is wrong there until the install is complete, and the tools say so where it
@@ -241,7 +247,9 @@ day (`tools/r806919_WizardDev.json`); the one checked in before was r800294's.
   `AH_Z09_AkashicCityW`, `AH_Z10_DarkWaterTrench`), the zone, entity and reagent snapshots,
   Ahmarra's World Gate and links, which need recording in game, a Scales of Knowledge entry
   once it has Challenge Mode, and a `bots/` folder once a bot for it exists (the folders
-  after it renumber then).
+  after it renumber then). **None of it is on `master`:** the walk-planner merge reverted
+  it, along with `game/data/`'s r811339 dump, where `master` ships live's r806919 instead.
+  The rest of the branch (the tools, the key bindings and this record) did merge.
 - **wiztype:** its scan no longer matched; `capture_type_dump.py` was written for it. The
   registry is the first of four map globals built the same way in both builds
   (`0x3372898` live, `0x379c618` on r811339). 7,033 types, from 6,981 on live.
