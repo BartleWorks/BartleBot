@@ -25,6 +25,15 @@ the run to the bot's recovery state, so a node inventing `"ERROR"` gets no defau
 spins to the no-match limit instead. `docs/RETURN_ROUTING.md` has the rest, including how
 an author marks a return value fatal.
 
+## Pressing a game key
+
+Press an action, never a letter: `await game_keys.press(client, GameAction.INTERACT, 0.1)`
+sends whatever key that client's account has Interact on, since a player can rebind it and
+X may then do something else. A new action BartleBot needs joins `GameAction` and
+`DEFAULT_KEYS` in `game/key_bindings.py`, which also makes every run require it. Only Space
+(dialogue) and Escape (`CloseUI`) stay `Keycode`s, being no rebindable action;
+`test_no_game_action_is_pressed_by_a_fixed_key` fails on any other. `docs/KEY_BINDINGS.md`.
+
 ## A node can be cancelled at any await
 
 Two things cancel a running node: `stop()` after its grace period, and the ambient combat

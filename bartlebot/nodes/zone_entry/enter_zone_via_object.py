@@ -3,9 +3,11 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
 from bartlebot.game import dialog_captions
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import (
     ARRIVAL_NOTE,
@@ -155,7 +157,7 @@ async def _trigger_sequentially(
     refusals: list[str] = []
 
     async def _turn(client) -> bool:
-        await client.send_key(Keycode.X, 0.1)
+        await game_keys.press(client, GameAction.INTERACT, 0.1)
         # Costs the full Safety Delay per client when no dialog appears, which is the common
         # case — affordable only because _loading_or_arrived also accepts "already in
         # to_zone", so a loading screen missed during the wait is still recognized.
@@ -217,7 +219,7 @@ async def _trigger_sequentially(
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
-          client.send_key(Keycode.X), client.is_loading()
+          game_keys.press(client, GameAction.INTERACT), client.is_loading()
 
     Flow:
       1. Verify all clients are in from_zone. Return FAILURE if not.
@@ -314,7 +316,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4. Press X for whichever clients have the interact prompt.
     machine.log(f"Pressing X to interact ({len(ready)} client(s))", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in ready])
+    await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in ready])
 
     # 4b. Answer the instance prompt if interacting raised one (e.g. leaving a dungeon).
     machine.log("Checking for an instance prompt…", logging.DEBUG)
@@ -343,7 +345,7 @@ async def run(machine, clients: list, params: dict) -> str:
     seen_loading = await node_helpers.poll_each_until_seen(
         ready,
         check_fn=lambda c: _loading_or_arrived(c, to_zone),
-        action_fn=lambda c: c.send_key(Keycode.X, 0.1),
+        action_fn=lambda c: game_keys.press(c, GameAction.INTERACT, 0.1),
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )

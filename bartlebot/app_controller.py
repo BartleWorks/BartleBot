@@ -2864,6 +2864,9 @@ class AppController(QObject):
         if result.fighting:
             self._refuse_while_fighting(result.fighting)
             return
+        if result.key_problems:
+            self._refuse_unpressable_keys(result.key_problems)
+            return
         self._finish_run_request(result.elixir_players, result.quick_teleport_players)
 
     def _refuse_while_fighting(self, fighting: list[int]) -> None:
@@ -2877,6 +2880,17 @@ class AppController(QObject):
         players = ", ".join(f"P{n}" for n in fighting)
         logger.warning("Refusing to run: %s in a fight", players)
         QMessageBox.warning(self._window, "Players in a Fight", run_probe.refusal_text(fighting))
+
+    def _refuse_unpressable_keys(self, problems: tuple[str, ...]) -> None:
+        """Refuse to start while a player has an action BartleBot cannot press.
+
+        Tells rather than asks, as the fight refusal does: a node pressing that action would
+        fail partway through the run, or type into the chat line, and only the player can
+        change a binding, in the game (``docs/KEY_BINDINGS.md``).
+        """
+        for problem in problems:
+            logger.warning("Refusing to run: %s", problem)
+        QMessageBox.warning(self._window, "Run Bot", run_probe.key_refusal_text(problems))
 
     def _finish_run_request(self, elixir_players, quick_teleport_players) -> None:
         """The rest of the run sequence: the dialogs that ask, then the run itself."""

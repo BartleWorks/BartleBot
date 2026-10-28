@@ -16,9 +16,11 @@ import difflib
 import logging
 from collections.abc import Callable
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
 from bartlebot.game import dialog_captions
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     UNIVERSE_CANCEL_BUTTON,
@@ -184,7 +186,7 @@ async def _use_list_sequentially(
     refusals: list[str] = []
 
     async def _turn(client) -> bool:
-        await client.send_key(Keycode.X, 0.1)
+        await game_keys.press(client, GameAction.INTERACT, 0.1)
 
         if not await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, UNIVERSE_TELEPORT_BUTTON), safety_delay, POLL_INTERVAL
@@ -254,7 +256,7 @@ async def _use_list_sequentially(
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
-          client.send_key(Keycode.X), node_helpers.is_visible_by_path(),
+          game_keys.press(client, GameAction.INTERACT), node_helpers.is_visible_by_path(),
           node_helpers.get_text_by_path(), node_helpers.click_by_path()
 
     Params are whatever the caller resolved: the two zones, the object's coordinates, and
@@ -325,7 +327,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4. Press X to open the zone list.
     machine.log("Pressing X to open zone list", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+    await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in clients])
 
     # 5. Wait for zone list UI to open.
     async def _list_open() -> bool:

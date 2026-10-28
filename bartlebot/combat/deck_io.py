@@ -55,7 +55,6 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from wizwalker import Keycode
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window, _maybe_get_window_at_path
 from wizwalker.memory.memory_object import Primitive
 from wizwalker.memory.memory_objects.conditionals import school_to_str
@@ -67,7 +66,9 @@ from wizwalker.memory.memory_objects.window import (
 )
 
 from bartlebot.bot import run_trace
+from bartlebot.clients import game_keys
 from bartlebot.combat.card_kinds import classify_effects
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes.paths import ARCHMASTERY_GAUGE_PATH, DECK_CONFIGURATION_PATH, archmastery_school_path
 from bartlebot.nodes.timing import (
     ARCHMASTERY_ATTEMPTS,
@@ -1912,7 +1913,7 @@ async def deck_page_open(client):
     was_open = await _find_deck_window(client) is not None
 
     if was_open:
-        await client.send_key(Keycode.P)
+        await game_keys.press(client, GameAction.DECK)
         if await _wait_for_page(client, present=False) is not None:
             # It would not close. Pressing P again would toggle something we
             # cannot predict, so stop here and let the caller take the full path,
@@ -1921,7 +1922,7 @@ async def deck_page_open(client):
             yield None
             return
 
-    await client.send_key(Keycode.P)
+    await game_keys.press(client, GameAction.DECK)
     window = await _wait_for_page(client, present=True)
 
     try:
@@ -1930,7 +1931,25 @@ async def deck_page_open(client):
         # Only if it actually opened: pressing P after a keypress that did nothing
         # would open the page, not close it.
         if window is not None:
-            await client.send_key(Keycode.P)
+            await game_keys.press(client, GameAction.DECK)
+
+
+def deck_builder(client):
+    """wizwalker's ``DeckBuilder``, pressing the player's own Deck key rather than P.
+
+    ``DeckBuilder`` presses the key itself, to open, close and refresh the page, and always
+    through ``_press_spellbook_key``; this overrides that one method, so a player who moved the
+    Deck elsewhere still gets a builder that opens it. A wizwalker update that renames the
+    method fails ``test_the_deck_builder_presses_the_player_s_deck_key``.
+    """
+    from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
+
+    class _PlayersDeckBuilder(DeckBuilder):
+        async def _press_spellbook_key(self):
+            async with self.client.mouse_handler:
+                await game_keys.press(self.client, GameAction.DECK)
+
+    return _PlayersDeckBuilder(client)
 
 
 async def deck_matches(client, deck: DeckData, *, check_archmastery: bool = False) -> bool:
@@ -2183,8 +2202,6 @@ async def apply_deck(
     """
 
     async def _open_and_write() -> DeckApplyReport:
-        from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
-
         set_archmastery, source = resolve_apply_archmastery(deck)
         if set_archmastery:
             logger.info("Archmastery school will be set to %s (%s)", deck.archmastery_school, source)
@@ -2209,7 +2226,7 @@ async def apply_deck(
         # module docstring). Until wizwalker 8783db0 it did not, and this set the
         # flag itself.
         with run_trace.span("deck.write"):
-            async with client.mouse_handler, DeckBuilder(client) as db:
+            async with client.mouse_handler, deck_builder(client) as db:
                 return await write_deck(db, deck, set_archmastery=set_archmastery)
 
     token = _apply_slot.set(slot)

@@ -264,3 +264,47 @@ The rules every stage kept:
   never offered.
 - **The signing key is read by one job, in an environment only `v*` tags reach.** Whoever
   owns the org owns the key, and a branch or a pull request never sees it.
+
+## Shared library extraction
+
+Epic #167: BartleBot and BartleBuddy as two apps of one family, built from one shared
+library, bartleby-core, which holds the shell, the widgets, the client runtime and the
+rules learned building them. BartleBot moves onto core in the same stages that build it.
+https://claude.ai/artifact/3K34iJqy6UV73EKuadNuky
+
+**In progress; the page is kept current while stages land.**
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | #288 | merge `walk-planner` into `master`, with r811339's game data held back until Ahmarra goes live | landed |
+| 2 | #289 | family knowledge: core's CLAUDE.md tree and docs, the user-level preferences and skills, the guards as core functions, render sheets | |
+| 3 | #290 | BartleBot onto core as it stands: core public on GitHub, the import codemod, BartleBot's copies deleted, the pin | |
+| 4 | #291 | the threading probe: one qasync loop, or the runtime on its own thread | |
+| 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state | |
+| 6 | #293 | cards, reordering, pills and the Log tab | |
+| 7 | #294 | the client manager's Qt-free half; `ClientPool` deleted | |
+| 8 | #295 | player cards on view models | |
+| 9 | #296 | the game view, Quick Launch and window sizing for two tile sizes | |
+| 10 | #297 | Bar A from a list of actions | |
+| 11 | #298 | settings and first run | |
+| 12 | #299 | the family check: both apps side by side, and BartleBuddy in game | |
+
+The feature docs are core's, from Stage 2: `bartleby-core/docs/ARCHITECTURE.md`, and the
+docs that move there (`WINDOW_SIZING`, `KEY_BINDINGS`, `WALKING`, `GAME_UPDATES` and the
+rest the page lists).
+
+The rules every stage keeps:
+
+- **Move, never rewrite.** A surface moves into core whole, with its docstring, tests and
+  rules, and keeps its file name. What it needs from BartleBot becomes one named cut: a
+  view model, a settings protocol, or the `Product`.
+- **BartleBot's copy is deleted in the stage that moves it**, and a codemod rewrites the
+  imports. No shim keeps an old path alive.
+- **Each surface reaches both apps in its own stage**, and BartleBot's render sheet is
+  pixel-identical before and after, unless the card names the change.
+- **Core imports neither product**, and its tiers run one way: `bartleby.shared` ←
+  `bartleby.runtime` ← `bartleby.qt`.
+- **BartleBot pins core by commit, never by path**, and every merge leaves all three repos
+  green. No stage migrates a bot file, a setting or a preference.
+- **No real player data and no game assets** in any of the three repos; core is public
+  from Stage 3.

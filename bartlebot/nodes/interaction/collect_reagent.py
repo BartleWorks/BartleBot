@@ -128,7 +128,7 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
                 await _report_drops()
         elif outcome is node_helpers.Pickup.NOT_DISMISSED:
             machine.log(
-                f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after X, skipping",
+                f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after Interact, skipping",
                 logging.DEBUG,
             )
         else:

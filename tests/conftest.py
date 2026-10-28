@@ -13,7 +13,8 @@ import pytest
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
 
-from bartlebot.clients import sightings
+from bartlebot.clients import game_keys, sightings
+from bartlebot.game.key_bindings import KeyMap
 from bartlebot.paths import project_root
 
 # ---------------------------------------------------------------------------
@@ -104,6 +105,8 @@ class FakeClient:
         self.is_in_npc_range = AsyncMock(return_value=False)
         self.is_in_dialog = AsyncMock(return_value=False)
         self.send_key = AsyncMock()
+        # No game behind it to read key bindings from: the shipped defaults, so X is Interact.
+        game_keys.use_map(self, KeyMap.defaults())
         self.find_closest_mob = AsyncMock(return_value=None)
         self.find_closest_by_vague_name = AsyncMock(return_value=None)
         self.find_closest_by_predicate = AsyncMock(return_value=None)

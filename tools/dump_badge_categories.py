@@ -20,7 +20,7 @@ WHY THE ICON PATH IS SNAPSHOTTED
     ``Badge_Category_Maestro_Events``, Special Event draws ``Badge_Category_Deckathalon``
     -- so the path cannot be derived from the key. It is a name, not an asset, and is
     tracked on the same terms as ``spell_names.json``; the texture itself is extracted
-    per machine by ``tools/extract_card_art.py``.
+    per machine by ``bartlebot/game/art_extraction.py``.
 
 USAGE
     uv run python tools/dump_badge_categories.py
@@ -36,23 +36,42 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from katsuba.op import LazyList, LazyObject
+from katsuba.op import STATEFUL_FLAGS, LazyList, LazyObject, Serializer, SerializerOptions, TypeList
 from katsuba.wad import Archive
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noqa: E402
 from bartlebot.game.badge_categories import BADGE_CATEGORIES_PATH  # noqa: E402
 from bartlebot.game.worlds import LOCALES  # noqa: E402
 from tools.dump_world_names import parse_lang  # noqa: E402
-from tools.extract_card_art import DEFAULT_TYPES, _build_serializer, _decode  # noqa: E402
 
 # Category names include Greek, which a cp1252 console cannot encode.
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
+# The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
+DEFAULT_TYPES = newest_type_dump(TYPE_DUMP_DIR, Path(__file__).resolve().parent)
 
 DESCRIPTIONS_FILE = "BadgeFilterDescriptions.xml"
 LANG_FILE = "BadgeFilterNames"
+
+
+def _decode(value) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _build_serializer(types_path: Path) -> Serializer:
+    types = TypeList.open(str(types_path))
+    opts = SerializerOptions()
+    opts.flags = STATEFUL_FLAGS
+    opts.shallow = False
+    opts.skip_unknown_types = True
+    return Serializer(opts, types)
 
 
 def _read_descriptions(archive: Archive, types_path: Path) -> list[dict]:

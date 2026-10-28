@@ -6,9 +6,9 @@ import logging
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from wizwalker import Keycode
-
+from bartlebot.clients import game_keys
 from bartlebot.game import dialog_captions
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
@@ -588,7 +588,7 @@ def _is_item_entry_for(entry: str, names: set[str]) -> bool:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.backpack_space(), client.send_key(Keycode.B), client.send_key(Keycode.Y),
+    APIs: client.backpack_space(), game_keys.press(client, GameAction.BACKPACK), game_keys.press(client, GameAction.JEWELS),
           node_helpers.is_visible_by_path(), node_helpers.is_enabled_by_path(),
           node_helpers.click_by_path(), node_helpers.get_text_by_path()
 
@@ -663,14 +663,14 @@ async def run(machine, clients: list, params: dict) -> str:
 async def _process_client(machine, client, keep_list: list[str], sell_pets: bool, safety_delay: float) -> str:
     """Check both backpack types and quicksell once if either is full."""
     # Open inventory page and check fullness.
-    await client.send_key(Keycode.B, 0.1)
+    await game_keys.press(client, GameAction.BACKPACK, 0.1)
     await asyncio.sleep(POLL_INTERVAL)
     used, total = await client.backpack_space()
     inventory_full = used >= total
     machine.log(f"quicksell: inventory {used}/{total} — {'full' if inventory_full else 'not full'}", logging.DEBUG)
 
     # Switch to jewel page and check fullness.
-    await client.send_key(Keycode.Y, 0.1)
+    await game_keys.press(client, GameAction.JEWELS, 0.1)
     await asyncio.sleep(POLL_INTERVAL)
     jewel_full = await _is_jewel_backpack_full(client)
     machine.log(f"quicksell: jewel pouch — {'full' if jewel_full else 'not full'}", logging.DEBUG)

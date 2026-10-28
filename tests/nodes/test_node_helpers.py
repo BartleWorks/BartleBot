@@ -742,6 +742,34 @@ async def test_click_until_gone_returns_as_soon_as_the_window_goes():
 
 async def test_press_key_until_gone_returns_as_soon_as_the_panel_goes():
     """The keyboard counterpart of the same rule — see click_until_gone above."""
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot.game.key_bindings import GameAction
+
+    panel = _Closeable(clicks_needed=1)
+
+    async def send_key(_key, _seconds=0):
+        panel.clicks += 1
+
+    client = FakeClient()
+    client.send_key = AsyncMock(side_effect=send_key)
+
+    async def is_open():
+        return panel.visible
+
+    loop = asyncio.get_event_loop()
+    start = loop.time()
+    result = await nh_mod.press_key_until_gone(
+        client, GameAction.FRIENDS, is_open=is_open, timeout=5, poll_interval=2.0
+    )
+    elapsed = loop.time() - start
+
+    assert result is True
+    assert panel.clicks == 1
+    assert elapsed < 1.0, f"waited out the retry interval after the panel had already closed ({elapsed:.2f}s)"
+
+
+async def test_press_key_until_gone_presses_a_keycode_as_itself():
+    """ESC is no player's to rebind, so it skips the key bindings and goes to send_key unchanged."""
     from wizwalker import Keycode
 
     import bartlebot.nodes.node_helpers as nh_mod
@@ -757,14 +785,10 @@ async def test_press_key_until_gone_returns_as_soon_as_the_panel_goes():
     async def is_open():
         return panel.visible
 
-    loop = asyncio.get_event_loop()
-    start = loop.time()
-    result = await nh_mod.press_key_until_gone(client, Keycode.F, is_open=is_open, timeout=5, poll_interval=2.0)
-    elapsed = loop.time() - start
+    result = await nh_mod.press_key_until_gone(client, Keycode.ESC, is_open=is_open, timeout=5, poll_interval=2.0)
 
     assert result is True
-    assert panel.clicks == 1
-    assert elapsed < 1.0, f"waited out the retry interval after the panel had already closed ({elapsed:.2f}s)"
+    client.send_key.assert_awaited_once_with(Keycode.ESC, 0.1)
 
 
 async def test_click_until_gone_uses_the_supplied_predicate_not_the_button():

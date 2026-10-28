@@ -26,6 +26,21 @@ game assets, either*).
 | `scales_table.py` | a Scales of Knowledge entry in `scales_of_knowledge.json`, from a bot recorded in the app (`docs/LEVEL_SCALING.md`) |
 | `zone_graph/` | the research behind the zone navigation map (`docs/ZONE_NAVIGATION.md`); its own `README.md` |
 
+## After a game update
+
+`game_update/`, the procedure in `docs/GAME_UPDATES.md`. Each compares the build the code
+works with against the one coming, so a Test realm patch can be read before it is live.
+
+| tool | does |
+|---|---|
+| `game_update/compare_installs.py` | compares two installs: revision, `Bin/` files, wads, and `Root.wad` entry by entry |
+| `game_update/diff_snapshots.py` | regenerates every snapshot from another install into a scratch folder and diffs it with the shipped one |
+| `game_update/check_hook_patterns.py` | scans wizwalker's byte patterns against two client exes on disk: which hooks a build breaks |
+| `game_update/find_function.py` | finds the function a broken pattern matched on the old exe, and the same function on the new one by a string it names; disassembles with `uv run --with capstone` |
+| `game_update/capture_type_dump.py` | captures a type dump from a running client with wiztype, finding the type registry itself when wiztype's scan no longer matches; run under `uvx --from wiztype==0.1.13` |
+| `game_update/smoke_test_client.py` | hooks one running client and reads through every hook and offset group a bot uses, OK or FAIL for each; close BartleBot first |
+| `game_update/pe_image.py` | the static exe reader the others share: sections, RVAs, calls and RIP-relative operands, functions from `.pdata`, strings and what refers to them |
+
 ## Reading the game's own data
 
 | tool | does |
@@ -82,6 +97,8 @@ recorded beside the code that depends on it.
 | `probe_group_roster.py`, `probe_group_tab.py`, `probe_group_ui.py` | the social window reads `group_manager` makes |
 | `probe_group_state.py`, `probe_group_offsets.py` | the memory route to group state, dead on the current build; rerun to see whether a later one revives it |
 | `probe_housing_equip.py` | telling an equipped castle from an unequipped one (`nodes/housing.py`) |
+| `probe_binding_memory.py` | each client's key bindings in memory, every `InputBindingList` and what holds it (`clients/game_keys.py`, `docs/KEY_BINDINGS.md`) |
+| `probe_key_bindings.py` | the key code each of the game's key names means, bound by hand (`game/key_bindings.py`'s `KEY_CODES`); writes `probe_key_bindings.local.json`, gitignored |
 | `probe_name_behavior.py` | reading the wizard name from `ClientWizPlayerNameBehavior`; `--record` writes `name_key_samples.local.json`, gitignored |
 | `probe_same_place.py` | sightings: when one client has another loaded (`clients/sightings.py`, `docs/PLAYER_REALMS.md`) |
 | `probe_untargetable.py` | wizsprinter skipping an untargetable enemy (#192) |

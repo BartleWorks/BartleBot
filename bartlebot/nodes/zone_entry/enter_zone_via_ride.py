@@ -33,8 +33,10 @@ import asyncio
 import logging
 import math
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.timing import (
     LOADING_SCREEN_TIMEOUT,
@@ -65,7 +67,7 @@ async def _no_prompt(client) -> bool:
 
 async def _press_x_if_prompted(client) -> None:
     if await client.is_in_npc_range():
-        await client.send_key(Keycode.X, 0.1)
+        await game_keys.press(client, GameAction.INTERACT, 0.1)
 
 
 async def _carried_away(client, board_xyz: XYZ) -> bool:
@@ -121,7 +123,7 @@ async def _board(
 
         if not await node_helpers.poll_until(client.is_in_npc_range, safety_delay, POLL_INTERVAL):
             continue
-        await client.send_key(Keycode.X, 0.1)
+        await game_keys.press(client, GameAction.INTERACT, 0.1)
         seen = await node_helpers.poll_each_until_seen(
             [client],
             check_fn=lambda _c: aboard(),
@@ -168,7 +170,7 @@ async def _skip(machine, client, number: int, ride_zone: str, to_zone: str, safe
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
-          client.send_key(Keycode.X), client.is_loading()
+          game_keys.press(client, GameAction.INTERACT), client.is_loading()
 
     Flow:
       1. Verify every client is in from_zone, ride_zone or to_zone. Return FAILURE if not.

@@ -8,7 +8,7 @@ from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
 from bartlebot.bot.machine import PauseHold
-from bartlebot.clients import account_identity, recovery_readiness, relog
+from bartlebot.clients import account_identity, game_keys, recovery_readiness, relog
 from bartlebot.clients.credentials import CredentialStore, account_label
 from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
 from bartlebot.clients.process_resources import gdi_object_count
@@ -696,6 +696,14 @@ class ClientManager(QObject):
             except Exception:
                 logger.exception("Client activation failed for hwnd %s", hwnd)
                 self._failed_hook_hwnds.add(hwnd)
+            else:
+                # The hooks wait for a character in the world, so the account's key bindings
+                # are in memory now: find them here, a scan of a few seconds, rather than when
+                # the first run starts. A task of its own, so publishing the client never waits
+                # on it; the pre-run check reads them again, and warns if they cannot be read.
+                warm = asyncio.create_task(game_keys.key_map(client, warn=False))
+                self._activation_tasks.add(warm)
+                warm.add_done_callback(self._activation_tasks.discard)
             finally:
                 self._activating_hwnds.discard(hwnd)
 

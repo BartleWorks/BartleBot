@@ -1,76 +1,87 @@
-"""The game's own keyboard bindings, read from ``Bin/config.xml``.
+"""The game's own keyboard bindings, for the authoring hotkeys' clash warning (#81).
 
-Wizard101 keeps its key map in ``<InputMappings>``: one ``<RECORD>`` per binding, naming
-the ``<Event>`` it fires, the ``<Key>``, and ``<Alt>``/``<Ctrl>``/``<Shift>`` flags. Mouse
-and gamepad bindings sit in the same list and are skipped.
+Read so the authoring hotkeys can say when one lands on a key the game already uses. The
+hotkeys are armed only while a game window has the keyboard, which is exactly when the game
+would have acted on that key, so a clash is not a hypothetical: the game never sees the key,
+and the user loses that binding for as long as the hotkey holds it.
 
-Read so the authoring hotkeys (#81) can say when one lands on a key the game already
-uses. The hotkeys are armed only while a game window has the keyboard, which is exactly
-when the game would have acted on that key, so a clash is not a hypothetical: the game
-never sees the key, and the user loses that binding for as long as the hotkey holds it.
+**Whose bindings.** Since r811339 they belong to the account (``docs/KEY_BINDINGS.md``), so
+the best answer is each attached client's own, as last read from its memory, and all of them
+together, since a hotkey is armed in whichever game window has the keyboard. The settings
+dialog cannot wait on a read, so its caller hands those in (``clients/game_keys.known_maps``).
+With none, the install's ``LocalInputBindings.xml``, the last account to save, and failing that
+the shipped ``InputBindings.xml``. ``Bin/config.xml``'s ``<InputMappings>``, read here before
+r811339, is no longer kept current by the game: a rebound key still read as its old one there.
 
-Read-only, and read with a regex like every other ``config.xml`` read in the launcher,
-because the file is the game's and is never parsed or rewritten whole here.
+Read-only, and read with a regex like every other read of the game's own files.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
+
+from bartlebot.game.key_bindings import ENCODING, Binding, KeyMap, parse_binding_file, parse_input
 
 logger = logging.getLogger(__name__)
 
-_SECTION = re.compile(r"<InputMappings>(.*?)</InputMappings>", re.DOTALL)
-_RECORD = re.compile(r"<RECORD>(.*?)</RECORD>", re.DOTALL)
-
-
-def _field(record: str, tag: str) -> str:
-    match = re.search(rf"<{tag}\b[^>]*>([^<]*)</\s*{tag}\s*>", record)
-    return match.group(1).strip() if match else ""
+GAME_DATA = ("Data", "GameData")
+BINDING_FILES = ("LocalInputBindings.xml", "InputBindings.xml")
 
 
 @dataclass(frozen=True)
 class GameBinding:
-    """One keyboard binding: the event it fires, and the key in ``QKeySequence`` form."""
+    """One keyboard binding: the action it fires, and its key as ``Ctrl+Shift+Q`` or ``F12``."""
 
     event: str
     binding: str
 
     @property
     def description(self) -> str:
-        """The event as words: ``DisplayNewBuddyList`` -> ``Display New Buddy List``."""
+        """The action as words: ``DisplayNewBuddyList`` -> ``Display New Buddy List``."""
         return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", self.event)
 
 
-def parse_input_mappings(text: str) -> list[GameBinding]:
-    """Every keyboard binding in *text*, a ``config.xml``'s contents. Empty if it has none."""
-    section = _SECTION.search(text)
-    if section is None:
+def game_bindings(bindings: Iterable[Binding]) -> list[GameBinding]:
+    """Every keyboard binding among *bindings*, once each; mouse and other inputs skipped."""
+    found: dict[tuple[str, str], GameBinding] = {}
+    for binding in bindings:
+        parsed = parse_input(binding.input)
+        if parsed is not None:
+            found.setdefault((binding.action, parsed.text), GameBinding(binding.action, parsed.text))
+    return list(found.values())
+
+
+def read_binding_files(install: Path | None) -> list[Binding]:
+    """The bindings in *install*'s ``LocalInputBindings.xml``, else its ``InputBindings.xml``; [] for neither."""
+    if install is None:
         return []
-    bindings: list[GameBinding] = []
-    for record in _RECORD.findall(section.group(1)):
-        if _field(record, "InputType").lower() != "keyboard":
+    for name in BINDING_FILES:
+        path = Path(install).joinpath(*GAME_DATA, name)
+        try:
+            return parse_binding_file(path.read_bytes().decode(ENCODING))
+        except OSError:
             continue
-        key = _field(record, "Key")
-        if not key:
-            continue
-        modifiers = [name for name in ("Ctrl", "Alt", "Shift") if _field(record, name) == "1"]
-        bindings.append(GameBinding(event=_field(record, "Event"), binding="+".join([*modifiers, key])))
-    return bindings
+    return []
 
 
-def read_game_keybindings() -> list[GameBinding]:
-    """The installed game's keyboard bindings, or an empty list if they cannot be read.
+def read_game_keybindings(maps: Sequence[KeyMap] = ()) -> list[GameBinding]:
+    """The game's keyboard bindings: those of *maps*, the clients' own, or else the install's files.
 
-    Empty on any failure: no install found, no file yet, a file mid-write. A warning that
-    cannot be given is not a reason to stop the settings dialog opening.
+    Empty on any failure: no install found, no file yet. A warning that cannot be given is not
+    a reason to stop the settings dialog opening.
     """
-    from wizwalker.utils import get_wiz_install  # noqa: PLC0415 - registry lookup, only when asked
+    if maps:
+        return game_bindings(b for key_map in maps for b in key_map.bindings)
+    from bartlebot.shared.game_install import find_install  # noqa: PLC0415 - a registry lookup, only when asked
+    from bartlebot.shared.preferences import PreferenceStore  # noqa: PLC0415
 
     try:
-        text = (get_wiz_install() / "Bin" / "config.xml").read_text(encoding="utf-8")
+        found = find_install(PreferenceStore())
     except Exception:
-        logger.debug("Could not read config.xml for the game's key bindings", exc_info=True)
+        logger.debug("Could not find the game for its key bindings", exc_info=True)
         return []
-    return parse_input_mappings(text)
+    return game_bindings(read_binding_files(found.path if found is not None else None))

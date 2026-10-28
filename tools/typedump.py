@@ -18,6 +18,9 @@ poking at a live client:
 
     # diff two dumps after a game patch
     uv run python tools/typedump.py diff tools/r800294_WizardDev.json bartlebot/game/data/r810000_WizardDev.json
+
+    # which hard-coded offsets in a library the new dump says have moved
+    uv run python tools/typedump.py stale ../wizwalker/wizwalker/memory/memory_objects --old tools/r806919_WizardDev.json
 """
 
 from __future__ import annotations
@@ -311,7 +314,7 @@ def cmd_annotate(dump: TypeDump, args) -> int:
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         m = _PY_CLASS.match(line)
         if m:
-            name = re.sub(r"^(Dynamic|Current)", "", m.group(1))
+            name = _game_class_name(m.group(1))
             game_class = name if dump.resolve(name) else None
             marker = "" if game_class else "   (no matching game class)"
             print(f"\n{lineno:>5}: {line}{marker}")
@@ -337,6 +340,137 @@ def cmd_annotate(dump: TypeDump, args) -> int:
             "in it -- those are expected misses, not stale offsets."
         )
     return 0
+
+
+#: wizwalker classes named otherwise than the game class they read. The rest of the
+#: unmatched ones (cameras, fish, the scene manager, the deck and spell list entries) are
+#: unreflected structures with no game class to check against.
+_GAME_CLASS_ALIASES = {"GameStats": "WizGameStats"}
+
+
+def _game_class_name(py_name: str) -> str:
+    """The game class a wizwalker class reads: its own name, Dynamic/Current dropped, or an alias."""
+    name = re.sub(r"^(Dynamic|Current)", "", py_name)
+    return _GAME_CLASS_ALIASES.get(name, name)
+
+
+#: Every read_*/write_* helper whose first argument is a literal offset: read_value_from_offset,
+#: write_value_to_offset, read_enum, read_dynamic_vector, write_xyz and the rest.
+_ANY_OFFSET_CALL = re.compile(r"\b(?:read|write)_\w+\(\s*(0x[0-9a-fA-F]+|\d+)\s*[,)]")
+_RAW_WINDOW = 16
+
+
+@dataclass(frozen=True)
+class Stale:
+    """One hard-coded offset a new dump says is wrong, or may be."""
+
+    path: str
+    line: int
+    klass: str
+    offset: int
+    kind: str  # "moved", "gone", or "raw" (an unreflected member whose neighbors moved)
+    note: str
+    span: tuple[int, int] = (0, 0)  # the offset literal's columns in its line
+    new_offset: int | None = None  # where the property is now, for "moved"
+
+
+def stale_offsets(source: str, path: str, old: TypeDump, new: TypeDump) -> tuple[list[Stale], set[str]]:
+    """The offsets in `source` that name a property `new` has moved or dropped since `old`.
+
+    A wizwalker class maps to the game class of its name, ``Dynamic``/``Current`` prefix
+    dropped, as in ``annotate``. An offset naming no property (a raw C++ member) cannot be
+    checked directly; when the properties within _RAW_WINDOW bytes of it moved, it is
+    reported as ``raw``, since a member between two that shifted has most likely shifted
+    with them. Returns the findings, and the source classes with no game class to check.
+    """
+    found: list[Stale] = []
+    unmatched: set[str] = set()
+    game_class: str | None = None
+    for lineno, line in enumerate(source.splitlines(), 1):
+        m = _PY_CLASS.match(line)
+        if m:
+            name = _game_class_name(m.group(1))
+            game_class = name if old.resolve(name) and new.resolve(name) else None
+            if game_class is None:
+                unmatched.add(m.group(1))
+            continue
+        if game_class is None:
+            continue
+        code = line.split("#", 1)[0]  # commented-out code reads nothing
+        for call in _ANY_OFFSET_CALL.finditer(code):
+            offset = int(call.group(1), 0)
+            now = {p.name: p for p in new.props(game_class)}
+            named = old.at(game_class, offset)
+            span = call.span(1)
+            for p in named:
+                q = now.get(p.name)
+                if q is None:
+                    found.append(
+                        Stale(path, lineno, game_class, offset, "gone", f"{p.name} is not in the new dump", span)
+                    )
+                elif q.offset != offset:
+                    note = f"{p.name}: {offset} -> {q.offset}"
+                    found.append(Stale(path, lineno, game_class, offset, "moved", note, span, q.offset))
+            if named:
+                continue
+            shifts = {
+                (p.name, now[p.name].offset - p.offset)
+                for p in old.near(game_class, offset, window=_RAW_WINDOW)
+                if p.name in now and now[p.name].offset != p.offset
+            }
+            if shifts:
+                detail = ", ".join(f"{n} {d:+d}" for n, d in sorted(shifts))
+                found.append(
+                    Stale(path, lineno, game_class, offset, "raw", f"unreflected; neighbors moved: {detail}", span)
+                )
+    return found, unmatched
+
+
+def fix_moved(source: str, findings: list[Stale]) -> str:
+    """`source` with each moved offset rewritten to where its property is now, in the literal's own base.
+
+    Only an offset naming one property is rewritten: two properties at one offset (a
+    union, or a zero-size member) moving apart cannot say which the code meant.
+    """
+    lines = source.splitlines(keepends=True)
+    per_site: dict[tuple[int, tuple[int, int]], list[Stale]] = {}
+    for f in findings:
+        if f.kind in ("moved", "gone"):
+            per_site.setdefault((f.line, f.span), []).append(f)
+    for (lineno, (start, end)), fs in sorted(per_site.items(), reverse=True):
+        if len(fs) != 1 or fs[0].kind != "moved":
+            continue
+        line = lines[lineno - 1]
+        literal = line[start:end]
+        new = f"0x{fs[0].new_offset:X}" if literal.lower().startswith("0x") else str(fs[0].new_offset)
+        lines[lineno - 1] = line[:start] + new + line[end:]
+    return "".join(lines)
+
+
+def cmd_stale(dump: TypeDump, args) -> int:
+    """Report the hard-coded offsets in source files that a new dump says have moved."""
+    old = TypeDump.load(Path(args.old))
+    new = dump
+    paths = [f for p in map(Path, args.paths) for f in (sorted(p.rglob("*.py")) if p.is_dir() else [p])]
+    findings: list[Stale] = []
+    unmatched: set[str] = set()
+    for path in paths:
+        # Bytes, not read_text: that would turn a CRLF file's endings into LF on --fix
+        source = path.read_bytes().decode("utf-8")
+        got, missing = stale_offsets(source, str(path), old, new)
+        findings += got
+        unmatched |= missing
+        if args.fix and any(f.kind == "moved" for f in got):
+            path.write_bytes(fix_moved(source, got).encode("utf-8"))
+            print(f"rewrote {sum(f.kind == 'moved' for f in got)} offsets in {path}")
+    for kind in ("moved", "gone", "raw"):
+        rows = [f for f in findings if f.kind == kind]
+        print(f"{kind}: {len(rows)}")
+        for f in rows:
+            print(f"  {f.path}:{f.line}  {f.klass} @{f.offset}  {f.note}")
+    if args.verbose and unmatched:
+        print(f"\nclasses with no game class of their name, not checked: {', '.join(sorted(unmatched))}")
+    return 1 if any(f.kind in ("moved", "gone") for f in findings) else 0
 
 
 def cmd_diff(dump: TypeDump, args) -> int:
@@ -409,6 +543,13 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("annotate", help="name the hardcoded offsets in a wizwalker source file")
     p.add_argument("path")
     p.set_defaults(fn=cmd_annotate)
+
+    p = sub.add_parser("stale", help="the hard-coded offsets in source files that the dump says have moved")
+    p.add_argument("paths", nargs="+", help="files or folders of .py files")
+    p.add_argument("--old", required=True, help="the dump the offsets were written against")
+    p.add_argument("--verbose", action="store_true", help="also list the classes that could not be checked")
+    p.add_argument("--fix", action="store_true", help="rewrite each moved offset in place; raw ones stay by hand")
+    p.set_defaults(fn=cmd_stale)
 
     p = sub.add_parser("diff", help="compare two dumps after a game patch")
     p.add_argument("old")

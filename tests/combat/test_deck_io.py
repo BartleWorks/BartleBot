@@ -3304,3 +3304,20 @@ async def test_wizwalkers_clear_deck_lets_a_stop_through(monkeypatch):
 
     assert task.cancelled()
     db.clear_deck_manual.assert_not_awaited()  # the fallback is for failures, never a Stop
+
+
+async def test_the_deck_builder_presses_the_player_s_deck_key():
+    """wizwalker's DeckBuilder presses P itself, always through _press_spellbook_key, which
+    deck_io overrides; a wizwalker update that renames it fails here."""
+    from wizwalker import Keycode
+    from wizwalker.extensions.scripting.deck_builder import DeckBuilder
+
+    from bartlebot.clients import game_keys
+    from bartlebot.combat.deck_io import deck_builder
+    from bartlebot.game.key_bindings import PREFIX, Binding, KeyMap
+
+    assert "_press_spellbook_key" in vars(DeckBuilder)
+    client = FakeClient()
+    game_keys.use_map(client, KeyMap([Binding("ToggleDeckConfig", PREFIX + "k")], source="memory"))
+    await deck_builder(client)._press_spellbook_key()
+    client.send_key.assert_awaited_once_with(Keycode.K, 0)

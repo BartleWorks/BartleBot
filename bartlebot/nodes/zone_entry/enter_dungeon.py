@@ -3,9 +3,11 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
 from bartlebot.game import dialog_captions
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ARRIVAL_NOTE, RESET_XYZ, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -245,7 +247,7 @@ async def _enter_normal(machine, clients: list, from_zone: str, challenge_mode: 
             return False
 
     machine.log("Pressing X to enter dungeon sigil", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+    await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in clients])
 
     # Answer the dungeon entry prompt — "you are about to enter a Dungeon" — which the
     # sigil raises before it will take anyone inside.
@@ -337,7 +339,7 @@ async def _enter_teamup(machine, clients: list, from_zone: str, team_size: int, 
             return False
         if now - last_afk >= AFK_INTERVAL:
             machine.log("Sending anti-AFK input during team-up wait", logging.DEBUG)
-            await asyncio.gather(*[c.send_key(Keycode.A, 0.1) for c in clients])
+            await asyncio.gather(*[game_keys.press(c, GameAction.MOVE_LEFT, 0.1) for c in clients])
             last_afk = now
         await asyncio.sleep(POLL_INTERVAL)
 
@@ -375,7 +377,7 @@ async def _all_seen(machine, clients: list) -> bool:
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_loading(),
-          client.send_key(Keycode.X), node_helpers.click_by_path()
+          game_keys.press(client, GameAction.INTERACT), node_helpers.click_by_path()
 
     Flow:
       1. node_helpers.reach_sigil_prompt(): verify from_zone, clear a stale prompt, and

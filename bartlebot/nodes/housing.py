@@ -27,6 +27,8 @@ import logging
 
 from wizwalker import Keycode
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
@@ -59,7 +61,7 @@ async def open_page(client) -> bool:
     for attempt in range(1, HOUSING_OPEN_RETRIES + 1):
         if await node_helpers.is_visible_by_path(client, HOUSING_CASTLES_TAB_PATH):
             return True
-        await client.send_key(Keycode.U, 0.1)
+        await game_keys.press(client, GameAction.HOUSING, 0.1)
         if await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, HOUSING_CASTLES_TAB_PATH),
             TRIGGER_TIMEOUT,

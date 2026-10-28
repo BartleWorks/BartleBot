@@ -13,6 +13,9 @@ from typing import NamedTuple
 
 from wizwalker import ExceptionalTimeout, Keycode, MemoryReadError
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction, action_label
+
 logger = logging.getLogger(__name__)
 
 from bartlebot.clients import sightings
@@ -986,7 +989,7 @@ class Pickup(enum.Enum):
 
 
 async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_INTERVAL) -> Pickup:
-    """Teleport *client* onto *xyz*, press X at the prompt there, and wait for the prompt to clear.
+    """Teleport *client* onto *xyz*, press Interact at the prompt there, and wait for the prompt to clear.
 
     The step collect_reagent and collect_item share. Each waits *safety_delay* for the prompt
     and again for it to clear. The caller reads *xyz* from the entity, since a stale entity
@@ -995,7 +998,7 @@ async def pick_up(client, xyz, safety_delay: float, poll_interval: float = POLL_
     await client.teleport(xyz)
     if not await poll_until(lambda: all_in_npc_range([client]), safety_delay, poll_interval):
         return Pickup.NO_PROMPT
-    await client.send_key(Keycode.X, 0.1)
+    await game_keys.press(client, GameAction.INTERACT, 0.1)
     if not await poll_until(lambda: none_in_npc_range([client]), safety_delay, poll_interval):
         return Pickup.NOT_DISMISSED
     return Pickup.COLLECTED
@@ -1636,12 +1639,15 @@ async def open_friends_list(client):
 
 async def press_key_until_gone(
     client,
-    key: Keycode,
+    action: GameAction | Keycode,
     is_open,
     timeout: float | None = None,
     poll_interval: float | None = None,
 ) -> bool:
-    """Press `key` until `is_open()` reports the panel has closed. Returns True once gone.
+    """Press `action`'s key until `is_open()` reports the panel has closed. Returns True once gone.
+
+    A GameAction is pressed by the key the player's account has it on; a Keycode as itself,
+    which is only for a key no player can rebind, such as ESC.
 
     The keyboard counterpart to click_until_gone, and preferable for panels that have a
     keyboard toggle: a keypress goes to the client as a whole, so unlike a click it cannot
@@ -1669,7 +1675,10 @@ async def press_key_until_gone(
     while True:
         if await _gone():
             return True
-        await client.send_key(key, 0.1)
+        if isinstance(action, GameAction):
+            await game_keys.press(client, action, 0.1)
+        else:
+            await client.send_key(action, 0.1)
         if loop.time() >= deadline:
             break
         if await poll_until(_gone, timeout=poll_interval, poll_interval=WINDOW_CLOSE_CONFIRM_INTERVAL):
@@ -1677,7 +1686,8 @@ async def press_key_until_gone(
 
     still_open = await is_open()
     if still_open:
-        logger.warning("Panel toggled by %s is still open after %.0fs of retries", key, timeout)
+        label = action_label(action) if isinstance(action, GameAction) else action.name
+        logger.warning("Panel toggled by %s is still open after %.0fs of retries", label, timeout)
     return not still_open
 
 
@@ -1740,7 +1750,7 @@ async def is_friends_list_open(client) -> bool:
 async def close_friends_list(client) -> bool:
     """Close the friends list, retrying until it is gone. Never raises.
 
-    Closed with the F toggle rather than a close button. F cycles
+    Closed with the Friends toggle (F by default) rather than a close button. F cycles
     closed -> NewFriendsListWindow -> wndFriendsList -> closed, so pressing it until
     neither window is visible handles whichever list the client happens to be showing.
 
@@ -1752,7 +1762,7 @@ async def close_friends_list(client) -> bool:
     try:
         return await press_key_until_gone(
             client,
-            Keycode.F,
+            GameAction.FRIENDS,
             is_open=lambda: is_friends_list_open(client),
         )
     except Exception:

@@ -3,8 +3,10 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
+from bartlebot.clients import game_keys
+from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import INTERACT_XYZ, RESET_XYZ, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
@@ -71,7 +73,7 @@ NODE_SPEC = NodeSpec(
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
-          client.send_key(Keycode.X)
+          game_keys.press(client, GameAction.INTERACT)
 
     Flow:
       1. Verify all clients are in zone. Return FAILURE if not.
@@ -137,7 +139,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if skipped:
         machine.log(f"Player(s) {skipped} got no interact prompt; continuing without them", logging.INFO)
     machine.log(f"Pressing X to unlock the door ({len(ready)} player(s))", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in ready])
+    await asyncio.gather(*[game_keys.press(c, GameAction.INTERACT, 0.1) for c in ready])
 
     # 5. The door opening takes the prompt from everyone; one client losing it is enough.
     async def _a_prompt_went() -> bool:

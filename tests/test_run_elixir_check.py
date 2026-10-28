@@ -1,4 +1,5 @@
-"""The run request's reads: an elixir already active (#141), a player in a fight (#203), and Dblclick Go To Friend on.
+"""The run request's reads: an elixir already active (#141), a player in a fight (#203), keys,
+and Dblclick Go To Friend on.
 
 The reads are async and what they feed is a blocking dialog, so the run sequence is split
 around them: the reads run as a task and the dialogs run from its done callback, outside any task.
@@ -37,7 +38,13 @@ class _Controller:
     def __init__(self, node_type: str) -> None:
         from bartlebot.app_controller import AppController  # noqa: PLC0415
 
-        for name in ("_on_run_requested", "_on_run_probe_done", "_refuse_while_fighting", "_finish_run_request"):
+        for name in (
+            "_on_run_requested",
+            "_on_run_probe_done",
+            "_refuse_while_fighting",
+            "_refuse_unpressable_keys",
+            "_finish_run_request",
+        ):
             setattr(self, name, getattr(AppController, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[FakeClient(), FakeClient()])
         self._loaded_config = _config(node_type)
@@ -215,6 +222,25 @@ async def test_a_fight_that_cannot_be_read_does_not_refuse_the_run(dialogs, refu
 
     assert refusals.texts == []
     assert controller.started == 1
+
+
+async def test_an_action_a_player_cannot_have_pressed_refuses_the_run(dialogs, refusals, monkeypatch):
+    """Every action BartleBot presses is required, whatever the bot: here a bot that never interacts."""
+    from bartlebot.clients import game_keys  # noqa: PLC0415
+    from bartlebot.game.key_bindings import PREFIX, Binding, KeyMap  # noqa: PLC0415
+
+    controller = _Controller("sleep")
+    keys = [b for b in KeyMap.defaults().bindings if b.action != "NPCInteract"]
+    keys.append(Binding("NPCInteract", PREFIX + "ctrl.x"))
+    game_keys.use_map(controller._client_manager.clients[1], KeyMap(keys, source="memory"))
+
+    controller._on_run_requested()
+    await controller.settle()
+
+    assert controller.started == 0
+    assert refusals.in_task == [False]
+    assert "Player 2: Interact is on Ctrl+X." in refusals.texts[0]
+    assert dialogs.warnings == []
 
 
 async def test_a_team_run_with_dblclick_go_to_friend_on_warns_before_it_starts(dialogs, monkeypatch):
