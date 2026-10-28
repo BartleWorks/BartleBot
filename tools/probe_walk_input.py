@@ -90,6 +90,12 @@ dropped, the replan took AZ-ZipLine-3-Quest at the same spot, landing 3 units fr
 after the press, 5,148 units in one tick, 3 units from "Target-FromMajorIsland"; 13 from the
 goal in 23.7s. A zipline is the server's teleport after the ride is shown, not a ride.
 
+Mirage's hub, ladders: up Ladder 02, pressed one tick after stopping, moved nobody; the game
+takes 0.2 to 0.4s to show the prompt, and a press before it does nothing. So a press now
+waits for the prompt (is_in_npc_range). Then Ladder 02 down, Ladder 05 up, and Ladder 01
+down and Ladder 07 up in one route each landed 0 to 4 units off the arrival point paired,
+in one tick 0.06 to 0.12s after the press.
+
 What else it watches for:
   - a jump: the wizard moved faster than walking allows. A server reset (rubber-band) looks
     like this, and so would a battle pulling the wizard to a seat.
@@ -204,6 +210,12 @@ MAX_WAIT = 30.0
 LINK_WAIT = 6.0
 LINK_MOVED = 300.0
 LINK_LANDED = 600.0
+# A press is taken only once the game shows the object's prompt, a moment after the wizard
+# stops beside it: Mirage's Ladder 02, pressed one tick after stopping, did nothing, and
+# pressed once settled, climbed. Wait up to PROMPT_WAIT for it, and press again each
+# PRESS_EVERY while not moved.
+PROMPT_WAIT = 2.0
+PRESS_EVERY = 2.0
 # A mob walks its patrol at about 90 units a second (Unicorn Way's ghosts, never pausing), a
 # wizard at 600, or 840 mounted: next to a wizard a mob is nearly a standing obstacle. So when
 # the way ahead is short of room, the walk first plans a detour around every mob, closed out
@@ -553,6 +565,17 @@ async def interact_and_watch(client, keys: Keys, code: int, planner: Planner) ->
     print("  landed nearest: " + "; ".join(f"{name} ({d:.0f} away)" for d, name in nearest))
 
 
+async def prompt_shown(client) -> float | None:
+    """How long the game took to show an interact prompt (wizwalker's NPCRangeWin), waiting up
+    to PROMPT_WAIT; None if it never did."""
+    began = time.monotonic()
+    while time.monotonic() - began < PROMPT_WAIT:
+        if await client.is_in_npc_range():
+            return time.monotonic() - began
+        await asyncio.sleep(TICK)
+    return None
+
+
 async def settle(client) -> tuple[float, float, float, float]:
     """Once a pressed link has begun moving the wizard, wait for it to put the wizard down: a
     teleport at once, a ride (a zipline) once it ends. Settled is moving under SETTLED_MOVE
@@ -740,13 +763,24 @@ async def walk(client, planner: Planner, path, goal, args, keys: Keys, codes: di
                 forward_since = math.inf
                 stepped_at, waiting_since = (x, y, z), time.monotonic()
                 pressed = link.kind != "volume"
+                last_press = math.inf
                 if pressed:
                     await client.body.write_yaw(heading_to(x, y, *link.source[:2]))
-                    await asyncio.sleep(TICK)
+                    shown = await prompt_shown(client)
+                    log(
+                        f"t={time.monotonic() - started:6.2f}s at {link.name}, "
+                        + (f"its prompt shown after {shown:.2f}s" if shown is not None else "no prompt shown")
+                    )
                     await keys.pulse(codes[INTERACT_ACTION], 0.1)
+                    last_press = time.monotonic()
+                    waiting_since = last_press
                 moved, first_moved, biggest, before = False, None, 0.0, stepped_at
                 while time.monotonic() - waiting_since < LINK_WAIT:
                     await asyncio.sleep(TICK)
+                    if pressed and time.monotonic() - last_press >= PRESS_EVERY:
+                        await keys.pulse(codes[INTERACT_ACTION], 0.1)
+                        last_press = time.monotonic()
+                        log(f"t={last_press - started:6.2f}s not moved yet: pressed again")
                     x, y, z, yaw = await read(client)
                     biggest = max(biggest, math.dist(before, (x, y, z)))
                     before = (x, y, z)

@@ -800,7 +800,7 @@ def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, fl
         if template is not None:
             placed.append((text(obj["m_zoneTag"]) or template.name, xyz(obj["m_location"]), template))
     points = {name: p for name, p in named.items() if "cinematic" not in name.lower()}
-    found: dict[str, Link] = {}
+    found: dict[tuple[str, tuple[float, float, float]], Link] = {}  # by tag and place: tags repeat
 
     # A ride is shown, then the server sets the wizard down on the arrival point past its far
     # end: ZipLine-3-Quest, pressed live, landed 3 units from "Target-ToMajorIsland", 800 past it.
@@ -812,7 +812,7 @@ def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, fl
                 nearest = min(points, key=lambda n: math.dist(points[n][:2], ends[1][:2]))
                 if math.dist(points[nearest][:2], ends[1][:2]) <= RIDE_LANDING_REACH:
                     landing, target = nearest, points[nearest]
-            found[tag] = Link(tag, at, landing, target, "ride")
+            found[tag, at] = Link(tag, at, landing, target, "ride")
 
     stones = [
         (tag, at, m.group(1), bool(_STONE_BACK.search(tag))) for tag, at, _ in placed if (m := _STONE.search(tag))
@@ -825,7 +825,7 @@ def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, fl
             if partner is None:
                 continue
             landing = min(points, key=lambda n: math.dist(points[n][:2], partner[:2]))
-            found.setdefault(tag, Link(tag, at, landing, points[landing], "interact"))
+            found.setdefault((tag, at), Link(tag, at, landing, points[landing], "interact"))
 
     travel = [
         (tag, at)
@@ -840,35 +840,37 @@ def interact_candidates(zone: str, wad, record, named: dict[str, tuple[float, fl
             other = by_name.get(name.removesuffix("_B")) if name.endswith("_B") else by_name.get(name + "_B")
             if other is not None:
                 landing = min(points, key=lambda n: math.dist(points[n][:2], other[1][:2]))
-                found.setdefault(tag, Link(tag, at, landing, points[landing], "interact"))
+                found.setdefault((tag, at), Link(tag, at, landing, points[landing], "interact"))
 
     nav = zone_nav.load(wad)
     if nav is not None:
-        for tag, (at, landing, target) in _nav_links(nav, travel, points).items():
-            found.setdefault(tag, Link(tag, at, landing, target, "interact"))
+        for (tag, at), (landing, target) in _nav_links(nav, travel, points).items():
+            found.setdefault((tag, at), Link(tag, at, landing, target, "interact"))
     return list(found.values())
 
 
-def _nav_links(nav, sources, points) -> dict[str, tuple[tuple[float, float, float], str, tuple[float, float, float]]]:
+def _nav_links(nav, sources, points) -> dict[tuple, tuple[str, tuple[float, float, float]]]:
     """For each (name, position) of *sources* that a zone.nav link edge starts near, the nearest
-    such edge's landing: the arrival point nearest its far end, or the far end itself."""
+    such edge's landing: the arrival point nearest its far end, or the far end itself. Edges
+    starting about as near (within 100) go shortest first: the top of Mirage's Ladder 06 starts
+    both its 731-unit climb down and a 7,004-unit edge across the zone."""
     edges = []
     for a, b in nav.link_edges():
         near, far = nav.nodes[a], nav.nodes[b]
         for name, at in sources:
             reach = math.dist(at, near)
             if reach <= NAV_OBJECT_REACH:
-                edges.append((reach, name, at, b, far))
+                edges.append((round(reach / 100), math.dist(near, far), name, at, b, far))
     out = {}
-    for _, name, at, b, far in sorted(edges):
-        if name in out:
+    for *_, name, at, b, far in sorted(edges, key=lambda e: e[:2]):
+        if (name, at) in out:
             continue
         landing, target = f"zone.nav node {b}", far
         if points:
             nearest = min(points, key=lambda n: math.dist(points[n], far))
             if math.dist(points[nearest], far) <= NAV_OBJECT_REACH:
                 landing, target = nearest, points[nearest]
-        out[name] = (at, landing, target)
+        out[name, at] = (landing, target)
     return out
 
 
@@ -906,7 +908,7 @@ def zone_links(zone: str, grid: Grid, passable: np.ndarray, label: np.ndarray, r
             for n, p in every_volume
             if n not in joined and "cinematic" not in n.lower() and _MOVING_VOLUME.search(n)
         ]
-        for name, (at, landing, target) in _nav_links(nav, unpaired, points).items():
+        for (name, at), (landing, target) in _nav_links(nav, unpaired, points).items():
             link = Link(name, at, landing, target)
             found = ends(link)
             if found and label[found[0]] != label[found[1]]:
