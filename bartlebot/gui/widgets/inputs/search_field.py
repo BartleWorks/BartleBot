@@ -20,13 +20,12 @@ it is gone the moment someone types, which is exactly when the scope matters.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.icon_utils import svg_icon
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
 from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics, QKeyEvent
 from PyQt6.QtWidgets import QLineEdit, QPushButton, QSizePolicy, QWidget
-
-from bartlebot.gui.theming.icon_utils import svg_icon
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
 
 SEARCH_ICON_SIZE = 14
 

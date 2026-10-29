@@ -1,4 +1,4 @@
-"""Summarize a run trace: where a run's time went. See bartlebot/bot/run_trace.py.
+"""Summarize a run trace: where a run's time went. See bartleby/runtime/run_trace.py.
 
 A trace is written for every run started with BARTLEBOT_DEV set, to logs/trace/.
 

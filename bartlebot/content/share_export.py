@@ -1,7 +1,7 @@
 """Export: one item, and everything Custom it needs, as one share file (#170).
 
 The format, and the three kinds BartleBot shares with BartleBuddy (duel strategies,
-player strategies and decks), are the vendor's: :mod:`bartlebot.shared.share_file`. This
+player strategies and decks), are the vendor's: :mod:`bartleby.shared.share_file`. This
 module adds BartleBot's own kinds and follows each kind's links:
 
 ==========================  ===============  ==================================================
@@ -40,15 +40,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
-from bartlebot.combat import strategy_store
-from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.combat.strategy_store import StrategyKind
-from bartlebot.content import bot_roots
-from bartlebot.content.store_roots import declared_id
-from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
-from bartlebot.shared import share_file
-from bartlebot.shared.share_file import (
+from bartleby.shared import share_file
+from bartleby.shared.share_file import (
     DECK,
     DUEL_STRATEGY,
     PLAYER_STRATEGY,
@@ -63,9 +56,17 @@ from bartlebot.shared.share_file import (
     collect_duel,
     shareable_deck_data,
 )
-from bartlebot.shared.store_files import Origin, slugify
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.shared.vendor import PRODUCT
+from bartleby.shared.store_files import Origin, slugify
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
+from bartleby.shared.vendor import PRODUCT
+
+from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
+from bartlebot.combat import strategy_store
+from bartlebot.combat.bot_strategy_models import BotCombatStrategy
+from bartlebot.combat.strategy_store import StrategyKind
+from bartlebot.content import bot_roots
+from bartlebot.content.store_roots import declared_id
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 
 logger = logging.getLogger(__name__)
 

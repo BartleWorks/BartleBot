@@ -17,7 +17,7 @@ from __future__ import annotations
 
 NO_ACCOUNT = "not linked to a configured account"
 # The client was launched outside BartleBot and its account has never been launched
-# from here, so nothing on file identifies it. See bartlebot/clients/account_identity.py.
+# from here, so nothing on file identifies it. See bartleby/runtime/clients/account_identity.py.
 
 NO_PASSWORD = "no password saved for '{account}'"
 # Identified, but Credential Manager has nothing to log back in with.

@@ -11,14 +11,19 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.shared import account_setup, game_install, launch_profiles
+from bartleby.shared.account_store import AccountStore
+from bartleby.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
+from bartleby.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
+from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 from wizwalker import utils as wizwalker_utils
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.clients import character_roster
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.first_run_dialog import (
     ACCOUNTS_EMPTY,
@@ -69,11 +74,6 @@ from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.options.quicksell_setup import SellFlags, current_flags, write_sell_flags
 from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
 from bartlebot.settings_manager import SettingsManager, default_for
-from bartlebot.shared import account_setup, game_install, launch_profiles
-from bartlebot.shared.account_store import AccountStore
-from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
-from bartlebot.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
-from bartlebot.shared.preferences import PreferenceStore
 from tests.conftest import FIRST_RUN_REFUSED
 
 _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]

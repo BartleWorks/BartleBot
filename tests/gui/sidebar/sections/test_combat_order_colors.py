@@ -5,9 +5,10 @@ the player card, the assignment pill, and the combat-order chip. So these tests 
 agreement and about the fallback, not about which hue any slot gets.
 """
 
+from bartleby.qt.theming.account_accent import account_accent, account_tint
+from bartleby.qt.theming.theme import THEME
+
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
-from bartlebot.gui.theming.account_accent import account_accent, account_tint
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
 
 

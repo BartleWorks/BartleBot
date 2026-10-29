@@ -35,14 +35,14 @@ as one.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.account_accent import account_accent, account_tint
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
 from PyQt6.QtCore import QEvent, QRect, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.content.bot_tags import tag_group
-from bartlebot.gui.theming.account_accent import account_accent, account_tint
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, TAG_ICON_PX, TagVocabulary, group_accent, tag_icon
 
 #: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and

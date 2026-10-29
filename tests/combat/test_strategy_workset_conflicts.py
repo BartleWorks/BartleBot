@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bartleby.shared.strategy_models import LIBRARY_FORMAT, PlayerCombatStrategy
+
 from bartlebot.combat.strategy_store import (
     StrategyKind,
     list_player_strategies,
@@ -17,7 +19,6 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
-from bartlebot.shared.strategy_models import LIBRARY_FORMAT, PlayerCombatStrategy
 
 PLAYER = StrategyKind.PLAYER
 

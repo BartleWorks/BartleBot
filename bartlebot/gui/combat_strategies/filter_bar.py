@@ -18,6 +18,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import replace
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
@@ -35,7 +36,6 @@ from bartlebot.combat.strategy_tags import (
     count_facets,
     team_label,
 )
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow

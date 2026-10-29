@@ -14,11 +14,12 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
+from bartleby.runtime import timing
+from bartleby.runtime.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
 
 from bartlebot.bot.machine import BotMachine, PauseHold
-from bartlebot.nodes import node_helpers, timing
-from bartlebot.nodes.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
 from tests.conftest import FakeClient
+from tests.node_helper_patches import set_helper
 
 
 def _config(node_type: str) -> dict:
@@ -79,8 +80,8 @@ class _Popups:
 @pytest.fixture
 def popups(monkeypatch) -> _Popups:
     fake = _Popups()
-    monkeypatch.setattr(node_helpers, "is_visible_by_path", fake.is_visible)
-    monkeypatch.setattr(node_helpers, "click_by_path", fake.click)
+    set_helper(monkeypatch, "is_visible_by_path", fake.is_visible)
+    set_helper(monkeypatch, "click_by_path", fake.click)
     monkeypatch.setattr(timing, "COMBAT_AFK_POLL_INTERVAL", 0.001)
     return fake
 

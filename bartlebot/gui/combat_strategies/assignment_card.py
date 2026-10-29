@@ -53,6 +53,12 @@ while the bot is running.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
+from bartleby.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -65,18 +71,12 @@ from PyQt6.QtWidgets import (
 from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.combat_strategies.dsl_checks import checker
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.buttons.icon_button import IconButton
 from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit
-from bartlebot.gui.widgets.labels.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
 from bartlebot.nodes.combat_runner import DslError, dsl_error, dsl_warning_text, dsl_warnings
-from bartlebot.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
 #: each carries. Module level because the tests name them and because ``choose_strategy``

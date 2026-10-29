@@ -17,6 +17,7 @@ import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_zone_via_list as via_list
 import bartlebot.nodes.zone_entry.enter_zone_via_object as via_object
 from tests.conftest import FakeClient, FakeMachine
+from tests.node_helper_patches import patch_helper
 
 _INTERACT = {"x": 0.0, "y": 0.0, "z": 0.0}
 _RESET = {"x": 1.0, "y": 0.0, "z": 0.0}
@@ -90,7 +91,7 @@ async def _delay_seen(module, params: dict) -> object:
     client = FakeClient()
     client.zone_name.side_effect = chain([start], repeat(params.get("to_zone", start)))
 
-    with patch.object(nh, "take_turns", _fake_take_turns), patch.object(nh, "POLL_INTERVAL", 0):
+    with patch.object(nh, "take_turns", _fake_take_turns), patch_helper("POLL_INTERVAL", 0):
         await module.run(FakeMachine(), [client], params)
 
     assert "object_use_delay" in captured, "the node did not pass a delay through to take_turns"

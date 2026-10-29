@@ -8,10 +8,10 @@ keyring is faked: the suite must not write to the developer's credential store.
 from unittest.mock import MagicMock
 
 import pytest
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.game import wizard_names
 
-from bartlebot.clients import character_roster
 from bartlebot.clients.client_manager import ClientManager
-from bartlebot.game import wizard_names
 
 
 class FakeClientWindow:

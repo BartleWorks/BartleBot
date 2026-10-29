@@ -86,6 +86,15 @@ from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING
 
+from bartleby.qt.theming.account_accent import account_accent
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.labels.elided_label import ElidedLabel
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.timing import PLAYER_COLOR_REFRESH_INTERVAL
+from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
@@ -97,7 +106,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.combat.bot_combat_strategy import StrategyLookup, duplicate_bot_strategy, read_bot_names
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.combat_grouping import (
@@ -159,26 +167,18 @@ from bartlebot.gui.sidebar.strategy_panel import (
     PanelRole,
     StrategyPanel,
 )
-from bartlebot.gui.theming.account_accent import account_accent
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.cards.add_card import AddCard
 from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
-from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
 from bartlebot.gui.widgets.labels.step_heading import Step
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadge
 from bartlebot.gui.widgets.pills.tag_pill import AccentPill, WarningPill
-from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
@@ -1772,8 +1772,9 @@ class CombatTab(QWidget):
         self._decks_section.refresh(decks)
 
     def _on_save_deck_to_library(self, slot: int) -> None:
+        from bartleby.shared.strategy_models import DeckPreset  # noqa: PLC0415
+
         from bartlebot.combat.strategy_store import save_deck_preset  # noqa: PLC0415
-        from bartlebot.shared.strategy_models import DeckPreset  # noqa: PLC0415
 
         if self._bcs is None:
             return

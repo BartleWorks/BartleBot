@@ -9,6 +9,9 @@ every loop that reads or writes the value does not.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.account_accent import account_accent, account_tint
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
 from PyQt6.QtCore import QByteArray, QEvent, QMimeData, QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import QDrag
 from PyQt6.QtWidgets import (
@@ -22,9 +25,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.art_signal import follow_art
-from bartlebot.gui.theming.account_accent import account_accent, account_tint
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.cards.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
 from bartlebot.gui.widgets.layout.discard import discard_widget
 

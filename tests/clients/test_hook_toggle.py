@@ -9,9 +9,9 @@ per-client emit rebuilds the whole sidebar and restarts its refresh loop.
 from unittest.mock import MagicMock
 
 import pytest
+from bartleby.runtime.clients.launch_tracker import LaunchTracker
 
 from bartlebot.clients.client_manager import ClientManager
-from bartlebot.clients.launch_tracker import LaunchTracker
 from tests.clients.test_client_slots import FakeGameView
 
 # ---------------------------------------------------------------------------

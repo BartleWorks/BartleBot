@@ -13,10 +13,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
-
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 
 @dataclass(frozen=True)

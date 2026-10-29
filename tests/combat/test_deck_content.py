@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.shared.strategy_models import DeckData
+
 from bartlebot.combat.deck_content import archmastery_line, deck_content_lines, deck_groups
-from bartlebot.shared.strategy_models import DeckData
 
 
 def test_lists_normal_and_item_sections_sorted_by_name():

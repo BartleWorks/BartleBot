@@ -13,6 +13,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
+from bartleby.runtime.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from PyQt6.QtCore import QEvent, QRectF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
@@ -77,7 +83,6 @@ from bartlebot.content.subgraphs.subgraphs import (
 )
 from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game import card_art, scales
-from bartlebot.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
 from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.canvas.bot_header import BotHeader
@@ -111,13 +116,8 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.debug.press_trace import PressTracer
 from bartlebot.gui.debug.repaint_trace import RepaintTracer
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.buttons.icon_button import IconButton
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
-from bartlebot.gui.widgets.labels.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.pickers.tag_picker import (
     BOT_VOCABULARY,

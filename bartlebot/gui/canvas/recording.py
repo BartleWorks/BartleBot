@@ -23,11 +23,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from bartleby.runtime.paths import NPC_RANGE_TITLE_PATH
+from bartleby.runtime.timing import RECORDING_POLL_INTERVAL
+
 from bartlebot.game import entity_names, zone_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION
-from bartlebot.nodes.paths import NPC_RANGE_TITLE_PATH
-from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL
 
 logger = logging.getLogger(__name__)
 

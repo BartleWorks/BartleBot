@@ -77,7 +77,7 @@ sorted for looks.
 Each pill is outlined in its account's color, and the account card carrying that
 color wears it as a stripe down its left edge. The pair is the point: a color on the
 profile pills alone would be decoration, because nothing else on the screen would say
-which account it stands for. bartlebot/gui/theming/account_accent.py owns the mapping and
+which account it stands for. bartleby/qt/theming/account_accent.py owns the mapping and
 explains where a color comes from.
 
 Both card types are therefore handed the *whole* account list, not just the account
@@ -91,6 +91,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import NamedTuple
 
+from bartleby.qt import streamer_mode
+from bartleby.qt.theming.account_accent import account_accent, account_color_key, account_color_keys
+from bartleby.qt.theming.theme import THEME
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.game.game_sizing import FitProblem
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
@@ -98,12 +103,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QSizePolicy,
 )
-
-from bartlebot.clients.credentials import CredentialStore
-from bartlebot.game.game_sizing import FitProblem
-from bartlebot.gui import streamer_mode
-from bartlebot.gui.theming.account_accent import account_accent, account_color_key, account_color_keys
-from bartlebot.gui.theming.theme import THEME
 
 # Re-exported, not defined here. ``AddCard`` moved to ``widgets/`` when the Combat tab's
 # Duel Combat Strategies section became its second caller -- a terminator card knows

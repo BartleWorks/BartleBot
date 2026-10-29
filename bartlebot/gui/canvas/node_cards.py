@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtWidgets import QHBoxLayout, QLineEdit, QWidget
 
 from bartlebot.gui.sidebar.option_card import CardHeadingActions
 from bartlebot.gui.sidebar.option_gutter import DescriptionSwitches
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.options.param_cards import to_fill_text
 
 

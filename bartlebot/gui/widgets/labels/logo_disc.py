@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import math
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QColor, QImage, QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.gui.logo import logo_disc_image
-from bartlebot.gui.theming.theme import THEME
 
 #: The accent ring around the disc, and the gap between the two, in logical pixels.
 RING_WIDTH = 2

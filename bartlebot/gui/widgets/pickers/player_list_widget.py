@@ -1,10 +1,9 @@
 """Shared P1–P4 player pickers used in param forms and strategy editors."""
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QRadioButton, QWidget
-
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 
 
 class PlayerListWidget(QWidget):

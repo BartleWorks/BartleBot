@@ -570,7 +570,7 @@ def test_teleport_to_friend_shows_an_unconfigured_name_as_the_problem_it_is(monk
 def test_hooked_player_target_is_shown_read_only():
     """In slot mode the name is not the user's to change — it is whoever is logged into
     that window — so the dialog reports it and offers no field."""
-    from bartlebot.game import wizard_names
+    from bartleby.runtime.game import wizard_names
 
     clients = [FakeClient(), FakeClient()]
     wizard_names.remember(clients[1], "Luke SkullHunter")

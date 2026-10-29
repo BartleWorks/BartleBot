@@ -19,10 +19,7 @@ import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from wizwalker import Keycode
-from wizwalker.errors import ClientClosedError
-
-from bartlebot.nodes.paths import (
+from bartleby.runtime.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     CROWNS_SHOP_WINDOW_PATH,
     DECK_CONFIGURATION_PATH,
@@ -34,8 +31,12 @@ from bartlebot.nodes.paths import (
     SPELLBOOK_BUTTON_PATH,
     SPELLBOOK_PREFERENCES_TAB_PATH,
 )
+from wizwalker import Keycode
+from wizwalker.errors import ClientClosedError
+
 from bartlebot.nodes.utility import relog as relog_node
 from tests.conftest import FakeClient, FakeMachine
+from tests.node_helper_patches import patch_helper, set_helper
 
 
 class FakeGame:
@@ -269,12 +270,13 @@ def games(monkeypatch):
     async def _text(client, path):
         return registry[client.window_handle].text(list(path))
 
-    import bartlebot.nodes.node_helpers as nh
-    from bartlebot.launcher import auto_select
+    from bartleby.runtime.launcher import auto_select
 
-    monkeypatch.setattr(nh, "is_visible_by_path", _is_visible)
-    monkeypatch.setattr(nh, "click_by_path", _click)
-    monkeypatch.setattr(nh, "get_text_by_path", _text)
+    import bartlebot.nodes.node_helpers as nh
+
+    set_helper(monkeypatch, "is_visible_by_path", _is_visible)
+    set_helper(monkeypatch, "click_by_path", _click)
+    set_helper(monkeypatch, "get_text_by_path", _text)
     monkeypatch.setattr(auto_select, "at_character_select", _at_char_select)
     monkeypatch.setattr(auto_select, "press_character_select_play", _press_play)
     monkeypatch.setattr(auto_select, "press_escape", _press_escape)
@@ -283,7 +285,7 @@ def games(monkeypatch):
     async def _press_key_until_gone(client, key, is_open, **_):
         return await real_press_key_until_gone(client, key, is_open=is_open, timeout=0.05, poll_interval=0.0)
 
-    monkeypatch.setattr(nh, "press_key_until_gone", _press_key_until_gone)
+    set_helper(monkeypatch, "press_key_until_gone", _press_key_until_gone)
     # Cadences, never ceilings — the fakes count polls, not seconds.
     monkeypatch.setattr(relog_node, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(relog_node, "TRIGGER_TIMEOUT", 0.2)
@@ -532,12 +534,11 @@ class TestFailurePaths:
 
     async def test_a_spellbook_that_never_opens(self, machine, games, monkeypatch):
         clients, (game,) = games({})
-        import bartlebot.nodes.node_helpers as nh
 
         async def _never_visible(_client, _path):
             return False
 
-        monkeypatch.setattr(nh, "is_visible_by_path", _never_visible)
+        set_helper(monkeypatch, "is_visible_by_path", _never_visible)
         assert await relog_node.run(machine, clients, {}) == "FAILURE"
         assert any("spellbook did not open" in msg for msg, _ in machine.logs)
 
@@ -707,9 +708,7 @@ class TestHandedToRecoveryMidRelog:
         async def _closed(*_args):
             raise RuntimeError("process gone")
 
-        import bartlebot.nodes.node_helpers as nh
-
-        with patch.object(nh, "click_by_path", _closed):
+        with patch_helper("click_by_path", _closed):
             assert await relog_node.log_out_and_in(machine, client) == relog_node.ABANDONED
 
 

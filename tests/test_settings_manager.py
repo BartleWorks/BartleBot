@@ -75,8 +75,9 @@ def test_layout_budget_can_judge_another_canvas_height():
 
 
 def test_a_save_that_fails_part_way_leaves_the_last_file_whole(monkeypatch):
+    from bartleby.shared import strategy_models
+
     from bartlebot.settings_manager import SettingsManager
-    from bartlebot.shared import strategy_models
 
     sm = SettingsManager()
     sm.save()

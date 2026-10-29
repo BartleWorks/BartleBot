@@ -11,6 +11,7 @@ import bartlebot.nodes.wizard_city as wc
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.zone_entry import enter_zone
 from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper, set_helper
 
 # ── Zone aliases ─────────────────────────────────────────────────────────────
 DORM = hp.DORM_ZONE
@@ -495,8 +496,8 @@ def _shop(clicks_to_close: float):
         return True
 
     patches = (
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=visible)),
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=visible)),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=click)),
         patch.object(hp, "SHOP_EXIT_CLICK_INTERVAL", 0.001),
     )
     return shop, patches
@@ -523,7 +524,7 @@ async def test_close_potion_shop_does_nothing_when_already_closed():
 
 async def test_close_potion_shop_gives_up_on_a_shop_that_never_closes(monkeypatch):
     """It used to click for as long as the shop read open: forever, for one that always does."""
-    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    set_helper(monkeypatch, "WINDOW_CLOSE_TIMEOUT", 0.05)
     shop, (visible, click, interval) = _shop(clicks_to_close=float("inf"))
 
     with visible, click, interval:
@@ -541,7 +542,7 @@ async def test_shop_opens_first_attempt():
     """Teleport → NPC in range → X pressed → shop visible → True."""
     client = FakeClient()
     npc_patch = patch.object(nh, "all_in_npc_range", new=AsyncMock(return_value=True))
-    shop_patch = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
+    shop_patch = patch_helper("is_visible_by_path", new=AsyncMock(return_value=True))
 
     with npc_patch, shop_patch, patch.object(hp, "POLL_INTERVAL", 0):
         result = await hp._open_potion_shop(_machine(), [client])
@@ -561,7 +562,7 @@ async def test_shop_npc_timeout_resets_and_retries():
     #   call 3: shop visible on attempt 2 → True
     wait_mock = AsyncMock(side_effect=[False, True, True])
 
-    with patch.object(nh, "poll_until", new=wait_mock):
+    with patch_helper("poll_until", new=wait_mock):
         result = await hp._open_potion_shop(_machine(), [client])
 
     assert result is True
@@ -573,7 +574,7 @@ async def test_shop_window_never_opens_returns_false():
     """Shop window never becomes visible after all retries → False."""
     client = FakeClient()
     npc_patch = patch.object(nh, "all_in_npc_range", new=AsyncMock(return_value=True))
-    shop_patch = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
+    shop_patch = patch_helper("is_visible_by_path", new=AsyncMock(return_value=False))
 
     with (
         npc_patch,
@@ -591,7 +592,7 @@ async def test_shop_opens_on_second_attempt():
     client = FakeClient()
     npc_patch = patch.object(nh, "all_in_npc_range", new=AsyncMock(return_value=True))
     # First wait_until(shop_open): False; second: True.
-    shop_patch = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[False, True]))
+    shop_patch = patch_helper("is_visible_by_path", new=AsyncMock(side_effect=[False, True]))
 
     with (
         npc_patch,
@@ -617,7 +618,7 @@ async def test_buy_already_full_no_clicks():
     client.stats.potion_max.return_value = 10
     client.stats.potion_charge.return_value = 10
     click_mock = AsyncMock()
-    click_patch = patch.object(nh, "click_by_path", new=click_mock)
+    click_patch = patch_helper("click_by_path", new=click_mock)
 
     with click_patch, _SLEEP:
         await hp._buy_potions_for_client(_machine(), client)
@@ -633,9 +634,8 @@ async def test_buy_once_to_full():
     client.stats.potion_charge.side_effect = [1, 2, 2]
 
     click_mock = AsyncMock()
-    click_patch = patch.object(nh, "click_by_path", new=click_mock)
-    vis_patch = patch.object(
-        nh,
+    click_patch = patch_helper("click_by_path", new=click_mock)
+    vis_patch = patch_helper(
         "is_visible_by_path",
         new=AsyncMock(
             side_effect=[
@@ -660,9 +660,8 @@ async def test_buy_stops_on_unchanged_charge():
     client.stats.potion_charge.side_effect = [5, 5]
 
     click_mock = AsyncMock()
-    click_patch = patch.object(nh, "click_by_path", new=click_mock)
-    vis_patch = patch.object(
-        nh,
+    click_patch = patch_helper("click_by_path", new=click_mock)
+    vis_patch = patch_helper(
         "is_visible_by_path",
         new=AsyncMock(
             side_effect=[
@@ -686,9 +685,8 @@ async def test_buy_reopens_shop_if_closed_at_start_of_iteration():
     # charge_before=5, charge_after=5 — stops after one attempt
     client.stats.potion_charge.side_effect = [5, 5]
 
-    click_patch = patch.object(nh, "click_by_path", new=AsyncMock())
-    vis_patch = patch.object(
-        nh,
+    click_patch = patch_helper("click_by_path", new=AsyncMock())
+    vis_patch = patch_helper(
         "is_visible_by_path",
         new=AsyncMock(
             side_effect=[
@@ -719,13 +717,13 @@ async def test_buy_reopens_shop_if_closed_at_start_of_iteration():
 
 async def test_all_shop_open_all_true():
     clients = [FakeClient(), FakeClient()]
-    with patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)):
+    with patch_helper("is_visible_by_path", new=AsyncMock(return_value=True)):
         assert await hp._all_shop_open(clients) is True
 
 
 async def test_all_shop_open_one_false():
     clients = [FakeClient(), FakeClient()]
-    with patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, False])):
+    with patch_helper("is_visible_by_path", new=AsyncMock(side_effect=[True, False])):
         assert await hp._all_shop_open(clients) is False
 
 

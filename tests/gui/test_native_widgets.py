@@ -3,7 +3,7 @@
 Embedding a game client made the tile native, Qt promoted siblings to native windows, and
 the reparenting in ``anchor_menu_to_window`` then made every child of the canvas's view
 native, ViewFrame included. A native widget gets its clicks from Windows, which never
-consults ``WA_TransparentForMouseEvents``. ``bartlebot/gui/native_widgets.py`` has the
+consults ``WA_TransparentForMouseEvents``. ``bartleby/qt/native_widgets.py`` has the
 whole chain.
 
 The suite's QApplication is built with ``keep_siblings_alien`` already applied, as the
@@ -14,12 +14,12 @@ window, which is all ``ClientTile`` does to Qt.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.native_widgets import give_native_ancestors_a_cursor
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtWidgets import QApplication, QWidget
 
 from bartlebot.gui.canvas.subgraph_widgets import ViewFrame
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.native_widgets import give_native_ancestors_a_cursor
 
 
 def test_the_app_keeps_siblings_of_a_native_widget_alien(qapp):

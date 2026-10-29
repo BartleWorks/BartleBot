@@ -272,7 +272,7 @@ async def movement_keys(client) -> tuple[dict[str, int], str]:
     codes: dict[str, int] = {}
     source = "the defaults"
     try:
-        from bartlebot.clients.game_keys import key_map  # ahmarra-test-realm onward
+        from bartleby.runtime.clients.game_keys import key_map  # ahmarra-test-realm onward
     except ImportError:
         from bartlebot.game.game_keybindings import read_game_keybindings
 

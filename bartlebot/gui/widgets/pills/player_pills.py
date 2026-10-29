@@ -34,15 +34,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from bartleby.qt.theming.account_accent import account_accent, account_tint
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from bartlebot.gui.art_signal import follow_art
-from bartlebot.gui.theming.account_accent import account_accent, account_tint
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.cards.duel_slot_gem import GEM_PX, DuelSlotGem
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.pills.tag_pill import pill_height
 
 #: The pill's metrics. Deliberately ``AccountPill``'s, so a slot pill and an account pill

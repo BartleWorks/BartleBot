@@ -11,6 +11,15 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.shared import share_file
+from bartleby.shared.content_hash import content_sha256
+from bartleby.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, SubgraphSource, TemplateRef
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
@@ -34,15 +43,6 @@ from bartlebot.content.share_export import (
 )
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, save_subgraph
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared import share_file
-from bartlebot.shared.content_hash import content_sha256
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 from tests.content.subgraphs.test_subgraph_store import _defn
 
 # ---------------------------------------------------------------------------
@@ -488,8 +488,9 @@ def test_no_settings_value_can_reach_a_share_file(roots, tmp_path):
     assert not any(_SENTINEL in text for text in after)
 
 
-@pytest.mark.parametrize("module", ["bartlebot/content/share_export.py", "bartlebot/shared/share_file.py"])
+@pytest.mark.parametrize("module", ["bartlebot/content/share_export.py"])
 def test_nothing_that_writes_a_share_file_imports_settings(module):
+    """Core's ``share_file`` imports no product at all, which core's ``tests/test_layers.py`` holds."""
     from bartlebot.paths import project_root
 
     tree = ast.parse((project_root() / module).read_text(encoding="utf-8"))

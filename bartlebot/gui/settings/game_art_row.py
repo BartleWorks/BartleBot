@@ -17,6 +17,11 @@ import asyncio
 import logging
 import threading
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QDialog, QProgressBar, QVBoxLayout, QWidget
 
@@ -30,12 +35,7 @@ from bartlebot.game.art_extraction import (
 )
 from bartlebot.gui.art_signal import announce_art_changed
 from bartlebot.gui.settings.rows import Binding, SettingRow
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
-from bartlebot.shared.preferences import PreferenceStore
 
 logger = logging.getLogger(__name__)
 

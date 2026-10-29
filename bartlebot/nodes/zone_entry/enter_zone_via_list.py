@@ -16,20 +16,20 @@ import difflib
 import logging
 from collections.abc import Callable
 
-from wizwalker import XYZ
-
-from bartlebot.clients import game_keys
-from bartlebot.game import dialog_captions
-from bartlebot.game.key_bindings import GameAction
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game import dialog_captions
+from bartleby.runtime.game.key_bindings import GameAction
+from bartleby.runtime.paths import (
     UNIVERSE_CANCEL_BUTTON,
     UNIVERSE_LIST_PATH,
     UNIVERSE_NEXT_PAGE,
     UNIVERSE_TELEPORT_BUTTON,
     universe_zone_option_path,
 )
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from bartleby.runtime.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from wizwalker import XYZ
+
+from bartlebot.nodes import node_helpers
 
 _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
 _FUZZY_THRESHOLD = 0.75  # Minimum SequenceMatcher ratio for a fuzzy match

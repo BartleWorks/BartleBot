@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import math
 
+from bartleby.qt.theming.icon_utils import svg_pixmap
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, QObject, Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetricsF, QIcon, QPixmap
 from PyQt6.QtWidgets import (
@@ -15,11 +19,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from bartlebot.gui.theming.icon_utils import svg_pixmap
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.icon_button import IconButton
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 _PLACEHOLDER = "—"
 _QWIDGETSIZE_MAX = 16777215  # Qt's QWIDGETSIZE_MAX

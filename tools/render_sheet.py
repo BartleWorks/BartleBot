@@ -57,7 +57,7 @@ def core_render_sheet():
 
 def themes():
     """BartleBot's own light and dark themes, which its widgets read until it adopts core's."""
-    from bartlebot.gui.theming import theme  # noqa: PLC0415
+    from bartleby.qt.theming import theme  # noqa: PLC0415
 
     return core_render_sheet().Themes(
         {"light": theme.LIGHT, "dark": theme.DARK}, theme.active_theme, theme.set_theme_instance
@@ -129,14 +129,15 @@ def _log_tab():
 
 
 def _title_bar():
+    from bartleby.qt.title_bar.title_bar import TitleBar  # noqa: PLC0415
     from PyQt6.QtWidgets import QMenuBar  # noqa: PLC0415
 
-    from bartlebot.gui.title_bar.title_bar import TitleBar  # noqa: PLC0415
+    from bartlebot.gui.logo import logo_icon  # noqa: PLC0415
 
     menu_bar = QMenuBar()
     for name in ("&File", "&Edit", "&View", "&Help"):
         menu_bar.addMenu(name)
-    bar = TitleBar(menu_bar)
+    bar = TitleBar(menu_bar, logo_icon())
     bar.set_title("BartleBot")
     return bar
 
@@ -187,10 +188,9 @@ def main(argv: list[str] | None = None) -> int:
     core_render_sheet().use_offscreen_platform()
     sys.path.insert(0, str(REPO))
 
+    from bartleby.qt.native_widgets import keep_siblings_alien  # noqa: PLC0415
+    from bartleby.qt.theming.theme import THEME  # noqa: PLC0415
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415
-
-    from bartlebot.gui.native_widgets import keep_siblings_alien  # noqa: PLC0415
-    from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415
 
     keep_siblings_alien()
     app = QApplication(sys.argv[:1])

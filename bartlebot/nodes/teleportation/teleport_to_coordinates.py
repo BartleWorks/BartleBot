@@ -3,13 +3,13 @@
 import asyncio
 import logging
 
+from bartleby.runtime.timing import MAX_RETRIES, POLL_INTERVAL
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

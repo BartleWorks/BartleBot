@@ -67,6 +67,13 @@ from __future__ import annotations
 import time
 from collections.abc import Iterable
 
+from bartleby.qt.theming.account_accent import account_accent, account_color_keys
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -78,18 +85,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.clients import character_roster
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
-from bartlebot.gui.theming.account_accent import account_accent, account_color_keys
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, PickerRow, Section, should_open
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+from bartlebot.settings_manager import SettingsManager
 
 # Wide enough for an account card to draw what it knows, plus the Add button and
 # resolution combo beside it. An ``AccountCard`` fits its character line to the width it

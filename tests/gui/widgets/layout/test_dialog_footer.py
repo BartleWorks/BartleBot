@@ -18,11 +18,11 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QSizePolicy, QVBoxLayout
 
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 # ---------------------------------------------------------------------------
@@ -211,8 +211,9 @@ def _link_input_dialog():
 
 
 def _color_picker_dialog():
+    from bartleby.qt.theming.theme import THEME
+
     from bartlebot.gui.canvas.edit_scene import _ColorPickerDialog
-    from bartlebot.gui.theming.theme import THEME
 
     return _ColorPickerDialog(THEME.REGION_PALETTE[0])._dialog
 

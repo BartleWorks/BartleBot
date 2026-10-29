@@ -12,6 +12,15 @@ import shutil
 from pathlib import Path
 
 import pytest
+from bartleby.shared.combat_defaults import (
+    PREFERENCE_KEYS,
+    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+    SHIPPED_SOLO_DUEL_ID,
+    SHIPPED_TEAM_DUEL_ID,
+    TeamSize,
+)
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
@@ -38,15 +47,6 @@ from bartlebot.combat.combat_resolution import (
 )
 from bartlebot.combat.combat_warnings import check_combat
 from bartlebot.paths import project_root
-from bartlebot.shared.combat_defaults import (
-    PREFERENCE_KEYS,
-    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
-    SHIPPED_SOLO_DUEL_ID,
-    SHIPPED_TEAM_DUEL_ID,
-    TeamSize,
-)
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 
 _DSL = "any<damage>[any<mod_damage>] @ enemy"
 

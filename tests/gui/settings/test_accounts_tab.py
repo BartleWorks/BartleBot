@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.runtime.clients.credentials import CredentialStore
 from PyQt6.QtWidgets import QLineEdit
 
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.settings.accounts_tab import _AccountDialog
 

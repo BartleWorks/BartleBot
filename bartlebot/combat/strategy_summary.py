@@ -27,9 +27,10 @@ from bartlebot.nodes.combat_runner import validate_dsl
 Validate = Callable[[str], str | None]
 
 if TYPE_CHECKING:
+    from bartleby.shared.strategy_models import DeckPreset, DuelConfig, PlayerCombatStrategy
+
     from bartlebot.bot.schema import BotConfig
     from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-    from bartlebot.shared.strategy_models import DeckPreset, DuelConfig, PlayerCombatStrategy
 
 # Truncation length for an inline DSL preview — the picker's own figure, now
 # canonical everywhere.  Surfaces that elide visually (the Combat tab's

@@ -34,6 +34,19 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from bartleby.qt.theming.account_accent import (
+    ACCOUNT_PALETTE_SIZE,
+    account_accent,
+    account_color_keys,
+    pinned_color_key,
+)
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
+from bartleby.shared.launch_profiles import add_profile, build_profile, copy_name, profile_names
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import (
@@ -50,8 +63,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.clients import character_roster
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.game_embed.card_columns import (
     ACCOUNTS_TITLE,
     ADD_ACCOUNT,
@@ -69,18 +80,8 @@ from bartlebot.gui.settings.profile_editor import (
     mark_unfittable_resolutions,
 )
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.theming.account_accent import (
-    ACCOUNT_PALETTE_SIZE,
-    account_accent,
-    account_color_keys,
-    pinned_color_key,
-)
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager, default_for
-from bartlebot.shared.launch_profiles import add_profile, build_profile, copy_name, profile_names
+from bartlebot.settings_manager import SettingsManager, default_for
 
 #: The account editor's window title, and the title of a message about what it was given.
 ADD_ACCOUNT_TITLE = "Add Wizard101 Account"

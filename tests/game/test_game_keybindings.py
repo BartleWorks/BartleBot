@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import pytest
+from bartleby.runtime.game.key_bindings import Binding, KeyMap, parse_binding_file
+from bartleby.shared import game_install
 
 from bartlebot.game import game_keybindings
 from bartlebot.game.game_keybindings import GameBinding, game_bindings, read_binding_files, read_game_keybindings
-from bartlebot.game.key_bindings import Binding, KeyMap, parse_binding_file
 from bartlebot.gui.settings.authoring_tab import binding_problems
-from bartlebot.shared import game_install
 
 
 def _entry(action: str, key: str, slot: int = 0) -> str:

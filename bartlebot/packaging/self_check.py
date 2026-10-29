@@ -94,7 +94,7 @@ def check_keyring(_root: Path) -> str:
         from keyring.backends.Windows import WinVaultKeyring  # noqa: PLC0415
 
         _require(isinstance(backend, WinVaultKeyring), f"keyring is using {name}, not Windows Credential Manager")
-    from bartlebot.shared.vendor import keyring_service  # noqa: PLC0415
+    from bartleby.shared.vendor import keyring_service  # noqa: PLC0415
 
     keyring.get_password(keyring_service("self-check"), "absent")
     return name
@@ -160,9 +160,9 @@ def check_subgraphs(root: Path) -> str:
 
 def check_shared_set(root: Path) -> str:
     """The shared Official set: its version, every duel, player strategy and deck loads, and the shipped defaults are in it."""
-    from bartlebot.shared import combat_defaults  # noqa: PLC0415
-    from bartlebot.shared.official_set import SET_FILE, set_version  # noqa: PLC0415
-    from bartlebot.shared.strategy_library import LIBRARY_DIRNAME, MODELS, LibraryKind, kind_dir  # noqa: PLC0415
+    from bartleby.shared import combat_defaults  # noqa: PLC0415
+    from bartleby.shared.official_set import SET_FILE, set_version  # noqa: PLC0415
+    from bartleby.shared.strategy_library import LIBRARY_DIRNAME, MODELS, LibraryKind, kind_dir  # noqa: PLC0415
 
     _folder(root, LIBRARY_DIRNAME)
     version = set_version(root)
@@ -195,12 +195,11 @@ def check_shared_set(root: Path) -> str:
 
 def game_data_files() -> list[Path]:
     """Every file under ``game/data/`` the app reads, by the path its reader holds."""
+    from bartleby.runtime.game import dialog_captions, name_tables, realms
+
     from bartlebot.game import (  # noqa: PLC0415
         badge_categories,
-        dialog_captions,
         entity_names,
-        name_tables,
-        realms,
         restricted_zones,
         scales,
         spell_names,
@@ -258,6 +257,7 @@ def check_native(_root: Path) -> str:
     window, #278), Pillow's DDS decoder (game art), Velopack, and cryptography's Ed25519 (the update feed's
     signature)."""
     import velopack  # noqa: F401, PLC0415
+    from bartleby.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
     from curl_cffi import requests  # noqa: F401, PLC0415
     from PIL import DdsImagePlugin, Image  # noqa: F401, PLC0415
 
@@ -266,7 +266,6 @@ def check_native(_root: Path) -> str:
     from webview.platforms import edgechromium  # noqa: F401, PLC0415
 
     from bartlebot.nodes.combat_runner import check_dsl_uncached  # noqa: PLC0415
-    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
     from bartlebot.updates.feed import verify  # noqa: PLC0415
 
     checked = check_dsl_uncached(LAST_RESORT_DSL)
@@ -283,11 +282,11 @@ def check_native(_root: Path) -> str:
 
 def check_qt(_root: Path) -> str:
     """Qt's platform plugin and SVG support, and every icon and the logo rendering. No window is shown."""
+    from bartleby.qt.theming.icon_utils import ICONS_DIR  # noqa: PLC0415
     from PyQt6.QtSvg import QSvgRenderer  # noqa: PLC0415
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415
 
     from bartlebot.gui.logo import LOGO_SVG  # noqa: PLC0415
-    from bartlebot.gui.theming.icon_utils import ICONS_DIR  # noqa: PLC0415
 
     app = QApplication.instance() or QApplication([sys.argv[0]])
     icons = sorted(ICONS_DIR.glob("*.svg"))

@@ -3,9 +3,10 @@
 import asyncio
 import logging
 
-from bartlebot.clients import game_keys
-from bartlebot.game import dialog_captions
-from bartlebot.game.key_bindings import GameAction
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game import dialog_captions
+from bartleby.runtime.game.key_bindings import GameAction
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ZONE_AT_END
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
@@ -55,7 +56,7 @@ NODE_SPEC = NodeSpec(
     implies_tags=["Gauntlet"],
 )
 
-from bartlebot.nodes.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from bartleby.runtime.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:

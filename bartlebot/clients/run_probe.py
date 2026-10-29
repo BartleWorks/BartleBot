@@ -12,8 +12,8 @@ social window over the cards, which is how players come to sit out rounds until 
 asks "You Are Idle". The user can end a fight in seconds; the bot would have to guess
 whether to fight it or flee it.
 
-**So does an action BartleBot cannot press.** Every action in ``GameAction`` is required of
-every player, whatever the bot: a player whose account has one bound only with Ctrl, Shift
+**So does an action BartleBot cannot press.** Every action in :data:`PRESSED_ACTIONS` is
+required of every player, whatever the bot: a player whose account has one bound only with Ctrl, Shift
 or Alt, only to the mouse, or only to a key the chat line shares, would have a node fail
 partway through the run, or type into chat. The user fixes it in the game's key bindings;
 ``bartleby-core/docs/KEY_BINDINGS.md``. A key shared with any other action is pressed, and only logged.
@@ -28,11 +28,12 @@ import logging
 from pathlib import Path
 from typing import NamedTuple
 
-from bartlebot.clients import game_keys
-from bartlebot.game.key_bindings import GameAction, KeyMap, action_label
-from bartlebot.launcher.launch_profile import quick_friend_teleport_on
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game.key_bindings import GameAction, KeyMap, action_label
+from bartleby.runtime.launcher.launch_profile import quick_friend_teleport_on
+from bartleby.shared.game_install import install_of_client, process_executable
+
 from bartlebot.nodes.combat_runner import slots_in_battle
-from bartlebot.shared.game_install import install_of_client, process_executable
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,21 @@ async def probe_before_run(clients: list, scaling_players, uses_friends_list: bo
     )
 
 
+#: Every action BartleBot presses, which a run needs a usable key for. Core's ``GameAction``
+#: also names the movement keys BartleBuddy's followers hold, which BartleBot never presses,
+#: so a player without them can still run a bot.
+PRESSED_ACTIONS: tuple[GameAction, ...] = (
+    GameAction.INTERACT,
+    GameAction.BACKPACK,
+    GameAction.JEWELS,
+    GameAction.CHARACTER_SHEET,
+    GameAction.DECK,
+    GameAction.HOUSING,
+    GameAction.FRIENDS,
+    GameAction.MOVE_LEFT,
+)
+
+
 def key_problems(keys: list[KeyMap]) -> tuple[str, ...]:
     """Each action a player has no key a press can use for, as a sentence; *keys* in player order.
 
@@ -121,7 +137,7 @@ def key_problems(keys: list[KeyMap]) -> tuple[str, ...]:
     """
     problems: list[str] = []
     for number, key_map in enumerate(keys, 1):
-        for action in GameAction:
+        for action in PRESSED_ACTIONS:
             choice = key_map.choose(action)
             if choice.code is None:
                 problems.append(f"Player {number}: {action_label(action)} {choice.problem}.")

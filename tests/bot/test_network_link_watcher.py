@@ -18,6 +18,7 @@ import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bartleby.runtime.timing import NETWORK_LINK_BAD_TIMEOUT, NETWORK_LINK_BROKEN_POLLS
 
 from bartlebot.bot.client_health_monitor import (
     LINK_BAD,
@@ -26,7 +27,6 @@ from bartlebot.bot.client_health_monitor import (
     ClientHealthMonitor,
     _network_link_level,
 )
-from bartlebot.nodes.timing import NETWORK_LINK_BAD_TIMEOUT, NETWORK_LINK_BROKEN_POLLS
 
 _SPRITE_NAMES = {
     LINK_SLOW: "spriteNetworkLinkSlow",

@@ -321,7 +321,7 @@ async def test_watcher_still_fires_recovery_when_kill_raises():
 
 @pytest.mark.parametrize("locale", ["de", "el", "en-US", "es", "fr", "it", "pl"])
 async def test_disconnect_is_detected_in_every_locale(locale):
-    from bartlebot.game import dialog_captions
+    from bartleby.runtime.game import dialog_captions
 
     captions = json.loads(dialog_captions.CAPTIONS_PATH.read_text(encoding="utf-8"))["captions"]
     text = captions[dialog_captions.DISCONNECTED_IDLE][locale]

@@ -3,19 +3,14 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from PyQt6.QtCore import QObject, pyqtSignal
-from wizwalker.errors import MemoryReadError
-from wizwalker.utils import get_window_title
-
-from bartlebot.bot.machine import PauseHold
-from bartlebot.clients import account_identity, game_keys, recovery_readiness, relog
-from bartlebot.clients.credentials import CredentialStore, account_label
-from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
-from bartlebot.clients.process_resources import gdi_object_count
-from bartlebot.clients.tile_slots import TileSlot, build_tile_slots
-from bartlebot.clients.window_kill import force_close_client
-from bartlebot.launcher import auto_select
-from bartlebot.nodes.timing import (
+from bartleby.runtime.clients import account_identity, game_keys
+from bartleby.runtime.clients.credentials import CredentialStore, account_label
+from bartleby.runtime.clients.launch_tracker import LaunchStage, LaunchTracker
+from bartleby.runtime.clients.process_resources import gdi_object_count
+from bartleby.runtime.clients.tile_slots import TileSlot, build_tile_slots
+from bartleby.runtime.clients.window_kill import force_close_client
+from bartleby.runtime.launcher import auto_select
+from bartleby.runtime.timing import (
     CLIENT_DETECT_ERROR_BACKOFF,
     CLIENT_DETECT_INTERVAL,
     CLIENT_DETECT_INTERVAL_IDLE,
@@ -23,6 +18,12 @@ from bartlebot.nodes.timing import (
     RELOG_PARK_TIMEOUT,
     RELOG_WATCH_INTERVAL,
 )
+from PyQt6.QtCore import QObject, pyqtSignal
+from wizwalker.errors import MemoryReadError
+from wizwalker.utils import get_window_title
+
+from bartlebot.bot.machine import PauseHold
+from bartlebot.clients import recovery_readiness, relog
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
@@ -726,7 +727,7 @@ class ClientManager(QObject):
         Never raises: a stale name degrades grouping, but an exception here would take down
         the client loop that owns hook lifecycle and crash recovery.
         """
-        from bartlebot.game import wizard_names  # noqa: PLC0415
+        from bartleby.runtime.game import wizard_names  # noqa: PLC0415
 
         try:
             changed = await wizard_names.fill_names_from_memory(clients)
@@ -757,8 +758,8 @@ class ClientManager(QObject):
         would cost the rest of the pass, tiles and names included. character_roster's own calls swallow their failures,
         so the remaining risk is a client object going away mid-pass.
         """
-        from bartlebot.clients import character_roster  # noqa: PLC0415
-        from bartlebot.game import wizard_names  # noqa: PLC0415
+        from bartleby.runtime.clients import character_roster  # noqa: PLC0415
+        from bartleby.runtime.game import wizard_names  # noqa: PLC0415
 
         for client in clients:
             try:
@@ -795,7 +796,7 @@ class ClientManager(QObject):
         Public because the launch screen asks about accounts that are not running, which
         is precisely the case no client object can answer.
         """
-        from bartlebot.clients import character_roster  # noqa: PLC0415
+        from bartleby.runtime.clients import character_roster  # noqa: PLC0415
 
         roster = self._rosters.get(username)
         if roster is None:
@@ -1560,8 +1561,8 @@ class ClientManager(QObject):
         Never raises and never stops the bot: running ungrouped is a degraded run, but
         stopping outright turns one crash into a dead overnight session.
         """
-        from bartlebot.clients import group_manager  # noqa: PLC0415
-        from bartlebot.game import wizard_names  # noqa: PLC0415
+        from bartleby.runtime.clients import group_manager  # noqa: PLC0415
+        from bartleby.runtime.game import wizard_names  # noqa: PLC0415
 
         if not SettingsManager.instance().auto_group_players:
             return
@@ -1580,7 +1581,9 @@ class ClientManager(QObject):
                 logger.debug("Skipping post-recovery grouping — all clients are already in one group")
                 self._refresh_group_routes(names, states)
                 return
-            result = await group_manager.form_group(clients, names, states=states)
+            result = await group_manager.form_group(
+                clients, names, states=states, safety_delay=SettingsManager.instance().default_safety_delay
+            )
             if result.success:
                 logger.info("Post-recovery grouping: %s", result.summary())
             else:
@@ -1655,7 +1658,7 @@ class ClientManager(QObject):
         so clients that want different resolutions cannot share a batch. They are grouped
         by resolution and each group is launched in turn. A fleet normally shares one.
         """
-        from bartlebot.launcher.launch_profile import launch_accounts  # noqa: PLC0415
+        from bartleby.runtime.launcher.launch_profile import launch_accounts  # noqa: PLC0415
 
         machine = self._machine
         if machine is None:

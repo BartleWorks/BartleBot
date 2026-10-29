@@ -15,6 +15,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.runtime.timing import DECK_APPLY_TIMEOUT
+from bartleby.shared.strategy_models import DeckData
 
 from bartlebot.combat.deck_io import (
     ACTIVE_FLAG_OFFSET,
@@ -57,9 +59,8 @@ from bartlebot.combat.deck_io import (
     write_deck,
 )
 from bartlebot.combat.deck_io import logger as deck_logger
-from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT
-from bartlebot.shared.strategy_models import DeckData
 from tests.conftest import FakeClient
+from tests.node_helper_patches import set_helper
 
 
 def slot(name: str, index: int, active: bool = False) -> ItemSlot:
@@ -3154,7 +3155,7 @@ def school_menu(monkeypatch):
     async def _rects(windows):
         return menu.sweep(windows)
 
-    monkeypatch.setattr("bartlebot.nodes.node_helpers._get_window_from_path", _get_window)
+    set_helper(monkeypatch, "_get_window_from_path", _get_window)
     monkeypatch.setattr("bartlebot.combat.deck_io._click", _click)
     monkeypatch.setattr("bartlebot.combat.deck_io._icon_rects", _rects)
     monkeypatch.setattr(
@@ -3263,7 +3264,7 @@ async def test_a_missing_selector_is_declined_rather_than_clicked_blind(school_m
     async def _no_windows(_parent, _path):
         return None
 
-    monkeypatch.setattr("bartlebot.nodes.node_helpers._get_window_from_path", _no_windows)
+    set_helper(monkeypatch, "_get_window_from_path", _no_windows)
 
     assert await set_archmastery_school(FakeClient(), "Storm") is False
     assert school_menu.clicks == []
@@ -3309,12 +3310,12 @@ async def test_wizwalkers_clear_deck_lets_a_stop_through(monkeypatch):
 async def test_the_deck_builder_presses_the_player_s_deck_key():
     """wizwalker's DeckBuilder presses P itself, always through _press_spellbook_key, which
     deck_io overrides; a wizwalker update that renames it fails here."""
+    from bartleby.runtime.clients import game_keys
+    from bartleby.runtime.game.key_bindings import PREFIX, Binding, KeyMap
     from wizwalker import Keycode
     from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 
-    from bartlebot.clients import game_keys
     from bartlebot.combat.deck_io import deck_builder
-    from bartlebot.game.key_bindings import PREFIX, Binding, KeyMap
 
     assert "_press_spellbook_key" in vars(DeckBuilder)
     client = FakeClient()

@@ -1,19 +1,19 @@
 """Unit tests for the wait_for_dialogue node."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.runtime.paths import DECLINE_QUEST_PATH
 from wizwalker import Keycode
 
 import bartlebot.nodes.interaction.wait_for_dialogue as wfd
-import bartlebot.nodes.node_helpers as nh
-from bartlebot.nodes.paths import DECLINE_QUEST_PATH
 from tests.conftest import FakeClient, FakeMachine
+from tests.node_helper_patches import patch_helper, set_helper
 
 
 @pytest.fixture(autouse=True)
 def _no_page_settle(monkeypatch):
-    monkeypatch.setattr(nh, "DIALOG_PAGE_SETTLE", 0.0)
+    set_helper(monkeypatch, "DIALOG_PAGE_SETTLE", 0.0)
 
 
 def _no_offer(visible):
@@ -40,7 +40,7 @@ async def test_no_dialogue_returns_success():
     client = FakeClient()
     # is_visible_by_path returns False by default (FakeClient.root_window.children=[])
 
-    with patch.object(nh, "POLL_INTERVAL", 0):
+    with patch_helper("POLL_INTERVAL", 0):
         result = await wfd.run(FakeMachine(), [client], {})
 
     assert result == "SUCCESS"
@@ -58,9 +58,9 @@ async def test_dialogue_dismissed_then_success():
         return False
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
-        patch.object(nh, "POLL_INTERVAL", 0),
-        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
     ):
         result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
 
@@ -78,9 +78,9 @@ async def test_multiple_dialogues_dismissed():
         return _call[0] <= 2  # True on first two calls, False after
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
-        patch.object(nh, "POLL_INTERVAL", 0),
-        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
     ):
         result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
 
@@ -92,8 +92,8 @@ async def test_timeout_returns_failure():
     """Dialogue persists beyond the timeout → FAILURE."""
     client = FakeClient()
 
-    with patch.object(nh, "is_visible_by_path", side_effect=_no_offer(AsyncMock(return_value=True))):
-        with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
+    with patch_helper("is_visible_by_path", side_effect=_no_offer(AsyncMock(return_value=True))):
+        with patch_helper("POLL_INTERVAL", 0):
             result = await wfd.run(FakeMachine(), [client], {"timeout": 0.01})
 
     assert result == "FAILURE"
@@ -104,7 +104,7 @@ async def test_zero_timeout_does_not_expire():
     client = FakeClient()
     # is_visible_by_path returns False by default
 
-    with patch.object(nh, "POLL_INTERVAL", 0):
+    with patch_helper("POLL_INTERVAL", 0):
         result = await wfd.run(FakeMachine(), [client], {"timeout": 0.0})
 
     assert result == "SUCCESS"
@@ -125,9 +125,9 @@ async def test_all_clients_must_be_clear():
         return False
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
-        patch.object(nh, "POLL_INTERVAL", 0),
-        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
     ):
         result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [free, busy], {})
 
@@ -138,7 +138,7 @@ async def test_all_clients_must_be_clear():
 
 async def test_empty_clients_returns_success():
     """No clients → no dialogue possible → SUCCESS immediately."""
-    with patch.object(nh, "POLL_INTERVAL", 0):
+    with patch_helper("POLL_INTERVAL", 0):
         result = await wfd.run(FakeMachine(), [], {})
 
     assert result == "SUCCESS"
@@ -158,9 +158,9 @@ async def test_timer_resets_after_dialogue():
     machine.get_option = lambda _: 0.001  # 1ms Safety Delay
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
-        patch.object(nh, "POLL_INTERVAL", 0),
-        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
     ):
         result = await wfd.run(machine, [client], {})
 
@@ -176,7 +176,7 @@ async def test_animation_delay_is_added_to_the_safety_delay(monkeypatch):
         seen.append(safety_delay)
         return True
 
-    monkeypatch.setattr(nh, "advance_dialogue_until_clear", _fake)
+    set_helper(monkeypatch, "advance_dialogue_until_clear", _fake)
 
     result = await wfd.run(
         FakeMachine(options={"Safety Delay": 3.0}),
@@ -196,7 +196,7 @@ async def test_without_an_animation_delay_the_quiet_period_is_the_safety_delay(m
         seen.append(safety_delay)
         return True
 
-    monkeypatch.setattr(nh, "advance_dialogue_until_clear", _fake)
+    set_helper(monkeypatch, "advance_dialogue_until_clear", _fake)
 
     result = await wfd.run(FakeMachine(options={"Safety Delay": 3.0}), [FakeClient()], {})
 

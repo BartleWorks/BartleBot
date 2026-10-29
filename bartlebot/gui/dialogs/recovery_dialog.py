@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+from bartleby.qt.widgets.buttons.action_button import ActionStyle
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -18,7 +19,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.widgets.buttons.action_button import ActionStyle
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 

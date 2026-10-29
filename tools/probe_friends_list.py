@@ -34,10 +34,10 @@ from __future__ import annotations
 import asyncio
 import sys
 
+from bartleby.runtime.paths import FRIENDS_LIST_PATHS
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import FRIENDS_LIST_PATHS
 
 # Both friends-list windows, plus every close button worth distinguishing.
 CANDIDATE_WINDOWS = [path[-1] for path in FRIENDS_LIST_PATHS]

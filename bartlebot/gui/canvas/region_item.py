@@ -8,12 +8,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
 from bartlebot.gui.canvas.lod import text_is_legible
-from bartlebot.gui.theming.theme import THEME
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import RegionModel

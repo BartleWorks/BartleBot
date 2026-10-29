@@ -35,8 +35,9 @@ import logging
 from functools import cache
 from pathlib import Path
 
+from bartleby.shared.vendor import product_dir
+
 from bartlebot.game.wiki_drops import PIN_CATEGORY, pin_kind
-from bartlebot.shared.vendor import product_dir
 
 logger = logging.getLogger(__name__)
 

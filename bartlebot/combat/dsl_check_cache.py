@@ -39,7 +39,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from bartlebot.shared.vendor import product_dir
+from bartleby.shared.vendor import product_dir
 
 logger = logging.getLogger(__name__)
 

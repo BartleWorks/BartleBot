@@ -20,9 +20,9 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bartleby.runtime.clients import account_identity
 
 from bartlebot import settings_manager as sm_mod
-from bartlebot.clients import account_identity
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.settings_manager import SettingsManager
 

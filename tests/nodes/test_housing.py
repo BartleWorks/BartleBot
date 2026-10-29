@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, patch
 import bartlebot.nodes.housing as housing
 import bartlebot.nodes.node_helpers as nh
 from tests.conftest import FakeClient
+from tests.node_helper_patches import patch_helper, set_helper
 
 # A page of castles: row -> (name, equipped)
 _TWO_CASTLES = {1: ("Arcanum Apartment", True), 2: ("Red Barn Farm", False)}
@@ -53,10 +54,10 @@ def _page(rows: dict[int, tuple[str, bool]], pages: list[dict] | None = None):
         return True
 
     return (
-        patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=get_text)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=is_visible)),
-        patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=is_enabled)),
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
+        patch_helper("get_text_by_path", new=AsyncMock(side_effect=get_text)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=is_visible)),
+        patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=is_enabled)),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=click)),
     )
 
 
@@ -224,7 +225,7 @@ async def test_set_equipped_fails_when_equip_item_never_enables(monkeypatch):
     """Selecting the row is what ungrays Equip_Item; without it the toggle is never pressed."""
     _fast(monkeypatch)
     text, visible, _enabled, click = _page(_TWO_CASTLES)
-    never = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+    never = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=False))
 
     with text, visible, never, click as c:
         assert await housing._set_equipped(FakeClient(), 2, True) is False
@@ -261,7 +262,7 @@ def _spellbook(client, *, blocked_by_other_page: bool):
         return path == housing.HOUSING_CASTLES_TAB_PATH and state["open"]
 
     client.send_key.side_effect = send_key
-    return patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=is_visible))
+    return patch_helper("is_visible_by_path", new=AsyncMock(side_effect=is_visible))
 
 
 def _keys(client) -> list:
@@ -280,7 +281,7 @@ async def test_open_page_presses_u():
 async def test_open_page_presses_nothing_when_already_open():
     client = FakeClient()
 
-    with patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)):
+    with patch_helper("is_visible_by_path", new=AsyncMock(return_value=True)):
         assert await housing.open_page(client) is True
 
     client.send_key.assert_not_awaited()
@@ -301,7 +302,7 @@ async def test_open_page_gives_up_after_its_retries(monkeypatch):
     _fast(monkeypatch)
     client = FakeClient()
 
-    with patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False)):
+    with patch_helper("is_visible_by_path", new=AsyncMock(return_value=False)):
         assert await housing.open_page(client) is False
 
     assert _keys(client).count(housing.Keycode.U) == housing.HOUSING_OPEN_RETRIES
@@ -339,16 +340,16 @@ class _Spellbook:
     def patches(self, client):
         client.send_key.side_effect = self._key
         return (
-            patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=self._visible)),
-            patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=self._enabled)),
-            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self._click)),
+            patch_helper("is_visible_by_path", new=AsyncMock(side_effect=self._visible)),
+            patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=self._enabled)),
+            patch_helper("click_by_path", new=AsyncMock(side_effect=self._click)),
         )
 
 
 def _fast_close(monkeypatch):
-    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
-    monkeypatch.setattr(nh, "WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001)
-    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.5)
+    set_helper(monkeypatch, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    set_helper(monkeypatch, "WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001)
+    set_helper(monkeypatch, "WINDOW_CLOSE_TIMEOUT", 0.5)
 
 
 async def test_close_page_clicks_the_close_button_when_there_is_one(monkeypatch):
@@ -417,8 +418,8 @@ async def test_select_castles_tab_clicks_the_tab_until_equip_item_shows():
         state["on_castles"] = path == housing.HOUSING_CASTLES_TAB_PATH
         return True
 
-    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=is_visible))
-    clicked = patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click))
+    visible = patch_helper("is_visible_by_path", new=AsyncMock(side_effect=is_visible))
+    clicked = patch_helper("click_by_path", new=AsyncMock(side_effect=click))
 
     with visible, clicked as c:
         assert await housing.select_castles_tab(client) is True
@@ -427,8 +428,8 @@ async def test_select_castles_tab_clicks_the_tab_until_equip_item_shows():
 
 
 async def test_select_castles_tab_does_not_click_when_already_there():
-    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
-    clicked = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    visible = patch_helper("is_visible_by_path", new=AsyncMock(return_value=True))
+    clicked = patch_helper("click_by_path", new=AsyncMock(return_value=True))
 
     with visible, clicked as c:
         assert await housing.select_castles_tab(FakeClient()) is True
@@ -438,8 +439,8 @@ async def test_select_castles_tab_does_not_click_when_already_there():
 
 async def test_select_castles_tab_fails_when_equip_item_never_shows(monkeypatch):
     _fast(monkeypatch)
-    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
-    clicked = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    visible = patch_helper("is_visible_by_path", new=AsyncMock(return_value=False))
+    clicked = patch_helper("click_by_path", new=AsyncMock(return_value=True))
 
     with visible, clicked:
         assert await housing.select_castles_tab(FakeClient()) is False
@@ -464,9 +465,9 @@ async def test_find_equipped_row_gives_up_rather_than_paging_forever():
 
 async def test_next_page_stops_at_a_grayed_scroll_button():
     """A visible but grayed rightscroll is the last page; clicking it would not advance."""
-    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
-    enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
-    clicked = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    visible = patch_helper("is_visible_by_path", new=AsyncMock(return_value=True))
+    enabled = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=False))
+    clicked = patch_helper("click_by_path", new=AsyncMock(return_value=True))
 
     with visible, enabled, clicked as c:
         assert await housing._next_page(FakeClient()) is False

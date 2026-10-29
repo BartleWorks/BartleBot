@@ -11,12 +11,12 @@ from contextlib import contextmanager
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
 from wizwalker import XYZ
 
-import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.mark_location as ml
-from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
 from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
 _PARAMS = {
@@ -105,9 +105,9 @@ def _game(huds: dict):
         huds[client].click()
 
     with (
-        patch.object(nh, "is_enabled_by_path", new=is_enabled),
-        patch.object(nh, "is_visible_by_path", new=is_visible),
-        patch.object(nh, "click_by_path", new=click),
+        patch_helper("is_enabled_by_path", new=is_enabled),
+        patch_helper("is_visible_by_path", new=is_visible),
+        patch_helper("click_by_path", new=click),
         patch.object(ml, "POLL_INTERVAL", 0),
     ):
         yield

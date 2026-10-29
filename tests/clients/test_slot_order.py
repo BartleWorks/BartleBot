@@ -10,9 +10,9 @@ reserve_slots, before any window exists.
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bartleby.runtime.launcher.launch_profile import launch_profile
 
 from bartlebot.clients.client_manager import ClientManager
-from bartlebot.launcher.launch_profile import launch_profile
 
 
 class OrderHarness:
@@ -129,20 +129,20 @@ async def test_launch_profile_spawns_only_the_accounts_it_was_given():
     logins: list[str] = []
 
     with (
-        patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-        patch("bartlebot.launcher.launch_profile._patch_window_config"),
-        patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-        patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
-        patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
-        patch("bartlebot.launcher.launch_profile.start_instance") as start,
+        patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+        patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+        patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+        patch("bartleby.runtime.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
+        patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+        patch("bartleby.runtime.launcher.launch_profile.start_instance") as start,
         patch(
-            "bartlebot.launcher.launch_profile.instance_login",
+            "bartleby.runtime.launcher.launch_profile.instance_login",
             lambda _h, username, _pw: logins.append(username),
         ),
-        patch("bartlebot.launcher.launch_profile.set_window_title"),
-        patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
-        patch("bartlebot.launcher.launch_profile.CredentialStore") as creds,
-        patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+        patch("bartleby.runtime.launcher.launch_profile.jitter", return_value=0.0),
+        patch("bartleby.runtime.launcher.launch_profile.CredentialStore") as creds,
+        patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
     ):
         creds.retrieve.return_value = "pw"
         creds.display_name.side_effect = lambda u, _a: u
@@ -161,11 +161,11 @@ async def test_launch_profile_spawns_only_the_accounts_it_was_given():
 async def test_launch_profile_spawns_nothing_when_every_account_is_filtered_out():
     """A profile whose accounts are all already launching is a no-op, not an empty batch."""
     with (
-        patch("bartlebot.launcher.launch_profile.patch_open_browser") as browser,
-        patch("bartlebot.launcher.launch_profile._patch_window_config"),
-        patch("bartlebot.launcher.launch_profile.start_instance") as start,
-        patch("bartlebot.launcher.launch_profile.CredentialStore") as creds,
-        patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        patch("bartleby.runtime.launcher.launch_profile.patch_open_browser") as browser,
+        patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+        patch("bartleby.runtime.launcher.launch_profile.start_instance") as start,
+        patch("bartleby.runtime.launcher.launch_profile.CredentialStore") as creds,
+        patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
     ):
         creds.retrieve.return_value = "pw"
         creds.display_name.side_effect = lambda u, _a: u
@@ -187,17 +187,17 @@ async def test_launch_profile_spawns_nothing_when_every_account_is_filtered_out(
 async def test_launch_profile_launches_the_whole_profile_by_default():
     """usernames is a filter, not a requirement — None launches everything."""
     with (
-        patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-        patch("bartlebot.launcher.launch_profile._patch_window_config"),
-        patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-        patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1])),
-        patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
-        patch("bartlebot.launcher.launch_profile.start_instance"),
-        patch("bartlebot.launcher.launch_profile.instance_login"),
-        patch("bartlebot.launcher.launch_profile.set_window_title"),
-        patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
-        patch("bartlebot.launcher.launch_profile.CredentialStore") as creds,
-        patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+        patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+        patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+        patch("bartleby.runtime.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1])),
+        patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+        patch("bartleby.runtime.launcher.launch_profile.start_instance"),
+        patch("bartleby.runtime.launcher.launch_profile.instance_login"),
+        patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+        patch("bartleby.runtime.launcher.launch_profile.jitter", return_value=0.0),
+        patch("bartleby.runtime.launcher.launch_profile.CredentialStore") as creds,
+        patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
     ):
         creds.retrieve.return_value = "pw"
         creds.display_name.side_effect = lambda u, _a: u

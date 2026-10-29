@@ -22,11 +22,10 @@ so it reads the same to someone who cannot tell the accent from the off fill.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QPointF, QRectF, QSize, Qt
 from PyQt6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QCheckBox, QWidget
-
-from bartlebot.gui.theming.theme import THEME
 
 SWITCH_WIDTH_PX = 36
 SWITCH_HEIGHT_PX = 20

@@ -3,12 +3,12 @@
 from types import SimpleNamespace
 
 import pytest
+from bartleby.runtime.clients.wizwalker_cache import apply_cache_dir, cache_dir
+from bartleby.shared.vendor import local_vendor_dir
 from wizwalker import utils as ww_utils
 
 from bartlebot import app_controller
 from bartlebot.app_controller import AppController
-from bartlebot.clients.wizwalker_cache import apply_cache_dir, cache_dir
-from bartlebot.shared.vendor import local_vendor_dir
 
 
 @pytest.fixture(autouse=True)

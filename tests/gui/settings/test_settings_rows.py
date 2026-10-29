@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.shared.vendor import product_dir
 from PyQt6.QtWidgets import QCheckBox, QSpinBox
 
 from bartlebot.gui.settings.bot_tab import BotTab
@@ -19,9 +21,7 @@ from bartlebot.gui.settings.rows import (
 )
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.gui.ui_state import UI_STATE_FILE, UiState
-from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.vendor import product_dir
 
 
 def _check_row(default: bool = True, *, details: str = "Longer prose.") -> SettingRow:

@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import enum
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout
 
 from bartlebot.content.bot_tags import REWARDS, TAG_GROUPS
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.layout.flow_layout import flow_container
 from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill

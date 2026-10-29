@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtGui import QFont, QFontMetrics
 from PyQt6.QtWidgets import QStyle
 
@@ -28,7 +29,6 @@ from bartlebot.gui.canvas.bot_canvas import (
     CATEGORY_LIST_WIDTH,
     CATEGORY_PAD_X,
 )
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartlebot.paths import project_root
 

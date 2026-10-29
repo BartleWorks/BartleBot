@@ -8,7 +8,9 @@ sight (#133), and the realm step Player Sync used to run separately is part of i
 
 import logging
 
-from bartlebot.game import realms, zone_names
+from bartleby.runtime.game import realms
+
+from bartlebot.game import zone_names
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM

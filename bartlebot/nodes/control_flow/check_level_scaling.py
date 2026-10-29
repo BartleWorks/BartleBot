@@ -2,9 +2,10 @@
 
 import asyncio
 
+from bartleby.runtime.paths import LEVEL_SCALING_ELIXIR_PATH
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH
 from bartlebot.options.option_groups import GROUP_TEAM
 
 PARAM_SCHEMA: list[ParamField] = []

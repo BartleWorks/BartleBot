@@ -2,9 +2,10 @@
 
 import logging
 
+from bartleby.runtime.timing import INTERACT_ANIMATION_DELAY
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import INTERACT_ANIMATION_DELAY
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

@@ -30,9 +30,10 @@ import threading
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
+from bartleby.shared.vendor import product_dir
+
 from bartlebot.game.wiki_pages import WIKI_HOST, wiki_page_path
 from bartlebot.packaging.build_kind import is_packaged
-from bartlebot.shared.vendor import product_dir
 
 logger = logging.getLogger(__name__)
 

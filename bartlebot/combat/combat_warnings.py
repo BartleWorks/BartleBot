@@ -31,6 +31,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from bartleby.shared.strategy_models import DuelConfig
+
 from bartlebot.combat.bot_combat_strategy import StrategyLookup, own_players_of
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.combat_resolution import (
@@ -45,13 +47,13 @@ from bartlebot.combat.fight_keys import bind, exposed_combat_states
 from bartlebot.combat.strategy_summary import format_players as _format_players
 from bartlebot.combat.strategy_summary import slot_order_warning
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.shared.strategy_models import DuelConfig
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from bartleby.shared.preferences import PreferenceStore
+
     from bartlebot.bot.schema import BotConfig
-    from bartlebot.shared.preferences import PreferenceStore
 
 __all__ = ["CombatCheck", "check_combat", "exposed_combat_states"]
 

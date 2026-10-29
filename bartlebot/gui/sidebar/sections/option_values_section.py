@@ -56,6 +56,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.shared.account_setup import has_team
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
@@ -76,7 +79,6 @@ from bartlebot.gui.sidebar.option_gutter import (
 )
 from bartlebot.gui.sidebar.sidebar_section import HeadingAction, SidebarSection, field_label
 from bartlebot.gui.sidebar.strategy_panel import LOCKED
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.buttons.toggle_switch import ToggleSwitch
 from bartlebot.gui.widgets.inputs.option_widgets import (
     TALL_TYPES,
@@ -86,12 +88,10 @@ from bartlebot.gui.widgets.inputs.option_widgets import (
     make_option_widget,
     set_widget_value,
 )
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 from bartlebot.options import bot_options, option_groups
 from bartlebot.options.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.account_setup import has_team
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

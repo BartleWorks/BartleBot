@@ -39,9 +39,10 @@ import logging
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from bartleby.shared.strategy_models import ROLE_TAGS, normalize_role_tags
+
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
-from bartlebot.shared.strategy_models import ROLE_TAGS, normalize_role_tags
 
 logger = logging.getLogger(__name__)
 

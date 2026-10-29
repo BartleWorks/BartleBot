@@ -10,6 +10,7 @@ import pytest
 
 import bartlebot.nodes.zone_entry.enter_zone_via_list as evl
 from tests.conftest import FakeClient, FakeMachine, prompt_at
+from tests.node_helper_patches import patch_helper, set_helper
 
 _PARAMS = {
     "zone": "TestZone",
@@ -19,18 +20,15 @@ _PARAMS = {
     "zone_list_entry": "Krokotopia",
 }
 
-_NH = "bartlebot.nodes.zone_entry.enter_zone_via_list.node_helpers"
-
 
 @pytest.fixture(autouse=True)
 def _short_window_close(monkeypatch):
     """Most fakes here answer every visibility read with True, so a cancelled list never
     reads closed and each cancel would retry for the full WINDOW_CLOSE_TIMEOUT. The cancel's
     outcome changes nothing those tests assert; the one test of the cancel itself is below."""
-    import bartlebot.nodes.node_helpers as nh
 
-    monkeypatch.setattr(nh, "WINDOW_CLOSE_TIMEOUT", 0.05)
-    monkeypatch.setattr(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
+    set_helper(monkeypatch, "WINDOW_CLOSE_TIMEOUT", 0.05)
+    set_helper(monkeypatch, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01)
 
 
 async def test_a_cancel_is_clicked_again_until_the_list_is_gone():
@@ -50,8 +48,8 @@ async def test_a_cancel_is_clicked_again_until_the_list_is_gone():
         return True
 
     with (
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(side_effect=_visible)),
-        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+        patch_helper("is_visible_by_path", AsyncMock(side_effect=_visible)),
+        patch_helper("click_by_path", AsyncMock(side_effect=_click)),
     ):
         await evl._cancel_list(FakeClient())
 
@@ -86,9 +84,9 @@ async def test_success_entry_on_first_page():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -103,9 +101,9 @@ async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -135,9 +133,9 @@ async def test_success_entry_on_second_page():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", _get_text),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", _get_text),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -152,10 +150,10 @@ async def test_fuzzy_match_partial_name():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
         # List shows a longer name; entry is a substring → fuzzy match succeeds
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopian Oasis", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopian Oasis", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -188,9 +186,9 @@ async def test_an_exact_match_on_a_later_page_beats_a_fuzzy_hit_on_an_earlier_on
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", _get_text),
-        patch(f"{_NH}.click_by_path", click_mock),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", _get_text),
+        patch_helper("click_by_path", click_mock),
     ):
         result = await evl.run(FakeMachine(), [client], params)
 
@@ -239,9 +237,9 @@ async def test_circular_detection_fails_when_no_match():
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", _get_text),
-        patch(f"{_NH}.click_by_path", click_mock),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", _get_text),
+        patch_helper("click_by_path", click_mock),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -272,9 +270,9 @@ async def test_entry_not_found_cancels_and_fails():
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", _get_text),
-        patch(f"{_NH}.click_by_path", click_mock),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", _get_text),
+        patch_helper("click_by_path", click_mock),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -302,7 +300,7 @@ async def test_zone_list_never_opens_fails():
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=False)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=False)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -317,9 +315,9 @@ async def test_zone_change_timeout_fails():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.01),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -335,9 +333,9 @@ async def test_stale_prompt_cleared():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -357,9 +355,9 @@ async def test_resets_before_approaching_even_with_no_prompt_showing_yet():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
@@ -387,10 +385,10 @@ async def test_instance_prompt_is_answered_after_the_teleport_click():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.answer_instance_prompts", answer),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
+        patch_helper("answer_instance_prompts", answer),
     ):
         result = await evl.run(FakeMachine(), clients, _PARAMS)
 
@@ -401,7 +399,7 @@ async def test_instance_prompt_is_answered_after_the_teleport_click():
 
 async def test_a_refused_teleport_fails_instead_of_waiting_for_a_zone_change():
     """A gauntlet will not let anyone change areas, so the arrival wait cannot succeed."""
-    from bartlebot.game import dialog_captions
+    from bartleby.runtime.game import dialog_captions
 
     clients = [_ready_client()]
     machine = FakeMachine()
@@ -409,11 +407,11 @@ async def test_a_refused_teleport_fails_instead_of_waiting_for_a_zone_change():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
-        patch(
-            f"{_NH}.answer_instance_prompts",
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
+        patch_helper(
+            "answer_instance_prompts",
             AsyncMock(return_value=dialog_captions.GAUNTLET_NO_ZONE_CHANGE),
         ),
     ):
@@ -467,10 +465,10 @@ async def test_sequential_each_client_uses_the_list_alone():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
-        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+        patch_helper("OBJECT_USE_DELAY", 0),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
+        patch_helper("click_by_path", AsyncMock(side_effect=_click)),
     ):
         result = await evl.run(FakeMachine(), clients, params)
 
@@ -492,10 +490,10 @@ async def test_sequential_entry_not_found_cancels_and_fails():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "_MAX_PAGES", 2),
-        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(return_value="Wizard City")),
-        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+        patch_helper("OBJECT_USE_DELAY", 0),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(return_value="Wizard City")),
+        patch_helper("click_by_path", AsyncMock(side_effect=_click)),
     ):
         result = await evl.run(machine, [client], params)
 
@@ -514,9 +512,9 @@ async def test_sequential_prompt_never_appears_fails():
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
-        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("OBJECT_USE_DELAY", 0),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(machine, [client], params)
 
@@ -540,11 +538,11 @@ async def test_sequential_turn_that_fails_for_one_client_is_left_to_the_arrival_
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
-        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
-        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
-        patch(f"{_NH}.wait_for_zone_with_recovery", arrival),
+        patch_helper("OBJECT_USE_DELAY", 0),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
+        patch_helper("click_by_path", AsyncMock(side_effect=_click)),
+        patch_helper("wait_for_zone_with_recovery", arrival),
     ):
         result = await evl.run(machine, [c1, c2], {**_PARAMS, "sequential": True})
 
@@ -586,9 +584,9 @@ async def test_alias_is_selected_when_the_list_is_in_another_locale():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Drachenfels", "", "", ""] * 10)),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(side_effect=["Drachenfels", "", "", ""] * 10)),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], params)
 
@@ -603,9 +601,9 @@ async def test_no_aliases_behaves_exactly_as_before():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.get_text_by_path", AsyncMock(return_value="Drachenfels")),
-        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", AsyncMock(return_value="Drachenfels")),
+        patch_helper("click_by_path", AsyncMock(return_value=True)),
     ):
         # _PARAMS asks for "Krokotopia" and carries no aliases, so the German row must miss.
         # Every page reads the same, so the visited-signature check wraps and gives up.

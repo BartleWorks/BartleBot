@@ -11,19 +11,27 @@ from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
+from bartleby.runtime import run_trace
+from bartleby.runtime.clients import group_manager
+from bartleby.runtime.clients.window_kill import force_close_client
+from bartleby.runtime.clients.wizwalker_cache import apply_cache_dir
+from bartleby.runtime.game import wizard_names
+from bartleby.runtime.launcher.launch_profile import restore_game_prefs, restore_ui_size
+from bartleby.runtime.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.vendor import PRODUCT, VENDOR
 from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.bot import run_trace, variables
+from bartlebot.bot import variables
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
-from bartlebot.clients import group_manager, recovery_readiness, run_probe
+from bartlebot.clients import recovery_readiness, run_probe
 from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.clients.client_manager import ClientManager
 from bartlebot.clients.install_location import apply_install
-from bartlebot.clients.window_kill import force_close_client
-from bartlebot.clients.wizwalker_cache import apply_cache_dir
 from bartlebot.combat import strategy_store
 from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_run
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
@@ -43,7 +51,7 @@ from bartlebot.content.subgraphs.subgraphs import (
     definition_to_config,
 )
 from bartlebot.content.templates import setup_steps, template_diff, template_gallery, template_store
-from bartlebot.game import restricted_zones, wizard_names, zone_names
+from bartlebot.game import restricted_zones, zone_names
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
@@ -60,26 +68,21 @@ from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
 from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
 from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.dialogs.templates_dialog import TemplatesDialog, TemplatesVerb
-from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
 from bartlebot.gui.single_instance import LaunchQueue, SingleInstance, raise_window
 from bartlebot.gui.update_prompt import UpdatePrompt
-from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
-from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
+from bartlebot.logging_setup import add_gui_callback, remove_gui_callback, session_log_dir
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
-from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.options import option_values, player_realms
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Coroutine, Sequence
 
-    from bartlebot.shared.strategy_models import DeckData
+    from bartleby.shared.strategy_models import DeckData
 
 #: What a PlayerCard shows for a zone it could not read; never a real zone name.
 _ZONE_PLACEHOLDER = "—"
@@ -173,6 +176,18 @@ def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str])
             live.append(canonical)
     recent = dict.fromkeys(zone_names.canonical_zone(z) for z in recent_zones)
     return live, live + [z for z in recent if z not in live]
+
+
+def start_run_trace(slot_of) -> Path | None:
+    """Begin the run's trace, in developer mode only, under ``logs/trace/``. Returns its file.
+
+    Core's ``run_trace`` writes wherever it is told; whether a run is traced at all is
+    BartleBot's call, and it is only while ``BARTLEBOT_DEV`` is set (``store_roots.dev_mode``).
+    ``tools/run_trace_report.py`` summarizes the newest one.
+    """
+    if not dev_mode():
+        return None
+    return run_trace.start(slot_of, session_log_dir() / "trace")
 
 
 def _share_files(args: list[str]) -> list[str]:
@@ -327,7 +342,7 @@ class AppController(QObject):
         """Give the game back the display settings a previous session overwrote.
 
         A launch below 800x600 has to shrink the game's own HUD to match (see
-        bartlebot/game/game_sizing.py), and every launch retiles the resolution and forces
+        bartleby/runtime/game/game_sizing.py), and every launch retiles the resolution and forces
         windowed mode. The user plays Wizard101 outside BartleBot, so all three are put
         back on quit. This is the other half: a session that died without reaching the
         quit path left them in place, and nothing else would ever undo them. No-op when
@@ -474,7 +489,7 @@ class AppController(QObject):
         # Client list changes → start button state. The game view is not connected here:
         # a tile's position follows its slot rather than its player index, so ClientManager
         # syncs the view itself, on every detection tick, including ticks where the client
-        # list did not change at all. See bartlebot.clients.tile_slots.
+        # list did not change at all. See bartleby.runtime.clients.tile_slots.
         self._client_manager.clients_changed.connect(self._on_clients_changed)
 
         # Wizard names → game tile pills. The sidebar reads the cache directly in its own
@@ -2587,7 +2602,7 @@ class AppController(QObject):
         The read half of an import, shared by one slot and by all of them, so Import all
         can read concurrently and still save once.
         """
-        from bartlebot.shared.strategy_models import DeckData  # noqa: PLC0415
+        from bartleby.shared.strategy_models import DeckData  # noqa: PLC0415
 
         logger.info("Importing deck for slot %d", slot)
         try:
@@ -3099,7 +3114,7 @@ class AppController(QObject):
         self._window.left_sidebar.set_bot_running(True)
         self._hotkeys.set_armed(False)
         self._slot_hotkeys.set_armed(False)
-        run_trace.start(self._player_number)
+        start_run_trace(self._player_number)
         try:
             # A run walks at the game's own speed and fights through its own nodes.
             await self._authoring.suspend_for_run()
@@ -3231,7 +3246,9 @@ class AppController(QObject):
             with run_trace.span("group.resolve_names"):
                 names = await wizard_names.resolve_names(clients)
             with run_trace.span("group.form"):
-                result = await group_manager.form_group(clients, names, states=states)
+                result = await group_manager.form_group(
+                    clients, names, states=states, safety_delay=SettingsManager.instance().default_safety_delay
+                )
             if result.success:
                 logger.info("Pre-run grouping: %s", result.summary())
             else:
@@ -3579,12 +3596,7 @@ class AppController(QObject):
 
     def _apply_theme(self) -> None:
         """Read the theme setting and apply palette + stylesheet to the app."""
-        from bartlebot.gui.theming.theme import (  # noqa: PLC0415
-            THEME,
-            build_custom_theme,
-            set_theme,
-            set_theme_instance,
-        )
+        from bartleby.qt.theming.theme import THEME, build_custom_theme, set_theme, set_theme_instance  # noqa: PLC0415
 
         sm = SettingsManager.instance()
         theme_mode = sm.get_general("theme", default="system")

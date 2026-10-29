@@ -8,9 +8,9 @@ the whole QObject and its handler.
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import bartleby.runtime.game.wizard_names as wn
 import pytest
 
-import bartlebot.game.wizard_names as wn
 from bartlebot.clients.client_manager import ClientManager
 from tests.conftest import FakeClient
 

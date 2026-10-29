@@ -5,9 +5,10 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game.key_bindings import PREFIX, Binding, KeyMap
 
-from bartlebot.clients import game_keys, run_probe
-from bartlebot.game.key_bindings import PREFIX, Binding, KeyMap
+from bartlebot.clients import run_probe
 from bartlebot.nodes.utility import handle_level_scaling
 from tests.conftest import FakeClient
 

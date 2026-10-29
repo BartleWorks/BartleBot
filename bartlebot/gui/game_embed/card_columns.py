@@ -45,6 +45,10 @@ engine its cards on every ``set_cards`` and passes ``reordered`` straight on.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.game.game_sizing import FitProblem
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
@@ -54,13 +58,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.game.game_sizing import FitProblem
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
     AUTOSCROLL_MARGIN,
     CARD_SETTLE_MS,

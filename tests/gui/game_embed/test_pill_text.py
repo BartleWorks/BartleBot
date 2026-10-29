@@ -4,7 +4,8 @@ The tiles themselves are QWidgets that need a QApplication, so the caption logic
 function and only that is tested here.
 """
 
-from bartlebot.gui.game_embed.client_tile import pill_text
+from bartleby.qt.game_embed.client_tile import pill_text
+
 from bartlebot.gui.game_embed.game_view import GameView
 
 
@@ -47,15 +48,15 @@ def test_streamer_mode_drops_the_name_and_keeps_the_label():
 # the names arrived gets one, which is exactly what went wrong the first time.
 #
 # Names arrive keyed by **player** index and tiles are keyed by **slot**, which are only
-# the same number while every account is in game (see bartlebot.clients.tile_slots). _tile_players
+# the same number while every account is in game (see bartleby.runtime.clients.tile_slots). _tile_players
 # is the join between them, so every stub here has to state it.
 # ---------------------------------------------------------------------------
 
 
 def test_an_unknown_account_gets_the_neutral_pill_and_the_accent_focus_border():
     """No account known means no color, never a default one (#40)."""
-    from bartlebot.gui.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
-    from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415
+    from bartleby.qt.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
+    from bartleby.qt.theming.theme import THEME  # noqa: PLC0415
 
     fill, border, text = tile_pill_colors(None)
 
@@ -66,8 +67,8 @@ def test_an_unknown_account_gets_the_neutral_pill_and_the_accent_focus_border():
 
 
 def test_a_known_account_outlines_and_tints_the_pill_and_colors_the_focus_border():
-    from bartlebot.gui.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
-    from bartlebot.gui.theming.account_accent import account_accent  # noqa: PLC0415
+    from bartleby.qt.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_accent  # noqa: PLC0415
 
     fill, border, _text = tile_pill_colors(3)
 

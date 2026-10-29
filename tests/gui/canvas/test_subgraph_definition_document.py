@@ -967,7 +967,7 @@ def test_unlinking_a_nested_input_keeps_the_value_and_the_outer_input(outer_doc)
 
 def test_the_signature_page_lists_and_unlinks_a_nested_link(outer_doc):
     outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
-    from bartlebot.gui.widgets.buttons.link_button import LinkButton  # noqa: PLC0415
+    from bartleby.qt.widgets.buttons.link_button import LinkButton  # noqa: PLC0415
 
     outer_doc.param_panel.show_signature(outer_doc.config)
     page = outer_doc.param_panel.signature_page
@@ -1054,7 +1054,7 @@ def test_a_linked_promoted_row_is_the_outer_inputs_default_both_ways(promoted_do
 
 
 def test_the_signature_page_names_a_promoted_row_by_its_group(promoted_doc):
-    from bartlebot.gui.widgets.buttons.link_button import LinkButton  # noqa: PLC0415
+    from bartleby.qt.widgets.buttons.link_button import LinkButton  # noqa: PLC0415
 
     promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
     promoted_doc.param_panel.show_signature(promoted_doc.config)
@@ -1260,7 +1260,7 @@ def test_selecting_an_input_asks_the_canvas_to_light_what_it_sets(doc):
 
 
 def test_a_link_row_centers_its_node_without_selecting_it(doc):
-    from bartlebot.gui.widgets.buttons.link_button import LinkButton  # noqa: PLC0415
+    from bartleby.qt.widgets.buttons.link_button import LinkButton  # noqa: PLC0415
 
     page = _page(doc)
     page.select("i:world")

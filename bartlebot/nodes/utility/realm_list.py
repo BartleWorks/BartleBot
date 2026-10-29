@@ -15,9 +15,8 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from bartlebot.game import dialog_captions, realms
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.game import dialog_captions, realms
+from bartleby.runtime.paths import (
     REALM_CURRENT_NAME_PATH,
     REALM_GO_TO_BUTTON_PATH,
     REALM_NEXT_PAGE_PATH,
@@ -28,7 +27,9 @@ from bartlebot.nodes.paths import (
     realm_button_path,
     realm_name_path,
 )
-from bartlebot.nodes.timing import POLL_INTERVAL, REALM_HOP_TIMEOUT, TRIGGER_TIMEOUT
+from bartleby.runtime.timing import POLL_INTERVAL, REALM_HOP_TIMEOUT, TRIGGER_TIMEOUT
+
+from bartlebot.nodes import node_helpers
 
 #: Rows the realm panel shows per page (btnRealm0 .. btnRealm6).
 REALMS_PER_PAGE = 7

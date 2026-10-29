@@ -6,11 +6,11 @@ unrouted FAILURE's route to the recovery state, which the canvas never draws.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtWidgets import QScrollArea
 
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas.param_panel import _ParamPanel
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.ui_state import UiState
 from bartlebot.options import param_cards
 from bartlebot.options.option_groups import summary_text

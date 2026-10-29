@@ -1,6 +1,6 @@
 """Whether a launch will fit on screen, asked from a widget.
 
-``bartlebot/game/game_sizing.py`` owns the arithmetic and knows nothing about Qt or settings.
+``bartleby/runtime/game/game_sizing.py`` owns the arithmetic and knows nothing about Qt or settings.
 This is the thin layer that supplies it with the things only the running app has: which
 screen the window is on, that screen's scale factor, how wide the user has configured
 their sidebars, and — where a caller can see it — how big the game area actually is right
@@ -33,11 +33,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import NamedTuple
 
+from bartleby.runtime.game import game_sizing
+from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QWidget
 
-from bartlebot.game import game_sizing
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+from bartlebot.settings_manager import SettingsManager
 
 # Stands in for a screen that cannot be measured. Big enough that nothing is refused:
 # an app that cannot see a screen must not be one that refuses to launch anything.

@@ -2,16 +2,18 @@
 
 from unittest.mock import AsyncMock, patch
 
+from bartleby.runtime.paths import HUB_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_world_hub as gwh
-from bartlebot.nodes.paths import HUB_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeMachine, message_box_patches, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper
 
 _ZONE = "WizardCity/WC_Hub"
 _PARAMS = {"zone": _ZONE}
 
 # Patch is_enabled_by_path → True by default so tests don't hang waiting for the button.
-_BUTTON_ENABLED = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+_BUTTON_ENABLED = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True))
 
 
 def _client_not_in_hub() -> FakeClient:
@@ -47,7 +49,7 @@ async def test_a_zone_unreadable_at_first_is_waited_for_not_sent_to_the_hub():
     zone_unreadable_at_first(client, _ZONE)
     click = AsyncMock(return_value=True)
 
-    with _BUTTON_ENABLED, patch.object(nh, "click_by_path", new=click):
+    with _BUTTON_ENABLED, patch_helper("click_by_path", new=click):
         result = await gwh.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -73,7 +75,7 @@ async def test_button_timeout_returns_failure():
     client.zone_name.return_value = "OtherZone"
 
     with (
-        patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False)),
+        patch_helper("is_enabled_by_path", new=AsyncMock(return_value=False)),
         patch.object(gwh, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(gwh, "POLL_INTERVAL", 0),
     ):

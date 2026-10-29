@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_models import PlayerCombatStrategy
 from PyQt6.QtCore import QEvent, QMimeData, QPoint, QPointF, Qt, QUrl
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import QDialog, QLineEdit, QMessageBox
@@ -22,7 +23,6 @@ from bartlebot.gui.dialogs import import_dialog
 from bartlebot.gui.dialogs.import_dialog import CHOICES_HEADING, COPIES_NOTE, REST_HEADING, ImportDialog, confirm_import
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file, share_paths
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.strategy_models import PlayerCombatStrategy
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 from tests.content.subgraphs.test_subgraph_store import _defn
 from tests.content.test_share_import import WORLD, Library, _bot, _combat, _export, _send_bot, _sender_setup

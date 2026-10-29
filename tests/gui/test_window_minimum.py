@@ -20,12 +20,13 @@ because the failure was the gap between the arithmetic and the widgets.
 from __future__ import annotations
 
 import pytest
+from bartleby.runtime.game import game_sizing as gs
+from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QBoxLayout, QComboBox, QScrollArea, QSizePolicy, QStyleFactory, QWidget
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.game import game_sizing as gs
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
@@ -35,7 +36,7 @@ from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.option_card import BODY_MARGIN_PX
 from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+from bartlebot.settings_manager import SettingsManager
 
 # The Players tab, and the two things between its viewport and the sidebar's own edge
 # that no widget reports on its own: the tab widget's frame, and the room a machine with

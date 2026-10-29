@@ -22,6 +22,9 @@ import json
 import logging
 from pathlib import Path
 
+from bartleby.shared.content_hash import official_updated
+from bartleby.shared.store_files import record_save_in
+
 from bartlebot.bot.schema import SubgraphDefinition
 from bartlebot.content.store_roots import (
     SOURCE_LABELS,  # noqa: F401  (re-exported: the subgraph surfaces import it from here)
@@ -35,8 +38,6 @@ from bartlebot.content.store_roots import (
     save_by_id,
     source_label,  # noqa: F401  (re-exported)
 )
-from bartlebot.shared.content_hash import official_updated
-from bartlebot.shared.store_files import record_save_in
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ def save_subgraph(
     """Write to the user root only; the shipped file is never touched.
 
     Records the history and, on an override, the Official base first
-    (:func:`~bartlebot.shared.store_files.record_save_in`), into ``defn`` itself.
+    (:func:`~bartleby.shared.store_files.record_save_in`), into ``defn`` itself.
     ``record=False`` writes the history ``defn`` already has, as an import does (#171).
     """
     shipped, user = resolve_roots(root, user_root)

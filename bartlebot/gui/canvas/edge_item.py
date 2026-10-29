@@ -2,6 +2,7 @@
 
 import math
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QFontMetricsF, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphicsItem
@@ -9,7 +10,6 @@ from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphi
 from bartlebot.bot import variables
 from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.canvas.node_item import NODE_W, NodeItem
-from bartlebot.gui.theming.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Constants

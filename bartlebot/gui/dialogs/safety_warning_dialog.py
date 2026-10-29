@@ -7,6 +7,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionStyle
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
@@ -22,8 +24,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionStyle
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend

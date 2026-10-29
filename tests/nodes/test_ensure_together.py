@@ -7,11 +7,12 @@ if that port fails. A Separate bot (#132) is never gathered.
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.clients.sightings import Reading, Sightings, choose_leader
+from bartleby.runtime.game import wizard_names
 
 import bartlebot.nodes.node_helpers as nh
-from bartlebot.clients.sightings import Reading, Sightings, choose_leader
-from bartlebot.game import wizard_names
 from tests.conftest import FakeClient, FakeMachine, see_each_other
+from tests.node_helper_patches import patch_helper, set_helper
 
 # Synthetic names from tools/name_key_samples.json -- never a real player's.
 _NAMES = ("Luke SkullHunter", "Misha SkullSeer", "Michelle HistoryBond", "Naomi HexPaint")
@@ -124,9 +125,9 @@ async def test_a_separate_bot_is_never_gathered():
 
 
 async def test_gather_moves_only_the_players_it_is_told_to(monkeypatch):
-    monkeypatch.setattr(nh, "PORT_QUIET_GRACE", 0.05)
+    set_helper(monkeypatch, "PORT_QUIET_GRACE", 0.05)
     a, b, c = _named(3)
     port = AsyncMock(return_value=nh.PortToFriendResult(seen_loading={0}))
-    with patch.object(nh, "port_to_friend", port):
+    with patch_helper("port_to_friend", port):
         assert await nh.gather_at_player(FakeMachine(), [a, b, c], 1, _NAMES[1], poll_interval=0.001, only=[0])
     assert port.await_args.args[0] == [a]

@@ -24,7 +24,7 @@ MATCHING
 --------
 
 Each packed item is matched by its id, by the vendor's rules
-(:mod:`bartlebot.shared.share_match`): Add, Already have it, Update, Keep mine, a
+(:mod:`bartleby.shared.share_match`): Add, Already have it, Update, Keep mine, a
 Conflict defaulting to **Import as copy**, and an item that would shadow an Official one
 always coming in as a copy. Items are matched in the order their links run -- player
 strategies, duels, subgraphs (nested ones first), bots, Bot Combat Strategies, decks --
@@ -61,6 +61,27 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from bartleby.shared import strategy_library
+from bartleby.shared.content_hash import content_sha256, next_history
+from bartleby.shared.share_file import SHARE_FORMAT, ShareFile
+from bartleby.shared.share_match import (
+    CHOICES,
+    WRITES,
+    Action,
+    Held,
+    Outcome,
+    copy_id,
+    copy_ids,
+    copy_outcome,
+    match,
+    relink_duel,
+    update_message,
+    version_is_newer,
+)
+from bartleby.shared.store_files import Origin, load_in
+from bartleby.shared.strategy_library import LibraryKind
+from bartleby.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
+from bartleby.shared.vendor import PRODUCT
 from pydantic import BaseModel, ValidationError
 
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
@@ -84,27 +105,6 @@ from bartlebot.content.share_export import (
 from bartlebot.content.store_roots import resolve_roots, resolve_shared_roots
 from bartlebot.game import restricted_zones
 from bartlebot.nodes.registry import NODE_REGISTRY
-from bartlebot.shared import strategy_library
-from bartlebot.shared.content_hash import content_sha256, next_history
-from bartlebot.shared.share_file import SHARE_FORMAT, ShareFile
-from bartlebot.shared.share_match import (
-    CHOICES,
-    WRITES,
-    Action,
-    Held,
-    Outcome,
-    copy_id,
-    copy_ids,
-    copy_outcome,
-    match,
-    relink_duel,
-    update_message,
-    version_is_newer,
-)
-from bartlebot.shared.store_files import Origin, load_in
-from bartlebot.shared.strategy_library import LibraryKind
-from bartlebot.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.shared.vendor import PRODUCT
 
 logger = logging.getLogger(__name__)
 
@@ -611,7 +611,7 @@ def _earlier_copy(sources: Sources, inc: Incoming) -> tuple[str, Outcome, Holdin
     """The copy an earlier import made of ``inc``, unchanged since: its id, what ``inc`` is to it, and the copy.
 
     ``COPIED`` when it holds this version already, ``NEWER`` when an earlier one
-    (:func:`~bartlebot.shared.share_match.copy_outcome`). None when there is no such copy.
+    (:func:`~bartleby.shared.share_match.copy_outcome`). None when there is no such copy.
     """
     for cid in copy_ids(inc.kind, inc.id, inc.sha256, inc.history):
         have = holding(sources, inc.kind, cid)

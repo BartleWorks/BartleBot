@@ -8,24 +8,24 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
-
-from bartlebot.content.store_roots import dev_mode, is_inside
-from bartlebot.game.game_sizing import (
+from bartleby.runtime.game.game_sizing import (
     BOTCANVAS_DEFAULT_HEIGHT,
     BOTCANVAS_MIN_HEIGHT,
     LEFT_SIDEBAR_MIN_WIDTH,
     RIGHT_SIDEBAR_MIN_WIDTH,
     SPLITTER_HANDLE_PX,
-    SUB_FLOOR_RESOLUTIONS,
+    VALID_RESOLUTIONS,
     required_window_size,
     screen_budget,
 )
+from bartleby.shared.account_store import AccountStore
+from bartleby.shared.strategy_models import atomic_write
+from bartleby.shared.vendor import PRODUCT, product_dir, vendor_dir
+from pydantic import BaseModel, ValidationError
+
+from bartlebot.content.store_roots import dev_mode, is_inside
 from bartlebot.options import bot_options
 from bartlebot.paths import project_root
-from bartlebot.shared.account_store import AccountStore
-from bartlebot.shared.strategy_models import atomic_write
-from bartlebot.shared.vendor import PRODUCT, product_dir, vendor_dir
 
 logger = logging.getLogger(__name__)
 
@@ -252,50 +252,6 @@ _DEFAULTS: dict[str, Any] = {
     "accepted_quicksell_sales": {},
 }
 
-# Resolutions from the game's own dropdown, at and above its 800x600 floor. A subset of
-# it: the dropdown also offers 1128x634, 1760x990, 3072x1728 and 3200x1800, which are
-# real 16:9 sizes but match no monitor anyone runs, so they are left out rather than
-# padding every picker with sizes nobody picks.
-#
-# Nothing here is off the dropdown. 1280x800 and 1280x960 used to be, and were removed
-# when the aspect bands were measured: neither is a size the game offers, 1280x960 was
-# the resolution the mistaken Huge narrow floor was built on, and 1280x800 existed mainly
-# as the one entry that sat exactly on the 16:10 boundary. 1680x1050 is 8:5 as well and
-# is measured, so the boundary keeps a live case.
-_STOCK_RESOLUTIONS: list[tuple[int, int]] = [
-    (800, 600),
-    (1024, 768),
-    (1280, 720),
-    (1280, 1024),
-    (1366, 768),
-    (1600, 900),
-    (1600, 1200),
-    (1680, 1050),
-    (1920, 1080),
-    (1920, 1200),
-    (2048, 1536),
-    (2560, 1440),
-    (3840, 2160),
-]
-
-# Valid Wizard101 windowed resolutions (width, height), smallest first.
-#
-# The sub-floor ones are the game_sizing ladder: the game's own dropdown stops at
-# 800x600, but that is a UI restriction rather than an engine limit, and each of them
-# pairs with exactly one UI scale. They are what makes 2-4 embedded clients fit a
-# 1080p screen. The smallest offered is 534x300; 400x300 renders but leaves the
-# teleporter buttons under the interact prompt with no smaller UI scale to escape to,
-# so game_sizing.has_unoccluded_ui_size rejects it and a test holds the whole list to
-# that bar.
-#
-# Sorted rather than concatenated because the two lists interleave: a rung's 16:9 form is
-# wider than its 4:3 one, so 854x480 and 960x540 both sort above 800x600 while still
-# being sub-floor sizes in the sense that matters -- they take a UI scale below Huge.
-#
-# "Sub-floor" is about the scale, not the size: the 4:3 entries at and above 800x600 top
-# out at Large too, because no 4:3 resolution reaches Huge at any size.
-VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
-
 # The panel floors moved to game_sizing.py, beside the arithmetic they are terms in.
 
 #: The pane sizes setup fits to the screen (``MainWindow.fit_layout_to_launches``).
@@ -366,6 +322,20 @@ def _deep_merge(base: dict, overrides: dict) -> dict:
     return result
 
 
+def _hand_to_core(settings: SettingsManager) -> None:
+    """Give bartleby-core's modules what they read of BartleBot's settings.
+
+    Launching reads them through core's ``LaunchSettings``, which this class answers, and
+    Streamer Mode reads the setting each time a name is shown. Called whenever the
+    singleton is made, so a fresh one (a test's) is the one they read.
+    """
+    from bartleby.qt import streamer_mode  # noqa: PLC0415 - kept off this module's import path
+    from bartleby.runtime.launcher import launch_profile  # noqa: PLC0415
+
+    launch_profile.configure(settings)
+    streamer_mode.configure(lambda: SettingsManager.instance().streamer_mode)
+
+
 class SettingsManager:
     """Singleton that loads/saves application-level settings.
 
@@ -400,6 +370,7 @@ class SettingsManager:
     def instance(cls) -> SettingsManager:
         if cls._instance is None:
             cls._instance = cls()
+            _hand_to_core(cls._instance)
         return cls._instance
 
     # ------------------------------------------------------------------
@@ -709,7 +680,7 @@ class SettingsManager:
 
         Off by default: a name is genuinely useful for telling characters apart, and
         someone who is not sharing their screen has nothing to gain from hiding it.
-        See bartlebot/gui/streamer_mode.py for what it applies to and why the placeholder
+        See bartleby/qt/streamer_mode.py for what it applies to and why the placeholder
         is positional rather than a mask.
         """
         return bool(self.get_general("streamer_mode", default=False))
@@ -1192,7 +1163,7 @@ class SettingsManager:
         This is the floor the window may be *dragged* to, so it is measured against the
         panel minimums rather than the configured layout sizes -- unlike
         ``layout_budget``, which asks the opposite question and must not assume the user
-        will crush their sidebars. See bartlebot/game/game_sizing.py for the two directions.
+        will crush their sidebars. See bartleby/runtime/game/game_sizing.py for the two directions.
 
         *client_count* is 1 by default because that is the floor the window is *given*:
         embedding more raises the game view's own minimum and Qt grows the window to

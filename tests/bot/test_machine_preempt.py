@@ -13,8 +13,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from bartlebot.bot.machine import BotMachine
-from bartlebot.nodes import combat_runner, node_helpers
+from bartlebot.nodes import combat_runner
 from tests.conftest import FakeClient
+from tests.node_helper_patches import set_helper
 
 
 def _config(node_type: str = "work") -> dict:
@@ -174,7 +175,7 @@ async def test_relog_and_handle_combat_are_never_cancelled(node_type):
 
 async def test_an_ambient_fight_cancels_the_node_then_runs_it_again(monkeypatch):
     """End to end: the watcher run() starts takes the fight mid-node."""
-    monkeypatch.setattr(node_helpers, "POLL_INTERVAL", 0.001)
+    set_helper(monkeypatch, "POLL_INTERVAL", 0.001)
     fights: list[tuple[int, bool]] = []
     node = _Node()
     battling = FakeClient()

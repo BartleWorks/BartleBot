@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import asyncio
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, FlagCondition, StateModel, TransitionModel, VariableModel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.sections.variable_values_section import VariableValuesSection
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 
 

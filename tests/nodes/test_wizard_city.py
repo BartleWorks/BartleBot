@@ -4,12 +4,12 @@ import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.paths import GOTO_DORM_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 
-import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.wizard_city as wc
-from bartlebot.nodes.paths import GOTO_DORM_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from bartlebot.nodes.zone_entry import enter_zone
 from tests.conftest import FakeClient, FakeMachine, message_box_patches, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper
 
 DORM = wc.DORM_ZONE
 
@@ -30,7 +30,7 @@ def _dorm_client() -> FakeClient:
 async def test_home_lands_in_dorm_first_try():
     """Single HOME press → dorm zone → True."""
     client = _dorm_client()
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
 
     with none_load, patch.object(wc, "POLL_INTERVAL", 0):
         result = await wc._press_home_until_dorm(FakeMachine(), [client])
@@ -42,10 +42,10 @@ async def test_a_zone_unreadable_off_the_home_loading_screen_is_not_sent_home_ag
     """Off HOME's loading screen the zone reads None for a moment (#282): it is in the dorm."""
     client = _dorm_client()
     zone_unreadable_at_first(client, DORM)
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
     click = AsyncMock(return_value=True)
 
-    with none_load, patch.object(nh, "click_by_path", new=click), patch.object(wc, "POLL_INTERVAL", 0):
+    with none_load, patch_helper("click_by_path", new=click), patch.object(wc, "POLL_INTERVAL", 0):
         result = await wc._press_home_until_dorm(FakeMachine(), [client])
 
     assert result is True
@@ -57,8 +57,8 @@ async def test_home_wrong_zone_dorm_button_wait_second_press_succeeds():
     client = FakeClient()
     client.zone_name.side_effect = ["SomeHouse", DORM]
     client.is_loading.side_effect = [True, False, True, False]
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
-    btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
+    btn_enabled = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True))
 
     with none_load, btn_enabled, patch.object(wc, "POLL_INTERVAL", 0):
         result = await wc._press_home_until_dorm(FakeMachine(), [client])
@@ -71,8 +71,8 @@ async def test_home_dorm_button_timeout_returns_false():
     client = FakeClient()
     client.zone_name.return_value = "SomeHouse"
     client.is_loading.side_effect = [True, False]
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
-    btn_disabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
+    btn_disabled = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=False))
 
     with (
         none_load,
@@ -90,8 +90,8 @@ async def test_home_both_attempts_wrong_zone_returns_false():
     client = FakeClient()
     client.zone_name.side_effect = ["SomeHouse", "SomeHouse"]
     client.is_loading.side_effect = [True, False, True, False]
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
-    btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
+    btn_enabled = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True))
 
     with none_load, btn_enabled, patch.object(wc, "POLL_INTERVAL", 0):
         result = await wc._press_home_until_dorm(FakeMachine(), [client])
@@ -104,7 +104,7 @@ async def test_home_loading_timeout_still_checks_zone():
     client = FakeClient()
     client.zone_name.return_value = DORM
     client.is_loading.return_value = False  # never loads
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
 
     with (
         none_load,
@@ -137,9 +137,9 @@ async def test_home_only_retries_clients_not_yet_in_dorm():
     async def fake_click(client, path):
         pressed_for.append(client)
 
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
-    btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
-    click_patch = patch.object(nh, "click_by_path", side_effect=fake_click)
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
+    btn_enabled = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True))
+    click_patch = patch_helper("click_by_path", side_effect=fake_click)
 
     with none_load, btn_enabled, click_patch, patch.object(wc, "POLL_INTERVAL", 0):
         result = await wc._press_home_until_dorm(FakeMachine(), [c_dorm, c_house])
@@ -159,7 +159,7 @@ async def test_home_repressed_for_lagging_client():
     c2.zone_name.return_value = DORM
     c2.is_loading.side_effect = [False, True, False]  # needs re-press
 
-    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
+    none_load = patch_helper("none_loading", new=AsyncMock(return_value=True))
 
     with none_load, patch.object(wc, "POLL_INTERVAL", 0):
         result = await wc._press_home_until_dorm(FakeMachine(), [c1, c2])
@@ -303,13 +303,13 @@ async def test_the_restore_follows_the_player_even_if_the_list_is_reordered_mean
 
 async def test_all_dorm_button_enabled_all_true():
     clients = [FakeClient(), FakeClient()]
-    with patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)):
+    with patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True)):
         assert await wc._all_dorm_button_enabled(clients) is True
 
 
 async def test_all_dorm_button_enabled_one_false():
     clients = [FakeClient(), FakeClient()]
-    with patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=[True, False])):
+    with patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=[True, False])):
         assert await wc._all_dorm_button_enabled(clients) is False
 
 
@@ -327,7 +327,7 @@ async def _press_home_with_modal(visible_buttons) -> tuple[bool, list[list[str]]
     patches, clicked = message_box_patches(visible_buttons)
 
     with (
-        patch.object(nh, "none_loading", new=AsyncMock(return_value=True)),
+        patch_helper("none_loading", new=AsyncMock(return_value=True)),
         patch.object(wc, "POLL_INTERVAL", 0),
         patches[0],
         patches[1],

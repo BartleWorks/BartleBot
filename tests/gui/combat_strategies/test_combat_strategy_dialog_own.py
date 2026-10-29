@@ -10,6 +10,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtWidgets import QInputDialog, QMessageBox, QSplitter
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
@@ -38,10 +40,8 @@ from bartlebot.gui.combat_strategies.dialog import (
     move_confirmation,
     tabs_for,
 )
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.pills.tag_pill import ThisBotPill
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 DUEL, PLAYER, DECK = StrategyKind.DUEL, StrategyKind.PLAYER, StrategyKind.DECK
 

@@ -1,6 +1,6 @@
 """Settings › General › Game folder: where Wizard101 is installed (epic #215, Stage 2).
 
-The same key the setup page writes, :data:`~bartlebot.shared.game_install.INSTALL_DIR_KEY`
+The same key the setup page writes, :data:`~bartleby.shared.game_install.INSTALL_DIR_KEY`
 in the vendor-wide ``preferences.json``, so BartleBuddy launches from the folder chosen
 here. The row's value is the folder chosen, or None for "detected": Detect, and the
 row's reset, go back to detection, which is the default. Like every row it is pending
@@ -13,13 +13,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PyQt6.QtWidgets import QHBoxLayout, QWidget
-
-from bartlebot.clients.install_location import apply_install
-from bartlebot.gui.settings.rows import Binding, SettingRow
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
-from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_MISSING, GameFolderInput, folder_status
-from bartlebot.shared.game_install import (
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.shared.game_install import (
     SOURCE_NAMES,
     clear_install_dir,
     detect_install,
@@ -27,7 +22,12 @@ from bartlebot.shared.game_install import (
     set_install_dir,
     stored_install_dir,
 )
-from bartlebot.shared.preferences import PreferenceStore
+from bartleby.shared.preferences import PreferenceStore
+from PyQt6.QtWidgets import QHBoxLayout, QWidget
+
+from bartlebot.clients.install_location import apply_install
+from bartlebot.gui.settings.rows import Binding, SettingRow
+from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_MISSING, GameFolderInput, folder_status
 
 logger = logging.getLogger(__name__)
 

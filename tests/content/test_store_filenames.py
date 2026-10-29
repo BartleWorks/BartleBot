@@ -1,4 +1,4 @@
-"""Tests for the readable filenames in bartlebot.shared.store_files (#99).
+"""Tests for the readable filenames in bartleby.shared.store_files (#99).
 
 Files are named after the item and found by the id inside them, so what is under
 test is that the two never disagree in a way a caller can see: a rename moves the
@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 from bartlebot.combat.strategy_store import (
     Origin,
@@ -30,7 +31,6 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.content.store_roots import declared_id, find_by_id, index_dir, save_by_id, slugify
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.paths import project_root
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 from tests.content.subgraphs.test_subgraph_store import _defn
 
 
@@ -182,7 +182,7 @@ def test_two_files_with_one_id_resolve_to_the_newer_with_a_warning(tmp_path, cap
     _age(d / f"{old.id}.json", 60)
     PlayerCombatStrategy(id=old.id, name="After").save(d / "after.json")
 
-    with caplog.at_level(logging.WARNING, logger="bartlebot.shared.store_files"):
+    with caplog.at_level(logging.WARNING, logger="bartleby.shared.store_files"):
         assert load_player_strategy(old.id, tmp_path).name == "After"
     assert "declare id" in caplog.text
     assert [s.name for s in list_player_strategies(tmp_path)] == ["After"]

@@ -8,6 +8,8 @@ widget.
 
 from pathlib import Path
 
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
+
 import bartlebot.combat.strategy_workset as workset_mod
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
@@ -22,7 +24,6 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.combat.strategy_workset import SharedUse, StrategyWorkingSet
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 
 def _bcs(**kw) -> BotCombatStrategy:

@@ -13,6 +13,7 @@ Strategy Library window's versions did; the window itself was retired by #4.
 """
 
 import pytest
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from PyQt6.QtCore import Qt
 
 from bartlebot.combat.strategy_store import StrategyKind
@@ -25,7 +26,6 @@ from bartlebot.gui.combat_strategies.dialog import (
     matches_filter,
     matches_query,
 )
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 
 @pytest.fixture

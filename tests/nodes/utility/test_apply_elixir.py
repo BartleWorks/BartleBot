@@ -9,6 +9,7 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.utility.handle_level_scaling as hls
 from tests.conftest import FakeClient, FakeMachine, prompt_at
+from tests.node_helper_patches import patch_helper
 
 _PARAMS = {
     "interact_xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
@@ -152,7 +153,7 @@ async def test_prompt_retry_then_success():
     with (
         _patch_menu_visible(),
         _patch_menu_gone(),
-        patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
         patch.object(hls, "POLL_INTERVAL", 0),
     ):
         result = await _apply(machine, [client])
@@ -177,7 +178,7 @@ async def test_missing_elixir_is_retried():
     with (
         _patch_menu_visible(),
         _patch_menu_gone(),
-        patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
         patch.object(hls, "POLL_INTERVAL", 0),
         patch.object(hls, "LEVEL_SCALING_STAGGER_DELAY", 0),
     ):
@@ -212,7 +213,7 @@ async def test_clients_use_station_one_at_a_time():
         _patch_menu_visible(),
         _patch_menu_gone(),
         _patch_elixir_active(),
-        patch("bartlebot.nodes.node_helpers.click_by_path", new=AsyncMock(side_effect=_click)),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=_click)),
         patch.object(hls, "POLL_INTERVAL", 0),
         patch.object(hls, "LEVEL_SCALING_STAGGER_DELAY", 0),
     ):

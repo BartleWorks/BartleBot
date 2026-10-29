@@ -10,9 +10,10 @@ by the prompt, silently, with the node running out its timeout instead of failin
 from __future__ import annotations
 
 import pytest
+from bartleby.runtime.game import game_sizing
+from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
 
-from bartlebot.game import game_sizing
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+from bartlebot.settings_manager import SettingsManager
 
 
 @pytest.fixture

@@ -9,12 +9,12 @@ guardian does" is the rule these pin.
 from __future__ import annotations
 
 import pytest
+from bartleby.shared.combat_defaults import SHIPPED_DEFAULT_SUPPORT_ID, SHIPPED_GUARDIAN_SUPPORT_ID
 from lark import Lark
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import TreeToConfig, get_sprinty_grammar
 from wizwalker.extensions.wizsprinter.sprinty_combat import is_enchant_only
 
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_SUPPORT_ID, SHIPPED_GUARDIAN_SUPPORT_ID
 from tests.strategies.fight import (
     AMPLIFY,
     ATTENUATE,

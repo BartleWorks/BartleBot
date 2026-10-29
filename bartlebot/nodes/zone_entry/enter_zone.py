@@ -2,9 +2,9 @@ import asyncio
 import contextlib
 import logging
 
+from bartleby.runtime.game import dialog_captions
 from wizwalker import XYZ
 
-from bartlebot.game import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ARRIVAL_NOTE, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
@@ -90,7 +90,7 @@ NODE_SPEC = NodeSpec(
     ),
 )
 
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from bartleby.runtime.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
 async def _has_left_zone(client, zone: str) -> bool:

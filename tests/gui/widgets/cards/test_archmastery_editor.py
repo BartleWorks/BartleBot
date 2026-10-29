@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtGui import QColor, QIcon, QPixmap
 
 from bartlebot.combat import deck_io
@@ -25,7 +26,6 @@ from bartlebot.gui.widgets.cards.archmastery_editor import (
     NO_SCHOOL,
     ArchmasteryEditor,
 )
-from bartlebot.shared.strategy_models import DeckData
 
 COLORS = {
     card_art.ARCHMASTERY_ICON: QColor("red"),

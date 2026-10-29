@@ -24,6 +24,9 @@ import enum
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -41,9 +44,6 @@ from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.content.templates.template_gallery import GalleryEntry
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary, tag_icon

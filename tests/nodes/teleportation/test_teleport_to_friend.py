@@ -3,12 +3,13 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.game import wizard_names
+from bartleby.runtime.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_friend as ttf
-from bartlebot.game import wizard_names
-from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.node_helper_patches import patch_helper, set_helper
 from tests.port_sim import HOME, PortSim
 
 _HUB = "HubZone"
@@ -23,15 +24,15 @@ _PARAMS = {"friend_name": _FRIEND, "to_zone": ""}
 
 # node_helpers owns the shared "port to a friend" mechanics (port_to_friend /
 # teleport_via_friends_list); these stand in for the friends list and the profile's button.
-_OPEN_OK = patch.object(nh, "open_friend_profile", new=AsyncMock())
-_TELEPORT_OK = patch.object(nh, "_click_go_to_friend", new=AsyncMock(return_value=True))
+_OPEN_OK = patch_helper("open_friend_profile", new=AsyncMock())
+_TELEPORT_OK = patch_helper("_click_go_to_friend", new=AsyncMock(return_value=True))
 
-_NO_DIALOG = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
+_NO_DIALOG = patch_helper("is_visible_by_path", new=AsyncMock(return_value=False))
 
 
 def _caption(text: str):
     """Patch the modal caption read, which is how dialogs are told apart."""
-    return patch.object(nh, "get_text_by_path", new=AsyncMock(return_value=text))
+    return patch_helper("get_text_by_path", new=AsyncMock(return_value=text))
 
 
 @pytest.fixture(autouse=True)
@@ -44,8 +45,8 @@ def _forget_names():
 def fast(monkeypatch):
     monkeypatch.setattr(ttf, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(ttf, "TRIGGER_TIMEOUT", 0.05)
-    monkeypatch.setattr(nh, "TRIGGER_TIMEOUT", 0.05)
-    monkeypatch.setattr(nh, "PORT_QUIET_GRACE", 0.05)
+    set_helper(monkeypatch, "TRIGGER_TIMEOUT", 0.05)
+    set_helper(monkeypatch, "PORT_QUIET_GRACE", 0.05)
 
 
 def _friend_sim() -> PortSim:
@@ -55,8 +56,8 @@ def _friend_sim() -> PortSim:
 async def _run(sim: PortSim, clients: list, params: dict = _PARAMS) -> tuple[str, FakeMachine]:
     machine = FakeMachine()
     with (
-        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
-        patch.object(nh, "resolve_modal", new=AsyncMock(return_value=nh.ModalOutcome(answered=False))),
+        patch_helper("teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch_helper("resolve_modal", new=AsyncMock(return_value=nh.ModalOutcome(answered=False))),
     ):
         return await ttf.run(machine, clients, params), machine
 
@@ -194,7 +195,7 @@ async def test_friend_name_is_lowercased():
     """friend_name is lowercased before the friends list is searched for it."""
     client = _friend_sim().player(_HOUSE, _AT_FRIEND)
 
-    with _TELEPORT_OK, _NO_DIALOG, patch.object(nh, "open_friend_profile", new=AsyncMock()) as profile:
+    with _TELEPORT_OK, _NO_DIALOG, patch_helper("open_friend_profile", new=AsyncMock()) as profile:
         await ttf.run(FakeMachine(), [client], _PARAMS)
 
     assert profile.call_args[0][1] == "wizardfriend"
@@ -223,7 +224,7 @@ async def test_friend_busy_dialog_returns_failure():
     machine = FakeMachine()
 
     with (
-        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch_helper("teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
         patches[0],
         patches[1],
         _caption("Your friend is busy right now."),
@@ -248,7 +249,7 @@ async def test_unrecognized_dismiss_only_dialog_still_fails_fast():
     machine = FakeMachine()
 
     with (
-        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch_helper("teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
         patches[0],
         patches[1],
         _caption("Some brand new refusal from a future patch"),
@@ -272,10 +273,10 @@ async def test_friend_busy_dialog_only_checked_for_not_yet_ported():
     )
 
     with (
-        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
-        patch.object(nh, "is_visible_by_path", dialog_for_c2),
-        patch.object(nh, "get_text_by_path", caption_for_c2),
-        patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
+        patch_helper("teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch_helper("is_visible_by_path", dialog_for_c2),
+        patch_helper("get_text_by_path", caption_for_c2),
+        patch_helper("click_by_path", new=AsyncMock(return_value=True)),
     ):
         result = await ttf.run(FakeMachine(), [c1, c2], _PARAMS)
 
@@ -308,9 +309,9 @@ async def test_dungeon_exit_warning_is_not_mistaken_for_a_busy_friend():
         return True
 
     with (
-        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+        patch_helper("teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=_click)),
     ):
         result = await ttf.run(FakeMachine(), [client], _PARAMS)
 
@@ -343,9 +344,9 @@ async def test_busy_dialog_behind_the_dungeon_warning_still_fails():
         return True
 
     with (
-        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+        patch_helper("teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=_click)),
     ):
         result = await ttf.run(FakeMachine(), [client], _PARAMS)
 

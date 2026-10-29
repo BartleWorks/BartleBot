@@ -15,6 +15,7 @@ import pytest
 from bartlebot.nodes import combat_runner
 from bartlebot.nodes.combat_runner import FightEnd, FightWatch, RoundReport, run_fight
 from tests.conftest import FakeClient
+from tests.node_helper_patches import set_helper
 
 _ROUNDS = combat_runner.FLEE_AFTER_ROUNDS
 
@@ -265,8 +266,7 @@ async def test_only_castable_damage_cards_count():
 @pytest.fixture
 def ui(monkeypatch):
     """The two UI reads/clicks _flee uses, with the confirmation showing once Flee is clicked."""
-    from bartlebot.nodes import node_helpers
-    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH
+    from bartleby.runtime.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH
 
     state = SimpleNamespace(clicks=[], flee_clickable=True, confirm_appears=True, confirm_drops=0)
 
@@ -290,8 +290,8 @@ def ui(monkeypatch):
             return confirm_up()
         return False
 
-    monkeypatch.setattr(node_helpers, "click_by_path", click)
-    monkeypatch.setattr(node_helpers, "is_visible_by_path", visible)
+    set_helper(monkeypatch, "click_by_path", click)
+    set_helper(monkeypatch, "is_visible_by_path", visible)
     return state
 
 

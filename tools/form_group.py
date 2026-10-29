@@ -1,7 +1,7 @@
 """Form an in-game group across every running Wizard101 client.
 
-Runs the exact code path the app uses — bartlebot.game.wizard_names for name detection and
-bartlebot.clients.group_manager for the invite flow — but without the GUI, a bot file, or the
+Runs the exact code path the app uses — bartleby.runtime.game.wizard_names for name detection and
+bartleby.runtime.clients.group_manager for the invite flow — but without the GUI, a bot file, or the
 settings system. What works here works in a real run, and what breaks here breaks there.
 
 PREREQUISITES
@@ -38,10 +38,11 @@ import asyncio
 import logging
 import sys
 
+from bartleby.runtime.clients import group_manager
+from bartleby.runtime.game import wizard_names
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.clients import group_manager
-from bartlebot.game import wizard_names
+from bartlebot.settings_manager import SettingsManager
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -161,6 +162,7 @@ async def main() -> int:
             clients,
             names,
             leader_index=args.leader - 1,
+            safety_delay=SettingsManager.instance().default_safety_delay,
             # Mirror group_manager's own log lines to stdout so the flow is visible live.
             log=lambda msg, level=logging.INFO: print(f"  {msg}"),
         )

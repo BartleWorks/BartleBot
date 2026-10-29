@@ -16,8 +16,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 
 
 def _buttons(widget) -> list[ActionButton]:

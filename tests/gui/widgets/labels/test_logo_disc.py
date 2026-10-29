@@ -7,10 +7,10 @@ exactly as ``logo_disc_image`` draws them.
 
 import math
 
+from bartleby.qt.theming.theme import THEME, set_theme
 from PyQt6.QtGui import QColor
 
 from bartlebot.gui.logo import logo_disc_image
-from bartlebot.gui.theming.theme import THEME, set_theme
 from bartlebot.gui.widgets.labels.logo_disc import RING_GAP, RING_WIDTH, LogoDisc, ringed_disc_image
 
 TRANSPARENT = QColor(0, 0, 0, 0).rgba()

@@ -25,10 +25,11 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from bartleby.shared import content_hash
+
 from bartlebot.bot.schema import BotConfig
 from bartlebot.content.store_roots import declared_id, dev_mode, is_inside, resolve_roots
 from bartlebot.paths import project_root
-from bartlebot.shared import content_hash
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +142,7 @@ def record_save(config: BotConfig, path: str | Path) -> None:
     A bot has one file and never overrides, so what a save replaces is the file at
     ``path``, when that is this bot: the same id. Anything else there (nothing, or
     another bot Save As is about to write over) is not this bot's past, and ``config``
-    keeps the history it has. :func:`bartlebot.shared.content_hash.record_save` has the
+    keeps the history it has. :func:`bartleby.shared.content_hash.record_save` has the
     rules; ``config`` is changed in place, so the open bot says what was written.
     """
     stored = None

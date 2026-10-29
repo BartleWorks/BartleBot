@@ -121,6 +121,11 @@ from collections.abc import Callable
 from enum import Enum
 from typing import NamedTuple
 
+from bartleby.qt.theming.icon_utils import svg_icon, svg_pixmap
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
+from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.runtime.timing import CARD_HIGHLIGHT_DURATION
 from PyQt6.QtCore import QPoint, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
@@ -135,12 +140,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theming.icon_utils import svg_icon, svg_pixmap
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.buttons.icon_button import IconButton
 from bartlebot.gui.widgets.layout.drag_reorder import MOVE_DOWN_KEYS, MOVE_UP_KEYS, add_move_actions
-from bartlebot.nodes.timing import CARD_HIGHLIGHT_DURATION
 
 _FACE_BTN_SIZE = 22
 

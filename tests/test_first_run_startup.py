@@ -12,6 +12,14 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from bartleby.shared import game_install
+from bartleby.shared.account_setup import ANSWERED_KEY as ACCOUNTS_ANSWERED
+from bartleby.shared.account_setup import record_accounts_answered
+from bartleby.shared.account_store import AccountStore
+from bartleby.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
+from bartleby.shared.first_run import BossTactic, combat_question_answered, record_answer
+from bartleby.shared.launch_profiles import record_launch_profile_answered
+from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QMenu, QWidget
 
 from bartlebot import app_controller
@@ -30,14 +38,6 @@ from bartlebot.options.custom_setup import ART_ANSWERED_KEY as ART_ANSWERED
 from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared import game_install
-from bartlebot.shared.account_setup import ANSWERED_KEY as ACCOUNTS_ANSWERED
-from bartlebot.shared.account_setup import record_accounts_answered
-from bartlebot.shared.account_store import AccountStore
-from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
-from bartlebot.shared.first_run import BossTactic, combat_question_answered, record_answer
-from bartlebot.shared.launch_profiles import record_launch_profile_answered
-from bartlebot.shared.preferences import PreferenceStore
 
 _TEAM = PREFERENCE_KEYS[TeamSize.TEAM]
 

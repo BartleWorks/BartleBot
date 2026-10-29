@@ -12,6 +12,7 @@ from bartlebot.game import scales
 from bartlebot.nodes.teleportation import mark_location
 from bartlebot.nodes.zone_navigation import Outcome
 from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper
 
 _FARM = "Farm/Zone"
 _FARM_SPOT = XYZ(100.0, 200.0, 0.0)
@@ -574,7 +575,7 @@ async def test_players_with_elixir_reads_only_the_players_asked_about():
     shown = {id(clients[0]): True, id(clients[2]): False}
     read = AsyncMock(side_effect=lambda client, path: shown[id(client)])
 
-    with patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=read):
+    with patch_helper("is_visible_by_path", new=read):
         assert await hls.players_with_elixir(clients, [1, 3]) == [1]
 
     assert read.await_count == 2

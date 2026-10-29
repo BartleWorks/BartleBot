@@ -12,14 +12,14 @@ Launch button (#266). Its tests are the second half of this file.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.clients.tile_slots import TileSlot
+from bartleby.runtime.game.game_sizing import required_game_area
 
-from bartlebot.clients.tile_slots import TileSlot
-from bartlebot.game.game_sizing import required_game_area
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed import game_view as game_view_module
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
 

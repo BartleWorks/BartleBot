@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QLabel,
@@ -16,7 +17,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.settings_manager import SettingsManager
 
 

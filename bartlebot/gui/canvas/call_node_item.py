@@ -26,6 +26,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt6.QtWidgets import QGraphicsView, QStyleOptionGraphicsItem
@@ -43,7 +44,6 @@ from bartlebot.gui.canvas.node_item import (
     _play_badge_renderer,
     _recovery_badge_renderer,
 )
-from bartlebot.gui.theming.theme import THEME
 
 # The title runs along the top, the port rows follow it -- the first centered on
 # PORT_Y0, as every node's first port is -- and the sub-line comes last, under the

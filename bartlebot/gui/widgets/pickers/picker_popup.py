@@ -33,6 +33,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
 from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPen, QPolygonF
 from PyQt6.QtWidgets import (
@@ -46,8 +48,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 

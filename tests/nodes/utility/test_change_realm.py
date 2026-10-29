@@ -10,13 +10,8 @@ import contextlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
-import bartlebot.nodes.node_helpers as nh
-import bartlebot.nodes.utility.change_realm as cr
-import bartlebot.nodes.utility.realm_list as rl
-from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.game import dialog_captions
-from bartlebot.nodes.paths import (
+from bartleby.runtime.game import dialog_captions
+from bartleby.runtime.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
@@ -27,8 +22,14 @@ from bartlebot.nodes.paths import (
     realm_button_path,
     realm_name_path,
 )
+
+import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.utility.change_realm as cr
+import bartlebot.nodes.utility.realm_list as rl
+from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.options import bot_options
 from tests.conftest import FakeClient, FakeMachine, message_box_patches, see_each_other
+from tests.node_helper_patches import patch_helper
 
 
 class _RealmList:
@@ -83,11 +84,11 @@ def _faked(realm_list: _RealmList):
     with contextlib.ExitStack() as stack:
         for p in (
             patch.object(rl, "POLL_INTERVAL", 0),
-            patch.object(nh, "poll_until", new=_poll_once),
-            patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
-            patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=realm_list.text)),
-            patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=realm_list.enabled)),
-            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=realm_list.click)),
+            patch_helper("poll_until", new=_poll_once),
+            patch_helper("is_visible_by_path", new=AsyncMock(return_value=True)),
+            patch_helper("get_text_by_path", new=AsyncMock(side_effect=realm_list.text)),
+            patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=realm_list.enabled)),
+            patch_helper("click_by_path", new=AsyncMock(side_effect=realm_list.click)),
         ):
             stack.enter_context(p)
         yield
@@ -122,7 +123,7 @@ async def test_an_unknown_realm_fails_before_touching_the_client():
     machine = _machine("Narnia")
     client = FakeClient()
 
-    with patch.object(nh, "click_by_path", new=AsyncMock()) as click:
+    with patch_helper("click_by_path", new=AsyncMock()) as click:
         result = await cr.run(machine, [client], {})
 
     assert result == "FAILURE"
@@ -254,8 +255,8 @@ async def test_spellbook_never_opens():
 
     with (
         patch.object(rl, "POLL_INTERVAL", 0),
-        patch.object(nh, "click_by_path", new=AsyncMock()),
-        patch.object(nh, "poll_until", new=AsyncMock(return_value=False)),
+        patch_helper("click_by_path", new=AsyncMock()),
+        patch_helper("poll_until", new=AsyncMock(return_value=False)),
     ):
         result = await cr.to_realm(_machine("Wraith"), client, "Wraith", 0.0)
 
@@ -310,8 +311,8 @@ async def test_next_realm_spellbook_never_opens():
 
     with (
         patch.object(rl, "POLL_INTERVAL", 0),
-        patch.object(nh, "click_by_path", new=AsyncMock()),
-        patch.object(nh, "poll_until", new=AsyncMock(return_value=False)),
+        patch_helper("click_by_path", new=AsyncMock()),
+        patch_helper("poll_until", new=AsyncMock(return_value=False)),
     ):
         result = await cr._to_next_realm(FakeMachine(), client, 3, 5, 0.0)
 
@@ -328,8 +329,8 @@ async def test_realm_panel_never_opens():
     # 3. REALM_CURRENT_NAME visible        → False (realm panel didn't open) → FAILURE
     with (
         patch.object(rl, "POLL_INTERVAL", 0),
-        patch.object(nh, "click_by_path", new=AsyncMock()),
-        patch.object(nh, "poll_until", new=AsyncMock(side_effect=[True, True, False])),
+        patch_helper("click_by_path", new=AsyncMock()),
+        patch_helper("poll_until", new=AsyncMock(side_effect=[True, True, False])),
     ):
         result = await cr._to_next_realm(FakeMachine(), client, 3, 5, 0.0)
 
@@ -353,10 +354,10 @@ async def test_realm_hop_timeout():
         patch.object(rl, "REALM_HOP_TIMEOUT", -1),  # -1 ensures elapsed > timeout immediately
         patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
         patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
-        patch.object(nh, "click_by_path", new=AsyncMock()),
-        patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_enabled_by_path", side_effect=fake_is_enabled),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
+        patch_helper("click_by_path", new=AsyncMock()),
+        patch_helper("poll_until", new=AsyncMock(return_value=True)),
+        patch_helper("is_enabled_by_path", side_effect=fake_is_enabled),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
     ):
         result = await cr._to_next_realm(FakeMachine(), client, 3, 5, 0.0)
 
@@ -379,9 +380,9 @@ async def _run_realm_change_with_modal(visible_buttons) -> tuple[str, list[list[
         patch.object(rl, "POLL_INTERVAL", 0),
         patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
         patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
-        patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
+        patch_helper("poll_until", new=AsyncMock(return_value=True)),
+        patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True)),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
         patches[0],
         patches[1],
     ):
@@ -422,10 +423,10 @@ async def test_refusal_from_inside_a_dungeon_fails_immediately():
         patch.object(rl, "POLL_INTERVAL", 0),
         patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
         patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
-        patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "identify_modal", new=AsyncMock(return_value=dialog_captions.REALM_NOT_ALLOWED_HERE)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
+        patch_helper("poll_until", new=AsyncMock(return_value=True)),
+        patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True)),
+        patch_helper("identify_modal", new=AsyncMock(return_value=dialog_captions.REALM_NOT_ALLOWED_HERE)),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
         patches[0],
         patches[1],
     ):
@@ -448,10 +449,10 @@ async def test_dungeon_reset_warning_is_confirmed_and_the_hop_proceeds():
         patch.object(rl, "POLL_INTERVAL", 0),
         patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
         patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
-        patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "identify_modal", new=AsyncMock(return_value=dialog_captions.REALM_RESETS_DUNGEON)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
+        patch_helper("poll_until", new=AsyncMock(return_value=True)),
+        patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True)),
+        patch_helper("identify_modal", new=AsyncMock(return_value=dialog_captions.REALM_RESETS_DUNGEON)),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
         patches[0],
         patches[1],
     ):

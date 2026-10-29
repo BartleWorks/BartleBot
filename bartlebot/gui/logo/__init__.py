@@ -30,12 +30,11 @@ import sys
 from functools import cache
 from pathlib import Path
 
+from bartleby.shared.vendor import PRODUCT, VENDOR
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QApplication, QWidget
-
-from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 logger = logging.getLogger(__name__)
 

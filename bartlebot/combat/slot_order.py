@@ -17,7 +17,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from bartlebot.shared.strategy_models import DuelConfig
+    from bartleby.shared.strategy_models import DuelConfig
 
 #: ``ally(<index>)``. ``ally`` alone picks by the move, not by slot, so it is not one.
 _SLOT = re.compile(r"\bally\s*\(\s*([^()\s]+)\s*\)", re.IGNORECASE)

@@ -7,14 +7,14 @@ settings non-modal, or add the live preview a theme tab invites, and all four br
 at once. They were fixed rather than allowlisted for that reason.
 """
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent
 
-import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.dialogs.wiki_import_dialog import WikiImportDialog
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 
 @pytest.fixture

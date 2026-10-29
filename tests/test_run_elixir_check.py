@@ -226,8 +226,8 @@ async def test_a_fight_that_cannot_be_read_does_not_refuse_the_run(dialogs, refu
 
 async def test_an_action_a_player_cannot_have_pressed_refuses_the_run(dialogs, refusals, monkeypatch):
     """Every action BartleBot presses is required, whatever the bot: here a bot that never interacts."""
-    from bartlebot.clients import game_keys  # noqa: PLC0415
-    from bartlebot.game.key_bindings import PREFIX, Binding, KeyMap  # noqa: PLC0415
+    from bartleby.runtime.clients import game_keys  # noqa: PLC0415
+    from bartleby.runtime.game.key_bindings import PREFIX, Binding, KeyMap  # noqa: PLC0415
 
     controller = _Controller("sleep")
     keys = [b for b in KeyMap.defaults().bindings if b.action != "NPCInteract"]

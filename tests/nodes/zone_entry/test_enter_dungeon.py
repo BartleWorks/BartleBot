@@ -5,11 +5,7 @@ import contextlib
 import itertools
 from unittest.mock import AsyncMock, patch
 
-from wizwalker import Keycode
-
-import bartlebot.nodes.node_helpers as nh
-import bartlebot.nodes.zone_entry.enter_dungeon as ed
-from bartlebot.nodes.paths import (
+from bartleby.runtime.paths import (
     ENTER_TEAMUP_BUTTON_PATH,
     MESSAGE_BOX_CENTER,
     TEAMUP_2_PLAYER_CHECKBOX,
@@ -18,7 +14,12 @@ from bartlebot.nodes.paths import (
     TEAMUP_CONFIRMATION_WINDOW_PATH,
     TEAMUP_QUEUED_PATH,
 )
+from wizwalker import Keycode
+
+import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.zone_entry.enter_dungeon as ed
 from tests.conftest import FakeClient, FakeGidEntity, FakeMachine
+from tests.node_helper_patches import patch_helper
 
 
 async def _center_button_visible(_client, path):
@@ -239,8 +240,8 @@ async def test_dungeon_warning_dialog_confirmed():
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "none_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_center_button_visible)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=_center_button_visible)),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
@@ -261,7 +262,7 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
@@ -294,10 +295,10 @@ async def test_dungeon_warning_dialog_appears_late():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=late_visible)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=late_visible)),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(machine, [client], _PARAMS)
 
@@ -329,10 +330,10 @@ async def test_challenge_mode_toggles_until_title_says_challenge():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=title_text)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("get_text_by_path", new=AsyncMock(side_effect=title_text)),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
@@ -349,10 +350,10 @@ async def test_challenge_mode_already_set_does_not_toggle():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="<center>Challenge Mode Entrance")),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="<center>Challenge Mode Entrance")),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
@@ -371,9 +372,9 @@ async def test_challenge_mode_arrives_in_the_copy_of_the_recorded_dungeon_zone()
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Challenge Mode Entrance")),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="Challenge Mode Entrance")),
     ):
         result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], params)
 
@@ -389,10 +390,10 @@ async def test_challenge_mode_missing_toggle_button_fails():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=click)),
     ):
         result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
@@ -407,10 +408,10 @@ async def test_challenge_mode_toggle_never_takes_fails():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
@@ -428,8 +429,8 @@ async def test_challenge_mode_off_never_reads_or_toggles_the_sigil_mode():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", get_text_mock),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("get_text_by_path", get_text_mock),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
@@ -446,10 +447,10 @@ async def test_the_option_alone_does_not_enter_challenge_mode():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
 
@@ -568,10 +569,10 @@ class _TeamUpScreen:
         with contextlib.ExitStack() as stack:
             for p in (
                 patch.object(ed, "POLL_INTERVAL", 0),
-                patch.object(nh, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
+                patch_helper("WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
                 patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-                patch.object(nh, "is_visible_by_path", side_effect=self.visible),
-                patch.object(nh, "click_by_path", side_effect=self.click),
+                patch_helper("is_visible_by_path", side_effect=self.visible),
+                patch_helper("click_by_path", side_effect=self.click),
                 *patches,
             ):
                 stack.enter_context(p)
@@ -745,7 +746,7 @@ async def test_the_option_alone_does_not_queue():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(_teamup_machine(), [client], _PARAMS)
 
@@ -765,7 +766,7 @@ async def test_the_param_alone_does_not_queue():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _TEAMUP_PARAMS)
 

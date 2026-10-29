@@ -15,9 +15,9 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bartleby.runtime.clients.launch_tracker import LaunchTracker
 
 from bartlebot.clients.client_manager import ClientManager
-from bartlebot.clients.launch_tracker import LaunchTracker
 
 # ---------------------------------------------------------------------------
 # Test harness
@@ -697,11 +697,11 @@ def _base_reconnect_patches(display_name: str = "j***n"):
     return (
         patch("bartlebot.clients.client_manager.CredentialStore"),
         patch("bartlebot.clients.client_manager.SettingsManager"),
-        patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
+        patch("bartleby.runtime.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
         patch("ctypes.windll", mock_windll),
         patch("asyncio.sleep", new_callable=AsyncMock),
-        patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
-        patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
+        patch("bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+        patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
     )
 
 
@@ -740,7 +740,7 @@ class TestReconnectClients:
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch(
-                "bartlebot.launcher.launch_profile.launch_accounts",
+                "bartleby.runtime.launcher.launch_profile.launch_accounts",
                 new_callable=AsyncMock,
                 side_effect=RuntimeError("launcher error"),
             ),
@@ -770,12 +770,14 @@ class TestReconnectClients:
         with (
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
-            patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
+            patch("bartleby.runtime.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
-            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
+            patch(
+                "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
+            ),
+            patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -815,7 +817,7 @@ class TestReconnectClients:
             with (
                 patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
                 patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
-                patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
+                patch("bartleby.runtime.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
                 patch("ctypes.windll", MagicMock()),
                 patch("asyncio.sleep", new_callable=AsyncMock),
             ):
@@ -848,12 +850,14 @@ class TestReconnectClients:
         with (
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
-            patch("bartlebot.launcher.launch_profile.launch_accounts", mock_launch),
+            patch("bartleby.runtime.launcher.launch_profile.launch_accounts", mock_launch),
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
-            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
+            patch(
+                "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
+            ),
+            patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -884,12 +888,14 @@ class TestReconnectClients:
         with (
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
-            patch("bartlebot.launcher.launch_profile.launch_accounts", mock_launch),
+            patch("bartleby.runtime.launcher.launch_profile.launch_accounts", mock_launch),
             patch("ctypes.windll", mock_windll),
             patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
-            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
+            patch(
+                "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
+            ),
+            patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -928,13 +934,13 @@ class TestReconnectClients:
         with (
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
-            patch("bartlebot.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
+            patch("bartleby.runtime.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.launcher.auto_select.is_enabled_by_path", crowns_check),
-            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=True),
-            patch("bartlebot.launcher.auto_select.click_by_path", mock_click),
+            patch("bartleby.runtime.launcher.auto_select.is_enabled_by_path", crowns_check),
+            patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=True),
+            patch("bartleby.runtime.launcher.auto_select.click_by_path", mock_click),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -988,11 +994,13 @@ class TestBatchRecovery:
         with (
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
-            patch("bartlebot.launcher.launch_profile.launch_accounts", launch),
+            patch("bartleby.runtime.launcher.launch_profile.launch_accounts", launch),
             patch("bartlebot.clients.client_manager.get_window_title", side_effect=harness._titles.get),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
-            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
+            patch(
+                "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
+            ),
+            patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.side_effect = lambda username: None if username in no_password else "s3cr3t"
             mock_creds.display_name.side_effect = lambda username, _alias=None: username

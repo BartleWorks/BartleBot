@@ -14,7 +14,7 @@ duel when the fight has no assignment; only one with neither falls through. The 
 one falls past level 2 to the defaults, never to the Official one: its gaps are not filled
 from the author's. Level 2 answers only when the user has no Bot Combat Strategy for the
 bot, or its file is missing. A duel
-:meth:`~bartlebot.shared.strategy_models.DuelConfig.accepts` ``n`` when ``n`` is within its
+:meth:`~bartleby.shared.strategy_models.DuelConfig.accepts` ``n`` when ``n`` is within its
 player range. At levels 2 to 4 a duel that does not accept ``n`` falls to the next level and
 the reason is kept. At level 1 the duel is used anyway, because the user chose it: the
 pre-run check (:mod:`bartlebot.combat.combat_warnings`) is what tells them it does not fit,
@@ -32,10 +32,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from bartlebot.combat import strategy_store
-from bartlebot.combat.bot_combat_strategy import StrategyLookup
-from bartlebot.combat.fight_keys import bind, exposed_combat_states
-from bartlebot.shared.combat_defaults import (
+from bartleby.shared.combat_defaults import (
     DefaultDuel,
     DefaultSource,
     TeamSize,
@@ -44,15 +41,20 @@ from bartlebot.shared.combat_defaults import (
     shortfall_text,
     team_size,
 )
-from bartlebot.shared.preferences import PreferenceStore
+from bartleby.shared.preferences import PreferenceStore
+
+from bartlebot.combat import strategy_store
+from bartlebot.combat.bot_combat_strategy import StrategyLookup
+from bartlebot.combat.fight_keys import bind, exposed_combat_states
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
 
+    from bartleby.shared.strategy_models import DuelCombatStrategy
+
     from bartlebot.bot.schema import BotConfig
     from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-    from bartlebot.shared.strategy_models import DuelCombatStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -522,7 +524,7 @@ def default_choice_notes(
 
     None is the recommended one, which is never checked: it was written for its size. A
     choice that is gone, or does not fit some of the sizes it answers for, leaves those to
-    the recommended one at run time, as :func:`~bartlebot.shared.combat_defaults.default_duel`
+    the recommended one at run time, as :func:`~bartleby.shared.combat_defaults.default_duel`
     does. A player strategy it links that is gone runs the built-in DSL in that slot.
     """
     if not duel_id:

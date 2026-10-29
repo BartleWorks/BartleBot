@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+
 from bartlebot.gui.widgets.labels.step_heading import Step, StepHeading
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 
 def test_it_says_where_the_step_is_what_it_decides_and_what_follows(qapp):

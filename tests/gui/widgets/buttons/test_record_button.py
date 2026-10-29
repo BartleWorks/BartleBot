@@ -1,9 +1,9 @@
 """Tests for ``RecordButton`` (issue #106): the red dot idle, a plain square while stopping."""
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionStyle
 from PyQt6.QtGui import QColor
 
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionStyle
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RECORD_RED, RecordButton
 
 

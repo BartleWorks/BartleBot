@@ -10,6 +10,7 @@ About section reach the entry and its card.
 from __future__ import annotations
 
 import pytest
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QCoreApplication, QEvent, QPointF
 from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QApplication
@@ -27,7 +28,6 @@ from bartlebot.gui.combat_strategies.dialog import (
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.pills.tag_pill import NeutralChip, TagChip
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.picker_helpers import pick
 
 BUILT_IN = SOURCE_LABELS[Origin.SHIPPED]

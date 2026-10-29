@@ -7,17 +7,17 @@ launch, and that a theme switch reaches a card's labels. The screen that holds t
 selection and the Launch button is test_game_view.py.
 """
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.account_accent import account_accent
 from PyQt6.QtCore import QEvent, QObject, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import QWidget
 
-import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.game_view import _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, CardMode, ProfileCard
 from bartlebot.gui.settings.accounts_tab import AccountsTab
-from bartlebot.gui.theming.account_accent import account_accent
 from bartlebot.gui.widgets.pills.tag_pill import AccountPill
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}

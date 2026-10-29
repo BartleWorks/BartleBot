@@ -10,17 +10,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.qt.game_embed import client_tile
+from bartleby.qt.game_embed.client_tile import SCALED_FAILED_TEXT, SCALED_FIXED_TEXT, SCALED_TEXT, ScaledTile
+from bartleby.runtime.clients.tile_slots import TileSlot
+from bartleby.shared import game_dpi
 
-from bartlebot.clients.tile_slots import TileSlot
-from bartlebot.gui.game_embed import client_tile
-from bartlebot.gui.game_embed.client_tile import (
-    SCALED_FAILED_TEXT,
-    SCALED_FIXED_TEXT,
-    SCALED_TEXT,
-    ScaledTile,
-)
 from bartlebot.gui.game_embed.game_view import GameView
-from bartlebot.shared import game_dpi
 
 EXE = Path(r"C:\Games\Wizard101\Bin\WizardGraphicalClient.exe")
 HWND = 4242

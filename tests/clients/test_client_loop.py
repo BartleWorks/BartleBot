@@ -191,7 +191,7 @@ async def test_client_is_published_once_hooks_come_up(harness):
 async def test_a_client_s_key_bindings_are_read_once_its_hooks_come_up(harness, monkeypatch):
     """The scan for a client's key bindings takes seconds, so it is begun as the client
     arrives, quietly, rather than when the first run starts; and publishing never waits on it."""
-    from bartlebot.clients import game_keys  # noqa: PLC0415
+    from bartleby.runtime.clients import game_keys  # noqa: PLC0415
 
     reads: list[tuple[int, bool]] = []
     scan = asyncio.Event()

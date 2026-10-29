@@ -8,13 +8,10 @@ underneath it instead, so each of those checks has to see the state it is lookin
 """
 
 import logging
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
-
-import bartlebot.nodes.node_helpers as nh
-import bartlebot.nodes.utility.realm_list as rl
-from bartlebot.nodes.paths import (
+from bartleby.runtime.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     REALM_CURRENT_NAME_PATH,
     REALM_GO_TO_BUTTON_PATH,
@@ -24,7 +21,11 @@ from bartlebot.nodes.paths import (
     realm_button_path,
     realm_name_path,
 )
+
+import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.utility.realm_list as rl
 from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.node_helper_patches import patch_helper
 
 # Wide enough that a check which *can* succeed always does, even on a loaded runner;
 # the tests that time out pay it once.
@@ -89,10 +90,10 @@ class _Panel:
 
     def patches(self):
         return (
-            patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=self.text)),
-            patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=self.enabled)),
-            patch.object(nh, "click_by_path", new=AsyncMock(side_effect=self.click)),
-            patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=self.visible)),
+            patch_helper("get_text_by_path", new=AsyncMock(side_effect=self.text)),
+            patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=self.enabled)),
+            patch_helper("click_by_path", new=AsyncMock(side_effect=self.click)),
+            patch_helper("is_visible_by_path", new=AsyncMock(side_effect=self.visible)),
         )
 
 
@@ -196,7 +197,7 @@ async def test_wait_for_current_realm_name_waits_for_the_label_to_fill():
         return await panel.text(client, path)
 
     _text, enabled, click, visible = panel.patches()
-    with patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=text)), enabled, click, visible:
+    with patch_helper("get_text_by_path", new=AsyncMock(side_effect=text)), enabled, click, visible:
         assert await rl.wait_for_current_realm_name(FakeClient(), 1.0) == "Wraith"
 
 
@@ -262,9 +263,9 @@ def _hop_game(client, *, cooldown_polls: int = 0, loads: bool = True):
     client.is_loading.side_effect = is_loading
     return (
         patches[0],
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
-        patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=enabled)),
-        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Wraith")),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=click)),
+        patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=enabled)),
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="Wraith")),
     ), clicked
 
 

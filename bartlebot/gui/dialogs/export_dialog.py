@@ -19,6 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QStandardPaths, Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -34,7 +35,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.content.share_export import FILE_TYPES, NOUNS, Disposition, Entry, ExportPlan
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 logger = logging.getLogger(__name__)

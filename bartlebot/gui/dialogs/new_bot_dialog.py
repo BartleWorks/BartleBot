@@ -25,6 +25,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from bartleby.qt.theming.icon_utils import svg_icon
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics, QIcon
 from PyQt6.QtWidgets import (
@@ -54,13 +59,8 @@ from bartlebot.content.new_bot import (
 )
 from bartlebot.content.store_roots import Origin
 from bartlebot.game import card_art
-from bartlebot.gui.theming.icon_utils import svg_icon
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView, art_icon
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX, PickerButton, PickerRow
 from bartlebot.gui.widgets.pickers.tag_picker import tag_icon

@@ -7,7 +7,7 @@ FightRef           — one fight an assignment covers
 
 The player strategies, duel strategies and decks one embeds belong to the library
 shared with every product by this vendor, so they live in
-:mod:`bartlebot.shared.strategy_models`; import them from there. Only the Bot Combat
+:mod:`bartleby.shared.strategy_models`; import them from there. Only the Bot Combat
 Strategy is BartleBot's own, since only BartleBot has bots.
 
 Each is stored as an individual JSON file identified by UUID.
@@ -19,14 +19,8 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy, atomic_write
 from pydantic import BaseModel, Field, model_validator
-
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DuelCombatStrategy,
-    PlayerCombatStrategy,
-    atomic_write,
-)
 
 __all__ = [
     "BotCombatStrategy",
@@ -115,7 +109,7 @@ class BotCombatStrategy(BaseModel):
     # there is never an Official base to record.
     history: list[str] = Field(default_factory=list)
     # The content hash it had as its sender sent it, when an import wrote it changed:
-    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # its links rewritten to a copy, or as a copy itself (#171; bartleby.shared.content_hash).
     # Dropped by the next save that changes it, and never in a share file.
     sent_sha256: str | None = None
 

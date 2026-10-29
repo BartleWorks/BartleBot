@@ -6,6 +6,17 @@ import contextlib
 import ctypes
 import logging
 
+from bartleby.qt.game_embed.client_tile import ClientTile, DetachedTile, PendingTile, ScaledTile
+from bartleby.qt.theming.account_accent import account_color_keys
+from bartleby.qt.theming.icon_utils import svg_icon
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.clients.tile_slots import TileKey, TileSlot, plan_tile_changes
+from bartleby.runtime.game.game_sizing import grid_for, required_game_area
+from bartleby.shared import game_dpi
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -17,8 +28,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.clients.tile_slots import TileKey, TileSlot, plan_tile_changes
-from bartlebot.game.game_sizing import grid_for, required_game_area
 from bartlebot.gui.game_embed.card_columns import (
     ACCOUNTS_TITLE,
     ADD_ACCOUNT,
@@ -27,18 +36,9 @@ from bartlebot.gui.game_embed.card_columns import (
     CardColumn,
     refresh_column_fit,
 )
-from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile, ScaledTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, launch_note_for
-from bartlebot.gui.theming.account_accent import account_color_keys
-from bartlebot.gui.theming.icon_utils import svg_icon
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared import game_dpi
 from bartlebot.updates.check import current_version
 
 logger = logging.getLogger(__name__)
@@ -511,7 +511,7 @@ class GameView(ThemedMixin, QWidget):
         self._detached_hwnds: dict[int, int] = {}  # slot → hwnd
         # Player index per slot, as of the last sync. The tiles are keyed by slot and the
         # wizard names arrive keyed by player, so this is the join between them; a slot
-        # holding a window that is not in game maps to None. See bartlebot.clients.tile_slots.
+        # holding a window that is not in game maps to None. See bartleby.runtime.clients.tile_slots.
         self._tile_players: dict[int, int | None] = {}
         # Last announced embed state, so sync_tiles can stay silent on a tick that changed
         # nothing rather than re-emitting several times a second.
@@ -579,7 +579,7 @@ class GameView(ThemedMixin, QWidget):
         select — an event that changes no client list, because it is not a client — still
         reach the screen.
 
-        Slot and player are different numbers here; see bartlebot.clients.tile_slots for why. A
+        Slot and player are different numbers here; see bartleby.runtime.clients.tile_slots for why. A
         tile sits at its ``slot`` and is captioned from its ``player``, so a window with no
         player index is drawn under its account name rather than a number it does not have.
         """
@@ -900,7 +900,7 @@ class GameView(ThemedMixin, QWidget):
 
         *names* is positionally aligned with the live client list — the **player** index,
         not the slot the tile sits in. The two are only the same number while every
-        account is in game (see bartlebot.clients.tile_slots), so each tile is looked up by the
+        account is in game (see bartleby.runtime.clients.tile_slots), so each tile is looked up by the
         player index it was last synced with rather than by its own key.
 
         A None entry clears the name rather than leaving a stale one on screen — that is
@@ -1037,7 +1037,7 @@ class GameView(ThemedMixin, QWidget):
         This is what stops the window and the splitters being dragged to where the game
         windows get clipped: a tile shows its client at 1:1 and cannot scale, so anything
         narrower than the grid needs simply cuts the game off. Resolutions are capped to
-        the screen before launch (see bartlebot/game/game_sizing.py), so the minimum this
+        the screen before launch (see bartleby/runtime/game/game_sizing.py), so the minimum this
         derives is always satisfiable rather than a size the window cannot reach.
 
         The grid is measured against the **largest** client on screen, not an arbitrary

@@ -7,12 +7,12 @@ from __future__ import annotations
 
 import asyncio
 
+from bartleby.qt.title_bar.title_bar import TitleBar
 from PyQt6.QtCore import QObject
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenuBar, QWidget
 
 from bartlebot.app_controller import AppController
-from bartlebot.gui.title_bar.title_bar import TitleBar
 
 
 class _Window(QWidget):

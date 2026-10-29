@@ -4,20 +4,21 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt.title_bar.bottom_edge import BottomEdge, bottom_rule_shown, edge_color
+from bartleby.qt.title_bar.native_frame import NativeFrame
+from bartleby.qt.title_bar.title_bar import TitleBar
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.game.game_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter, QVBoxLayout, QWidget
 
-from bartlebot.clients.credentials import CredentialStore
-from bartlebot.game.game_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
+from bartlebot.gui.logo import logo_icon
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
-from bartlebot.gui.title_bar.bottom_edge import BottomEdge, bottom_rule_shown, edge_color
-from bartlebot.gui.title_bar.native_frame import NativeFrame
-from bartlebot.gui.title_bar.title_bar import TitleBar
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 
@@ -255,7 +256,7 @@ class MainWindow(QMainWindow):
         ``NativeFrame`` is what makes it a title bar rather than a strip under one, and it
         has to exist before the window is first shown, since it sets the window flags.
         """
-        self._title_bar = TitleBar(menu_bar, self)
+        self._title_bar = TitleBar(menu_bar, logo_icon(), self)
         self.setMenuWidget(self._title_bar)
         icons = ("panel_left", "panel_top", "panel_right", "panel_bottom")
         for action, icon in zip(self._pane_actions(), icons):
@@ -1132,7 +1133,7 @@ class MainWindow(QMainWindow):
         list see every launch this window makes.
         """
         try:
-            from bartlebot.launcher.launch_profile import launch_profile
+            from bartleby.runtime.launcher.launch_profile import launch_profile
 
             profile = next(
                 (p for p in SettingsManager.instance().launch_profiles if p.get("name") == profile_name), None
@@ -1185,7 +1186,7 @@ class MainWindow(QMainWindow):
     async def launch_account_named(self, username: str, display_name: str) -> None:
         """Launch one account, unless a launch for it is already running."""
         try:
-            from bartlebot.launcher.launch_profile import launch_account
+            from bartleby.runtime.launcher.launch_profile import launch_account
 
             if (reason := self._single_account_fit_problem()) is not None:
                 self._tell_later(QMessageBox.critical, "Launch failed", reason)

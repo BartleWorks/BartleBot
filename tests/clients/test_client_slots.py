@@ -1,7 +1,7 @@
 """Tests for ClientManager slot bookkeeping and game-view tile reconciliation.
 
 Slots and player indices are different numbers, and most of this file is about keeping
-them apart -- see ``bartlebot.clients.tile_slots`` for why they had to be separated at all. A slot
+them apart -- see ``bartleby.runtime.clients.tile_slots`` for why they had to be separated at all. A slot
 is a position in ``_client_order``, pinned before the windows exist and held for as long as
 the account is running; a player index is a position in the live client list, which is
 compacted and therefore moves as clients hook, crash and recover.
@@ -25,8 +25,8 @@ where windows ended up rather than about call order.
 from unittest.mock import MagicMock, patch
 
 import pytest
+from bartleby.runtime.clients.tile_slots import TileSlot, plan_tile_changes
 
-from bartlebot.clients.tile_slots import TileSlot, plan_tile_changes
 from tests.clients.test_recovery import RecoveryHarness, _make_machine, _mock_create_task
 
 # ---------------------------------------------------------------------------

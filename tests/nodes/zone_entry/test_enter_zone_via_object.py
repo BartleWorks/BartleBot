@@ -8,6 +8,7 @@ from wizwalker import Keycode
 
 import bartlebot.nodes.zone_entry.enter_zone_via_object as itz
 from tests.conftest import FakeClient, FakeMachine, prompt_at
+from tests.node_helper_patches import patch_helper
 
 _FROM_ZONE = "TestZone"  # matches FakeClient zone_name default
 _TO_ZONE = "TestZone/SnowGlobe"
@@ -324,10 +325,10 @@ async def test_sequential_clients_transition_one_at_a_time():
 
     with (
         patch.object(itz, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
-        patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
-        patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=False)),
+        patch_helper("get_text_by_path", AsyncMock(return_value="")),
     ):
         result = await itz.run(FakeMachine(), clients, params)
 
@@ -346,10 +347,10 @@ def _sequential_patches():
     return (
         patch.object(itz, "POLL_INTERVAL", 0),
         patch.object(itz, "TRIGGER_TIMEOUT", 0.05),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
-        patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
-        patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=False)),
+        patch_helper("get_text_by_path", AsyncMock(return_value="")),
     )
 
 
@@ -395,10 +396,10 @@ async def test_sequential_does_not_park_a_departing_client():
 
     with (
         patch.object(itz, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
-        patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
-        patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
+        patch_helper("is_visible_by_path", AsyncMock(return_value=False)),
+        patch_helper("get_text_by_path", AsyncMock(return_value="")),
     ):
         result = await itz.run(FakeMachine(), [client], params)
 
