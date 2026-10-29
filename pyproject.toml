@@ -6,6 +6,9 @@ license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
+    # The family's shared library: accounts, the client runtime and the widgets both apps
+    # use (bartleby-core/docs/ARCHITECTURE.md). Pinned by commit below.
+    "bartleby-core[runtime,qt]",
     "PyQt6>=6.9",
     "qasync>=0.27",
     "pyperclip>=1.8",
@@ -58,6 +61,7 @@ site = [
 # commit -- see bartleby-core/docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
+bartleby-core = { path = "../bartleby-core", editable = true }
 wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "e73a73635bedfc0e05f2730f277c43b49c24f113" }
 wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "088fc838bda285c8b06d2f235fb5671126035f59" }
 
