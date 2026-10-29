@@ -3,7 +3,7 @@
 The client declares no DPI awareness, so on a display scaled above 100% Windows runs it
 DPI-unaware and stretches its window: 2560x1440, asked for at 150%, is 3840x2160 on the
 screen. The sizing arithmetic and embedding both take the game to draw at the pixels it was
-given (``docs/WINDOW_SIZING.md``), which holds only while it is aware. Two things make it so,
+given (``bartleby-core/docs/WINDOW_SIZING.md``), which holds only while it is aware. Two things make it so,
 each the compatibility layer :data:`HIGH_DPI_LAYER`:
 
 - **in the environment it starts with**, :data:`COMPAT_LAYER_ENV`, which is how every launch

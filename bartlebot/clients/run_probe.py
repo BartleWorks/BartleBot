@@ -16,7 +16,7 @@ whether to fight it or flee it.
 every player, whatever the bot: a player whose account has one bound only with Ctrl, Shift
 or Alt, only to the mouse, or only to a key the chat line shares, would have a node fail
 partway through the run, or type into chat. The user fixes it in the game's key bindings;
-``docs/KEY_BINDINGS.md``. A key shared with any other action is pressed, and only logged.
+``bartleby-core/docs/KEY_BINDINGS.md``. A key shared with any other action is pressed, and only logged.
 
 Players are named by number, as everywhere else the run speaks to the user.
 """
@@ -150,7 +150,7 @@ def refusal_text(fighting: list[int]) -> str:
 
 
 def key_refusal_text(problems: tuple[str, ...]) -> str:
-    """The dialog's text when a player has an action BartleBot cannot press (``docs/UI_TEXT.md``, M2)."""
+    """The dialog's text when a player has an action BartleBot cannot press (``bartleby-core/docs/UI_TEXT.md``, M2)."""
     return (
         "BartleBot can't press every action this run needs.\n\n"
         + "\n".join(problems)

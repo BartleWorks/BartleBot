@@ -6,7 +6,7 @@ its data RIP-relative, so nothing a pattern spans is rewritten by relocation. Th
 lets a patch on the Test realm be checked before any client of it has run.
 
 Standard library only, so ``capture_type_dump.py`` can import it from wiztype's own
-environment (``docs/GAME_UPDATES.md``).
+environment (``bartleby-core/docs/GAME_UPDATES.md``).
 """
 
 from __future__ import annotations

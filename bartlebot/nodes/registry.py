@@ -131,7 +131,7 @@ NODE_PARAM_SCHEMAS: dict[str, list[ParamField]] = {k: v.params for k, v in NODE_
 
 
 #: Words a node name keeps lowercase after its first word, as Unreal's node names do
-#: (docs/UI_TEXT.md, N3).
+#: (bartleby-core/docs/UI_TEXT.md, N3).
 _SMALL_WORDS = frozenset({"a", "an", "and", "at", "by", "for", "in", "of", "on", "or", "the", "to", "via"})
 
 

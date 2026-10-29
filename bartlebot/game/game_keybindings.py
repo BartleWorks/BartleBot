@@ -5,7 +5,7 @@ hotkeys are armed only while a game window has the keyboard, which is exactly wh
 would have acted on that key, so a clash is not a hypothetical: the game never sees the key,
 and the user loses that binding for as long as the hotkey holds it.
 
-**Whose bindings.** Since r811339 they belong to the account (``docs/KEY_BINDINGS.md``), so
+**Whose bindings.** Since r811339 they belong to the account (``bartleby-core/docs/KEY_BINDINGS.md``), so
 the best answer is each attached client's own, as last read from its memory, and all of them
 together, since a hotkey is armed in whichever game window has the keyboard. The settings
 dialog cannot wait on a read, so its caller hands those in (``clients/game_keys.known_maps``).

@@ -95,7 +95,7 @@ def right_sidebar_floor() -> int:
     two numbers derived here have to be the same number: the width ``RightSidebar``
     enforces, and the width ``layout_budget`` subtracts before deciding what may launch.
     A floor the arithmetic does not know about is the whole failure this guards against
-    -- see "The floor is only a floor if the panes honor it" in docs/WINDOW_SIZING.md.
+    -- see "The floor is only a floor if the panes honor it" in bartleby-core/docs/WINDOW_SIZING.md.
 
     Measured rather than a constant because the row is a caption beside controls, and
     both the font and the resolved style move it: the same layout wants 281px here and

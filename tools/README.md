@@ -28,7 +28,7 @@ game assets, either*).
 
 ## After a game update
 
-`game_update/`, the procedure in `docs/GAME_UPDATES.md`. Each compares the build the code
+`game_update/`, the procedure in `bartleby-core/docs/GAME_UPDATES.md`. Each compares the build the code
 works with against the one coming, so a Test realm patch can be read before it is live.
 
 | tool | does |
@@ -97,13 +97,13 @@ recorded beside the code that depends on it.
 | `probe_group_roster.py`, `probe_group_tab.py`, `probe_group_ui.py` | the social window reads `group_manager` makes |
 | `probe_group_state.py`, `probe_group_offsets.py` | the memory route to group state, dead on the current build; rerun to see whether a later one revives it |
 | `probe_housing_equip.py` | telling an equipped castle from an unequipped one (`nodes/housing.py`) |
-| `probe_binding_memory.py` | each client's key bindings in memory, every `InputBindingList` and what holds it (`clients/game_keys.py`, `docs/KEY_BINDINGS.md`) |
+| `probe_binding_memory.py` | each client's key bindings in memory, every `InputBindingList` and what holds it (`clients/game_keys.py`, `bartleby-core/docs/KEY_BINDINGS.md`) |
 | `probe_key_bindings.py` | the key code each of the game's key names means, bound by hand (`game/key_bindings.py`'s `KEY_CODES`); writes `probe_key_bindings.local.json`, gitignored |
 | `probe_name_behavior.py` | reading the wizard name from `ClientWizPlayerNameBehavior`; `--record` writes `name_key_samples.local.json`, gitignored |
-| `probe_same_place.py` | sightings: when one client has another loaded (`clients/sightings.py`, `docs/PLAYER_REALMS.md`) |
+| `probe_same_place.py` | sightings: when one client has another loaded (`clients/sightings.py`, `bartleby-core/docs/PLAYER_REALMS.md`) |
 | `probe_untargetable.py` | wizsprinter skipping an untargetable enemy (#192) |
 
-Never commit what a probe records about a real account. The root `CLAUDE.md`, *No real
+Never commit what a probe records about a real account. Core's root `CLAUDE.md`, *No real
 player data*, lists where each one writes.
 
 ## Our own GUI
@@ -112,3 +112,8 @@ player data*, lists where each one writes.
 the event stream, paint damage. No game client. `CLAUDE.md` in this folder, *Our own
 widgets*, has how to use it. `export_logo.py` exports the logo's raster files from its
 SVG for places outside the app (#26).
+
+`render_sheet.py` renders BartleBot's surfaces offscreen in both themes, with sample accounts
+`P1` to `P4`, one PNG each, and `--compare` names every surface whose pixels differ between
+two runs. It is the visual gate of #167's stages: rendered on `master` before a stage and on
+its branch before the merge (core's `docs/ARCHITECTURE.md`).

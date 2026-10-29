@@ -36,7 +36,7 @@ Two things to know before trusting it:
 **A dump is captured with wiztype**, from one running client:
 `uvx --from wiztype==0.1.13 python tools/game_update/capture_type_dump.py`. katsuba only
 reads one. The tool finds the type registry itself when a patch breaks wiztype's own scan,
-as r811339 did; `docs/GAME_UPDATES.md` has when to run it and where the file goes.
+as r811339 did; `bartleby-core/docs/GAME_UPDATES.md` has when to run it and where the file goes.
 
 **Dumps are committed, and old ones are never deleted.** A dump can only be
 captured from a running client, so once a patch ships there is no way back to the

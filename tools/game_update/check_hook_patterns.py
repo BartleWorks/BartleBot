@@ -23,7 +23,7 @@ USAGE
     uv run python tools/game_update/check_hook_patterns.py
     uv run python tools/game_update/check_hook_patterns.py --old <exe> --new <exe> --source ../wizwalker/wizwalker
 
-    Exits 1 when a pattern is broken. ``docs/GAME_UPDATES.md`` has the procedure around it.
+    Exits 1 when a pattern is broken. ``bartleby-core/docs/GAME_UPDATES.md`` has the procedure around it.
 """
 
 from __future__ import annotations
