@@ -7,16 +7,13 @@ and none of it is a level of any bot option's resolution.
 
 from __future__ import annotations
 
-from bartleby.runtime.game.game_sizing import (
-    BOTCANVAS_DEFAULT_HEIGHT,
-    BOTCANVAS_MIN_HEIGHT,
-    LEFT_SIDEBAR_MIN_WIDTH,
-    RIGHT_SIDEBAR_MIN_WIDTH,
-)
+from bartleby.qt import screen_fit
+from bartleby.runtime.game.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
-from bartlebot.gui import screen_fit
+from bartlebot.game.pane_sizing import BOTCANVAS_DEFAULT_HEIGHT, BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH
+from bartlebot.gui import window_panes
 from bartlebot.gui.settings.game_art_row import game_art_row
 from bartlebot.gui.settings.game_folder_row import apply_game_folder, game_folder_row
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
@@ -160,7 +157,7 @@ class GeneralTab(SettingsForm):
         # Each pane's range runs to a 4K screen's size: setup fits the panes to the screen,
         # and a range below what it wrote would clamp it on the next Save.
         self._left_sb = QSpinBox()
-        self._left_sb.setRange(screen_fit.left_sidebar_floor(), 3840)
+        self._left_sb.setRange(window_panes.left_sidebar_floor(), 3840)
         self._left_sb.setSuffix(" px")
         self._left_sb.setValue(sm.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH))
         self.add_row(

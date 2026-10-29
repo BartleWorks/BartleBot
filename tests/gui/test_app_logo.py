@@ -9,12 +9,12 @@ window icon, and the disc on the launch screen.
 import math
 
 import pytest
+from bartleby.qt.game_embed.game_view import _GamePlaceholder
 from bartleby.qt.widgets.labels.logo_disc import LogoDisc
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QApplication, QWidget
 
 from bartlebot.gui import logo
-from bartlebot.gui.game_embed.game_view import _GamePlaceholder
 from bartlebot.gui.logo import (
     GRID,
     ICON_SIZES,
@@ -29,6 +29,7 @@ from bartlebot.gui.logo import (
     tree_image,
     tree_scale,
 )
+from bartlebot.settings_manager import SettingsManager
 
 BACKGROUND = QColor("#1d3a8a").rgba()
 TREE = {QColor(c).rgba() for c in ("#22b14c", "#b97a57", "#7092be", "#3f48cc")}
@@ -136,13 +137,13 @@ def test_the_disc_cell_leaves_a_cell_of_disc_past_the_feet(qapp):
 
 
 def test_the_launch_screen_shows_the_logo_disc(qapp):
-    placeholder = _GamePlaceholder()
+    placeholder = _GamePlaceholder(SettingsManager.instance(), logo_disc_image)
     assert placeholder.findChild(LogoDisc) is not None
 
 
 def test_the_launch_screen_s_disc_is_the_tree_drawn_unchanged_inside_its_ring(qapp):
     """Core's ``LogoDisc`` is handed BartleBot's disc, and draws it one to one at any scaling."""
-    disc = _GamePlaceholder().findChild(LogoDisc)
+    disc = _GamePlaceholder(SettingsManager.instance(), logo_disc_image).findChild(LogoDisc)
     shot = disc.grab().toImage()
     dpr = disc.devicePixelRatioF()
     diameter = math.floor(160 * dpr)

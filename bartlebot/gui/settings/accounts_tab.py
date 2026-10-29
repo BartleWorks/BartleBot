@@ -41,6 +41,7 @@ from bartleby.qt.game_embed.card_columns import (
     EMPTY_PROFILES_HINT,
     CardColumn,
 )
+from bartleby.qt.game_embed.launch_cards import AccountCard, CardMode, ProfileCard, refresh_column_fit
 from bartleby.qt.theming.account_accent import (
     ACCOUNT_PALETTE_SIZE,
     account_accent,
@@ -72,7 +73,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard, refresh_column_fit
 from bartlebot.gui.settings.profile_editor import (
     ADD_PROFILE_TITLE,
     EDIT_PROFILE_TITLE,
@@ -538,7 +538,7 @@ def edit_launch_profile(
     saved: no such profile, the editor cancelled, and a name the save refused.
 
     *live_game_area* is passed through so the editor's resolution picker judges a launch
-    the same way the surface behind it does — see gui/screen_fit.budget_for.
+    the same way the surface behind it does — see core's screen_fit.budget_for.
     """
     profile = next((p for p in SettingsManager.instance().launch_profiles if p.get("name") == old_name), None)
     if profile is None:

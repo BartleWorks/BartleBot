@@ -22,7 +22,6 @@ from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from bartleby.qt.widgets.pills.pill import NeutralPill
-from bartleby.runtime.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from PyQt6.QtCore import QEvent, QRectF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
@@ -87,6 +86,7 @@ from bartlebot.content.subgraphs.subgraphs import (
 )
 from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game import card_art, scales
+from bartlebot.game.pane_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, FoldedNodeItem, PortNodeItem

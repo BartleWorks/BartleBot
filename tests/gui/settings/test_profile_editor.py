@@ -14,9 +14,9 @@ selection in section order rather than in the order the user built.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt import screen_fit
+from bartleby.qt.game_embed.launch_cards import AccountCard, CardMode
 
-from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.profile_editor import (
     ProfileDialog,
     account_sections,

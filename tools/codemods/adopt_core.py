@@ -1,7 +1,8 @@
 """Point BartleBot at bartleby-core: rewrite every reference to a module core now holds.
 
 Stage 3 of #167, and each later stage that moves a module: Stage 5 added the app
-skeleton, Stage 6 the cards, pills and the Log tab, Stage 8 the player cards. Each module in :data:`TABLE` exists in bartleby-core, identical to
+skeleton, Stage 6 the cards, pills and the Log tab, Stage 8 the player cards, Stage 9 the
+game view, the launch cards and the screen fit. Each module in :data:`TABLE` exists in bartleby-core, identical to
 BartleBot's but for its imports, the cuts the stage lists and its docstring paths, and
 BartleBot's copy is deleted in the same stage. No shim keeps an old path alive, so every
 ``from`` and ``import`` line, every dotted path in a string (``monkeypatch.setattr``,
@@ -74,6 +75,9 @@ TABLE: dict[str, str] = {
     # Stage 8: player cards on view models. BartleBot's card is ``client_card.ClientCard`` now.
     "bartlebot.gui.sidebar.player_card": "bartleby.qt.sidebar.player_card",
     "bartlebot.gui.game_embed.card_columns": "bartleby.qt.game_embed.card_columns",
+    # Stage 9: the game view, Quick Launch and the screen fit.
+    **{f"bartlebot.gui.game_embed.{m}": f"bartleby.qt.game_embed.{m}" for m in ("game_view", "launch_cards")},
+    "bartlebot.gui.screen_fit": "bartleby.qt.screen_fit",
 }
 
 #: The family pills, which left ``tag_pill`` in Stage 6; the bot-tag pills stay in it.
@@ -81,7 +85,16 @@ _PILLS = (
     "pill_height pill_style paint_pill_outline NeutralPill NeutralChip AccentPill AccountPill WarningPill ActionPill"
 ).split()
 
-#: Names that moved out of a module BartleBot keeps: (module, name) to core's module.
+#: What stayed in BartleBot of ``gui/screen_fit`` in Stage 9, and what left core's ``game_sizing`` for it.
+_WINDOW_PANES = "left_sidebar_floor setup_area setup_resolution FittedLayout fitted_layout".split()
+_PANE_SIZING = (
+    "BOTCANVAS_MIN_WIDTH BOTCANVAS_MIN_HEIGHT BOTCANVAS_DEFAULT_HEIGHT SINGLE_CLIENT_CANVAS_SHARE "
+    "LEFT_SIDEBAR_MIN_WIDTH REFERENCE_FILTER_ROW_PX LEFT_SIDEBAR_CHROME_PX left_sidebar_floor "
+    "canvas_height_for single_client_canvas_floor sidebar_widths_for"
+).split()
+
+#: Names that moved out of a module BartleBot keeps: (module, name) to core's module, or
+#: to the BartleBot module that took them.
 NAMES: dict[tuple[str, str], str] = {
     ("bartlebot.settings_manager", "VALID_RESOLUTIONS"): "bartleby.runtime.game.game_sizing",
     **{("bartlebot.gui.widgets.pills.tag_pill", name): "bartleby.qt.widgets.pills.pill" for name in _PILLS},
@@ -89,11 +102,15 @@ NAMES: dict[tuple[str, str], str] = {
     ("bartlebot.gui.game_embed.card_columns", "apply_order"): "bartleby.shared.ordering",
     # Stage 8: the badge left player_pills; the fit refresh waits in launch_cards for Stage 9.
     ("bartlebot.gui.widgets.pills.player_pills", "PlayerBadge"): "bartleby.qt.widgets.pills.player_badge",
-    ("bartlebot.gui.game_embed.card_columns", "refresh_column_fit"): "bartlebot.gui.game_embed.launch_cards",
+    ("bartlebot.gui.game_embed.card_columns", "refresh_column_fit"): "bartleby.qt.game_embed.launch_cards",
     **{
         ("bartlebot.gui.sidebar.player_card", name): "bartlebot.gui.sidebar.client_card"
         for name in ("XYZ_PLACEHOLDER", "MOB_INTERVAL", "format_xyz", "xyz_clipboard_text")
     },
+    # Stage 9: BartleBot's own part of the screen fit stays, as gui/window_panes; its pane
+    # constants left core's game_sizing for game/pane_sizing.
+    **{("bartlebot.gui.screen_fit", name): "bartlebot.gui.window_panes" for name in _WINDOW_PANES},
+    **{("bartleby.runtime.game.game_sizing", name): "bartlebot.game.pane_sizing" for name in _PANE_SIZING},
 }
 
 DEFAULT_PATHS = ("bartlebot", "tests", "tools", "bartlebot.py")
@@ -162,7 +179,8 @@ def rewrite(source: str) -> str:
         for node in ast.walk(tree):
             if not (isinstance(node, ast.ImportFrom) and node.level == 0 and node.module):
                 continue
-            if not node.module.startswith("bartlebot"):
+            # Core's own modules too, where a name left one for BartleBot (Stage 9's panes).
+            if not node.module.startswith("bartlebot") and not any((node.module, a.name) in NAMES for a in node.names):
                 continue
             first = lines[node.lineno - 1]
             last = lines[node.end_lineno - 1]

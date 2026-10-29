@@ -15,10 +15,10 @@ or the older tests can see:
 from __future__ import annotations
 
 import pytest
+from bartleby.qt import screen_fit
 from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from PyQt6.QtWidgets import QFormLayout, QLabel
 
-from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab

@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import json
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
 from bartleby.qt.app.ui_state import UI_STATE_FILE, UiState
+from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.link_button import LinkButton
 from bartleby.shared.vendor import product_dir
+from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QCheckBox, QSpinBox
 
 from bartlebot.gui.settings.bot_tab import BotTab
@@ -19,6 +22,7 @@ from bartlebot.gui.settings.rows import (
     SettingGroup,
     SettingRow,
     SettingsForm,
+    hint,
 )
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.packaging.product import NAME as PRODUCT
@@ -309,3 +313,23 @@ def test_a_form_that_always_describes_ignores_descriptions_hidden_in_settings(qa
     form.finish()
 
     assert all(row.details_shown for row in form.rows if row.details is not None)
+
+
+@pytest.fixture
+def theme():
+    before = theme_mod.active_theme()
+    yield theme_mod.set_theme
+    theme_mod.set_theme_instance(before)
+
+
+def test_the_settings_hint_follows_the_theme(qapp, theme):
+    """Moved from the game view's theme tests when the game view moved to core (#167, Stage 9)."""
+    theme("light")
+    lbl = hint("Some explanation")
+    light = THEME.text_muted
+
+    theme("dark")
+    qapp.sendEvent(lbl, QEvent(QEvent.Type.StyleChange))
+
+    assert light not in lbl.styleSheet()
+    assert "padding-bottom: 6px" in lbl.styleSheet()

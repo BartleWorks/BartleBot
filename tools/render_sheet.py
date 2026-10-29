@@ -61,7 +61,8 @@ def themes():
 @contextlib.contextmanager
 def sample_data() -> Iterator[None]:
     """The sample accounts and profile in the settings, and the screen pinned; both put back after."""
-    from bartlebot.gui import screen_fit  # noqa: PLC0415
+    from bartleby.qt import screen_fit  # noqa: PLC0415
+
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     sm = SettingsManager.instance()
@@ -92,9 +93,9 @@ def _main_window():
 
 
 def _quick_launch():
-    from bartlebot.gui.game_embed.game_view import GameView  # noqa: PLC0415
+    from bartlebot.gui.game_embed.game_view_panel import new_game_view  # noqa: PLC0415
 
-    view = GameView()
+    view = new_game_view()
     view.refresh_launch_lists()
     return view
 

@@ -8,13 +8,16 @@ unfittable launch is *refused* — a card that cannot be clicked — rather than
 from __future__ import annotations
 
 import pytest
+from bartleby.qt import screen_fit
+from bartleby.qt.game_embed.launch_cards import AccountCard, ProfileCard, character_summary, profile_summary
 from bartleby.runtime.game import game_sizing
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QMouseEvent, QResizeEvent
 from PyQt6.QtWidgets import QApplication, QPushButton
 
-from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, character_summary, profile_summary
+from bartlebot.game import pane_sizing
+from bartlebot.gui import window_panes
+from bartlebot.gui.game_embed.game_view_panel import new_game_view
 from bartlebot.settings_manager import SettingsManager
 
 # A 1080p screen at the default layout, which is where two 800x600 clients stop fitting.
@@ -41,7 +44,7 @@ def _sidebar_excess() -> int:
     A literal budget therefore asserts which style the runner happens to have rather than
     the behavior this test names — see "One QApplication per worker" in tests/CLAUDE.md.
     """
-    return (screen_fit.left_sidebar_floor() - game_sizing.LEFT_SIDEBAR_MIN_WIDTH) + (
+    return (window_panes.left_sidebar_floor() - pane_sizing.LEFT_SIDEBAR_MIN_WIDTH) + (
         screen_fit.right_sidebar_floor() - game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
     )
 
@@ -291,14 +294,13 @@ def test_the_launch_screen_re_judges_its_cards_on_a_resize_without_rebuilding_th
     until it is shown — which is also why ``_recompute_geometry`` drives the re-judge
     rather than leaving it to the placeholder's own handler.
     """
-    from bartlebot.gui.game_embed.game_view import GameView
 
     # A screen with room for one 800x600 tile and not two, so only the live game area can
     # decide this pair.
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((1300, 800), 1.0))
     SettingsManager.instance().launch_profiles = [_profile(["a", "b"], (800, 600))]
 
-    view = GameView()
+    view = new_game_view()
     card = view.findChild(ProfileCard)
     container = card.parent()
 
@@ -317,26 +319,6 @@ def _resize(widget, width, height):
     old = widget.size()
     widget.resize(width, height)
     widget.resizeEvent(QResizeEvent(widget.size(), old))
-
-
-# ---------------------------------------------------------------------------
-# Fitting a window to the screen
-# ---------------------------------------------------------------------------
-
-
-def test_a_window_that_already_fits_is_left_at_its_preferred_size():
-    assert screen_fit.size_within_screen((620, 720), (480, 400), (1920, 1080)) == (620, 720)
-
-
-def test_a_window_taller_than_the_screen_is_cut_down_to_it():
-    width, height = screen_fit.size_within_screen((620, 1400), (480, 400), (1920, 1080))
-    assert height == 1080 - screen_fit.WINDOW_SCREEN_MARGIN
-    assert width == 620
-
-
-def test_the_minimum_wins_over_a_screen_too_small_for_it():
-    """Clamping past the minimum is a second way to lose the buttons, not a fix."""
-    assert screen_fit.size_within_screen((620, 720), (480, 400), (500, 300)) == (480, 400)
 
 
 # ---------------------------------------------------------------------------
@@ -385,14 +367,13 @@ def test_the_accounts_banner_names_the_default_resolution_and_two_ways_out(qapp,
     "Launch fewer clients" is left out on purpose -- an account card launches exactly one,
     so it is a remedy that cannot be taken.
     """
-    from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
     SettingsManager.instance().game_resolution = (800, 600)
     SettingsManager.instance().accounts = _accounts("one", "two", "three")
     SettingsManager.instance().launch_profiles = []
 
-    view = GameView()
+    view = new_game_view()
     cards = view.findChildren(AccountCard)
     assert len(cards) == 3
     assert all(card.unavailable_reason is not None for card in cards)
@@ -412,7 +393,6 @@ def test_the_accounts_banner_names_the_default_resolution_and_two_ways_out(qapp,
 
 def test_the_profiles_banner_is_sized_against_the_panel_not_a_resolution(qapp, monkeypatch):
     """Profiles may each pin their own, so naming one would point at the wrong setting."""
-    from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
     SettingsManager.instance().game_resolution = (640, 480)
@@ -422,37 +402,34 @@ def test_the_profiles_banner_is_sized_against_the_panel_not_a_resolution(qapp, m
         _profile(["a", "b"], (1024, 768)),
     ]
 
-    text = _banner_texts(GameView())[0]
+    text = _banner_texts(new_game_view())[0]
     assert text.startswith("No launch profiles fit in the game view panel at its current size (")
     assert "800" not in text and "1024" not in text
     assert "launch fewer clients" in text
 
 
 def test_a_lone_unfittable_profile_is_not_described_as_a_list(qapp, monkeypatch):
-    from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
     SettingsManager.instance().game_resolution = (640, 480)
     SettingsManager.instance().accounts = []
     SettingsManager.instance().launch_profiles = [_profile(["a", "b"], (800, 600))]
 
-    assert _banner_texts(GameView())[0].startswith("This launch profile does not fit")
+    assert _banner_texts(new_game_view())[0].startswith("This launch profile does not fit")
 
 
 def test_the_banner_goes_away_once_everything_fits(qapp, monkeypatch):
-    from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((3840, 2160), 1.0))
     SettingsManager.instance().game_resolution = (640, 480)
     SettingsManager.instance().accounts = _accounts("one", "two")
     SettingsManager.instance().launch_profiles = []
 
-    assert _banner_texts(GameView()) == []
+    assert _banner_texts(new_game_view()) == []
 
 
 def test_a_partly_fitting_profile_column_says_some_rather_than_none(qapp, monkeypatch):
     """Counting grayed rows is not how the user should learn that one of them still works."""
-    from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: _1080P)
     SettingsManager.instance().game_resolution = (640, 480)
@@ -464,7 +441,7 @@ def test_a_partly_fitting_profile_column_says_some_rather_than_none(qapp, monkey
         _profile(["a", "b"], (800, 600)),
     ]
 
-    text = _banner_texts(GameView())[0]
+    text = _banner_texts(new_game_view())[0]
     assert text.startswith("Some launch profiles do not fit")
     assert text.endswith("have been disabled.")
     # The ways out are left to the cards that still work and the ones that do not: this
@@ -476,14 +453,12 @@ def test_the_banner_link_opens_the_settings_the_advice_points_at(qapp, monkeypat
     """ "Lower the resolution" the user then has to go hunting for is half an answer."""
     from bartleby.qt.game_embed.card_columns import _FitBanner
 
-    from bartlebot.gui.game_embed.game_view import GameView
-
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
     SettingsManager.instance().game_resolution = (800, 600)
     SettingsManager.instance().accounts = _accounts("one")
     SettingsManager.instance().launch_profiles = []
 
-    view = GameView()
+    view = new_game_view()
     fired = []
     view.manage_accounts_requested.connect(lambda: fired.append(True))
     banner = next(b for b in view.findChildren(_FitBanner) if b.text)
@@ -510,7 +485,7 @@ def counted_measures(qapp, monkeypatch):
 
     monkeypatch.setattr(screen_fit, "_FLOORS", {})
     built = {"left": 0, "right": 0}
-    measure_left, header_row_floor = screen_fit._measure_left_sidebar_floor, log_panel.header_row_floor
+    measure_left, header_row_floor = window_panes._measure_left_sidebar_floor, log_panel.header_row_floor
 
     def left(app):
         built["left"] += 1
@@ -520,16 +495,16 @@ def counted_measures(qapp, monkeypatch):
         built["right"] += 1
         return header_row_floor(font)
 
-    monkeypatch.setattr(screen_fit, "_measure_left_sidebar_floor", left)
+    monkeypatch.setattr(window_panes, "_measure_left_sidebar_floor", left)
     monkeypatch.setattr(log_panel, "header_row_floor", right)
     return built
 
 
 def test_a_floor_asked_for_again_is_not_measured_again(counted_measures):
     """A resize asks once per launch card: 14 probe rows made a drag from maximized freeze."""
-    first = (screen_fit.left_sidebar_floor(), screen_fit.right_sidebar_floor())
+    first = (window_panes.left_sidebar_floor(), screen_fit.right_sidebar_floor())
     for _ in range(14):
-        assert (screen_fit.left_sidebar_floor(), screen_fit.right_sidebar_floor()) == first
+        assert (window_panes.left_sidebar_floor(), screen_fit.right_sidebar_floor()) == first
 
     assert counted_measures == {"left": 1, "right": 1}
 
@@ -537,126 +512,13 @@ def test_a_floor_asked_for_again_is_not_measured_again(counted_measures):
 def test_a_new_stylesheet_measures_the_floors_again(qapp, counted_measures):
     """A theme switch is a new app stylesheet, and a stylesheet can widen the probe rows."""
     sheet = qapp.styleSheet()
-    screen_fit.left_sidebar_floor()
+    window_panes.left_sidebar_floor()
     screen_fit.right_sidebar_floor()
     try:
         qapp.setStyleSheet(sheet + "\nQComboBox { padding: 0 30px; }")
-        screen_fit.left_sidebar_floor()
+        window_panes.left_sidebar_floor()
         screen_fit.right_sidebar_floor()
     finally:
         qapp.setStyleSheet(sheet)
 
     assert counted_measures == {"left": 2, "right": 2}
-
-
-# -- what setup fits: a new profile's resolution, and the canvas -----------------------
-
-_1080P_TASKBAR = ((1920, 1032), 1.0)
-
-
-def test_setup_judges_a_new_profile_at_the_default_canvas(screen):
-    """Not the canvas as configured: one fitted to a single account would leave four nothing."""
-    screen(_1080P_TASKBAR)
-    SettingsManager.instance().set_general("bottom_section_height", 500)
-
-    assert screen_fit.setup_area()[1] == 1032 - game_sizing.BOTCANVAS_DEFAULT_HEIGHT - 60
-    assert screen_fit.setup_resolution(4) == (534, 300)
-
-
-def test_one_client_gets_the_largest_resolution_that_fits(screen):
-    """800x600 is a quarter of a 4K screen: setup gives a single account the room there is."""
-    screen(_1080P_TASKBAR)
-
-    assert screen_fit.fitted_layout().resolution == (960, 540)
-
-
-def test_a_resolution_chosen_in_settings_is_kept(screen):
-    screen(_1080P_TASKBAR)
-    SettingsManager.instance().game_resolution = (854, 480)
-
-    assert screen_fit.fitted_layout().resolution == (854, 480)
-
-
-def test_the_canvas_takes_the_height_one_client_leaves(screen):
-    screen(_1080P_TASKBAR)
-
-    assert screen_fit.fitted_layout().panes["bottom_section_height"] == 1032 - 60 - (540 + 51)
-
-
-def test_the_canvas_leaves_room_for_the_tallest_launch_profile(screen):
-    screen(_1080P_TASKBAR)
-    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "abcd"]
-    SettingsManager.instance().launch_profiles = [_profile("abcd", (534, 300))]
-
-    assert screen_fit.fitted_layout().panes["bottom_section_height"] == 1032 - 60 - 2 * (300 + 51)
-
-
-def test_a_launch_profile_that_cannot_fit_shapes_no_pane(screen):
-    """Two at 800x600 can't launch on 1080p whatever the panes do."""
-    screen(_1080P_TASKBAR)
-    alone = screen_fit.fitted_layout().panes
-    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
-    SettingsManager.instance().launch_profiles = [_profile("ab", (800, 600))]
-
-    assert screen_fit.fitted_layout().panes == alone
-
-
-def test_the_sidebars_share_the_width_the_widest_grid_leaves_evenly(screen):
-    screen(_1080P_TASKBAR)
-    panes = screen_fit.fitted_layout().panes
-    left, right = panes["left_sidebar_width"], panes["right_sidebar_width"]
-
-    assert abs(left - right) <= 1
-    assert left + right == 1920 - 2 * game_sizing.SPLITTER_HANDLE_PX - (960 + 12)
-
-
-def test_a_sidebar_sized_in_settings_keeps_its_size(screen):
-    screen(_1080P_TASKBAR)
-    SettingsManager.instance().set_general("left_sidebar_width", 450)
-    panes = screen_fit.fitted_layout().panes
-
-    assert "left_sidebar_width" not in panes
-    assert panes["right_sidebar_width"] == 1920 - 2 * game_sizing.SPLITTER_HANDLE_PX - 972 - 450
-
-
-def test_an_unmeasurable_screen_fits_nothing(screen):
-    screen((screen_fit._UNMEASURABLE, 1.0))
-
-    assert screen_fit.fitted_layout() is None
-
-
-def test_a_launch_profile_decides_the_layout_and_one_client_fits_what_it_leaves(screen):
-    """Two at 560x420 on 1080p keep a 471px-tall game area, and a single client fits in it."""
-    screen(_1080P_TASKBAR)
-    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
-    SettingsManager.instance().launch_profiles = [_profile("ab", (560, 420))]
-
-    fitted = screen_fit.fitted_layout()
-
-    assert fitted.panes["bottom_section_height"] == 1032 - 60 - (420 + 51)
-    assert fitted.resolution == (746, 420)
-
-
-def test_one_client_is_fitted_to_a_profile_that_follows_it(screen):
-    """A profile with no resolution of its own launches at the global one."""
-    screen(_1080P_TASKBAR)
-    SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in "ab"]
-    SettingsManager.instance().launch_profiles = [_profile("ab")]
-
-    assert screen_fit.fitted_layout().resolution == (560, 420)
-
-
-def test_one_client_on_1440p_leaves_the_canvas_its_share(screen):
-    """1680x1050 is the largest that fits, but leaves the canvas 231px; 1600x900 leaves 381."""
-    screen(((2560, 1392), 1.0))
-    fitted = screen_fit.fitted_layout()
-
-    assert fitted.resolution == (1600, 900)
-    assert fitted.panes["bottom_section_height"] == 1392 - 60 - (900 + 51)
-
-
-def test_one_client_on_4k_at_150_percent_keeps_the_largest(screen):
-    """2560x1440 leaves 329 of 1400, over the share: the bar is set so this stays."""
-    screen(((2560, 1400), 1.5))
-
-    assert screen_fit.fitted_layout().resolution == (2560, 1440)

@@ -46,6 +46,22 @@ def test_a_name_that_left_a_module_bartlebot_keeps_is_imported_from_core():
     )
 
 
+def test_a_name_that_left_core_for_bartlebot_is_imported_from_bartlebot():
+    """Stage 9's pane constants left core's ``game_sizing``; an import of core's module is split too."""
+    source = "from bartleby.runtime.game.game_sizing import BOTCANVAS_MIN_HEIGHT, VALID_RESOLUTIONS\n"
+
+    assert rewrite(source) == (
+        "from bartlebot.game.pane_sizing import BOTCANVAS_MIN_HEIGHT\n"
+        "from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS\n"
+    )
+
+
+def test_an_import_from_core_with_nothing_moved_is_left_alone():
+    source = "from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS\n"
+
+    assert rewrite(source) == source
+
+
 def test_a_dotted_path_in_a_string_or_a_docstring_is_rewritten():
     source = (
         'monkeypatch.setattr("bartlebot.launcher.launch_profile.launch", fake)\n"""See bartlebot.bot.run_trace."""\n'

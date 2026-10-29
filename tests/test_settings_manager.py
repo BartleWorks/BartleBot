@@ -61,14 +61,13 @@ def test_setup_may_fit_a_resolution_it_fitted_before_but_not_one_chosen_in_setti
     assert not sm.resolution_follows_setup
 
 
-def test_layout_budget_can_judge_another_canvas_height():
+def test_the_pane_sizes_are_the_configured_ones_and_the_defaults_for_the_rest():
     from bartlebot.settings_manager import SettingsManager
 
     sm = SettingsManager.instance()
     sm.set_general("bottom_section_height", 500)
 
-    assert sm.layout_budget((1920, 1032), bottom_section=220)[1] == 1032 - 220 - 60
-    assert sm.layout_budget((1920, 1032))[1] == 1032 - 500 - 60
+    assert sm.pane_sizes() == {"left_sidebar_width": 404, "right_sidebar_width": 300, "bottom_section_height": 500}
 
 
 # -- the file itself (#154) -----------------------------------------------------------

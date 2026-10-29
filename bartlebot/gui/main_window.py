@@ -4,16 +4,18 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt import screen_fit
 from bartleby.qt.title_bar.bottom_edge import BottomEdge, bottom_rule_shown, edge_color
 from bartleby.qt.title_bar.native_frame import NativeFrame
 from bartleby.qt.title_bar.title_bar import TitleBar
 from bartleby.runtime.clients.credentials import CredentialStore
-from bartleby.runtime.game.game_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartleby.runtime.game.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter, QVBoxLayout, QWidget
 
-from bartlebot.gui import screen_fit
+from bartlebot.game.pane_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH
+from bartlebot.gui import window_panes
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.logo import logo_icon
@@ -443,7 +445,7 @@ class MainWindow(QMainWindow):
         min_w, min_h = SettingsManager.instance().minimum_window_size(
             dpr=self.devicePixelRatio() or 1.0,
             right_sidebar_floor=screen_fit.right_sidebar_floor(),
-            left_sidebar_floor=screen_fit.left_sidebar_floor(),
+            left_sidebar_floor=window_panes.left_sidebar_floor(),
         )
         self.setMinimumSize(min_w, min_h)
 
@@ -458,7 +460,7 @@ class MainWindow(QMainWindow):
         sidebar and 600px in the bot canvas, none of which the user asked for.
 
         That is not only a cosmetic mis-layout. The game area left over is what a launch
-        is judged against (see gui/screen_fit.budget_for), so the panes taking space they
+        is judged against (see core's screen_fit.budget_for), so the panes taking space they
         were never configured for is what refused profiles the screen had room for --
         and dragging a sidebar could not always give it back, because the height had gone
         to the canvas at the same time.
@@ -470,7 +472,7 @@ class MainWindow(QMainWindow):
         sm = SettingsManager.instance()
         left_w = max(
             int(sm.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH)),
-            screen_fit.left_sidebar_floor(),
+            window_panes.left_sidebar_floor(),
         )
         right_w = max(
             int(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
@@ -537,7 +539,7 @@ class MainWindow(QMainWindow):
         min_w, min_h = sm.minimum_window_size(
             dpr=self.devicePixelRatio() or 1.0,
             right_sidebar_floor=screen_fit.right_sidebar_floor(),
-            left_sidebar_floor=screen_fit.left_sidebar_floor(),
+            left_sidebar_floor=window_panes.left_sidebar_floor(),
         )
         if sm.get_general("maximize_on_open", default=True):
             self.showMaximized()
@@ -734,7 +736,7 @@ class MainWindow(QMainWindow):
 
         Public because it is what every launch surface has to be judged against, including
         the settings dialog, which is handed it rather than reaching back through its own
-        parent chain to find this window. See gui/screen_fit.budget_for.
+        parent chain to find this window. See core's screen_fit.budget_for.
         """
         return self.game_view.game_area_size
 
@@ -945,14 +947,14 @@ class MainWindow(QMainWindow):
     def fit_layout_to_launches(self) -> None:
         """Fit the global resolution and the panes to the screen, after setup (epic #215).
 
-        ``screen_fit.fitted_layout`` has the rule: one client at the largest resolution
+        ``window_panes.fitted_layout`` has the rule: one client at the largest resolution
         that fits, a game area just big enough for the tallest and widest grid the user
         can launch, and the canvas and sidebars taking the rest. Stored, as the Settings
         rows store them, and applied to the window now. Each only while it is still the
         shipped value or setup's own: one chosen in Settings is the user's.
         """
         sm = SettingsManager.instance()
-        fitted = screen_fit.fitted_layout(self)
+        fitted = window_panes.fitted_layout(self)
         if fitted is None:
             return
         if sm.resolution_follows_setup and fitted.resolution != sm.game_resolution:

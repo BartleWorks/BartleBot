@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt import screen_fit
 from bartleby.qt.widgets.layout.dialog_footer import claim_default, dialog_footer
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
@@ -13,7 +14,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab

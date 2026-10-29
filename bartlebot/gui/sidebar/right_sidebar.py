@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bartleby.qt import screen_fit
 from bartleby.qt.sidebar.log_panel import LogPanel
 from bartleby.runtime.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
-from bartlebot.gui import screen_fit
 from bartlebot.gui.sidebar.sections.client_section import ClientSection
 from bartlebot.gui.sidebar.sections.drop_section import DropSection
 from bartlebot.gui.sidebar.sections.possible_drops_section import PossibleDropsSection

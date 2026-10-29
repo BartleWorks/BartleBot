@@ -8,22 +8,16 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from bartleby.runtime.game.game_sizing import (
-    BOTCANVAS_DEFAULT_HEIGHT,
-    BOTCANVAS_MIN_HEIGHT,
-    LEFT_SIDEBAR_MIN_WIDTH,
-    RIGHT_SIDEBAR_MIN_WIDTH,
-    SPLITTER_HANDLE_PX,
-    VALID_RESOLUTIONS,
-    required_window_size,
-    screen_budget,
-)
+from bartleby.runtime.game import game_sizing
+from bartleby.runtime.game.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH, VALID_RESOLUTIONS
 from bartleby.shared.account_store import AccountStore
 from bartleby.shared.strategy_models import atomic_write
 from bartleby.shared.vendor import product_dir, vendor_dir
 from pydantic import BaseModel, ValidationError
 
 from bartlebot.content.store_roots import dev_mode, is_inside
+from bartlebot.game import pane_sizing
+from bartlebot.game.pane_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH
 from bartlebot.options import bot_options
 from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
@@ -328,13 +322,46 @@ def _hand_to_core(settings: SettingsManager) -> None:
 
     Launching reads them through core's ``LaunchSettings``, which this class answers, and
     Streamer Mode reads the setting each time a name is shown. Called whenever the
-    singleton is made, so a fresh one (a test's) is the one they read.
+    singleton is made, so a fresh one (a test's) is the one they read. The screen fit is
+    :func:`hand_fit_to_core`'s.
     """
     from bartleby.qt import streamer_mode  # noqa: PLC0415 - kept off this module's import path
     from bartleby.runtime.launcher import launch_profile  # noqa: PLC0415
 
     launch_profile.configure(settings)
     streamer_mode.configure(lambda: SettingsManager.instance().streamer_mode)
+    hand_fit_to_core()
+
+
+class _CurrentFitSettings:
+    """Core's ``FitSettings``, answered by whichever ``SettingsManager`` is current at each read.
+
+    Not the instance itself, as launching is handed: the fit is asked from widgets that
+    never touch the singleton first, so it can be asked after a test has replaced the
+    singleton and before anything has made the new one, and a captured instance would
+    answer with the last test's sidebars.
+    """
+
+    @property
+    def game_resolution(self) -> tuple[int, int]:
+        return SettingsManager.instance().game_resolution
+
+    def pane_sizes(self) -> dict[str, int]:
+        return SettingsManager.instance().pane_sizes()
+
+
+def _window_panes() -> list:
+    from bartlebot.gui import window_panes  # noqa: PLC0415 - Qt, and a cycle at module scope
+
+    return window_panes.panes()
+
+
+def hand_fit_to_core() -> None:
+    """Give core's screen fit BartleBot's settings and panes: the resolution, the pane sizes,
+    and ``gui/window_panes.panes``, which measures the floors. Safe to call again."""
+    from bartleby.qt import screen_fit  # noqa: PLC0415 - kept off this module's import path
+
+    screen_fit.configure(_CurrentFitSettings(), _window_panes)
 
 
 class SettingsManager:
@@ -1172,7 +1199,7 @@ class SettingsManager:
         """Return (min_width, min_height) based on the configured game resolution.
 
         This is the floor the window may be *dragged* to, so it is measured against the
-        panel minimums rather than the configured layout sizes -- unlike
+        panel minimums rather than the configured layout sizes -- unlike core's
         ``layout_budget``, which asks the opposite question and must not assume the user
         will crush their sidebars. See bartleby/runtime/game/game_sizing.py for the two directions.
 
@@ -1181,41 +1208,25 @@ class SettingsManager:
         match, which is the documented behavior that lets a launch bigger than the
         current window correct itself.
         """
-        return required_window_size(self.game_resolution, client_count, dpr, right_sidebar_floor, left_sidebar_floor)
-
-    def layout_budget(
-        self,
-        screen_size: tuple[int, int],
-        right_sidebar_floor: int | None = None,
-        left_sidebar_floor: int | None = None,
-        bottom_section: int | None = None,
-    ) -> tuple[int, int]:
-        """The game-grid space *screen_size* leaves once this layout is placed on it.
-
-        The cap that decides which resolutions may be launched. Reads the user's
-        configured sidebar widths and canvas height -- see ``game_sizing.screen_budget``
-        for why it must not read the minimums instead.
-
-        Held *at* those minimums, though, and for the same reason the minimums exist: a
-        stored width below a panel's floor describes a layout the app cannot produce, so
-        budgeting against it hands the game area space the splitter will not give it. The
-        clamp is on the read rather than the stored value, which stays the user's.
-
-        *bottom_section* replaces the configured canvas height, for setup, which judges a
-        new profile at ``BOTCANVAS_DEFAULT_HEIGHT`` before fitting the canvas to it.
-        """
-        if bottom_section is None:
-            bottom_section = int(self.get_general("bottom_section_height", default=BOTCANVAS_DEFAULT_HEIGHT))
-        return screen_budget(
-            screen_size,
-            left_sidebar=max(
-                int(self.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH)),
-                left_sidebar_floor if left_sidebar_floor is not None else LEFT_SIDEBAR_MIN_WIDTH,
-            ),
-            right_sidebar=max(
-                int(self.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
-                right_sidebar_floor if right_sidebar_floor is not None else RIGHT_SIDEBAR_MIN_WIDTH,
-            ),
-            bottom_section=max(bottom_section, BOTCANVAS_MIN_HEIGHT),
-            splitter_handle=SPLITTER_HANDLE_PX,
+        panes = pane_sizing.panes(
+            left_sidebar_floor if left_sidebar_floor is not None else LEFT_SIDEBAR_MIN_WIDTH,
+            right_sidebar_floor if right_sidebar_floor is not None else RIGHT_SIDEBAR_MIN_WIDTH,
         )
+        return game_sizing.required_window_size(self.game_resolution, client_count, panes, dpr)
+
+    def pane_sizes(self) -> dict[str, int]:
+        """Each pane's size as configured, by its key: what core's screen fit budgets against.
+
+        The configured sidebar widths and canvas height, never the floors -- see core's
+        ``game_sizing.screen_budget`` for why. Core's ``layout_budget`` holds each at its
+        floor, since a stored width below one describes a layout the app cannot produce.
+        A key never written reads its default: the reference sidebar floors, and the
+        canvas height a new install opens at.
+        """
+        return {
+            pane_sizing.LEFT_SIDEBAR: int(self.get_general(pane_sizing.LEFT_SIDEBAR, default=LEFT_SIDEBAR_MIN_WIDTH)),
+            pane_sizing.RIGHT_SIDEBAR: int(
+                self.get_general(pane_sizing.RIGHT_SIDEBAR, default=RIGHT_SIDEBAR_MIN_WIDTH)
+            ),
+            pane_sizing.BOT_CANVAS: int(self.get_general(pane_sizing.BOT_CANVAS, default=BOTCANVAS_DEFAULT_HEIGHT)),
+        }

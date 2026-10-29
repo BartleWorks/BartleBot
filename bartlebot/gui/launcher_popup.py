@@ -7,6 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt import screen_fit
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
@@ -16,7 +17,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui import screen_fit
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -47,7 +47,7 @@ class LauncherPopup(QWidget):
             btn.clicked.connect(lambda _checked, n=name: self._launch(n))
             # Disabled with the reason on it, never dropped from the list. This popup and
             # the Quick Launch cards show the same profiles and have to agree about which
-            # of them can launch — see bartlebot/gui/screen_fit.py.
+            # of them can launch — see bartleby/qt/screen_fit.py.
             if (reason := screen_fit.profile_fit_problem(profile, self, self._live_game_area)) is not None:
                 btn.setEnabled(False)
                 btn.setToolTip(reason)

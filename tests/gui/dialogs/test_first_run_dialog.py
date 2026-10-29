@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.qt import screen_fit
 from bartleby.runtime.clients import character_roster
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.shared import account_setup, game_install, launch_profiles
@@ -24,7 +25,6 @@ from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 from wizwalker import utils as wizwalker_utils
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.first_run_dialog import (
     ACCOUNTS_EMPTY,
     ACCOUNTS_HEADING,
