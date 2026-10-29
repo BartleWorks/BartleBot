@@ -92,6 +92,7 @@ from collections.abc import Callable
 from typing import NamedTuple
 
 from bartleby.qt import streamer_mode
+from bartleby.qt.game_embed.card_columns import CardColumn, account_banner_text, profile_banner_text
 from bartleby.qt.theming.account_accent import account_accent, account_color_key, account_color_keys
 from bartleby.qt.theming.theme import THEME
 
@@ -115,7 +116,11 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QSizePolicy,
+    QWidget,
 )
+
+from bartlebot.gui import screen_fit
+from bartlebot.settings_manager import SettingsManager
 
 # Characters listed in full on an account card before the rest become "+N more", used
 # only when nothing has told the card how wide it is -- during construction, and in the
@@ -861,3 +866,50 @@ class ProfileCard(_LaunchCard):
                 on_face=self._mode is CardMode.MANAGE,
             ),
         ]
+
+
+def refresh_column_fit(
+    accounts: CardColumn,
+    profiles: CardColumn,
+    widget: QWidget,
+    live_area: tuple[int, int] | None,
+) -> None:
+    """Re-judge both columns' cards against the game area *live_area* describes.
+
+    Cheap by construction: ``set_unavailable`` returns immediately when the reason has not
+    changed, so a splitter drag costs a few comparisons per card per event and restyles
+    only on the frame where a verdict actually flips.
+
+    Each column's banner is then given what its refusals have in common. The account
+    column's answer is one answer by construction -- every card asks the same question --
+    so the whole sentence, numbers included, belongs there and not on each card. A profile
+    column's cards keep their own numbers; see ``_FitBanner``.
+
+    Here rather than beside ``CardColumn`` in core's ``card_columns``, because it reads
+    BartleBot's settings and ``screen_fit``, which move to core in Stage 9 of #167.
+
+    Shared by both surfaces because it is the same question on each. What differs is only
+    what a card *does* with the answer, which is that card's own ``refuses_when_unfit``:
+    the launch screen grays and refuses, the settings tab merely notes. The launch screen
+    measures itself and the settings tab is handed the panel's live size, so the
+    measurement arrives as an argument either way.
+    """
+    resolution = SettingsManager.instance().game_resolution
+    # One client, deliberately: an account card on the launch screen always launches the
+    # first one, because that screen is only up when nothing is embedded. The +1 case --
+    # adding a client to a running fleet -- belongs to the Launch menu, which is reachable
+    # while tiles are on screen.
+    account_problem = screen_fit.fit_details(resolution, 1, widget, live_area)
+    account_cards = accounts.cards
+    for card in account_cards:
+        card.set_unavailable(account_problem)
+    accounts.set_banner_text(account_banner_text(account_problem) if account_cards else "")
+
+    problems: list[FitProblem] = []
+    profile_cards = [card for card in profiles.cards if isinstance(card, ProfileCard)]
+    for card in profile_cards:
+        problem = screen_fit.profile_fit_details(card.profile, widget, live_area)
+        card.set_unavailable(problem)
+        if problem is not None:
+            problems.append(problem)
+    profiles.set_banner_text(profile_banner_text(problems, len(profile_cards)))

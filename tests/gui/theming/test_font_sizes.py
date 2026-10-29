@@ -25,9 +25,10 @@ def test_a_widget_pinned_to_a_height_still_fits_its_text(qapp) -> None:
     it was given, so the gap between the two is exactly the clipping.
     """
     from bartleby.qt.widgets.pills.pill import ActionPill, NeutralPill
+    from bartleby.qt.widgets.pills.player_badge import PlayerBadge
 
     from bartlebot.gui.canvas.node_browser_dialog import _Chip
-    from bartlebot.gui.widgets.pills.player_pills import PlayerBadge, PlayerSlotPill
+    from bartlebot.gui.widgets.pills.player_pills import PlayerSlotPill
     from bartlebot.gui.widgets.pills.tag_pill import TagPill
 
     widgets = {

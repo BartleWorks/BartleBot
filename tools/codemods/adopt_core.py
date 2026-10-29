@@ -1,7 +1,7 @@
 """Point BartleBot at bartleby-core: rewrite every reference to a module core now holds.
 
 Stage 3 of #167, and each later stage that moves a module: Stage 5 added the app
-skeleton, Stage 6 the cards, pills and the Log tab. Each module in :data:`TABLE` exists in bartleby-core, identical to
+skeleton, Stage 6 the cards, pills and the Log tab, Stage 8 the player cards. Each module in :data:`TABLE` exists in bartleby-core, identical to
 BartleBot's but for its imports, the cuts the stage lists and its docstring paths, and
 BartleBot's copy is deleted in the same stage. No shim keeps an old path alive, so every
 ``from`` and ``import`` line, every dotted path in a string (``monkeypatch.setattr``,
@@ -71,6 +71,9 @@ TABLE: dict[str, str] = {
     },
     **{f"bartlebot.gui.widgets.labels.{m}": f"bartleby.qt.widgets.labels.{m}" for m in ("rule_heading", "logo_disc")},
     **{f"bartlebot.gui.sidebar.{m}": f"bartleby.qt.sidebar.{m}" for m in ("sidebar_section", "log_panel")},
+    # Stage 8: player cards on view models. BartleBot's card is ``client_card.ClientCard`` now.
+    "bartlebot.gui.sidebar.player_card": "bartleby.qt.sidebar.player_card",
+    "bartlebot.gui.game_embed.card_columns": "bartleby.qt.game_embed.card_columns",
 }
 
 #: The family pills, which left ``tag_pill`` in Stage 6; the bot-tag pills stay in it.
@@ -84,6 +87,13 @@ NAMES: dict[tuple[str, str], str] = {
     **{("bartlebot.gui.widgets.pills.tag_pill", name): "bartleby.qt.widgets.pills.pill" for name in _PILLS},
     # Stage 7: the client manager's reorder needs it, and core cannot import a widget module.
     ("bartlebot.gui.game_embed.card_columns", "apply_order"): "bartleby.shared.ordering",
+    # Stage 8: the badge left player_pills; the fit refresh waits in launch_cards for Stage 9.
+    ("bartlebot.gui.widgets.pills.player_pills", "PlayerBadge"): "bartleby.qt.widgets.pills.player_badge",
+    ("bartlebot.gui.game_embed.card_columns", "refresh_column_fit"): "bartlebot.gui.game_embed.launch_cards",
+    **{
+        ("bartlebot.gui.sidebar.player_card", name): "bartlebot.gui.sidebar.client_card"
+        for name in ("XYZ_PLACEHOLDER", "MOB_INTERVAL", "format_xyz", "xyz_clipboard_text")
+    },
 }
 
 DEFAULT_PATHS = ("bartlebot", "tests", "tools", "bartlebot.py")

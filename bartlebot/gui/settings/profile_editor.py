@@ -67,6 +67,7 @@ from __future__ import annotations
 import time
 from collections.abc import Iterable
 
+from bartleby.qt.game_embed.card_columns import CardColumn
 from bartleby.qt.theming.account_accent import account_accent, account_color_keys
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
@@ -88,7 +89,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.settings_manager import SettingsManager

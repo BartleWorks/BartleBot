@@ -10,11 +10,11 @@ The tests measure positions against each other rather than pinning pixels, so th
 meaning if a margin changes.
 """
 
+from bartleby.qt.game_embed.card_columns import CardColumn
 from bartleby.qt.offscreen_warmup import WARMED_PROPERTY
 from PyQt6.QtCore import QPoint
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
-from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"]}

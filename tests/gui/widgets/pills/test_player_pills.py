@@ -190,32 +190,8 @@ def test_a_pill_holds_its_slot_not_a_hex_so_a_theme_switch_re_resolves(qapp):
 
 
 # ---------------------------------------------------------------------------
-# PlayerBadge / PlayerBadgeRow — the read-only pills the Combat tab draws
+# PlayerBadgeRow — the read-only pills the Combat tab draws (the badge is core's)
 # ---------------------------------------------------------------------------
-
-
-def test_an_uncolored_badge_is_the_neutral_gray_pill(qapp):
-    from bartlebot.gui.widgets.pills.player_pills import PlayerBadge  # noqa: PLC0415
-
-    badge = PlayerBadge(2)
-
-    assert badge.text() == "P2"
-    assert THEME.pill_neutral_bg in badge.styleSheet()
-    assert account_accent(1) not in badge.styleSheet()
-
-
-def test_a_colored_badge_is_outlined_and_tinted_and_names_the_account_in_its_tooltip(qapp):
-    from bartlebot.gui.widgets.pills.player_pills import PlayerBadge  # noqa: PLC0415
-
-    badge = PlayerBadge(1)
-
-    badge.set_color_key(3)
-    badge.set_account_label("Main")
-
-    assert account_accent(3) in badge.styleSheet()
-    assert account_tint(3) in badge.styleSheet()
-    assert badge.text() == "P1"
-    assert "Main" in badge.toolTip()
 
 
 def test_a_badge_row_hides_surplus_badges_and_separators_rather_than_destroying_them(qapp):

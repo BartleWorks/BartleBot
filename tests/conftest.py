@@ -12,6 +12,7 @@ from unittest.mock import DEFAULT, AsyncMock, MagicMock
 import pytest
 from bartleby.qt.testing.widget_lifetime import (  # noqa: F401 - registers them with pytest
     _free_widgets_this_test_created,
+    parentless_shows,
     pytest_runtest_call,
 )
 from bartleby.runtime.clients import game_keys, sightings
@@ -887,37 +888,3 @@ def main_window_stub():
     )
     stub._after_card_action = MainWindow._after_card_action.__get__(stub)
     return calls, stub
-
-
-@pytest.fixture
-def parentless_shows(qapp):
-    """The class name of every widget shown while it had no parent, as the test goes on.
-
-    Qt gives such a widget a window of its own, maps it, and unmaps it again the moment
-    the next ``addWidget`` reparents it, so the user sees a window flash where the
-    surface is about to appear. Nothing in the finished widget tree records it, which
-    is why this watches the events instead: a filter on the ``QApplication`` sees the
-    ``Show`` delivered to every object in the process.
-
-    Ask for it in the test that builds a new dialog, card or row, build the surface, and
-    assert the list is empty. Opt-in rather than autouse: a filter on every event of
-    every test is paid 7,000 times, and some tests show a top-level widget on purpose.
-    ``bartlebot/gui/CLAUDE.md``, "Never show a widget before it has a parent", has the rule.
-    """
-    from PyQt6.QtCore import QEvent, QObject  # noqa: PLC0415
-    from PyQt6.QtWidgets import QWidget  # noqa: PLC0415
-
-    shown: list[str] = []
-
-    class _Spy(QObject):
-        def eventFilter(self, obj, event):  # noqa: N802 - Qt's name
-            if event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.parent() is None:
-                shown.append(type(obj).__name__)
-            return False
-
-    spy = _Spy()
-    qapp.installEventFilter(spy)
-    try:
-        yield shown
-    finally:
-        qapp.removeEventFilter(spy)

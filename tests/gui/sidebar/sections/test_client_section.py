@@ -1,8 +1,8 @@
-"""The Players tab as widgets: the drag, the buckets, the stripe, the copy.
+"""BartleBot's Players tab: core's column of client cards, and what BartleBot wires to it.
 
-``tests/gui/sidebar/test_player_card_text.py`` has everything decidable from a username and an index.
-What needs a ``QApplication`` is the part that is genuinely widget behavior, and it is
-where the sharp edges of this issue are:
+The column and the card are core's (``bartleby.qt.sidebar.player_column``,
+``player_card``), and core's tests hold their behavior on views. These hold it through
+``ClientSection``, with clients, where the sharp edges of the Players tab card rework are:
 
 - ``ClientManager.clients`` is hooked-only and contiguous, so a drag must not be able to
   land an active card among the unhooked ones. That is enforced by *which container holds
@@ -10,7 +10,6 @@ where the sharp edges of this issue are:
 - the stripe has to arrive **late** — the account identity is learned inside the client
   loop and nothing signals it — so a card colored once in its constructor is the bug.
 - a rebuild must not reset live state, because with a drag it is one gesture away.
-- the copy affordance has to copy the value the row *displays*, and say that it did.
 
 The drag itself is driven exactly as ``test_card_column_reorder.py`` drives it: real
 mouse events on the grip, against real geometry, with the settle waited out.
@@ -19,17 +18,17 @@ mouse events on the grip, against real geometry, with the settle waited out.
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.qt.game_embed.card_columns import CARD_SETTLE_MS
 from bartleby.qt.theming.account_accent import account_accent, account_color_keys
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget
 
-from bartlebot.gui.game_embed.card_columns import CARD_SETTLE_MS
-from bartlebot.gui.sidebar.player_card import PLACEHOLDER, XYZ_PLACEHOLDER, CopyValue, PlayerCard
 from bartlebot.gui.sidebar.sections.client_section import ClientSection
 from bartlebot.settings_manager import SettingsManager
 
@@ -146,8 +145,22 @@ def test_the_permutation_reaches_reorder_clients(qapp, section):
     assert host
 
 
+def test_a_move_by_keyboard_reaches_reorder_clients_as_a_drag_does(qapp, section):
+    """Every drag-reordered list takes the keyboard too: Move down from the card's menu."""
+    from bartleby.qt.testing.drag_helpers import menu_move
+
+    host, clients = section()
+    seen: list[list] = []
+    clients.reordered.connect(seen.append)
+
+    assert menu_move(clients.column.cards[0], "Move down")
+
+    assert seen == [[1, 0, 2]]
+    assert host
+
+
 def test_the_cards_are_renumbered_rather_than_rebuilt_after_a_reorder(qapp, section):
-    """The order arriving back is a re-key, not a rebuild — see ``PlayerCard.set_index``."""
+    """The order arriving back is a re-key, not a rebuild — see core's ``PlayerCard.set_index``."""
     host, clients = section()
     first, second = clients.column.cards[0], clients.column.cards[1]
 
@@ -303,96 +316,6 @@ def test_an_unhooked_card_keeps_its_stripe(qapp, section):
 
 
 # ---------------------------------------------------------------------------
-# The copy affordance
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture
-def clipboard(monkeypatch):
-    """Capture what would go to the system clipboard, rather than writing to it."""
-    written: list[str] = []
-    monkeypatch.setattr("bartlebot.gui.sidebar.player_card.pyperclip.copy", written.append)
-    return written
-
-
-def _click(widget) -> None:
-    widget.mouseReleaseEvent(
-        QMouseEvent(
-            QEvent.Type.MouseButtonRelease,
-            QPoint(5, 5).toPointF(),
-            Qt.MouseButton.LeftButton,
-            Qt.MouseButton.NoButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    )
-
-
-def test_clicking_a_value_copies_what_the_row_displays(qapp, clipboard):
-    row = CopyValue("Click to copy this zone name")
-    row.set_value("WizardCity/WC_Streets/Interior")
-
-    _click(row)
-
-    assert clipboard == ["WizardCity/WC_Streets/Interior"]
-
-
-def test_a_row_whose_copy_form_differs_copies_the_copy_form(qapp, clipboard):
-    """XYZ reads at one decimal and pastes as JSON at two — see ``xyz_clipboard_text``."""
-    row = CopyValue("Click to copy this position as JSON")
-    row.set_value("X=1.0  Y=2.0  Z=3.0", '{"x": 1.0, "y": 2.0, "z": 3.0}')
-
-    _click(row)
-
-    assert clipboard == ['{"x": 1.0, "y": 2.0, "z": 3.0}']
-
-
-def test_a_copy_confirms_itself(qapp, clipboard):
-    """There was no feedback at all before: you pressed ``Copy`` and nothing changed."""
-    row = CopyValue("Click to copy")
-    row.set_value("Colossus Boulevard")
-    assert not row.confirming
-
-    _click(row)
-
-    assert row.confirming
-    assert clipboard == ["Colossus Boulevard"]
-
-
-def test_the_confirmation_goes_away_on_its_own(qapp):
-    from bartlebot.gui.sidebar import player_card
-
-    row = CopyValue("Click to copy")
-    row.set_value("Colossus Boulevard")
-    row.copy()
-
-    QTest.qWait(player_card.COPY_CONFIRM_MS + 200)
-
-    assert not row.confirming
-
-
-def test_a_placeholder_row_copies_nothing_and_confirms_nothing(qapp, clipboard):
-    """An em-dash pasted into a bot param is a silently wrong value."""
-    row = CopyValue("Click to copy this zone name")
-
-    assert row.display_text == PLACEHOLDER
-    assert not row.copyable
-    assert row.copy() is False
-
-    _click(row)
-
-    assert clipboard == []
-    assert not row.confirming
-
-
-def test_a_card_starts_with_every_row_uncopyable(qapp):
-    """Nothing has been read yet, so there is nothing on the card worth pasting anywhere."""
-    card = PlayerCard(_FakeClient(1), 0)
-
-    assert card.rows["XYZ"].display_text == XYZ_PLACEHOLDER
-    assert not any(row.copyable for row in card.rows.values())
-
-
-# ---------------------------------------------------------------------------
 # Live state across a rebuild
 # ---------------------------------------------------------------------------
 
@@ -417,7 +340,7 @@ def test_a_rebuild_keeps_the_freecam_toggle(qapp, section):
 def test_a_rebuild_keeps_the_rows_that_were_already_read(qapp, section):
     host, clients = section(active=1)
     card = clients.cards[0]
-    card.rows["Zone"].set_value("Colossus Boulevard")
+    card.show_view(replace(card.view, zone="Colossus Boulevard"))  # what a refresh tick does
 
     clients.set_all_clients([card.client], [])
 

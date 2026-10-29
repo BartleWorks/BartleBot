@@ -26,19 +26,19 @@ from __future__ import annotations
 
 import re
 
-from bartleby.qt.theming.icon_utils import ICONS_DIR
-from PyQt6.QtCore import QEvent, QPoint, Qt
-from PyQt6.QtGui import QMouseEvent
-from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget
-
-from bartlebot.gui.game_embed.card_columns import (
+from bartleby.qt.game_embed.card_columns import (
     AUTOSCROLL_MARGIN,
     CARD_SETTLE_MS,
     CARD_SHIFT_MS,
     CardColumn,
     _DropPlaceholder,
 )
+from bartleby.qt.theming.icon_utils import ICONS_DIR
+from PyQt6.QtCore import QEvent, QPoint, Qt
+from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtTest import QTest
+from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget
+
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 
 ACCOUNTS = [
