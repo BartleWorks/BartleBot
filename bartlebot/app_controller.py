@@ -3381,7 +3381,7 @@ class AppController(QObject):
         """Called by the health monitor when a client becomes unresponsive.
 
         Force-closes the game window so that remove_dead_clients() detects the exit
-        and triggers the reconnect procedure via _on_clients_removed. That reaping is
+        and triggers the reconnect procedure via _recover_removed. That reaping is
         keyed on the *process* exiting, not the window, so the close has to be seen
         through: a crashing client parks on an error popup and never exits on WM_CLOSE
         alone, which used to leave recovery waiting forever.

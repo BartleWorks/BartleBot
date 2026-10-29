@@ -227,7 +227,7 @@ async def test_driver_borrows_the_pending_client(keys, fast, monkeypatch):
     pending = FakeGameClient()
     gate = _Gate()
     gate._handler = MagicMock(clients=[pending])
-    monkeypatch.setattr("bartlebot.clients.client_manager.get_window_title", lambda _h: TITLE)
+    monkeypatch.setattr("bartleby.runtime.clients.client_manager.get_window_title", lambda _h: TITLE)
 
     assert gate.pending_client_titled(TITLE) is pending
     assert gate.client_titled(TITLE) is None  # not published yet
