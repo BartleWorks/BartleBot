@@ -23,7 +23,6 @@ from wizwalker import ExceptionalTimeout, MemoryReadError
 logger = logging.getLogger(__name__)
 
 from bartleby.runtime.actions.node_helpers import (  # noqa: F401 — re-exported for callers
-    _GO_TO_FRIEND,
     _NOTHING,
     TRIGGER_MARGIN,
     ModalOutcome,
@@ -31,17 +30,10 @@ from bartleby.runtime.actions.node_helpers import (  # noqa: F401 — re-exporte
     ProfileLayout,
     ShopClosure,
     _click_go_to_friend,
-    _dialog_lock,
-    _dialog_locks,
     _entity_gids,
     _get_window_from_path,
     _or_none,
     _position_or_none,
-    _reading,
-    _rect_tuple,
-    _sees_each_other,
-    _start_each,
-    _window_text,
     advance_dialog_once,
     advance_dialogue_until_clear,
     await_settled_friend_profile,

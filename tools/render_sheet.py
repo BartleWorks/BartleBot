@@ -11,10 +11,7 @@ and compares; this file is the list.
 Sample data only: four accounts aliased ``P1`` to ``P4`` on ``example.com`` addresses, one
 launch profile, no wizard names and no game art. The settings and the art cache are a
 throwaway ``%APPDATA%``, never the developer's, and the screen the launch fit is judged
-against is pinned, so the pixels depend on this tree alone.
-
-Until Stage 3 of #167 pins bartleby-core, core is imported from the sibling checkout
-``../bartleby-core`` when it is not installed.
+against is pinned, so the pixels depend on this tree alone, and the core it pins.
 """
 
 from __future__ import annotations
@@ -46,17 +43,14 @@ LOG_LINES = [
 
 
 def core_render_sheet():
-    """bartleby-core's render sheet module, from the sibling checkout if core is not installed."""
-    try:
-        from bartleby.qt.testing import render_sheet  # noqa: PLC0415
-    except ImportError:
-        sys.path.insert(0, str(REPO.parent / "bartleby-core"))
-        from bartleby.qt.testing import render_sheet  # noqa: PLC0415
+    """bartleby-core's render sheet module, imported when the sheet is drawn rather than with this one."""
+    from bartleby.qt.testing import render_sheet  # noqa: PLC0415
+
     return render_sheet
 
 
 def themes():
-    """BartleBot's own light and dark themes, which its widgets read until it adopts core's."""
+    """Core's light and dark themes, which BartleBot's widgets read."""
     from bartleby.qt.theming import theme  # noqa: PLC0415
 
     return core_render_sheet().Themes(
