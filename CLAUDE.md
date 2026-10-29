@@ -67,8 +67,8 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 
 ## Layout
 
-`bartlebot/`'s top level is the app shell only: `app_controller`, `logging_setup`,
-`paths` and `settings_manager`. **A new module goes in a package, never beside them.**
+`bartlebot/`'s top level is the app shell only: `app_controller`, `paths` and
+`settings_manager`. **A new module goes in a package, never beside them.**
 
 | package | holds |
 |---|---|
@@ -79,7 +79,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
 | `clients/` | game clients at run time: the client manager, recovery and relog, porting, the run's pre-checks, the authoring tools |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
-| `packaging/` | the app as a packaged build: `--self-check`, whether this process is one, and Velopack's install hooks, which write the install key and the file types (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
+| `packaging/` | the app as a product and a packaged build: BartleBot's `Product` for core (`product.py`), `--self-check`, whether this process is one, and Velopack's install hooks, which write the install key and the file types (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
 | `updates/` | the update check: the feed, its signature and the trusted keys, and staging an update for Velopack (`docs/INSTALLER.md`) |
 | `gui/` | everything Qt. Dialogs in `dialogs/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`) |
 
