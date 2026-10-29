@@ -8,8 +8,8 @@ What every change ships with here. The ways this suite goes slow or flaky are co
 - **Where a test goes:** the test for `bartlebot/a/b/c.py` is `tests/a/b/test_c.py`. A
   test named `test_<module>_<aspect>.py`, or one that drives a module through another
   name, sits beside that module's test. Tests of a top-level module (`app_controller`,
-  `settings_manager`, `paths`, `logging_setup`) and tests of the whole repo (shipped bots
-  and templates, install-dir writes, integration) stay in `tests/` itself; a `tools/`
+  `settings_manager`, `paths`), of `bartlebot.py` (`test_startup.py`), and of the whole
+  repo (shipped bots and templates, install-dir writes, integration) stay in `tests/`; a `tools/`
   script's test goes in `tests/tools/`, and our wizsprinter fork's in `tests/wizsprinter/`.
   A new folder needs an empty `__init__.py`, or pytest quietly stops collecting it.
   Shared helpers (`conftest.py`, `drag_helpers.py`, `picker_helpers.py`, `port_sim.py`)

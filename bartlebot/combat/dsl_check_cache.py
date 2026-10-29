@@ -41,6 +41,8 @@ from typing import Any
 
 from bartleby.shared.vendor import product_dir
 
+from bartlebot.packaging.product import NAME as PRODUCT
+
 logger = logging.getLogger(__name__)
 
 #: How many answers the file keeps. Each is a hash and a short message: ~100 bytes.
@@ -51,7 +53,7 @@ _FILE_NAME = "dsl_checks.json"
 
 def cache_path() -> Path:
     """``%APPDATA%/Bartleby/BartleBot/cache/dsl_checks.json`` -- never the install directory."""
-    return product_dir() / "cache" / _FILE_NAME
+    return product_dir(PRODUCT) / "cache" / _FILE_NAME
 
 
 def text_key(text: str) -> str:

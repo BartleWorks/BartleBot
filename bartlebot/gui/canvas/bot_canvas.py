@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.qt.app.logging_setup import GUI_ONLY
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
@@ -127,7 +128,6 @@ from bartlebot.gui.widgets.pickers.tag_picker import (
 )
 from bartlebot.gui.widgets.pills.source_pill import source_pill
 from bartlebot.gui.widgets.pills.tag_pill import NeutralPill, TagChip, TagPill
-from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
 from bartlebot.options import option_values

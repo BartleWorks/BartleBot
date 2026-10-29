@@ -531,7 +531,7 @@ class UiStateFoldStore:
     """
 
     def __init__(self, surface: str, defaults: dict[str, bool], ui_state: Any = None) -> None:
-        from bartlebot.gui.ui_state import UiState  # noqa: PLC0415 - keeps this module's imports light
+        from bartleby.qt.app.ui_state import UiState  # noqa: PLC0415 - keeps this module's imports light
 
         self._surface = surface
         self._defaults = dict(defaults)

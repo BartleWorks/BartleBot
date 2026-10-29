@@ -280,7 +280,7 @@ https://claude.ai/artifact/3K34iJqy6UV73EKuadNuky
 | 2 | #289 | family knowledge: core's CLAUDE.md tree and docs, the user-level preferences and skills, the guards as core functions, render sheets | landed |
 | 3 | #290 | BartleBot onto core as it stands: core public on GitHub, the import codemod, BartleBot's copies deleted, the pin | landed |
 | 4 | #291 | the threading probe: one qasync loop, or the runtime on its own thread | landed |
-| 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state | |
+| 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state | landed |
 | 6 | #293 | cards, reordering, pills and the Log tab | |
 | 7 | #294 | the client manager's Qt-free half; `ClientPool` deleted | |
 | 8 | #295 | player cards on view models | |

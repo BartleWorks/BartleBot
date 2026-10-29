@@ -10,8 +10,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from bartleby.shared.vendor import PRODUCT
-
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
 

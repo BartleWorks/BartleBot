@@ -1,6 +1,7 @@
 """Point BartleBot at bartleby-core: rewrite every reference to a module core now holds.
 
-Stage 3 of #167. Each module in :data:`TABLE` exists in bartleby-core, identical to
+Stage 3 of #167, and each later stage that moves a module: Stage 5 added the app
+skeleton. Each module in :data:`TABLE` exists in bartleby-core, identical to
 BartleBot's but for its imports, the cuts the stage lists and its docstring paths, and
 BartleBot's copy is deleted in the same stage. No shim keeps an old path alive, so every
 ``from`` and ``import`` line, every dotted path in a string (``monkeypatch.setattr``,
@@ -56,6 +57,11 @@ TABLE: dict[str, str] = {
     "bartlebot.nodes.timing": "bartleby.runtime.timing",
     "bartlebot.nodes.paths": "bartleby.runtime.paths",
     "bartlebot.bot.run_trace": "bartleby.runtime.run_trace",
+    # Stage 5: the app skeleton.
+    "bartlebot.logging_setup": "bartleby.qt.app.logging_setup",
+    **{f"bartlebot.gui.{m}": f"bartleby.qt.app.{m}" for m in ("single_instance", "app_exit", "ui_state")},
+    "bartlebot.gui.offscreen_warmup": "bartleby.qt.offscreen_warmup",
+    "bartlebot.gui.debug.qt_paint_debug": "bartleby.qt.debug.qt_paint_debug",
 }
 
 #: Names that moved out of a module BartleBot keeps: (module, name) to core's module.

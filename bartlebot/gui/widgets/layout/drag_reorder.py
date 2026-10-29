@@ -77,12 +77,11 @@ from __future__ import annotations
 import weakref
 from collections.abc import Callable
 
+from bartleby.qt.offscreen_warmup import warm_offscreen_render
 from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEasingCurve, QEvent, QObject, QPoint, QPropertyAnimation, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QKeySequence, QPainter, QPen
 from PyQt6.QtWidgets import QApplication, QBoxLayout, QMenu, QScrollArea, QSizePolicy, QWidget
-
-from bartlebot.gui.offscreen_warmup import warm_offscreen_render
 
 # How long a card that has been displaced takes to slide into the slot the dragged one
 # vacated. Short enough not to lag the pointer, long enough to be a movement rather than a

@@ -1216,6 +1216,12 @@ async def _run(app: QApplication, client_number: int) -> int:
 
 
 def main() -> int:
+    # Which app this is, for the parts of bartleby-core that say so, as bartlebot.py does first.
+    from bartleby.shared.product import use
+
+    from bartlebot.packaging.product import product
+
+    use(product())
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--client", type=int, default=1, help="1-based client to hook (default: 1)")
     args = parser.parse_args()

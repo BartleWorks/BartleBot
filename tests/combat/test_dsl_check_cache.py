@@ -8,6 +8,7 @@ from bartleby.shared.vendor import product_dir
 
 from bartlebot.combat import dsl_check_cache
 from bartlebot.combat.dsl_check_cache import DslCheckCache, cache_path, shared_cache, text_key
+from bartlebot.packaging.product import NAME as PRODUCT
 
 
 def test_an_answer_put_in_one_session_is_there_in_the_next(tmp_path):
@@ -64,7 +65,7 @@ def test_the_file_holds_hashes_of_the_strategies_never_their_text(tmp_path):
 
 
 def test_the_shared_cache_lives_in_the_product_directory_and_follows_appdata():
-    assert cache_path() == product_dir() / "cache" / "dsl_checks.json"
+    assert cache_path() == product_dir(PRODUCT) / "cache" / "dsl_checks.json"
     assert shared_cache("fp").path == cache_path()
     assert shared_cache("fp") is shared_cache("fp")
 

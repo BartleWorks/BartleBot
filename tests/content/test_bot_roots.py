@@ -10,6 +10,7 @@ from bartleby.shared.vendor import product_dir
 
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import DEV_ENV_VAR
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
 
@@ -25,11 +26,11 @@ def _bot(path: Path, bot_id: str, name: str = "Bot") -> Path:
 
 
 def test_the_default_user_folder_is_under_the_user_root():
-    assert bot_roots.user_bots_dir() == product_dir() / "bots"
+    assert bot_roots.user_bots_dir() == product_dir(PRODUCT) / "bots"
 
 
 def test_a_relative_setting_resolves_against_the_user_root_not_the_install_directory():
-    assert bot_roots.user_bots_dir("data/bots") == product_dir() / "data" / "bots"
+    assert bot_roots.user_bots_dir("data/bots") == product_dir(PRODUCT) / "data" / "bots"
 
 
 def test_an_absolute_setting_is_used_as_it_is(tmp_path):
@@ -50,7 +51,7 @@ def test_developer_mode_makes_the_two_folders_one(monkeypatch):
 
 
 def test_outside_developer_mode_the_library_reads_both_folders():
-    assert bot_roots.library_dirs() == [project_root() / "bots", product_dir() / "bots"]
+    assert bot_roots.library_dirs() == [project_root() / "bots", product_dir(PRODUCT) / "bots"]
 
 
 # ---------------------------------------------------------------------------
@@ -67,7 +68,7 @@ def test_a_shipped_bot_is_shipped_and_may_not_be_written():
 def test_nothing_in_the_install_directory_may_be_written(tmp_path):
     assert not bot_roots.may_write(project_root() / "somewhere" / "bot.json")
     assert bot_roots.may_write(tmp_path / "Desktop" / "bot.json")
-    assert bot_roots.may_write(product_dir() / "bots" / "01_wizard_city" / "bot.json")
+    assert bot_roots.may_write(product_dir(PRODUCT) / "bots" / "01_wizard_city" / "bot.json")
 
 
 def test_a_user_folder_set_inside_the_install_directory_may_still_be_written():

@@ -11,6 +11,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.qt.app.logging_setup import session_log_dir
+from bartleby.qt.app.ui_state import UiState
 from bartleby.runtime.clients import wizwalker_cache
 from bartleby.shared.preferences import PreferenceStore
 from bartleby.shared.strategy_models import PlayerCombatStrategy
@@ -26,8 +28,6 @@ from bartlebot.content.store_roots import is_inside, resolve_bot_strategy_roots,
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates.template_store import templates_dir
 from bartlebot.game import card_art, wiki_browser
-from bartlebot.gui.ui_state import UiState
-from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.updates.feed import staging_dir
@@ -55,7 +55,31 @@ def _default_write_paths() -> dict[str, Path]:
     }
 
 
-@pytest.mark.parametrize("store", list(_default_write_paths()))
+#: Each store's name, for the parametrization: read under a product, as the paths are read in each test.
+_STORES = (
+    "user root (subgraphs, Bot Combat Strategies)",
+    "shared strategy library",
+    "template drafts and releases",
+    "the user's bots",
+    "autosaves",
+    "settings",
+    "ui state",
+    "game art",
+    "wiki window profile",
+    "accounts",
+    "shared preferences",
+    "session logs",
+    "DSL check cache",
+    "update staging",
+    "wizwalker cache",
+)
+
+
+def test_every_store_is_named_for_the_parametrization():
+    assert _STORES == tuple(_default_write_paths())
+
+
+@pytest.mark.parametrize("store", _STORES)
 def test_no_default_write_path_falls_inside_the_install_directory(store):
     path = _default_write_paths()[store]
     assert not is_inside(path, project_root()), f"{store} writes to {path}, inside the install directory"

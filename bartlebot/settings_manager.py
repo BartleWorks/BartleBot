@@ -20,11 +20,12 @@ from bartleby.runtime.game.game_sizing import (
 )
 from bartleby.shared.account_store import AccountStore
 from bartleby.shared.strategy_models import atomic_write
-from bartleby.shared.vendor import PRODUCT, product_dir, vendor_dir
+from bartleby.shared.vendor import product_dir, vendor_dir
 from pydantic import BaseModel, ValidationError
 
 from bartlebot.content.store_roots import dev_mode, is_inside
 from bartlebot.options import bot_options
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
 logger = logging.getLogger(__name__)
@@ -276,7 +277,7 @@ def _appdata_dir() -> Path:
     named for the product, inside a directory named for the publisher, is what makes that
     layout readable rather than two peer directories with one reaching into the other.
     """
-    directory = product_dir()
+    directory = product_dir(PRODUCT)
     _adopt_legacy_appdata(directory)
     return directory
 

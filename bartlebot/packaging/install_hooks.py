@@ -35,9 +35,9 @@ from pathlib import Path
 
 from bartleby.shared import file_types, install_key
 from bartleby.shared.file_types import SHARED_TYPES, FileType
-from bartleby.shared.vendor import PRODUCT
 
 from bartlebot.packaging.build_kind import is_packaged
+from bartlebot.packaging.product import NAME as PRODUCT
 
 #: How long Velopack lets the install and uninstall hooks run before it kills them.
 INSTALL_LIMIT_SECONDS = 30

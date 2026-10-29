@@ -56,6 +56,7 @@ from bartleby.shared.store_files import (
 )
 from bartleby.shared.vendor import product_dir, vendor_dir
 
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
 __all__ = [
@@ -137,7 +138,7 @@ def resolve_roots(root: str | Path | None, user_root: str | Path | None) -> tupl
     elif dev_mode():
         user = project_root()
     else:
-        user = product_dir()
+        user = product_dir(PRODUCT)
     return shipped, user
 
 
@@ -149,7 +150,7 @@ def resolve_bot_strategy_roots(root: str | Path | None, user_root: str | Path | 
     rather than in the repo.
     """
     if root is None and user_root is None:
-        return project_root(), product_dir()
+        return project_root(), product_dir(PRODUCT)
     return resolve_roots(root, user_root)
 
 
@@ -166,7 +167,7 @@ def resolve_shared_roots(root: str | Path | None, user_root: str | Path | None) 
     if dev_mode():
         shipped = project_root()
         return shipped, Path(user_root) if user_root is not None else shipped
-    shipped = official_set.shipped_root(project_root())
+    shipped = official_set.shipped_root(project_root(), product=PRODUCT)
     return shipped, Path(user_root) if user_root is not None else vendor_dir()
 
 

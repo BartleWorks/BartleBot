@@ -11,6 +11,8 @@ from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
+from bartleby.qt.app.logging_setup import LogEntry, add_gui_callback, remove_gui_callback, session_log_dir
+from bartleby.qt.app.single_instance import LaunchQueue, SingleInstance, raise_window
 from bartleby.qt.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import group_manager
@@ -20,7 +22,7 @@ from bartleby.runtime.game import wizard_names
 from bartleby.runtime.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartleby.runtime.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartleby.shared.preferences import PreferenceStore
-from bartleby.shared.vendor import PRODUCT, VENDOR
+from bartleby.shared.vendor import VENDOR
 from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
@@ -71,11 +73,10 @@ from bartlebot.gui.dialogs.templates_dialog import TemplatesDialog, TemplatesVer
 from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
-from bartlebot.gui.single_instance import LaunchQueue, SingleInstance, raise_window
 from bartlebot.gui.update_prompt import UpdatePrompt
-from bartlebot.logging_setup import add_gui_callback, remove_gui_callback, session_log_dir
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.options import option_values, player_realms
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 
@@ -3107,7 +3108,11 @@ class AppController(QObject):
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
         self._window.right_sidebar.log_panel.on_run_started()
-        log_cb = self._window.right_sidebar.log_panel.append_log_formatted
+        log_panel = self._window.right_sidebar.log_panel
+
+        def log_cb(entry: LogEntry) -> None:
+            log_panel.append_log_formatted(entry.text, entry.level)
+
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         self._window.right_sidebar.clients.set_bot_running(True)

@@ -1,9 +1,9 @@
 """Where a surface's card folds are kept: ``settings.json`` for the option surfaces, ``ui_state.json`` for the node pages (#142)."""
 
+from bartleby.qt.app.ui_state import UiState
 from PyQt6.QtCore import Qt
 
 from bartlebot.gui.sidebar.option_card import CardFolds, CardHeadingActions, OptionCard, UiStateFoldStore
-from bartlebot.gui.ui_state import UiState
 
 
 def _store(tmp_path, defaults):

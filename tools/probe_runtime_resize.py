@@ -793,4 +793,10 @@ async def main() -> int:
 
 
 if __name__ == "__main__":
+    # Which app this is, for the parts of bartleby-core that say so, as bartlebot.py does first.
+    from bartleby.shared.product import use
+
+    from bartlebot.packaging.product import product
+
+    use(product())
     sys.exit(asyncio.run(main()))

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.qt.app.ui_state import UI_STATE_FILE, UiState
 from bartleby.qt.widgets.buttons.link_button import LinkButton
 from bartleby.shared.vendor import product_dir
 from PyQt6.QtWidgets import QCheckBox, QSpinBox
@@ -20,7 +21,7 @@ from bartlebot.gui.settings.rows import (
     SettingsForm,
 )
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
-from bartlebot.gui.ui_state import UI_STATE_FILE, UiState
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -176,7 +177,7 @@ def test_a_fold_is_remembered_in_ui_state_and_read_back(qapp):
     _group().set_collapsed(False)
 
     assert not _group().is_collapsed
-    stored = json.loads((product_dir() / UI_STATE_FILE).read_text(encoding="utf-8"))
+    stored = json.loads((product_dir(PRODUCT) / UI_STATE_FILE).read_text(encoding="utf-8"))
     assert stored == {"folds": {FOLD_SURFACE: {"quicksell": False}}}
 
 
@@ -186,7 +187,7 @@ def test_folding_back_to_the_default_stores_nothing(qapp):
     group.set_collapsed(True)
 
     assert UiState().folds(FOLD_SURFACE, SETTINGS_FOLD_DEFAULTS) == SETTINGS_FOLD_DEFAULTS
-    assert json.loads((product_dir() / UI_STATE_FILE).read_text(encoding="utf-8")) == {}
+    assert json.loads((product_dir(PRODUCT) / UI_STATE_FILE).read_text(encoding="utf-8")) == {}
 
 
 def test_folds_never_reach_settings_json(qapp):
@@ -199,7 +200,7 @@ def test_a_group_that_does_not_fold_is_open_whatever_was_folded_and_stores_nothi
     """Setup's Quicksell page: every row shown, and the user's fold in Settings left alone."""
     _group().set_collapsed(False)
     _group().set_collapsed(True)
-    stored = (product_dir() / UI_STATE_FILE).read_text(encoding="utf-8")
+    stored = (product_dir(PRODUCT) / UI_STATE_FILE).read_text(encoding="utf-8")
 
     group = SettingGroup("quicksell", _check_row(), [_check_row(False)], foldable=False)
     group.set_collapsed(True)
@@ -207,7 +208,7 @@ def test_a_group_that_does_not_fold_is_open_whatever_was_folded_and_stores_nothi
     assert group.fold_button is None
     assert not group.is_collapsed
     assert not any(row.isHidden() for row in group.rows)
-    assert (product_dir() / UI_STATE_FILE).read_text(encoding="utf-8") == stored
+    assert (product_dir(PRODUCT) / UI_STATE_FILE).read_text(encoding="utf-8") == stored
 
 
 def test_a_group_the_dialog_does_not_declare_is_refused(qapp):

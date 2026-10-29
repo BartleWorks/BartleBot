@@ -177,7 +177,7 @@ purpose works under a scratch key of its own.
 A double-clicked share file starts the exe with the file as its argument, and a second
 launch would otherwise open a second app with its own window and its own clients. So the
 first launch listens on a `QLocalServer`, and every later one connects, sends its
-arguments and exits (`gui/single_instance.py`). `bartlebot.py` does this as soon as the
+arguments and exits (core's `bartleby/qt/app/single_instance.py`). `bartlebot.py` does this as soon as the
 `QApplication` exists, before the log starts, so a launch that only hands over neither
 writes a session log nor prunes a real one from the ten kept.
 

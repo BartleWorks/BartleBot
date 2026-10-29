@@ -3,11 +3,11 @@
 import os
 import sys
 
+from bartleby.qt.app.logging_setup import HEADER_LIBRARIES
 from bartleby.qt.theming.icon_utils import ICONS_DIR
 
 from bartlebot.game.art_extraction import TYPE_DUMP_DIR
 from bartlebot.gui.logo import LOGO_SVG
-from bartlebot.logging_setup import HEADER_LIBRARIES
 from bartlebot.packaging.self_check import game_data_files
 from bartlebot.paths import project_root
 

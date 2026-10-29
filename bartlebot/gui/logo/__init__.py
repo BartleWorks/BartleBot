@@ -28,18 +28,20 @@ import logging
 import math
 import sys
 from functools import cache
-from pathlib import Path
 
-from bartleby.shared.vendor import PRODUCT, VENDOR
+from bartleby.shared.vendor import VENDOR
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import QApplication, QWidget
 
+from bartlebot.packaging import product
+from bartlebot.packaging.product import NAME as PRODUCT
+
 logger = logging.getLogger(__name__)
 
 #: The source of truth for every raster of the logo.
-LOGO_SVG = Path(__file__).parent / "bartlebot.svg"
+LOGO_SVG = product.LOGO_SVG
 
 #: The grid the SVG is drawn on, in cells along each side.
 GRID = 12

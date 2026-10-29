@@ -10,11 +10,12 @@ The tests measure positions against each other rather than pinning pixels, so th
 meaning if a margin changes.
 """
 
+from bartleby.qt.offscreen_warmup import WARMED_PROPERTY
 from PyQt6.QtCore import QPoint
-from PyQt6.QtWidgets import QFrame
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
 from bartlebot.gui.game_embed.card_columns import CardColumn
-from bartlebot.gui.game_embed.launch_cards import ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"]}
 
@@ -104,3 +105,28 @@ def test_an_untitled_column_keeps_its_full_width(qapp):
 
     assert _span(column.cards[0].frame, column)[1] == column.scroll_area.viewport().width()
     column.close()
+
+
+# ---------------------------------------------------------------------------
+# The first offscreen render is paid on a show (bartleby.qt.offscreen_warmup)
+# ---------------------------------------------------------------------------
+
+_WARMUP_ACCOUNTS = [
+    {"username": "one@example.com", "alias": "One"},
+    {"username": "two@example.com", "alias": "Two"},
+]
+
+
+def test_showing_a_card_column_warms_its_window(qapp):
+    column = CardColumn("Accounts", "hint", "Add account")
+    column.set_cards([AccountCard(a, [], _WARMUP_ACCOUNTS) for a in _WARMUP_ACCOUNTS])
+    host = QWidget()
+    QVBoxLayout(host).addWidget(column)
+
+    host.show()
+    for _ in range(3):
+        qapp.processEvents()
+
+    assert host.property(WARMED_PROPERTY) is True, (
+        "a drag would otherwise pay Qt's first offscreen render between two mouse moves"
+    )

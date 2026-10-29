@@ -30,10 +30,11 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from bartleby.shared.vendor import PRODUCT, local_vendor_dir
+from bartleby.shared.vendor import local_vendor_dir
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.updates.keys import TRUSTED_KEYS
 
 logger = logging.getLogger(__name__)

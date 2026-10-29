@@ -18,7 +18,7 @@ def fake_roots(tmp_path, monkeypatch):
     """Point the default shipped and user roots at two private directories."""
     project, appdata = tmp_path / "project", tmp_path / "appdata"
     monkeypatch.setattr(store_roots, "project_root", lambda: project)
-    monkeypatch.setattr(store_roots, "product_dir", lambda: appdata)
+    monkeypatch.setattr(store_roots, "product_dir", lambda _product: appdata)
     return project, appdata
 
 

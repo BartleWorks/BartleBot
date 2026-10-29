@@ -73,7 +73,7 @@ Two rules about the settings dialog itself:
   not a group: Maximize being *on* is what makes the window size moot. Every group
   id is declared in `SETTINGS_FOLD_DEFAULTS`, or the others' reads prune its fold.
 - **Folds go in `ui_state.json`, not `settings.json`.** Which groups a reader left
-  open is view state, safe to lose: `bartlebot/gui/ui_state.py` keeps only departures
+  open is view state, safe to lose: core's `bartleby/qt/app/ui_state.py` keeps only departures
   from a default, keyed by surface and group, and reads the file afresh on every
   call so two holders cannot overwrite each other. Whether descriptions are shown
   is a setting of its own, `show_setting_descriptions`, written at once whatever

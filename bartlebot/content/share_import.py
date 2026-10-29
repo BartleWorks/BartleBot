@@ -81,7 +81,6 @@ from bartleby.shared.share_match import (
 from bartleby.shared.store_files import Origin, load_in
 from bartleby.shared.strategy_library import LibraryKind
 from bartleby.shared.strategy_models import LIBRARY_FORMAT, DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartleby.shared.vendor import PRODUCT
 from pydantic import BaseModel, ValidationError
 
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SubgraphDefinition
@@ -105,6 +104,7 @@ from bartlebot.content.share_export import (
 from bartlebot.content.store_roots import resolve_roots, resolve_shared_roots
 from bartlebot.game import restricted_zones
 from bartlebot.nodes.registry import NODE_REGISTRY
+from bartlebot.packaging.product import NAME as PRODUCT
 
 logger = logging.getLogger(__name__)
 

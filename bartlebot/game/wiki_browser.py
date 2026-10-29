@@ -34,6 +34,7 @@ from bartleby.shared.vendor import product_dir
 
 from bartlebot.game.wiki_pages import WIKI_HOST, wiki_page_path
 from bartlebot.packaging.build_kind import is_packaged
+from bartlebot.packaging.product import NAME as PRODUCT
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ def is_challenge(status: int, headers: Mapping[str, str], text: str) -> bool:
 
 def profile_dir() -> Path:
     """``%APPDATA%/Bartleby/BartleBot/webview`` — the window's cookies and cache."""
-    return product_dir() / PROFILE_DIRNAME
+    return product_dir(PRODUCT) / PROFILE_DIRNAME
 
 
 def command(url: str, out_path: Path) -> list[str]:
