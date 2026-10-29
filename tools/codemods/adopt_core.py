@@ -41,8 +41,13 @@ TABLE: dict[str, str] = {
     "bartlebot.shared": "bartleby.shared",
     "bartlebot.gui.theming": "bartleby.qt.theming",
     "bartlebot.gui.title_bar": "bartleby.qt.title_bar",
-    **{f"bartlebot.gui.widgets.buttons.{m}": f"bartleby.qt.widgets.buttons.{m}" for m in ("action_button", "icon_button", "link_button")},
-    **{f"bartlebot.gui.widgets.labels.{m}": f"bartleby.qt.widgets.labels.{m}" for m in ("elided_label", "themed_label")},
+    **{
+        f"bartlebot.gui.widgets.buttons.{m}": f"bartleby.qt.widgets.buttons.{m}"
+        for m in ("action_button", "icon_button", "link_button")
+    },
+    **{
+        f"bartlebot.gui.widgets.labels.{m}": f"bartleby.qt.widgets.labels.{m}" for m in ("elided_label", "themed_label")
+    },
     **{f"bartlebot.gui.game_embed.{m}": f"bartleby.qt.game_embed.{m}" for m in ("client_tile", "win32_window")},
     **{f"bartlebot.gui.{m}": f"bartleby.qt.{m}" for m in ("global_hotkeys", "native_widgets", "streamer_mode")},
     **{f"bartlebot.clients.{m}": f"bartleby.runtime.clients.{m}" for m in _CLIENTS},
@@ -153,7 +158,8 @@ def files(paths: list[Path]) -> list[Path]:
             out.append(path)
         else:
             out += sorted(p for p in path.rglob("*.py") if "__pycache__" not in p.parts)
-    return [p for p in out if p.resolve() != Path(__file__).resolve()]
+    # This file and its test name the old paths on purpose.
+    return [p for p in out if p.resolve() != Path(__file__).resolve() and p.name != "test_codemods_adopt_core.py"]
 
 
 def main(argv: list[str] | None = None) -> int:

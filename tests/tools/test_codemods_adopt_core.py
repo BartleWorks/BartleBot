@@ -47,7 +47,9 @@ def test_a_name_that_left_a_module_bartlebot_keeps_is_imported_from_core():
 
 
 def test_a_dotted_path_in_a_string_or_a_docstring_is_rewritten():
-    source = 'monkeypatch.setattr("bartlebot.launcher.launch_profile.launch", fake)\n"""See bartlebot.bot.run_trace."""\n'
+    source = (
+        'monkeypatch.setattr("bartlebot.launcher.launch_profile.launch", fake)\n"""See bartlebot.bot.run_trace."""\n'
+    )
 
     assert rewrite(source) == (
         'monkeypatch.setattr("bartleby.runtime.launcher.launch_profile.launch", fake)\n'
