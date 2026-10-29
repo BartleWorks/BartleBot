@@ -888,5 +888,3 @@ def main_window_stub():
     )
     stub._after_card_action = MainWindow._after_card_action.__get__(stub)
     return calls, stub
-
-
