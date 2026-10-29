@@ -53,11 +53,14 @@ while the bot is running.
 
 from __future__ import annotations
 
+from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.qt.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
+from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.shared.strategy_models import PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -70,10 +73,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.combat.dsl_syntax import DSL_HELP
 from bartlebot.gui.combat_strategies.dsl_checks import checker
-from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.inputs.dsl_edit import DslGrowingTextEdit
-from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
 from bartlebot.nodes.combat_runner import DslError, dsl_error, dsl_warning_text, dsl_warnings

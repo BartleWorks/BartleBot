@@ -9,6 +9,7 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
@@ -26,7 +27,6 @@ from bartlebot.game.wiki_browser import BrowserFetch, is_challenge
 from bartlebot.game.wiki_drops import match_name_for
 from bartlebot.game.wiki_pages import WIKI_HOST as _WIKI_HOST
 from bartlebot.game.wiki_pages import page_title, wiki_page_path
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 logger = logging.getLogger(__name__)
 

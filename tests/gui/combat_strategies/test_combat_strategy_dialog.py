@@ -21,6 +21,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.qt.widgets.layout.scroll_gutter import is_gutter_reserved
+from bartleby.qt.widgets.pills.pill import AccentPill, NeutralPill
 from bartleby.shared.strategy_models import (
     DeckData,
     DeckPreset,
@@ -50,8 +52,6 @@ from bartlebot.gui.combat_strategies.dialog import (
     DialogMode,
     _KindPage,
 )
-from bartlebot.gui.widgets.layout.scroll_gutter import is_gutter_reserved
-from bartlebot.gui.widgets.pills.tag_pill import AccentPill, NeutralPill
 
 
 @pytest.fixture

@@ -53,6 +53,7 @@ from pathlib import Path
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.runtime.clients import character_roster
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
@@ -106,7 +107,6 @@ from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_d
 from bartlebot.gui.settings.rows import SettingsForm
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.options.custom_setup import (
     art_answered,
     extract_art_chosen,

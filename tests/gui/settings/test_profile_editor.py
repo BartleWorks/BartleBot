@@ -240,7 +240,7 @@ def test_the_resolution_hint_is_judged_against_this_profiles_account_count(qapp,
 
 
 def _pill_texts(card) -> list[str]:
-    from bartlebot.gui.widgets.pills.tag_pill import NeutralPill
+    from bartleby.qt.widgets.pills.pill import NeutralPill
 
     return [pill.text() for pill in card.findChildren(NeutralPill)]
 

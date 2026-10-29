@@ -24,6 +24,7 @@ to rest over. What the drag *looks like* while it happens is tested next door, i
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.testing.drag_helpers import menu_move
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtTest import QTest
@@ -33,7 +34,6 @@ from bartlebot.gui.game_embed.card_columns import CARD_SETTLE_MS, CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard
 from bartlebot.gui.settings.accounts_tab import reorder_accounts, reorder_launch_profiles
 from bartlebot.settings_manager import SettingsManager
-from tests.drag_helpers import menu_move
 
 ACCOUNTS = [
     {"username": "one@example.com", "alias": "One"},

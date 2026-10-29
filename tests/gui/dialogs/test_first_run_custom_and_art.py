@@ -447,7 +447,7 @@ def test_a_first_run_with_art_already_extracted_skips_the_page(qapp, prefs, game
 
 async def test_setups_art_page_announces_the_new_art_once(qapp, prefs, game):
     """What makes the bot library behind setup show its badges and tag medallions at once (#239)."""
-    from bartlebot.gui.art_signal import art_signal  # noqa: PLC0415
+    from bartleby.qt.art_signal import art_signal  # noqa: PLC0415
 
     seen: list[None] = []
 

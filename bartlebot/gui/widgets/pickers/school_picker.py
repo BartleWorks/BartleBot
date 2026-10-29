@@ -14,12 +14,12 @@ legible, with a count once anything is selected, as ``TagPickerButton`` does.
 
 from __future__ import annotations
 
+from bartleby.qt.art_signal import follow_art
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.combat.deck_io import PIP_SCHOOLS
 from bartlebot.game import card_art
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow, Section, summarize
 from bartlebot.gui.widgets.pickers.tag_picker import count_label

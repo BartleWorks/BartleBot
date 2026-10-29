@@ -2,7 +2,7 @@
 
 :class:`ArtExtraction` runs :func:`bartlebot.game.art_extraction.extract_art` off the GUI
 thread and shows how far it has got. A run that writes art announces it once
-(:mod:`bartlebot.gui.art_signal`), so what is already on screen redraws with it. Setup's Game art page holds one, and so does
+(:mod:`bartleby.qt.art_signal`), so what is already on screen redraws with it. Setup's Game art page holds one, and so does
 :class:`ArtExtractionDialog`, which the Settings row opens for a run after a game patch.
 The choice on Custom setup's Options page is :func:`extract_art_row`, with the same text the
 Settings row carries.
@@ -17,10 +17,12 @@ import asyncio
 import logging
 import threading
 
+from bartleby.qt.art_signal import announce_art_changed
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QDialog, QProgressBar, QVBoxLayout, QWidget
@@ -33,9 +35,7 @@ from bartlebot.game.art_extraction import (
     Progress,
     installed_game_data_dir,
 )
-from bartlebot.gui.art_signal import announce_art_changed
 from bartlebot.gui.settings.rows import Binding, SettingRow
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 logger = logging.getLogger(__name__)
 

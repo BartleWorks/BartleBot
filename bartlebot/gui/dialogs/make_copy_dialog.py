@@ -10,9 +10,8 @@ The copy itself is :mod:`bartlebot.content.bot_fork`; the controller makes it an
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtWidgets import QDialog, QFormLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
-
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 TITLE = "Make My Own Copy"
 COMMIT_TEXT = "Make my own copy"

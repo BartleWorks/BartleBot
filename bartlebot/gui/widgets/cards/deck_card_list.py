@@ -25,14 +25,14 @@ empty -- and the library page passes the sentence that tells the user how to fil
 
 from __future__ import annotations
 
+from bartleby.qt.art_signal import follow_art
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.discard import discard_widget
 from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.combat.deck_content import DeckCardEntry, deck_groups
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.card_art_tile import ROW_TILE, CardArtTile, card_icon, tooltip_for
-from bartlebot.gui.widgets.layout.discard import discard_widget
 
 #: A group heading is the row's own text in bold rather than a heading widget: this is a
 #: list inside a card or a form region, and ``RuleHeading`` would divide the two groups

@@ -40,13 +40,20 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.icon_utils import svg_icon
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.cards.add_card import AddCard
+from bartleby.qt.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
+from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.qt.widgets.layout.drag_reorder import DragReorder
+from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -62,13 +69,6 @@ from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SetupStep, SetupTar
 from bartlebot.content.subgraphs.subgraphs import exposed_key, node_panels
 from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
-from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.widgets.cards.add_card import AddCard
-from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
-from bartlebot.gui.widgets.layout.discard import discard_widget
-from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
-from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 
 #: The tick's size.

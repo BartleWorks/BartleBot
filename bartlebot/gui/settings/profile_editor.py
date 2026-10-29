@@ -71,6 +71,7 @@ from bartleby.qt.theming.account_accent import account_accent, account_color_key
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.runtime.clients import character_roster
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
@@ -88,7 +89,6 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.settings_manager import SettingsManager
 

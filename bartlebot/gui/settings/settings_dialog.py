@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt.widgets.layout.dialog_footer import claim_default, dialog_footer
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QDialog,
@@ -21,7 +22,6 @@ from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab, SettingsForm
 from bartlebot.gui.settings.theme_tab import ThemeTab
-from bartlebot.gui.widgets.layout.dialog_footer import claim_default, dialog_footer
 from bartlebot.settings_manager import SettingsManager
 
 # The size the dialog opens at when the screen has room for it. The height clears the

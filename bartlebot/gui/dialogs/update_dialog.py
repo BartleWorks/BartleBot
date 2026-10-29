@@ -23,9 +23,9 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtWidgets import QDialog, QProgressBar, QTextBrowser, QVBoxLayout, QWidget
 
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.updates.check import Offer, PreparedUpdate
 from bartlebot.updates.feed import FeedError
 

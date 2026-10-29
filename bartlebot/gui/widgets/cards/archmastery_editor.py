@@ -33,6 +33,7 @@ absence is explained in a line rather than left as an empty region.
 
 from __future__ import annotations
 
+from bartleby.qt.art_signal import follow_art
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtCore import pyqtSignal
@@ -40,7 +41,6 @@ from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QRadioButton, QVBoxLayout
 
 from bartlebot.combat.deck_content import ARCHMASTERY_MODES, archmastery_note
 from bartlebot.combat.deck_io import resolve_apply_archmastery
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
 
 #: What the caption says the app setting will do, for a deck that defers to it.

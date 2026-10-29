@@ -20,13 +20,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from bartleby.qt.widgets.layout.discard import discard_widget
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
 from bartlebot.bot import variables
 from bartlebot.bot.schema import VariableModel
-from bartlebot.gui.widgets.layout.discard import discard_widget
 
 #: A spin box's range: wide enough for any counter a bot keeps.
 INT_RANGE = (-999_999, 999_999)

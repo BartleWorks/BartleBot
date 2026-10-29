@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bartleby.qt.sidebar.log_panel import LogPanel
 from bartleby.runtime.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.sections.client_section import ClientSection
 from bartlebot.gui.sidebar.sections.drop_section import DropSection
 from bartlebot.gui.sidebar.sections.possible_drops_section import PossibleDropsSection
 from bartlebot.gui.sidebar.setup_panel import SetupPanel
+from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -72,7 +73,7 @@ class RightSidebar(QTabWidget):
         self.clients = ClientSection()
         self.drops = DropSection()
         self.possible_drops = PossibleDropsSection()
-        self.log_panel = LogPanel()
+        self.log_panel = LogPanel(SettingsManager.instance())
         self.setup_panel = SetupPanel()
         self._parked = QWidget(self)
         self._parked.setVisible(False)

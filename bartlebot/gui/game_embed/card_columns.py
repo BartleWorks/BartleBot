@@ -37,7 +37,7 @@ the combo box it would point at is already on screen above the columns.
 
 THE DRAG
 
-The drag that reorders a column is ``widgets.drag_reorder.DragReorder``'s, which is where
+The drag that reorders a column is core's ``bartleby.qt.widgets.layout.drag_reorder.DragReorder``'s, which is where
 its reasoning lives too: it began here and moved out when the Combat tab's cards needed
 the same gesture. What stays here is that this column is one of its hosts -- it hands the
 engine its cards on every ``set_cards`` and passes ``reordered`` straight on.
@@ -47,7 +47,15 @@ from __future__ import annotations
 
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.cards.card_frame import GRIP_GUTTER
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
+    AUTOSCROLL_MARGIN,
+    CARD_SETTLE_MS,
+    CARD_SHIFT_MS,
+    DragReorder,
+)
+from bartleby.qt.widgets.layout.drag_reorder import DropPlaceholder as _DropPlaceholder  # noqa: F401
 from bartleby.runtime.game.game_sizing import FitProblem
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -60,14 +68,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
-from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER
-from bartlebot.gui.widgets.layout.drag_reorder import (  # noqa: F401 -- re-exported for callers of this module
-    AUTOSCROLL_MARGIN,
-    CARD_SETTLE_MS,
-    CARD_SHIFT_MS,
-    DragReorder,
-)
-from bartlebot.gui.widgets.layout.drag_reorder import DropPlaceholder as _DropPlaceholder  # noqa: F401
 from bartlebot.settings_manager import SettingsManager
 
 # What an empty column says beneath its Add card. The Add card is the empty state -- it
@@ -257,7 +257,7 @@ class CardColumn(QWidget):
         # is the column's terminator, not an entry in the ordered list.
         self._add_card: QWidget | None = None
         self._build_ui(title, show_settings_link)
-        # The drag, and the first-show warm-up it needs: see ``widgets/layout/drag_reorder.py``.
+        # The drag, and the first-show warm-up it needs: see core's ``widgets/layout/drag_reorder.py``.
         self._drag = DragReorder(self._rows_layout(), self)
         self._drag.reordered.connect(self.reordered)
         self._drag.watch_for_show(self)

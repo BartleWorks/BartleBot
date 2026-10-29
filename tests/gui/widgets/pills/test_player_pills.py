@@ -264,7 +264,8 @@ def _left_press():
 
 def test_new_art_shows_the_gems_of_the_players_listed_and_no_others(qapp):
     """Art extracted while a combat order is summarized (#239)."""
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
+
     from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow  # noqa: PLC0415
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 

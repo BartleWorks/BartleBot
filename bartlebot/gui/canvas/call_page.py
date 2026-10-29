@@ -25,7 +25,9 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
+from bartleby.qt.widgets.layout.discard import discard_widget
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
@@ -50,8 +52,6 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.node_cards import PageFoldBar, TitleEdit, ToFillLabel, record_line
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
-from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
-from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.pickers.player_picker import pick_player
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS

@@ -9,9 +9,11 @@ every loop that reads or writes the value does not.
 
 from __future__ import annotations
 
+from bartleby.qt.art_signal import follow_art
 from bartleby.qt.theming.account_accent import account_accent, account_tint
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.layout.discard import discard_widget
 from PyQt6.QtCore import QByteArray, QEvent, QMimeData, QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import QDrag
 from PyQt6.QtWidgets import (
@@ -24,9 +26,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
-from bartlebot.gui.widgets.layout.discard import discard_widget
 
 _CHIP_MIME = "application/x-bartlebot-combat-order-chip"
 _ORDINALS = ["1st", "2nd", "3rd", "4th"]

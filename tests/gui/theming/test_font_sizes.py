@@ -24,9 +24,11 @@ def test_a_widget_pinned_to_a_height_still_fits_its_text(qapp) -> None:
     a QLabel goes on reporting the height its text wants while being held at the height
     it was given, so the gap between the two is exactly the clipping.
     """
+    from bartleby.qt.widgets.pills.pill import ActionPill, NeutralPill
+
     from bartlebot.gui.canvas.node_browser_dialog import _Chip
     from bartlebot.gui.widgets.pills.player_pills import PlayerBadge, PlayerSlotPill
-    from bartlebot.gui.widgets.pills.tag_pill import ActionPill, NeutralPill, TagPill
+    from bartlebot.gui.widgets.pills.tag_pill import TagPill
 
     widgets = {
         "PlayerBadge": PlayerBadge(1),
@@ -52,7 +54,7 @@ def test_a_multi_line_value_field_shows_every_line_it_promises(qapp, lines: int)
     so the last line went under the fold as soon as that moved. Asserted by asking the
     field whether it can scroll: if it can, there is text it is not showing.
     """
-    from bartlebot.gui.sidebar.sidebar_section import value_edit_multi
+    from bartleby.qt.sidebar.sidebar_section import value_edit_multi
 
     field = value_edit_multi(lines)
     field.setPlainText("\n".join(f"line {n}" for n in range(lines)))

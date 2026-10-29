@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPen, QPolygonF
 from PyQt6.QtWidgets import (
@@ -49,7 +50,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
-from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 
 POPUP_WIDTH = 400
 

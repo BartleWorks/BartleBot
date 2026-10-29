@@ -8,10 +8,10 @@ and the Source filter beside each list offers the same words (``SOURCE_VOCABULAR
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.pills.pill import AccentPill, NeutralPill
 from PyQt6.QtWidgets import QLabel
 
 from bartlebot.content.store_roots import Origin, pill_text
-from bartlebot.gui.widgets.pills.tag_pill import AccentPill, NeutralPill
 
 #: The tooltip on the pill of an override whose Official item has changed since (#169).
 OFFICIAL_UPDATED_TIP = (

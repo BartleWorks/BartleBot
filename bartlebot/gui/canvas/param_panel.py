@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import replace
 from typing import Any
 
+from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.icon_utils import svg_icon, svg_pixmap
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
@@ -20,6 +21,9 @@ from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartleby.qt.widgets.pills.pill import NeutralChip
 from PyQt6.QtCore import QEvent, QLocale, QRectF, QSize, QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
@@ -73,7 +77,6 @@ from bartlebot.game import zone_names
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.variable_rows import AssignmentsField, ConditionRow, parse_rows
-from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.option_gutter import (
     HelpToggle,
     OverrideBar,
@@ -84,13 +87,10 @@ from bartlebot.gui.sidebar.option_gutter import (
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
-from bartlebot.gui.widgets.layout.discard import discard_widget
-from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.pickers.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.pickers.scales_picker import ScalesButton
 from bartlebot.gui.widgets.pickers.zone_picker import NavZoneButton, is_destination
-from bartlebot.gui.widgets.pills.tag_pill import NeutralChip
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, ParamField
 from bartlebot.nodes.registry import (

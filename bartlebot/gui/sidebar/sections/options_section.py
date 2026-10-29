@@ -31,11 +31,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from bartleby.qt.sidebar.sidebar_section import SidebarSection, field_label
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
@@ -62,7 +64,6 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.inputs.option_widgets import (
     OPTION_TYPES,
@@ -75,7 +76,6 @@ from bartlebot.gui.widgets.inputs.option_widgets import (
     set_widget_value,
     widget_value,
 )
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget
 from bartlebot.options import option_groups
 from bartlebot.options.bot_options import (

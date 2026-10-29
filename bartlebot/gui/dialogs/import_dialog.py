@@ -17,7 +17,9 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Mapping
 
+from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtCore import QStandardPaths, Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -43,8 +45,6 @@ from bartlebot.content.share_import import (
     affected_text,
     headline,
 )
-from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 logger = logging.getLogger(__name__)
 
