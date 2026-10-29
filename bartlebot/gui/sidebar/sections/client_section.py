@@ -47,6 +47,7 @@ is the same bargain the wizard name already makes with ``wizard_names.cached_nam
 import asyncio
 import logging
 
+from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.runtime.timing import (
     CLIENT_REFRESH_INTERVAL_HIDDEN,
@@ -59,7 +60,6 @@ from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.sidebar.player_card import PlayerCard, account_stripe_keys
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

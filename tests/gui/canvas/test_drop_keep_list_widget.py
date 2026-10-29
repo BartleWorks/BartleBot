@@ -1000,7 +1000,8 @@ def test_pets_the_keep_list_cannot_keep_stay_out_of_bulk_changes(qapp):
 
 def test_new_art_gives_the_rows_their_category_icons_keeping_the_ticks(qapp):
     """Art extracted while the keep list is up, as in Settings (#239): rows re-icon in place."""
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
+
     from bartlebot.gui.canvas.drop_keep_list import _COL_CATEGORY  # noqa: PLC0415
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 

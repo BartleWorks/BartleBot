@@ -58,6 +58,8 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+from bartleby.qt.menu_utils import popup_menu
+from bartleby.qt.sidebar.sidebar_section import DISCLOSURE_PX, HeadingAction, disclosure_pixmap
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
@@ -74,8 +76,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX, HeadingAction, disclosure_pixmap
 from bartlebot.options import option_groups
 from bartlebot.options.option_groups import SummaryPart, summary_text
 

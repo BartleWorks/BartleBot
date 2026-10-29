@@ -505,7 +505,7 @@ def _banner_texts(view):
 @pytest.fixture
 def counted_measures(qapp, monkeypatch):
     """How many probe rows each floor builds, from a cold cache."""
-    from bartlebot.gui.sidebar import log_panel  # noqa: PLC0415
+    from bartleby.qt.sidebar import log_panel  # noqa: PLC0415
 
     monkeypatch.setattr(screen_fit, "_FLOORS", {})
     built = {"left": 0, "right": 0}

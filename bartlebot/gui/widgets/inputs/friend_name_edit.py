@@ -19,6 +19,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 
+from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -28,8 +29,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from bartlebot.gui.menu_utils import popup_menu
 
 logger = logging.getLogger(__name__)
 

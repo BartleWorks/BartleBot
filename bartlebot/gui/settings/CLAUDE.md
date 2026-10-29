@@ -81,7 +81,7 @@ Two rules about the settings dialog itself:
   `show_option_descriptions`.
 - **A section is a `RuleHeading`, not a bold label.** A tab is long, and on a
   long page a bold line of text is not enough to stop the eye — the Bot tab's five sections ran together as one column of
-  rows. `widgets/labels/rule_heading.py` is the same heading the detail panes use: the
+  rows. Core's `bartleby/qt/widgets/labels/rule_heading.py` is the same heading the detail panes use: the
   name at the left margin the fields align to, and a hairline out to the right.
   It carries its own space above, so a section adds the heading and nothing else.
   `test_every_settings_section_is_a_rule_heading` is the guard.

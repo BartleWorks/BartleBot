@@ -17,6 +17,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import chain
 
+from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QBrush, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen
@@ -93,7 +94,6 @@ from bartlebot.gui.canvas.node_item import (
 )
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
-from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS, node_display_name
 from bartlebot.options import player_realms
 
@@ -3732,9 +3732,8 @@ class _ColorPickerDialog(QWidget):
     """Minimal six-swatch palette dialog for region color selection."""
 
     def __init__(self, current_key: int, parent=None) -> None:
+        from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
         from PyQt6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout
-
-        from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
         # Re-parent as QDialog so exec() works
         self._dialog = QDialog(parent)

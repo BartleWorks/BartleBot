@@ -1,7 +1,7 @@
 """Point BartleBot at bartleby-core: rewrite every reference to a module core now holds.
 
 Stage 3 of #167, and each later stage that moves a module: Stage 5 added the app
-skeleton. Each module in :data:`TABLE` exists in bartleby-core, identical to
+skeleton, Stage 6 the cards, pills and the Log tab. Each module in :data:`TABLE` exists in bartleby-core, identical to
 BartleBot's but for its imports, the cuts the stage lists and its docstring paths, and
 BartleBot's copy is deleted in the same stage. No shim keeps an old path alive, so every
 ``from`` and ``import`` line, every dotted path in a string (``monkeypatch.setattr``,
@@ -62,11 +62,26 @@ TABLE: dict[str, str] = {
     **{f"bartlebot.gui.{m}": f"bartleby.qt.app.{m}" for m in ("single_instance", "app_exit", "ui_state")},
     "bartlebot.gui.offscreen_warmup": "bartleby.qt.offscreen_warmup",
     "bartlebot.gui.debug.qt_paint_debug": "bartleby.qt.debug.qt_paint_debug",
+    # Stage 6: cards, reordering, pills and the Log tab.
+    **{f"bartlebot.gui.{m}": f"bartleby.qt.{m}" for m in ("menu_utils", "art_signal")},
+    **{f"bartlebot.gui.widgets.cards.{m}": f"bartleby.qt.widgets.cards.{m}" for m in ("card_frame", "add_card")},
+    **{
+        f"bartlebot.gui.widgets.layout.{m}": f"bartleby.qt.widgets.layout.{m}"
+        for m in ("drag_reorder", "scroll_gutter", "flow_layout", "dialog_footer", "discard")
+    },
+    **{f"bartlebot.gui.widgets.labels.{m}": f"bartleby.qt.widgets.labels.{m}" for m in ("rule_heading", "logo_disc")},
+    **{f"bartlebot.gui.sidebar.{m}": f"bartleby.qt.sidebar.{m}" for m in ("sidebar_section", "log_panel")},
 }
+
+#: The family pills, which left ``tag_pill`` in Stage 6; the bot-tag pills stay in it.
+_PILLS = (
+    "pill_height pill_style paint_pill_outline NeutralPill NeutralChip AccentPill AccountPill WarningPill ActionPill"
+).split()
 
 #: Names that moved out of a module BartleBot keeps: (module, name) to core's module.
 NAMES: dict[tuple[str, str], str] = {
     ("bartlebot.settings_manager", "VALID_RESOLUTIONS"): "bartleby.runtime.game.game_sizing",
+    **{("bartlebot.gui.widgets.pills.tag_pill", name): "bartleby.qt.widgets.pills.pill" for name in _PILLS},
 }
 
 DEFAULT_PATHS = ("bartlebot", "tests", "tools", "bartlebot.py")

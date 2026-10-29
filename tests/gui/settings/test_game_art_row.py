@@ -7,13 +7,13 @@ the dialog's own task, the way the app's loop would run it.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.art_signal import art_signal
 from bartleby.shared.game_install import set_install_dir
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.game import art_extraction, card_art
 from bartlebot.game.art_extraction import ExtractionError
-from bartlebot.gui.art_signal import art_signal
 from bartlebot.gui.settings.game_art_row import (
     EXTRACT_DETAILS,
     NOT_EXTRACTED,

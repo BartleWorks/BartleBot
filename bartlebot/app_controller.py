@@ -11,7 +11,7 @@ from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
-from bartleby.qt.app.logging_setup import LogEntry, add_gui_callback, remove_gui_callback, session_log_dir
+from bartleby.qt.app.logging_setup import add_gui_callback, remove_gui_callback, session_log_dir
 from bartleby.qt.app.single_instance import LaunchQueue, SingleInstance, raise_window
 from bartleby.qt.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartleby.runtime import run_trace
@@ -3107,12 +3107,10 @@ class AppController(QObject):
         self._window.action_import.setEnabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
-        self._window.right_sidebar.log_panel.on_run_started()
         log_panel = self._window.right_sidebar.log_panel
-
-        def log_cb(entry: LogEntry) -> None:
-            log_panel.append_log_formatted(entry.text, entry.level)
-
+        if SettingsManager.instance().clear_log_on_run:
+            log_panel.clear()
+        log_cb = log_panel.append_entry
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         self._window.right_sidebar.clients.set_bot_running(True)

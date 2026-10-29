@@ -114,11 +114,14 @@ def _bar_a():
 
 
 def _log_tab():
-    from bartlebot.gui.sidebar.log_panel import LogPanel  # noqa: PLC0415
+    from bartleby.qt.app.logging_setup import LogEntry  # noqa: PLC0415
+    from bartleby.qt.sidebar.log_panel import LogPanel  # noqa: PLC0415
 
-    panel = LogPanel()
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    panel = LogPanel(SettingsManager.instance())
     for text, level in LOG_LINES:
-        panel.append_log_formatted(text, level)
+        panel.append_entry(LogEntry(time=0.0, level=level, logger="", message=text, slot=None, text=text))
     return panel
 
 

@@ -178,7 +178,8 @@ def test_a_row_does_not_say_an_unresolved_name_twice(qapp):
 
 def test_new_art_gives_the_rows_their_tiles(qapp):
     """Art extracted while the list is up (#239): each row gains the tile it lacked."""
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
+
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 
     listing = DeckCardList()
@@ -192,7 +193,7 @@ def test_new_art_gives_the_rows_their_tiles(qapp):
 
 
 def test_new_art_leaves_a_list_never_filled_empty(qapp):
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
 
     listing = DeckCardList(empty_text="No cards")
     announce_art_changed()

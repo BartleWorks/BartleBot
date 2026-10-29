@@ -52,7 +52,9 @@ from bartleby.qt.app.ui_state import UiState
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import (
@@ -80,8 +82,6 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
-from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

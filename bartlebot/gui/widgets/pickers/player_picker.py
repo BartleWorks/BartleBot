@@ -9,9 +9,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt.menu_utils import popup_menu
 from PyQt6.QtWidgets import QWidget
-
-from bartlebot.gui.menu_utils import popup_menu
 
 #: What a label gains when a click opens the player menu instead of acting.
 MENU_MARK = " ▾"

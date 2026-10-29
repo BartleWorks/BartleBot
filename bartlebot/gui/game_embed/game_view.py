@@ -13,6 +13,7 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.labels.logo_disc import LogoDisc
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.runtime.clients.tile_slots import TileKey, TileSlot, plan_tile_changes
 from bartleby.runtime.game.game_sizing import grid_for, required_game_area
@@ -37,7 +38,7 @@ from bartlebot.gui.game_embed.card_columns import (
     refresh_column_fit,
 )
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, launch_note_for
-from bartlebot.gui.widgets.labels.logo_disc import LogoDisc
+from bartlebot.gui.logo import logo_disc_image
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.updates.check import current_version
 
@@ -167,7 +168,7 @@ class _GamePlaceholder(QWidget):
         center.addWidget(version, alignment=Qt.AlignmentFlag.AlignHCenter)
         center.addSpacing(8)
 
-        logo = LogoDisc(_LOGO_SIZE)
+        logo = LogoDisc(_LOGO_SIZE, logo_disc_image)
         logo_wrapper = QHBoxLayout()
         logo_wrapper.setContentsMargins(0, 0, 0, 0)
         logo_wrapper.addStretch()

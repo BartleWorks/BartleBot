@@ -120,7 +120,7 @@ def right_sidebar_floor() -> int:
     app = QApplication.instance()
     if app is None:
         return game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
-    from bartlebot.gui.sidebar.log_panel import header_row_floor  # noqa: PLC0415 - import cycle at module scope
+    from bartleby.qt.sidebar.log_panel import header_row_floor  # noqa: PLC0415 - import cycle at module scope
 
     return _measured_floor("right", app, lambda: game_sizing.right_sidebar_floor(header_row_floor(app.font())))
 

@@ -26,13 +26,13 @@ from typing import Any
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.discard import discard_widget
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.bot import variables
 from bartlebot.bot.schema import AssignmentModel, FlagCondition, VariableModel
 from bartlebot.gui.widgets.inputs.variable_widgets import OPTION, VARIABLE, ConditionSourceCombo, VariableValueField
-from bartlebot.gui.widgets.layout.discard import discard_widget
 
 _NOT_W = 52
 _REM_W = 24

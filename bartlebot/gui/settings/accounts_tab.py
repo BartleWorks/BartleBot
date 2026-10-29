@@ -43,6 +43,7 @@ from bartleby.qt.theming.account_accent import (
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.runtime.clients import character_roster
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
@@ -80,7 +81,6 @@ from bartlebot.gui.settings.profile_editor import (
     mark_unfittable_resolutions,
 )
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.settings_manager import SettingsManager, default_for
 
 #: The account editor's window title, and the title of a message about what it was given.

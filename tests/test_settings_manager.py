@@ -109,3 +109,19 @@ def test_an_unreadable_file_is_kept_and_reported(caplog):
     kept = path.with_name("settings.json.unreadable")
     assert kept.read_text(encoding="utf-8") == '{"general": {"theme": "da'
     assert "could not be read" in caplog.text
+
+
+# -- the Log tab -----------------------------------------------------------------------
+
+
+def test_the_log_tab_reads_its_line_limit_and_its_clear_from_the_general_settings():
+    """Core's Log tab takes a ``LogSettings``; the run start reads ``clear_log_on_run`` itself."""
+    from bartlebot.settings_manager import SettingsManager
+
+    sm = SettingsManager.instance()
+    assert (sm.log_max_lines, sm.clear_log_on_run) == (5000, True)
+
+    sm.set_general("log_max_lines", 1500)
+    sm.set_general("clear_log_on_run", False)
+
+    assert (sm.log_max_lines, sm.clear_log_on_run) == (1500, False)

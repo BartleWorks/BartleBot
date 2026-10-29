@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from bartlebot.gui.art_signal import announce_art_changed
+from bartleby.qt.art_signal import announce_art_changed
+
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.widgets.cards.duel_slot_gem import DuelSlotGem
 from tests.extracted_art import write_extracted_art

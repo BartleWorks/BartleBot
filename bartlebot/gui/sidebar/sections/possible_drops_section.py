@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
@@ -24,8 +26,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.game.wiki_drops import match_name_for
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.layout.drop_tree import (
     DROP_ICON_PX,
     UNCATEGORIZED_DISPLAY,

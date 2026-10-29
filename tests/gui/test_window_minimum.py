@@ -20,6 +20,7 @@ because the failure was the gap between the arithmetic and the widgets.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.sidebar.log_panel import LogPanel
 from bartleby.runtime.game import game_sizing as gs
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
 from PyQt6.QtCore import QSize
@@ -32,7 +33,6 @@ from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
-from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.option_card import BODY_MARGIN_PX
 from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
@@ -316,7 +316,7 @@ def test_the_log_header_row_fits_the_right_sidebar_at_its_floor(qapp):
     the chrome allowance were short, the Clear button would run off the panel exactly as
     ``Unhook`` did before any of this was measured.
     """
-    assert LogPanel().minimumSizeHint().width() <= screen_fit.right_sidebar_floor()
+    assert LogPanel(SettingsManager.instance()).minimumSizeHint().width() <= screen_fit.right_sidebar_floor()
 
 
 def test_the_log_header_row_fits_the_right_sidebar_under_every_available_style(qapp):
@@ -338,7 +338,9 @@ def test_the_log_header_row_fits_the_right_sidebar_under_every_available_style(q
                 continue
             qapp.setStyle(style)
 
-            assert LogPanel().minimumSizeHint().width() <= screen_fit.right_sidebar_floor(), f"{name} style"
+            assert LogPanel(SettingsManager.instance()).minimumSizeHint().width() <= screen_fit.right_sidebar_floor(), (
+                f"{name} style"
+            )
     finally:
         qapp.setStyle(QStyleFactory.create(original))
 

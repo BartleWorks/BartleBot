@@ -253,7 +253,7 @@ def test_the_icons_are_absent_on_an_install_that_never_extracted_them(art_home, 
 
 def test_new_art_shows_the_icons_in_place_of_nothing(qapp, art_home, app_setting):
     """Art extracted while the editor is up (#239): the badge appears beside the school."""
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
 
     editor = ArchmasteryEditor()
     editor.load(DeckData(normal={"Test Card": 1}, archmastery_school="Fire"))

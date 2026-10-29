@@ -10,12 +10,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import lru_cache
 
+from bartleby.qt.art_signal import follow_art
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 from bartlebot.game import card_art
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 
 #: Shown in the Category column for a drop that has none — every drop imported

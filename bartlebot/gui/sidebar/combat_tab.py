@@ -86,12 +86,19 @@ from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING
 
+from bartleby.qt.art_signal import follow_art
+from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.theming.account_accent import account_accent
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.cards.add_card import AddCard
+from bartleby.qt.widgets.cards.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
 from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.drag_reorder import DragReorder
+from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartleby.qt.widgets.pills.pill import AccentPill, WarningPill
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
@@ -139,7 +146,6 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.combat.strategy_summary import summarize_bot
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import (
@@ -152,9 +158,6 @@ from bartlebot.gui.combat_strategies.dialog import (
 from bartlebot.gui.dialogs.choose_fights_dialog import TITLE as ADD_FLOW_TITLE
 from bartlebot.gui.dialogs.choose_fights_dialog import ChooseFightsDialog, FightsAnswer
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
-from bartlebot.gui.sidebar.sidebar_section import (
-    SidebarSection,
-)
 from bartlebot.gui.sidebar.strategy_panel import (
     DEFAULTS_LABEL,
     DEFAULTS_META,
@@ -167,17 +170,12 @@ from bartlebot.gui.sidebar.strategy_panel import (
     PanelRole,
     StrategyPanel,
 )
-from bartlebot.gui.widgets.cards.add_card import AddCard
 from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.labels.step_heading import Step
-from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
-from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadge
-from bartlebot.gui.widgets.pills.tag_pill import AccentPill, WarningPill
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:

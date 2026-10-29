@@ -17,10 +17,10 @@ from __future__ import annotations
 from enum import Enum
 
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QWidget
 
 from bartlebot.gui.widgets.labels.step_heading import Step, StepHeading
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, Section
 
 TITLE = "Add a duel strategy"

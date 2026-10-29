@@ -59,9 +59,11 @@ def _possible_drops_section():
 
 
 def _log_panel():
-    from bartlebot.gui.sidebar.log_panel import LogPanel
+    from bartleby.qt.sidebar.log_panel import LogPanel
 
-    return LogPanel()
+    from bartlebot.settings_manager import SettingsManager
+
+    return LogPanel(SettingsManager.instance())
 
 
 def _keep_list():

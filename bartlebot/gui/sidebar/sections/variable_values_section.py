@@ -19,7 +19,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.qt.widgets.layout.discard import discard_widget
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
@@ -33,8 +35,6 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.layout.discard import discard_widget
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, VariableModel

@@ -14,11 +14,14 @@ from pathlib import Path
 from uuid import uuid4
 
 from bartleby.qt.app.logging_setup import GUI_ONLY
+from bartleby.qt.art_signal import follow_art
+from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
+from bartleby.qt.widgets.pills.pill import NeutralPill
 from bartleby.runtime.game.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from PyQt6.QtCore import QEvent, QRectF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
@@ -85,7 +88,6 @@ from bartlebot.content.subgraphs.subgraphs import (
 from bartlebot.content.templates import setup_steps, template_diff
 from bartlebot.game import card_art, scales
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM
-from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.call_node_item import CallNodeItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import EdgeItem
@@ -116,7 +118,6 @@ from bartlebot.gui.canvas.subgraph_widgets import (
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.debug.press_trace import PressTracer
 from bartlebot.gui.debug.repaint_trace import RepaintTracer
-from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
@@ -127,7 +128,7 @@ from bartlebot.gui.widgets.pickers.tag_picker import (
     source_vocabulary,
 )
 from bartlebot.gui.widgets.pills.source_pill import source_pill
-from bartlebot.gui.widgets.pills.tag_pill import NeutralPill, TagChip, TagPill
+from bartlebot.gui.widgets.pills.tag_pill import TagChip, TagPill
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS, node_display_name
 from bartlebot.options import option_values

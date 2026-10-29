@@ -691,6 +691,16 @@ class SettingsManager:
         self.set_general("streamer_mode", bool(value))
 
     @property
+    def log_max_lines(self) -> int:
+        """How many lines the Log tab keeps (core's ``LogSettings``); older ones scroll away."""
+        return int(self.get_general("log_max_lines", default=5000))
+
+    @property
+    def clear_log_on_run(self) -> bool:
+        """Whether the Log tab is cleared as each run starts."""
+        return bool(self.get_general("clear_log_on_run", default=True))
+
+    @property
     def record_combat_decisions(self) -> bool:
         """Whether the session file gets wizsprinter's turn trace: why each turn cast what it did.
 

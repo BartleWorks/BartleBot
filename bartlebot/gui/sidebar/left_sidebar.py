@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartleby.runtime.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
@@ -41,7 +42,6 @@ from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSec
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.variable_values_section import VariableValuesSection
 from bartlebot.gui.sidebar.sections.variables_section import VariablesSection
-from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.options.bot_options import options_signature
 
 if TYPE_CHECKING:

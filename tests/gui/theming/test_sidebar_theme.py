@@ -12,11 +12,9 @@ import pytest
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QSizePolicy
 
 from bartlebot.bot.schema import BotOptionModel
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
-from bartlebot.gui.sidebar.sidebar_section import SidebarField, field_label
 
 
 @pytest.fixture
@@ -86,46 +84,6 @@ def test_the_color_token_is_resolved_at_apply_time(qapp, theme):
 # ---------------------------------------------------------------------------
 # The two factories
 # ---------------------------------------------------------------------------
-
-
-def test_field_label_returns_something_that_follows_the_theme(qapp, theme):
-    theme("light")
-    lbl = field_label("Zone")
-    light = THEME.text_muted
-
-    _switch(qapp, lbl, theme, "dark")
-
-    assert light not in lbl.styleSheet()
-    assert "font-weight: 600" in lbl.styleSheet()
-
-
-def test_field_label_still_reads_as_a_caption(qapp, theme):
-    """The colon and the fixed width are the caption, not decoration.
-
-    Every caller passes a bare word, so the colon has to come from here; and the
-    fixed horizontal policy is what holds the label column steady in a player card's
-    rows, whose value labels are added with stretch. Both were dropped when this
-    factory stopped styling a bare QLabel, and nothing asserted either.
-    """
-    theme("light")
-    lbl = field_label("Zone")
-
-    assert lbl.text() == "Zone:"
-    assert lbl.sizePolicy().horizontalPolicy() == QSizePolicy.Policy.Fixed
-    assert lbl.sizePolicy().verticalPolicy() == QSizePolicy.Policy.Preferred
-
-
-def test_a_sidebar_field_recolors_its_caption(qapp, theme):
-    """SidebarField never referenced THEME — it was stale purely through field_label."""
-    theme("light")
-    field = SidebarField("Zone", ThemedTextLabel("value"))
-    caption = field.findChild(ThemedTextLabel)
-    assert caption is not None
-    before = caption.styleSheet()
-
-    _switch_app(qapp, theme, "dark")
-
-    assert caption.styleSheet() != before
 
 
 def test_an_option_description_recolors(qapp, theme):

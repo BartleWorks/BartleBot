@@ -733,7 +733,8 @@ def _pills(panel: _BotLibraryPanel) -> list:
 
 
 def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qapp, library):
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
+
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 
     _tagged_bot(library / "31_four_dungeons", "Gold Run", "Gold")
@@ -754,7 +755,8 @@ def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qap
 
 
 def test_a_library_hidden_behind_an_open_bot_relists_when_next_shown(qapp, library):
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
+
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 
     panel = _BotLibraryPanel()

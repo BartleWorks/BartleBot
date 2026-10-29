@@ -12,7 +12,7 @@ pills beside it and quieter secondary lines below.
 
 WHAT IS HERE, AND WHAT IS IN ``CardFrame``
 
-The card *frame* is gui/widgets/cards/card_frame.py: the gutter-and-frame split, the drag
+The card *frame* is bartleby-core's bartleby/qt/widgets/cards/card_frame.py: the gutter-and-frame split, the drag
 handle, the hover state, the picked-up state, the theme pass, ``CardMode``, and the
 verbs-as-data machinery with the right-click menu built from it. Read that module for the
 click model and the reasoning behind the gutter -- it is shared with a second family of
@@ -94,6 +94,19 @@ from typing import NamedTuple
 from bartleby.qt import streamer_mode
 from bartleby.qt.theming.account_accent import account_accent, account_color_key, account_color_keys
 from bartleby.qt.theming.theme import THEME
+
+# Re-exported, not defined here. ``AddCard`` moved to ``widgets/`` when the Combat tab's
+# Duel Combat Strategies section became its second caller -- a terminator card knows
+# nothing about launching, and a sidebar should not import out of ``game_embed`` to draw
+# one. The names stay importable from here because the launch columns and their tests
+# have always spelled them this way, and the card is still what ends *these* columns.
+from bartleby.qt.widgets.cards.add_card import ADD_CARD_BORDER_WIDTH, AddCard  # noqa: F401
+
+# ``CardMode`` is imported from here by the surfaces that build these cards, since the
+# card and the mode it is built in are one import. The frame itself lives outside
+# game_embed because a second family of cards uses it -- see card_frame.py.
+from bartleby.qt.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
+from bartleby.qt.widgets.pills.pill import AccountPill, NeutralPill
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.game.game_sizing import FitProblem
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -103,19 +116,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QSizePolicy,
 )
-
-# Re-exported, not defined here. ``AddCard`` moved to ``widgets/`` when the Combat tab's
-# Duel Combat Strategies section became its second caller -- a terminator card knows
-# nothing about launching, and a sidebar should not import out of ``game_embed`` to draw
-# one. The names stay importable from here because the launch columns and their tests
-# have always spelled them this way, and the card is still what ends *these* columns.
-from bartlebot.gui.widgets.cards.add_card import ADD_CARD_BORDER_WIDTH, AddCard  # noqa: F401
-
-# ``CardMode`` is imported from here by the surfaces that build these cards, since the
-# card and the mode it is built in are one import. The frame itself lives outside
-# game_embed because a second family of cards uses it -- see card_frame.py.
-from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.pills.tag_pill import AccountPill, NeutralPill
 
 # Characters listed in full on an account card before the rest become "+N more", used
 # only when nothing has told the card how wide it is -- during construction, and in the

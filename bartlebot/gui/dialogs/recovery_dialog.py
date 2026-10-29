@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from bartleby.qt.widgets.buttons.action_button import ActionStyle
+from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -18,8 +19,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 
 
 class RecoveryDialog(QDialog):

@@ -11,6 +11,8 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from bartleby.qt.testing.drag_helpers import menu_move
+from bartleby.qt.widgets.cards.card_frame import CardMode
 from PyQt6.QtCore import QEvent, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QMessageBox
@@ -48,9 +50,7 @@ from bartlebot.gui.sidebar.setup_panel import (
     step_summary,
     target_choices,
 )
-from bartlebot.gui.widgets.cards.card_frame import CardMode
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
-from tests.drag_helpers import menu_move
 
 TEMPLATE_ID = "tpl-mob"
 _HUB = "WizardCity/WC_Hub"

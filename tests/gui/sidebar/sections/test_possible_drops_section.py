@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.qt.art_signal import announce_art_changed
+
 from bartlebot.bot.schema import DropModel
-from bartlebot.gui.art_signal import announce_art_changed
 from bartlebot.gui.sidebar.sections.possible_drops_section import _DropsListWidget
 from tests.extracted_art import write_extracted_art
 

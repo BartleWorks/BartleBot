@@ -4,7 +4,8 @@ Import all rebuilt every deck card's art strip once per slot inside one turn. Ea
 rebuild showed its tiles and the next one unparented them before that show landed, so
 Qt mapped every tile as a top-level window of its own -- a burst of empty windows in the
 corner of the screen. Invisible to a test that only inspects the finished tree, which is
-why the spy below counts ``Show`` events as they are delivered.
+why the spy below counts ``Show`` events as they are delivered. ``discard_widget`` is core's
+since Stage 6 of #167, with its own tests; this is the case that found the bug.
 """
 
 import pytest
@@ -16,7 +17,6 @@ from PyQt6.QtWidgets import QVBoxLayout, QWidget
 from bartlebot.combat.deck_content import deck_groups
 from bartlebot.gui.widgets.cards import card_art_tile
 from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.layout.discard import discard_widget
 
 
 class _WindowShowSpy(QObject):
@@ -53,29 +53,6 @@ def shown_host(qapp):
     qapp.processEvents()
     yield host
     host.close()
-
-
-def test_a_widget_shown_then_discarded_in_one_turn_never_becomes_a_window(qapp, shown_host, spy):
-    child = QWidget(shown_host)
-    shown_host.layout().addWidget(child)
-    child.show()
-
-    discard_widget(child, shown_host.layout())
-    qapp.processEvents()
-
-    assert spy.shown == []
-
-
-def test_discard_takes_the_widget_out_of_its_layout_and_parent(qapp, shown_host):
-    child = QWidget(shown_host)
-    layout = shown_host.layout()
-    layout.addWidget(child)
-
-    discard_widget(child, layout)
-
-    assert child.parent() is None
-    assert layout.indexOf(child) == -1
-    assert not child.isVisible()
 
 
 def test_rebuilding_an_art_strip_repeatedly_opens_no_window(qapp, shown_host, spy, monkeypatch):

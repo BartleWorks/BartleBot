@@ -10,13 +10,13 @@ the definition's categories instead (#172), with the same pills and the same but
 
 from __future__ import annotations
 
+from bartleby.qt.art_signal import follow_art
+from bartleby.qt.sidebar.sidebar_section import value_label
+from bartleby.qt.widgets.layout.flow_layout import flow_container
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QWidget
 
 from bartlebot.content.bot_tags import REWARDS
-from bartlebot.gui.art_signal import follow_art
-from bartlebot.gui.sidebar.sidebar_section import value_label
-from bartlebot.gui.widgets.layout.flow_layout import flow_container
 from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, TagPickerButton, TagVocabulary
 from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill, TagChip, TagPill
 

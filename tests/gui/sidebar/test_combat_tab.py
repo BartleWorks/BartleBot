@@ -19,6 +19,8 @@ import shutil
 from unittest.mock import patch
 
 import pytest
+from bartleby.qt.testing.drag_helpers import drag_card, menu_move, press_and_move, release, show
+from bartleby.qt.widgets.pills.pill import AccentPill, ActionPill, NeutralPill
 from bartleby.shared.combat_defaults import (
     PREFERENCE_KEYS,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
@@ -88,9 +90,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
     StrategyPanel,
 )
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow
-from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, NeutralPill
 from bartlebot.paths import project_root
-from tests.drag_helpers import drag_card, menu_move, press_and_move, release, show
 
 
 @pytest.fixture
@@ -3254,7 +3254,8 @@ def test_a_flagged_pill_keeps_its_click(qapp):
 
 def test_new_art_swaps_a_deck_cards_summary_for_its_strip_and_its_sentence_for_icons(qapp):
     """Art extracted while the sidebar is up (#239): the folded card shows tiles and the badge."""
-    from bartlebot.gui.art_signal import announce_art_changed  # noqa: PLC0415
+    from bartleby.qt.art_signal import announce_art_changed  # noqa: PLC0415
+
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 
     section = _PlayerDecksSection()
