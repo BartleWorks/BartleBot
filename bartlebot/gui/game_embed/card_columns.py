@@ -459,24 +459,6 @@ class CardColumn(QWidget):
         super().closeEvent(event)
 
 
-def apply_order(items: list, order: list[int]) -> list | None:
-    """*items* rearranged into *order*, or None if *order* does not describe *items*.
-
-    The inverse of what ``CardColumn.reordered`` emits, and it lives beside that signal
-    rather than beside any one of its listeners: three surfaces now take the permutation,
-    and a guard that only two of them apply is a guard.
-
-    Guarded rather than trusted, because the permutation crosses a signal from a column
-    that was built out of a list read some time earlier, and either surface — or a delete
-    the same gesture raced — can have rewritten it in between. Refusing a stale
-    permutation costs the user one drag; applying one silently reorders a list that is not
-    the one they dragged, and can drop an account off the end of it.
-    """
-    if sorted(order) != list(range(len(items))):
-        return None
-    return [items[index] for index in order]
-
-
 def refresh_column_fit(
     accounts: CardColumn,
     profiles: CardColumn,

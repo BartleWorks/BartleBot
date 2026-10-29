@@ -134,7 +134,7 @@ def test_the_permutation_reaches_reorder_clients(qapp, section):
     that reported the wrong shape would be silently dropped rather than misordering
     anything — which is exactly why this is worth asserting at the seam.
     """
-    from bartlebot.gui.game_embed.card_columns import apply_order
+    from bartleby.shared.ordering import apply_order
 
     host, clients = section()
     order: list[list] = []
