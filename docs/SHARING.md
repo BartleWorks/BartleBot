@@ -5,10 +5,10 @@ strategy or a deck to someone else as **one file that carries its own dependenci
 Stage 4 of epic #173 (#170) built the format and Export; Stage 5 (#171) built Import.
 The plan, with the reasoning behind every rule here, is linked from `docs/EPICS.md`, *Official and shared content*.
 
-Code: `bartlebot/shared/share_file.py` (the vendor's format, and the three kinds
+Code: core's `bartleby/shared/share_file.py` (the vendor's format, and the three kinds
 BartleBuddy shares), `bartlebot/content/share_export.py` (BartleBot's kinds, and following each
 kind's links), `bartlebot/gui/dialogs/export_dialog.py` (the export summary);
-`bartlebot/shared/share_match.py` (the vendor's matching rules),
+`bartleby/shared/share_match.py` (the vendor's matching rules),
 `bartlebot/content/share_import.py` (checking, matching and writing),
 `bartlebot/gui/dialogs/import_dialog.py` (the import summary) and `bartlebot/gui/share_drop.py`
 (dropping a file on the window).

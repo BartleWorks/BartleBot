@@ -78,28 +78,29 @@ Conventions worth knowing:
   translator description, display text. The description reads as blank in most
   records, which makes the format look like `key / blank / value` — a parser that
   *requires* it blank silently drops every documented key rather than failing. Slice
-  at a fixed stride; see `parse_lang` in `tools/dump_dialog_captions.py`.
+  at a fixed stride; see `parse_lang` in `tools/dump_world_names.py`.
 - Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
   later additions were not always translated.
 
 Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
 dependency on the game being installed at a guessable path. Extract what you need
-into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
-`bartlebot/game/data/name_tables.json`, and regenerate it when the game adds entries.
+into a checked-in snapshot instead, as `tools/dump_world_names.py` does for
+`bartlebot/game/data/world_names.json`, and regenerate it when the game adds entries.
 
 The snapshots, all in `bartlebot/game/data/`, and their tools:
 
 | snapshot | tool | regenerate when |
 |---|---|---|
-| `data/name_tables.json` | `dump_name_tables.py` | the game adds name entries |
-| `data/dialog_captions.json` | `dump_dialog_captions.py` | a modal is reworded, or a key is added to `KNOWN_KEYS` |
 | `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
 | `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
-| `data/realm_names.json` | `dump_realm_names.py` | a realm is added, retired or renamed; also carries the localized Yes/No the Remember Realm option shows |
 | `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
 | `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
 | `data/badge_categories.json` | `dump_badge_categories.py` | a badge category is added, reordered or renamed; the bot library's folders follow its order |
 | `data/entity_names.json` | `dump_entity_names.py` | an NPC, mob or world object is added or renamed |
+
+Three more are bartleby-core's, in `bartleby/runtime/game/data/`, with their tools in core's
+`tools/`: `name_tables.json` (`dump_name_tables.py`), `dialog_captions.json`
+(`dump_dialog_captions.py`) and `realm_names.json` (`dump_realm_names.py`).
 | `data/reagent_nodes.json` | `dump_reagent_nodes.py` | a reagent node is added or renamed; `entity_names.json` cannot hold them, having no display name to join on |
 
 `entity_names.json` is the one snapshot taken to *avoid* a library call rather than to

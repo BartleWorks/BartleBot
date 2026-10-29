@@ -138,7 +138,7 @@ grayed on the Options tab instead (`bartleby-core/docs/PLAYER_REALMS.md`).
 ### The game folder
 
 wizwalker's `get_wiz_install()` looks only where the KingsIsle launcher installs, so a
-Steam install was never found. `bartlebot/shared/game_install.py` looks further, and
+Steam install was never found. Core's `bartleby/shared/game_install.py` looks further, and
 `find_install` takes the first of these that holds `Bin/WizardGraphicalClient.exe`:
 
 1. **The folder chosen**, `game.install_dir` in `preferences.json`, written by this page

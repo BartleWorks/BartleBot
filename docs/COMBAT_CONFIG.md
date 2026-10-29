@@ -74,7 +74,7 @@ Its own strategies have ids like any other entry, and are linked with the existi
 | duel strategies, player strategies, deck presets | the install directory with the newest shared Official set (`shared.official_set`) | `%APPDATA%/Bartleby`, via `shared.vendor.vendor_dir` |
 | Bot Combat Strategies | `project_root()`, the install directory | `%APPDATA%/Bartleby/BartleBot`, via `shared.vendor.product_dir` |
 
-**The first three are one library for every product by the vendor** (#168): BartleBuddy reads and writes the same `%APPDATA%/Bartleby/strategies/`, beside `accounts.json`. Their models and their store live in `bartlebot/shared/` (`strategy_models`, `strategy_library`), which imports nothing from `bartlebot` outside itself, and `strategy_store` is BartleBot's facade over them. Bot Combat Strategies stay BartleBot's own, since only BartleBot has bots. `store_roots.resolve_shared_roots` gives the library's pair; in developer mode both are the repo, whatever else is installed.
+**The first three are one library for every product by the vendor** (#168): BartleBuddy reads and writes the same `%APPDATA%/Bartleby/strategies/`, beside `accounts.json`. Their models and their store are bartleby-core's (`bartleby.shared.strategy_models`, `bartleby.shared.strategy_library`), which import no product, and `strategy_store` is BartleBot's facade over them. Bot Combat Strategies stay BartleBot's own, since only BartleBot has bots. `store_roots.resolve_shared_roots` gives the library's pair; in developer mode both are the repo, whatever else is installed.
 
 **Which shipped copy.** Each product ships the shared Official set in its own install directory, pinned from one source. With two installed, `official_set.shipped_root` reads both products' install keys under `HKCU\Software\Bartleby\<product>` (`shared.install_key`, written by the install hook; `docs/INSTALLER.md`), reads each set's version from the `strategies/official_set.json` in that product's install directory, and uses the higher version, whole, never mixing items from two sets; on a tie, or once the other product is uninstalled, our own. A key whose directory is gone is skipped. The version lives only in that file, beside the set it describes, and is raised whenever a shared Official item changes. The registry is read through `InstallRegistry`, and the suite swaps in an empty one.
 
@@ -184,7 +184,7 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 Six Official items are what a fight with nothing tailored runs, and a seventh, Default
 Guardian Support, ships beside them for a user to pick. They are ordinary files
 under `strategies/`, found by id, and their ids are named in
-`bartlebot/shared/combat_defaults.py`, which imports nothing from the rest of `bartlebot`.
+core's `bartleby/shared/combat_defaults.py`, which imports no product.
 
 | item | kind | what it does |
 |---|---|---|
@@ -536,7 +536,7 @@ team takes on bosses.
 
 Every answer sets `setup.combat_defaults_answered` in `preferences.json`, so whichever
 product asks first, the other doesn't ask again. The logic is
-`bartlebot/shared/first_run.py`, which has no Qt, so BartleBuddy writes the same keys.
+core's `bartleby/shared/first_run.py`, which has no Qt, so BartleBuddy writes the same keys.
 Four rules:
 
 - **"Solo or team?" is never asked.** Both defaults exist, and the clients connected

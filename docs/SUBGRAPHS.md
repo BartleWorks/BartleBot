@@ -207,7 +207,7 @@ unopenable.
 
 An override hides every later change to the Official definition under it, so the save
 that first makes one records `official_sha256`, the content hash of the Official
-definition it was made from (`bartlebot/shared/content_hash.py`, #169), and every later
+definition it was made from (core's `bartleby/shared/content_hash.py`, #169), and every later
 save keeps it. When the Official one stops hashing to it, after an app update,
 `SubgraphLibrary.official_updated()` says so, and the pill reads **Official (modified) ·
 Official updated** on the Subgraphs folder card, which puts a *Revert…* button beside it,
