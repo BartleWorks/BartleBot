@@ -277,7 +277,7 @@ https://claude.ai/artifact/3K34iJqy6UV73EKuadNuky
 | stage | issue | what | status |
 |---|---|---|---|
 | 1 | #288 | merge `walk-planner` into `master`, with r811339's game data held back until Ahmarra goes live | landed |
-| 2 | #289 | family knowledge: core's CLAUDE.md tree and docs, the user-level preferences and skills, the guards as core functions, render sheets | |
+| 2 | #289 | family knowledge: core's CLAUDE.md tree and docs, the user-level preferences and skills, the guards as core functions, render sheets | landed |
 | 3 | #290 | BartleBot onto core as it stands: core public on GitHub, the import codemod, BartleBot's copies deleted, the pin | |
 | 4 | #291 | the threading probe: one qasync loop, or the runtime on its own thread | |
 | 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state | |
