@@ -4,16 +4,17 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.paths import DECLINE_QUEST_PATH
 
 import bartlebot.nodes.interaction.interact as ix
 import bartlebot.nodes.node_helpers as _nh
-from bartlebot.nodes.paths import DECLINE_QUEST_PATH
 from tests.conftest import FakeClient, FakeMachine, prompt_at, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper, set_helper
 
 
 @pytest.fixture(autouse=True)
 def _no_page_settle(monkeypatch):
-    monkeypatch.setattr(_nh, "DIALOG_PAGE_SETTLE", 0.0)
+    set_helper(monkeypatch, "DIALOG_PAGE_SETTLE", 0.0)
 
 
 @pytest.fixture(autouse=True)
@@ -59,7 +60,7 @@ async def test_success_no_dialog():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -85,9 +86,9 @@ async def test_success_with_dialog():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
-        patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -115,9 +116,9 @@ async def test_success_multiple_clients():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
-        patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
     ):
         result = await ix.run(FakeMachine(), clients, {**_PARAMS, "interact_clients": [1, 2]})
 
@@ -164,7 +165,7 @@ async def test_prompt_retry_then_success():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -180,8 +181,8 @@ async def test_dialog_timeout_fails():
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(ix, "DIALOG_TIMEOUT", 0.01),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(AsyncMock(return_value=True))),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(AsyncMock(return_value=True))),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -231,7 +232,7 @@ async def test_stale_prompt_cleared_before_interaction():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -262,7 +263,7 @@ async def test_interact_clients_subset():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
     ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
@@ -282,7 +283,7 @@ async def test_out_of_range_client_numbers_skipped():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
     ):
         result = await ix.run(FakeMachine(), [client], params)
 
@@ -330,8 +331,8 @@ async def test_has_dialogue_true_explicit_behaves_as_default():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", vis_mock),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", vis_mock),
     ):
         result = await ix.run(FakeMachine(), [client], params)
 
@@ -377,7 +378,7 @@ async def test_sequential_each_client_interacts_alone():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(_nh, "OBJECT_USE_DELAY", 0),
     ):
         result = await ix.run(FakeMachine(), clients, params)
@@ -416,10 +417,10 @@ async def test_sequential_advances_dialogue_per_client():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
-        patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("DIALOG_FAST_POLL_INTERVAL", 0),
         patch.object(_nh, "OBJECT_USE_DELAY", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_visible)),
     ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
@@ -438,7 +439,7 @@ async def test_sequential_prompt_never_appears_fails():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(_nh, "OBJECT_USE_DELAY", 0),
     ):
         result = await ix.run(machine, [good, bad], params)
@@ -454,7 +455,7 @@ async def test_sequential_respects_interact_clients_subset():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch_helper("POLL_INTERVAL", 0),
         patch.object(_nh, "OBJECT_USE_DELAY", 0),
     ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
@@ -493,8 +494,8 @@ async def test_late_dialog_caught_within_safety_window():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_late_visible)),
+        patch_helper("POLL_INTERVAL", 0),
+        patch_helper("is_visible_by_path", side_effect=_no_offer(_late_visible)),
     ):
         result = await ix.run(machine, [client], _PARAMS)
 
@@ -514,7 +515,7 @@ def _capture_quiet(monkeypatch) -> list[tuple[float, float]]:
         seen.append((safety_delay, first_wait))
         return True
 
-    monkeypatch.setattr(_nh, "advance_dialogue_until_clear", _fake)
+    set_helper(monkeypatch, "advance_dialogue_until_clear", _fake)
     return seen
 
 
@@ -524,7 +525,7 @@ async def test_animation_delay_is_added_to_the_wait_for_the_first_window_only(mo
     seen = _capture_quiet(monkeypatch)
     client = _ready_client()
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(_nh, "POLL_INTERVAL", 0):
+    with patch.object(ix, "POLL_INTERVAL", 0), patch_helper("POLL_INTERVAL", 0):
         result = await ix.run(
             FakeMachine(options={"Safety Delay": 3.0}),
             [client],
@@ -540,7 +541,7 @@ async def test_no_animation_delay_leaves_the_quiet_period_at_the_safety_delay(mo
     seen = _capture_quiet(monkeypatch)
     client = _ready_client()
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(_nh, "POLL_INTERVAL", 0):
+    with patch.object(ix, "POLL_INTERVAL", 0), patch_helper("POLL_INTERVAL", 0):
         result = await ix.run(FakeMachine(options={"Safety Delay": 3.0}), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -572,7 +573,7 @@ async def test_animation_delay_costs_nothing_when_the_interaction_is_silent(monk
     seen = _capture_quiet(monkeypatch)
     client = _ready_client()
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(_nh, "POLL_INTERVAL", 0):
+    with patch.object(ix, "POLL_INTERVAL", 0), patch_helper("POLL_INTERVAL", 0):
         result = await ix.run(
             FakeMachine(options={"Safety Delay": 3.0}),
             [client],

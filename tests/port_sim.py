@@ -8,10 +8,10 @@ instead and applies a port to it: a test says what kind of port happens, not wha
 
 from unittest.mock import AsyncMock
 
+from bartleby.runtime.clients.sightings import SIGHT_RANGE
+from bartleby.runtime.game import wizard_names
 from wizwalker import XYZ
 
-from bartlebot.clients.sightings import SIGHT_RANGE
-from bartlebot.game import wizard_names
 from tests.conftest import FakeClient, FakeGidEntity
 
 LOAD_READS = 2

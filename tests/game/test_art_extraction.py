@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.shared.game_install import set_install_dir
+from bartleby.shared.preferences import PreferenceStore
 from PIL import Image
 
 from bartlebot.game import art_extraction, card_art
@@ -28,8 +30,6 @@ from bartlebot.game.art_extraction import (
 )
 from bartlebot.game.card_art import INDEX_FILENAME
 from bartlebot.paths import project_root
-from bartlebot.shared.game_install import set_install_dir
-from bartlebot.shared.preferences import PreferenceStore
 from tests.art_fixture import ICON_KEYS, SPELLS, game_install
 from tools import extract_card_art
 

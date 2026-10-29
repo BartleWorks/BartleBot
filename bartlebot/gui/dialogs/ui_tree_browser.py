@@ -28,6 +28,9 @@ import asyncio
 import logging
 
 import pyperclip
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QPainter, QPalette, QPen, QWindow
 from PyQt6.QtWidgets import (
@@ -43,10 +46,7 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.nodes.node_helpers import strip_html
 
 logger = logging.getLogger(__name__)
@@ -242,7 +242,7 @@ class _StateColorDelegate(QStyledItemDelegate):
         notable = _NOTABLE_STATE.get(index.column())
         if notable is None:
             return
-        from bartlebot.gui.theming.theme import THEME
+        from bartleby.qt.theming.theme import THEME
 
         notable_value, notable_token = notable
         value = index.data(_STATE_ROLE)
@@ -269,7 +269,7 @@ class _RectOverlay(QWidget):
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        from bartlebot.gui.theming.theme import THEME
+        from bartleby.qt.theming.theme import THEME
 
         pen = QPen(THEME.qcolor("error"), 3)
         painter.setPen(pen)

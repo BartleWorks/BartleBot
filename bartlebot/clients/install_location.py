@@ -14,9 +14,7 @@ from __future__ import annotations
 
 import logging
 
-from wizwalker.utils import override_wiz_install_location
-
-from bartlebot.shared.game_install import (
+from bartleby.shared.game_install import (
     SOURCE_NAMES,
     FoundInstall,
     InstallPlaces,
@@ -24,7 +22,8 @@ from bartlebot.shared.game_install import (
     find_install,
     set_install_dir,
 )
-from bartlebot.shared.preferences import PreferenceStore
+from bartleby.shared.preferences import PreferenceStore
+from wizwalker.utils import override_wiz_install_location
 
 logger = logging.getLogger(__name__)
 

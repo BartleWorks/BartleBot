@@ -7,12 +7,12 @@ That distinction is the thing worth pinning, along with the scroll position it h
 to preserve to be usable while reading.
 """
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEvent
 
-import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog, _DetailPanel
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
 
 

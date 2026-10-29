@@ -22,6 +22,7 @@ import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.qt.theming.account_accent import account_accent, account_color_keys
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtTest import QTest
@@ -30,7 +31,6 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget
 from bartlebot.gui.game_embed.card_columns import CARD_SETTLE_MS
 from bartlebot.gui.sidebar.player_card import PLACEHOLDER, XYZ_PLACEHOLDER, CopyValue, PlayerCard
 from bartlebot.gui.sidebar.sections.client_section import ClientSection
-from bartlebot.gui.theming.account_accent import account_accent, account_color_keys
 from bartlebot.settings_manager import SettingsManager
 
 ACCOUNTS = [
@@ -601,7 +601,7 @@ def test_the_players_tab_has_exactly_one_scroll_area(qapp):
 
 def test_the_column_draws_no_heading_of_its_own(qapp, section):
     """The tab label already says "Players"; a bold heading under it says the word twice."""
-    from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
+    from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 
     host, clients = section(active=1)
 

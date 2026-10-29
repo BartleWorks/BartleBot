@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 from typing import TYPE_CHECKING
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -19,7 +20,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.nodes.utility import quicksell
 from bartlebot.options import bot_options

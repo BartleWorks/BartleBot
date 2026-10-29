@@ -86,12 +86,7 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=5,
 )
 
-from bartlebot.nodes.timing import (
-    ENTER_COMBAT_TIMEOUT,
-    TARGET_ACQUIRE_DELAY,
-    TARGET_ACQUIRE_RETRIES,
-    jitter,
-)
+from bartleby.runtime.timing import ENTER_COMBAT_TIMEOUT, TARGET_ACQUIRE_DELAY, TARGET_ACQUIRE_RETRIES, jitter
 
 
 async def run(machine, clients: list, params: dict) -> str:

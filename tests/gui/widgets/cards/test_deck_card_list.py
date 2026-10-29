@@ -12,12 +12,12 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtGui import QColor, QPixmap
 
 from bartlebot.game import card_art
 from bartlebot.gui.widgets.cards.card_art_tile import CardArtTile
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
-from bartlebot.shared.strategy_models import DeckData
 
 
 @pytest.fixture

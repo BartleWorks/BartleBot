@@ -3,19 +3,14 @@
 import asyncio
 import logging
 
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game.key_bindings import GameAction
+from bartleby.runtime.paths import POTION_BUY_PATH, POTION_EXIT_PATH, POTION_FILL_ALL_PATH, POTION_SHOP_BASE_PATH
 from wizwalker import XYZ
 
-from bartlebot.clients import game_keys
-from bartlebot.game.key_bindings import GameAction
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import (
-    POTION_BUY_PATH,
-    POTION_EXIT_PATH,
-    POTION_FILL_ALL_PATH,
-    POTION_SHOP_BASE_PATH,
-)
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.wizard_city import (
     COMMONS_ZONE,
@@ -43,7 +38,7 @@ _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
 OPTION_REFILL = "Refill Potions"
 
 # ── Timing constants ───────────────────────────────────────────────────────────
-from bartlebot.nodes.timing import (
+from bartleby.runtime.timing import (
     MAX_RETRIES,
     POLL_INTERVAL,
     SHOP_CLICK_DELAY,

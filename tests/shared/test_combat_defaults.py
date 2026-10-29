@@ -11,10 +11,8 @@ import json
 from pathlib import Path
 
 import pytest
-
-from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.shared import combat_defaults
-from bartlebot.shared.combat_defaults import (
+from bartleby.shared import combat_defaults
+from bartleby.shared.combat_defaults import (
     LAST_RESORT_DSL,
     PREFERENCE_KEYS,
     SHIPPED_DEFAULT_PLAYER_ID,
@@ -32,9 +30,11 @@ from bartlebot.shared.combat_defaults import (
     set_default_choice,
     team_size,
 )
-from bartlebot.shared.official_set import set_version
-from bartlebot.shared.store_files import index_dir, slugify
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
+from bartleby.shared.official_set import set_version
+from bartleby.shared.store_files import index_dir, slugify
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
+
+from bartlebot.nodes.combat_runner import validate_dsl
 
 STRATEGIES = Path(__file__).resolve().parents[2] / "strategies"
 DUELS = STRATEGIES / "duel"
@@ -327,7 +327,7 @@ def _library(*duels: DuelCombatStrategy):
 
 
 def _prefs(tmp_path: Path):
-    from bartlebot.shared.preferences import PreferenceStore  # noqa: PLC0415
+    from bartleby.shared.preferences import PreferenceStore  # noqa: PLC0415
 
     return PreferenceStore(tmp_path)
 
@@ -463,7 +463,7 @@ def _deck_files() -> list[Path]:
 
 @pytest.mark.parametrize("path", _deck_files(), ids=lambda p: p.name)
 def test_every_shipped_deck_is_named_a_deck_and_says_what_it_is_for(path: Path):
-    from bartlebot.shared.strategy_models import DeckPreset  # noqa: PLC0415
+    from bartleby.shared.strategy_models import DeckPreset  # noqa: PLC0415
 
     deck = DeckPreset.load(path)
 

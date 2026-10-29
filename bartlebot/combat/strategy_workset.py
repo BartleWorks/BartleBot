@@ -63,7 +63,7 @@ ANOTHER PROGRAM CAN CHANGE A FILE WHILE THE DIALOG IS OPEN
 ---------------------------------------------------------
 
 The three kinds here are the shared library, which BartleBuddy reads and writes too
-(:mod:`bartlebot.shared.strategy_library`). Each entry is held with the fingerprint it
+(:mod:`bartleby.shared.strategy_library`). Each entry is held with the fingerprint it
 was loaded with, and :meth:`StrategyWorkingSet.commit` passes it to every write, so a
 file another program changed since is never overwritten. Commit records it as a
 :class:`Conflict` instead and leaves the entry dirty; the dialog then offers to
@@ -80,6 +80,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
+
+from bartleby.shared.content_hash import content_sha256, official_updated
+from bartleby.shared.strategy_library import is_newer_format
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 from bartlebot.combat.bot_combat_strategy import StrategyLookup, own_players_of
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
@@ -104,9 +108,6 @@ from bartlebot.combat.strategy_store import (
     unique_name,
 )
 from bartlebot.combat.strategy_summary import name_list
-from bartlebot.shared.content_hash import content_sha256, official_updated
-from bartlebot.shared.strategy_library import is_newer_format
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
 

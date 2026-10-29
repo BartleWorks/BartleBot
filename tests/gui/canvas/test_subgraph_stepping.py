@@ -14,6 +14,7 @@ controller harness from ``test_subgraph_integration``; nothing here is a real ch
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QMessageBox
@@ -25,7 +26,6 @@ from bartlebot.content.subgraphs.subgraphs import compose_bot, definition_to_con
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.canvas.call_node_item import CallNodeItem
 from bartlebot.gui.canvas.subgraph_widgets import CrumbMode
-from bartlebot.gui.theming.theme import THEME
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 from tests.content.subgraphs.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
 

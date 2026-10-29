@@ -6,8 +6,9 @@ import sys
 import tomllib
 from pathlib import Path
 
+from bartleby.shared.vendor import PRODUCT, VENDOR
+
 from bartlebot.paths import project_root
-from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 sys.path.insert(0, str(project_root()))
 

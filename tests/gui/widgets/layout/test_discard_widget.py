@@ -8,6 +8,7 @@ why the spy below counts ``Show`` events as they are delivered.
 """
 
 import pytest
+from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtCore import QEvent, QObject, Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
@@ -16,7 +17,6 @@ from bartlebot.combat.deck_content import deck_groups
 from bartlebot.gui.widgets.cards import card_art_tile
 from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.layout.discard import discard_widget
-from bartlebot.shared.strategy_models import DeckData
 
 
 class _WindowShowSpy(QObject):

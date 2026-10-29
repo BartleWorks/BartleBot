@@ -3,14 +3,14 @@
 import itertools
 from unittest.mock import AsyncMock, patch
 
+from bartleby.runtime.game import dialog_captions
+from bartleby.runtime.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT, RECALL_BUTTON_PATH
 from wizwalker import XYZ
 
-import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.mark_location as ml
 import bartlebot.nodes.teleportation.teleport_to_marked_location as rtm
-from bartlebot.game import dialog_captions
-from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT, RECALL_BUTTON_PATH
 from tests.conftest import FakeClient, FakeMachine, message_box_patches, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
 _PARAMS = {
@@ -19,7 +19,7 @@ _PARAMS = {
 }
 
 # Patch is_enabled_by_path so the RecallButton is enabled (mark is set) by default.
-_RECALL_ENABLED = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+_RECALL_ENABLED = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True))
 
 
 def _ready_client() -> FakeClient:
@@ -72,7 +72,7 @@ async def test_one_client_no_mana_fails():
 async def test_no_mark_set_returns_failure():
     """FAILURE when RecallButton never becomes enabled (no mark set)."""
     client = FakeClient()
-    no_mark = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+    no_mark = patch_helper("is_enabled_by_path", new=AsyncMock(return_value=False))
 
     with (
         no_mark,
@@ -274,7 +274,7 @@ async def test_expired_dungeon_recall_is_named_rather_than_timing_out():
     with (
         _RECALL_ENABLED,
         patch.object(rtm, "POLL_INTERVAL", 0),
-        patch.object(nh, "identify_modal", new=AsyncMock(return_value=dialog_captions.RECALL_DUNGEON_EXPIRED)),
+        patch_helper("identify_modal", new=AsyncMock(return_value=dialog_captions.RECALL_DUNGEON_EXPIRED)),
         patches[0],
         patches[1],
     ):

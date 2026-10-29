@@ -19,10 +19,9 @@ is the same weight in both themes and matches every card border on the same scre
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QWidget
-
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
 
 #: Gap between the label and the start of the rule, and how far the rule sits below the
 #: label's baseline. Small: the rule belongs to the heading rather than dividing it from

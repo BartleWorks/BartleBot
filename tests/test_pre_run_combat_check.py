@@ -14,6 +14,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from bartleby.shared.combat_defaults import PREFERENCE_KEYS, TeamSize
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -23,9 +26,6 @@ from bartlebot.combat.combat_resolution import CombatResolver
 from bartlebot.combat.combat_warnings import check_combat
 from bartlebot.gui.dialogs import combat_faults_dialog
 from bartlebot.paths import project_root
-from bartlebot.shared.combat_defaults import PREFERENCE_KEYS, TeamSize
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 _VALID = "any<damage>[any<mod_damage>] @ enemy"
 

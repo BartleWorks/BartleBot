@@ -13,8 +13,7 @@ import asyncio
 from unittest.mock import MagicMock
 
 import pytest
-
-from bartlebot.shared.strategy_models import DeckData
+from bartleby.shared.strategy_models import DeckData
 
 
 class PreRunDeckHarness:

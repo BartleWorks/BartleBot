@@ -40,6 +40,9 @@ the write happens is the dialog's Save button's business. See
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.labels.elided_label import apply_muted_color
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import (
     QLabel,
@@ -52,12 +55,9 @@ from bartlebot.combat.strategy_summary import slot_order_warning
 from bartlebot.gui.combat_strategies.assignment_card import AssignmentCard
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.widgets.cards.add_card import AddCard
-from bartlebot.gui.widgets.labels.elided_label import apply_muted_color
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.layout.drag_reorder import DragReorder
-from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 
 #: The two section headings, and what the Add card at the foot of the second one reads.
 #: "Player Strategies" rather than "Player assignments": an assignment *is* the pairing

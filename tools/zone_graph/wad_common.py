@@ -31,7 +31,7 @@ from bartlebot.game.art_extraction import TYPE_DUMP_DIR, newest_type_dump  # noq
 # The newest dump, from game/data/ where the app ships it or tools/ where older ones stay.
 DEFAULT_TYPES = newest_type_dump(TYPE_DUMP_DIR, TOOLS_DIR)
 
-from dump_dialog_captions import parse_lang  # noqa: E402, F401  (re-exported for the tools)
+from dump_world_names import parse_lang  # noqa: E402, F401  (re-exported for the tools)
 
 
 def root_wad(game_data: Path = GAME_DATA) -> Archive:

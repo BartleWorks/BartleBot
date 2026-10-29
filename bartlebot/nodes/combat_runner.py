@@ -13,9 +13,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import TYPE_CHECKING, NamedTuple
 
-from bartlebot.bot import run_trace
-from bartlebot.game import drop_detection
-from bartlebot.nodes.timing import (
+from bartleby.runtime import run_trace
+from bartleby.runtime.timing import (
     COMBAT_DROP_MESSAGE_POLL,
     COMBAT_DROP_MESSAGE_TIMEOUT,
     COMBAT_TP_RETRY_INTERVAL,
@@ -27,7 +26,9 @@ from bartlebot.nodes.timing import (
     ROUND_REPORT_READS,
     ROUND_REPORT_RETRY_INTERVAL,
 )
-from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
+from bartleby.shared.combat_defaults import LAST_RESORT_DSL
+
+from bartlebot.game import drop_detection
 
 if TYPE_CHECKING:
     from bartlebot.combat.combat_resolution import Level
@@ -753,8 +754,9 @@ async def _carries_damage_over_time(participants: list) -> bool:
 
 async def _flee(combat, watch: FightWatch) -> None:
     """Click Flee and confirm it. A miss is logged, and retried at the next planning phase."""
+    from bartleby.runtime.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH  # noqa: PLC0415
+
     from bartlebot.nodes import node_helpers  # noqa: PLC0415
-    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH, FLEE_CONFIRM_WINDOW_PATH  # noqa: PLC0415
 
     client = combat.client
     number = watch.number(client)

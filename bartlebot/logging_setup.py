@@ -62,9 +62,10 @@ _GUI_FORMAT = "[%(asctime)s] [%(levelname)-7s] %(name)s: %(message)s"
 
 
 class ShortNameFormatter(logging.Formatter):
-    """Formatter that drops the ``bartlebot.`` prefix from logger names.
+    """Formatter that drops the ``bartlebot.`` and ``bartleby.`` prefixes from logger names.
 
-    Every line in a session log is from this application, so the prefix is eleven
+    Every line in a session log is from this application or the library it is built on
+    (bartleby-core, whose lines read ``runtime.clients.group_manager``), so the prefix is
     characters of nothing on every one of them. What is left is what distinguishes
     the lines — ``node.quicksell``, ``bot.machine``, ``gui.canvas.bot_canvas`` —
     and third-party loggers keep their full names, which is how you can still tell
@@ -74,7 +75,7 @@ class ShortNameFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         # Restored afterwards: the same record is handed to every other handler.
         original = record.name
-        record.name = original.removeprefix("bartlebot.")
+        record.name = original.removeprefix("bartlebot.").removeprefix("bartleby.")
         try:
             return super().format(record)
         finally:

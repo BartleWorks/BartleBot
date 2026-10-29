@@ -39,7 +39,7 @@ On a first run the walk is the pages unanswered when the dialog opened; a page a
 the way stays in it, so Back still reaches it. A rerun walks every page that applies, each
 on the current value.
 
-What each answer stores lives in a Qt-free module, as :mod:`bartlebot.shared.first_run`
+What each answer stores lives in a Qt-free module, as :mod:`bartleby.shared.first_run`
 does for the combat page, so BartleBuddy asks the same question and writes the same keys.
 """
 
@@ -50,6 +50,33 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
+from bartleby.shared.account_setup import accounts_answered, has_team, record_accounts_answered
+from bartleby.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
+from bartleby.shared.game_install import (
+    SOURCE_NAMES,
+    InstallSource,
+    find_install,
+    is_install,
+    running_install,
+    set_install_dir,
+)
+from bartleby.shared.launch_profiles import (
+    EVERYONE,
+    add_profile,
+    build_profile,
+    free_name,
+    launch_profile_answered,
+    matching_profile,
+    profile_names,
+    record_launch_profile_answered,
+)
+from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
@@ -64,8 +91,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.clients import character_roster
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.clients.install_location import apply_install
 from bartlebot.game import card_art
 from bartlebot.gui import screen_fit
@@ -79,11 +104,8 @@ from bartlebot.gui.settings.profile_editor import mark_unfittable_resolutions
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
 from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
 from bartlebot.gui.settings.rows import SettingsForm
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.inputs.game_folder_input import GameFolderInput, folder_status
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.options.custom_setup import (
     art_answered,
@@ -94,28 +116,7 @@ from bartlebot.options.custom_setup import (
 )
 from bartlebot.options.quicksell_setup import quicksell_answered, record_quicksell
 from bartlebot.options.realm_delay_setup import realm_delay_answered, record_realm_delay, setup_realm
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
-from bartlebot.shared.account_setup import accounts_answered, has_team, record_accounts_answered
-from bartlebot.shared.first_run import RECOMMENDED, BossTactic, combat_question_answered, current_tactic, record_answer
-from bartlebot.shared.game_install import (
-    SOURCE_NAMES,
-    InstallSource,
-    find_install,
-    is_install,
-    running_install,
-    set_install_dir,
-)
-from bartlebot.shared.launch_profiles import (
-    EVERYONE,
-    add_profile,
-    build_profile,
-    free_name,
-    launch_profile_answered,
-    matching_profile,
-    profile_names,
-    record_launch_profile_answered,
-)
-from bartlebot.shared.preferences import PreferenceStore
+from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
 

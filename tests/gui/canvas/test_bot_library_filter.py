@@ -7,15 +7,15 @@ only that is tested here — same convention as tests/test_bot_canvas_paths.py.
 import json
 from pathlib import Path
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import QEvent, QPointF, Qt
 from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QLabel
 
-import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, _read_bot_meta, filter_bot_metas
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.pickers.tag_picker import group_accent
 
 

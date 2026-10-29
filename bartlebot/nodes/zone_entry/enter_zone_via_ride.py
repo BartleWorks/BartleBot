@@ -33,12 +33,9 @@ import asyncio
 import logging
 import math
 
-from wizwalker import XYZ
-
-from bartlebot.clients import game_keys
-from bartlebot.game.key_bindings import GameAction
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.timing import (
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game.key_bindings import GameAction
+from bartleby.runtime.timing import (
     LOADING_SCREEN_TIMEOUT,
     MAX_RETRIES,
     POLL_INTERVAL,
@@ -46,6 +43,9 @@ from bartlebot.nodes.timing import (
     TRIGGER_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
 )
+from wizwalker import XYZ
+
+from bartlebot.nodes import node_helpers
 
 BOARD_OBJECT = "object"
 BOARD_WALK = "walk"

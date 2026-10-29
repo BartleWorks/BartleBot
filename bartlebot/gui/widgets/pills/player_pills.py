@@ -19,7 +19,7 @@ WHY THE PILL STILL READS "P1"
 
 The color is the account's; the *text* is not. A ``DuelConfig`` stores player slots,
 not accounts — it is authored offline, shared between bots, and outlives whichever
-account happens to be in slot 1 tonight. A pill reading ``Malvin`` would be a claim the
+account happens to be in slot 1 tonight. A pill reading ``Farmer`` would be a claim the
 stored data does not make, and the same card would read differently depending on whether
 anything was hooked when it was opened.
 
@@ -34,15 +34,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from bartleby.qt.theming.account_accent import account_accent, account_tint
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from bartlebot.gui.art_signal import follow_art
-from bartlebot.gui.theming.account_accent import account_accent, account_tint
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
 from bartlebot.gui.widgets.cards.duel_slot_gem import GEM_PX, DuelSlotGem
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.pills.tag_pill import pill_height
 
 #: The pill's metrics. Deliberately ``AccountPill``'s, so a slot pill and an account pill

@@ -35,13 +35,13 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QRect, QRectF, QSize, Qt
 from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 from bartlebot.combat.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.game import card_art
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.layout.flow_layout import FlowLayout
 

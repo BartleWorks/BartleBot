@@ -17,16 +17,16 @@ import random
 from pathlib import Path
 
 import pytest
+from bartleby.shared.combat_defaults import (
+    SHIPPED_DEFAULT_PLAYER_ID,
+    SHIPPED_DEFAULT_SUPPORT_ID,
+    SHIPPED_TEAM_HITTER_ID,
+)
 from lark import Lark
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import TreeToConfig, get_sprinty_grammar
 from wizwalker.extensions.wizsprinter.sprinty_combat import is_enchant_only
 
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.shared.combat_defaults import (
-    SHIPPED_DEFAULT_PLAYER_ID,
-    SHIPPED_DEFAULT_SUPPORT_ID,
-    SHIPPED_TEAM_HITTER_ID,
-)
 from tests.strategies.fight import (
     AMPLIFY,
     ATTENUATE,

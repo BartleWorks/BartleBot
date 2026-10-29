@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 
+from bartleby.shared.vendor import product_dir
+
 from bartlebot.combat import dsl_check_cache
 from bartlebot.combat.dsl_check_cache import DslCheckCache, cache_path, shared_cache, text_key
-from bartlebot.shared.vendor import product_dir
 
 
 def test_an_answer_put_in_one_session_is_there_in_the_next(tmp_path):

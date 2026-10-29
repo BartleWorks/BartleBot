@@ -13,11 +13,8 @@ game assets, either*).
 | tool | writes |
 |---|---|
 | `dump_badge_categories.py` | `badge_categories.json` |
-| `dump_dialog_captions.py` | `dialog_captions.json` |
 | `dump_entity_names.py` | `entity_names.json` |
-| `dump_name_tables.py` | `name_tables.json` |
 | `dump_reagent_nodes.py` | `reagent_nodes.json` |
-| `dump_realm_names.py` | `realm_names.json` |
 | `dump_spell_names.py` | `spell_names.json` |
 | `dump_spell_schools.py` | `spell_schools.json` |
 | `dump_stat_caps.py` | `stat_caps.json` |

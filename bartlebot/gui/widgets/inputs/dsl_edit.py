@@ -29,12 +29,12 @@ from __future__ import annotations
 import logging
 import re
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEvent, QStringListModel, Qt, QTimer
 from PyQt6.QtGui import QKeyEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor, QTextDocument
 from PyQt6.QtWidgets import QCompleter, QPlainTextEdit, QWidget
 
 from bartlebot.combat import dsl_syntax
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.nodes.combat_runner import DslError, DslWarning
 

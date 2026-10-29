@@ -97,6 +97,7 @@ import asyncio
 import sys
 from dataclasses import dataclass
 
+from bartleby.runtime.timing import DECK_ITEM_PAGE_SETTLE, DECK_SPELL_PAGE_SETTLE
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.extensions.wizsprinter import WizSprinter
@@ -104,7 +105,6 @@ from wizwalker.memory.memory_object import DynamicMemoryObject, Primitive
 from wizwalker.memory.memory_objects.spell import DynamicGraphicalSpell
 
 from bartlebot.combat.deck_io import parse_tiered_name
-from bartlebot.nodes.timing import DECK_ITEM_PAGE_SETTLE, DECK_SPELL_PAGE_SETTLE
 
 SCAN_START = 0x240
 SCAN_END = 0x400

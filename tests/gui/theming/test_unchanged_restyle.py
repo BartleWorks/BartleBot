@@ -10,6 +10,7 @@ through it, and this checks they still do.
 from __future__ import annotations
 
 import pytest
+from bartleby.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QApplication, QWidget
 
@@ -20,7 +21,6 @@ from bartlebot.gui.combat_strategies.dialog import _KindPage
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
-from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 
 
 def _strategy_page() -> QWidget:

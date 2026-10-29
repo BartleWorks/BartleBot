@@ -52,11 +52,10 @@ import sys
 import time
 from pathlib import Path
 
+from bartleby.shared.game_install import install_of_client, process_executable
 from wizwalker import ClientHandler
 from wizwalker.errors import PatternFailed
 from wizwalker.memory.memory_object import DynamicMemoryObject, PropertyClass
-
-from bartlebot.shared.game_install import install_of_client, process_executable
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 

@@ -1,5 +1,7 @@
 """Tests for the Possible Drops edit, merge, and header helpers."""
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sections.possible_drops_section import (
     _DropEditDialog,
@@ -7,7 +9,6 @@ from bartlebot.gui.sidebar.sections.possible_drops_section import (
     edit_drop,
     merge_drops,
 )
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.nodes.utility.quicksell import DROP_CATEGORIES
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from bartleby.shared.strategy_models import DeckData, DeckPreset
 
 from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.combat.strategy_summary import summarize_deck
@@ -25,7 +26,6 @@ from bartlebot.combat.strategy_tags import (
     works_with_school,
 )
 from bartlebot.content.store_roots import SOURCE_LABELS, Origin
-from bartlebot.shared.strategy_models import DeckData, DeckPreset
 
 ANY = frozenset()
 

@@ -8,6 +8,7 @@ the answers.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEvent, QPointF
 from PyQt6.QtGui import QEnterEvent, QIcon
 from PyQt6.QtWidgets import QDialog, QLabel, QMessageBox
@@ -20,7 +21,6 @@ from bartlebot.content.templates.template_store import release, save_draft
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.dialogs import new_bot_dialog
 from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.pills.tag_pill import TagChip
 from bartlebot.settings_manager import SettingsManager
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness

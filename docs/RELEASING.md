@@ -48,7 +48,8 @@ under the project root, and no reader needs to know it is frozen. The lists are 
 
 | list | holds | why |
 |---|---|---|
-| `DATA_DIRS` | `bots/`, `templates/`, `subgraphs/`, `strategies/`, `bartlebot/game/data/`, `bartlebot/gui/icons/` | the Official content, the game snapshots and the type dump, and the icons |
+| `DATA_DIRS` | `bots/`, `templates/`, `subgraphs/`, `strategies/`, `bartlebot/game/data/` | the Official content, and BartleBot's game snapshots and the type dump |
+| `CORE_DATA_DIRS` | bartleby-core's `qt/icons/` and `runtime/game/data/`, bundled under `bartleby/` | the icons, and the snapshots core's runtime reads (dialog captions, name tables, realm names), at the paths core's modules look for them |
 | `DATA_FILES` | `bartlebot/gui/logo/bartlebot.svg` | the logo, drawn at every size from this one file |
 | `METADATA` | `bartlebot`, `PyQt6`, `qasync`, `transitions`, `wizwalker` | `importlib.metadata.version("bartlebot")` is how the app knows its version, and the session log's header names it and the four libraries' (`logging_setup.HEADER_LIBRARIES`) |
 | `WHOLE_PACKAGES` | `katsuba` | `katsuba.op` and `katsuba.wad` are submodules its native extension registers when it loads. No file names them, so an import scan leaves the package out |

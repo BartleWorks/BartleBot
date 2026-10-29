@@ -15,9 +15,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.pickers.player_picker import picker_label
 
 #: The conventional recorder red. Fixed rather than a theme token: it is a convention

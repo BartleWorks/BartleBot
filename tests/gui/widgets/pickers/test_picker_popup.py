@@ -5,13 +5,13 @@ QApplication, and is tested because the parts that break (row rebuild, live
 selection, the self-styling recursion trap) are not extractable.
 """
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEvent, QRect, QSize, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QWidget
 
-import bartlebot.gui.theming.theme as theme_mod
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.pickers.picker_popup import (
     _BOX,
     _PAD_X,

@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
@@ -24,7 +25,6 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.paths import project_root
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 _VALID_DSL = "any<blade>[sharp]@self"
 _OTHER_VALID_DSL = "any<aura & out_damage> | any<aoe>[epic]"
@@ -51,7 +51,7 @@ def _pcs(root: Path, name: str, dsl: str) -> PlayerCombatStrategy:
 
 def _user_root() -> Path:
     """A user root holding nothing: the redirected ``%APPDATA%``'s vendor folder."""
-    from bartlebot.shared.vendor import vendor_dir  # noqa: PLC0415
+    from bartleby.shared.vendor import vendor_dir  # noqa: PLC0415
 
     return vendor_dir()
 

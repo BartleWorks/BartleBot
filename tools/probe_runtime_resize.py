@@ -122,12 +122,11 @@ import time
 from pathlib import Path
 
 import numpy as np
+from bartleby.shared.game_install import install_of_client, process_executable
 from wizwalker import ClientHandler
 from wizwalker.errors import PatternFailed
 from wizwalker.memory.hooks import SimpleHook
 from wizwalker.memory.memory_reader import Primitive
-
-from bartlebot.shared.game_install import install_of_client, process_executable
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -406,9 +405,8 @@ class Host:
     """A plain Qt window to embed the game in as a child, as BartleBot's ClientTile does."""
 
     def __init__(self, hwnd: int, w: int, h: int) -> None:
+        from bartleby.qt.game_embed.win32_window import EmbeddedWindow
         from PyQt6.QtWidgets import QApplication, QWidget
-
-        from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
 
         self.app = QApplication.instance() or QApplication(sys.argv)
         self.widget = QWidget()
@@ -432,7 +430,7 @@ class Host:
 
     def reembed(self, w: int, h: int) -> None:
         """Embed again after the engine's apply put the window back on the desktop."""
-        from bartlebot.gui.game_embed.win32_window import child_style
+        from bartleby.qt.game_embed.win32_window import child_style
 
         hwnd = self.window.hwnd
         style = user32.GetWindowLongW(hwnd, GWL_STYLE) & 0xFFFFFFFF

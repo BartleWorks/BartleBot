@@ -8,6 +8,7 @@ from wizwalker import Keycode
 import bartlebot.nodes.interaction.open_skeleton_key_door as door_node
 import bartlebot.nodes.node_helpers as _nh
 from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
+from tests.node_helper_patches import patch_helper, set_helper
 
 _PARAMS = {
     "zone": "TestZone",
@@ -21,9 +22,9 @@ _DOOR = (0.0, 0.0, 0.0)
 def _fast(monkeypatch):
     """Compress the cadences; the ceilings (Safety Delay, TRIGGER_TIMEOUT) stay real."""
     monkeypatch.setattr(_nh, "PROMPT_CLEAR_SETTLE", 0.0)
-    monkeypatch.setattr(_nh, "DIALOG_PAGE_SETTLE", 0.0)
-    monkeypatch.setattr(_nh, "DIALOG_FAST_POLL_INTERVAL", 0.0)
-    monkeypatch.setattr(_nh, "POLL_INTERVAL", 0.0)
+    set_helper(monkeypatch, "DIALOG_PAGE_SETTLE", 0.0)
+    set_helper(monkeypatch, "DIALOG_FAST_POLL_INTERVAL", 0.0)
+    set_helper(monkeypatch, "POLL_INTERVAL", 0.0)
     monkeypatch.setattr(door_node, "POLL_INTERVAL", 0.0)
 
 
@@ -69,7 +70,7 @@ class _Door:
 
 
 async def _run(door: _Door, machine: FakeMachine | None = None) -> str:
-    with patch.object(_nh, "is_visible_by_path", return_value=False):
+    with patch_helper("is_visible_by_path", return_value=False):
         return await door_node.run(machine or FakeMachine(), door.clients, _PARAMS)
 
 
@@ -163,7 +164,7 @@ async def test_dialogue_the_door_opens_is_clicked_through():
         seen.append(True)
         return True
 
-    with patch.object(_nh, "is_visible_by_path", side_effect=_visible):
+    with patch_helper("is_visible_by_path", side_effect=_visible):
         result = await door_node.run(FakeMachine(), door.clients, _PARAMS)
     assert result == "SUCCESS"
     assert any(call.args[0] == Keycode.SPACEBAR for call in door.clients[0].send_key.call_args_list)

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
+
 from bartlebot.bot.schema import BotConfig, BotOptionModel, ForkedFrom, StateModel, TemplateRef
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.combat.strategy_store import list_bot_strategies, load_bot_strategy, save_bot_strategy
 from bartlebot.content import bot_fork
 from bartlebot.options import option_values
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 
 def _official(**overrides) -> BotConfig:

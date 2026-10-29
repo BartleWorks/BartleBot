@@ -4,13 +4,14 @@ import threading
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from bartleby.shared.combat_defaults import LAST_RESORT_DSL, SHIPPED_DEFAULT_SUPPORT_ID, SHIPPED_TEAM_HITTER_ID
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
+
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.nodes import combat_runner
 from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
-from bartlebot.shared.combat_defaults import LAST_RESORT_DSL, SHIPPED_DEFAULT_SUPPORT_ID, SHIPPED_TEAM_HITTER_ID
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.conftest import FakeMachine
 
 

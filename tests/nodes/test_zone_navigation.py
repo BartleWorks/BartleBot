@@ -3,9 +3,10 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.runtime.game import wizard_names
 
 from bartlebot.clients import port_map
-from bartlebot.game import wizard_names, worlds, zone_names, zone_nav
+from bartlebot.game import worlds, zone_names, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city, zone_navigation
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub

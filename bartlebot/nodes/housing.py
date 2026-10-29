@@ -6,7 +6,7 @@ node then has to wait out the ~30 s teleport cooldown before it can press HOME a
 Unequipping first makes the first press land in the dorm.
 
 Two facts from tools/probe_housing_equip.py shape everything here (see that file for the
-evidence, and bartlebot/nodes/paths.py for the paths):
+evidence, and bartleby/runtime/paths.py for the paths):
 
   * A row's own text is the castle's name, and an equipped row shows a visible `fist` icon.
     Nothing else distinguishes equipped from unequipped — Equip_Item is a bare toggle. So a
@@ -25,12 +25,9 @@ find it again — and never by remembering a row number.
 import asyncio
 import logging
 
-from wizwalker import Keycode
-
-from bartlebot.clients import game_keys
-from bartlebot.game.key_bindings import GameAction
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game.key_bindings import GameAction
+from bartleby.runtime.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     HOUSING_CASTLES_TAB_PATH,
     HOUSING_EQUIP_BUTTON_PATH,
@@ -38,13 +35,16 @@ from bartlebot.nodes.paths import (
     housing_castle_equipped_icon_path,
     housing_castle_row_path,
 )
-from bartlebot.nodes.timing import (
+from bartleby.runtime.timing import (
     HOUSING_EQUIP_TIMEOUT,
     HOUSING_OPEN_RETRIES,
     HOUSING_PAGE_MAX,
     POLL_INTERVAL,
     TRIGGER_TIMEOUT,
 )
+from wizwalker import Keycode
+
+from bartlebot.nodes import node_helpers
 
 logger = logging.getLogger(__name__)
 

@@ -13,9 +13,9 @@ import re
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGE = ROOT / "bartlebot"

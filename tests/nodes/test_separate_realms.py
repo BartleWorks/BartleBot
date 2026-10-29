@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
 from tests.conftest import FakeClient, FakeMachine, see_each_other
+from tests.node_helper_patches import patch_helper
 
 SEPARATE = {"Player Realms": "Separate"}
 
@@ -31,8 +32,8 @@ async def _recover(machine, clients, zones) -> list[tuple[list, str]]:
             nh, "find_target_in_zone", AsyncMock(return_value=nh.ZoneTarget(index=first, name=names[clients[first]]))
         ),
         patch.object(nh.wizard_names, "cached_name", side_effect=lambda c: names[c]),
-        patch.object(nh, "port_to_friend", port),
-        patch.object(nh, "none_loading", AsyncMock(return_value=True)),
+        patch_helper("port_to_friend", port),
+        patch_helper("none_loading", AsyncMock(return_value=True)),
     ):
         await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)
     return [(call.args[0], call.args[1]) for call in port.await_args_list]
@@ -81,7 +82,7 @@ async def test_a_failed_port_does_not_log_the_name_it_could_not_find():
         patch.object(
             nh, "find_target_in_zone", AsyncMock(return_value=nh.ZoneTarget(index=0, name="Luke SkullHunter"))
         ),
-        patch.object(nh, "port_to_friend", AsyncMock(side_effect=ValueError("Luke SkullHunter not found"))),
+        patch_helper("port_to_friend", AsyncMock(side_effect=ValueError("Luke SkullHunter not found"))),
     ):
         await nh._attempt_zone_recovery(machine, clients, "Dst", ["Dst", "Src"], 0)
     assert machine.logs

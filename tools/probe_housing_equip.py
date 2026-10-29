@@ -90,18 +90,18 @@ import argparse
 import asyncio
 import sys
 
-from wizwalker import Keycode
-from wizwalker.extensions.wizsprinter import WizSprinter
-
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.paths import (
     HOUSING_CASTLES_TAB_PATH,
     HOUSING_EQUIP_BUTTON_PATH,
     HOUSING_PAGE_PATH,
     housing_castle_equipped_icon_path,
     housing_castle_row_path,
 )
-from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
+from bartleby.runtime.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
+from wizwalker import Keycode
+from wizwalker.extensions.wizsprinter import WizSprinter
+
+from bartlebot.nodes import node_helpers
 
 # The whole Castles page is dumped, not just the row of interest: question 2 needs the other
 # Item_N rows (to see where names live and how many are shown) and any paging controls.

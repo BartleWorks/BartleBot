@@ -6,12 +6,13 @@ import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bartleby.runtime.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_zone as gtz
-from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeMachine, ModalScreen
+from tests.node_helper_patches import patch_helper
 
 # Minimal params used across all tests.
 _PARAMS = {"from_zone": "Src", "to_zone": "Dst", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
@@ -256,8 +257,8 @@ async def test_exit_dungeon_dialog_dismissed():
 
     with (
         patch.object(gtz, "POLL_INTERVAL", 0),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=lambda _c, p: p == MESSAGE_BOX_CENTER)),
-        patch.object(nh, "click_by_path", click_by_path_mock),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=lambda _c, p: p == MESSAGE_BOX_CENTER)),
+        patch_helper("click_by_path", click_by_path_mock),
     ):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 

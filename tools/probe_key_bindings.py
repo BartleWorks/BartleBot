@@ -10,7 +10,7 @@ sends, and the doubtful names (``period``: the main key or the numpad's?) need a
 Bindings belong to the account, and each client holds its own in memory, so they are set the
 way a player sets them: by hand, in the game's key bindings, pressing the physical key. That
 also records the name the game gives each physical key. This probe then reads the client's
-bindings from memory (``bartlebot.clients.game_keys``), sends each candidate code
+bindings from memory (``bartleby.runtime.clients.game_keys``), sends each candidate code
 for each name exactly the way the nodes send keys (wizwalker's ``timed_send_key``), and
 records which code opened the action's window. It also sends Ctrl+0, bound as the Character
 page's second key, three ways, to see whether a binding with a modifier can be pressed at all.
@@ -51,10 +51,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 
+from bartleby.runtime.clients.game_keys import find_binding_list, read_binding_list
 from wizwalker import ClientHandler
 from wizwalker.errors import PatternFailed
-
-from bartlebot.clients.game_keys import find_binding_list, read_binding_list
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 

@@ -23,11 +23,12 @@ import asyncio
 import logging
 from collections.abc import Sequence
 
-from bartlebot.bot import run_trace
-from bartlebot.clients import group_manager
-from bartlebot.game import dialog_captions, wizard_names
+from bartleby.runtime import run_trace
+from bartleby.runtime.clients import group_manager
+from bartleby.runtime.game import dialog_captions, wizard_names
+from bartleby.runtime.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
+
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
 
 logger = logging.getLogger(__name__)
 

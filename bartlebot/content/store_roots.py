@@ -3,7 +3,7 @@
   shipped — the project root (``bartlebot.paths.project_root``), which is the install
             directory: read-only, what the repo ships and version-controls, and
             replaced whole by every app update.
-  user    — ``%APPDATA%/Bartleby/BartleBot`` (``bartlebot.shared.vendor.product_dir``),
+  user    — ``%APPDATA%/Bartleby/BartleBot`` (``bartleby.shared.vendor.product_dir``),
             where every app-initiated write lands.
 
 Reads resolve user-first: a user file with the same id shadows the shipped one.
@@ -17,7 +17,7 @@ so they never override: a user file declaring a shipped one's id is ignored
 The shared strategy library (player strategies, duel strategies and decks) has roots
 of its own, :func:`resolve_shared_roots`: its user root is the vendor directory, where
 every product by this vendor reads and writes it, and its shipped root is whichever
-installed product ships the newest copy (:mod:`bartlebot.shared.official_set`).
+installed product ships the newest copy (:mod:`bartleby.shared.official_set`).
 
 Every store function takes an optional ``root``, which sets the shipped root and,
 unless ``user_root`` is also given, doubles as the user root — so a single sandbox
@@ -32,7 +32,7 @@ go stale. It only changes the default: a caller passing ``root`` or ``user_root`
 unaffected.
 
 Finding, naming and writing a file by the id inside it lives in
-:mod:`bartlebot.shared.store_files`, which the shared library uses too; it is
+:mod:`bartleby.shared.store_files`, which the shared library uses too; it is
 re-exported here because every store imports it from this module.
 """
 
@@ -41,9 +41,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from bartlebot.paths import project_root
-from bartlebot.shared import official_set
-from bartlebot.shared.store_files import (
+from bartleby.shared import official_set
+from bartleby.shared.store_files import (
     Origin,
     declared_id,
     delete_by_id,
@@ -55,7 +54,9 @@ from bartlebot.shared.store_files import (
     save_by_id,
     slugify,
 )
-from bartlebot.shared.vendor import product_dir, vendor_dir
+from bartleby.shared.vendor import product_dir, vendor_dir
+
+from bartlebot.paths import project_root
 
 __all__ = [
     "DEV_ENV_VAR",

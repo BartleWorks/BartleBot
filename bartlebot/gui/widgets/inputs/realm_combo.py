@@ -2,7 +2,7 @@
 
 One control for both surfaces, so the Bot settings tab and an Option Values override list the
 same realms in the same order and neither can offer a realm the other cannot. The
-list is the checked-in snapshot (``bartlebot.game.realms``), never typed: the value has
+list is the checked-in snapshot (``bartleby.runtime.game.realms``), never typed: the value has
 to match a key the run-time matcher knows, and a free-text field is how a realm
 spelled slightly wrong would fail at run time with "not found in the list".
 
@@ -12,10 +12,9 @@ Speaks the get/set/changed protocol every node-only option control shares, so
 
 from __future__ import annotations
 
+from bartleby.runtime.game import realms
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox
-
-from bartlebot.game import realms
 
 #: What the empty choice reads as. Empty is a real value -- "no favorite" -- and the
 #: node fails plainly on it rather than guessing a realm.

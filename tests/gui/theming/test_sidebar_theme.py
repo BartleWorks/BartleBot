@@ -7,16 +7,16 @@ instance. Fixing the factory fixed all three without touching them, which is why
 tests here are mostly about ThemedTextLabel and the two factories that return it.
 """
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QSizePolicy
 
-import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.bot.schema import BotOptionModel
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
 from bartlebot.gui.sidebar.sidebar_section import SidebarField, field_label
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 
 @pytest.fixture
@@ -180,7 +180,7 @@ def test_the_add_option_dialog_still_builds_completely(qapp):
 
 
 def test_the_link_button_recolors(qapp, theme):
-    from bartlebot.gui.widgets.buttons.link_button import LinkButton
+    from bartleby.qt.widgets.buttons.link_button import LinkButton
 
     theme("light")
     btn = LinkButton("Show descriptions")
@@ -195,7 +195,7 @@ def test_the_link_button_recolors(qapp, theme):
 def test_the_revert_button_re_renders_its_icon(qapp, theme):
     """A bare ``svg_icon`` bakes ``THEME.icon_tint`` in at render time, so an icon
     set once and kept goes stale with no stylesheet anywhere to grep for."""
-    from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+    from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 
     theme("light")
     btn = IconButton("revert", tooltip="Discard this value", tint=IconTint.ACCENT_WHEN_ENABLED)
@@ -208,7 +208,7 @@ def test_the_revert_button_re_renders_its_icon(qapp, theme):
 
 def test_the_revert_button_spends_the_accent_only_while_it_can_act(qapp, theme):
     """Its being enabled is one of the two marks saying the value is the user's."""
-    from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
+    from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 
     theme("light")
     btn = IconButton("revert", tooltip="Discard this value", tint=IconTint.ACCENT_WHEN_ENABLED)

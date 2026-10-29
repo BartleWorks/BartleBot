@@ -1,8 +1,9 @@
 import asyncio
 import sys
 
+from bartleby.shared.keyring_backend import use_windows_backend
+
 from bartlebot.packaging.install_hooks import run_velopack
-from bartlebot.shared.keyring_backend import use_windows_backend
 
 
 def _self_check() -> int:
@@ -30,10 +31,10 @@ if __name__ == "__main__":
     if "--wiki-browser" in sys.argv[1:]:
         sys.exit(_wiki_browser())
 
+    from bartleby.qt.native_widgets import keep_siblings_alien
     from PyQt6.QtWidgets import QApplication
 
     from bartlebot.gui.debug.qt_paint_debug import install as install_qt_diagnostics
-    from bartlebot.gui.native_widgets import keep_siblings_alien
     from bartlebot.gui.single_instance import SingleInstance
 
     install_qt_diagnostics()

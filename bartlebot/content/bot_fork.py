@@ -27,11 +27,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.shared.content_hash import content_sha256
+
 from bartlebot.bot.schema import BotConfig, ForkedFrom
 from bartlebot.combat.bot_combat_strategy import duplicate_bot_strategy
 from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.content.new_bot import file_stem, unique_file_name
-from bartlebot.shared.content_hash import content_sha256
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ def make_fork(official: BotConfig, name: str) -> BotConfig:
     """The user's copy of ``official``: a new id, ``name``, and ``forked_from`` naming where it came from.
 
     ``official`` should be the bot as its file has it, not as composed in memory, so
-    the hash recorded is the Official file's (:func:`~bartlebot.shared.content_hash.content_sha256`,
+    the hash recorded is the Official file's (:func:`~bartleby.shared.content_hash.content_sha256`,
     the one content hash). Everything else is copied as it is, ``template`` included: a
     copy of a bot has the same base. Its ``history`` starts empty: the copy is a new item,
     and ``forked_from`` is its record of where it came from.

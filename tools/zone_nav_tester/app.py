@@ -59,6 +59,8 @@ import time
 from dataclasses import dataclass, field
 
 import qasync
+from bartleby.runtime.paths import HUB_BUTTON_PATH, TELEPORT_TIMER_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
+from bartleby.runtime.timing import POLL_INTERVAL
 from PyQt6.QtGui import QBrush, QColor, QFont
 from PyQt6.QtWidgets import (
     QApplication,
@@ -83,8 +85,6 @@ from wizwalker import XYZ
 from bartlebot.game import worlds, zone_names, zone_nav
 from bartlebot.game.restricted_zones import check_zone
 from bartlebot.nodes import node_helpers, zone_navigation
-from bartlebot.nodes.paths import HUB_BUTTON_PATH, TELEPORT_TIMER_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
-from bartlebot.nodes.timing import POLL_INTERVAL
 from tools.zone_nav_tester import edits, recorder, tree
 from tools.zone_nav_tester.game_data import GameData
 

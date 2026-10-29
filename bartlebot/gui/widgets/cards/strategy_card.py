@@ -13,17 +13,17 @@ no way to express that.
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
+from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
 from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.combat.strategy_summary import HealthStatus, StrategySummary
 from bartlebot.combat.strategy_tags import THIS_BOT_SOURCE
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
-from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView
-from bartlebot.gui.widgets.labels.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.layout.flow_layout import flow_container
 from bartlebot.gui.widgets.pickers.school_picker import school_icon
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY

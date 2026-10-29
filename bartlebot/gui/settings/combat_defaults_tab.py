@@ -44,6 +44,12 @@ from __future__ import annotations
 import logging
 from dataclasses import replace
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+from bartleby.shared.combat_defaults import SHIPPED_DUEL_IDS, TeamSize, chosen_default, set_default_choice
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.store_files import held_listings
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 
@@ -55,20 +61,9 @@ from bartlebot.gui.art_signal import follow_art
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.settings.rows import SettingCard, SettingRow, SettingsForm
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.logging_setup import set_turn_trace
 from bartlebot.settings_manager import SettingsManager, default_for
-from bartlebot.shared.combat_defaults import (
-    SHIPPED_DUEL_IDS,
-    TeamSize,
-    chosen_default,
-    set_default_choice,
-)
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.store_files import held_listings
 
 logger = logging.getLogger(__name__)
 

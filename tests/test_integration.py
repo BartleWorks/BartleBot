@@ -720,7 +720,7 @@ async def test_a_dead_client_pauses_the_run_instead_of_failing_the_node(error):
 @_DEAD_CLIENT_ERRORS
 async def test_the_same_error_from_a_live_client_is_the_nodes_failure(error, monkeypatch, caplog):
     """No client gone means no recovery coming to resume the run: parked, it sat paused for good."""
-    from bartlebot.nodes import timing
+    from bartleby.runtime import timing
 
     monkeypatch.setattr(timing, "DEAD_CLIENT_CONFIRM_TIMEOUT", 0.05)
     transitions_seen: list[tuple] = []
@@ -742,7 +742,7 @@ async def test_the_same_error_from_a_live_client_is_the_nodes_failure(error, mon
 @_DEAD_CLIENT_ERRORS
 async def test_a_client_handed_to_recovery_needs_no_wait(error, monkeypatch):
     """The health monitor saying it is recovering the client is proof enough: park at once."""
-    from bartlebot.nodes import timing
+    from bartleby.runtime import timing
 
     monkeypatch.setattr(timing, "DEAD_CLIENT_CONFIRM_TIMEOUT", 60.0)
     client = FakeClient()

@@ -3,13 +3,13 @@
 import asyncio
 import logging
 
+from bartleby.runtime.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
 from wizwalker import XYZ
 
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.help_text import seconds
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances, poll_until
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL, WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

@@ -10,6 +10,8 @@ import shutil
 from pathlib import Path
 
 import pytest
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
@@ -25,8 +27,6 @@ from bartlebot.combat.flee_marks import (
     fled_tooltip,
 )
 from bartlebot.paths import project_root
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 
 
 @pytest.fixture

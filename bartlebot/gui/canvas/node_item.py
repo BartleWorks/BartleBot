@@ -2,6 +2,8 @@
 
 import math
 
+from bartleby.qt.theming.icon_utils import ICONS_DIR
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEasingCurve, QPointF, QRectF, QSequentialAnimationGroup, Qt, QVariantAnimation
 from PyQt6.QtGui import (
     QBrush,
@@ -16,7 +18,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.canvas.lod import text_is_legible
-from bartlebot.gui.theming.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Geometry constants (also used by EdgeItem for port positions)
@@ -57,11 +58,9 @@ def _play_badge_renderer() -> QSvgRenderer:
     """Lazily parse play.svg with white fill. Cached after first call; renders as vector."""
     global _PLAY_RENDERER
     if _PLAY_RENDERER is None:
-        from pathlib import Path
-
         from PyQt6.QtCore import QByteArray
 
-        svg_path = Path(__file__).parent.parent / "icons" / "play.svg"
+        svg_path = ICONS_DIR / "play.svg"
         svg_bytes = svg_path.read_bytes().replace(b'fill="#404040"', b'fill="#ffffff"')
         _PLAY_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
     return _PLAY_RENDERER
@@ -71,11 +70,9 @@ def _stop_badge_renderer() -> QSvgRenderer:
     """Lazily parse stop.svg with white fill. Cached after first call; renders as vector."""
     global _STOP_RENDERER
     if _STOP_RENDERER is None:
-        from pathlib import Path
-
         from PyQt6.QtCore import QByteArray
 
-        svg_path = Path(__file__).parent.parent / "icons" / "stop.svg"
+        svg_path = ICONS_DIR / "stop.svg"
         svg_bytes = svg_path.read_bytes().replace(b'fill="#404040"', b'fill="#ffffff"')
         _STOP_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
     return _STOP_RENDERER

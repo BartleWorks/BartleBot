@@ -2,13 +2,13 @@
 
 import re
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLineEdit, QPushButton
 
-import bartlebot.gui.theming.theme as theme_mod
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.paths import project_root
 

@@ -21,8 +21,9 @@ from dataclasses import dataclass, field, replace
 from functools import cache
 from pathlib import Path
 
+from bartleby.runtime.timing import OBJECT_USE_DELAY
+
 from bartlebot.game.restricted_zones import check_zone
-from bartlebot.nodes.timing import OBJECT_USE_DELAY
 
 logger = logging.getLogger(__name__)
 

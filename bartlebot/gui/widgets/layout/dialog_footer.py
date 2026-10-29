@@ -51,10 +51,9 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from PyQt6.QtCore import QEvent, QObject
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QSizePolicy
-
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 
 #: Spacing between the footer's buttons, matching the worked example in
 #: ``combat_strategies/dialog.py``.

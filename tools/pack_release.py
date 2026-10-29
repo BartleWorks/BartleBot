@@ -31,7 +31,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from bartlebot.shared.vendor import PRODUCT, VENDOR  # noqa: E402
+from bartleby.shared.vendor import PRODUCT, VENDOR  # noqa: E402
+
 from bartlebot.updates.feed import INSTALL_NOTES_MARKER, REPOSITORY  # noqa: E402
 from tools.build_package import NAME  # noqa: E402
 

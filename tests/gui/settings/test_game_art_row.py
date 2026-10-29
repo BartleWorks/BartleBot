@@ -7,6 +7,8 @@ the dialog's own task, the way the app's loop would run it.
 from __future__ import annotations
 
 import pytest
+from bartleby.shared.game_install import set_install_dir
+from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.game import art_extraction, card_art
@@ -20,8 +22,6 @@ from bartlebot.gui.settings.game_art_row import (
     game_art_row,
 )
 from bartlebot.gui.settings.general_tab import GeneralTab
-from bartlebot.shared.game_install import set_install_dir
-from bartlebot.shared.preferences import PreferenceStore
 from tests.art_fixture import game_install
 
 

@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from collections import deque
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -16,8 +18,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.settings_manager import SettingsManager
 
 _NAME_TO_LEVEL: dict[str, int] = {

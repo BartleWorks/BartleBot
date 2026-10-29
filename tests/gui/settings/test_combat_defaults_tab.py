@@ -13,6 +13,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.combat_defaults import (
+    PREFERENCE_KEYS,
+    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+    SHIPPED_SOLO_DUEL_ID,
+    SHIPPED_TEAM_DUEL_ID,
+    TeamSize,
+)
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.strategy_models import DuelCombatStrategy
 
 from bartlebot.combat.strategy_store import save_duel_strategy
 from bartlebot.gui.combat_strategies.dialog import DialogMode
@@ -24,15 +33,6 @@ from bartlebot.gui.settings.combat_defaults_tab import (
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.logging_setup import TURN_TRACE_LOGGER
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.combat_defaults import (
-    PREFERENCE_KEYS,
-    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
-    SHIPPED_SOLO_DUEL_ID,
-    SHIPPED_TEAM_DUEL_ID,
-    TeamSize,
-)
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.strategy_models import DuelCombatStrategy
 
 _DIALOG = "bartlebot.gui.settings.combat_defaults_tab.CombatStrategyDialog"
 

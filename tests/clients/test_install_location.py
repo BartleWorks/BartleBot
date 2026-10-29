@@ -6,14 +6,14 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from bartleby.shared import game_install
+from bartleby.shared.game_install import InstallSource, set_install_dir
+from bartleby.shared.preferences import PreferenceStore
 from wizwalker import utils as wizwalker_utils
 
 from bartlebot import app_controller
 from bartlebot.app_controller import AppController
 from bartlebot.clients.install_location import apply_install
-from bartlebot.shared import game_install
-from bartlebot.shared.game_install import InstallSource, set_install_dir
-from bartlebot.shared.preferences import PreferenceStore
 
 
 def _install(folder: Path) -> Path:

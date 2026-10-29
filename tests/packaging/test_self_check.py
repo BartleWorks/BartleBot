@@ -10,6 +10,8 @@ import sys
 
 import keyring
 import pytest
+from bartleby.runtime.game.dialog_captions import CAPTIONS_PATH
+from bartleby.shared.combat_defaults import SHIPPED_SOLO_DUEL_ID
 from keyring.backends import fail
 
 from bartlebot.game.art_extraction import TYPE_DUMP_PATTERN
@@ -27,7 +29,8 @@ from bartlebot.packaging.self_check import (
     run_checks,
 )
 from bartlebot.paths import project_root
-from bartlebot.shared.combat_defaults import SHIPPED_SOLO_DUEL_ID
+
+CORE_GAME_DATA = CAPTIONS_PATH.parent
 
 #: The checks that read the root they are given, and the folder each reads there.
 STORE_CHECKS = {
@@ -145,9 +148,9 @@ def test_main_prints_a_line_per_check_and_returns_the_failures(tmp_path):
 
 
 def test_every_file_in_game_data_is_checked():
-    """A snapshot added without a line in game_data_files() would ship unchecked."""
-    data = project_root() / "bartlebot" / "game" / "data"
-    shipped = {p.name for p in data.glob("*.json") if not TYPE_DUMP_PATTERN.fullmatch(p.name)}
+    """A snapshot added without a line in game_data_files() would ship unchecked: BartleBot's, and core's."""
+    folders = (project_root() / "bartlebot" / "game" / "data", CORE_GAME_DATA)
+    shipped = {p.name for data in folders for p in data.glob("*.json") if not TYPE_DUMP_PATTERN.fullmatch(p.name)}
 
     assert {p.name for p in game_data_files()} == shipped
 

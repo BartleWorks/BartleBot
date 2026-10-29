@@ -28,6 +28,8 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
@@ -42,8 +44,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.content.bot_tags import suggested_tags
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
 from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.pills.tag_pill import NeutralPill
 from bartlebot.gui.widgets.pills.tags_field import TagsField

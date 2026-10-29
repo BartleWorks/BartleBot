@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import pytest
+from bartleby.shared.strategy_models import DeckData
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, FightRef, StateAssignment
-from bartlebot.shared.strategy_models import DeckData
 
 # ---------------------------------------------------------------------------
 # BotCombatStrategy

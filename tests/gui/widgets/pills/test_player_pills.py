@@ -8,8 +8,9 @@ a color on this pill is a claim about which account is in that slot, and a wrong
 target is worse than no match target.
 """
 
-from bartlebot.gui.theming.account_accent import account_accent, account_tint
-from bartlebot.gui.theming.theme import THEME
+from bartleby.qt.theming.account_accent import account_accent, account_tint
+from bartleby.qt.theming.theme import THEME
+
 from bartlebot.gui.widgets.pills.player_pills import PlayerPillBar
 
 
@@ -172,7 +173,7 @@ def test_a_pill_that_is_off_is_drawn_as_a_slot_rather_than_as_an_account(qapp):
 
 
 def test_a_pill_holds_its_slot_not_a_hex_so_a_theme_switch_re_resolves(qapp):
-    from bartlebot.gui.theming.theme import set_theme  # noqa: PLC0415
+    from bartleby.qt.theming.theme import set_theme  # noqa: PLC0415
 
     bar = PlayerPillBar()
     bar.set_value([1])

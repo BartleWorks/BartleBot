@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import logging
 
+from bartleby.qt.theming.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme, saved_color
+from bartleby.qt.widgets.buttons.action_button import ActionButton
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
@@ -22,8 +24,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.theming.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme, saved_color
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager, default_for
 

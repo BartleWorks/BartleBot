@@ -23,15 +23,15 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import Any
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.bot import variables
 from bartlebot.bot.schema import AssignmentModel, FlagCondition, VariableModel
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
-from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.inputs.variable_widgets import OPTION, VARIABLE, ConditionSourceCombo, VariableValueField
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.discard import discard_widget
 
 _NOT_W = 52

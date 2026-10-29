@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <!-- eye outline (almond shape) -->
-  <path d="M2 12 Q7 5 12 5 Q17 5 22 12 Q17 19 12 19 Q7 19 2 12 Z" fill="none" stroke="#404040" stroke-width="1.8"/>
-  <!-- iris / pupil -->
-  <circle cx="12" cy="12" r="3" fill="#404040"/>
-  <!-- solid slash: every failure edge hidden -->
-  <path d="M4 20 L20 4" fill="none" stroke="#404040" stroke-width="1.8" stroke-linecap="round"/>
-</svg>

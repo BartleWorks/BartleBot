@@ -17,19 +17,19 @@ whether it handles all of it. The help button beside the node type dropdown was 
 of the seven it missed.
 """
 
+import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEvent
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QLabel
 
-import bartlebot.gui.theming.theme as theme_mod
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas.param_panel import (
     _DynamicParamForm,
     _FlagConditionsWidget,
     _ParamPanel,
 )
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.nodes.param_schema import ParamField
 
 

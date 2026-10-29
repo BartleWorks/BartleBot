@@ -17,14 +17,14 @@ are the three things that has to mean:
 from __future__ import annotations
 
 import pytest
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.shared.account_store import AccountStore
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.clients import character_roster
-from bartlebot.clients.credentials import CredentialStore
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.account_store import AccountStore
 from tests.conftest import main_window_stub
 
 # Synthetic throughout, as CLAUDE.md requires: these are account usernames rather than

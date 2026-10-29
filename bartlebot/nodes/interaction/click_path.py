@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from bartleby.runtime.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
+
 from bartlebot.nodes.help_text import UI_PATH_NOTE, seconds
 from bartlebot.nodes.node_helpers import (
     click_window,
@@ -12,7 +14,6 @@ from bartlebot.nodes.node_helpers import (
     resolve_path_match,
 )
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

@@ -32,18 +32,18 @@ give this widget.
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.shared.strategy_models import DeckData, DeckPreset
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.combat.deck_content import APPLY_DECK, IMPORT_DECK
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
 from bartlebot.gui.widgets.cards.archmastery_editor import ArchmasteryEditor
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.gui.widgets.pickers.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
-from bartlebot.shared.strategy_models import DeckData, DeckPreset
 
 #: Said in place of the card list for a preset holding nothing. A preset *can* be empty:
 #: ``+ New`` makes one before anything has been captured into it.

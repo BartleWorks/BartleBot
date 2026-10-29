@@ -7,15 +7,16 @@ import logging
 import os
 import sys
 from contextlib import ExitStack
-from unittest.mock import DEFAULT, AsyncMock, MagicMock, patch
+from unittest.mock import DEFAULT, AsyncMock, MagicMock
 
 import pytest
+from bartleby.runtime.clients import game_keys, sightings
+from bartleby.runtime.game.key_bindings import KeyMap
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
 
-from bartlebot.clients import game_keys, sightings
-from bartlebot.game.key_bindings import KeyMap
 from bartlebot.paths import project_root
+from tests.node_helper_patches import patch_helper
 
 # ---------------------------------------------------------------------------
 # API drift guard
@@ -355,7 +356,6 @@ def message_box_patches(visible_buttons=()):
     Returns (patches, clicked_paths): apply the patches with an ExitStack or a `with`
     tuple, and assert against clicked_paths afterwards.
     """
-    import bartlebot.nodes.node_helpers as nh
 
     visible = [list(p) for p in visible_buttons]
     clicked: list[list[str]] = []
@@ -368,8 +368,8 @@ def message_box_patches(visible_buttons=()):
         return list(path) in visible
 
     return (
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
-        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+        patch_helper("is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch_helper("click_by_path", new=AsyncMock(side_effect=_click)),
     ), clicked
 
 
@@ -386,8 +386,7 @@ class ModalScreen:
         self.clicked: list[list[str]] = []
 
     def patches(self):
-        import bartlebot.nodes.node_helpers as nh_mod
-        from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
+        from bartleby.runtime.paths import MESSAGE_BOX_CAPTION_PATH
 
         async def _text(_client, path):
             return self.modals[0][0] if self.modals and list(path) == MESSAGE_BOX_CAPTION_PATH else ""
@@ -401,9 +400,9 @@ class ModalScreen:
                 self.modals.pop(0)
 
         return (
-            patch.object(nh_mod, "get_text_by_path", new=_text),
-            patch.object(nh_mod, "is_visible_by_path", new=_visible),
-            patch.object(nh_mod, "click_by_path", new=_click),
+            patch_helper("get_text_by_path", new=_text),
+            patch_helper("is_visible_by_path", new=_visible),
+            patch_helper("click_by_path", new=_click),
         )
 
     def apply(self) -> ExitStack:
@@ -487,7 +486,7 @@ def _remove_unguarded_registry_key():
     if sys.platform == "win32":
         import winreg  # noqa: PLC0415
 
-        from bartlebot.shared.install_key import delete_tree  # noqa: PLC0415
+        from bartleby.shared.install_key import delete_tree  # noqa: PLC0415
 
         delete_tree(winreg.HKEY_CURRENT_USER, UNGUARDED_REGISTRY_KEY)
 
@@ -528,7 +527,7 @@ def isolated_settings(_appdata_root, monkeypatch):
     monkeypatch.setattr(SettingsManager, "_instance", None)
     # Nor may another product installed on the developer's machine decide which shared
     # Official set the suite reads (see shared.official_set).
-    from bartlebot.shared import official_set  # noqa: PLC0415
+    from bartleby.shared import official_set  # noqa: PLC0415
 
     monkeypatch.setattr(official_set, "_registry", official_set.NoRegistry())
     official_set.reset_shipped_root()
@@ -541,18 +540,18 @@ def isolated_settings(_appdata_root, monkeypatch):
     # types: both registry roots point at a throwaway key, removed at the end of the
     # session, and Explorer is never told (see packaging.install_hooks). Before this, a
     # hook test registered all six share types to the venv's python.
-    from bartlebot.shared import file_types, install_key  # noqa: PLC0415
+    from bartleby.shared import file_types, install_key  # noqa: PLC0415
 
     monkeypatch.setattr(install_key, "REGISTRY_KEY", UNGUARDED_REGISTRY_KEY)
     monkeypatch.setattr(file_types, "CLASSES_KEY", rf"{UNGUARDED_REGISTRY_KEY}\Classes")
     monkeypatch.setattr(file_types, "notify", lambda: None)
     # Nor the game's compatibility settings, which the scaled-window tile can write.
-    from bartlebot.shared import game_dpi  # noqa: PLC0415
+    from bartleby.shared import game_dpi  # noqa: PLC0415
 
     monkeypatch.setattr(game_dpi, "LAYERS_KEY", rf"{UNGUARDED_REGISTRY_KEY}\Layers")
     # Nor the game the developer has installed, which would decide whether setup asks
     # for a game folder (see shared.game_install).
-    from bartlebot.shared import game_install  # noqa: PLC0415
+    from bartleby.shared import game_install  # noqa: PLC0415
 
     monkeypatch.setattr(game_install, "_places", game_install.NoPlaces())
 
@@ -735,10 +734,9 @@ def qapp_cls():
     keeps the first-run dialog from opening, for the same reason: it must hold from the
     first GUI test.
     """
+    from bartleby.qt.native_widgets import keep_siblings_alien  # noqa: PLC0415
+    from bartleby.qt.theming.theme import THEME  # noqa: PLC0415
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
-
-    from bartlebot.gui.native_widgets import keep_siblings_alien  # noqa: PLC0415
-    from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415
 
     keep_siblings_alien()
     _refuse_first_run_dialog()
@@ -792,7 +790,7 @@ def _production_app_font():
     if qtwidgets is not None:
         app = qtwidgets.QApplication.instance()
         if app is not None:
-            from bartlebot.gui.theming.theme import THEME  # noqa: PLC0415 - keeps Qt out of non-GUI runs
+            from bartleby.qt.theming.theme import THEME  # noqa: PLC0415 - keeps Qt out of non-GUI runs
 
             if app.font().pixelSize() != THEME.font_body_px:
                 app.setFont(THEME.ui_font())

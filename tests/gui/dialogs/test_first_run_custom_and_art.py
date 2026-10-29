@@ -14,6 +14,8 @@ import time
 from pathlib import Path
 
 import pytest
+from bartleby.shared.game_install import set_install_dir
+from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.game import art_extraction, card_art
@@ -36,8 +38,6 @@ from bartlebot.options.custom_setup import (
     options_answered,
 )
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.game_install import set_install_dir
-from bartlebot.shared.preferences import PreferenceStore
 from tests.art_fixture import game_install
 
 

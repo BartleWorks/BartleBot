@@ -3,23 +3,7 @@
 import logging
 
 from bartlebot.clients.client_manager import ClientManager
-from bartlebot.clients.credentials import account_label
 from bartlebot.settings_manager import SettingsManager
-
-
-def test_an_account_with_an_alias_is_called_by_it():
-    SettingsManager.instance().accounts = [{"username": "jdoe1234", "alias": "Main"}]
-    assert account_label("jdoe1234") == "Main"
-
-
-def test_an_account_without_one_is_censored():
-    SettingsManager.instance().accounts = [{"username": "jdoe1234", "alias": ""}]
-    assert account_label("jdoe1234") == "j***4"
-
-
-def test_an_account_the_store_does_not_know_is_censored_too():
-    SettingsManager.instance().accounts = []
-    assert account_label("jdoe1234") == "j***4"
 
 
 class _OrderHarness:

@@ -13,6 +13,13 @@ from collections.abc import Callable
 from dataclasses import replace
 from typing import Any
 
+from bartleby.qt.theming.icon_utils import svg_icon, svg_pixmap
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
+from bartleby.qt.widgets.labels.elided_label import ElidedLabel
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, QLocale, QRectF, QSize, QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
@@ -74,16 +81,9 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.theming.icon_utils import svg_icon, svg_pixmap
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
-from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.layout.discard import discard_widget
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.player_list_widget import PlayerListWidget, PlayerSlotWidget

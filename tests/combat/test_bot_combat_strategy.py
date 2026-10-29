@@ -8,6 +8,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
+
 from bartlebot.combat.bot_combat_strategy import (
     StrategyLookup,
     duplicate_bot_strategy,
@@ -22,7 +24,6 @@ from bartlebot.combat.strategy_store import (
     save_duel_strategy,
     save_player_strategy,
 )
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
 
 def _duel(name: str, *pcs: PlayerCombatStrategy) -> DuelCombatStrategy:

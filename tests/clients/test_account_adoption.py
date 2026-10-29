@@ -10,8 +10,8 @@ Exercises the real method against a stub holding only the attributes it touches.
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bartleby.runtime.clients import account_identity
 
-from bartlebot.clients import account_identity
 from bartlebot.clients.client_manager import ClientManager
 
 KEY = b"\x01" * 32

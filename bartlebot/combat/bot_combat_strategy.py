@@ -38,9 +38,10 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from uuid import uuid4
 
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
+
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
 

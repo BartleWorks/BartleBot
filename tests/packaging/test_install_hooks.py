@@ -14,13 +14,13 @@ from types import SimpleNamespace
 
 import pytest
 import velopack
+from bartleby.shared import file_types, install_key
+from bartleby.shared.install_key import InstallRecord
+from bartleby.shared.official_set import SET_FILE
+from bartleby.shared.vendor import PRODUCT, VENDOR
 
 from bartlebot.packaging import install_hooks
 from bartlebot.paths import project_root
-from bartlebot.shared import file_types, install_key
-from bartlebot.shared.install_key import InstallRecord
-from bartlebot.shared.official_set import SET_FILE
-from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 
 class _FakeApp:

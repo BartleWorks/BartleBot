@@ -77,6 +77,6 @@ def test_a_deck_card_without_art_keeps_the_plain_line(qapp, monkeypatch):
 
 
 def test_role_pills_are_not_the_color_of_any_school(qapp):
-    from bartlebot.gui.theming.theme import THEME
+    from bartleby.qt.theming.theme import THEME
 
     assert STRATEGY_VOCABULARY.accent("Hitter") == THEME.chip_neutral_bg

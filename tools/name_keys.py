@@ -4,7 +4,7 @@ SOLVED (2026-08-12).  The wizard name is not stored as text anywhere in the clie
 is three indices into the game's own name tables, packed into one uint32, resolved against
 a dictionary at draw time.  That is why every plaintext memory scan for it failed.
 
-The decoding itself lives in ``bartlebot/game/name_tables.py``, since it is production code
+The decoding itself lives in ``bartleby/runtime/game/name_tables.py``, since it is production code
 now; this is the command-line front end and the regression check against recorded samples.
 See that module for the byte layout and why the checked-in table snapshot is safe.
 
@@ -38,7 +38,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bartlebot.game.name_tables import (  # noqa: E402
+from bartleby.runtime.game.name_tables import (  # noqa: E402
     DEFAULT_LOCALE,
     GENDER_MALE,
     decode_name_keys,

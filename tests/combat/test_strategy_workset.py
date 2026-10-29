@@ -6,6 +6,14 @@ and none of that reasoning needs a QApplication to check.
 
 from pathlib import Path
 
+from bartleby.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
+
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import (
     Origin,
@@ -16,13 +24,6 @@ from bartlebot.combat.strategy_store import (
     save_player_strategy,
 )
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 
 
 def _ws(tmp_path: Path, **kw) -> StrategyWorkingSet:

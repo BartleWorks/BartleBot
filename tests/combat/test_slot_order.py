@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.shared.strategy_models import DuelConfig, PlayerAssignment
+
 from bartlebot.combat.slot_order import slot_targets, unfixed_slot_uses
-from bartlebot.shared.strategy_models import DuelConfig, PlayerAssignment
 
 _SUPPORT = "any<blade>[sharp] @ ally(last) | pass"
 

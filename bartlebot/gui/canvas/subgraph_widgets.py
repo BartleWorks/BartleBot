@@ -16,6 +16,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from PyQt6.QtCore import QRectF, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPen, QRegion
 from PyQt6.QtWidgets import (
@@ -32,10 +36,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import SubgraphInput
 from bartlebot.gui.canvas.call_node_item import canvas_edge_color
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.pills.tags_field import TagsField

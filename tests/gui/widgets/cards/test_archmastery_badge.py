@@ -14,12 +14,12 @@ from __future__ import annotations
 import json
 
 import pytest
+from bartleby.shared.strategy_models import DeckData
 from PyQt6.QtGui import QColor, QIcon, QPixmap
 
 from bartlebot.game import card_art
 from bartlebot.gui.sidebar.combat_tab import _PlayerDecksSection
 from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge, extracted_icon, school_icon_for
-from bartlebot.shared.strategy_models import DeckData
 
 #: A color per icon key, so a pixmap can be identified by reading a pixel out of it.
 COLORS = {

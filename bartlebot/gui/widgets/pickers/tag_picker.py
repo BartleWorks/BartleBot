@@ -20,6 +20,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
@@ -29,7 +30,6 @@ from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 from bartlebot.game import card_art
 from bartlebot.gui.art_signal import follow_art
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 

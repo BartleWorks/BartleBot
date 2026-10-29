@@ -100,6 +100,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from enum import Enum
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import set_style_sheet
+from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.labels.elided_label import apply_muted_color
+from bartleby.shared.store_files import held_listings
 from PyQt6.QtCore import QEvent, QObject, QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -148,18 +153,13 @@ from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilte
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import set_style_sheet
-from bartlebot.gui.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
-from bartlebot.gui.widgets.labels.elided_label import apply_muted_color
 from bartlebot.gui.widgets.labels.rule_heading import RuleHeading
 from bartlebot.gui.widgets.labels.step_heading import Step, StepHeading
 from bartlebot.gui.widgets.layout.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.store_files import held_listings
 
 logger = logging.getLogger(__name__)
 

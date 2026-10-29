@@ -9,6 +9,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.combat_defaults import LAST_RESORT_DSL
 
 from bartlebot.nodes.combat_runner import (
     _combat_provider,
@@ -19,7 +20,6 @@ from bartlebot.nodes.combat_runner import (
     dsl_warnings,
     validate_dsl,
 )
-from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
 
 # Real DSLs taken from strategies/player/*.json.
 _VALID_DSLS = [

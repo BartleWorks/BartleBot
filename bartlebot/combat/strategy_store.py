@@ -15,7 +15,7 @@ The kinds sit under two different user roots:
   strategies/decks/    — DeckPreset           files   } written by every product
   bot_strategies/      — BotCombatStrategy    files   — BartleBot's own (%APPDATA%/Bartleby/BartleBot)
 
-The shared three are stored by :mod:`bartlebot.shared.strategy_library`, whose roots
+The shared three are stored by :mod:`bartleby.shared.strategy_library`, whose roots
 come from :func:`bartlebot.content.store_roots.resolve_shared_roots`. Because another product
 can have one of their files open, a save of one passes the fingerprint it was loaded
 with (``expected``) and writes nothing if the file changed on disk since, raising
@@ -23,7 +23,7 @@ with (``expected``) and writes nothing if the file changed on disk since, raisin
 fingerprint a save expects no user file, which is what creating an item means.
 
 Each file is named after the strategy's name (``default-support.json``) and found
-by the id inside it; :mod:`bartlebot.shared.store_files` has the naming rules.
+by the id inside it; :mod:`bartleby.shared.store_files` has the naming rules.
 
 Every function accepts an optional ``root``, which sets the shipped root and,
 unless ``user_root`` is also given, doubles as the user root too — so a single
@@ -41,6 +41,11 @@ import re
 from enum import Enum
 from pathlib import Path
 
+from bartleby.shared import strategy_library as library
+from bartleby.shared.store_files import record_save_in
+from bartleby.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat
+from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
+
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.content.store_roots import (
     Origin,
@@ -54,10 +59,6 @@ from bartlebot.content.store_roots import (
     resolve_shared_roots,
     save_by_id,
 )
-from bartlebot.shared import strategy_library as library
-from bartlebot.shared.store_files import record_save_in
-from bartlebot.shared.strategy_library import ChangedOnDisk, Entry, LibraryKind, NewerFormat
-from bartlebot.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +167,7 @@ def load_library_entry(
 def fingerprint(
     kind: StrategyKind, uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> str | None:
-    """The fingerprint ``uuid`` would load with now; see :mod:`bartlebot.shared.strategy_library`."""
+    """The fingerprint ``uuid`` would load with now; see :mod:`bartleby.shared.strategy_library`."""
     _, user = _shared_roots(root, user_root)
     return library.fingerprint(user, _LIBRARY_KINDS[kind], uuid)
 
@@ -309,7 +310,7 @@ def load_bot_strategy(
 def save_bot_strategy(
     s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None, *, record: bool = True
 ) -> None:
-    """Write ``s`` to the user root, recording its history into it first (:mod:`bartlebot.shared.content_hash`).
+    """Write ``s`` to the user root, recording its history into it first (:mod:`bartleby.shared.content_hash`).
 
     ``record=False`` writes the history ``s`` already has, as an import does (#171).
     """

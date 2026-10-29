@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import re
 
+from bartleby.qt.theming.icon_utils import ICONS_DIR
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtTest import QTest
@@ -39,7 +40,6 @@ from bartlebot.gui.game_embed.card_columns import (
     _DropPlaceholder,
 )
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
-from bartlebot.paths import project_root
 
 ACCOUNTS = [
     {"username": "one@example.com", "alias": "One"},
@@ -210,7 +210,7 @@ def test_the_grip_tile_stacks_without_a_seam():
     of a 24-unit box they add up to twice it, and the handle draws as bands of six dots
     with a visible break between them, which reads as three handles rather than one.
     """
-    svg = (project_root() / "bartlebot/gui/icons/grip.svg").read_text()
+    svg = (ICONS_DIR / "grip.svg").read_text()
     box = float(re.search(r'viewBox="0 0 \S+ (\S+)"', svg).group(1))
     rows = sorted({float(cy) for cy in re.findall(r'cy="(\S+?)"', svg)})
 

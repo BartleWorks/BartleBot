@@ -38,7 +38,8 @@ whenever it is held for over a second, writes every thread's stack, taken during
 freeze, to `logs/stalls/`. The game hang tracer (`bartlebot/gui/debug/game_hang_trace.py`)
 logs a WARNING whenever a game window goes over a second without answering, saying what its
 thread was waiting on, as Windows' wait chain traversal names it. The run trace
-(`bartlebot/bot/run_trace.py`) writes a timeline of every run to `logs/trace/`: spans for
+(core's `bartleby.runtime.run_trace`, started by `app_controller.start_run_trace`) writes a
+timeline of every run to `logs/trace/`: spans for
 the pre-run steps, each node and each combat round's phases, every key and click with the
 function that sent it, UI-tree walks, memory reads and event-loop stalls.
 `uv run python tools/run_trace_report.py` summarizes the newest one.
@@ -73,16 +74,17 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 |---|---|
 | `bot/` | the FSM: the machine, the bot file schema, ambient combat, the health monitor, variables |
 | `nodes/` | the node library, grouped by kind |
-| `game/` | read-only facts about the game: zones, worlds, realms, spells, names, scales, stat caps, sizing, keybindings, wiki lookups. `game/data/` holds the extracted snapshots, and every reader of them lives here |
-| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, Bot Combat Strategies, fight keys, which duel strategy a fight runs (`combat_resolution`) and the pre-run check. The shipped default ids and the last-resort DSL are in `shared/combat_defaults.py` |
+| `game/` | read-only facts about the game: zones, worlds, spells, scales, stat caps, wiki lookups. `game/data/` holds the extracted snapshots, and every reader of them lives here |
+| `combat/` | decks, the DSL vocabulary, strategy stores and summaries, Bot Combat Strategies, fight keys, which duel strategy a fight runs (`combat_resolution`) and the pre-run check. The shipped default ids and the last-resort DSL are core's `bartleby.shared.combat_defaults` |
 | `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
-| `clients/` | game clients at run time: the client and group managers, accounts, credentials, launch tracking, relog, porting, sightings, tile slots, process and window helpers |
+| `clients/` | game clients at run time: the client manager, recovery and relog, porting, the run's pre-checks, the authoring tools |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
-| `launcher/` | auto-select, launch profiles, Remember Realm |
 | `packaging/` | the app as a packaged build: `--self-check`, whether this process is one, and Velopack's install hooks, which write the install key and the file types (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
 | `updates/` | the update check: the feed, its signature and the trusted keys, and staging an update for Velopack (`docs/INSTALLER.md`) |
-| `shared/` | what every Bartleby product shares; imports nothing from the rest of `bartlebot` |
-| `gui/` | everything Qt. Dialogs in `dialogs/`, the theme in `theming/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`, `title_bar/`) |
+| `gui/` | everything Qt. Dialogs in `dialogs/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`) |
+
+What every Bartleby product shares is bartleby-core's, imported, never copied
+(`tests/test_family_guards.py` fails on a copy); core's `docs/ARCHITECTURE.md` has what.
 
 Logic a widget needs but that needs no Qt goes outside `gui/`, in the package its
 subject belongs to. A module keeps its file name when it moves; a new package gets an
@@ -177,8 +179,7 @@ times stopping a legitimate PvE farm mid-fight.
 BartleBot's install directory is the project root, holding the Official content: bots,
 templates, subgraphs and strategies. A new store takes its default path from
 `store_roots`, and `test_install_dir_writes` lists every default write path. The vendor's
-shared files are written through `bartlebot/shared/`, BartleBot's copy of core's
-`bartleby.shared` until Stage 3 of #167 deletes it.
+shared files are written through core's `bartleby.shared`.
 
 A value that is not a fact about *this node in this graph* is a bot option, not a
 node param:

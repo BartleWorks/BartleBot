@@ -10,6 +10,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
@@ -18,7 +19,6 @@ from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import store_roots
 from bartlebot.gui.combat_strategies.dialog import NEW_NAMES, CombatStrategyDialog, DialogMode, FlowStep
 from bartlebot.gui.widgets.labels.step_heading import Step
-from bartlebot.shared.strategy_models import DuelCombatStrategy, PlayerAssignment
 
 DUEL = StrategyKind.DUEL
 FLOW = FlowStep("Add a duel strategy", Step(1, 2, "Make the duel strategy", "Next, the fights."), "Next: choose fights")

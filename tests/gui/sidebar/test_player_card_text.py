@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import json
 
+from bartleby.qt.theming.account_accent import ACCOUNT_PALETTE_SIZE, account_color_keys
+
 from bartlebot.gui.sidebar.player_card import (
     PLACEHOLDER,
     account_stripe_keys,
@@ -20,7 +22,6 @@ from bartlebot.gui.sidebar.player_card import (
     player_pill_text,
     xyz_clipboard_text,
 )
-from bartlebot.gui.theming.account_accent import ACCOUNT_PALETTE_SIZE, account_color_keys
 from bartlebot.settings_manager import SettingsManager
 
 ACCOUNTS = [

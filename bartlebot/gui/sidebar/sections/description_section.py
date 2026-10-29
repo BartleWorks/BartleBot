@@ -39,17 +39,17 @@ from __future__ import annotations
 import html
 from typing import TYPE_CHECKING
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.buttons.link_button import LinkButton
+from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.content import bot_summary
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
-from bartlebot.gui.widgets.buttons.link_button import LinkButton
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

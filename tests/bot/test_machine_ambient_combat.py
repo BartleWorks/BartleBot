@@ -23,6 +23,7 @@ from bartlebot.bot.machine import BotMachine, PauseHold
 from bartlebot.nodes import combat_runner, node_helpers
 from bartlebot.nodes.combat_and_healing import collect_wisps
 from tests.conftest import FakeClient, FakeEntity, see_each_other
+from tests.node_helper_patches import set_helper
 
 HOME = "WizardCity/WC_Streets/Unicorn_Way"
 
@@ -76,7 +77,7 @@ class _Fights:
 @pytest.fixture
 def fast(monkeypatch):
     """Compress the cadences: the watcher's poll, the session's, and joining's retry."""
-    monkeypatch.setattr(node_helpers, "POLL_INTERVAL", 0.001)
+    set_helper(monkeypatch, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(ambient_combat, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(combat_runner, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01)
@@ -841,7 +842,7 @@ async def test_settle_fights_fights_a_player_still_in_battle_and_leaves_the_fsm_
 
 
 async def test_settle_fights_flees_an_idle_popup_and_counts_it(fast, combat, monkeypatch):
-    from bartlebot.nodes.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
+    from bartleby.runtime.paths import COMBAT_AFK_FLEE_PATH, COMBAT_AFK_WINDOW_PATH
 
     idle = _client()
     idle.in_battle.return_value = True
@@ -857,8 +858,8 @@ async def test_settle_fights_flees_an_idle_popup_and_counts_it(fast, combat, mon
             return True
         return False
 
-    monkeypatch.setattr(node_helpers, "is_visible_by_path", is_visible)
-    monkeypatch.setattr(node_helpers, "click_by_path", click)
+    set_helper(monkeypatch, "is_visible_by_path", is_visible)
+    set_helper(monkeypatch, "click_by_path", click)
     machine = BotMachine(clients=[idle], config=_config(), node_registry={})
     machine.pause()
 

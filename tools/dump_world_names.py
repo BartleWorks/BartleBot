@@ -64,7 +64,8 @@ def parse_lang(raw: bytes) -> dict[str, str]:
     The middle line is the trap -- it reads as blank in most records, so a parser that
     requires it blank silently drops every documented key. WorldNames has one such
     record ("Crafting"), so this is not hypothetical here either. Slice at a fixed
-    stride rather than walking; see tools/dump_dialog_captions.py, same format.
+    stride rather than walking; bartleby-core's tools/dump_dialog_captions.py reads the same
+    format the same way.
     """
     lines = raw.decode("utf-16-le", errors="replace").lstrip("\ufeff").split("\r\n")
     return {lines[i]: lines[i + 2] for i in range(1, len(lines) - 2, 3) if lines[i]}

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel
 
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.gui.widgets.cards import card_frame
 from bartlebot.gui.widgets.cards.card_frame import CardFrame, CardMode
 

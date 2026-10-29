@@ -3,13 +3,15 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.runtime.clients import group_manager
+from bartleby.runtime.clients.group_manager import GroupState
+from bartleby.runtime.game import wizard_names
 
-from bartlebot.clients import group_manager, port_map
-from bartlebot.clients.group_manager import GroupState
+from bartlebot.clients import port_map
 from bartlebot.clients.port_map import PortMap
-from bartlebot.game import wizard_names
 from bartlebot.nodes import node_helpers
 from tests.conftest import FakeClient, FakeMachine, see_each_other
+from tests.node_helper_patches import set_helper
 
 # Synthetic names from tools/name_key_samples.json -- never a real player's.
 _A, _B, _C, _D = "Luke SkullHunter", "Misha SkullSeer", "Michelle HistoryBond", "Naomi HexPaint"
@@ -149,9 +151,9 @@ def test_friends_everywhere_needs_every_pair_and_every_name():
 async def test_the_survey_skips_the_group_tab_when_friends_connect_everyone(monkeypatch):
     clients = _clients(_A, _B)
     friends = {clients[0]: [_B], clients[1]: [_A]}
-    monkeypatch.setattr(node_helpers, "list_online_friends", AsyncMock(side_effect=lambda c: friends[c]))
+    set_helper(monkeypatch, "list_online_friends", AsyncMock(side_effect=lambda c: friends[c]))
     close = AsyncMock(return_value=True)
-    monkeypatch.setattr(node_helpers, "close_friends_list", close)
+    set_helper(monkeypatch, "close_friends_list", close)
     states = AsyncMock()
     monkeypatch.setattr(group_manager, "read_group_states", states)
 
@@ -172,8 +174,8 @@ async def test_the_survey_reads_each_friends_list_inside_the_mouse_handler(monke
         held.append(entered == exited + 1)
         return [_B] if client is clients[0] else [_A]
 
-    monkeypatch.setattr(node_helpers, "list_online_friends", read)
-    monkeypatch.setattr(node_helpers, "close_friends_list", AsyncMock(return_value=True))
+    set_helper(monkeypatch, "list_online_friends", read)
+    set_helper(monkeypatch, "close_friends_list", AsyncMock(return_value=True))
 
     pm = await port_map.survey(clients, names=[_A, _B])
 
@@ -183,8 +185,8 @@ async def test_the_survey_reads_each_friends_list_inside_the_mouse_handler(monke
 
 async def test_the_survey_reads_the_group_tab_when_a_pair_is_not_friends(monkeypatch):
     clients = _clients(_A, _B)
-    monkeypatch.setattr(node_helpers, "list_online_friends", AsyncMock(side_effect=ValueError("No friends online")))
-    monkeypatch.setattr(node_helpers, "close_friends_list", AsyncMock(return_value=True))
+    set_helper(monkeypatch, "list_online_friends", AsyncMock(side_effect=ValueError("No friends online")))
+    set_helper(monkeypatch, "close_friends_list", AsyncMock(return_value=True))
     monkeypatch.setattr(group_manager, "read_group_states", AsyncMock(return_value=[GroupState(True, (_A, _B))] * 2))
 
     pm = await port_map.survey(clients, names=[_A, _B])
@@ -194,8 +196,8 @@ async def test_the_survey_reads_the_group_tab_when_a_pair_is_not_friends(monkeyp
 
 async def test_the_survey_reuses_group_states_it_is_given(monkeypatch):
     clients = _clients(_A, _B)
-    monkeypatch.setattr(node_helpers, "list_online_friends", AsyncMock(return_value=[]))
-    monkeypatch.setattr(node_helpers, "close_friends_list", AsyncMock(return_value=True))
+    set_helper(monkeypatch, "list_online_friends", AsyncMock(return_value=[]))
+    set_helper(monkeypatch, "close_friends_list", AsyncMock(return_value=True))
     read = AsyncMock()
     monkeypatch.setattr(group_manager, "read_group_states", read)
 
@@ -212,7 +214,7 @@ async def test_waves_port_through_whoever_has_already_arrived(monkeypatch):
     a, b, c = _clients(_A, _B, _C, zones=["Alpha/S1", "Beta/Hub", "Gamma/Hub"])
     pm = PortMap.from_survey([_A, _B, _C], [[_B], [_A, _C], [_B]], [(), (), ()])
     port, calls = _fake_port([a, b, c])
-    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    set_helper(monkeypatch, "port_to_friend", port)
 
     left = await port_map.port_waves(FakeMachine(), [a, b, c], [b, c], [a], pm)
 
@@ -225,7 +227,7 @@ async def test_the_group_route_is_taken_when_there_is_no_friend_route(monkeypatc
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[], []], [(_A, _B), (_A, _B)])
     friend = AsyncMock()
-    monkeypatch.setattr(node_helpers, "port_to_friend", friend)
+    set_helper(monkeypatch, "port_to_friend", friend)
     port, _ = _fake_port([a, b])
     monkeypatch.setattr(group_manager, "port_to_group_member", port)
 
@@ -236,8 +238,8 @@ async def test_the_group_route_is_taken_when_there_is_no_friend_route(monkeypatc
 async def test_a_route_that_cannot_start_is_demoted_and_never_names_the_player(monkeypatch):
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
-    monkeypatch.setattr(
-        node_helpers, "port_to_friend", AsyncMock(side_effect=ValueError(f"Could not find friend matching {_A!r}"))
+    set_helper(
+        monkeypatch, "port_to_friend", AsyncMock(side_effect=ValueError(f"Could not find friend matching {_A!r}"))
     )
     machine = FakeMachine()
 
@@ -250,8 +252,8 @@ async def test_a_route_that_cannot_start_is_demoted_and_never_names_the_player(m
 async def test_a_port_that_does_not_land_is_demoted(monkeypatch):
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
-    monkeypatch.setattr(
-        node_helpers, "port_to_friend", AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading=set()))
+    set_helper(
+        monkeypatch, "port_to_friend", AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading=set()))
     )
 
     assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], pm) == [b]
@@ -265,7 +267,7 @@ async def test_a_port_that_lands_in_the_zone_but_not_the_realm_is_demoted(monkey
     see_each_other(b)
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
     port, _ = _fake_port([a, b])
-    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    set_helper(monkeypatch, "port_to_friend", port)
     monkeypatch.setattr(port_map, "SIGHTING_SETTLE_TIMEOUT", 0.05)
     machine = FakeMachine()
 
@@ -279,7 +281,7 @@ async def test_a_port_that_lands_with_the_target_is_recorded_together(monkeypatc
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
     port, _ = _fake_port([a, b])
-    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    set_helper(monkeypatch, "port_to_friend", port)
     machine = FakeMachine()
 
     assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == []
@@ -289,7 +291,7 @@ async def test_a_port_that_lands_with_the_target_is_recorded_together(monkeypatc
 async def test_a_client_with_no_route_is_left_without_an_attempt(monkeypatch):
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     port = AsyncMock()
-    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    set_helper(monkeypatch, "port_to_friend", port)
 
     assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], PortMap()) == [b]
     port.assert_not_awaited()
@@ -300,7 +302,7 @@ async def test_a_port_is_not_judged_while_the_movers_zone_is_unreadable(monkeypa
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
     port, _ = _fake_port([a, b])
-    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    set_helper(monkeypatch, "port_to_friend", port)
     arrived = b.zone_name.side_effect
     b.zone_name = AsyncMock(side_effect=lambda: None if b.zone_name.await_count <= 2 else arrived())
     machine = FakeMachine()
@@ -315,7 +317,7 @@ async def test_two_unreadable_zones_are_not_a_match(monkeypatch):
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
     port, _ = _fake_port([a, b])
-    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    set_helper(monkeypatch, "port_to_friend", port)
     monkeypatch.setattr(node_helpers, "read_zones", _quick(node_helpers.read_zones))
     a.zone_name = AsyncMock(return_value=None)
     b.zone_name = AsyncMock(return_value=None)
@@ -328,9 +330,7 @@ async def test_two_unreadable_zones_are_not_a_match(monkeypatch):
 async def test_a_judged_port_logs_the_zones_it_compared(monkeypatch):
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
     pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
-    monkeypatch.setattr(
-        node_helpers, "port_to_friend", AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading={0}))
-    )
+    set_helper(monkeypatch, "port_to_friend", AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading={0})))
     machine = FakeMachine()
 
     assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == [b]

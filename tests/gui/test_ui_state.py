@@ -5,8 +5,9 @@ from __future__ import annotations
 import json
 import logging
 
+from bartleby.shared.vendor import product_dir
+
 from bartlebot.gui.ui_state import UI_STATE_FILE, UiState
-from bartlebot.shared.vendor import product_dir
 
 _DEFAULTS = {"quicksell": True, "autosave": True}
 

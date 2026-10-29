@@ -60,19 +60,19 @@ import argparse
 import asyncio
 import sys
 
-from wizwalker.extensions.wizsprinter import WizSprinter
-
-from bartlebot.clients import group_manager
-from bartlebot.game import wizard_names
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.clients import group_manager
+from bartleby.runtime.game import wizard_names
+from bartleby.runtime.paths import (
     GROUP_ROSTER_LINES,
     SOCIAL_BUTTON_PATH,
     SOCIAL_GROUP_TAB_PATH,
     SOCIAL_WINDOW_PATH,
     group_member_name_path,
 )
-from bartlebot.nodes.timing import GROUP_UI_SETTLE, POLL_INTERVAL, TRIGGER_TIMEOUT
+from bartleby.runtime.timing import GROUP_UI_SETTLE, POLL_INTERVAL, TRIGGER_TIMEOUT
+from wizwalker.extensions.wizsprinter import WizSprinter
+
+from bartlebot.nodes import node_helpers
 
 # Probe one line past the assumed cap. If this one resolves, GROUP_ROSTER_LINES is too
 # small and full groups are being truncated — see Q2.

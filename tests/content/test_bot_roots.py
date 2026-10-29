@@ -6,10 +6,11 @@ import json
 import logging
 from pathlib import Path
 
+from bartleby.shared.vendor import product_dir
+
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import DEV_ENV_VAR
 from bartlebot.paths import project_root
-from bartlebot.shared.vendor import product_dir
 
 
 def _bot(path: Path, bot_id: str, name: str = "Bot") -> Path:

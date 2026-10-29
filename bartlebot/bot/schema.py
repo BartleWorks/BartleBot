@@ -438,7 +438,7 @@ class ForkedFrom(BaseModel):
     """The Official bot a user's copy was made from (Make my own copy, #149).
 
     ``sha256`` is the Official bot's content hash when the copy was made
-    (:func:`bartlebot.shared.content_hash.content_sha256`), so a later release that changes the
+    (:func:`bartleby.shared.content_hash.content_sha256`), so a later release that changes the
     Official bot can be told apart from one that does not. Written once, by the copy,
     and never by a load or a save; Save As copies it unchanged, since a copy of a copy
     came from the same Official bot.
@@ -549,11 +549,11 @@ class BotConfig(BaseModel):
     # Set only on a template's draft or a released version of it, never on a bot.
     template_meta: TemplateMeta | None = None
     # The content hashes of what earlier saves replaced, newest first (#169); see
-    # bartlebot.shared.content_hash. Left out of the file while empty, so a bot never
+    # bartleby.shared.content_hash. Left out of the file while empty, so a bot never
     # saved since it existed is written exactly as before.
     history: list[str] = Field(default_factory=list)
     # The content hash it had as its sender sent it, when an import wrote it changed:
-    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # its links rewritten to a copy, or as a copy itself (#171; bartleby.shared.content_hash).
     # Dropped by the next save that changes it, and never in a share file.
     sent_sha256: str | None = None
 
@@ -933,11 +933,11 @@ class SubgraphDefinition(BaseModel):
     regions: list[RegionModel] = Field(default_factory=list)
     # The content hashes of what earlier saves replaced, newest first, and on a user's
     # override of an Official definition the hash of the Official one it was made from
-    # (#169; bartlebot.shared.content_hash). Both stay out of the file while unset.
+    # (#169; bartleby.shared.content_hash). Both stay out of the file while unset.
     history: list[str] = Field(default_factory=list)
     official_sha256: str | None = None
     # The content hash it had as its sender sent it, when an import wrote it changed:
-    # its links rewritten to a copy, or as a copy itself (#171; bartlebot.shared.content_hash).
+    # its links rewritten to a copy, or as a copy itself (#171; bartleby.shared.content_hash).
     # Dropped by the next save that changes it, and never in a share file.
     sent_sha256: str | None = None
 

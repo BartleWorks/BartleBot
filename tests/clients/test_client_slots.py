@@ -1,7 +1,7 @@
 """Tests for ClientManager slot bookkeeping and game-view tile reconciliation.
 
 Slots and player indices are different numbers, and most of this file is about keeping
-them apart -- see ``bartlebot.clients.tile_slots`` for why they had to be separated at all. A slot
+them apart -- see ``bartleby.runtime.clients.tile_slots`` for why they had to be separated at all. A slot
 is a position in ``_client_order``, pinned before the windows exist and held for as long as
 the account is running; a player index is a position in the live client list, which is
 compacted and therefore moves as clients hook, crash and recover.
@@ -25,8 +25,8 @@ where windows ended up rather than about call order.
 from unittest.mock import MagicMock, patch
 
 import pytest
+from bartleby.runtime.clients.tile_slots import TileSlot, plan_tile_changes
 
-from bartlebot.clients.tile_slots import TileSlot, plan_tile_changes
 from tests.clients.test_recovery import RecoveryHarness, _make_machine, _mock_create_task
 
 # ---------------------------------------------------------------------------
@@ -191,9 +191,9 @@ class TestBuildTileSlots:
     def test_a_window_that_is_not_in_game_has_no_player_number(self, harness: RecoveryHarness) -> None:
         """It is not Player anything -- a bot cannot route to it -- so it shows its account."""
         _fleet(harness, "a")
-        tiles = _tiles(harness, [{"username": "a", "alias": "Malvin"}])
+        tiles = _tiles(harness, [{"username": "a", "alias": "Farmer"}])
         assert tiles[0].player is None
-        assert tiles[0].label == "Malvin"
+        assert tiles[0].label == "Farmer"
 
     def test_a_hooked_window_is_captioned_by_its_player_index(self, harness: RecoveryHarness) -> None:
         hwnds = _fleet(harness, "a", "b")

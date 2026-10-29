@@ -36,12 +36,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
-
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
-from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
 
 BAR_WIDTH_PX = 3
 
@@ -271,8 +270,8 @@ class DescriptionSwitches(QWidget):
 
         *trailing* is an optional ``(text, tooltip, callback)`` link, right-aligned.
         """
-        from bartlebot.gui.widgets.buttons.link_button import LinkButton  # noqa: PLC0415 - import cycle
-        from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel  # noqa: PLC0415 - import cycle
+        from bartleby.qt.widgets.buttons.link_button import LinkButton  # noqa: PLC0415 - import cycle
+        from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel  # noqa: PLC0415 - import cycle
 
         super().__init__(parent)
         row = QHBoxLayout(self)

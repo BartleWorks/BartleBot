@@ -13,6 +13,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
 
 import pytest
+from bartleby.shared.strategy_models import PlayerCombatStrategy
 
 from bartlebot.combat.strategy_store import StrategyKind, save_player_strategy
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
@@ -23,7 +24,6 @@ from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks, DslChe
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.nodes import combat_runner
 from bartlebot.nodes.combat_runner import dsl_check, known_dsl_check
-from bartlebot.shared.strategy_models import PlayerCombatStrategy
 
 _BROKEN = "not even close to valid (("
 _VALID = "any<damage> @ enemy"

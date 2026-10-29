@@ -5,14 +5,14 @@ import logging
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from bartleby.runtime.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
+from bartleby.runtime.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ZONE_AT_START
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
-from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

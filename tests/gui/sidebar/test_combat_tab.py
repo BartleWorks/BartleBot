@@ -19,6 +19,16 @@ import shutil
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.combat_defaults import (
+    PREFERENCE_KEYS,
+    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
+    SHIPPED_TEAM_DUEL_ID,
+    DefaultDuel,
+    DefaultSource,
+    TeamSize,
+)
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from PyQt6.QtWidgets import QInputDialog, QMessageBox, QScrollArea
 
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -80,16 +90,6 @@ from bartlebot.gui.sidebar.strategy_panel import (
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow
 from bartlebot.gui.widgets.pills.tag_pill import AccentPill, ActionPill, NeutralPill
 from bartlebot.paths import project_root
-from bartlebot.shared.combat_defaults import (
-    PREFERENCE_KEYS,
-    SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
-    SHIPPED_TEAM_DUEL_ID,
-    DefaultDuel,
-    DefaultSource,
-    TeamSize,
-)
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 from tests.drag_helpers import drag_card, menu_move, press_and_move, release, show
 
 
@@ -2004,7 +2004,8 @@ def test_the_source_is_asked_at_resolve_time_rather_than_at_install_time(qapp):
 
 
 def test_a_known_account_resolves_to_its_palette_slot(qapp):
-    from bartlebot.gui.theming.account_accent import account_color_keys  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_color_keys  # noqa: PLC0415
+
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     accounts = [{"username": "a@example.com"}, {"username": "b@example.com"}]
@@ -2066,7 +2067,8 @@ def test_the_label_is_the_account_s_alias_when_it_has_one(qapp):
 
 
 def _two_accounts():
-    from bartlebot.gui.theming.account_accent import account_color_keys  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_color_keys  # noqa: PLC0415
+
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     accounts = [{"username": "a@example.com"}, {"username": "b@example.com"}]
@@ -2075,7 +2077,7 @@ def _two_accounts():
 
 
 def test_a_deck_card_is_striped_by_the_account_in_its_slot(qapp):
-    from bartlebot.gui.theming.account_accent import account_accent  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_accent  # noqa: PLC0415
 
     keys = _two_accounts()
     tab = CombatTab()
@@ -2805,7 +2807,7 @@ def switch_theme(qapp):
 
     The app stylesheet is restored by conftest; the theme and the palette are not.
     """
-    from bartlebot.gui.theming import theme as theme_mod
+    from bartleby.qt.theming import theme as theme_mod
 
     before, palette = theme_mod.active_theme(), qapp.palette()
 
@@ -2825,8 +2827,8 @@ def test_card_text_takes_the_new_theme_without_a_hover(qapp, switch_theme, make)
     """The card recolored its labels, and then the stylesheet repolish of each label
     restored the palette it saved under the old theme -- so the text stayed in the old
     colors until a hover restyled the card again."""
-    from bartlebot.gui.theming.theme import THEME
-    from bartlebot.gui.widgets.labels.elided_label import ElidedLabel
+    from bartleby.qt.theming.theme import THEME
+    from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 
     switch_theme("dark")
     card = make()

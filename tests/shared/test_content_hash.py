@@ -1,6 +1,6 @@
 """The one content hash, the histories every saved item keeps, and "Official updated" (#169).
 
-Pure functions first (:mod:`bartlebot.shared.content_hash`), then each store that records
+Pure functions first (:mod:`bartleby.shared.content_hash`), then each store that records
 a history on save, then the surfaces that read it. Nothing here is a real character.
 """
 
@@ -10,6 +10,15 @@ import json
 from pathlib import Path
 
 import pytest
+from bartleby.shared.content_hash import HISTORY_CAP, content_sha256, next_history, official_updated, record_save
+from bartleby.shared.share_file import shareable_content
+from bartleby.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
@@ -27,21 +36,6 @@ from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import Origin, pill_text
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, load_subgraph, save_subgraph
 from bartlebot.paths import project_root
-from bartlebot.shared.content_hash import (
-    HISTORY_CAP,
-    content_sha256,
-    next_history,
-    official_updated,
-    record_save,
-)
-from bartlebot.shared.share_file import shareable_content
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 from tests.content.subgraphs.test_subgraph_store import _defn
 
 

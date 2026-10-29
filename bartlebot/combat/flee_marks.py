@@ -30,9 +30,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
 
+    from bartleby.shared.preferences import PreferenceStore
+
     from bartlebot.bot.schema import BotConfig
     from bartlebot.combat.combat_resolution import Level
-    from bartlebot.shared.preferences import PreferenceStore
 
 
 class FleeMarks:

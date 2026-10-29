@@ -2,12 +2,12 @@
 
 import logging
 
+from bartleby.runtime.timing import POLL_INTERVAL
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.help_text import ENTITY_ID_MATCHING, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(

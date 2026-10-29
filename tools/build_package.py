@@ -23,6 +23,8 @@ import sys
 import time
 from pathlib import Path
 
+import bartleby
+
 ROOT = Path(__file__).resolve().parent.parent
 ENTRY = ROOT / "bartlebot.py"
 NAME = "BartleBot"
@@ -35,9 +37,12 @@ DATA_DIRS = (
     "subgraphs",
     "strategies",
     "bartlebot/game/data",
-    "bartlebot/gui/icons",
 )
 DATA_FILES = ("bartlebot/gui/logo/bartlebot.svg",)
+#: bartleby-core's folders the app reads: its icons, and the game data its runtime reads.
+#: Each is bundled at its path under ``bartleby/``, where core's modules look for it.
+CORE = Path(bartleby.__file__).resolve().parent
+CORE_DATA_DIRS = ("qt/icons", "runtime/game/data")
 #: Distributions whose metadata the app reads: ``importlib.metadata.version("bartlebot")``,
 #: and the libraries the session log's header names (``logging_setup.HEADER_LIBRARIES``).
 METADATA = ("bartlebot", "PyQt6", "qasync", "transitions", "wizwalker")
@@ -73,6 +78,8 @@ def pyinstaller_command(dist: Path, work: Path, icon: Path | None = None) -> tup
         command += ["--add-data", f"{ROOT / folder}{sep}{folder}"]
     for file in DATA_FILES:
         command += ["--add-data", f"{ROOT / file}{sep}{Path(file).parent.as_posix()}"]
+    for folder in CORE_DATA_DIRS:
+        command += ["--add-data", f"{CORE / folder}{sep}bartleby/{folder}"]
     for dist_name in METADATA:
         command += ["--copy-metadata", dist_name]
     for package in WHOLE_PACKAGES:

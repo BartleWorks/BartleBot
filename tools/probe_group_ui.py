@@ -34,17 +34,17 @@ import argparse
 import asyncio
 import sys
 
-from wizwalker.extensions.wizsprinter import WizSprinter
-
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.paths import (
     GROUP_WINDOW_CLOSE_PATH,
     LEAVE_GROUP_BUTTON_PATH,
     SOCIAL_BUTTON_PATH,
     SOCIAL_GROUP_TAB_PATH,
     SOCIAL_WINDOW_PATH,
 )
-from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
+from bartleby.runtime.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
+from wizwalker.extensions.wizsprinter import WizSprinter
+
+from bartlebot.nodes import node_helpers
 
 # Depth limit for the subtree dump. The social window nests a few layers; beyond this the
 # output stops being readable without adding information.

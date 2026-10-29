@@ -13,9 +13,9 @@ takes both away again (``docs/INSTALLER.md``). Update and uninstall also remove 
 update the app staged for Velopack, which is spent by then:
 
 - **The install key**, ``HKCU\\Software\\Bartleby\\BartleBot``, with the install directory
-  and the exe (:mod:`bartlebot.shared.install_key`). An update writes the same values
+  and the exe (:mod:`bartleby.shared.install_key`). An update writes the same values
   again, which mends a key that went missing and changes nothing otherwise.
-- **The six share file types** (:mod:`bartlebot.shared.file_types`): BartleBot's own
+- **The six share file types** (:mod:`bartleby.shared.file_types`): BartleBot's own
   three, :func:`own_types`, and the three it shares with every product by the vendor.
   Uninstall removes its own three, and hands the shared three to another installed
   product, or removes them when there is none.
@@ -33,10 +33,11 @@ import traceback
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from bartleby.shared import file_types, install_key
+from bartleby.shared.file_types import SHARED_TYPES, FileType
+from bartleby.shared.vendor import PRODUCT
+
 from bartlebot.packaging.build_kind import is_packaged
-from bartlebot.shared import file_types, install_key
-from bartlebot.shared.file_types import SHARED_TYPES, FileType
-from bartlebot.shared.vendor import PRODUCT
 
 #: How long Velopack lets the install and uninstall hooks run before it kills them.
 INSTALL_LIMIT_SECONDS = 30
@@ -50,8 +51,9 @@ CURRENT_DIRNAME = "current"
 
 def own_types() -> tuple[FileType, ...]:
     """BartleBot's own share types: ``.bbot``, ``.bbcombat`` and ``.bbsubgraph``, ProgIDs under the product."""
+    from bartleby.shared.share_file import SHARED_EXTENSIONS  # noqa: PLC0415
+
     from bartlebot.content.share_export import EXTENSIONS, FILE_TYPES  # noqa: PLC0415 - only a hook needs it
-    from bartlebot.shared.share_file import SHARED_EXTENSIONS  # noqa: PLC0415
 
     own = {kind: ext for kind, ext in EXTENSIONS.items() if kind not in SHARED_EXTENSIONS}
     return file_types.file_types(PRODUCT, own, FILE_TYPES)

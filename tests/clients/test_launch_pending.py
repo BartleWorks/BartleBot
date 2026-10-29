@@ -19,11 +19,11 @@ result, so the tile assertions are about where things ended up.
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bartleby.qt.game_embed.client_tile import launch_status_text
+from bartleby.runtime.clients.launch_tracker import LaunchStage, LaunchTracker
+from bartleby.runtime.clients.tile_slots import TileSlot, build_tile_slots, plan_tile_changes
+from bartleby.runtime.timing import LAUNCH_STAGE_ELAPSED_HINT
 
-from bartlebot.clients.launch_tracker import LaunchStage, LaunchTracker
-from bartlebot.clients.tile_slots import TileSlot, build_tile_slots, plan_tile_changes
-from bartlebot.gui.game_embed.client_tile import launch_status_text
-from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
 from tests.clients.test_client_slots import FakeClient, FakeGameView
 from tests.clients.test_recovery import RecoveryHarness
 
@@ -405,8 +405,9 @@ class TestGameViewPendingTiles:
         view.deleteLater()
 
     def test_a_tile_takes_its_account_color_on_sync_and_none_without_an_account(self, qapp) -> None:
+        from bartleby.qt.theming.account_accent import account_color_keys
+
         from bartlebot.gui.game_embed.game_view import GameView
-        from bartlebot.gui.theming.account_accent import account_color_keys
         from bartlebot.settings_manager import SettingsManager
 
         accounts = [{"username": "alpha"}, {"username": "beta"}]
@@ -521,18 +522,18 @@ class TestLaunchStatusText:
 
 class TestLauncherReportsStages:
     async def test_a_single_account_launch_reports_each_stage_in_order(self) -> None:
-        from bartlebot.launcher.launch_profile import launch_account
+        from bartleby.runtime.launcher.launch_profile import launch_account
 
         seen: list[tuple[str, LaunchStage]] = []
         with (
-            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-            patch("bartlebot.launcher.launch_profile._patch_window_config"),
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-            patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
-            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
-            patch("bartlebot.launcher.launch_profile.instance_login"),
-            patch("bartlebot.launcher.launch_profile.set_window_title"),
-            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+            patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+            patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+            patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartleby.runtime.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+            patch("bartleby.runtime.launcher.launch_profile.instance_login"),
+            patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+            patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
         ):
             sm.instance.return_value = MagicMock(game_resolution=(800, 600))
             await launch_account("alpha", "pw", "Alpha", progress=lambda u, s: seen.append((u, s)))
@@ -550,7 +551,7 @@ class TestLauncherReportsStages:
         yet -- a per-client stage invented for that stretch would claim progress that has
         not been made.
         """
-        from bartlebot.launcher.launch_profile import launch_accounts
+        from bartleby.runtime.launcher.launch_profile import launch_accounts
 
         seen: list[tuple[str, LaunchStage]] = []
 
@@ -559,16 +560,16 @@ class TestLauncherReportsStages:
             return [1, 2]
 
         with (
-            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-            patch("bartlebot.launcher.launch_profile._patch_window_config"),
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-            patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", _wait),
-            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
-            patch("bartlebot.launcher.launch_profile.start_instance"),
-            patch("bartlebot.launcher.launch_profile.instance_login"),
-            patch("bartlebot.launcher.launch_profile.set_window_title"),
-            patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
-            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+            patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+            patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+            patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_n_new_handles", _wait),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+            patch("bartleby.runtime.launcher.launch_profile.start_instance"),
+            patch("bartleby.runtime.launcher.launch_profile.instance_login"),
+            patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+            patch("bartleby.runtime.launcher.launch_profile.jitter", return_value=0.0),
+            patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
         ):
             sm.instance.return_value = MagicMock(game_resolution=(800, 600))
             await launch_accounts(
@@ -584,20 +585,20 @@ class TestLauncherReportsStages:
 
         An exception escaping it would leave a real client with nobody logging into it.
         """
-        from bartlebot.launcher.launch_profile import launch_account
+        from bartleby.runtime.launcher.launch_profile import launch_account
 
         def _boom(_username, _stage):
             raise RuntimeError("caption failed to draw")
 
         with (
-            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-            patch("bartlebot.launcher.launch_profile._patch_window_config"),
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-            patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
-            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
-            patch("bartlebot.launcher.launch_profile.instance_login") as login,
-            patch("bartlebot.launcher.launch_profile.set_window_title"),
-            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+            patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+            patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+            patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartleby.runtime.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+            patch("bartleby.runtime.launcher.launch_profile.instance_login") as login,
+            patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+            patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
         ):
             sm.instance.return_value = MagicMock(game_resolution=(800, 600))
             assert await launch_account("alpha", "pw", "Alpha", progress=_boom) == "[Alpha] Wizard101"
@@ -717,20 +718,20 @@ class TestFailureOnScreen:
 class TestLauncherReportsFailure:
     async def test_a_drive_that_gives_up_is_reported(self) -> None:
         """The quiet failure: auto_select returns False on a timeout rather than raising."""
-        from bartlebot.launcher.launch_profile import launch_account
+        from bartleby.runtime.launcher.launch_profile import launch_account
 
         seen: list[tuple[str, LaunchStage]] = []
         with (
-            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+            patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
             # The window is still there, which is what makes this a failure rather than a
             # launch the user closed -- see _report_drive_outcome.
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[1]),
-            patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
-            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
-            patch("bartlebot.launcher.launch_profile.instance_login"),
-            patch("bartlebot.launcher.launch_profile.set_window_title"),
-            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+            patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[1]),
+            patch("bartleby.runtime.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
+            patch("bartleby.runtime.launcher.launch_profile.instance_login"),
+            patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+            patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
         ):
             sm.instance.return_value = MagicMock(game_resolution=(800, 600))
             await launch_account(
@@ -746,7 +747,7 @@ class TestLauncherReportsFailure:
     async def test_a_window_that_never_reaches_the_login_screen_fails_alone(self) -> None:
         """One window failing to come up is not a reason to abandon the ones that did --
         and it must not be typed into at whatever screen it is actually showing."""
-        from bartlebot.launcher.launch_profile import launch_accounts
+        from bartleby.runtime.launcher.launch_profile import launch_accounts
 
         seen: list[tuple[str, LaunchStage]] = []
         logins: list[str] = []
@@ -755,19 +756,19 @@ class TestLauncherReportsFailure:
             return handle != 1
 
         with (
-            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-            patch("bartlebot.launcher.launch_profile._patch_window_config"),
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-            patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
-            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", _login_screen),
-            patch("bartlebot.launcher.launch_profile.start_instance"),
+            patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+            patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
+            patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", _login_screen),
+            patch("bartleby.runtime.launcher.launch_profile.start_instance"),
             patch(
-                "bartlebot.launcher.launch_profile.instance_login",
+                "bartleby.runtime.launcher.launch_profile.instance_login",
                 lambda _h, username, _pw: logins.append(username),
             ),
-            patch("bartlebot.launcher.launch_profile.set_window_title"),
-            patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
-            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+            patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+            patch("bartleby.runtime.launcher.launch_profile.jitter", return_value=0.0),
+            patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
         ):
             sm.instance.return_value = MagicMock(game_resolution=(800, 600))
             titles = await launch_accounts(
@@ -782,7 +783,7 @@ class TestLauncherReportsFailure:
 
     async def test_one_drive_raising_does_not_swallow_the_others_result(self) -> None:
         """Every account in the batch has a window by now and is owed an answer about it."""
-        from bartlebot.launcher.launch_profile import launch_accounts
+        from bartleby.runtime.launcher.launch_profile import launch_accounts
 
         seen: list[tuple[str, LaunchStage]] = []
 
@@ -792,18 +793,18 @@ class TestLauncherReportsFailure:
             return False
 
         with (
-            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
-            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartleby.runtime.launcher.launch_profile.patch_open_browser"),
+            patch("bartleby.runtime.launcher.launch_profile._patch_window_config"),
             # Both windows are still there: a drive that raised on a live window is a
             # failure, unlike one that ended because the window went away.
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[1, 2]),
-            patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
-            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
-            patch("bartlebot.launcher.launch_profile.start_instance"),
-            patch("bartlebot.launcher.launch_profile.instance_login"),
-            patch("bartlebot.launcher.launch_profile.set_window_title"),
-            patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
-            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+            patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[1, 2]),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
+            patch("bartleby.runtime.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
+            patch("bartleby.runtime.launcher.launch_profile.start_instance"),
+            patch("bartleby.runtime.launcher.launch_profile.instance_login"),
+            patch("bartleby.runtime.launcher.launch_profile.set_window_title"),
+            patch("bartleby.runtime.launcher.launch_profile.jitter", return_value=0.0),
+            patch("bartleby.runtime.launcher.launch_profile.SettingsManager") as sm,
         ):
             sm.instance.return_value = MagicMock(game_resolution=(800, 600))
             await launch_accounts(
@@ -817,17 +818,17 @@ class TestLauncherReportsFailure:
 
     async def test_a_login_screen_that_never_arrives_gives_up(self) -> None:
         """The wait was unbounded, so this window would have held its launch open forever."""
-        from bartlebot.launcher.launch_profile import _wait_for_login_screen
+        from bartleby.runtime.launcher.launch_profile import _wait_for_login_screen
 
-        with patch("bartlebot.launcher.launch_profile.get_window_title", return_value="Wizard101 Patcher"):
+        with patch("bartleby.runtime.launcher.launch_profile.get_window_title", return_value="Wizard101 Patcher"):
             assert await _wait_for_login_screen(1, timeout=0.05) is False
 
     async def test_windows_that_never_spawn_fail_the_whole_batch(self) -> None:
         """Not attributable to an account — the handles have not been paired with anybody —
         and it means the windows were never started at all."""
-        from bartlebot.launcher.launch_profile import _wait_for_n_new_handles
+        from bartleby.runtime.launcher.launch_profile import _wait_for_n_new_handles
 
-        with patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]):
+        with patch("bartleby.runtime.launcher.launch_profile.get_all_wizard_handles", return_value=[]):
             with pytest.raises(TimeoutError):
                 await _wait_for_n_new_handles(set(), 2, timeout=0.05)
 
@@ -840,7 +841,7 @@ class TestSpinnerMotion:
         turns every synchronous memory read during a launch into a visible hitch."""
         import time
 
-        from bartlebot.gui.game_embed.client_tile import _SPINNER_PERIOD_MS, PendingTile
+        from bartleby.qt.game_embed.client_tile import _SPINNER_PERIOD_MS, PendingTile
 
         tile = PendingTile("Alpha")
         tile._spin_start = time.monotonic() - _SPINNER_PERIOD_MS / 1000 / 4
@@ -856,7 +857,7 @@ class TestSpinnerMotion:
     def test_a_tick_repaints_the_ring_and_leaves_the_rest_alone(self, qapp) -> None:
         """At 60fps, repainting the whole tile would redraw an unchanged caption and pill
         sixty times a second, for every pending tile at once."""
-        from bartlebot.gui.game_embed.client_tile import PendingTile
+        from bartleby.qt.game_embed.client_tile import PendingTile
 
         tile = PendingTile("Alpha")
         tile.resize(400, 300)
@@ -872,7 +873,7 @@ class TestSpinnerMotion:
     def test_a_changed_caption_repaints_the_whole_tile(self, qapp) -> None:
         """The caption ages on the clock rather than on a report, so the tick is also what
         notices it has changed — a partial repaint alone would freeze the elapsed hint."""
-        from bartlebot.gui.game_embed.client_tile import PendingTile
+        from bartleby.qt.game_embed.client_tile import PendingTile
 
         tile = PendingTile("Alpha")
         tile.resize(400, 300)
@@ -891,7 +892,7 @@ class TestFailedTileRendering:
         assert launch_status_text("Launch failed", 0.0, now=9999.0, failed=True) == "Launch failed"
 
     def test_a_failed_tile_stops_spinning_and_offers_a_way_out(self, qapp) -> None:
-        from bartlebot.gui.game_embed.client_tile import PendingTile
+        from bartleby.qt.game_embed.client_tile import PendingTile
 
         tile = PendingTile("Alpha")
         assert tile._spin_timer.isActive()

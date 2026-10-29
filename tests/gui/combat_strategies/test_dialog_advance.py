@@ -11,11 +11,12 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from bartleby.runtime.paths import ADVANCE_DIALOG_PATH, DECLINE_QUEST_PATH
 from wizwalker import Keycode
 
 from bartlebot.nodes import node_helpers as nh
-from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DECLINE_QUEST_PATH
 from tests.conftest import FakeClient
+from tests.node_helper_patches import set_helper
 
 #: One dialogue page: the right button (advance, or ACCEPT on an offer), the left (DECLINE).
 TALK = {"right": True, "left": False}
@@ -72,11 +73,11 @@ def fake_ui(monkeypatch):
     async def click(client, path):
         return client.dialogue.click(path)
 
-    monkeypatch.setattr(nh, "is_visible_by_path", visible)
-    monkeypatch.setattr(nh, "click_by_path", click)
-    monkeypatch.setattr(nh, "DIALOG_PAGE_SETTLE", 0.0)
-    monkeypatch.setattr(nh, "DIALOG_FAST_POLL_INTERVAL", 0.001)
-    monkeypatch.setattr(nh, "POLL_INTERVAL", 0.001)
+    set_helper(monkeypatch, "is_visible_by_path", visible)
+    set_helper(monkeypatch, "click_by_path", click)
+    set_helper(monkeypatch, "DIALOG_PAGE_SETTLE", 0.0)
+    set_helper(monkeypatch, "DIALOG_FAST_POLL_INTERVAL", 0.001)
+    set_helper(monkeypatch, "POLL_INTERVAL", 0.001)
 
 
 async def test_an_ordinary_page_is_advanced_with_spacebar():
@@ -156,8 +157,8 @@ async def test_advancing_until_clear_declines_an_offer_mid_conversation():
 
 @pytest.fixture
 def _fast_polls(monkeypatch):
-    monkeypatch.setattr(nh, "POLL_INTERVAL", 0.0)
-    monkeypatch.setattr(nh, "DIALOG_FAST_POLL_INTERVAL", 0.0)
+    set_helper(monkeypatch, "POLL_INTERVAL", 0.0)
+    set_helper(monkeypatch, "DIALOG_FAST_POLL_INTERVAL", 0.0)
 
 
 async def test_first_wait_is_the_quiet_period_when_no_dialogue_opens(_fast_polls):

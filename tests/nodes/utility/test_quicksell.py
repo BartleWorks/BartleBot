@@ -3,18 +3,20 @@
 import logging
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.utility.quicksell as qs
-from bartlebot.bot.schema import BotConfig, BotOptionModel
-from bartlebot.nodes import node_helpers
-from bartlebot.nodes.paths import (
+from bartleby.runtime.paths import (
     QUICKSELL_JEWEL_OPEN_PATH,
     QUICKSELL_NEXT_PAGE_PATH,
     QUICKSELL_PET_TAB_PATH,
     quicksell_item_checkbox_path,
     quicksell_item_title_path,
 )
+
+import bartlebot.nodes.utility.quicksell as qs
+from bartlebot.bot.schema import BotConfig, BotOptionModel
+from bartlebot.nodes import node_helpers
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import FakeClient, FakeMachine
+from tests.node_helper_patches import patch_helper
 
 
 def _machine(**options) -> FakeMachine:
@@ -46,14 +48,12 @@ def _make_patchers(
 ):
     """Return a dict of patch context managers for the common quicksell dependencies."""
     return {
-        "poll_until": patch.object(node_helpers, "poll_until", new_callable=AsyncMock, return_value=poll_until_returns),
-        "click_by_path": patch.object(node_helpers, "click_by_path", new_callable=AsyncMock, return_value=True),
-        "is_enabled": patch.object(
-            node_helpers, "is_enabled_by_path", new_callable=AsyncMock, return_value=is_enabled_by_path_returns
+        "poll_until": patch_helper("poll_until", new_callable=AsyncMock, return_value=poll_until_returns),
+        "click_by_path": patch_helper("click_by_path", new_callable=AsyncMock, return_value=True),
+        "is_enabled": patch_helper(
+            "is_enabled_by_path", new_callable=AsyncMock, return_value=is_enabled_by_path_returns
         ),
-        "get_text": patch.object(
-            node_helpers, "get_text_by_path", new_callable=AsyncMock, return_value=get_window_text_returns
-        ),
+        "get_text": patch_helper("get_text_by_path", new_callable=AsyncMock, return_value=get_window_text_returns),
         "jewel_full": patch.object(
             qs, "_is_jewel_backpack_full", new_callable=AsyncMock, return_value=is_jewel_full_returns
         ),
@@ -179,7 +179,7 @@ async def test_keeps_items_matching_keyword():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch_helper("get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(_machine(keep_list=["hat"]), [client], {})
 
     assert result == "SUCCESS"
@@ -201,7 +201,7 @@ async def test_a_ticked_item_spares_only_itself():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch_helper("get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(_machine(keep_list=["=Couch Potatoes"]), [client], {})
 
     assert result == "SUCCESS"
@@ -222,7 +222,7 @@ async def test_case_insensitive_keep_match():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch_helper("get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(_machine(keep_list=["STAFF"]), [client], {})
 
     assert result == "SUCCESS"
@@ -242,7 +242,7 @@ async def test_non_matching_items_not_unchecked():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch_helper("get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(_machine(keep_list=["hat"]), [client], {})
 
     assert result == "SUCCESS"
@@ -258,7 +258,7 @@ async def test_iterates_multiple_pages():
     p = _make_patchers(is_jewel_full_returns=False)
     # is_enabled_by_path calls: next-page True (advance), next-page False (stop), sell-button False (grayed).
     with p["poll_until"], p["click_by_path"] as mock_click, p["get_text"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "is_enabled_by_path", new_callable=AsyncMock, side_effect=[True, False, False]):
+        with patch_helper("is_enabled_by_path", new_callable=AsyncMock, side_effect=[True, False, False]):
             result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
@@ -383,16 +383,16 @@ class _SellScreen:
 
     async def sell(self, machine, *, complete_timeout: float = 1.0) -> str:
         with (
-            patch.object(node_helpers, "is_visible_by_path", new=AsyncMock(side_effect=self._is_visible)),
-            patch.object(node_helpers, "is_enabled_by_path", new=AsyncMock(side_effect=self._is_enabled)),
-            patch.object(node_helpers, "click_by_path", new=AsyncMock(side_effect=self._click)),
-            patch.object(node_helpers, "get_text_by_path", new=AsyncMock(side_effect=self._text)),
+            patch_helper("is_visible_by_path", new=AsyncMock(side_effect=self._is_visible)),
+            patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=self._is_enabled)),
+            patch_helper("click_by_path", new=AsyncMock(side_effect=self._click)),
+            patch_helper("get_text_by_path", new=AsyncMock(side_effect=self._text)),
             patch.object(qs, "_is_jewel_backpack_full", new=AsyncMock(return_value=False)),
             patch.object(qs, "POLL_INTERVAL", 0),
             patch.object(qs, "QUICKSELL_COMPLETE_TIMEOUT", complete_timeout),
-            patch.object(node_helpers, "WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
-            patch.object(node_helpers, "WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001),
-            patch.object(node_helpers, "WINDOW_CLOSE_TIMEOUT", 0.5),
+            patch_helper("WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
+            patch_helper("WINDOW_CLOSE_CONFIRM_INTERVAL", 0.001),
+            patch_helper("WINDOW_CLOSE_TIMEOUT", 0.5),
         ):
             return await qs.run(machine, [_full_backpack()], {})
 
@@ -573,7 +573,7 @@ async def test_handles_multiple_clients():
 
 async def test_is_jewel_backpack_full_parses_text():
     """_is_jewel_backpack_full returns True when text is 'X/Y' with X >= Y."""
-    with patch.object(node_helpers, "get_text_by_path", new_callable=AsyncMock) as mock_text:
+    with patch_helper("get_text_by_path", new_callable=AsyncMock) as mock_text:
         mock_text.return_value = "100/100"
         assert await qs._is_jewel_backpack_full(FakeClient()) is True
 
@@ -792,7 +792,7 @@ async def test_the_users_own_keep_list_spares_an_item_the_bot_would_sell():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch_helper("get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(_machine(keep_list=[]), [client], {})
 
     assert result == "SUCCESS"

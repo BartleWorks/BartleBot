@@ -14,13 +14,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from bartleby.qt.theming.icon_utils import svg_icon, svg_pixmap
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMenu, QWidget
 
 from bartlebot.gui.menu_utils import popup_menu
-from bartlebot.gui.theming.icon_utils import svg_icon, svg_pixmap
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.cards.card_frame import GRIP_GUTTER
 
 # Border width of the Add card's dashed outline. Two, not one, because Qt scales a dash

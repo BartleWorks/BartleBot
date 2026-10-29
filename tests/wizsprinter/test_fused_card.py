@@ -19,6 +19,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.combat_defaults import SHIPPED_DEFAULT_SUPPORT_ID
 from lark import Lark
 from wizwalker.extensions.wizsprinter import sprinty_combat
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (
@@ -27,7 +28,6 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
 )
 from wizwalker.memory import EffectTarget, SpellEffects
 
-from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_SUPPORT_ID
 from tests.strategies.fight import (
     _INSTANT,
     SHARPENED_BLADE,

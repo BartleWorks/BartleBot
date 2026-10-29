@@ -11,10 +11,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.runtime.clients import wizwalker_cache
+from bartleby.shared.preferences import PreferenceStore
+from bartleby.shared.strategy_models import PlayerCombatStrategy
+from bartleby.shared.vendor import vendor_dir
 from PyQt6.QtWidgets import QFileDialog, QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.clients import wizwalker_cache
 from bartlebot.combat import dsl_check_cache
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import save_bot_strategy, save_player_strategy
@@ -27,9 +30,6 @@ from bartlebot.gui.ui_state import UiState
 from bartlebot.logging_setup import session_log_dir
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.shared.preferences import PreferenceStore
-from bartlebot.shared.strategy_models import PlayerCombatStrategy
-from bartlebot.shared.vendor import vendor_dir
 from bartlebot.updates.feed import staging_dir
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 from tests.content.subgraphs.test_subgraph_store import _defn

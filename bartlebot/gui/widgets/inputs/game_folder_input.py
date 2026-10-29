@@ -9,11 +9,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.shared.game_install import is_install
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QFileDialog, QHBoxLayout, QLineEdit, QWidget
-
-from bartlebot.gui.widgets.buttons.action_button import ActionButton
-from bartlebot.shared.game_install import is_install
 
 BROWSE = "Browse…"
 BROWSE_TITLE = "Choose Wizard101 Folder"

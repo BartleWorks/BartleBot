@@ -14,7 +14,7 @@ and that is only written once a character is in a game zone. But the *root windo
 (`activate_root_window_hook`) is independently activatable, and the character-select screen
 plainly has a UI root — the PLAY button is a real window in it. If `current_root_window`
 gets written at character select, we can read the actual screen instead of guessing, and
-`CHAR_SELECT_PATH` / `CHAR_SELECT_PLAY_PATH` in bartlebot/nodes/paths.py (defined, never
+`CHAR_SELECT_PATH` / `CHAR_SELECT_PLAY_PATH` in bartleby/runtime/paths.py (defined, never
 used) become usable.
 
 This probe answers exactly that, on a client that has never had a character logged in —
@@ -61,10 +61,9 @@ import asyncio
 import sys
 import time
 
+from bartleby.runtime.paths import CHAR_SELECT_PATH, CHAR_SELECT_PLAY_PATH
 from wizwalker.extensions.wizsprinter import WizSprinter
 from wizwalker.utils import get_all_wizard_handles, get_window_title
-
-from bartlebot.nodes.paths import CHAR_SELECT_PATH, CHAR_SELECT_PLAY_PATH
 
 # Depth limit for the one-off tree dump. Character select is shallow; past this the output
 # stops being readable without adding information.

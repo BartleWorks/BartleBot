@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import time
 
-from bartlebot.shared.combat_defaults import SHIPPED_DEFAULT_PLAYER_ID
+from bartleby.shared.combat_defaults import SHIPPED_DEFAULT_PLAYER_ID
+
 from tests.strategies.fight import (
     BALANCEBLADE,
     EPIC,

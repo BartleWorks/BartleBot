@@ -9,6 +9,15 @@ assignment and a linked preset.
 
 from __future__ import annotations
 
+from bartleby.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    DuelConfig,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
+
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy, StateAssignment
 from bartlebot.combat.strategy_summary import (
     Health,
@@ -21,14 +30,6 @@ from bartlebot.combat.strategy_summary import (
     summarize_deck,
     summarize_duel,
     summarize_player,
-)
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    DuelConfig,
-    PlayerAssignment,
-    PlayerCombatStrategy,
 )
 
 _VALID_DSL = "any<blade>[sharp]@ally(2)"

@@ -27,13 +27,13 @@ import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from bartleby.shared.vendor import PRODUCT, VENDOR
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 from PyQt6.QtNetwork import QLocalServer, QLocalSocket
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.content.store_roots import dev_mode
 from bartlebot.packaging.build_kind import is_packaged
-from bartlebot.shared.vendor import PRODUCT, VENDOR
 
 logger = logging.getLogger(__name__)
 

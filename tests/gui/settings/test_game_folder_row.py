@@ -5,15 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from bartleby.shared import game_install
+from bartleby.shared.game_install import INSTALL_DIR_KEY
+from bartleby.shared.preferences import PreferenceStore
 from wizwalker import utils as wizwalker_utils
 
 from bartlebot.gui.dialogs.first_run_dialog import GameFolderPage
 from bartlebot.gui.settings.game_folder_row import CHOSEN, NOT_FOUND, SUMMARY, TITLE
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_MISSING
-from bartlebot.shared import game_install
-from bartlebot.shared.game_install import INSTALL_DIR_KEY
-from bartlebot.shared.preferences import PreferenceStore
 
 
 def _install(folder: Path) -> Path:

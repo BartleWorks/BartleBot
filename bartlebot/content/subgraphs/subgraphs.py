@@ -37,6 +37,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
+from bartleby.shared.content_hash import HISTORY_FIELDS
+
 from bartlebot.bot.schema import (
     PORT_NODE_TYPES,
     SUBGRAPH_ENTRY,
@@ -56,7 +58,6 @@ from bartlebot.bot.schema import (
 )
 from bartlebot.content.store_roots import Origin
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
-from bartlebot.shared.content_hash import HISTORY_FIELDS
 
 #: Nesting depth past which composition refuses. A cycle is caught by id before this
 #: is reached; the limit is the second guard, against a chain that is merely absurd.

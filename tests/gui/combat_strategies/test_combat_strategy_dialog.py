@@ -21,6 +21,13 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
+from bartleby.shared.strategy_models import (
+    DeckData,
+    DeckPreset,
+    DuelCombatStrategy,
+    PlayerAssignment,
+    PlayerCombatStrategy,
+)
 from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
@@ -45,13 +52,6 @@ from bartlebot.gui.combat_strategies.dialog import (
 )
 from bartlebot.gui.widgets.layout.scroll_gutter import is_gutter_reserved
 from bartlebot.gui.widgets.pills.tag_pill import AccentPill, NeutralPill
-from bartlebot.shared.strategy_models import (
-    DeckData,
-    DeckPreset,
-    DuelCombatStrategy,
-    PlayerAssignment,
-    PlayerCombatStrategy,
-)
 
 
 @pytest.fixture
@@ -938,7 +938,7 @@ def test_deselecting_empties_the_about_section_with_the_editor(qapp, roots):
 
 
 def test_the_slot_colors_the_dialog_was_given_reach_the_assignment_cards(qapp, roots):
-    from bartlebot.gui.theming.account_accent import account_accent  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
     save_duel_strategy(dcs, roots[0])
@@ -951,7 +951,7 @@ def test_the_slot_colors_the_dialog_was_given_reach_the_assignment_cards(qapp, r
 
 def test_a_dialog_given_no_colors_draws_uncolored_pills(qapp, roots):
     """Authoring with nothing hooked is the normal case and must not invent a color."""
-    from bartlebot.gui.theming.account_accent import account_accent  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
     save_duel_strategy(dcs, roots[0])
@@ -964,7 +964,7 @@ def test_a_dialog_given_no_colors_draws_uncolored_pills(qapp, roots):
 
 def test_an_assignment_added_later_gets_the_colors_too(qapp, roots):
     """The keys are held, not just applied: cards are built long after the dialog opens."""
-    from bartlebot.gui.theming.account_accent import account_accent  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss")
     save_duel_strategy(dcs, roots[0])
@@ -977,7 +977,7 @@ def test_an_assignment_added_later_gets_the_colors_too(qapp, roots):
 
 
 def test_the_colors_reach_the_combat_order_chips_as_well(qapp, roots):
-    from bartlebot.gui.theming.account_accent import account_accent  # noqa: PLC0415
+    from bartleby.qt.theming.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss", combat_order=[1, 2, 3, 4])
     save_duel_strategy(dcs, roots[0])

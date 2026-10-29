@@ -7,12 +7,13 @@ The rule lives in a pure function precisely so it can be pinned down here withou
 a QApplication.
 """
 
-from bartlebot.gui.sidebar.sections.client_section import client_refresh_interval
-from bartlebot.nodes.timing import (
+from bartleby.runtime.timing import (
     CLIENT_REFRESH_INTERVAL_HIDDEN,
     CLIENT_REFRESH_INTERVAL_IDLE,
     CLIENT_REFRESH_INTERVAL_RUN,
 )
+
+from bartlebot.gui.sidebar.sections.client_section import client_refresh_interval
 
 
 class TestVisible:

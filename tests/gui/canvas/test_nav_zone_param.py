@@ -124,7 +124,7 @@ class _ZoneClient:
 
 
 def test_both_buttons_are_action_buttons(qapp):
-    from bartlebot.gui.widgets.buttons.action_button import ActionButton
+    from bartleby.qt.widgets.buttons.action_button import ActionButton
 
     form = _form({"zone": _ENTRANCE})
     field = form.widget("zone")

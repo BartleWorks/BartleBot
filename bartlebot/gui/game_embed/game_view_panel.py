@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.qt.theming.theme import THEME
+from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
@@ -14,9 +17,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.clients.authoring_tools import ACTION_LABELS, AuthoringAction
 from bartlebot.gui.game_embed.game_view import GameView
-from bartlebot.gui.theming.theme import THEME
-from bartlebot.gui.theming.themed import ThemedMixin
-from bartlebot.gui.widgets.buttons.icon_button import IconButton, IconTint
 
 
 def client_summary(connected: int, profile: str | None) -> str:

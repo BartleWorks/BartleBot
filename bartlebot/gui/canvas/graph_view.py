@@ -6,11 +6,11 @@ _MinimapView — small thumbnail overlay driven by the same scene.
 
 import logging
 
+from bartleby.qt.theming.theme import THEME
 from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen, QTransform, QWheelEvent
 from PyQt6.QtWidgets import QApplication, QGraphicsItem, QGraphicsScene, QGraphicsView
 
-from bartlebot.gui.theming.theme import THEME
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)

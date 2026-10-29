@@ -263,8 +263,9 @@ def test_an_empty_profile_says_what_it_will_do(qapp, screen, stored):
     """Said rather than refused: a half-built profile is a legitimate thing to close the
     dialog on, and there is no Add card in the column to carry the explanation instead --
     the Add button now lives beside it."""
+    from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
+
     from bartlebot.gui.settings.profile_editor import EMPTY_PROFILE_HINT
-    from bartlebot.gui.widgets.labels.themed_label import ThemedTextLabel
 
     dlg = ProfileDialog()
 

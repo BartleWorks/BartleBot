@@ -24,7 +24,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from bartlebot.game.key_bindings import ENCODING, Binding, KeyMap, parse_binding_file, parse_input
+from bartleby.runtime.game.key_bindings import ENCODING, Binding, KeyMap, parse_binding_file, parse_input
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +76,8 @@ def read_game_keybindings(maps: Sequence[KeyMap] = ()) -> list[GameBinding]:
     """
     if maps:
         return game_bindings(b for key_map in maps for b in key_map.bindings)
-    from bartlebot.shared.game_install import find_install  # noqa: PLC0415 - a registry lookup, only when asked
-    from bartlebot.shared.preferences import PreferenceStore  # noqa: PLC0415
+    from bartleby.shared.game_install import find_install  # noqa: PLC0415 - a registry lookup, only when asked
+    from bartleby.shared.preferences import PreferenceStore  # noqa: PLC0415
 
     try:
         found = find_install(PreferenceStore())

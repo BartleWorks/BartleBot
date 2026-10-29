@@ -30,10 +30,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bartleby.runtime.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
-from bartlebot.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from bartlebot.gui import screen_fit
 from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection

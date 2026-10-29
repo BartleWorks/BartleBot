@@ -7,20 +7,20 @@ and none of it is a level of any bot option's resolution.
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
-
-from bartlebot.game.game_sizing import (
+from bartleby.runtime.game.game_sizing import (
     BOTCANVAS_DEFAULT_HEIGHT,
     BOTCANVAS_MIN_HEIGHT,
     LEFT_SIDEBAR_MIN_WIDTH,
     RIGHT_SIDEBAR_MIN_WIDTH,
 )
+from bartleby.shared.preferences import PreferenceStore
+from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSpinBox, QWidget
+
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.game_art_row import game_art_row
 from bartlebot.gui.settings.game_folder_row import apply_game_folder, game_folder_row
 from bartlebot.gui.settings.rows import Binding, SettingGroup, SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for
-from bartlebot.shared.preferences import PreferenceStore
 
 #: Each of the window size's two boxes, which share one row and one control slot.
 _SIZE_BOX_PX = 112

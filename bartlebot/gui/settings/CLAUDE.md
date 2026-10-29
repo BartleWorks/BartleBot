@@ -7,7 +7,7 @@ Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
 **Accounts and launch profiles are not in that file.** They are about the *account*, not
 about this app, so they live one level up in the vendor-level store —
-`%APPDATA%/Bartleby/accounts.json`, `bartlebot/shared/account_store.py` — where a second
+`%APPDATA%/Bartleby/accounts.json`, core's `bartleby/shared/account_store.py` — where a second
 product by this publisher can read them. `SettingsManager.accounts` and `.launch_profiles`
 are a facade over it and are still what you call; `SettingsManager.account_store` is the
 seam, and the only reason to reach it is a change to *both* lists that must be one write.
@@ -18,13 +18,13 @@ exactly once.
 
 | file | holds |
 |---|---|
-| `%APPDATA%/Bartleby/preferences.json` | a preference about the *user* that every product reads, such as the combat defaults. Flat, dotted keys (`combat.default_duel.solo`), `"version": 1`. `bartlebot/shared/preferences.py`, `PreferenceStore` |
+| `%APPDATA%/Bartleby/preferences.json` | a preference about the *user* that every product reads, such as the combat defaults. Flat, dotted keys (`combat.default_duel.solo`), `"version": 1`. core's `bartleby/shared/preferences.py`, `PreferenceStore` |
 | `%APPDATA%/Bartleby/accounts.json` | accounts and launch profiles |
 | `%APPDATA%/Bartleby/BartleBot/settings.json` | what only this app has: layout, sidebars, Safety Delay, bot options |
 
 **The write rule for the two shared files:** two products can be open at once, so a
 shared file is never written from memory. Every write is
-`bartlebot/shared/json_update.update_json(path, mutate)`: read the file as it is, change
+core's `bartleby/shared/json_update.update_json(path, mutate)`: read the file as it is, change
 only the key you own, check nobody wrote in between (retrying up to `UPDATE_RETRIES`),
 and rename a temporary over it. Keys you do not know are kept; the last writer of a key
 wins, which is right for a preference and why the strategy library, with authored content

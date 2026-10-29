@@ -36,7 +36,7 @@ _DEFAULT_PARAMS = {"enemy": "", "use_default_strategy": True}
 def _patch_resolve_combat(combat_order: list[int]):
     from unittest.mock import patch  # noqa: PLC0415
 
-    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
+    from bartleby.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
 
     return patch(
         "bartlebot.nodes.combat_and_healing.handle_combat.resolve_combat",
@@ -232,7 +232,7 @@ async def test_combat_order_sequential():
 
 async def test_combat_order_invalid_client_number_skipped():
     """combat_order referencing a client that doesn't exist is silently skipped."""
-    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL
+    from bartleby.shared.combat_defaults import LAST_RESORT_DSL
 
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
@@ -734,8 +734,9 @@ async def test_a_fled_fight_counts_toward_the_flee_limit():
 
 def _fled_on(level, source: str = "duel strategy 'Default Team Duel' (the shipped Team default)"):
     """Run a fight that is fled, its duel resolved at *level*. Returns the machine."""
+    from bartleby.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
+
     from bartlebot.bot.schema import BotConfig, StateModel  # noqa: PLC0415
-    from bartlebot.shared.combat_defaults import LAST_RESORT_DSL  # noqa: PLC0415
 
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
