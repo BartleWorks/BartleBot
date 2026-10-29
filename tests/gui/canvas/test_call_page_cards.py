@@ -7,11 +7,11 @@ Drives a real ``BotCanvas`` over the synthetic "sync players" fixture from
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.app.ui_state import UiState
 
 from bartlebot.bot.schema import SubgraphPanel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.subgraphs.subgraphs import compose_bot
-from bartlebot.gui.ui_state import UiState
 from bartlebot.gui.widgets.buttons.record_button import RecordButton
 from bartlebot.options import param_cards
 from bartlebot.options.option_groups import summary_text

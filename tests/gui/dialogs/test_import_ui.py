@@ -337,10 +337,10 @@ def test_files_a_later_launch_hands_over_are_imported_and_nothing_else(harness, 
 
 
 def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
-    qtbot, harness, sender, tmp_path, monkeypatch
+    qtbot, harness, sender, tmp_path, monkeypatch, bartlebot_product
 ):
     """Done when (#237): a double-click while the app runs imports in that app."""
-    from bartlebot.gui.single_instance import SingleInstance  # noqa: PLC0415
+    from bartleby.qt.app.single_instance import SingleInstance  # noqa: PLC0415
 
     raised = []
     monkeypatch.setattr("bartlebot.app_controller.raise_window", raised.append)
@@ -348,12 +348,12 @@ def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
     monkeypatch.setattr(
         "bartlebot.app_controller.QApplication.activeModalWidget", lambda: object() if modal[0] else None
     )
-    monkeypatch.setattr("bartlebot.gui.single_instance.BUSY_RETRY_MS", 10)
+    monkeypatch.setattr("bartleby.qt.app.single_instance.BUSY_RETRY_MS", 10)
     bot, _ = _sender_setup(sender)
     path = _send_bot(sender, tmp_path, bot)
     imported: list[str] = []
     harness._import_share_file = imported.append
-    instance = SingleInstance("unused")
+    instance = SingleInstance(bartlebot_product, name="unused")
     harness.listen_for_launches(instance)
 
     instance.arguments_received.emit([str(path)])

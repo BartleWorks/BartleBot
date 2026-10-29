@@ -15,6 +15,7 @@ from bartleby.shared.strategy_library import (
 from bartleby.shared.vendor import product_dir, vendor_dir
 
 from bartlebot.content.store_roots import DEV_ENV_VAR, resolve_shared_roots
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
 PLAYER = LibraryKind.PLAYER
@@ -38,7 +39,7 @@ PLAYER = LibraryKind.PLAYER
 def test_the_library_is_written_at_the_vendor_root_not_the_products():
     shipped, user = resolve_shared_roots(None, None)
     assert user == vendor_dir()
-    assert user != product_dir()
+    assert user != product_dir(PRODUCT)
     assert shipped == project_root()
 
 

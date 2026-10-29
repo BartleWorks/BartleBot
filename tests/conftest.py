@@ -491,6 +491,25 @@ def _remove_unguarded_registry_key():
         delete_tree(winreg.HKEY_CURRENT_USER, UNGUARDED_REGISTRY_KEY)
 
 
+@pytest.fixture(scope="session")
+def _bartlebot_product():
+    """BartleBot as the suite runs it: never in developer mode, whatever the shell says."""
+    from dataclasses import replace  # noqa: PLC0415
+
+    from bartlebot.packaging.product import product  # noqa: PLC0415
+
+    return replace(product(), dev_mode=False, log_root=None)
+
+
+@pytest.fixture(autouse=True)
+def bartlebot_product(_bartlebot_product, monkeypatch):
+    """Run every test as BartleBot, as ``bartlebot.py`` does with ``product.use`` before anything else."""
+    from bartleby.shared import product  # noqa: PLC0415
+
+    monkeypatch.setattr(product, "_current", _bartlebot_product)
+    return _bartlebot_product
+
+
 @pytest.fixture(autouse=True)
 def isolated_settings(_appdata_root, monkeypatch):
     """Point the SettingsManager singleton at a per-test directory.

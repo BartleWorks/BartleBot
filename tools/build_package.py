@@ -44,7 +44,7 @@ DATA_FILES = ("bartlebot/gui/logo/bartlebot.svg",)
 CORE = Path(bartleby.__file__).resolve().parent
 CORE_DATA_DIRS = ("qt/icons", "runtime/game/data")
 #: Distributions whose metadata the app reads: ``importlib.metadata.version("bartlebot")``,
-#: and the libraries the session log's header names (``logging_setup.HEADER_LIBRARIES``).
+#: and the libraries the session log's header names (``packaging.product.HEADER_LIBRARIES``).
 METADATA = ("bartlebot", "PyQt6", "qasync", "transitions", "wizwalker")
 #: Packages PyInstaller's import scan misses whole. katsuba's ``op`` and ``wad`` are
 #: submodules its native extension registers when it loads, so no file names them.

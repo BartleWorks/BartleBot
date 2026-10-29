@@ -213,7 +213,7 @@ def roots(tmp_path, monkeypatch):
             (root / "strategies" / kind).mkdir(parents=True)
         (root / "bot_strategies").mkdir(parents=True)
     monkeypatch.setattr(store_roots, "project_root", lambda: shipped)
-    monkeypatch.setattr(store_roots, "product_dir", lambda: user)
+    monkeypatch.setattr(store_roots, "product_dir", lambda _product: user)
     return shipped, user
 
 

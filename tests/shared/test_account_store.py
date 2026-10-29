@@ -21,6 +21,7 @@ import pytest
 from bartleby.shared.account_store import AccountStore
 
 from bartlebot import settings_manager as sm_mod
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.settings_manager import SettingsManager
 
 ONE = "one@example.com"
@@ -57,7 +58,7 @@ def settings_dir(tmp_path, monkeypatch):
     """
     monkeypatch.setenv("APPDATA", str(tmp_path))
     monkeypatch.setattr(SettingsManager, "_instance", None)
-    directory = sm_mod.product_dir()
+    directory = sm_mod.product_dir(PRODUCT)
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 

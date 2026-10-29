@@ -4,7 +4,7 @@
 ``ProcessPoolExecutor`` worker kept for the life of the app. A worker waits on its call queue for the next job and never
 notices that its parent has gone: a spawned ``multiprocessing.Queue`` gives the child
 both ends of its pipe, so the read never breaks. The pool tells its workers to leave
-from Python's shutdown, which the app skips on quit (``gui/app_exit.py``) and which a
+from Python's shutdown, which the app skips on quit (core's ``qt/app/app_exit.py``) and which a
 crash or a kill never reaches either, so each such quit left its worker running for
 good.
 

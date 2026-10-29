@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+from bartleby.qt.app.logging_setup import TURN_TRACE_LOGGER
 from lark import Lark
 from wizwalker.extensions.wizsprinter import sprinty_combat
 from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (
@@ -26,7 +27,6 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
 )
 from wizwalker.extensions.wizsprinter.sprinty_combat import SprintyCombat
 
-from bartlebot.logging_setup import TURN_TRACE_LOGGER
 from tests.strategies.fight import (
     _INSTANT,
     SHARPENED_BLADE,

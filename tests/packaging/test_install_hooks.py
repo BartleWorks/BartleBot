@@ -17,9 +17,10 @@ import velopack
 from bartleby.shared import file_types, install_key
 from bartleby.shared.install_key import InstallRecord
 from bartleby.shared.official_set import SET_FILE
-from bartleby.shared.vendor import PRODUCT, VENDOR
+from bartleby.shared.vendor import VENDOR
 
 from bartlebot.packaging import install_hooks
+from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.paths import project_root
 
 

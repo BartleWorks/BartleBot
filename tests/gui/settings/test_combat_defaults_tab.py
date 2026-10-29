@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from bartleby.qt.app.logging_setup import TURN_TRACE_LOGGER
 from bartleby.shared.combat_defaults import (
     PREFERENCE_KEYS,
     SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
@@ -31,7 +32,6 @@ from bartlebot.gui.settings.combat_defaults_tab import (
     CombatDefaultsTab,
 )
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
-from bartlebot.logging_setup import TURN_TRACE_LOGGER
 from bartlebot.settings_manager import SettingsManager
 
 _DIALOG = "bartlebot.gui.settings.combat_defaults_tab.CombatStrategyDialog"

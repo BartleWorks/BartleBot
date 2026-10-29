@@ -58,7 +58,6 @@ from bartleby.shared.share_file import (
 )
 from bartleby.shared.store_files import Origin, slugify
 from bartleby.shared.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartleby.shared.vendor import PRODUCT
 
 from bartlebot.bot.schema import BotConfig, RegionModel, SubgraphDefinition
 from bartlebot.combat import strategy_store
@@ -67,6 +66,7 @@ from bartlebot.combat.strategy_store import StrategyKind
 from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import declared_id
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.packaging.product import NAME as PRODUCT
 
 logger = logging.getLogger(__name__)
 

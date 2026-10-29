@@ -44,7 +44,7 @@ KEEP_FILES = 10
 
 
 def stall_dir() -> Path:
-    from bartlebot.logging_setup import session_log_dir  # noqa: PLC0415 - kept off this module's import path
+    from bartleby.qt.app.logging_setup import session_log_dir  # noqa: PLC0415 - kept off this module's import path
 
     return session_log_dir() / "stalls"
 

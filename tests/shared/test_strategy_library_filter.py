@@ -36,7 +36,7 @@ def store(tmp_path, monkeypatch):
     (tmp_path / "strategies" / "decks").mkdir(parents=True)
     (tmp_path / "bot_strategies").mkdir(parents=True)
     monkeypatch.setattr(store_roots, "project_root", lambda: tmp_path)
-    monkeypatch.setattr(store_roots, "product_dir", lambda: tmp_path)
+    monkeypatch.setattr(store_roots, "product_dir", lambda _product: tmp_path)
     return tmp_path
 
 

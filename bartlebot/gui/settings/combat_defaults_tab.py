@@ -44,6 +44,7 @@ from __future__ import annotations
 import logging
 from dataclasses import replace
 
+from bartleby.qt.app.logging_setup import set_turn_trace
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
@@ -62,7 +63,6 @@ from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogM
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
-from bartlebot.logging_setup import set_turn_trace
 from bartlebot.settings_manager import SettingsManager, default_for
 
 logger = logging.getLogger(__name__)

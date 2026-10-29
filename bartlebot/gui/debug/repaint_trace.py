@@ -46,11 +46,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from bartleby.qt.app.logging_setup import session_log_dir
 from PyQt6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QTimer
 from PyQt6.QtGui import QColor, QPainter, QPen, QRegion
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsView
-
-from bartlebot.logging_setup import session_log_dir
 
 logger = logging.getLogger(__name__)
 

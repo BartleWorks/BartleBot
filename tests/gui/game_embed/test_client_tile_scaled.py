@@ -38,7 +38,7 @@ def _tile(qapp) -> ScaledTile:
 def test_the_tile_says_why_and_offers_the_setting(qapp, overrides):
     tile = _tile(qapp)
 
-    assert tile.text == SCALED_TEXT
+    assert tile.text == SCALED_TEXT.format(app="BartleBot")
     assert tile.offers_fix
 
 
@@ -66,7 +66,7 @@ def test_with_no_exe_to_name_there_is_nothing_to_offer(qapp, overrides, monkeypa
 
     tile = _tile(qapp)
 
-    assert tile.text == SCALED_TEXT
+    assert tile.text == SCALED_TEXT.format(app="BartleBot")
     assert not tile.offers_fix
 
 

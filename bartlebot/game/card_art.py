@@ -38,6 +38,7 @@ from pathlib import Path
 from bartleby.shared.vendor import product_dir
 
 from bartlebot.game.wiki_drops import PIN_CATEGORY, pin_kind
+from bartlebot.packaging.product import NAME as PRODUCT
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ def art_dir() -> Path:
 
     May not exist: art is optional, and an extraction can be declined or fail.
     """
-    return product_dir() / ART_DIRNAME
+    return product_dir(PRODUCT) / ART_DIRNAME
 
 
 def index_path() -> Path:

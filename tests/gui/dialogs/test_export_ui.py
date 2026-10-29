@@ -99,7 +99,7 @@ def test_a_subgraph_card_offers_export(qapp, tmp_path):
 def strategy_roots(tmp_path, monkeypatch):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     monkeypatch.setattr(store_roots, "project_root", lambda: shipped)
-    monkeypatch.setattr(store_roots, "product_dir", lambda: user)
+    monkeypatch.setattr(store_roots, "product_dir", lambda _product: user)
     return shipped, user
 
 
