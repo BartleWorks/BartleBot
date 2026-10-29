@@ -14,6 +14,7 @@ import logging
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
+from bartleby.shared.listeners import Listeners
 
 from bartlebot.bot.machine import PauseHold
 from bartlebot.clients.client_manager import ClientManager
@@ -49,6 +50,7 @@ class RelogHarness:
     relog_clients = ClientManager.relog_clients
     _clients_near_gdi_quota = ClientManager._clients_near_gdi_quota
     _on_clients_removed = ClientManager._on_clients_removed
+    _recover_removed = ClientManager._recover_removed
     _log_unrecoverable_removal = ClientManager._log_unrecoverable_removal
     # The cycle hands off to recovery here; recovery itself is covered by test_recovery.py.
     # Sync rather than async so nothing is left as an un-awaited coroutine when create_task
@@ -69,6 +71,9 @@ class RelogHarness:
         self._vacated_slots: dict[str, int] = {}
         self._recovery_task = None
         self._gaps: list[tuple[int, str]] = []
+        # Core reports a lost client here, and the relog's own recovery answers.
+        self.clients_removed = Listeners("clients_removed")
+        self.clients_removed.connect(self._recover_removed)
 
     def recovery_gaps(self):
         return self._gaps

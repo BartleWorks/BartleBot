@@ -63,6 +63,7 @@ class GapsHarness:
     def __init__(self, clients: list, account_map: dict[int, str]) -> None:
         self._clients = clients
         self._hwnd_account_map = account_map
+        self._settings = MagicMock(accounts=[{"username": "user1", "alias": "Jeff"}])
 
 
 def _client(hwnd: int):
@@ -76,13 +77,6 @@ def passwords():
         store.display_name.side_effect = lambda username, alias: alias or username
         store.retrieve.return_value = "hunter2"
         yield store
-
-
-@pytest.fixture(autouse=True)
-def _accounts():
-    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
-        sm.instance.return_value = MagicMock(accounts=[{"username": "user1", "alias": "Jeff"}])
-        yield
 
 
 def test_no_gaps_when_every_client_is_mapped_and_has_a_password(passwords):

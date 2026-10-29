@@ -109,8 +109,8 @@ widget.** Two surfaces manage these, and since the Game tab card rework they dra
 the same `CardColumn`; a second copy of the delete cascade is how they drift.
 `reorder_accounts` and `reorder_launch_profiles` are the same rule for a drag —
 both refuse a permutation that no longer describes the stored list, and both go through
-`card_columns.apply_order`, which is where that guard lives now that three surfaces take
-a permutation from a column.
+core's `bartleby.shared.ordering.apply_order`, which is where that guard lives now that
+three surfaces take a permutation from a column.
 
 The profile editor is `profile_editor.py`, not this module: it draws the same
 `AccountCard`s in the same `CardColumn` as the Game tab, in `CardMode.MEMBER`. Its two

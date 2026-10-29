@@ -82,6 +82,8 @@ _PILLS = (
 NAMES: dict[tuple[str, str], str] = {
     ("bartlebot.settings_manager", "VALID_RESOLUTIONS"): "bartleby.runtime.game.game_sizing",
     **{("bartlebot.gui.widgets.pills.tag_pill", name): "bartleby.qt.widgets.pills.pill" for name in _PILLS},
+    # Stage 7: the client manager's reorder needs it, and core cannot import a widget module.
+    ("bartlebot.gui.game_embed.card_columns", "apply_order"): "bartleby.shared.ordering",
 }
 
 DEFAULT_PATHS = ("bartlebot", "tests", "tools", "bartlebot.py")

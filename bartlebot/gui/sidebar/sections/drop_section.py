@@ -214,7 +214,7 @@ class DropSection(QWidget):
         dict is a client reading another client's drops.
 
         Refused outright when *order* does not describe the current tab list -- the same
-        bargain ``card_columns.apply_order`` makes, and for the same reason: the column was
+        bargain core's ``apply_order`` makes, and for the same reason: the column was
         built from a client list read some moments earlier.
 
         The selected tab is restored afterwards. The gesture behind this was about player

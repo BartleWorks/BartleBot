@@ -282,7 +282,7 @@ https://claude.ai/artifact/3K34iJqy6UV73EKuadNuky
 | 4 | #291 | the threading probe: one qasync loop, or the runtime on its own thread | landed |
 | 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state | landed |
 | 6 | #293 | cards, reordering, pills and the Log tab | landed |
-| 7 | #294 | the client manager's Qt-free half; `ClientPool` deleted | |
+| 7 | #294 | the client manager's Qt-free half; `ClientPool` deleted | landed |
 | 8 | #295 | player cards on view models | |
 | 9 | #296 | the game view, Quick Launch and window sizing for two tile sizes | |
 | 10 | #297 | Bar A from a list of actions | |

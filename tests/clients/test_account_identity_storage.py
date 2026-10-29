@@ -1,6 +1,6 @@
 """Fingerprint storage through a real SettingsManager, to disk and back.
 
-The adoption tests stub SettingsManager, so they prove the learn/adopt logic but say
+Core's adoption tests stub the settings, so they prove the learn/adopt logic but say
 nothing about whether a fingerprint actually lands on disk — and a fingerprint that does
 not survive the process is worthless, since recognizing a window a *previous* session
 launched is the entire reason it exists.
@@ -17,7 +17,7 @@ Each test builds a private SettingsManager against tmp_path rather than touching
 from __future__ import annotations
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bartleby.runtime.clients import account_identity
@@ -63,9 +63,9 @@ def _client(hwnd: int, user_id: int):
 
 
 async def _identify(harness, settings, clients) -> None:
-    with patch("bartlebot.clients.client_manager.SettingsManager") as sm:
-        sm.instance.return_value = settings
-        await ClientManager._refresh_account_identity(harness, clients)
+    """Run the real method against *settings*, as the app hands it its SettingsManager."""
+    harness._settings = settings
+    await ClientManager._refresh_account_identity(harness, clients)
 
 
 def _stored(settings) -> dict:

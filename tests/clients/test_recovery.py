@@ -1,7 +1,7 @@
 """Comprehensive tests for the ClientManager client recovery system.
 
 Tests cover:
-  - _on_clients_removed   — disconnect detection, slot marking, recovery task dispatch
+  - _on_clients_removed   — core's slot marking, answered by _recover_removed: recovery task dispatch
   - _run_recovery_queue   — batch processing, error containment, FSM resume
   - _reconnect_clients    — full reconnect pipeline (launch, wait, crowns shop dismiss)
   - _build_ordered_clients — slot-ordered client list assembly
@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bartleby.runtime.clients.launch_tracker import LaunchTracker
+from bartleby.shared.listeners import Listeners
 
 from bartlebot.clients.client_manager import ClientManager
 
@@ -37,6 +38,7 @@ class RecoveryHarness:
 
     # Bind real methods directly — no copying, no duplication.
     _on_clients_removed = ClientManager._on_clients_removed
+    _recover_removed = ClientManager._recover_removed
     _log_unrecoverable_removal = ClientManager._log_unrecoverable_removal
     _forget_closed_windows = ClientManager._forget_closed_windows
     _run_recovery_queue = ClientManager._run_recovery_queue
@@ -97,8 +99,13 @@ class RecoveryHarness:
         self._client_resolutions: dict[str, tuple[int, int]] = {}
         self._machine = None
         self._get_recovery_state = lambda: None
+        self._settings = MagicMock(accounts=[])
         # Simulate pyqtSignal without requiring a QApplication.
         self.recovery_error = MagicMock()
+        # Core reports a lost client here, and BartleBot's recovery answers, as the
+        # manager's constructor wires them.
+        self.clients_removed = Listeners("clients_removed")
+        self.clients_removed.connect(self._recover_removed)
 
 
 def _make_machine(*, stopped: bool = False) -> MagicMock:
@@ -127,44 +134,6 @@ def _mock_create_task(coro: object) -> MagicMock:
 # ---------------------------------------------------------------------------
 # _on_clients_removed
 # ---------------------------------------------------------------------------
-
-
-class TestAccountMapTitleCache:
-    """_refresh_account_map records every title it reads, matched or not.
-
-    An unmatched title is the only description of the window that will still exist by the
-    time the client disconnects — the window is gone by then, so it cannot be read again.
-    """
-
-    def _run(self, harness: RecoveryHarness, title: str, accounts: list[dict]):
-        client = MagicMock(window_handle=100)
-        settings = MagicMock(accounts=accounts)
-        with (
-            patch("bartlebot.clients.client_manager.SettingsManager") as sm,
-            patch("bartlebot.clients.client_manager.get_window_title", return_value=title),
-        ):
-            sm.instance.return_value = settings
-            ClientManager._refresh_account_map(harness, [client])
-
-    def test_unmatched_title_is_remembered(self, harness: RecoveryHarness) -> None:
-        self._run(harness, "Wizard101", [{"username": "user1", "alias": "Jeff"}])
-        assert harness._hwnd_account_map == {}, "an adopted window matches no account"
-        assert harness._hwnd_titles == {100: "Wizard101"}
-
-    def test_matched_title_is_remembered_and_mapped(self, harness: RecoveryHarness) -> None:
-        self._run(harness, "[Jeff] Wizard101", [{"username": "user1", "alias": "Jeff"}])
-        assert harness._hwnd_account_map == {100: "user1"}
-        assert harness._hwnd_titles == {100: "[Jeff] Wizard101"}
-
-    def test_unreadable_title_records_nothing(self, harness: RecoveryHarness) -> None:
-        client = MagicMock(window_handle=100)
-        with (
-            patch("bartlebot.clients.client_manager.SettingsManager") as sm,
-            patch("bartlebot.clients.client_manager.get_window_title", side_effect=OSError("gone")),
-        ):
-            sm.instance.return_value = MagicMock(accounts=[])
-            ClientManager._refresh_account_map(harness, [client])
-        assert harness._hwnd_titles == {}
 
 
 class TestOnClientsRemoved:
@@ -772,7 +741,7 @@ class TestReconnectClients:
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartleby.runtime.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartleby.runtime.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch(
                 "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
@@ -852,7 +821,7 @@ class TestReconnectClients:
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartleby.runtime.launcher.launch_profile.launch_accounts", mock_launch),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartleby.runtime.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch(
                 "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
@@ -890,7 +859,7 @@ class TestReconnectClients:
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartleby.runtime.launcher.launch_profile.launch_accounts", mock_launch),
             patch("ctypes.windll", mock_windll),
-            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartleby.runtime.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch(
                 "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False
@@ -936,7 +905,7 @@ class TestReconnectClients:
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartleby.runtime.launcher.launch_profile.launch_accounts", _fake_launch_accounts()),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartleby.runtime.clients.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartleby.runtime.launcher.auto_select.is_enabled_by_path", crowns_check),
             patch("bartleby.runtime.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=True),
@@ -995,7 +964,7 @@ class TestBatchRecovery:
             patch("bartlebot.clients.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.clients.client_manager.SettingsManager") as mock_sm,
             patch("bartleby.runtime.launcher.launch_profile.launch_accounts", launch),
-            patch("bartlebot.clients.client_manager.get_window_title", side_effect=harness._titles.get),
+            patch("bartleby.runtime.clients.client_manager.get_window_title", side_effect=harness._titles.get),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch(
                 "bartleby.runtime.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False

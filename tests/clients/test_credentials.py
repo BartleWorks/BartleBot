@@ -21,7 +21,7 @@ def test_the_reserved_slot_order_is_logged_by_label_and_slot(caplog):
     harness = _OrderHarness()
     harness._client_order = [None, "jdoe1234"]
 
-    with caplog.at_level(logging.INFO, logger="bartlebot.clients.client_manager"):
+    with caplog.at_level(logging.INFO, logger="bartleby.runtime.clients.client_manager"):
         harness.reserve_slots(["asmith99"])
 
     assert harness._client_order == ["asmith99", "jdoe1234"]

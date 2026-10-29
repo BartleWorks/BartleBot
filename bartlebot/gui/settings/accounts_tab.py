@@ -48,6 +48,7 @@ from bartleby.runtime.clients import character_roster
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
 from bartleby.shared.launch_profiles import add_profile, build_profile, copy_name, profile_names
+from bartleby.shared.ordering import apply_order
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import (
@@ -70,7 +71,6 @@ from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
     CardColumn,
-    apply_order,
     refresh_column_fit,
 )
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard

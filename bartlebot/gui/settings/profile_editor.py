@@ -75,6 +75,7 @@ from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.runtime.clients import character_roster
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
+from bartleby.shared.ordering import apply_order
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -87,7 +88,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
+from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.settings_manager import SettingsManager
