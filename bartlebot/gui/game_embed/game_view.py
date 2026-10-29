@@ -6,6 +6,13 @@ import contextlib
 import ctypes
 import logging
 
+from bartleby.qt.game_embed.card_columns import (
+    ACCOUNTS_TITLE,
+    ADD_ACCOUNT,
+    EMPTY_ACCOUNTS_HINT,
+    EMPTY_PROFILES_HINT,
+    CardColumn,
+)
 from bartleby.qt.game_embed.client_tile import ClientTile, DetachedTile, PendingTile, ScaledTile
 from bartleby.qt.theming.account_accent import account_color_keys
 from bartleby.qt.theming.icon_utils import svg_icon
@@ -29,15 +36,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.game_embed.card_columns import (
-    ACCOUNTS_TITLE,
-    ADD_ACCOUNT,
-    EMPTY_ACCOUNTS_HINT,
-    EMPTY_PROFILES_HINT,
-    CardColumn,
-    refresh_column_fit,
-)
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, launch_note_for
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, launch_note_for, refresh_column_fit
 from bartlebot.gui.logo import logo_disc_image
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.updates.check import current_version

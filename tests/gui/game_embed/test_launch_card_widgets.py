@@ -9,13 +9,13 @@ selection and the Launch button is test_game_view.py.
 
 import bartleby.qt.theming.theme as theme_mod
 import pytest
+from bartleby.qt.game_embed.card_columns import CardColumn
 from bartleby.qt.theming.account_accent import account_accent
 from bartleby.qt.widgets.pills.pill import AccountPill
 from PyQt6.QtCore import QEvent, QObject, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.game_view import _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, CardMode, ProfileCard
 from bartlebot.gui.settings.accounts_tab import AccountsTab

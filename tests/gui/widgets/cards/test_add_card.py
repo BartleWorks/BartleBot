@@ -14,13 +14,13 @@ core's, and so are its tests (``tests/qt/widgets/cards/test_add_card.py``).
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PROFILES_HINT
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PROFILES_HINT
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab

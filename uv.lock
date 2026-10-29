@@ -86,7 +86,7 @@ site = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?rev=aaa1730b8e462fe2b445bc6922a8ff55f4d2f952" },
+    { name = "bartleby-core", extras = ["runtime", "qt"], editable = "../bartleby-core" },
     { name = "beautifulsoup4", specifier = ">=4.0" },
     { name = "cryptography", specifier = ">=44" },
     { name = "curl-cffi", specifier = ">=0.15" },
@@ -122,7 +122,7 @@ site = [{ name = "zensical", specifier = "==0.0.71" }]
 [[package]]
 name = "bartleby-core"
 version = "0.1.0"
-source = { git = "https://github.com/BartleWorks/bartleby-core.git?rev=aaa1730b8e462fe2b445bc6922a8ff55f4d2f952#aaa1730b8e462fe2b445bc6922a8ff55f4d2f952" }
+source = { editable = "../bartleby-core" }
 dependencies = [
     { name = "keyring" },
     { name = "pydantic" },
@@ -131,11 +131,34 @@ dependencies = [
 
 [package.optional-dependencies]
 qt = [
+    { name = "pyperclip" },
     { name = "pyqt6" },
 ]
 runtime = [
     { name = "wizsprinter" },
     { name = "wizwalker" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "keyring", specifier = ">=25.0" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pyperclip", marker = "extra == 'qt'", specifier = ">=1.8" },
+    { name = "pyqt6", marker = "extra == 'qt'", specifier = ">=6.9" },
+    { name = "vdf", specifier = ">=3.4" },
+    { name = "wizsprinter", marker = "extra == 'runtime'", git = "https://github.com/BartleWorks/wizsprinter.git?rev=088fc838bda285c8b06d2f235fb5671126035f59" },
+    { name = "wizwalker", marker = "extra == 'runtime'", git = "https://github.com/BartleWorks/wizwalker.git?rev=e73a73635bedfc0e05f2730f277c43b49c24f113" },
+]
+provides-extras = ["runtime", "qt"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "katsuba", specifier = ">=0.4.0" },
+    { name = "pytest", specifier = ">=9.0" },
+    { name = "pytest-asyncio", specifier = ">=1.0" },
+    { name = "pytest-qt", specifier = ">=4.5.0" },
+    { name = "pytest-xdist", specifier = ">=3.6" },
+    { name = "ruff", specifier = ">=0.15" },
 ]
 
 [[package]]

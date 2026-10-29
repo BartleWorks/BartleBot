@@ -50,6 +50,7 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
+from bartleby.qt.game_embed.card_columns import ADD_ACCOUNT, CardColumn
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
@@ -96,7 +97,6 @@ from bartlebot.clients.install_location import apply_install
 from bartlebot.game import card_art
 from bartlebot.gui import screen_fit
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
-from bartlebot.gui.game_embed.card_columns import ADD_ACCOUNT, CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row

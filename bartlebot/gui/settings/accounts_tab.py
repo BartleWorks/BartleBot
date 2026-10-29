@@ -34,6 +34,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from bartleby.qt.game_embed.card_columns import (
+    ACCOUNTS_TITLE,
+    ADD_ACCOUNT,
+    EMPTY_ACCOUNTS_HINT,
+    EMPTY_PROFILES_HINT,
+    CardColumn,
+)
 from bartleby.qt.theming.account_accent import (
     ACCOUNT_PALETTE_SIZE,
     account_accent,
@@ -65,15 +72,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.game_embed.card_columns import (
-    ACCOUNTS_TITLE,
-    ADD_ACCOUNT,
-    EMPTY_ACCOUNTS_HINT,
-    EMPTY_PROFILES_HINT,
-    CardColumn,
-    refresh_column_fit,
-)
-from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard, refresh_column_fit
 from bartlebot.gui.settings.profile_editor import (
     ADD_PROFILE_TITLE,
     EDIT_PROFILE_TITLE,

@@ -87,6 +87,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from bartleby.qt.art_signal import follow_art
+from bartleby.qt.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartleby.qt.sidebar.sidebar_section import SidebarSection
 from bartleby.qt.theming.account_accent import account_accent
 from bartleby.qt.theming.theme import THEME
@@ -99,6 +100,7 @@ from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.drag_reorder import DragReorder
 from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
 from bartleby.qt.widgets.pills.pill import AccentPill, WarningPill
+from bartleby.qt.widgets.pills.player_badge import PlayerBadge
 from bartleby.runtime.clients.credentials import CredentialStore
 from bartleby.runtime.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartleby.shared.strategy_models import DeckData, DuelCombatStrategy, PlayerCombatStrategy
@@ -157,7 +159,6 @@ from bartlebot.gui.combat_strategies.dialog import (
 )
 from bartlebot.gui.dialogs.choose_fights_dialog import TITLE as ADD_FLOW_TITLE
 from bartlebot.gui.dialogs.choose_fights_dialog import ChooseFightsDialog, FightsAnswer
-from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.strategy_panel import (
     DEFAULTS_LABEL,
     DEFAULTS_META,
@@ -175,7 +176,6 @@ from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.labels.step_heading import Step
 from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
-from bartlebot.gui.widgets.pills.player_pills import PlayerBadge
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:

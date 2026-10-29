@@ -21,9 +21,9 @@ they keep meaning if a font or a margin changes.
 """
 
 import pytest
+from bartleby.qt.game_embed.card_columns import CardColumn
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
-from bartlebot.gui.game_embed.card_columns import CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
