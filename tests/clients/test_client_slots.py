@@ -191,9 +191,9 @@ class TestBuildTileSlots:
     def test_a_window_that_is_not_in_game_has_no_player_number(self, harness: RecoveryHarness) -> None:
         """It is not Player anything -- a bot cannot route to it -- so it shows its account."""
         _fleet(harness, "a")
-        tiles = _tiles(harness, [{"username": "a", "alias": "Malvin"}])
+        tiles = _tiles(harness, [{"username": "a", "alias": "Farmer"}])
         assert tiles[0].player is None
-        assert tiles[0].label == "Malvin"
+        assert tiles[0].label == "Farmer"
 
     def test_a_hooked_window_is_captioned_by_its_player_index(self, harness: RecoveryHarness) -> None:
         hwnds = _fleet(harness, "a", "b")

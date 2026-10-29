@@ -19,7 +19,7 @@ WHY THE PILL STILL READS "P1"
 
 The color is the account's; the *text* is not. A ``DuelConfig`` stores player slots,
 not accounts — it is authored offline, shared between bots, and outlives whichever
-account happens to be in slot 1 tonight. A pill reading ``Malvin`` would be a claim the
+account happens to be in slot 1 tonight. A pill reading ``Farmer`` would be a claim the
 stored data does not make, and the same card would read differently depending on whether
 anything was hooked when it was opened.
 
