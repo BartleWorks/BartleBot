@@ -286,7 +286,7 @@ https://claude.ai/artifact/3K34iJqy6UV73EKuadNuky
 | 8 | #295 | player cards on view models | landed |
 | 9 | #296 | the game view, Quick Launch and window sizing for two tile sizes | landed |
 | 10 | #297 | Bar A from a list of actions | landed |
-| 11 | #298 | settings and first run | |
+| 11 | #298 | settings and first run | landed |
 | 12 | #299 | the family check: both apps side by side, and BartleBuddy in game | |
 
 The feature docs are core's, from Stage 2: `bartleby-core/docs/ARCHITECTURE.md`, and the
