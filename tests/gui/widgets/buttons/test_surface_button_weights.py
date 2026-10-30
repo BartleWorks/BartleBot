@@ -80,7 +80,7 @@ def test_reset_to_system_default_keeps_its_literal_styling(qapp):
     """The one deliberate exception in the rollout. This button is the escape hatch from
     a custom theme that has made the app unreadable, so it is styled in fixed colors that
     no theme can reach — which is exactly what an ``ActionButton`` would undo."""
-    from bartlebot.gui.settings.theme_tab import ThemeTab
+    from bartleby.qt.settings.theme_tab import ThemeTab
 
     tab = ThemeTab()
     reset = tab._reset_btn

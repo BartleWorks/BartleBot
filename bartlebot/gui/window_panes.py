@@ -13,13 +13,13 @@ from __future__ import annotations
 from typing import NamedTuple
 
 from bartleby.qt import screen_fit
+from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.runtime.game import game_sizing
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS, Pane
 from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QWidget
 
 from bartlebot.game import pane_sizing
 from bartlebot.game.pane_sizing import BOT_CANVAS, LEFT_SIDEBAR, RIGHT_SIDEBAR
-from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.settings_manager import SettingsManager
 
 

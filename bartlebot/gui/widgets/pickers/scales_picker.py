@@ -13,13 +13,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
+from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 from bartlebot.game import card_art, scales, worlds
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
-from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 
 PLACEHOLDER = "Choose a Scales of Knowledge…"
 POPUP_WIDTH = 420

@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import pytest
 from bartleby.qt import screen_fit
+from bartleby.qt.settings.rows import ScrollableTab, SettingRow
+from bartleby.qt.settings.theme_tab import ThemeTab
 from bartleby.qt.widgets.labels.rule_heading import RuleHeading
 from PyQt6.QtWidgets import QFormLayout, QLabel
 
@@ -24,9 +26,7 @@ from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
-from bartlebot.gui.settings.rows import ScrollableTab, SettingRow
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
-from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.options import bot_options
 from bartlebot.settings_manager import _DEFAULTS, _SECTION_MODELS, SettingsManager

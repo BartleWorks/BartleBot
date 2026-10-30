@@ -6,11 +6,11 @@ checked in test_combat_strategy_dialog.py.
 """
 
 from bartleby.qt.widgets.layout.scroll_gutter import is_gutter_reserved
+from bartleby.qt.widgets.pickers.picker_popup import PickerPopup
 from PyQt6.QtWidgets import QScrollArea, QWidget
 
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.sidebar.combat_tab import CombatTab
-from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup
 
 
 def _scroll_areas(widget: QWidget) -> list[QScrollArea]:

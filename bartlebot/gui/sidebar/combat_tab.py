@@ -99,6 +99,7 @@ from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.drag_reorder import DragReorder
 from bartleby.qt.widgets.layout.scroll_gutter import reserve_scrollbar_gutter
+from bartleby.qt.widgets.pickers.picker_popup import PickerRow, Section
 from bartleby.qt.widgets.pills.pill import AccentPill, WarningPill
 from bartleby.qt.widgets.pills.player_badge import PlayerBadge
 from bartleby.runtime.clients.credentials import CredentialStore
@@ -175,7 +176,6 @@ from bartlebot.gui.widgets.cards.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.cards.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.cards.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.labels.step_heading import Step
-from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, Section
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:

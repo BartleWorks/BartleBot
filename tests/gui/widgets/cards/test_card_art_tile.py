@@ -121,9 +121,8 @@ def test_the_art_is_rendered_at_the_screens_own_resolution(art_home, qapp, ratio
 
 def test_the_view_paints_at_the_devices_resolution(art_home, qapp):
     """Painted into a 150% device, a 20pt view fills 30 physical pixels with the art."""
+    from bartleby.qt.widgets.labels.art_icon_view import ArtIconView
     from PyQt6.QtGui import QImage, QPainter
-
-    from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView
 
     _extract({"Tempest": "Spell_Storm_Tempest.png"}, qapp)
     view = ArtIconView(20)

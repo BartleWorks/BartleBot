@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from bartleby.qt.settings import store as settings_store
 from bartleby.runtime.game import game_sizing
 from bartleby.runtime.game.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH, VALID_RESOLUTIONS
 from bartleby.shared.account_store import AccountStore
@@ -250,6 +251,13 @@ _DEFAULTS: dict[str, Any] = {
 # The panel floors moved to game_sizing.py, beside the arithmetic they are terms in.
 
 #: The pane sizes setup fits to the screen (``MainWindow.fit_layout_to_launches``).
+#: Each setting core's ``SettingsStore`` names, and where its default is in ``_DEFAULTS``.
+_STORE_DEFAULTS: dict[str, tuple[str, str]] = {
+    "theme": ("general", "theme"),
+    "game_resolution": ("game_embed", "resolution"),
+    "disable_quick_friend_teleport": ("general", "disable_quick_friend_teleport"),
+}
+
 FITTED_LAYOUT_KEYS = ("left_sidebar_width", "right_sidebar_width", "bottom_section_height")
 
 
@@ -701,6 +709,38 @@ class SettingsManager:
     @disable_quick_friend_teleport.setter
     def disable_quick_friend_teleport(self, value: bool) -> None:
         self.set_general("disable_quick_friend_teleport", bool(value))
+
+    @property
+    def theme(self) -> str:
+        """``system``, ``light``, ``dark`` or ``custom``: core's ``SettingsStore``, which the Theme tab writes."""
+        return self.get_general("theme", default="system")
+
+    @theme.setter
+    def theme(self, value: str) -> None:
+        self.set_general("theme", value)
+
+    @property
+    def custom_theme(self) -> dict[str, str]:
+        """The colors a custom theme overrides, by token name; only the overridden ones are stored."""
+        return self.get("custom_theme", default={})
+
+    @custom_theme.setter
+    def custom_theme(self, value: dict[str, str]) -> None:
+        self.set("custom_theme", value=dict(value))
+
+    @property
+    def show_setting_descriptions(self) -> bool:
+        """Whether the Settings dialog shows every row's description, apart from the sidebar's ``show_option_descriptions``."""
+        return bool(self.get_general("show_setting_descriptions", default=False))
+
+    @show_setting_descriptions.setter
+    def show_setting_descriptions(self, value: bool) -> None:
+        self.set_general("show_setting_descriptions", bool(value))
+
+    @staticmethod
+    def default_for(name: str) -> Any:
+        """The shipped default of core's ``SettingsStore`` setting *name*, as ``default_for`` gives it."""
+        return default_for(*_STORE_DEFAULTS[name])
 
     @property
     def streamer_mode(self) -> bool:
@@ -1230,3 +1270,8 @@ class SettingsManager:
             ),
             pane_sizing.BOT_CANVAS: int(self.get_general(pane_sizing.BOT_CANVAS, default=BOTCANVAS_DEFAULT_HEIGHT)),
         }
+
+
+# Core's settings surfaces (the rows, the Theme and Game tabs, setup's shared pages) read
+# whichever singleton is current, as the screen fit does: a test replaces it.
+settings_store.configure(SettingsManager.instance)

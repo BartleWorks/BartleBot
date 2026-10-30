@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 
+from bartleby.qt.widgets.pickers.picker_popup import _RowWidget
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QWidget
 
@@ -9,7 +10,6 @@ from bartlebot.bot.schema import BotConfig
 from bartlebot.combat.strategy_tags import STRATEGY_TAG_GROUPS
 from bartlebot.content.bot_tags import BOT_TAGS, TAG_GROUPS
 from bartlebot.gui.canvas.bot_header import BotHeader
-from bartlebot.gui.widgets.pickers.picker_popup import _RowWidget
 from bartlebot.gui.widgets.pickers.tag_picker import (
     BOT_VOCABULARY,
     STRATEGY_VOCABULARY,

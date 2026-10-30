@@ -10,15 +10,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from bartleby.qt.global_hotkeys import parse_binding
+from bartleby.qt.global_hotkeys import binding_problems as hotkey_problems
+from bartleby.qt.settings.rows import SettingRow, SettingsForm
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.runtime.clients import game_keys
+from bartleby.runtime.game.game_keybindings import GameBinding, read_game_keybindings
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QDoubleSpinBox, QKeySequenceEdit
 
 from bartlebot.clients.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
-from bartlebot.game.game_keybindings import GameBinding, read_game_keybindings
-from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SPEED_MULTIPLIER_RANGE, SettingsManager, default_for
 
 #: Each hotkey row's one line, and the longer prose behind its ``?`` (empty: none).
@@ -65,38 +65,13 @@ def slot_key_notes(game_bindings: Sequence[GameBinding]) -> str:
 
 
 def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBinding] = ()) -> list[str]:
-    """What is wrong with a set of bindings, as sentences; empty when nothing is.
+    """What is wrong with the authoring hotkeys, as sentences; empty when nothing is.
 
-    Pure, so the rules are testable without a QApplication. A key nothing can register is
-    one problem; two actions on one key is another, since only the first would ever fire;
-    a key the game itself binds (*game_bindings*, the players' own) is a third, since
-    while the hotkey is armed the game never sees that key.
+    Core's :func:`~bartleby.qt.global_hotkeys.binding_problems` over BartleBot's actions,
+    in the order the tab shows them.
     """
-    problems: list[str] = []
-    game: dict[tuple[int, int], GameBinding] = {}
-    for gb in game_bindings:
-        combo = parse_binding(gb.binding)
-        if combo is not None:
-            game.setdefault(combo, gb)
-    seen: dict[tuple[int, int], str] = {}
-    for action in AuthoringAction:
-        text = bindings.get(action.value, "")
-        if not text:
-            continue
-        combo = parse_binding(text)
-        label = ACTION_LABELS[action]
-        if combo is None:
-            problems.append(f"{label}: {text} can't be used. Choose F1–F24, a letter or a digit.")
-        elif combo in seen:
-            problems.append(f"{label} and {seen[combo]} both use {text}. Choose another key for one of them.")
-        else:
-            seen[combo] = label
-            if clash := game.get(combo):
-                problems.append(
-                    f"{label}: {text} is the game's key for {clash.description}, which won't work in "
-                    "the game while this is set."
-                )
-    return problems
+    labels = {action.value: ACTION_LABELS[action] for action in AuthoringAction}
+    return hotkey_problems(bindings, labels, game_bindings)
 
 
 class AuthoringTab(SettingsForm):

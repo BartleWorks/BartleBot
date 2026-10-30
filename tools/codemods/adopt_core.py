@@ -2,7 +2,7 @@
 
 Stage 3 of #167, and each later stage that moves a module: Stage 5 added the app
 skeleton, Stage 6 the cards, pills and the Log tab, Stage 8 the player cards, Stage 9 the
-game view, the launch cards and the screen fit. Each module in :data:`TABLE` exists in bartleby-core, identical to
+game view, the launch cards and the screen fit, Stage 11 settings and first run. Each module in :data:`TABLE` exists in bartleby-core, identical to
 BartleBot's but for its imports, the cuts the stage lists and its docstring paths, and
 BartleBot's copy is deleted in the same stage. No shim keeps an old path alive, so every
 ``from`` and ``import`` line, every dotted path in a string (``monkeypatch.setattr``,
@@ -78,6 +78,19 @@ TABLE: dict[str, str] = {
     # Stage 9: the game view, Quick Launch and the screen fit.
     **{f"bartlebot.gui.game_embed.{m}": f"bartleby.qt.game_embed.{m}" for m in ("game_view", "launch_cards")},
     "bartlebot.gui.screen_fit": "bartleby.qt.screen_fit",
+    # Stage 11: settings and first run, and the widgets they are built from.
+    **{
+        f"bartlebot.gui.settings.{m}": f"bartleby.qt.settings.{m}"
+        for m in ("rows", "theme_tab", "profile_editor", "game_folder_row")
+    },
+    "bartlebot.gui.sidebar.option_gutter": "bartleby.qt.sidebar.option_gutter",
+    **{
+        f"bartlebot.gui.widgets.inputs.{m}": f"bartleby.qt.widgets.inputs.{m}"
+        for m in ("search_field", "game_folder_input")
+    },
+    "bartlebot.gui.widgets.pickers.picker_popup": "bartleby.qt.widgets.pickers.picker_popup",
+    "bartlebot.clients.install_location": "bartleby.runtime.clients.install_location",
+    "bartlebot.game.game_keybindings": "bartleby.runtime.game.game_keybindings",
 }
 
 #: The family pills, which left ``tag_pill`` in Stage 6; the bot-tag pills stay in it.
@@ -91,6 +104,25 @@ _PANE_SIZING = (
     "BOTCANVAS_MIN_WIDTH BOTCANVAS_MIN_HEIGHT BOTCANVAS_DEFAULT_HEIGHT SINGLE_CLIENT_CANVAS_SHARE "
     "LEFT_SIDEBAR_MIN_WIDTH REFERENCE_FILTER_ROW_PX LEFT_SIDEBAR_CHROME_PX left_sidebar_floor "
     "canvas_height_for single_client_canvas_floor sidebar_widths_for"
+).split()
+
+#: What left BartleBot's ``accounts_tab``, ``settings_dialog`` and ``first_run_dialog`` for
+#: core in Stage 11. Each keeps the rest: its ``AccountsTab`` with the character selection
+#: row, its ``SettingsDialog`` listing its tabs, and its own setup pages, with its texts
+#: for the Accounts page and a ``needs_asking`` over its pages.
+_ACCOUNTS_TAB = (
+    "ADD_ACCOUNT_TITLE EDIT_ACCOUNT_TITLE _confirm_delete _slots_in_use _Swatch _AccountColorPicker "
+    "_AccountDialog add_account edit_account delete_account reorder_accounts reorder_launch_profiles "
+    "add_launch_profile edit_launch_profile duplicate_launch_profile delete_launch_profile"
+).split()
+_SETTINGS_DIALOG = "_PREFERRED_SIZE _QT_MAX_SIZE SettingsTab _LazyTab _forms_in".split()
+_FIRST_RUN = (
+    "TITLE NEXT FINISH BACK STEP SAVE_FAILED RECOMMENDED_DETAIL SetupMode FirstRunPage _CardsPage "
+    "MODE_HEADING MODE_CARDS ModePage COMBAT_HEADING TACTIC_CARDS SETTINGS_COMBAT COMBAT_NOTE "
+    "CombatQuestionPage GAME_FOLDER_HEADING GAME_FOLDER_INTRO GAME_FOLDER_UNSET named RUNNING_GAME_POLL_MS "
+    "GameFolderPage ACCOUNTS_HEADING AccountsPage LAUNCH_PROFILE_HEADING LAUNCH_PROFILE_INTRO "
+    "RESOLUTION_LABEL PROFILE_WILL_MAKE PROFILE_EXISTS PROFILE_TOO_FEW PROFILE_NO_FIT LaunchProfilePage "
+    "FirstRunDialog"
 ).split()
 
 #: Names that moved out of a module BartleBot keeps: (module, name) to core's module, or
@@ -111,6 +143,15 @@ NAMES: dict[tuple[str, str], str] = {
     # constants left core's game_sizing for game/pane_sizing.
     **{("bartlebot.gui.screen_fit", name): "bartlebot.gui.window_panes" for name in _WINDOW_PANES},
     **{("bartleby.runtime.game.game_sizing", name): "bartlebot.game.pane_sizing" for name in _PANE_SIZING},
+    # Stage 11: settings and first run.
+    **{("bartlebot.gui.settings.accounts_tab", name): "bartleby.qt.settings.accounts_tab" for name in _ACCOUNTS_TAB},
+    **{
+        ("bartlebot.gui.settings.settings_dialog", name): "bartleby.qt.settings.settings_dialog"
+        for name in _SETTINGS_DIALOG
+    },
+    **{("bartlebot.gui.dialogs.first_run_dialog", name): "bartleby.qt.dialogs.first_run_dialog" for name in _FIRST_RUN},
+    ("bartlebot.gui.dialogs.new_bot_dialog", "StartCard"): "bartleby.qt.widgets.cards.start_card",
+    ("bartlebot.gui.widgets.cards.card_art_tile", "ArtIconView"): "bartleby.qt.widgets.labels.art_icon_view",
 }
 
 DEFAULT_PATHS = ("bartlebot", "tests", "tools", "bartlebot.py")

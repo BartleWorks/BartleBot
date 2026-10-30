@@ -53,6 +53,7 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from bartleby.qt.menu_utils import popup_menu
+from bartleby.qt.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton
@@ -81,7 +82,6 @@ from bartlebot.content.subgraphs.signature_tree import GROUP, INPUT, NODE, TreeR
 from bartlebot.content.subgraphs.subgraphs import binding_type, nested_key
 from bartlebot.gui.canvas.node_cards import PageFoldBar
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
-from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.options import param_cards
 

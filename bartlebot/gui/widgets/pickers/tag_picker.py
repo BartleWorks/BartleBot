@@ -22,6 +22,7 @@ from functools import lru_cache
 
 from bartleby.qt.art_signal import follow_art
 from bartleby.qt.theming.theme import THEME
+from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
@@ -31,7 +32,6 @@ from bartlebot.content.store_roots import LISTED_ORIGINS, SOURCE_LABELS
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SUBGRAPH_CATEGORIES
 from bartlebot.game import card_art
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
-from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow, Section
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
 #: are 128px (two are 64px) game art, and 20px is the smallest that stays legible.

@@ -16,14 +16,14 @@ things that make a picker safe rather than the swatches themselves:
 from __future__ import annotations
 
 import pytest
+from bartleby.qt.settings import accounts_tab
+from bartleby.qt.settings.accounts_tab import _AccountColorPicker, _slots_in_use
 from bartleby.qt.theming.account_accent import ACCOUNT_PALETTE_SIZE, account_color_keys
 from bartleby.qt.theming.theme import THEME
 from bartleby.runtime.clients.credentials import CredentialStore
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.gui.settings import accounts_tab
-from bartlebot.gui.settings.accounts_tab import _AccountColorPicker, _slots_in_use
 from bartlebot.settings_manager import SettingsManager
 
 # Synthetic throughout, as CLAUDE.md requires.

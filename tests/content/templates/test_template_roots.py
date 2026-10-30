@@ -71,7 +71,7 @@ def test_new_bot_shows_each_templates_source_and_none_on_the_blank_bot(qapp, roo
 
     cards = NewBotDialog(starting_points(shipped, user), tmp_path / "bots").cards
 
-    assert {c.name: c.source_text for c in cards} == {
+    assert {c.name: c.pill_text for c in cards} == {
         "Blank bot": "",
         "My Farmer": "Custom",
         "Official Farmer": "Official",

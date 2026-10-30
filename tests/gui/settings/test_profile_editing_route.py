@@ -15,9 +15,9 @@ decisions and the slot that runs the refresh, neither of which needs a MainWindo
 import inspect
 
 import pytest
+from bartleby.qt.settings import accounts_tab
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import main_window_stub
 

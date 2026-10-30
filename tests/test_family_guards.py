@@ -22,16 +22,6 @@ GUI_ROOT = PACKAGE / "gui"
 #: Bare ``QPushButton``\ s, keyed ``"<module>:<name>"`` under ``bartlebot/gui/``, and why each
 #: is not an ``ActionButton``.
 ALLOWED_PUSH_BUTTONS: dict[str, str] = {
-    "settings/theme_tab.py:_reset_btn": (
-        "Reset to System Default, styled with hardcoded colors on purpose — it is the "
-        "way out of a custom theme that has broken its own tokens, so it has to stay "
-        "legible exactly when THEME is what cannot be trusted. An ActionButton derives "
-        "every color it draws from THEME and so cannot promise that."
-    ),
-    "settings/theme_tab.py:btn": (
-        "A color swatch in the token editor: the background *is* the data — it shows "
-        "the value of the token the label names, and its text is that hex value."
-    ),
     "canvas/param_panel.py:btn": (
         "A region color swatch in the inspector — the background is the data. 22px "
         "square, no label, one of six in a palette row."

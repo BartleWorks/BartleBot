@@ -973,19 +973,19 @@ class MainWindow(QMainWindow):
         open Settings on the Game tab with the editor on top, which left the whole
         dialog standing behind the editor once it was dismissed.
         """
-        from bartlebot.gui.settings.accounts_tab import edit_launch_profile
+        from bartleby.qt.settings.accounts_tab import edit_launch_profile
 
         self._after_card_action(edit_launch_profile(name, self, self.live_game_area))
 
     def _duplicate_launch_profile(self, name: str) -> None:
         """Copy one launch profile, from its context menu. The only action with no dialog."""
-        from bartlebot.gui.settings.accounts_tab import duplicate_launch_profile
+        from bartleby.qt.settings.accounts_tab import duplicate_launch_profile
 
         self._after_card_action(duplicate_launch_profile(name))
 
     def _delete_launch_profile(self, name: str) -> None:
         """Delete one launch profile, from its context menu. Confirms first."""
-        from bartlebot.gui.settings.accounts_tab import delete_launch_profile
+        from bartleby.qt.settings.accounts_tab import delete_launch_profile
 
         self._after_card_action(delete_launch_profile(name, self))
 
@@ -995,19 +995,19 @@ class MainWindow(QMainWindow):
         The live game area goes through so the editor's resolution picker judges a launch
         the same way the screen behind it does.
         """
-        from bartlebot.gui.settings.accounts_tab import add_launch_profile
+        from bartleby.qt.settings.accounts_tab import add_launch_profile
 
         self._after_card_action(add_launch_profile(self, self.live_game_area))
 
     def _add_account(self) -> None:
         """Add an account, from the Add card at the foot of the Accounts column."""
-        from bartlebot.gui.settings.accounts_tab import add_account
+        from bartleby.qt.settings.accounts_tab import add_account
 
         self._after_card_action(add_account(self))
 
     def _edit_account(self, username: str) -> None:
         """Edit one account, from the pencil on its card or its context menu."""
-        from bartlebot.gui.settings.accounts_tab import edit_account
+        from bartleby.qt.settings.accounts_tab import edit_account
 
         self._after_card_action(edit_account(username, self))
 
@@ -1019,19 +1019,19 @@ class MainWindow(QMainWindow):
         — so the profile column is redrawn by the same refresh, with a pill fewer on each
         card that carried this one.
         """
-        from bartlebot.gui.settings.accounts_tab import delete_account
+        from bartleby.qt.settings.accounts_tab import delete_account
 
         self._after_card_action(delete_account(username, self))
 
     def _reorder_accounts(self, order: list) -> None:
         """Persist a drag in the Accounts column. The only card action with no dialog behind it."""
-        from bartlebot.gui.settings.accounts_tab import reorder_accounts
+        from bartleby.qt.settings.accounts_tab import reorder_accounts
 
         self._after_card_action(reorder_accounts(list(order)))
 
     def _reorder_launch_profiles(self, order: list) -> None:
         """Persist a drag in the Launch Profiles column."""
-        from bartlebot.gui.settings.accounts_tab import reorder_launch_profiles
+        from bartleby.qt.settings.accounts_tab import reorder_launch_profiles
 
         self._after_card_action(reorder_launch_profiles(list(order)))
 

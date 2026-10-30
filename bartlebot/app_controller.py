@@ -13,9 +13,11 @@ logger = logging.getLogger(__name__)
 
 from bartleby.qt.app.logging_setup import add_gui_callback, remove_gui_callback, session_log_dir
 from bartleby.qt.app.single_instance import LaunchQueue, SingleInstance, raise_window
+from bartleby.qt.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage
 from bartleby.qt.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import group_manager
+from bartleby.runtime.clients.install_location import apply_install
 from bartleby.runtime.clients.window_kill import force_close_client
 from bartleby.runtime.clients.wizwalker_cache import apply_cache_dir
 from bartleby.runtime.game import wizard_names
@@ -33,7 +35,6 @@ from bartlebot.bot.schema import BotConfig
 from bartlebot.clients import recovery_readiness, run_probe
 from bartlebot.clients.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.clients.client_manager import ClientManager
-from bartlebot.clients.install_location import apply_install
 from bartlebot.combat import strategy_store
 from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_run
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
@@ -62,7 +63,7 @@ from bartlebot.gui.debug.game_hang_trace import GameHangTracer
 from bartlebot.gui.debug.stall_trace import StallTracer
 from bartlebot.gui.debug.window_show_trace import WindowShowTracer
 from bartlebot.gui.dialogs.export_dialog import run_export
-from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage, needs_asking, setup_pages
+from bartlebot.gui.dialogs.first_run_dialog import needs_asking, setup_pages
 from bartlebot.gui.dialogs.import_dialog import TITLE as IMPORT_TITLE
 from bartlebot.gui.dialogs.import_dialog import ask_for_file, confirm_import
 from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
@@ -3598,22 +3599,11 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _apply_theme(self) -> None:
-        """Read the theme setting and apply palette + stylesheet to the app."""
-        from bartleby.qt.theming.theme import THEME, build_custom_theme, set_theme, set_theme_instance  # noqa: PLC0415
+        """Read the theme setting and apply palette + stylesheet to the app (core's ``apply_app_theme``)."""
+        from bartleby.qt.theming.app_theme import apply_app_theme  # noqa: PLC0415
 
         sm = SettingsManager.instance()
-        theme_mode = sm.get_general("theme", default="system")
-        if theme_mode == "custom":
-            overrides = sm.get("custom_theme", default={})
-            set_theme_instance(build_custom_theme(overrides))
-        else:
-            set_theme(theme_mode)
-        self._app.setPalette(THEME.build_palette())
-        # The app font, so every widget that does not set its own size is the body
-        # size in px rather than the platform's own 9pt. Passed without a class name,
-        # which is what clears the per-class fonts Windows gives menus and tooltips.
-        self._app.setFont(THEME.ui_font())
-        self._app.setStyleSheet(THEME.global_stylesheet())
+        apply_app_theme(self._app, sm.theme, sm.custom_theme)
 
     def _reconfigure_autosave_timer(self) -> None:
         """Read current settings and start/stop/reconfigure the auto-save timer."""

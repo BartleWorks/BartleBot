@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 import pytest
 from bartleby.qt.testing.drag_helpers import drag_card, menu_move, press_and_move, release, show
+from bartleby.qt.widgets.pickers.picker_popup import PickerRow
 from bartleby.qt.widgets.pills.pill import AccentPill, ActionPill, NeutralPill
 from bartleby.shared.combat_defaults import (
     PREFERENCE_KEYS,
@@ -89,7 +90,6 @@ from bartlebot.gui.sidebar.strategy_panel import (
     PanelRole,
     StrategyPanel,
 )
-from bartlebot.gui.widgets.pickers.picker_popup import PickerRow
 from bartlebot.paths import project_root
 
 

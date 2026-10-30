@@ -46,6 +46,7 @@ from dataclasses import replace
 
 from bartleby.qt.app.logging_setup import set_turn_trace
 from bartleby.qt.art_signal import follow_art
+from bartleby.qt.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
@@ -61,7 +62,6 @@ from bartlebot.combat.strategy_summary import summarize_duel
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
-from bartlebot.gui.settings.rows import SettingCard, SettingRow, SettingsForm
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.settings_manager import SettingsManager, default_for
 

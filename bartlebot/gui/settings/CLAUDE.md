@@ -35,7 +35,7 @@ key it merges per entry (an account by `username`, a profile by `name`) against 
 last read: only the entries it changed are applied, and the other product's adds, edits
 and removes stand. A list is one value only for a preference.
 
-Two rules about the settings dialog itself:
+One rule about the settings dialog itself, and where the rest went:
 
 - **Every key in `_DEFAULTS[section]` must also be a field on that section's
   pydantic model.** Pydantic *ignores* an extra key rather than rejecting it, so a
@@ -43,131 +43,10 @@ Two rules about the settings dialog itself:
   and a hand-edited `settings.json` can then put a string where a bool belongs and
   have it reach the widget. `streamer_mode` and `bot_library_path` were both in
   that state. `test_every_default_is_declared_on_its_model` is the guard.
-- **A row explains itself on the page, not on hover — in one line.** Every
-  setting is a `rows.SettingRow`: the title, one line under it saying what the
-  setting does, and the control right-aligned in a fixed-width slot. The line is
-  always on screen; anything the user needs in order to choose, and doesn't get from
-  the line, goes in `details=` and folds behind the row's `?`. That means a cost, when
-  the change applies, what overrides it, or what Off costs. The *why* goes in no row at
-  all. `bartleby-core/docs/UI_TEXT.md` has the rules for all three layers. The page's *Show descriptions · Hide descriptions* open or
-  fold every row at once (#148); a form with no `details=` to open hides them
-  (`SettingsForm.finish`). Before the description-row rework the Log, Layout
-  and Auto-save rows had no explanation at all; after it every row carried a
-  paragraph, and the Bot tab was 1,392px tall. A tooltip still never carries the
-  whole explanation on its own.
-  `test_every_settings_row_explains_itself_on_the_page` checks every row has its
-  line, and that no tab still builds a `QFormLayout` row.
-- **Build a tab from `rows`, not by hand.** A form tab subclasses
-  `rows.SettingsForm` (`add_heading`, `add_row`, `add_group`, `finish`); a tab that
-  is not all form — Theme, Game — holds one with `margin=0` for its rows. The
-  dialog finds every form, so one tab's description links reach the others. A row
-  gets the sidebar's gutter through `build_gutter_row`: the override bar lights
-  when the value has left the app's default (`settings_manager.default_for`, in the
-  control's own terms), and `RevertButton` puts the default back — as pending as
-  any other edit until OK. Each setting is its own bordered card; sections stay
-  `RuleHeading`s.
-- **Only a setting with dependents folds.** A `rows.SettingGroup` is the parent's
-  own row (a check box) with the assignment card's chevron in its last slot, and the rows
-  that only count while it is on — Quicksell, Auto-save, Grid. Off grays them,
-  never hides them; collapsed, a change inside lights the header's bar. Layout is
-  not a group: Maximize being *on* is what makes the window size moot. Every group
-  id is declared in `SETTINGS_FOLD_DEFAULTS`, or the others' reads prune its fold.
-- **Folds go in `ui_state.json`, not `settings.json`.** Which groups a reader left
-  open is view state, safe to lose: core's `bartleby/qt/app/ui_state.py` keeps only departures
-  from a default, keyed by surface and group, and reads the file afresh on every
-  call so two holders cannot overwrite each other. Whether descriptions are shown
-  is a setting of its own, `show_setting_descriptions`, written at once whatever
-  the dialog's OK or Cancel, and apart from the sidebar's
-  `show_option_descriptions`.
-- **A section is a `RuleHeading`, not a bold label.** A tab is long, and on a
-  long page a bold line of text is not enough to stop the eye — the Bot tab's five sections ran together as one column of
-  rows. Core's `bartleby/qt/widgets/labels/rule_heading.py` is the same heading the detail panes use: the
-  name at the left margin the fields align to, and a hairline out to the right.
-  It carries its own space above, so a section adds the heading and nothing else.
-  `test_every_settings_section_is_a_rule_heading` is the guard.
-
-- **The dialog fits the screen; the tabs do not have to.** A visible hint under
-  every row once grew the dialog taller than a 1080p screen and put OK and Cancel
-  under the taskbar. A tab with every description and group open is still taller
-  than the dialog, so the five form tabs are wrapped in `rows.ScrollableTab`,
-  which caps the column at `PAGE_MAX_WIDTH_PX`, centers it, and reserves the scroll
-  bar's space so a fold does not jolt the column sideways (#112). Wrap a new
-  form tab too. Do **not** wrap a tab that carries the layout's stretch, as the Game tab's two card columns do:
-  inside a scroll area they collapse to a couple of visible rows, and a column
-  that scrolls inside a page that scrolls is two bars for one list. `_fit_to_screen` caps the
-  dialog at `screen_fit.size_within_screen` on the way up as the last defense, and
-  a wrapper forwards `apply()` so the tab in the bar is still one `apply_all` can
-  call.
-
-## Card actions
-
-Every write to an account or a launch profile goes through one of the module-level
-functions in `accounts_tab.py` — `add_`/`edit_`/`delete_account`, and
-`add_`/`edit_`/`duplicate_`/`delete_launch_profile`. **Never open `_AccountDialog` or
-`ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
-widget.** Two surfaces manage these, and since the Game tab card rework they draw the same cards out of
-the same `CardColumn`; a second copy of the delete cascade is how they drift.
-`reorder_accounts` and `reorder_launch_profiles` are the same rule for a drag —
-both refuse a permutation that no longer describes the stored list, and both go through
-core's `bartleby.shared.ordering.apply_order`, which is where that guard lives now that
-three surfaces take a permutation from a column.
-
-The profile editor is `profile_editor.py`, not this module: it draws the same
-`AccountCard`s in the same `CardColumn` as the Game tab, in `CardMode.MEMBER`. Its two
-controls divide one job — the picker owns *which* accounts, the column owns *what order*
-— and both removal routes go through `reconcile_membership`. Do not give either control
-its own list; that is how a card whose cross removes it is left ticked in the popup.
-
-Three things every one of them does, and a new one must:
-
-- **Return whether anything was written.** That is the caller's cue to refresh. It is
-  false for a cancelled dialog, a declined confirm, and a name that was refused.
-- **Persist it.** Assigning `sm.accounts` or `sm.launch_profiles` writes the shared
-  store through, so no `SettingsManager.save()` follows — but an action that changes
-  *both*, as `delete_account` does, goes through `sm.account_store` with `save=False` on
-  the first so the pair reaches disk once. A card on the launch screen has no Settings
-  dialog behind it, so an action that persists nothing survives until the process exits
-  and no further — which is exactly how the Add-card work shipped.
-- **Be called from a synchronous Qt slot.** Each runs `exec()`, and Python 3.13 forbids
-  re-entering Qt's event loop from inside a running asyncio task.
-
-Deleting an account cascades: the credential, the character roster, and the username in
-every profile that launched it. That is why it is a function and not a button handler.
-
-`SettingsDialog.apply_all` iterates the tab bar rather than naming four tabs.
-A hand-written list is one line to forget when a tab is added, and forgetting it
-discards everything the user typed into the new tab with no error anywhere;
-Everything on the Game tab that a card action writes persists eagerly, so
-`AccountsTab.apply` writes only its own two form rows — the launch options under
-*On launch*, which wait for OK like every other row in the dialog. Two ways to
-persist on one tab is not an oversight: a card on the launch screen has no
-Settings dialog behind it to press OK on, and a check box in this dialog that
-ignored Cancel would be the odd one out.
-
-## The Game folder row
-
-The first row on General (`game_folder_row.py`), and the one row there that is **not** a
-`settings.json` key: it writes `game.install_dir` in the vendor-wide `preferences.json`,
-because BartleBuddy launches the game from the same folder. Setup's game folder page writes
-the same key through the same `shared/game_install.set_install_dir`, so the two always
-agree; `docs/FIRST_RUN.md` ("The game folder") has where the folder is looked for.
-
-- **Its value is the folder chosen, or None for detected.** Detected is the default, so
-  Detect and the row's reset are the same move: the key is cleared on OK, and the folder is
-  found again wherever it is. The line under the title says where the folder shown came
-  from, or that nothing was found.
-- **The apply rule holds,** as on the Combat tab: OK writes it only when it changed since
-  the tab opened, so a folder the other product chose meanwhile stands. A folder without
-  the game is never stored; the row says so in its line, in the error color.
-- **A write is handed to wizwalker at once** (`clients/install_location.apply_install`), so
-  the next launch uses it without a restart.
-- **A folder found from the running game is stored on OK**, even left on detected: the
-  game is the last place looked, there only while it runs, so `apply_install` keeps what
-  it finds there. OK on an unchanged detected row runs it for that, and it never writes
-  over a folder stored, since a stored folder is looked at first.
-- It is on General rather than the Game tab because nothing about it is applied to a
-  client as it starts: it is where the game is, which every launch and every read of the
-  game's `Bin` files asks first.
+- **The rows, the dialog, the card actions and the Game folder row are core's**
+  (`bartleby/qt/settings/`, Stage 11 of #167), and so are their rules: core's
+  `bartleby/qt/CLAUDE.md`, *Settings rows*, which loads with this file. BartleBot's tabs
+  are built from them; its folding groups are declared in this package's `__init__.py`.
 
 ## The Game art row
 

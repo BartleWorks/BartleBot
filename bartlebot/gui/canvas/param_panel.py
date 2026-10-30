@@ -14,6 +14,13 @@ from dataclasses import replace
 from typing import Any
 
 from bartleby.qt.menu_utils import popup_menu
+from bartleby.qt.sidebar.option_gutter import (
+    HelpToggle,
+    OverrideBar,
+    RevertButton,
+    build_gutter_row,
+    keep_slot_when_hidden,
+)
 from bartleby.qt.theming.icon_utils import svg_icon, svg_pixmap
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
@@ -77,13 +84,6 @@ from bartlebot.game import zone_names
 from bartlebot.game.wiki_pages import WIKI_PAGE_PARAM, page_title
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.variable_rows import AssignmentsField, ConditionRow, parse_rows
-from bartlebot.gui.sidebar.option_gutter import (
-    HelpToggle,
-    OverrideBar,
-    RevertButton,
-    build_gutter_row,
-    keep_slot_when_hidden,
-)
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox

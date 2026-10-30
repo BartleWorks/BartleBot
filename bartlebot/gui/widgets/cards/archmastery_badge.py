@@ -33,11 +33,12 @@ WHERE IT SITS
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.labels.art_icon_view import ArtIconView
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from bartlebot.game import card_art
-from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView, art_icon
+from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 
 #: Height of both icons on the deck card. ``Icon_Archmastery`` is a 32px texture and
 #: the game ships nothing larger, so this is the ceiling rather than a preference --

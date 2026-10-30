@@ -325,82 +325,16 @@ redrawn by `refresh_source` and after each `_save_bcs`, never during the rebuild
 it: the pick is resolved from its file, so a fight just given a strategy would still read
 as on the default.
 
-**Setup is a list of pages, and each page writes a choice** (epics #201 and #215,
-`gui/dialogs/first_run_dialog.py`; `docs/FIRST_RUN.md` lists the pages). A page that only
-explains gets skipped, so a page asks something whose answer is stored and can be changed
-again in Settings. The dialog opens on Quick or Custom (`ModePage`), then walks the pages
-that apply. The rules for a page:
-
-- **It is a `FirstRunPage`**, with a `heading`, `answered()`, `applies(mode)` and
-  `record() -> bool`, and joins `setup_pages` and `SETUP_PAGE_TYPES`. What it stores lives in a Qt-free module, as
-  `shared/first_run.py` does for the combat page, so the other product asks the same
-  question and writes the same keys, and it writes through the function its Settings row
-  uses.
-- **Its classmethod `asks_first_run(prefs)` answers for it before it is built**: whether it
-  is unanswered and applies under Quick, read from the stores alone, since every launch
-  asks it and building every page is slow. It must agree with `not answered() and
-  applies(SetupMode.QUICK)` on the page built;
-  `test_each_page_asks_a_first_run_as_its_answer_and_walk_say` checks each page across
-  several machine states, so a page that changes one changes the other.
-- **`answered()` is "the setting already exists"**, not a key of the dialog's own: an
-  account, a found install, or the page's record key. A first run passes an answered page
-  over; a rerun shows it on the current value.
-- **There is no Skip.** Next calls `record()` and moves on only when it returns true; a
-  failed write keeps the user on the page and says so. Back records nothing. Escape and
-  the close button write nothing more, so the next launch resumes at the first
-  unanswered page. A page never records on its own: only Next does.
-- **A page whose answer changes what follows emits `walk_changed`**, and the dialog
-  recounts Step N of M and Next or Finish. `ModePage` does, on a change of mode.
-- **A page that can't be answered as it stands says so with `ready()`**, and emits
-  `ready_changed` when that may have changed; the dialog disables Next until it is true.
-  The game folder page is ready only for a folder holding the client. A page that is
-  always ready, as most are, leaves the default.
-- **A page with work running says so with `busy()`**, and the dialog disables Back and Next
-  until it ends, so the user can't change an earlier answer under it: Back to the Options
-  page could turn the art off under a run installing it. Escape and the close button
-  still leave. It emits `ready_changed` when that may have changed.
-- **A page with work running stops it in `stop()`**, which the dialog calls from `done()`
-  whenever setup closes, finished or not. The Game art page stops its extraction there;
-  the extractor removes what it wrote, and the page stays unanswered. A page's work runs
-  in a task it owns, started from `enter()`, and only when a loop is running, so the tests
-  that never await build the page without starting anything (`ArtExtraction.start`).
-- **A page that draws what an earlier page wrote rereads it in `enter()`**, which the
-  dialog calls each time it turns to the page, by Next or Back. The Launch profile page
-  lists the accounts the Accounts page added there. `showEvent` is not the place: the
-  tests drive a dialog that is never shown.
-- **A page that applies only once an earlier page is answered is unanswered until its
-  own setting exists**, never "doesn't apply yet", or it is not in the walk when the
-  dialog opens and the earlier page can't bring it in. `needs_asking` keeps such a page
-  from opening setup on its own: it counts only a page that applies under Quick, so
-  neither one that applies under no mode yet nor a Custom-only page opens setup by itself.
-  The Options page's choices are the ones Quick applies, and a setup opened for it alone
-  would end on Quick or Custom with nothing asked, and open again next launch.
-- **A card that selects itself on focus needs the selected one focused on show**, or the
-  focus chain hands it to the first card and changes the answer. `_CardsPage` does it in
-  `showEvent`, and with no card selected focuses the page itself. In the constructor it
-  is lost when the page joins the dialog.
-- **A page that sets what a Settings card holds shows that card's rows**, built by the
-  same code, as the Quicksell page shows `gui/settings/quicksell_group.QuicksellSettings`.
-  Answers that bundle several settings into one card are a second way to think about the
-  same switches, and leave combinations no card names. A group shown in setup is built
-  with `foldable=False`, so every row is on the page and the user's fold is left alone.
-- **Setup shows every description, and none can be hidden.** On a first run each is part
-  of the question, so a page's `SettingsForm` is built with `always_describe=True`: no
-  Show · Hide descriptions, no `?` on a row (its slot kept, so rows line up), and the
-  Settings dialog's own preference neither read nor written. A row's text says what the
-  setting does to the app, not what the game item is for.
-- **Wrapped text is fitted by the dialog, not the page.** Qt sizes a window from its
-  layout's minimum, which guesses a wrapped label's height at a width of the label's own
-  choosing, and does not always fit the window to its height at the real width: with the
-  Windows fonts, Always keep's summary lost its second line. `FirstRunDialog._fit_height`
-  grows the dialog to the layout's `totalHeightForWidth` on show and on every
-  `LayoutRequest`, so a page turn, or a page that grows as it is used, is fitted too. It
-  grows about its center, only moves the dialog once the first show has placed it (a
-  `move()` before then stops Qt placing it), and never shrinks it.
-- **It is opened from `AppController._after_window_shown`**, a timer's synchronous slot,
-  before a file named at launch is imported. Each opens a modal, and a second timer
-  would fire inside the first one's `exec()`. File › Set up BartleBot… opens it with
-  `rerun=True`.
+**Setup is core's frame and pages, with BartleBot's own after them** (epics #201 and #215,
+Stage 11 of #167). The dialog, `FirstRunPage` and the pages both products ask are core's
+`bartleby/qt/dialogs/first_run_dialog.py`, and so are the rules for a page: core's
+`bartleby/qt/CLAUDE.md`, *Setup is a list of pages*. BartleBot's
+`gui/dialogs/first_run_dialog.py` holds its own four pages, its texts for the Accounts page,
+the area a launch profile's resolution is judged in (`window_panes.setup_area`), and
+`setup_pages`, its list; `docs/FIRST_RUN.md` lists the pages. It is opened from
+`AppController._after_window_shown`, a timer's synchronous slot, before a file named at
+launch is imported: each opens a modal, and a second timer would fire inside the first
+one's `exec()`. File › Set up BartleBot… opens it with `rerun=True`.
 
 Every test's `%APPDATA%` is a first run, so `tests/conftest.py` makes
 `FirstRunDialog.exec` fail the test that calls it. Drive the dialog by its buttons, as
@@ -803,7 +737,7 @@ already has.
   switch for reading the whole tab at once -- a property of the reader, so it
   lives in `settings.json` and not in the bot.
 - **Every row's chrome lives in a fixed leading gutter, `[bar][action][?]`, on
-  both surfaces.** The pieces are shared — `gui/sidebar/option_gutter.py` holds
+  both surfaces.** The pieces are shared — core's `bartleby/qt/sidebar/option_gutter.py` holds
   the bar, the `?`, the `Show/Hide descriptions` links and the row builder — so
   the two tabs' columns land at the same x and a mode switch does not read as a
   different row. Only the middle slot differs: Option Values reverts a *value*, Options

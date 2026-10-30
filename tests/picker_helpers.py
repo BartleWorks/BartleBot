@@ -6,7 +6,7 @@ a test that set the selection that way would step over the very signal it means 
 
 from __future__ import annotations
 
-from bartlebot.gui.widgets.pickers.picker_popup import PickerButton
+from bartleby.qt.widgets.pickers.picker_popup import PickerButton
 
 
 def pick(button: PickerButton, *keys: str, on: bool = True) -> None:

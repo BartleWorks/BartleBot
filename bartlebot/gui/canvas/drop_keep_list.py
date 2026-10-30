@@ -18,6 +18,7 @@ from typing import Any
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.layout.flow_layout import FlowLayout
 from PyQt6.QtCore import QEvent, QModelIndex, QRect, Qt, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QFontMetrics, QIcon, QPainter, QPalette
@@ -41,7 +42,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.widgets.inputs.list_text import parse_list_text
-from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.gui.widgets.layout.drop_tree import (
     UNCATEGORIZED_DISPLAY,
     CaseInsensitiveTreeItem,

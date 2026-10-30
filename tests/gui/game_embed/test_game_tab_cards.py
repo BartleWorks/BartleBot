@@ -134,7 +134,7 @@ def test_clicking_an_account_card_edits_it_rather_than_launching_it(qapp, screen
     tab = AccountsTab()
     edited: list[str] = []
     monkeypatch.setattr(
-        "bartlebot.gui.settings.accounts_tab.edit_account", lambda u, *args, **kwargs: edited.append(u) or False
+        "bartleby.qt.settings.accounts_tab.edit_account", lambda u, *args, **kwargs: edited.append(u) or False
     )
 
     _click(tab.accounts_column.cards[0])
@@ -147,7 +147,7 @@ def test_clicking_a_profile_card_edits_it_rather_than_launching_it(qapp, screen,
     tab = AccountsTab()
     edited: list[str] = []
     monkeypatch.setattr(
-        "bartlebot.gui.settings.accounts_tab.edit_launch_profile",
+        "bartleby.qt.settings.accounts_tab.edit_launch_profile",
         lambda n, *args, **kwargs: edited.append(n) or False,
     )
 
@@ -174,7 +174,7 @@ def test_a_card_that_would_not_fit_is_noted_and_still_editable(qapp, screen, pop
     card = tab.profiles_column.cards[0]
     edited: list[str] = []
     monkeypatch.setattr(
-        "bartlebot.gui.settings.accounts_tab.edit_launch_profile",
+        "bartleby.qt.settings.accounts_tab.edit_launch_profile",
         lambda n, *args, **kwargs: edited.append(n) or False,
     )
 

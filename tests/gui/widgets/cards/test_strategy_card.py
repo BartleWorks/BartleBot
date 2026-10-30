@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.labels.art_icon_view import ArtIconView
+
 from bartlebot.combat.strategy_summary import StrategySummary
-from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY
 

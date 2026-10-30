@@ -14,23 +14,17 @@ import time
 from pathlib import Path
 
 import pytest
+from bartleby.qt.dialogs.first_run_dialog import CombatQuestionPage, FirstRunDialog, SetupMode
+from bartleby.qt.settings.rows import SettingRow
 from bartleby.shared.game_install import set_install_dir
 from bartleby.shared.preferences import PreferenceStore
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.game import art_extraction, card_art
 from bartlebot.game.art_extraction import ExtractionError
-from bartlebot.gui.dialogs.first_run_dialog import (
-    CombatQuestionPage,
-    FirstRunDialog,
-    GameArtPage,
-    OptionsPage,
-    RealmAndDelayPage,
-    SetupMode,
-)
+from bartlebot.gui.dialogs.first_run_dialog import GameArtPage, OptionsPage, RealmAndDelayPage
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.game_art_row import NO_GAME
-from bartlebot.gui.settings.rows import SettingRow
 from bartlebot.options.custom_setup import (
     ART_ANSWERED_KEY,
     EXTRACT_ART_KEY,

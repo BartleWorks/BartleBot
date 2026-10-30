@@ -12,21 +12,7 @@ from pathlib import Path
 
 import pytest
 from bartleby.qt import screen_fit
-from bartleby.runtime.clients import character_roster
-from bartleby.runtime.clients.credentials import CredentialStore
-from bartleby.shared import account_setup, game_install, launch_profiles
-from bartleby.shared.account_store import AccountStore
-from bartleby.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
-from bartleby.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
-from bartleby.shared.preferences import PreferenceStore
-from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
-from wizwalker import utils as wizwalker_utils
-
-from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui.dialogs.first_run_dialog import (
-    ACCOUNTS_EMPTY,
+from bartleby.qt.dialogs.first_run_dialog import (
     ACCOUNTS_HEADING,
     BACK,
     COMBAT_HEADING,
@@ -44,29 +30,48 @@ from bartlebot.gui.dialogs.first_run_dialog import (
     RECOMMENDED_DETAIL,
     SAVE_FAILED,
     SETTINGS_COMBAT,
-    SETUP_PAGE_TYPES,
     TACTIC_CARDS,
     AccountsPage,
     CombatQuestionPage,
     FirstRunDialog,
     FirstRunPage,
-    GameArtPage,
     GameFolderPage,
     LaunchProfilePage,
     ModePage,
+    SetupMode,
+    named,
+)
+from bartleby.qt.settings import accounts_tab
+from bartleby.qt.settings.rows import SettingRow, SettingsForm
+from bartleby.qt.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
+from bartleby.runtime.clients import character_roster
+from bartleby.runtime.clients.credentials import CredentialStore
+from bartleby.shared import account_setup, game_install, launch_profiles
+from bartleby.shared.account_store import AccountStore
+from bartleby.shared.combat_defaults import PREFERENCE_KEYS, SHIPPED_EVERYONE_ATTACKS_DUEL_ID, TeamSize
+from bartleby.shared.first_run import ANSWERED_KEY, BossTactic, combat_question_answered
+from bartleby.shared.preferences import PreferenceStore
+from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtTest import QTest
+from PyQt6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
+from wizwalker import utils as wizwalker_utils
+
+from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.gui.dialogs.first_run_dialog import (
+    ACCOUNTS_EMPTY,
+    SETUP_PAGE_TYPES,
+    GameArtPage,
     OptionsPage,
     QuicksellPage,
     RealmAndDelayPage,
-    SetupMode,
+    accounts_page,
+    launch_profile_page,
     needs_asking,
     setup_pages,
 )
-from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.combat_defaults_tab import CombatDefaultsTab
-from bartlebot.gui.settings.rows import SettingRow, SettingsForm
-from bartlebot.gui.widgets.inputs.game_folder_input import FOLDER_EMPTY, FOLDER_MISSING, FOLDER_OK
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.options import bot_options, option_values
 from bartlebot.options.custom_setup import ART_ANSWERED_KEY, EXTRACT_ART_KEY
@@ -898,7 +903,7 @@ def test_a_rerun_with_nothing_found_passes_the_page_and_writes_nothing(qapp, pre
     page = _folder_page(dialog)
     assert dialog.current is page
 
-    assert page.status_text == GAME_FOLDER_UNSET
+    assert page.status_text == named(GAME_FOLDER_UNSET)
     assert dialog.commit_button.isEnabled()
     _next(dialog)
     assert dialog.current is not page
@@ -985,7 +990,7 @@ def _accounts_on_disk() -> list[str]:
 
 
 def test_an_account_added_on_the_page_is_stored_and_shows_in_settings(qapp, prefs, editor):
-    page = AccountsPage(prefs)
+    page = accounts_page(prefs)
     walk_changes: list[int] = []
     page.walk_changed.connect(lambda: walk_changes.append(1))
 
@@ -1000,7 +1005,7 @@ def test_an_account_added_on_the_page_is_stored_and_shows_in_settings(qapp, pref
 
 def test_a_cancelled_add_changes_nothing(qapp, prefs, editor):
     editor.accepted = False
-    page = AccountsPage(prefs)
+    page = accounts_page(prefs)
 
     page.accounts_column.add_card.add_requested.emit()
 
@@ -1013,7 +1018,7 @@ def test_edit_and_remove_on_the_page_use_the_settings_actions(qapp, prefs, edito
     editor.passwords.update({ONE: "pw1", TWO: "pw2"})
     editor.alias_typed = "Main"
     editor.password_typed = ""  # kept, as the editor says
-    page = AccountsPage(prefs)
+    page = accounts_page(prefs)
 
     page.accounts_column.cards[0].edit_account_requested.emit(ONE)
     page.accounts_column.cards[1].delete_account_requested.emit(TWO)
@@ -1024,7 +1029,7 @@ def test_edit_and_remove_on_the_page_use_the_settings_actions(qapp, prefs, edito
 
 
 def test_with_no_account_the_page_says_what_still_works(qapp, prefs):
-    page = AccountsPage(prefs)
+    page = accounts_page(prefs)
 
     texts = [label.text() for label in page.accounts_column.findChildren(QLabel)]
     assert ACCOUNTS_EMPTY in texts
@@ -1032,7 +1037,7 @@ def test_with_no_account_the_page_says_what_still_works(qapp, prefs):
 
 
 def test_next_with_no_account_records_the_page_answered(qapp, prefs):
-    page = AccountsPage(prefs)
+    page = accounts_page(prefs)
     dialog = FirstRunDialog([page])
     _next(dialog)
 
@@ -1042,12 +1047,12 @@ def test_next_with_no_account_records_the_page_answered(qapp, prefs):
     assert dialog.result() == QDialog.DialogCode.Accepted
     assert _record(prefs)[account_setup.ANSWERED_KEY] is True
     assert SettingsManager.instance().accounts == []
-    assert AccountsPage(prefs).answered()
+    assert accounts_page(prefs).answered()
 
 
 def test_a_failed_record_keeps_the_user_on_the_page(qapp, prefs, monkeypatch):
     monkeypatch.setattr(PreferenceStore, "set", lambda self, key, value: False)
-    dialog = FirstRunDialog([AccountsPage(prefs)])
+    dialog = FirstRunDialog([accounts_page(prefs)])
     _next(dialog, 2)
 
     assert dialog.heading_text == ACCOUNTS_HEADING
@@ -1058,14 +1063,14 @@ def test_an_account_in_the_shared_file_answers_the_page(qapp, prefs):
     """Written by the other product, before BartleBot read the file."""
     AccountStore().set_accounts([{"username": ONE, "alias": ""}])
 
-    assert AccountsPage(prefs).answered()
+    assert accounts_page(prefs).answered()
     assert _record(prefs) == {}
 
 
 def test_a_first_run_with_an_account_does_not_show_the_page(qapp, prefs):
     SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}]
 
-    dialog = FirstRunDialog([AccountsPage(prefs), _Page("Last?")])
+    dialog = FirstRunDialog([accounts_page(prefs), _Page("Last?")])
 
     assert _headings(dialog) == [MODE_HEADING, "Last?"]
 
@@ -1073,7 +1078,7 @@ def test_a_first_run_with_an_account_does_not_show_the_page(qapp, prefs):
 def test_a_rerun_shows_the_page_on_the_stored_accounts(qapp, prefs):
     SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}, {"username": TWO, "alias": ""}]
 
-    dialog = FirstRunDialog([AccountsPage(prefs)], rerun=True)
+    dialog = FirstRunDialog([accounts_page(prefs)], rerun=True)
 
     assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING]
     assert len(dialog.walk[1].accounts_column.cards) == 2
@@ -1099,7 +1104,7 @@ def test_every_account_is_listed_checked_in_the_order_of_the_accounts_page(qapp,
         {"username": ONE, "alias": "First"},
     ]
 
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
 
     assert [box.text() for box in page.boxes] == ["Second", "First"]
     assert all(box.isChecked() for box in page.boxes)
@@ -1109,7 +1114,7 @@ def test_every_account_is_listed_checked_in_the_order_of_the_accounts_page(qapp,
 
 def test_next_makes_one_profile_of_the_checked_accounts_in_order(qapp, prefs):
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     page.boxes[1].setChecked(False)
 
     assert page.record()
@@ -1121,7 +1126,7 @@ def test_next_makes_one_profile_of_the_checked_accounts_in_order(qapp, prefs):
 def test_the_profile_shows_on_settings_game(qapp, prefs):
     _three_accounts()
 
-    assert LaunchProfilePage(prefs).record()
+    assert launch_profile_page(prefs).record()
 
     assert len(AccountsTab().profiles_column.cards) == 1
 
@@ -1129,7 +1134,7 @@ def test_the_profile_shows_on_settings_game(qapp, prefs):
 def test_a_name_already_taken_gets_the_next_free_one(qapp, prefs):
     _three_accounts()
     SettingsManager.instance().launch_profiles = [{"name": "Everyone", "accounts": [ONE]}]
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
 
     assert page.status_text == PROFILE_WILL_MAKE.format(name="Everyone 2", n=3)
     assert page.record()
@@ -1139,7 +1144,7 @@ def test_a_name_already_taken_gets_the_next_free_one(qapp, prefs):
 
 def test_fewer_than_two_checked_makes_no_profile_and_still_records_the_page(qapp, prefs):
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     page.boxes[0].setChecked(False)
     page.boxes[2].setChecked(False)
 
@@ -1148,14 +1153,14 @@ def test_fewer_than_two_checked_makes_no_profile_and_still_records_the_page(qapp
 
     assert _profiles_on_disk() == []
     assert _record(prefs)[launch_profiles.ANSWERED_KEY] is True
-    assert LaunchProfilePage(prefs).answered()
+    assert launch_profile_page(prefs).answered()
 
 
 def test_the_same_accounts_already_launching_together_make_no_second_profile(qapp, prefs):
     """A rerun, or Next tried again after a failed write, finds the profile already made."""
     _three_accounts()
     SettingsManager.instance().launch_profiles = [{"name": "Team", "accounts": [ONE, TWO, THREE]}]
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
 
     assert page.status_text == PROFILE_EXISTS.format(name="Team")
     assert page.record()
@@ -1166,7 +1171,7 @@ def test_the_same_accounts_already_launching_together_make_no_second_profile(qap
 def test_a_failed_profile_write_keeps_the_user_on_the_page(qapp, prefs, monkeypatch):
     _three_accounts()
     monkeypatch.setattr(AccountStore, "save", lambda self: False)
-    dialog = FirstRunDialog([LaunchProfilePage(prefs), _Page("Last?")])
+    dialog = FirstRunDialog([launch_profile_page(prefs), _Page("Last?")])
     _next(dialog, 2)
 
     assert dialog.heading_text == LAUNCH_PROFILE_HEADING
@@ -1177,7 +1182,7 @@ def test_a_failed_profile_write_keeps_the_user_on_the_page(qapp, prefs, monkeypa
 def test_the_page_does_not_apply_with_fewer_than_two_accounts(qapp, prefs):
     SettingsManager.instance().accounts = [{"username": ONE, "alias": ""}]
 
-    dialog = FirstRunDialog([LaunchProfilePage(prefs), _Page("Last?")])
+    dialog = FirstRunDialog([launch_profile_page(prefs), _Page("Last?")])
 
     assert _headings(dialog) == [MODE_HEADING, "Last?"]
 
@@ -1188,7 +1193,7 @@ def test_the_page_is_not_shown_when_a_profile_exists(qapp, prefs):
     other.set_accounts([{"username": u, "alias": ""} for u in (ONE, TWO, THREE)])
     other.set_launch_profiles([{"name": "Duo", "accounts": [ONE, TWO]}])
 
-    dialog = FirstRunDialog([LaunchProfilePage(prefs), _Page("Last?")])
+    dialog = FirstRunDialog([launch_profile_page(prefs), _Page("Last?")])
 
     assert _headings(dialog) == [MODE_HEADING, "Last?"]
 
@@ -1197,22 +1202,22 @@ def test_a_rerun_shows_the_page_while_two_accounts_exist(qapp, prefs):
     _three_accounts()
     SettingsManager.instance().launch_profiles = [{"name": "Duo", "accounts": [ONE, TWO]}]
 
-    dialog = FirstRunDialog([LaunchProfilePage(prefs)], rerun=True)
+    dialog = FirstRunDialog([launch_profile_page(prefs)], rerun=True)
 
     assert _headings(dialog) == [MODE_HEADING, LAUNCH_PROFILE_HEADING]
 
 
 def test_accounts_added_on_the_page_before_bring_the_launch_profile_page(qapp, prefs, editor):
     """The walk across both pages: Stage 3's open item for #229."""
-    accounts_page = AccountsPage(prefs)
-    dialog = FirstRunDialog([accounts_page, LaunchProfilePage(prefs), _Page("Last?")])
+    shown = accounts_page(prefs)
+    dialog = FirstRunDialog([shown, launch_profile_page(prefs), _Page("Last?")])
     _next(dialog)
     assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING, "Last?"]
 
-    accounts_page.accounts_column.add_card.add_requested.emit()
+    shown.accounts_column.add_card.add_requested.emit()
     assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING, "Last?"]
     editor.username_typed = TWO
-    accounts_page.accounts_column.add_card.add_requested.emit()
+    shown.accounts_column.add_card.add_requested.emit()
     assert _headings(dialog) == [MODE_HEADING, ACCOUNTS_HEADING, LAUNCH_PROFILE_HEADING, "Last?"]
     assert dialog.step_text == "Step 2 of 4"
 
@@ -1226,7 +1231,7 @@ def test_accounts_added_on_the_page_before_bring_the_launch_profile_page(qapp, p
 
 
 def test_next_with_no_account_passes_the_launch_profile_page_over(qapp, prefs):
-    dialog = FirstRunDialog([AccountsPage(prefs), LaunchProfilePage(prefs), _Page("Last?")])
+    dialog = FirstRunDialog([accounts_page(prefs), launch_profile_page(prefs), _Page("Last?")])
     _next(dialog, 2)
 
     assert dialog.heading_text == "Last?"
@@ -1235,14 +1240,14 @@ def test_next_with_no_account_passes_the_launch_profile_page_over(qapp, prefs):
 
 def test_an_account_removed_before_the_page_is_not_on_it(qapp, prefs, editor):
     _three_accounts()
-    accounts_page = AccountsPage(prefs)
-    dialog = FirstRunDialog([accounts_page, LaunchProfilePage(prefs)], rerun=True)
+    shown = accounts_page(prefs)
+    dialog = FirstRunDialog([shown, launch_profile_page(prefs)], rerun=True)
     _next(dialog)
     _next(dialog)
     assert dialog.current.checked == [ONE, TWO, THREE]
     dialog.back_button.click()
 
-    accounts_page.accounts_column.cards[2].delete_account_requested.emit(THREE)
+    shown.accounts_column.cards[2].delete_account_requested.emit(THREE)
     _next(dialog)
 
     assert dialog.current.checked == [ONE, TWO]
@@ -1250,8 +1255,8 @@ def test_an_account_removed_before_the_page_is_not_on_it(qapp, prefs, editor):
 
 def test_an_account_unchecked_stays_unchecked_after_back(qapp, prefs):
     _three_accounts()
-    page = LaunchProfilePage(prefs)
-    dialog = FirstRunDialog([AccountsPage(prefs), page], rerun=True)
+    page = launch_profile_page(prefs)
+    dialog = FirstRunDialog([accounts_page(prefs), page], rerun=True)
     _next(dialog, 2)
     page.boxes[0].setChecked(False)
 
@@ -1264,7 +1269,7 @@ def test_an_account_unchecked_stays_unchecked_after_back(qapp, prefs):
 def test_a_box_drawn_again_leaves_none_of_the_old_ones_showing(qapp, prefs):
     """Out of the layout and waiting for its deferred delete, an old box sat over the intro."""
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     old = page.boxes
 
     page.enter()
@@ -1279,7 +1284,7 @@ def test_a_box_drawn_again_leaves_none_of_the_old_ones_showing(qapp, prefs):
 def test_the_resolution_starts_on_the_largest_that_fits_the_accounts_checked(qapp, prefs):
     """Two 800x600 clients do not fit side by side on 1080p: the global one would make a dead profile."""
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     assert page.resolution == (534, 300)
 
     page.boxes[2].setChecked(False)
@@ -1289,7 +1294,7 @@ def test_the_resolution_starts_on_the_largest_that_fits_the_accounts_checked(qap
 
 def test_resolutions_too_big_for_the_accounts_checked_are_grayed(qapp, prefs):
     SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO)]
-    combo = LaunchProfilePage(prefs).resolution_combo
+    combo = launch_profile_page(prefs).resolution_combo
     model = combo.model()
 
     enabled = {combo.itemData(i): model.item(i).isEnabled() for i in range(combo.count())}
@@ -1300,7 +1305,7 @@ def test_resolutions_too_big_for_the_accounts_checked_are_grayed(qapp, prefs):
 
 def test_a_smaller_resolution_picked_is_the_one_saved(qapp, prefs):
     SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in (ONE, TWO)]
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     combo = page.resolution_combo
     index = next(i for i in range(combo.count()) if combo.itemData(i) == (534, 300))
 
@@ -1313,7 +1318,7 @@ def test_a_smaller_resolution_picked_is_the_one_saved(qapp, prefs):
 
 def test_a_pick_that_stops_fitting_gives_way_to_the_largest_that_does(qapp, prefs):
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     page.boxes[2].setChecked(False)
     combo = page.resolution_combo
     index = next(i for i in range(combo.count()) if combo.itemData(i) == (560, 420))
@@ -1329,13 +1334,13 @@ def test_the_resolution_is_judged_at_the_default_canvas_whatever_setup_fitted(qa
     SettingsManager.instance().set_general("bottom_section_height", 500)
     _three_accounts()
 
-    assert LaunchProfilePage(prefs).resolution == (534, 300)
+    assert launch_profile_page(prefs).resolution == (534, 300)
 
 
 def test_with_no_resolution_that_fits_the_profile_follows_the_global_one(qapp, prefs, screen):
     screen(((1366, 728), 1.0))
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
 
     assert page.resolution is None
     assert page.status_text.endswith(PROFILE_NO_FIT.format(n=3))
@@ -1345,7 +1350,7 @@ def test_with_no_resolution_that_fits_the_profile_follows_the_global_one(qapp, p
 
 def test_the_resolution_is_disabled_when_no_profile_is_made(qapp, prefs):
     _three_accounts()
-    page = LaunchProfilePage(prefs)
+    page = launch_profile_page(prefs)
     assert page.resolution_combo.isEnabled()
 
     page.boxes[0].setChecked(False)

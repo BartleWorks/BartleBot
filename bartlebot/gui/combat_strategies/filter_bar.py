@@ -19,7 +19,9 @@ from collections.abc import Iterable
 from dataclasses import replace
 
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.layout.discard import discard_widget
+from bartleby.qt.widgets.pickers.picker_popup import PickerButton, PickerRow
 from bartleby.qt.widgets.pills.pill import NeutralChip
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
@@ -38,8 +40,6 @@ from bartlebot.combat.strategy_tags import (
     count_facets,
     team_label,
 )
-from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
-from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, PickerRow
 from bartlebot.gui.widgets.pickers.school_picker import SchoolPickerButton
 from bartlebot.gui.widgets.pickers.tag_picker import STRATEGY_VOCABULARY, TagPickerButton, TagVocabulary, count_label
 from bartlebot.gui.widgets.pills.tag_pill import TagChip
