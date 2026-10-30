@@ -127,10 +127,9 @@ def _log_tab():
 
 
 def _title_bar():
+    from bartleby.qt.logo import logo_icon  # noqa: PLC0415
     from bartleby.qt.title_bar.title_bar import TitleBar  # noqa: PLC0415
     from PyQt6.QtWidgets import QMenuBar  # noqa: PLC0415
-
-    from bartlebot.gui.logo import logo_icon  # noqa: PLC0415
 
     menu_bar = QMenuBar()
     for name in ("&File", "&Edit", "&View", "&Help"):

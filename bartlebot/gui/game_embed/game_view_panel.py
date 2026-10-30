@@ -11,13 +11,12 @@ from bartleby.qt.game_embed.game_view import GameView
 from bartleby.qt.game_embed.game_view_panel import ActionBar, BarAction, GamePanel
 
 from bartlebot.clients.authoring_tools import ACTION_LABELS, AuthoringAction
-from bartlebot.gui.logo import logo_disc_image
 from bartlebot.settings_manager import SettingsManager
 
 
 def new_game_view(parent=None) -> GameView:
     """Core's game view as BartleBot draws it: from BartleBot's settings, with its logo disc."""
-    return GameView(SettingsManager.instance(), logo_disc_image, parent)
+    return GameView(SettingsManager.instance(), parent)
 
 
 #: The toggles: each switches on and off, and reports its state in the accent.

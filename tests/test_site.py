@@ -10,7 +10,9 @@ import sys
 import tomllib
 from urllib.parse import urlparse
 
-from bartlebot.gui.logo import LOGO_SVG
+from bartleby.qt.logo import logo_svg
+
+from bartlebot.packaging.product import LOGO_BACKGROUND
 from bartlebot.paths import project_root
 from bartlebot.updates.feed import FEED_URL, REPOSITORY
 
@@ -91,10 +93,10 @@ def test_every_image_a_page_shows_is_in_the_site():
 
 
 def test_the_sites_logo_is_the_apps():
-    """The site can only show a file under its own pages, so the logo is a copy."""
+    """The site can only show a file under its own pages, so the logo is core's tree on our color, written out."""
     site_logo = PAGES / CONFIG["theme"]["logo"]
 
-    assert site_logo.read_bytes() == LOGO_SVG.read_bytes()
+    assert site_logo.read_text(encoding="utf-8") == logo_svg(LOGO_BACKGROUND)
     assert CONFIG["theme"]["favicon"] == CONFIG["theme"]["logo"]
 
 

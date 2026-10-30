@@ -24,7 +24,7 @@ The build is a PyInstaller onedir (*The packager*, below, has why). PyInstaller 
 `dist/BartleBot/` with `dist/build-report.json` beside it: the build time, the folder's
 size and file count, and the self-check's lines. The script exits non-zero when
 PyInstaller or the self-check fails. It also draws `dist/bartlebot.ico` from the logo's
-SVG (`tools/export_logo.py`'s `write_icon`) and gives it to the exe, so the Start Menu
+SVG (core's `bartleby.qt.logo.export.write_icon`) and gives it to the exe, so the Start Menu
 entry, the uninstall entry and Explorer show the logo rather than PyInstaller's icon.
 Beside it goes `dist/bartlebot-splash.png` (`write_splash`), the logo on its square at
 288 px, which only `vpk pack` reads: Setup.exe shows it while it installs.
@@ -50,7 +50,7 @@ under the project root, and no reader needs to know it is frozen. The lists are 
 |---|---|---|
 | `DATA_DIRS` | `bots/`, `templates/`, `subgraphs/`, `strategies/`, `bartlebot/game/data/` | the Official content, and BartleBot's game snapshots and the type dump |
 | `CORE_DATA_DIRS` | bartleby-core's `qt/icons/` and `runtime/game/data/`, bundled under `bartleby/` | the icons, and the snapshots core's runtime reads (dialog captions, name tables, realm names), at the paths core's modules look for them |
-| `DATA_FILES` | `bartlebot/gui/logo/bartlebot.svg` | the logo, drawn at every size from this one file |
+| `CORE_DATA_FILES` | bartleby-core's `qt/logo/tree.svg`, bundled under `bartleby/` | the logo, drawn at every size from this one file |
 | `METADATA` | `bartlebot`, `PyQt6`, `qasync`, `transitions`, `wizwalker` | `importlib.metadata.version("bartlebot")` is how the app knows its version, and the session log's header names it and the four libraries' (`packaging.product.HEADER_LIBRARIES`) |
 | `WHOLE_PACKAGES` | `katsuba` | `katsuba.op` and `katsuba.wad` are submodules its native extension registers when it loads. No file names them, so an import scan leaves the package out |
 
@@ -363,9 +363,9 @@ soon as it is published.
 **`.github/workflows/site.yml`** builds the site on every push to `master` and every pull
 request into it, with `--strict`, which fails the build on a link to a page or an anchor
 that is not there. A missing image is no warning to Zensical, so `tests/test_site.py`
-checks those, with the rest a build cannot see: the button's URL, the logo, which is a
-copy of `bartlebot/gui/logo/bartlebot.svg` because a page can show only files under
-`site/pages/`, and no web fonts, so a visit sends nothing to anyone but GitHub. The
+checks those, with the rest a build cannot see: the button's URL, the logo, which is
+core's tree on BartleBot's blue (`bartleby.qt.logo.logo_svg`) written out as a file, because a
+page can show only files under `site/pages/`, and no web fonts, so a visit sends nothing to anyone but GitHub. The
 workflow publishes the build to GitHub Pages from `master` only, and only while the repo
 is public: GitHub Free serves Pages from no private repo.
 

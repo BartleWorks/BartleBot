@@ -9,8 +9,6 @@ from this process.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from bartleby.shared.product import Product
 
 #: As the user sees it, and the folder under ``%APPDATA%/Bartleby/``.
@@ -20,8 +18,8 @@ NAME = "BartleBot"
 ACCENT = "#3366bb"
 ACCENT_DARK = "#4488cc"
 
-#: The logo's SVG, which ``bartlebot.gui.logo`` draws every raster from.
-LOGO_SVG = Path(__file__).resolve().parents[1] / "gui" / "logo" / "bartlebot.svg"
+#: The color behind the family's tree (``bartleby.qt.logo``), on the logo's square and its disc.
+LOGO_BACKGROUND = "#1d3a8a"
 
 #: Libraries whose versions the session log's header names, beside BartleBot's own. A
 #: packaged build carries their metadata only because ``tools/build_package.py`` copies it.
@@ -45,7 +43,7 @@ def product() -> Product:
         version=current_version(),
         accent=ACCENT,
         accent_dark=ACCENT_DARK,
-        logo=LOGO_SVG,
+        logo_background=LOGO_BACKGROUND,
         dev_mode=dev,
         build_kind=build_kind(),
         log_root=project_root() / "logs" if dev else None,

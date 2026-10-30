@@ -15,6 +15,7 @@ from bartleby.qt.app.logging_setup import add_gui_callback, remove_gui_callback,
 from bartleby.qt.app.single_instance import LaunchQueue, SingleInstance, raise_window
 from bartleby.qt.dialogs.first_run_dialog import FirstRunDialog, FirstRunPage
 from bartleby.qt.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
+from bartleby.qt.logo import install_app_icon, refresh_taskbar_icon
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import group_manager
 from bartleby.runtime.clients.install_location import apply_install
@@ -71,7 +72,6 @@ from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
 from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
 from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.dialogs.templates_dialog import TemplatesDialog, TemplatesVerb
-from bartlebot.gui.logo import install_app_icon, refresh_taskbar_icon
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
 from bartlebot.gui.update_prompt import UpdatePrompt
