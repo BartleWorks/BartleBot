@@ -53,7 +53,7 @@ def test_a_toggle_that_is_on_is_drawn_in_the_accent_names_its_key_and_stays_pres
     )
     speed = bar.button(AuthoringAction.TOGGLE_SPEED)
     assert bar.is_checked(AuthoringAction.TOGGLE_SPEED)
-    assert speed._tint is IconTint.ACCENT
+    assert speed.tint is IconTint.ACCENT
     assert speed.isEnabled()
     assert speed.toolTip().startswith("Speed (on) [F3] — ")
-    assert bar.button(AuthoringAction.TOGGLE_COMBAT)._tint is IconTint.DEFAULT
+    assert bar.button(AuthoringAction.TOGGLE_COMBAT).tint is IconTint.DEFAULT
