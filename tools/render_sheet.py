@@ -146,6 +146,36 @@ def _accounts_tab():
     return AccountsTab()
 
 
+def _settings(tab: str):
+    """The Settings dialog, opened on *tab*."""
+
+    def build():
+        from bartlebot.gui.settings.settings_dialog import SettingsDialog  # noqa: PLC0415
+
+        dialog = SettingsDialog()
+        dialog.open_tab(tab)
+        return dialog
+
+    return build
+
+
+def _setup(page: str | None):
+    """Setup, rerun so every page is in the walk, turned to the page whose class is *page*; None for the first."""
+
+    def build():
+        from bartleby.qt.dialogs.first_run_dialog import FirstRunDialog  # noqa: PLC0415
+        from bartleby.shared.preferences import PreferenceStore  # noqa: PLC0415
+
+        from bartlebot.gui.dialogs.first_run_dialog import setup_pages
+
+        dialog = FirstRunDialog(setup_pages(PreferenceStore(), rerun=True), rerun=True)
+        if page is not None:
+            dialog._show(next(p for p in dialog.pages if type(p).__name__ == page))
+        return dialog
+
+    return build
+
+
 def surfaces() -> list:
     """BartleBot's sheet, in the order the plan names it."""
     Surface = core_render_sheet().Surface
@@ -157,6 +187,11 @@ def surfaces() -> list:
         Surface("log_tab", _log_tab, (420, 300)),
         Surface("title_bar", _title_bar, (1280, 40)),
         Surface("settings_accounts", _accounts_tab, (900, 700)),
+        Surface("settings_general", _settings("general"), (900, 860)),
+        Surface("settings_theme", _settings("theme"), (900, 860)),
+        Surface("setup_mode", _setup(None), (600, 640)),
+        Surface("setup_accounts", _setup("AccountsPage"), (600, 640)),
+        Surface("setup_launch_profile", _setup("LaunchProfilePage"), (600, 640)),
     ]
 
 

@@ -542,7 +542,7 @@ def test_the_dialog_shows_a_card_per_template_with_its_source_and_detail(qapp, g
     roots, _fork = gallery_roots
     dialog = _dialog(roots)
 
-    assert [(c.name, c.source_text, c.detail_text) for c in dialog.cards] == [
+    assert [(c.name, c.pill_text, c.detail_text) for c in dialog.cards] == [
         ("Mine", "Custom", "v1 · no bots · from Official Farmer v1"),
         ("Official Farmer", "Official", "v1 · no bots"),
     ]

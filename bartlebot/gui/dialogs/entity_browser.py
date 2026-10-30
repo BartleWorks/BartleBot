@@ -20,6 +20,7 @@ import logging
 import pyperclip
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -32,7 +33,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.game import entity_names
-from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 
 logger = logging.getLogger(__name__)
 

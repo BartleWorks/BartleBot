@@ -31,11 +31,12 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from bartleby.qt.widgets.labels.art_icon_view import ArtIconView
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot.game import card_art
-from bartlebot.gui.widgets.cards.card_art_tile import ArtIconView, art_icon
+from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 
 #: How big a gem is drawn beside a label. The textures are 64px, so this is a preference
 #: rather than a ceiling -- but below about 20px the four symbols stop resolving and the

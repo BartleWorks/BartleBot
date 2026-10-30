@@ -8,6 +8,7 @@ import json
 import bartleby.qt.theming.theme as theme_mod
 import pytest
 from bartleby.qt.app.ui_state import UI_STATE_FILE, UiState
+from bartleby.qt.settings.rows import FOLD_SURFACE, SETTINGS_FOLD_DEFAULTS, SettingGroup, SettingRow, SettingsForm, hint
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.link_button import LinkButton
 from bartleby.shared.vendor import product_dir
@@ -16,14 +17,6 @@ from PyQt6.QtWidgets import QCheckBox, QSpinBox
 
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.general_tab import GeneralTab
-from bartlebot.gui.settings.rows import (
-    FOLD_SURFACE,
-    SETTINGS_FOLD_DEFAULTS,
-    SettingGroup,
-    SettingRow,
-    SettingsForm,
-    hint,
-)
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.settings_manager import SettingsManager

@@ -56,6 +56,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from bartleby.qt.sidebar.option_gutter import (
+    DescriptionSwitches,
+    HelpToggle,
+    OverrideBar,
+    RevertButton,
+    build_gutter_row,
+    keep_slot_when_hidden,
+)
 from bartleby.qt.sidebar.sidebar_section import HeadingAction, SidebarSection, field_label
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
@@ -70,14 +78,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
-from bartlebot.gui.sidebar.option_gutter import (
-    DescriptionSwitches,
-    HelpToggle,
-    OverrideBar,
-    RevertButton,
-    build_gutter_row,
-    keep_slot_when_hidden,
-)
 from bartlebot.gui.sidebar.strategy_panel import LOCKED
 from bartlebot.gui.widgets.buttons.toggle_switch import ToggleSwitch
 from bartlebot.gui.widgets.inputs.option_widgets import (

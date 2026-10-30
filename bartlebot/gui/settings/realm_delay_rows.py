@@ -8,9 +8,9 @@ way of :func:`bartlebot.options.realm_delay_setup.record_realm_delay`.
 
 from __future__ import annotations
 
+from bartleby.qt.settings.rows import SettingRow
 from PyQt6.QtWidgets import QDoubleSpinBox
 
-from bartlebot.gui.settings.rows import SettingRow
 from bartlebot.gui.widgets.inputs.realm_combo import RealmCombo
 from bartlebot.options.bot_options import FAVORITE_REALM_DESCRIPTION, SAFETY_DELAY_DESCRIPTION
 from bartlebot.settings_manager import SettingsManager, default_for

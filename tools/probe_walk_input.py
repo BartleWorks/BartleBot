@@ -274,7 +274,7 @@ async def movement_keys(client) -> tuple[dict[str, int], str]:
     try:
         from bartleby.runtime.clients.game_keys import key_map  # ahmarra-test-realm onward
     except ImportError:
-        from bartlebot.game.game_keybindings import read_game_keybindings
+        from bartleby.runtime.game.game_keybindings import read_game_keybindings
 
         for binding in read_game_keybindings():
             action = binding.event.removesuffix("Start")

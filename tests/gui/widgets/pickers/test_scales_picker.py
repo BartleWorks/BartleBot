@@ -1,11 +1,11 @@
 """The 'scales' param type: the picker's sections, its button, the form field and the node error."""
 
+from bartleby.qt.widgets.pickers.picker_popup import filter_sections
 from wizwalker import XYZ
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.content.templates.setup_steps import value_empty
 from bartlebot.game import scales
-from bartlebot.gui.widgets.pickers.picker_popup import filter_sections
 from bartlebot.gui.widgets.pickers.scales_picker import PLACEHOLDER, ScalesButton, describe_key, scales_sections
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS

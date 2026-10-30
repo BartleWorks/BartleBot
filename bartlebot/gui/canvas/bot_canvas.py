@@ -20,7 +20,9 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin, set_style_sheet
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
 from bartleby.qt.widgets.buttons.icon_button import IconButton
+from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.labels.elided_label import WrappingElidedLabel
+from bartleby.qt.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartleby.qt.widgets.pills.pill import NeutralPill
 from PyQt6.QtCore import QEvent, QRectF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
@@ -119,8 +121,6 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.debug.press_trace import PressTracer
 from bartlebot.gui.debug.repaint_trace import RepaintTracer
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
-from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
-from bartlebot.gui.widgets.pickers.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.pickers.tag_picker import (
     BOT_VOCABULARY,
     SUBGRAPH_VOCABULARY,

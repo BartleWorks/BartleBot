@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from bartleby.qt.settings.rows import SettingGroup, SettingRow
 from PyQt6.QtWidgets import QCheckBox, QLineEdit
 
-from bartlebot.gui.settings.rows import SettingGroup, SettingRow
 from bartlebot.gui.widgets.inputs.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.utility.quicksell import USER_KEEP_LIST_KEY
 from bartlebot.options.quicksell_setup import (

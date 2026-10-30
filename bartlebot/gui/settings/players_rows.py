@@ -8,9 +8,9 @@ and a refill spends gold. Both write through
 
 from __future__ import annotations
 
+from bartleby.qt.settings.rows import SettingRow
 from PyQt6.QtWidgets import QCheckBox
 
-from bartlebot.gui.settings.rows import SettingRow
 from bartlebot.options.custom_setup import refill_potions
 from bartlebot.settings_manager import SettingsManager, default_for
 

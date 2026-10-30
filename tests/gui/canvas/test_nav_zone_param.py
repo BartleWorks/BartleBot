@@ -8,7 +8,7 @@ free to disagree with the first.
 import asyncio
 import logging
 
-from bartlebot.gui.widgets.pickers.picker_popup import apply_toggle
+from bartleby.qt.widgets.pickers.picker_popup import apply_toggle
 
 _ENTRANCE = "Krokotopia/KT_Krokosphinx/KT_EntranceHall"
 

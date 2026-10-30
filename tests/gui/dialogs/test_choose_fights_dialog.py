@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from bartleby.qt.widgets.pickers.picker_popup import PickerRow
 from PyQt6.QtCore import Qt
 
 from bartlebot.gui.dialogs.choose_fights_dialog import ChooseFightsDialog, FightsAnswer
 from bartlebot.gui.widgets.labels.step_heading import Step
-from bartlebot.gui.widgets.pickers.picker_popup import PickerRow
 
 SECTIONS = [
     ("", [PickerRow(key="state_1", label="Lamia", meta="Default"), PickerRow(key="state_2", label="Krokopatra")])

@@ -1,6 +1,6 @@
 """File › Templates…: every template, Official and Custom, and the verbs that make templates of your own (#164).
 
-A gallery built from New Bot's :class:`~bartlebot.gui.dialogs.new_bot_dialog.StartCard`: one card
+A gallery built from core's :class:`~bartleby.qt.widgets.cards.start_card.StartCard`, as New Bot's is: one card
 per template, with its Source pill, what it is for, and a last line giving its latest
 version, how many of the user's bots were made from it, and the template it was copied
 from. A Source filter sits beside the heading, since this is the gallery that holds the
@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from bartleby.qt.menu_utils import popup_menu
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton, ActionStyle
+from bartleby.qt.widgets.cards.start_card import StartCard
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from bartleby.qt.widgets.layout.dialog_footer import dialog_footer
 from bartleby.qt.widgets.layout.discard import discard_widget
@@ -45,8 +46,8 @@ from PyQt6.QtWidgets import (
 from bartlebot.combat.strategy_tags import SOURCE
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.content.templates.template_gallery import GalleryEntry
-from bartlebot.gui.dialogs.new_bot_dialog import StartCard
 from bartlebot.gui.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary, tag_icon
+from bartlebot.gui.widgets.pills.source_pill import source_pill
 
 #: Two columns, as New Bot's gallery has.
 _GALLERY_COLUMNS = 2
@@ -248,7 +249,7 @@ class TemplatesDialog(QDialog):
                 entry.summary,
                 tooltip=entry.blurb if entry.blurb != entry.summary else "",
                 icon=tag_icon(entry.icon_tag) if entry.icon_tag else None,
-                source=entry.origin,
+                pill=source_pill(entry.origin),
                 detail=entry.detail,
             )
             # Into the installed grid before anything shows it: see gui/CLAUDE.md.

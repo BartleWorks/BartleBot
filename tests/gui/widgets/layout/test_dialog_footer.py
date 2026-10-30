@@ -36,13 +36,13 @@ def _settings_dialog():
 
 
 def _account_dialog():
-    from bartlebot.gui.settings import accounts_tab
+    from bartleby.qt.settings import accounts_tab
 
     return accounts_tab._AccountDialog()
 
 
 def _profile_dialog():
-    from bartlebot.gui.settings.profile_editor import ProfileDialog
+    from bartleby.qt.settings.profile_editor import ProfileDialog
 
     return ProfileDialog()
 
@@ -113,7 +113,9 @@ def _new_bot_dialog():
 
 
 def _first_run_dialog():
-    from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog, RealmAndDelayPage
+    from bartleby.qt.dialogs.first_run_dialog import FirstRunDialog
+
+    from bartlebot.gui.dialogs.first_run_dialog import RealmAndDelayPage
 
     # A page every user is asked: the combat question is only a team's.
     return FirstRunDialog([RealmAndDelayPage()])

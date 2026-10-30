@@ -140,6 +140,7 @@ from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.cards.card_frame import CardFrame, CardMode, CardVerb
 from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.layout.flow_layout import FlowLayout
+from bartleby.qt.widgets.pickers.picker_popup import PickerButton, Section
 from bartleby.qt.widgets.pills.pill import AccentPill, ActionPill, NeutralPill, WarningPill
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
@@ -154,7 +155,6 @@ from bartlebot.combat.combat_resolution import (
 from bartlebot.combat.flee_marks import FledFight, fled_fight_tooltip, fled_pill_text, fled_text, fled_tooltip
 from bartlebot.combat.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
-from bartlebot.gui.widgets.pickers.picker_popup import PickerButton, Section
 from bartlebot.gui.widgets.pills.player_pills import PlayerBadgeRow
 
 if TYPE_CHECKING:

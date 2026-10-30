@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from bartleby.qt.settings.rows import SettingGroup, SettingRow, SettingsForm
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 
-from bartlebot.gui.settings.rows import SettingGroup, SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for
 
 

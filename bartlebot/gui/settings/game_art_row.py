@@ -18,6 +18,7 @@ import logging
 import threading
 
 from bartleby.qt.art_signal import announce_art_changed
+from bartleby.qt.settings.rows import Binding, SettingRow
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.action_button import ActionButton
@@ -35,7 +36,6 @@ from bartlebot.game.art_extraction import (
     Progress,
     installed_game_data_dir,
 )
-from bartlebot.gui.settings.rows import Binding, SettingRow
 
 logger = logging.getLogger(__name__)
 

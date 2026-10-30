@@ -1,65 +1,17 @@
-"""Handing wizwalker the game folder, at startup and after a change (#227)."""
+"""BartleBot hands wizwalker the game folder at startup (#227).
+
+``apply_install`` and its own tests moved to core's ``bartleby/runtime/clients/`` in Stage
+11 of #167; this is when BartleBot calls it.
+"""
 
 from __future__ import annotations
 
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from bartleby.shared import game_install
-from bartleby.shared.game_install import InstallSource, set_install_dir
-from bartleby.shared.preferences import PreferenceStore
-from wizwalker import utils as wizwalker_utils
 
 from bartlebot import app_controller
 from bartlebot.app_controller import AppController
-from bartlebot.clients.install_location import apply_install
-
-
-def _install(folder: Path) -> Path:
-    (folder / "Bin").mkdir(parents=True)
-    (folder / "Bin" / "WizardGraphicalClient.exe").write_bytes(b"")
-    return folder
-
-
-@pytest.fixture(autouse=True)
-def _restore_wizwalker():
-    yield
-    wizwalker_utils.override_wiz_install_location(None)
-
-
-def test_a_stored_folder_reaches_get_wiz_install(tmp_path):
-    prefs = PreferenceStore()
-    folder = _install(tmp_path / "Steam" / "steamapps" / "common" / "Wizard101")
-    assert set_install_dir(prefs, folder)
-
-    found = apply_install(prefs)
-
-    assert found.source is InstallSource.STORED
-    assert wizwalker_utils.get_wiz_install() == folder.absolute()
-
-
-def test_nothing_found_leaves_wizwalkers_own_checks(tmp_path, monkeypatch):
-    wizwalker_utils.override_wiz_install_location(str(tmp_path))
-    monkeypatch.setattr(wizwalker_utils, "DEFAULT_INSTALL", str(_install(tmp_path / "Default")))
-
-    assert apply_install(PreferenceStore()) is None
-
-    # wizwalker's own first check, the launcher's folder, answers again.
-    assert wizwalker_utils.get_wiz_install() == tmp_path / "Default"
-
-
-def test_the_detected_folder_is_handed_over_too(tmp_path, monkeypatch):
-    folder = _install(tmp_path / "KingsIsle")
-
-    class _Launcher(game_install.NoPlaces):
-        def launcher_dir(self) -> Path:
-            return folder
-
-    monkeypatch.setattr(game_install, "_places", _Launcher())
-
-    assert apply_install(PreferenceStore()).source is InstallSource.LAUNCHER
-    assert wizwalker_utils.get_wiz_install() == folder.absolute()
 
 
 class _Stop(Exception):
@@ -87,28 +39,3 @@ def test_the_app_applies_it_at_startup_before_anything_asks_wizwalker(monkeypatc
         AppController(app)
 
     assert calls == ["install", "handler"]
-
-
-class _Running(game_install.NoPlaces):
-    """A machine where the game is found only because it is running, from *folder*."""
-
-    def __init__(self, folder: Path) -> None:
-        self.folder = folder
-
-    def running_clients(self) -> list[Path]:
-        return [self.folder / "Bin" / "WizardGraphicalClient.exe"]
-
-
-def test_a_folder_found_from_the_running_game_is_stored(tmp_path, monkeypatch):
-    """The next launch may find the game closed, and nothing else would find the folder again."""
-    folder = _install(tmp_path / "Games" / "W101")
-    monkeypatch.setattr(game_install, "_places", _Running(folder))
-    prefs = PreferenceStore()
-
-    found = apply_install(prefs)
-
-    assert found.path == folder
-    assert wizwalker_utils.get_wiz_install() == folder.absolute()
-    assert game_install.stored_install_dir(PreferenceStore()) == folder
-    monkeypatch.setattr(game_install, "_places", game_install.NoPlaces())
-    assert game_install.find_install(PreferenceStore()).path == folder

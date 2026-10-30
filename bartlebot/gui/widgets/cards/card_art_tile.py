@@ -100,33 +100,6 @@ def card_icon(template: str) -> QIcon | None:
     return None if path is None else art_icon(path)
 
 
-class ArtIconView(QWidget):
-    """One extracted icon, drawn at a fixed logical size for whichever screen it is on.
-
-    Stands in for a ``QLabel`` with a pixmap, which would fix the image's resolution
-    when it is set rather than when it is painted.
-    """
-
-    def __init__(self, size: int, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._icon: QIcon | None = None
-        self.setFixedSize(size, size)
-
-    def icon(self) -> QIcon | None:
-        return self._icon
-
-    def set_icon(self, icon: QIcon | None) -> None:
-        self._icon = icon
-        self.update()
-
-    def paintEvent(self, event) -> None:  # noqa: N802  (Qt override)
-        if self._icon is None:
-            return
-        painter = QPainter(self)
-        self._icon.paint(painter, self.rect())
-        painter.end()
-
-
 def tooltip_for(entry: DeckCardEntry) -> str:
     """What a tile says on hover: the display name, the count, and the template.
 

@@ -18,13 +18,13 @@ from bartleby.qt import screen_fit
 from bartleby.qt.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PROFILES_HINT
 from bartleby.qt.game_embed.game_view import GameView, _GamePlaceholder
 from bartleby.qt.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
+from bartleby.qt.settings import accounts_tab
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.gui.game_embed.game_view_panel import new_game_view
-from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import main_window_stub
 

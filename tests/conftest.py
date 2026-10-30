@@ -790,7 +790,7 @@ def _refuse_first_run_dialog() -> None:
     opens it; this stops one that does from blocking the suite on a modal nobody answers.
     The dialog's own tests drive it without ``exec()``.
     """
-    from bartlebot.gui.dialogs.first_run_dialog import FirstRunDialog  # noqa: PLC0415
+    from bartleby.qt.dialogs.first_run_dialog import FirstRunDialog  # noqa: PLC0415
 
     def refuse(self) -> int:
         raise AssertionError(f"{FIRST_RUN_REFUSED}; stub AppController._offer_first_run or FirstRunDialog instead")

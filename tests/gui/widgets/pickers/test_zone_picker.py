@@ -6,9 +6,9 @@ No QApplication: zone_sections, describe_zone and filter_sections are plain func
 import json
 
 import pytest
+from bartleby.qt.widgets.pickers.picker_popup import PickerRow, filter_sections
 
 from bartlebot.game import card_art, zone_nav
-from bartlebot.gui.widgets.pickers.picker_popup import PickerRow, filter_sections
 from bartlebot.gui.widgets.pickers.zone_picker import (
     SUGGESTED_LIMIT,
     SUGGESTED_TITLE,

@@ -12,6 +12,13 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from bartleby.qt.dialogs.first_run_dialog import (
+    AccountsPage,
+    CombatQuestionPage,
+    FirstRunDialog,
+    GameFolderPage,
+    LaunchProfilePage,
+)
 from bartleby.shared import game_install
 from bartleby.shared.account_setup import ANSWERED_KEY as ACCOUNTS_ANSWERED
 from bartleby.shared.account_setup import record_accounts_answered
@@ -24,16 +31,7 @@ from PyQt6.QtWidgets import QMenu, QWidget
 
 from bartlebot import app_controller
 from bartlebot.app_controller import AppController
-from bartlebot.gui.dialogs.first_run_dialog import (
-    AccountsPage,
-    CombatQuestionPage,
-    FirstRunDialog,
-    GameArtPage,
-    GameFolderPage,
-    LaunchProfilePage,
-    QuicksellPage,
-    RealmAndDelayPage,
-)
+from bartlebot.gui.dialogs.first_run_dialog import GameArtPage, QuicksellPage, RealmAndDelayPage
 from bartlebot.options.custom_setup import ART_ANSWERED_KEY as ART_ANSWERED
 from bartlebot.options.quicksell_setup import ANSWERED_KEY as QUICKSELL_ANSWERED
 from bartlebot.options.realm_delay_setup import ANSWERED_KEY as REALM_DELAY_ANSWERED

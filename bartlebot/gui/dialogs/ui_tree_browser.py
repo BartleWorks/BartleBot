@@ -30,6 +30,7 @@ import logging
 import pyperclip
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
+from bartleby.qt.widgets.inputs.search_field import SearchLineEdit
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QPainter, QPalette, QPen, QWindow
@@ -46,7 +47,6 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
-from bartlebot.gui.widgets.inputs.search_field import SearchLineEdit
 from bartlebot.nodes.node_helpers import strip_html
 
 logger = logging.getLogger(__name__)

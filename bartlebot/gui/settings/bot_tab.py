@@ -17,12 +17,12 @@ to a client while it is starting, and happen whether or not a bot is ever run.
 
 from __future__ import annotations
 
+from bartleby.qt.settings.rows import SettingRow, SettingsForm
 from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLineEdit
 
 from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
 from bartlebot.gui.settings.quicksell_group import QuicksellSettings
 from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
-from bartlebot.gui.settings.rows import SettingRow, SettingsForm
 from bartlebot.settings_manager import SettingsManager, default_for
 
 _INTRO = (
