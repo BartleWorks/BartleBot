@@ -19,12 +19,12 @@ each of which is a deliberate decision rather than an accident of reuse:
 from __future__ import annotations
 
 import pytest
+from bartleby.qt import screen_fit
+from bartleby.qt.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QListWidget, QPushButton
 
-from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.settings_manager import SettingsManager
 
@@ -240,3 +240,14 @@ def test_the_launch_screens_cards_keep_the_trash_off_their_faces(qapp):
 
     assert card.action_button("Delete") is None
     assert card.action_button("Edit").isHidden()
+
+
+def test_building_the_game_tab_puts_no_window_on_the_screen(qapp, parentless_shows):
+    """Moved from the launch card tests when the cards moved to core (#167, Stage 9).
+
+    A ``_FitBanner`` hiding its "Change resolution" link before the layout had adopted
+    the button flashed twice on every app start, which is why the tab is on this list.
+    """
+    AccountsTab()
+
+    assert parentless_shows == []

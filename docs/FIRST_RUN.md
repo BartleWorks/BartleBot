@@ -68,7 +68,7 @@ seeing it. An account or profile made in setup is on the launch screen and under
 as soon as setup closes.
 
 Then the window is fitted to the screen, before the launch screen is judged against it:
-`MainWindow.fit_layout_to_launches`, through `screen_fit.fitted_layout`. The game area keeps
+`MainWindow.fit_layout_to_launches`, through `window_panes.fitted_layout`. The game area keeps
 the tallest and widest grid the user can launch, the bot canvas takes the height left, and
 the sidebars the width left, evened up: the narrower one grows until the two match, and
 what remains is shared equally. A fixed 220 px canvas left most of a 1080p screen empty
@@ -228,7 +228,7 @@ built and added by `build_profile` and `add_profile`, which Settings › Game's 
 too. A line under the list says what Next will do.
 
 The profile gets a resolution of its own, from a combo under the list that starts on the
-largest that fits the accounts checked (`screen_fit.setup_resolution`), with every size
+largest that fits the accounts checked (`window_panes.setup_resolution`), with every size
 too big for them grayed. Left on the global 800×600, two accounts on a 1080p screen would
 make a profile the launch screen refuses as soon as setup closes; 560×420 is what fits
 them. The fit is judged with the sidebars at their floors and the canvas at 220 px,

@@ -20,6 +20,7 @@ because the failure was the gap between the arithmetic and the widgets.
 from __future__ import annotations
 
 import pytest
+from bartleby.qt import screen_fit
 from bartleby.qt.sidebar.log_panel import LogPanel
 from bartleby.runtime.game import game_sizing as gs
 from bartleby.runtime.game.game_sizing import VALID_RESOLUTIONS
@@ -28,7 +29,8 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QBoxLayout, QComboBox, QScrollArea, QSizePolicy, QStyleFactory, QWidget
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.gui import screen_fit
+from bartlebot.game import pane_sizing
+from bartlebot.gui import window_panes
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.main_window import MainWindow
@@ -174,12 +176,7 @@ def _declared_floor(resolution: tuple[int, int], client_count: int = 1) -> tuple
     are style and font metrics, so they have to be allowed to grow together, exactly as
     the two sidebar tests below already say of themselves.
     """
-    return gs.required_window_size(
-        resolution,
-        client_count,
-        right_sidebar=screen_fit.right_sidebar_floor(),
-        left_sidebar=screen_fit.left_sidebar_floor(),
-    )
+    return gs.required_window_size(resolution, client_count, window_panes.panes())
 
 
 def _window_floor(window: MainWindow) -> tuple[int, int]:
@@ -265,7 +262,7 @@ def test_each_sidebar_declares_the_floor_the_arithmetic_budgets_for_it(qapp):
     A sidebar whose floor came from its content instead would be whatever the widest tab
     happened to need — 562px for the parameter panel, against the width budgeted here.
     """
-    assert LeftSidebar(QWidget()).minimumSize() == QSize(screen_fit.left_sidebar_floor(), gs.SIDEBAR_MIN_HEIGHT)
+    assert LeftSidebar(QWidget()).minimumSize() == QSize(window_panes.left_sidebar_floor(), gs.SIDEBAR_MIN_HEIGHT)
     assert RightSidebar().minimumSize() == QSize(screen_fit.right_sidebar_floor(), gs.SIDEBAR_MIN_HEIGHT)
 
 
@@ -281,7 +278,7 @@ def test_the_keep_list_filter_row_fits_the_left_sidebar_at_its_floor(qapp):
     Measured against the floor *this machine* reports rather than the constant, for the
     same reason as the right sidebar: both sides are font and style metrics.
     """
-    assert _keep_list_needs() <= screen_fit.left_sidebar_floor()
+    assert _keep_list_needs() <= window_panes.left_sidebar_floor()
 
 
 def test_the_keep_list_filter_row_fits_the_left_sidebar_under_every_available_style(qapp):
@@ -303,7 +300,7 @@ def test_the_keep_list_filter_row_fits_the_left_sidebar_under_every_available_st
                 continue
             qapp.setStyle(style)
 
-            assert _keep_list_needs() <= screen_fit.left_sidebar_floor(), f"{name} style"
+            assert _keep_list_needs() <= window_panes.left_sidebar_floor(), f"{name} style"
     finally:
         qapp.setStyle(QStyleFactory.create(original))
 
@@ -402,7 +399,7 @@ def test_the_player_card_fits_the_right_sidebar_under_every_available_style(qapp
 
 
 def test_the_bot_canvas_declares_the_floor_the_arithmetic_budgets_for_it(qapp):
-    assert BotCanvas().minimumSize() == QSize(gs.BOTCANVAS_MIN_WIDTH, gs.BOTCANVAS_MIN_HEIGHT)
+    assert BotCanvas().minimumSize() == QSize(pane_sizing.BOTCANVAS_MIN_WIDTH, pane_sizing.BOTCANVAS_MIN_HEIGHT)
 
 
 def test_the_game_panel_s_own_chrome_fits_its_allowance(open_window):
@@ -456,22 +453,22 @@ def test_the_right_floor_follows_its_forcing_row(log_row, expected):
 @pytest.mark.parametrize(
     ("filter_row", "expected"),
     [
-        (None, gs.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
-        (gs.REFERENCE_FILTER_ROW_PX, gs.LEFT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
+        (None, pane_sizing.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
+        (pane_sizing.REFERENCE_FILTER_ROW_PX, pane_sizing.LEFT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
         (301, 412),  # windows11 — wider comboboxes and checkboxes at the same text height
         (324, 435),  # the row at 14px body text
-        (274, gs.LEFT_SIDEBAR_MIN_WIDTH),  # Fusion, narrower: it does not narrow the panel
+        (274, pane_sizing.LEFT_SIDEBAR_MIN_WIDTH),  # Fusion, narrower: it does not narrow the panel
     ],
 )
 def test_the_left_floor_follows_its_forcing_row(filter_row, expected):
     """The same shape on the left, from a combobox and a checkbox instead of a button."""
-    assert gs.left_sidebar_floor(filter_row) == expected
+    assert pane_sizing.left_sidebar_floor(filter_row) == expected
 
 
 @pytest.mark.parametrize(
     ("floor", "reference_row", "reference_floor"),
     [
-        (gs.left_sidebar_floor, gs.REFERENCE_FILTER_ROW_PX, gs.LEFT_SIDEBAR_MIN_WIDTH),
+        (pane_sizing.left_sidebar_floor, pane_sizing.REFERENCE_FILTER_ROW_PX, pane_sizing.LEFT_SIDEBAR_MIN_WIDTH),
         (gs.right_sidebar_floor, gs.REFERENCE_LOG_ROW_PX, gs.RIGHT_SIDEBAR_MIN_WIDTH),
     ],
     ids=["left", "right"],
@@ -504,21 +501,19 @@ def test_the_floor_the_widget_holds_is_the_floor_the_budget_subtracts(qapp):
     try:
         qapp.setFont(bigger)
         right, left = RightSidebar(), LeftSidebar(QWidget())
-        right_floor, left_floor = screen_fit.right_sidebar_floor(), screen_fit.left_sidebar_floor()
+        right_floor, left_floor = screen_fit.right_sidebar_floor(), window_panes.left_sidebar_floor()
 
         # The font change actually moved them, so the rest asserts something.
         assert right_floor > gs.RIGHT_SIDEBAR_MIN_WIDTH
-        assert left_floor > gs.LEFT_SIDEBAR_MIN_WIDTH
+        assert left_floor > pane_sizing.LEFT_SIDEBAR_MIN_WIDTH
         assert right.minimumSize().width() == right_floor
         assert left.minimumSize().width() == left_floor
-        assert SettingsManager.instance().layout_budget(
-            (1920, 1080), left_sidebar_floor=left_floor, right_sidebar_floor=right_floor
-        ) == gs.screen_budget(
-            (1920, 1080),
-            left_sidebar=left_floor,
-            right_sidebar=right_floor,
-            bottom_section=220,
-            splitter_handle=gs.SPLITTER_HANDLE_PX,
+        panes = window_panes.panes()
+        assert [pane.floor for pane in panes[:2]] == [left_floor, right_floor]
+        sizes = SettingsManager.instance().pane_sizes()
+        assert gs.layout_budget((1920, 1080), panes, sizes) == (
+            1920 - max(left_floor, sizes["left_sidebar_width"]) - max(right_floor, sizes["right_sidebar_width"]) - 16,
+            1080 - 220 - gs.WINDOW_CHROME_ESTIMATE_PX,
         )
     finally:
         qapp.setFont(original)
@@ -537,25 +532,22 @@ def test_the_budget_never_assumes_a_panel_narrower_than_its_floor(qapp):
     settings.set_general("bottom_section_height", 10)
     screen = (1920, 1080)
 
-    budget = settings.layout_budget(screen, right_sidebar_floor=screen_fit.right_sidebar_floor())
+    budget = gs.layout_budget(screen, window_panes.panes(), settings.pane_sizes())
 
-    assert budget == gs.screen_budget(
-        screen,
-        left_sidebar=gs.LEFT_SIDEBAR_MIN_WIDTH,
-        right_sidebar=screen_fit.right_sidebar_floor(),
-        bottom_section=gs.BOTCANVAS_MIN_HEIGHT,
-        splitter_handle=gs.SPLITTER_HANDLE_PX,
+    assert budget == (
+        1920 - window_panes.left_sidebar_floor() - screen_fit.right_sidebar_floor() - 2 * gs.SPLITTER_HANDLE_PX,
+        1080 - pane_sizing.BOTCANVAS_MIN_HEIGHT - gs.WINDOW_CHROME_ESTIMATE_PX,
     )
 
 
 def test_the_bot_canvas_never_becomes_the_window_s_width_floor():
     """Same argument on the other axis: the canvas spans the window, so it has no term."""
-    narrowest_window = min(gs.required_window_size(r)[0] for r in VALID_RESOLUTIONS)
+    narrowest_window = min(gs.required_window_size(r, 1, pane_sizing.panes())[0] for r in VALID_RESOLUTIONS)
 
-    assert gs.BOTCANVAS_MIN_WIDTH <= narrowest_window
+    assert pane_sizing.BOTCANVAS_MIN_WIDTH <= narrowest_window
 
 
 def test_the_settings_floor_and_the_arithmetic_agree(qapp):
     sm = SettingsManager.instance()
 
-    assert sm.minimum_window_size() == gs.required_window_size(sm.game_resolution)
+    assert sm.minimum_window_size() == gs.required_window_size(sm.game_resolution, 1, pane_sizing.panes())

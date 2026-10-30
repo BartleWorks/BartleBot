@@ -67,7 +67,9 @@ from __future__ import annotations
 import time
 from collections.abc import Iterable
 
+from bartleby.qt import screen_fit
 from bartleby.qt.game_embed.card_columns import CardColumn
+from bartleby.qt.game_embed.launch_cards import AccountCard, CardMode
 from bartleby.qt.theming.account_accent import account_accent, account_color_keys
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
@@ -88,8 +90,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.widgets.pickers.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.settings_manager import SettingsManager
 
@@ -248,7 +248,7 @@ class ProfileDialog(QDialog):
         super().__init__(parent)
         # The game area behind the settings dialog, so this picker and the Launch menu
         # agree about which resolutions can be launched. None falls back to the
-        # configured layout alone — see gui/screen_fit.budget_for.
+        # configured layout alone — see core's screen_fit.budget_for.
         self._live_game_area = live_game_area
         self.setWindowTitle(EDIT_PROFILE_TITLE if name else ADD_PROFILE_TITLE)
         self.setMinimumWidth(PROFILE_DIALOG_MIN_WIDTH)

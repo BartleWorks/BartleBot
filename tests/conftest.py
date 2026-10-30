@@ -549,6 +549,11 @@ def isolated_settings(_appdata_root, monkeypatch):
     # that takes the default roots into the working tree — see store_roots.
     monkeypatch.delenv("BARTLEBOT_DEV", raising=False)
     monkeypatch.setattr(SettingsManager, "_instance", None)
+    # Core's screen fit reads the current singleton, but only once it has been handed it,
+    # which making the singleton does: a test that asks the fit first needs it handed here.
+    from bartlebot.settings_manager import hand_fit_to_core  # noqa: PLC0415
+
+    hand_fit_to_core()
     # Nor may another product installed on the developer's machine decide which shared
     # Official set the suite reads (see shared.official_set).
     from bartleby.shared import official_set  # noqa: PLC0415

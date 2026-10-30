@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from bartleby.qt.game_embed.game_view import GameView
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
 from bartleby.qt.widgets.buttons.icon_button import IconButton, IconTint
@@ -16,7 +17,13 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.clients.authoring_tools import ACTION_LABELS, AuthoringAction
-from bartlebot.gui.game_embed.game_view import GameView
+from bartlebot.gui.logo import logo_disc_image
+from bartlebot.settings_manager import SettingsManager
+
+
+def new_game_view(parent=None) -> GameView:
+    """Core's game view as BartleBot draws it: from BartleBot's settings, with its logo disc."""
+    return GameView(SettingsManager.instance(), logo_disc_image, parent)
 
 
 def client_summary(connected: int, profile: str | None) -> str:
@@ -229,7 +236,7 @@ class GameViewPanel(ThemedMixin, QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.game_view = GameView()
+        self.game_view = new_game_view()
         self._connected = 0
         self._profile: str | None = None
         self._build_ui()

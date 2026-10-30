@@ -321,7 +321,8 @@ def test_one_account_and_no_profile_keep_it_closed(startup):
 
 def test_a_profile_made_in_setup_is_under_launch_and_on_the_launch_screen_once_it_closes(qapp):
     """What ``_open_setup`` runs when setup closes: the window never saw the page's write."""
-    from bartlebot.gui.game_embed.game_view import _GamePlaceholder  # noqa: PLC0415
+    from bartleby.qt.game_embed.game_view import _GamePlaceholder  # noqa: PLC0415
+
     from bartlebot.gui.main_window import MainWindow  # noqa: PLC0415
 
     SettingsManager.instance().accounts = [{"username": u, "alias": ""} for u in ("one@example.com", "two@example.com")]
@@ -344,7 +345,8 @@ def test_a_profile_made_in_setup_is_under_launch_and_on_the_launch_screen_once_i
 
 def _fit_window(qapp, monkeypatch):
     """A real window on a 1080p screen less its taskbar, shown so its splitter has an extent."""
-    from bartlebot.gui import screen_fit  # noqa: PLC0415
+    from bartleby.qt import screen_fit  # noqa: PLC0415
+
     from bartlebot.gui.main_window import MainWindow  # noqa: PLC0415
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((1920, 1032), 1.0))
@@ -358,7 +360,7 @@ def _fit_window(qapp, monkeypatch):
 
 def test_setup_fits_the_layout_to_what_the_launches_leave(qapp, monkeypatch):
     """One account on 1080p: 960x540, a game area just that big, and the panes the rest."""
-    from bartlebot.gui import screen_fit  # noqa: PLC0415
+    from bartleby.qt import screen_fit  # noqa: PLC0415
 
     window = _fit_window(qapp, monkeypatch)
     try:

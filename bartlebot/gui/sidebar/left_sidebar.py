@@ -35,7 +35,7 @@ from bartleby.runtime.game.game_sizing import SIDEBAR_MIN_HEIGHT
 from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
-from bartlebot.gui import screen_fit
+from bartlebot.gui import window_panes
 from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
@@ -88,7 +88,7 @@ class LeftSidebar(QTabWidget):
         # pushing it past the screen the launch was sized to fit. Prose still wraps and
         # long names still elide at this width; that is the trade, and only for a sidebar
         # dragged to the stop. What the floor *does* have to hold is the row that can do
-        # neither -- see ``screen_fit.left_sidebar_floor`` and "The panel floors" in
+        # neither -- see ``window_panes.left_sidebar_floor`` and "The panel floors" in
         # game_sizing.py. Measured rather than fixed, for the same reason as the right
         # one: that row's width is font and style metrics.
         self._apply_width_floor()
@@ -172,7 +172,7 @@ class LeftSidebar(QTabWidget):
     # ------------------------------------------------------------------
 
     def _apply_width_floor(self) -> None:
-        self.setMinimumSize(screen_fit.left_sidebar_floor(), SIDEBAR_MIN_HEIGHT)
+        self.setMinimumSize(window_panes.left_sidebar_floor(), SIDEBAR_MIN_HEIGHT)
 
     def changeEvent(self, event) -> None:  # noqa: N802 - Qt override
         """Re-measure the floor when the text size under it changes.

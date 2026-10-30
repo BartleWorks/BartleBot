@@ -14,15 +14,16 @@ core's, and so are its tests (``tests/qt/widgets/cards/test_add_card.py``).
 from __future__ import annotations
 
 import pytest
+from bartleby.qt import screen_fit
 from bartleby.qt.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PROFILES_HINT
+from bartleby.qt.game_embed.game_view import GameView, _GamePlaceholder
+from bartleby.qt.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QDialog
 
-from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
-from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
+from bartlebot.gui.game_embed.game_view_panel import new_game_view
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import main_window_stub
@@ -101,7 +102,7 @@ def test_a_full_column_ends_with_its_add_card(qapp, screen, column):
     screen(_4K)
     _populate(["one", "two"], ["Team A", "Team B"])
 
-    view = GameView()
+    view = new_game_view()
     rows = _columns(view)[column]
 
     assert [type(row) for row in rows[:-1]] == [(AccountCard, ProfileCard)[column]] * 2
@@ -123,7 +124,7 @@ def test_an_empty_column_is_the_add_card_and_one_line_saying_what_it_adds(qapp, 
     screen(_4K)
     _populate([], [])
 
-    view = GameView()
+    view = new_game_view()
     rows = _columns(view)[column]
 
     assert isinstance(rows[0], AddCard)
@@ -135,7 +136,7 @@ def test_the_old_empty_hint_is_gone_once_the_column_has_something_in_it(qapp, sc
     screen(_4K)
     _populate(["one"], ["Team A"])
 
-    view = GameView()
+    view = new_game_view()
     rows = _columns(view)[column]
 
     assert not [row for row in rows if isinstance(row, ThemedTextLabel)]
@@ -147,7 +148,7 @@ def test_no_column_still_says_none_of_these(qapp, screen, column):
     screen(_4K)
     _populate([], [])
 
-    view = GameView()
+    view = new_game_view()
     texts = [row.text() for row in _columns(view)[column] if isinstance(row, ThemedTextLabel)]
 
     assert not any(text.startswith("(No ") for text in texts)
@@ -170,7 +171,7 @@ def test_a_screen_too_small_for_the_game_grays_the_cards_but_not_the_add_card(qa
     SettingsManager.instance().game_resolution = (1280, 720)
     _populate(["one"], ["Team A"])
 
-    view = GameView()
+    view = new_game_view()
     accounts, profiles = _columns(view)
 
     assert accounts[0].unavailable_reason is not None, "test needs a screen the cards refuse"
@@ -184,7 +185,7 @@ def test_a_screen_too_small_for_the_game_grays_the_cards_but_not_the_add_card(qa
 def test_the_add_card_is_not_one_of_the_cards_the_fit_pass_walks(qapp, screen):
     screen(_4K)
     _populate(["one"], ["Team A"])
-    view = GameView()
+    view = new_game_view()
 
     placeholder = view.findChild(_GamePlaceholder)
     # Read off the columns deliberately: ``CardColumn.cards`` is the list the fit pass
@@ -202,7 +203,7 @@ def test_the_add_card_is_not_one_of_the_cards_the_fit_pass_walks(qapp, screen):
 def test_clicking_the_add_card_asks_for_the_editor(qapp, screen, column):
     screen(_4K)
     _populate(["one"], ["Team A"])
-    view = GameView()
+    view = new_game_view()
     fired: list[str] = []
     view.add_account_requested.connect(lambda: fired.append("account"))
     view.add_profile_requested.connect(lambda: fired.append("profile"))

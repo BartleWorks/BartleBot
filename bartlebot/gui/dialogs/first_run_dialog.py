@@ -50,7 +50,9 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
+from bartleby.qt import screen_fit
 from bartleby.qt.game_embed.card_columns import ADD_ACCOUNT, CardColumn
+from bartleby.qt.game_embed.launch_cards import AccountCard, CardMode
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.widgets.buttons.action_button import ActionButton
 from bartleby.qt.widgets.labels.themed_label import ThemedTextLabel
@@ -95,9 +97,8 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.clients.install_location import apply_install
 from bartlebot.game import card_art
-from bartlebot.gui import screen_fit
+from bartlebot.gui import window_panes
 from bartlebot.gui.dialogs.new_bot_dialog import StartCard
-from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.settings.accounts_tab import add_account, delete_account, edit_account, reorder_accounts
 from bartlebot.gui.settings.game_art_row import ArtExtraction, extract_art_row
 from bartlebot.gui.settings.players_rows import auto_group_row, refill_potions_row
@@ -625,7 +626,7 @@ class LaunchProfilePage(FirstRunPage):
     accounts added on the page before are on it.
 
     The profile gets a resolution of its own, from a combo that starts on the largest that
-    fits the accounts checked (``screen_fit.setup_resolution``). Left on the global one, two
+    fits the accounts checked (``window_panes.setup_resolution``). Left on the global one, two
     accounts on a 1080p screen would make a profile too wide to launch. A size the user
     picks is kept while it still fits the accounts checked.
     """
@@ -695,7 +696,7 @@ class LaunchProfilePage(FirstRunPage):
         return tuple(resolution)
 
     def _fits(self, resolution: tuple[int, int]) -> bool:
-        return screen_fit.fit_problem(resolution, len(self.checked), self, screen_fit.setup_area(self)) is None
+        return screen_fit.fit_problem(resolution, len(self.checked), self, window_panes.setup_area(self)) is None
 
     def _on_resolution_picked(self, index: int) -> None:
         self._picked = self._res_combo.itemData(index)
@@ -743,10 +744,10 @@ class LaunchProfilePage(FirstRunPage):
 
     def _choose_resolution(self, count: int) -> bool:
         """Gray what *count* accounts can't fit, and select the pick or the largest. Whether any fits."""
-        mark_unfittable_resolutions(self._res_combo, count, self, screen_fit.setup_area(self))
+        mark_unfittable_resolutions(self._res_combo, count, self, window_panes.setup_area(self))
         target = self._picked if self._picked is not None and self._fits(self._picked) else None
         if target is None:
-            target = screen_fit.setup_resolution(count, self)
+            target = window_panes.setup_resolution(count, self)
         if target is None:
             return False
         index = next(i for i in range(self._res_combo.count()) if self._res_combo.itemData(i) == target)
