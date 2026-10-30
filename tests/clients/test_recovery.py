@@ -73,6 +73,7 @@ class RecoveryHarness:
     # _reconnect_clients drives each relaunched window in through these, the same path
     # a normal launch takes.
     drive_client_in = ClientManager.drive_client_in
+    _remember_realm_on_login = ClientManager._remember_realm_on_login
     await_client_in = ClientManager.await_client_in
     has_client_titled = ClientManager.has_client_titled
     client_titled = ClientManager.client_titled
@@ -947,6 +948,8 @@ class TestBatchRecovery:
         settings = MagicMock()
         settings.accounts = []
         settings.auto_select_character = auto_select
+        # What the manager was built with, and so what its drive reads.
+        harness._settings = settings
         return settings
 
     async def _run(

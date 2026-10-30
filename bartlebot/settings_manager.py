@@ -255,6 +255,7 @@ _DEFAULTS: dict[str, Any] = {
 _STORE_DEFAULTS: dict[str, tuple[str, str]] = {
     "theme": ("general", "theme"),
     "game_resolution": ("game_embed", "resolution"),
+    "auto_select_character": ("general", "auto_select_character"),
     "disable_quick_friend_teleport": ("general", "disable_quick_friend_teleport"),
 }
 
