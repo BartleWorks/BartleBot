@@ -1,91 +1,59 @@
-"""Bar A's authoring buttons (#81): grouped by what they do, and centered whatever the captions say."""
+"""Bar A's authoring buttons (#81): BartleBot's list on core's action bar, and what each says.
+
+How the bar groups, centers and reports a press is core's (``tests/qt/game_embed/test_game_view_panel.py``).
+"""
 
 from __future__ import annotations
 
-import pytest
+from bartleby.qt.theming.icon_utils import ICONS_DIR
+from bartleby.qt.widgets.buttons.icon_button import IconTint
 
 from bartlebot.clients.authoring_tools import AuthoringAction
 from bartlebot.gui.game_embed.game_view_panel import AUTHORING_GROUPS, AuthoringBar, GameViewPanel
 
 
-def _bar_center_offset(panel: GameViewPanel) -> int:
-    """How far the buttons' center sits from the panel's, in pixels."""
-    panel.layout().activate()
-    panel.authoring_bar.parentWidget().layout().activate()
-    bar = panel.authoring_bar
-    center = bar.mapTo(panel, bar.rect().center()).x()
-    return center - panel.width() // 2
-
-
-@pytest.mark.parametrize(
-    "node_title",
-    ["", "Fight", "A node title long enough to be wider than its half of the bar, and then some more"],
-)
-def test_the_buttons_are_centered_with_or_without_a_node_title(qapp, node_title):
-    panel = GameViewPanel()
-    panel.resize(900, 400)
-    panel.show()
-    panel.set_client_summary(4, "Four Wizards")
-    panel.set_active_node(node_title)
-    qapp.processEvents()
-
-    assert abs(_bar_center_offset(panel)) <= 2
-    panel.close()
-
-
-def test_a_run_starting_does_not_move_the_buttons(qapp):
-    panel = GameViewPanel()
-    panel.resize(900, 400)
-    panel.show()
-    qapp.processEvents()
-    idle = panel.authoring_bar.mapTo(panel, panel.authoring_bar.rect().topLeft()).x()
-
-    panel.set_active_node("Go to zone")
-    qapp.processEvents()
-    panel.layout().activate()
-    running = panel.authoring_bar.mapTo(panel, panel.authoring_bar.rect().topLeft()).x()
-
-    assert running == idle
-    panel.close()
-
-
 def test_the_groups_hold_every_action_once_in_bar_order():
     """Bar A, the Settings tab and the default F-keys all follow AuthoringAction's order."""
-    flat = [action for group in AUTHORING_GROUPS for action in group]
-    assert flat == list(AuthoringAction)
+    flat = [action.id for group in AUTHORING_GROUPS for action in group]
+    assert flat == [a.value for a in AuthoringAction]
 
 
-def test_a_divider_sits_between_each_group_and_nowhere_else(qapp):
-    bar = AuthoringBar()
-    bar.resize(bar.sizeHint())
-    bar.layout().activate()
+def test_every_action_s_icon_is_in_core_s_set():
+    assert all((ICONS_DIR / f"{a.icon}.svg").is_file() for group in AUTHORING_GROUPS for a in group)
 
-    def left(w):
-        return w.geometry().left()
 
-    def right(w):
-        return w.geometry().right()
-
-    groups = [[bar.button(a) for a in group] for group in AUTHORING_GROUPS]
-    dividers = bar.dividers
-    assert len(dividers) == len(AUTHORING_GROUPS) - 1
-    for before, divider, after in zip(groups, dividers, groups[1:]):
-        assert right(before[-1]) < left(divider) and right(divider) < left(after[0])
-
-    within = left(groups[1][1]) - right(groups[1][0])
-    across = left(groups[1][0]) - right(groups[0][-1])
-    assert across > within
+def test_the_panel_s_bar_is_the_authoring_bar(qapp):
+    panel = GameViewPanel()
+    assert isinstance(panel.authoring_bar, AuthoringBar)
+    assert panel.authoring_bar is panel.action_bar
 
 
 def test_a_disabled_button_says_why_and_every_button_has_a_tooltip(qapp):
     bar = AuthoringBar()
     for action in AuthoringAction:
-        if action in bar._buttons:
-            assert bar.button(action).toolTip()
+        assert bar.button(action).toolTip()
     # No clients: everything is disabled, and says what is needed.
     assert "Unavailable" in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
     assert "two" in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
-    bar.set_state(speed_on=False, combat_on=False, busy=False, run_active=True, clients=2, hotkeys={})
+    bar.show_state(speed_on=False, combat_on=False, busy=False, run_active=True, clients=2, hotkeys={})
     assert "bot is running" in bar.button(AuthoringAction.TOGGLE_SPEED).toolTip()
-    bar.set_state(speed_on=False, combat_on=False, busy=False, run_active=False, clients=2, hotkeys={})
+    bar.show_state(speed_on=False, combat_on=False, busy=False, run_active=False, clients=2, hotkeys={})
     assert "Unavailable" not in bar.button(AuthoringAction.XYZ_SYNC).toolTip()
+
+
+def test_a_toggle_that_is_on_is_drawn_in_the_accent_names_its_key_and_stays_pressable(qapp):
+    bar = AuthoringBar()
+    bar.show_state(
+        speed_on=True,
+        combat_on=False,
+        busy=False,
+        run_active=False,
+        clients=0,
+        hotkeys={AuthoringAction.TOGGLE_SPEED.value: "F3"},
+    )
+    speed = bar.button(AuthoringAction.TOGGLE_SPEED)
+    assert bar.is_checked(AuthoringAction.TOGGLE_SPEED)
+    assert speed._tint is IconTint.ACCENT
+    assert speed.isEnabled()
+    assert speed.toolTip().startswith("Speed (on) [F3] — ")
+    assert bar.button(AuthoringAction.TOGGLE_COMBAT)._tint is IconTint.DEFAULT

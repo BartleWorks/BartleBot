@@ -745,7 +745,7 @@ class AppController(QObject):
 
     def _refresh_authoring_bar(self) -> None:
         tools = self._authoring
-        self._window.authoring_bar.set_state(
+        self._window.authoring_bar.show_state(
             speed_on=tools.speed_on,
             combat_on=tools.combat_on,
             busy=tools.busy,
