@@ -18,7 +18,6 @@ from bartleby.runtime.clients.client_manager import Removal
 from bartleby.runtime.clients.credentials import CredentialStore, account_label
 from bartleby.runtime.clients.process_resources import gdi_object_count
 from bartleby.runtime.clients.window_kill import force_close_client
-from bartleby.runtime.launcher import auto_select
 from bartleby.runtime.timing import (
     CLIENT_DETECT_INTERVAL,
     RECOVERY_BATCH_SETTLE,
@@ -182,33 +181,9 @@ class ClientManager(CoreClientManager):
             return recovery_readiness.NO_PASSWORD.format(account=display)
         return None
 
-    async def drive_client_in(self, expected_title: str) -> bool:
-        """Advance a just-launched window through to in-game, then tidy up after it.
-
-        This is the callback the launcher is handed (see MainWindow.set_auto_select_driver);
-        it lives here because the completion signal is has_client_titled, which only this
-        class can answer. Recovery uses it too, so a relaunched client and a freshly
-        launched one take exactly the same path in.
-
-        The single place the auto-select setting is read. With it off the loading screens
-        are still cleared — they carry no decision — but the window is then left sitting at
-        character select for the user to pick from, and False says so: the client is not
-        in-game. Callers that need it anyway (recovery) fall back to await_client_in.
-        """
-        if not SettingsManager.instance().auto_select_character:
-            await auto_select.drive_to_character_select(
-                expected_title,
-                lambda: self.has_client_titled(expected_title),
-                lambda: self.pending_client_titled(expected_title),
-            )
-            return False
-        return await auto_select.drive_client_in(
-            expected_title,
-            lambda: self.has_client_titled(expected_title),
-            lambda: self.pending_client_titled(expected_title),
-            # Remember Realm only matters once there is a realm to come back to.
-            remember_realm=bool(SettingsManager.instance().favorite_realm),
-        )
+    def _remember_realm_on_login(self) -> bool:
+        """Remember Realm only matters once there is a realm to come back to."""
+        return bool(SettingsManager.instance().favorite_realm)
 
     def _refuse_reorder(self) -> bool:
         """True, and the sidebar redrawn in the order it really is, while a bot is running.

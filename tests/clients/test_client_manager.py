@@ -4,11 +4,14 @@ Core's half is tested in bartleby-core's ``tests/runtime/clients/``. Recovery an
 cycle have files of their own here (``test_recovery.py``, ``test_relog_cycle.py``).
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from bartleby.runtime.clients.client_manager import Removal
+from bartleby.runtime.launcher import auto_select
 
 from bartlebot.clients.client_manager import ClientManager
+from bartlebot.settings_manager import SettingsManager
 
 
 class FakeClient:
@@ -24,6 +27,25 @@ def _manager() -> ClientManager:
     return ClientManager(
         handler=MagicMock(clients=[]), game_view=MagicMock(), drops_widget=MagicMock(), get_recovery_state=lambda: None
     )
+
+
+@pytest.mark.parametrize(("realm", "expected"), [("Ambrose", True), ("", False)])
+async def test_a_drive_turns_remember_realm_on_only_with_a_favorite_realm(realm, expected):
+    SettingsManager.instance().auto_select_character = True
+    SettingsManager.instance().favorite_realm = realm
+    driver = AsyncMock(return_value=True)
+    with patch.object(auto_select, "drive_client_in", driver):
+        await _manager().drive_client_in("[Alpha] Wizard101")
+    assert driver.await_args.kwargs["remember_realm"] is expected
+
+
+async def test_the_setting_a_drive_reads_is_this_app_s():
+    """Core's drive asks the settings it was handed, which here are the singleton's."""
+    SettingsManager.instance().auto_select_character = False
+    driver = AsyncMock(return_value=True)
+    with patch.object(auto_select, "drive_to_character_select", driver):
+        assert await _manager().drive_client_in("[Alpha] Wizard101") is False
+    driver.assert_awaited_once()
 
 
 async def test_a_running_bot_sees_the_emptied_client_list():
