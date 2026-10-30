@@ -92,7 +92,8 @@ async def probe_before_run(clients: list, scaling_players, uses_friends_list: bo
     """
     flags, keys = await asyncio.gather(
         asyncio.gather(*(c.in_battle() for c in clients), return_exceptions=True),
-        asyncio.gather(*(game_keys.key_map(c, refresh=True) for c in clients)),
+        # Never refresh=True: a client with no list would be scanned for seconds at every Start.
+        asyncio.gather(*(game_keys.key_map(c) for c in clients)),
     )
     fighting = [slot + 1 for slot in slots_in_battle(flags)]
     if fighting:

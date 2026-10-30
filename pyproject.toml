@@ -61,7 +61,7 @@ site = [
 # commit -- see bartleby-core/docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
-bartleby-core = { git = "https://github.com/BartleWorks/bartleby-core.git", rev = "6c63c2b63a6854c913c52402ebac562702004ad3" }
+bartleby-core = { git = "https://github.com/BartleWorks/bartleby-core.git", rev = "7bc6048ae349aea2ac151e5c26fd798f6edbb5d5" }
 wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "e73a73635bedfc0e05f2730f277c43b49c24f113" }
 wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "088fc838bda285c8b06d2f235fb5671126035f59" }
 

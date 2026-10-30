@@ -188,7 +188,7 @@ def test_a_key_another_action_shares_is_logged_not_refused(caplog):
     assert "Player 1: Interact's key, X, also does Toggle Map Window in the game" in caplog.text
 
 
-async def test_the_probe_reads_every_player_s_keys_afresh(elixirs, monkeypatch):
+async def test_the_probe_reads_every_player_s_keys_without_forcing_a_new_scan(elixirs, monkeypatch):
     calls = []
 
     on_the_mouse = KeyMap(
@@ -203,7 +203,7 @@ async def test_the_probe_reads_every_player_s_keys_afresh(elixirs, monkeypatch):
     monkeypatch.setattr(game_keys, "key_map", key_map)
     probe = await run_probe.probe_before_run([FakeClient(), FakeClient()], [])
 
-    assert calls == [True, True]
+    assert calls == [False, False]
     assert probe.key_problems == ("Player 2: Move Left is on the mouse.",)
 
 
