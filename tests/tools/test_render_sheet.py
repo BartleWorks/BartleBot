@@ -22,7 +22,7 @@ def test_the_sheet_draws_every_surface_in_both_themes_and_two_runs_agree(qapp, t
 
     names = {p.name for p in first}
     assert names == {f"{s.name}.{t}.png" for s in render_sheet.surfaces() for t in ("light", "dark")}
-    assert len(names) == 14
+    assert len(names) == 24
     assert [p.name for p in first if core.is_blank(p)] == []
     assert core.compare(tmp_path / "a", tmp_path / "b") == []
 
