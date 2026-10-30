@@ -272,28 +272,33 @@ library, bartleby-core, which holds the shell, the widgets, the client runtime a
 rules learned building them. BartleBot moves onto core in the same stages that build it.
 https://claude.ai/artifact/3K34iJqy6UV73EKuadNuky
 
-**In progress; the page is kept current while stages land.**
+**Complete: all 12 stages landed by 2026-10-30.**
 
-| stage | issue | what | status |
-|---|---|---|---|
-| 1 | #288 | merge `walk-planner` into `master`, with r811339's game data held back until Ahmarra goes live | landed |
-| 2 | #289 | family knowledge: core's CLAUDE.md tree and docs, the user-level preferences and skills, the guards as core functions, render sheets | landed |
-| 3 | #290 | BartleBot onto core as it stands: core public on GitHub, the import codemod, BartleBot's copies deleted, the pin | landed |
-| 4 | #291 | the threading probe: one qasync loop, or the runtime on its own thread | landed |
-| 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state | landed |
-| 6 | #293 | cards, reordering, pills and the Log tab | landed |
-| 7 | #294 | the client manager's Qt-free half; `ClientPool` deleted | landed |
-| 8 | #295 | player cards on view models | landed |
-| 9 | #296 | the game view, Quick Launch and window sizing for two tile sizes | landed |
-| 10 | #297 | Bar A from a list of actions | landed |
-| 11 | #298 | settings and first run | landed |
-| 12 | #299 | the family check: both apps side by side, and BartleBuddy in game | |
+| stage | issue | what |
+|---|---|---|
+| 1 | #288 | merge `walk-planner` into `master`, with r811339's game data held back until Ahmarra goes live |
+| 2 | #289 | family knowledge: core's CLAUDE.md tree and docs, the user-level preferences and skills, the guards as core functions, render sheets |
+| 3 | #290 | BartleBot onto core as it stands: core public on GitHub, the import codemod, BartleBot's copies deleted, the pin |
+| 4 | #291 | the threading probe: one qasync loop, or the runtime on its own thread |
+| 5 | #292 | the app skeleton and product identity: `Product`, logging and the excepthook, single instance, window state |
+| 6 | #293 | cards, reordering, pills and the Log tab |
+| 7 | #294 | the client manager's Qt-free half; `ClientPool` deleted |
+| 8 | #295 | player cards on view models |
+| 9 | #296 | the game view, Quick Launch and window sizing for two tile sizes |
+| 10 | #297 | Bar A from a list of actions |
+| 11 | #298 | settings and first run |
+| 12 | #299 | the family check: both apps side by side, and BartleBuddy in game |
 
 The feature docs are core's, from Stage 2: `bartleby-core/docs/ARCHITECTURE.md`, and the
 docs that move there (`WINDOW_SIZING`, `KEY_BINDINGS`, `WALKING`, `GAME_UPDATES` and the
 rest the page lists).
 
-The rules every stage keeps:
+After it, each needing a plan of its own: BartleBot on the arbiter and core's helpers
+(#301), live resize of a running client (BartleBuddy #3) and packaging BartleBuddy
+(BartleBuddy #4). The stages' leftovers are #300 and #302 to #304, and BartleBuddy #1 and
+#2 from Stage 8.
+
+The rules every stage kept:
 
 - **Move, never rewrite.** A surface moves into core whole, with its docstring, tests and
   rules, and keeps its file name. What it needs from BartleBot becomes one named cut: a
