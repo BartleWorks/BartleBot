@@ -1,49 +1,10 @@
-# Reading the game's own data
+# Game data and tools
 
-Two sources answer most "what is this offset / where does this value come from"
-questions without probing a live client. **Check both before writing a probe** —
-several days of `probe_*.py` work has been spent rediscovering things that were
-sitting in one of these.
-
-## Type dumps: `r<rev>_WizardDev.json`
-
-A wiztype dump of every game class with the exact byte offset of each property —
-about 7,000 classes and 49,000 properties. Query it with `tools/typedump.py`:
-
-```bash
-uv run python tools/typedump.py at ClientObject 448     # what lives at this offset?
-uv run python tools/typedump.py show DeckListControl    # full layout, incl. inherited
-uv run python tools/typedump.py prop "characterId"      # find a property everywhere
-uv run python tools/typedump.py classes "SpellList"     # find classes by regex
-uv run python tools/typedump.py gaps DeckListControl    # holes where raw members hide
-uv run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
-uv run python tools/typedump.py diff <old.json> <new.json>
-```
-
-Two things to know before trusting it:
-
-- **It covers reflected PropertyClass properties only.** Raw C++ members — child
-  pointers, manager handles, the entry vectors `deck_io.py` reads — never appear.
-  `gaps` is the workaround: it brackets those between named neighbors, which is
-  how `deck_io`'s `0x300` entry vector shows up as a 40-byte hole between
-  `m_treasureFrame` and `m_cardSize`.
-- **A class name is not the runtime behavior template name**, and the difference
-  is not derivable: `ClientWizPlayerNameBehavior` → `"WizPlayerNameBehavior"`,
-  `ClientTreasureBookBehavior` → `"BasicTreasureBookBehavior"`,
-  `ClientInventoryBehavior` → `"WizardInventoryBehavior"`. The authoritative list
-  is `await client_object.list_behavior_names()` on a live client.
-
-**A dump is captured with wiztype**, from one running client:
-`uvx --from wiztype==0.1.13 python tools/game_update/capture_type_dump.py`. katsuba only
-reads one. The tool finds the type registry itself when a patch breaks wiztype's own scan,
-as r811339 did; `bartleby-core/docs/GAME_UPDATES.md` has when to run it and where the file goes.
-
-**Dumps are committed, and old ones are never deleted.** A dump can only be
-captured from a running client, so once a patch ships there is no way back to the
-previous layout. The checked-in dumps are the only record of what the offsets were
-when our code last worked; `typedump.py diff` against a fresh dump then says
-exactly what moved. `.gitattributes` disables textual diffing for them — use the
-tool, not `git diff`.
+How to read the game's own data -- type dumps, `Root.wad`, `katsuba` for BINd objects, and
+why window names need a live client -- is core's `docs/GAME_DATA.md`. **Read it before writing a
+probe.** What stays here is BartleBot's: its snapshots and its art. Measuring a layout bug
+before theorising is in core's `bartleby/qt/CLAUDE.md`; `tools/probe_layout.py` is its worked
+example.
 
 **The newest dump lives in `bartlebot/game/data/`, the older ones in `tools/`.** Art
 extraction reads the newest at run time (`art_extraction.type_dump()`), so it is app data
@@ -53,39 +14,7 @@ history follows it), which keeps one 26 MB dump in each install rather than one 
 Every tool that defaults to a dump takes the newest across both folders
 (`art_extraction.newest_type_dump`).
 
-## Game data: `Root.wad`
-
-WizWalker can read the game's own archives, which hold the lookup tables the
-client resolves IDs against. Many fields in memory are keys, not text —
-`m_badgeTitle` reads `'Badges_00006184'`, and a wizard's name is three indices,
-never characters — so a memory scan for display text will find nothing while the
-answer sits in a WAD.
-
-```python
-from wizwalker.file_readers.wad import Wad
-
-wad = Wad(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
-names = await wad.names()                       # ~172,000 entries
-data = await wad.get_file("CharacterNames.xml") # bytes
-```
-
-Conventions worth knowing:
-
-- `<Thing>.xml` holds the **ordered key list**; `Locale/<loc>/<Thing>.lang` maps
-  key → display text. IDs index **position in the XML list**, not the numeric
-  suffix of the key (`First_Boy_102` is "Luke" but sits at index 100).
-- `.lang` files are UTF-16LE with CRLF, in fixed three-line records: `key`,
-  translator description, display text. The description reads as blank in most
-  records, which makes the format look like `key / blank / value` — a parser that
-  *requires* it blank silently drops every documented key rather than failing. Slice
-  at a fixed stride; see `parse_lang` in `tools/dump_world_names.py`.
-- Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
-  later additions were not always translated.
-
-Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
-dependency on the game being installed at a guessable path. Extract what you need
-into a checked-in snapshot instead, as `tools/dump_world_names.py` does for
-`bartlebot/game/data/world_names.json`, and regenerate it when the game adds entries.
+## Snapshots of `Root.wad`, and the art
 
 The snapshots, all in `bartlebot/game/data/`, and their tools:
 
@@ -277,124 +206,3 @@ Which zones connect, where gates and arrival points sit, and the hub/spiral-door
 per world all ship in the game files (`zonemap.nav`, `WorldHubZones.xml`, each zone's own
 wad). Its `CLAUDE.md` has the layouts, and the open questions. Prefer it over
 wizsprinter's hand-built `traversalData/`.
-
-## Reading a field out of a BINd file: use `katsuba`, not a byte scan
-
-Every game object under `Root.wad` (`Spells/`, `ObjectData/`, etc.) is a `BINd`-
-prefixed binary blob — a serialized `PropertyClass`, not text. Pulling one named
-field out of it without a real deserializer means guessing at a marker in the raw
-bytes, and that guess can silently read the wrong field: `dump_spell_names.py`
-originally found a spell's display-name langcode by searching for the first
-literal `b"Spells_"` and reading the length byte before it, which assumes
-`m_displayName` is always the first localized string in the blob. It isn't —
-field order in the serialized bytes isn't fixed, so for some templates
-`m_description`'s langcode came first and got misread as the name (1457 spells
-got their combat-log template text — `"$eA$ $dT_image$$Damage_image$..."` — as
-their "display name" before this was caught).
-
-[`katsuba`](https://pypi.org/project/katsuba/) is a real BINd deserializer — the
-same one the wizdb/Kimerith-WindHammer Discord-bot toolchain uses — and it reads
-straight off the newest wiztype dump, the one in `bartlebot/game/data/` that `typedump.py`
-reads too, so no separate type dump is needed:
-
-```python
-from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
-from katsuba.wad import Archive
-
-from bartlebot.game.art_extraction import type_dump
-
-archive = Archive.mmap(str(wad_path))
-types = TypeList.open(str(type_dump()))
-opts = SerializerOptions()
-opts.flags = STATEFUL_FLAGS
-opts.shallow = False
-opts.skip_unknown_types = True
-ser = Serializer(opts, types)
-
-data = archive["Spells/Tiered Spells/Novus Storm - T05 - A.xml"]
-if data.startswith(b"BINd"):
-    data = data[4:]
-obj = ser.deserialize(data)
-obj.get("m_displayName")  # -> b"Spells_00003940", by name, not position
-```
-
-`tools/dump_spell_names.py` is the worked example. It's a dev-only dependency
-(`uv add --group dev katsuba`) — nothing at runtime reads a WAD, per the rule
-above — so reach for it whenever a new dump tool needs a specific field off a
-`BINd` object rather than an ordered `<Thing>.xml` / `.lang` pair; save the
-marker-scanning approach for cases `katsuba` genuinely can't cover.
-
-**A spell's WAD path stem is its template name, but a template name is not unique.**
-41 of them exist twice — once under `Spells/CastleMagic/` and once as the real spell,
-so `Banshee` is both `CastleMagic` and `Death`. Both files name the same art, so it is
-one card filed twice rather than two cards. A tool keyed by stem therefore has a
-collision rule whether it writes one down or not, and "last one the archive handed
-over" is not a rule. `dump_spell_schools.py` keeps whichever copy claims a real school,
-because a card in a combat deck is never the castle-magic copy.
-
-## What neither source answers: window layout
-
-**UI window names are not in the type dump and not in any WAD.** The dump covers
-reflected `PropertyClass` properties, and the archives hold game data; the window
-layout is compiled into the client binary. Searching every UI-ish XML across
-`Root.wad`, `GUI-WorldData.wad` and `_Shared-WorldData.wad` for names the app
-already relies on — `DeckConfiguration`, `CardsInDeck`, `ItemSpells` — returns
-zero content hits, and `GUI/` in `Root.wad` is textures.
-
-So the rule above inverts for anything shaped like "what is this control called":
-go straight to a live client. Either the in-app **UI Tree Browser**, or a probe
-that dumps the subtree and diffs it across a change the user makes by hand —
-`tools/probe_archmastery_ui.py` is the worked example of the second.
-
-# Our own widgets: measure before theorising
-
-`tools/probe_layout.py` is the equivalent of the rule above for BartleBot's *own* GUI.
-It builds a real `BotCanvas` offscreen, drives a scripted interaction, and prints what
-Qt did: each widget's height at every step, the event stream, and each paint's damage
-rect. No game client, so it is cheap to re-run.
-
-```bash
-uv run python tools/probe_layout.py mode            # Run/Edit switches
-uv run python tools/probe_layout.py mode --tags 6   # a heavily tagged bot, whose tags wrap
-uv run python tools/probe_layout.py paints --show   # paint damage; --show to really paint
-```
-
-`bartlebot/gui/debug/qt_layout_debug.py` is the reusable half — `LayoutTracer` and
-`size_snapshot` — so the same instrumentation can be attached to the live app when a bug
-only reproduces there. It is installed nowhere by default and hooks nothing.
-
-**Widths measured offscreen are not the app's widths.** The offscreen platform resolves
-`fusion`, and the app resolves `windows11`; fusion's controls are much wider at the same
-font metrics — a "Gear" tag pill is 80px there and 59px in the app, a ~35% error that
-compounds across a row. Heights are close enough to reason about, widths are not. So
-**anything about wrapping, eliding or how much room a row needs must be measured with
-`--show`**, which uses the real platform and therefore the real style. This is the same
-trap `tests/CLAUDE.md` describes for CI, arriving through a different door: there the
-runner has the wrong style, here the probe does.
-
-**Reach for it before forming a theory about a layout or repaint bug.** #83's toolbar
-flicker took four wrong guesses — deferred `deleteLater`, height-for-width propagation,
-`setUpdatesEnabled`, a forced re-layout — each of which sounded right and measured as
-having no effect. One run of this printed the answer: Bar B was given six different
-heights per Run/Edit round trip, four of them heights no mode had asked for, and it ended
-18px taller than its own size hint said it should be.
-
-Two readings carry most of the diagnostic weight:
-
-- **Geometry that disagrees with the widget's own `sizeHint` after the event loop has
-  turned** means a parent laid the widget out from a hint that has since changed, and
-  nothing is coming to correct it. Qt delivers `LayoutRequest` as a *posted* event, so a
-  parent whose request is served before its child's measures the state the child is
-  leaving. Fix it by removing the dependence — a height that never changes cannot be read
-  at the wrong moment — not by forcing a re-measure afterwards, which in #83 landed on the
-  right pixel for two cycles and then stopped.
-- **A height the widget passed through that no resting state asked for** is a frame that
-  was painted. That is what a flicker *is*, and counting them is the difference between a
-  bar that is legitimately taller in Edit mode and one that overshoots on the way there.
-
-One Qt trap the tool was built around, worth knowing before reading a trace:
-**`QWidgetItem` answers `heightForWidth` from the widget's *layout*, never from the
-widget's own override.** So a wrapping widget — anything holding a `FlowLayout` — cannot
-floor its height by overriding `sizeHint` or `heightForWidth`; the parent reads straight
-past both. `setMinimumHeight` is the floor a parent honors. `_TagsField` in
-`bartlebot/gui/canvas/bot_header.py` sets both, and the comment there says why.
