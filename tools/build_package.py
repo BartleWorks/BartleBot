@@ -38,11 +38,12 @@ DATA_DIRS = (
     "strategies",
     "bartlebot/game/data",
 )
-DATA_FILES = ("bartlebot/gui/logo/bartlebot.svg",)
 #: bartleby-core's folders the app reads: its icons, and the game data its runtime reads.
 #: Each is bundled at its path under ``bartleby/``, where core's modules look for it.
 CORE = Path(bartleby.__file__).resolve().parent
 CORE_DATA_DIRS = ("qt/icons", "runtime/game/data")
+#: And its one file in a folder of code: the tree, which every raster of the logo is drawn from.
+CORE_DATA_FILES = ("qt/logo/tree.svg",)
 #: Distributions whose metadata the app reads: ``importlib.metadata.version("bartlebot")``,
 #: and the libraries the session log's header names (``packaging.product.HEADER_LIBRARIES``).
 METADATA = ("bartlebot", "PyQt6", "qasync", "transitions", "wizwalker")
@@ -76,10 +77,10 @@ def pyinstaller_command(dist: Path, work: Path, icon: Path | None = None) -> tup
         command += ["--icon", str(icon)]
     for folder in DATA_DIRS:
         command += ["--add-data", f"{ROOT / folder}{sep}{folder}"]
-    for file in DATA_FILES:
-        command += ["--add-data", f"{ROOT / file}{sep}{Path(file).parent.as_posix()}"]
     for folder in CORE_DATA_DIRS:
         command += ["--add-data", f"{CORE / folder}{sep}bartleby/{folder}"]
+    for file in CORE_DATA_FILES:
+        command += ["--add-data", f"{CORE / file}{sep}bartleby/{Path(file).parent.as_posix()}"]
     for dist_name in METADATA:
         command += ["--copy-metadata", dist_name]
     for package in WHOLE_PACKAGES:
@@ -109,9 +110,9 @@ def write_icon(dist: Path) -> Path:
     Setup.exe.
     """
     _app = _painter_app()  # noqa: F841 - QPainter needs one alive
-    from tools import export_logo  # noqa: PLC0415
+    from bartleby.qt.logo import export  # noqa: PLC0415
 
-    return export_logo.write_icon(dist)
+    return export.write_icon(dist)
 
 
 def write_splash(dist: Path) -> Path:
@@ -121,18 +122,23 @@ def write_splash(dist: Path) -> Path:
     it while it installs.
     """
     _app = _painter_app()  # noqa: F841 - QPainter needs one alive
-    from tools import export_logo  # noqa: PLC0415
+    from bartleby.qt.logo import export  # noqa: PLC0415
 
-    return export_logo.write_splash(dist)
+    return export.write_splash(dist)
 
 
 def _painter_app():
     """The running ``QGuiApplication``, or a new offscreen one, for QPainter. The caller keeps it alive.
 
-    It also puts the project root on the path, for ``tools.export_logo``.
+    It also makes BartleBot the product in use, which core's export names and colors its files for.
     """
     sys.path.insert(0, str(ROOT))
+    from bartleby.shared.product import use  # noqa: PLC0415
     from PyQt6.QtGui import QGuiApplication  # noqa: PLC0415
+
+    from bartlebot.packaging.product import product  # noqa: PLC0415
+
+    use(product())
 
     return QGuiApplication.instance() or QGuiApplication([NAME, "-platform", "offscreen"])
 

@@ -6,6 +6,7 @@ import sys
 import tomllib
 from pathlib import Path
 
+from bartleby.qt.logo import TREE_SVG
 from bartleby.shared.vendor import VENDOR
 
 from bartlebot.packaging.product import NAME as PRODUCT
@@ -13,7 +14,6 @@ from bartlebot.paths import project_root
 
 sys.path.insert(0, str(project_root()))
 
-from bartlebot.gui.logo import LOGO_SVG  # noqa: E402
 from bartlebot.updates.feed import INSTALL_NOTES_MARKER, REPOSITORY, parse  # noqa: E402
 from tools import pack_release  # noqa: E402
 from tools.pack_release import (  # noqa: E402
@@ -62,7 +62,7 @@ def test_setup_shows_the_logo_while_it_installs(tmp_path):
 def test_the_splash_progress_bar_is_a_color_from_the_logo(tmp_path):
     """Velopack's default bar is #00FF00, which is in no part of the logo."""
     assert _value(pack_command("1.2.0", build=tmp_path), "--splashProgressColor") == SPLASH_PROGRESS_COLOR
-    assert f'fill="{SPLASH_PROGRESS_COLOR}"' in LOGO_SVG.read_text(encoding="utf-8")
+    assert f'fill="{SPLASH_PROGRESS_COLOR}"' in TREE_SVG.read_text(encoding="utf-8")
 
 
 def test_the_shortcuts_are_on_the_desktop_and_in_the_start_menu(tmp_path):

@@ -1,4 +1,4 @@
-<h1><img src="bartlebot/gui/logo/bartlebot.svg" alt="" width="48" align="middle"> BartleBot</h1>
+<h1><img src="site/pages/assets/bartlebot.svg" alt="" width="48" align="middle"> BartleBot</h1>
 
 A Wizard101 bot for the repetitive parts of the game: farming dungeons, gathering, and the
 fights in between. BartleBot is in public beta.

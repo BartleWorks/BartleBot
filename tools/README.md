@@ -107,8 +107,8 @@ player data*, lists where each one writes.
 
 `probe_layout.py` builds a real `BotCanvas` offscreen and prints what Qt did to it: sizes,
 the event stream, paint damage. No game client. `CLAUDE.md` in this folder, *Our own
-widgets*, has how to use it. `export_logo.py` exports the logo's raster files from its
-SVG for places outside the app (#26).
+widgets*, has how to use it. `export_logo.py` exports the logo's raster files (core's
+`bartleby.qt.logo.export`) for places outside the app (#26).
 
 `render_sheet.py` renders BartleBot's surfaces offscreen in both themes, with sample accounts
 `P1` to `P4`, one PNG each, and `--compare` names every surface whose pixels differ between

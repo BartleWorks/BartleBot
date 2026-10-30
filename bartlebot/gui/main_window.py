@@ -5,6 +5,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 from bartleby.qt import screen_fit
+from bartleby.qt.logo import logo_icon
 from bartleby.qt.title_bar.bottom_edge import BottomEdge, bottom_rule_shown, edge_color
 from bartleby.qt.title_bar.native_frame import NativeFrame
 from bartleby.qt.title_bar.title_bar import TitleBar
@@ -18,7 +19,6 @@ from bartlebot.game.pane_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MI
 from bartlebot.gui import window_panes
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
-from bartlebot.gui.logo import logo_icon
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.paths import project_root

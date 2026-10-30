@@ -4,10 +4,10 @@ import os
 import sys
 
 from bartleby.qt.app.logging_setup import HEADER_LIBRARIES
+from bartleby.qt.logo import TREE_SVG
 from bartleby.qt.theming.icon_utils import ICONS_DIR
 
 from bartlebot.game.art_extraction import TYPE_DUMP_DIR
-from bartlebot.gui.logo import LOGO_SVG
 from bartlebot.packaging.self_check import game_data_files
 from bartlebot.paths import project_root
 
@@ -16,8 +16,8 @@ sys.path.insert(0, str(project_root()))
 from tools.build_package import (  # noqa: E402
     CORE,
     CORE_DATA_DIRS,
+    CORE_DATA_FILES,
     DATA_DIRS,
-    DATA_FILES,
     ENTRY,
     METADATA,
     WHOLE_PACKAGES,
@@ -30,14 +30,14 @@ from tools.build_package import (  # noqa: E402
 
 def test_every_folder_the_app_reads_is_bundled():
     root = project_root()
-    bundled = {root / folder for folder in DATA_DIRS} | {root / file for file in DATA_FILES}
-    bundled |= {CORE / folder for folder in CORE_DATA_DIRS}
+    bundled = {root / folder for folder in DATA_DIRS} | {CORE / folder for folder in CORE_DATA_DIRS}
+    bundled |= {CORE / file for file in CORE_DATA_FILES}
 
     for folder in ("bots", "templates", "subgraphs", "strategies"):
         assert root / folder in bundled
     assert TYPE_DUMP_DIR in bundled
     assert ICONS_DIR.resolve() in {p.resolve() for p in bundled}
-    assert LOGO_SVG.resolve() in {p.resolve() for p in bundled}
+    assert TREE_SVG.resolve() in {p.resolve() for p in bundled}
     assert all(path.parent in bundled for path in game_data_files())
     assert all(path.exists() for path in bundled)
 
@@ -48,10 +48,10 @@ def test_the_command_bundles_every_list(tmp_path):
 
     for folder in DATA_DIRS:
         assert str(project_root() / folder) in text
-    for file in DATA_FILES:
-        assert str(project_root() / file) in text
     for folder in CORE_DATA_DIRS:
         assert f"{CORE / folder}{os.pathsep}bartleby/{folder}" in text
+    for file in CORE_DATA_FILES:
+        assert f"{CORE / file}{os.pathsep}bartleby/qt/logo" in text
     for name in (*METADATA, *WHOLE_PACKAGES):
         assert any(arg == name or arg.endswith(f"={name}") for arg in command), name
     assert str(ENTRY) in command
@@ -89,9 +89,8 @@ def test_the_command_carries_the_icon_when_given_one(tmp_path):
 
 
 def test_the_icon_is_the_logo_at_every_window_icon_size(qapp, tmp_path):
+    from bartleby.qt.logo import ICON_SIZES
     from PIL import Image
-
-    from bartlebot.gui.logo import ICON_SIZES
 
     icon = write_icon(tmp_path)
 
@@ -102,9 +101,8 @@ def test_the_icon_is_the_logo_at_every_window_icon_size(qapp, tmp_path):
 
 def test_the_splash_is_the_logo_square_with_room_below_the_tree_for_the_bar(qapp, tmp_path):
     """Velopack lays an opaque 12 px bar, scaled as the image is, along the splash's bottom edge."""
+    from bartleby.qt.logo.export import SPLASH_SIZE
     from PIL import Image
-
-    from tools.export_logo import SPLASH_SIZE
 
     splash = write_splash(tmp_path)
 

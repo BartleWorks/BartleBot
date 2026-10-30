@@ -282,16 +282,15 @@ def check_native(_root: Path) -> str:
 
 def check_qt(_root: Path) -> str:
     """Qt's platform plugin and SVG support, and every icon and the logo rendering. No window is shown."""
+    from bartleby.qt.logo import TREE_SVG  # noqa: PLC0415
     from bartleby.qt.theming.icon_utils import ICONS_DIR  # noqa: PLC0415
     from PyQt6.QtSvg import QSvgRenderer  # noqa: PLC0415
     from PyQt6.QtWidgets import QApplication  # noqa: PLC0415
 
-    from bartlebot.gui.logo import LOGO_SVG  # noqa: PLC0415
-
     app = QApplication.instance() or QApplication([sys.argv[0]])
     icons = sorted(ICONS_DIR.glob("*.svg"))
     _require(icons, f"no icon in {ICONS_DIR}")
-    for path in [*icons, LOGO_SVG]:
+    for path in [*icons, TREE_SVG]:
         _require(QSvgRenderer(str(path)).isValid(), f"{path.name} does not render")
     return f"platform {app.platformName()}, {_count(len(icons), 'icon')} and the logo"
 

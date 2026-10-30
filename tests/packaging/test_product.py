@@ -6,7 +6,6 @@ import importlib.metadata
 
 from bartleby.shared.vendor import product_dir
 
-from bartlebot.gui import logo
 from bartlebot.packaging import product as bartlebot_product
 from bartlebot.packaging.build_kind import CHECKOUT
 from bartlebot.paths import project_root
@@ -21,9 +20,8 @@ def test_bartlebot_is_named_and_versioned_as_its_package_is():
     assert built.build_kind == CHECKOUT
 
 
-def test_its_logo_is_the_one_the_rasters_are_drawn_from():
-    assert bartlebot_product.product().logo == logo.LOGO_SVG
-    assert logo.LOGO_SVG.is_file()
+def test_its_logo_is_the_tree_on_its_own_blue():
+    assert bartlebot_product.product().logo_background == "#1d3a8a"
 
 
 def test_its_data_and_logs_are_under_its_own_appdata_folder():
