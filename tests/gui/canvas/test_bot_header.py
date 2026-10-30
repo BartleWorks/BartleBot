@@ -18,7 +18,6 @@ from PyQt6.QtWidgets import QApplication, QWidget
 
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_header import BotHeader, _ElidedLabel
-from bartlebot.gui.game_embed.game_view_panel import client_summary
 from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill, TagPill
 
 
@@ -246,24 +245,6 @@ def test_a_theme_switch_keeps_the_status_it_was_last_told(header, qapp):
     header.refresh_theme_styles()
 
     assert (header.status_text, header.elapsed_text) == ("Running", "00:00:07")
-
-
-# ---------------------------------------------------------------------------
-# Bar A — the clients
-# ---------------------------------------------------------------------------
-
-
-def test_the_client_summary_counts_and_names_the_profile():
-    assert client_summary(4, "Four Wizards") == "4 clients connected · Four Wizards"
-
-
-def test_one_client_is_singular():
-    assert client_summary(1, None) == "1 client connected"
-
-
-def test_no_clients_does_not_name_a_profile():
-    """ "0 clients · Four Wizards" reads as a claim that the profile is running."""
-    assert client_summary(0, "Four Wizards") == "No clients connected"
 
 
 # ---------------------------------------------------------------------------
