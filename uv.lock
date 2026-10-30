@@ -86,7 +86,7 @@ site = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?rev=b568b0bc00eddf0517a39dea22601e2f989ca78f" },
+    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?rev=dfe094d7c487b24ff2a047802b5b243d726e15a1" },
     { name = "beautifulsoup4", specifier = ">=4.0" },
     { name = "cryptography", specifier = ">=44" },
     { name = "curl-cffi", specifier = ">=0.15" },
@@ -122,7 +122,7 @@ site = [{ name = "zensical", specifier = "==0.0.71" }]
 [[package]]
 name = "bartleby-core"
 version = "0.1.0"
-source = { git = "https://github.com/BartleWorks/bartleby-core.git?rev=b568b0bc00eddf0517a39dea22601e2f989ca78f#b568b0bc00eddf0517a39dea22601e2f989ca78f" }
+source = { git = "https://github.com/BartleWorks/bartleby-core.git?rev=dfe094d7c487b24ff2a047802b5b243d726e15a1#dfe094d7c487b24ff2a047802b5b243d726e15a1" }
 dependencies = [
     { name = "keyring" },
     { name = "pydantic" },
