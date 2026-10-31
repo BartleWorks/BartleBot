@@ -142,7 +142,24 @@ async def test_a_window_closed_first_says_so_and_lets_the_user_try_again(qapp, m
     assert dlg._btn_fetch.isEnabled()
 
 
-async def test_closing_the_dialog_closes_the_window(qapp, monkeypatch, challenged):
+async def test_a_window_that_failed_shows_its_message(qapp, monkeypatch, challenged):
+    class FailingBrowser(FakeBrowser):
+        def run(self):
+            raise wiki_import_dialog.WikiBrowserError("The wiki window couldn't open.", "no WebView2 runtime")
+
+    monkeypatch.setattr(wiki_import_dialog, "BrowserFetch", FailingBrowser)
+    dlg = WikiImportDialog()
+
+    await _start(dlg)
+
+    assert dlg._status_lbl.text() == "The wiki window couldn't open."
+    assert dlg._status_error
+    assert dlg._btn_fetch.isEnabled()
+
+
+# Cancel and Esc reject the dialog, which sends no closeEvent.
+@pytest.mark.parametrize("end", ["close", "reject"])
+async def test_ending_the_dialog_closes_the_window(qapp, monkeypatch, challenged, end):
     release = threading.Event()
     monkeypatch.setattr(wiki_import_dialog, "BrowserFetch", lambda url: FakeBrowser(url, release=release))
     dlg = WikiImportDialog()
@@ -150,7 +167,7 @@ async def test_closing_the_dialog_closes_the_window(qapp, monkeypatch, challenge
     while not FakeBrowser.instances:
         await asyncio.sleep(0.01)
 
-    dlg.close()
+    getattr(dlg, end)()
     release.set()
 
     with pytest.raises(asyncio.CancelledError):

@@ -46,7 +46,12 @@ PROFILE_DIRNAME = "webview"
 #: How long the parent waits for the window. Long, because a person is answering a check.
 WAIT_SECONDS = 600
 
-WINDOW_TITLE = "Wizard101 Central Wiki — the drops import when the page loads"
+WINDOW_TITLE = "Wizard101 Central Wiki"
+
+#: What the import dialog shows for each way the window fails. The cause goes to the log.
+OPEN_FAILED = "The wiki window couldn't open. Click Fetch to try again."
+READ_FAILED = "The wiki window couldn't read the page. Click Fetch to try again."
+TIMED_OUT = "The wiki window closed because the page didn't load in time. Click Fetch to try again."
 
 #: The title of Cloudflare's challenge page, for a response that lacks its header.
 _CHALLENGE_TITLE = "Just a moment"
@@ -62,7 +67,14 @@ EXIT_FAILED = 2
 
 
 class WikiBrowserError(Exception):
-    """The window could not be opened, or failed before the page loaded."""
+    """The window could not be opened, or failed before the page loaded.
+
+    Its text is for the user. :attr:`detail` is the cause, for the log.
+    """
+
+    def __init__(self, message: str, detail: str = ""):
+        super().__init__(message)
+        self.detail = detail
 
 
 def is_challenge(status: int, headers: Mapping[str, str], text: str) -> bool:
@@ -123,13 +135,13 @@ class BrowserFetch:
                         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                     )
                 except OSError as exc:
-                    raise WikiBrowserError(f"could not start the wiki window: {exc}") from exc
+                    raise WikiBrowserError(OPEN_FAILED, f"could not start the child: {exc}") from exc
             try:
                 code = self._proc.wait(WAIT_SECONDS)
             except subprocess.TimeoutExpired:
                 self._proc.kill()
                 self._proc.wait()
-                raise WikiBrowserError("the wiki window was left open too long") from None
+                raise WikiBrowserError(TIMED_OUT, f"no answer in {WAIT_SECONDS} s") from None
             if self._cancelled:
                 return None
             return self._answer(out_path, code)
@@ -148,7 +160,7 @@ class BrowserFetch:
             return None
         answer = json.loads(out_path.read_text(encoding="utf-8"))
         if "error" in answer:
-            raise WikiBrowserError(answer["error"])
+            raise WikiBrowserError(answer["error"], answer.get("detail", ""))
         return answer["html"]
 
 
@@ -184,7 +196,7 @@ def run_window(url: str, out_path: Path) -> int:
         try:
             captured = capture(window, out_path)
         except Exception as exc:
-            _write(out_path, {"error": f"{type(exc).__name__}: {exc}"})
+            _write(out_path, {"error": READ_FAILED, "detail": f"{type(exc).__name__}: {exc}"})
             captured = True
         if captured:
             done.set()
@@ -194,7 +206,7 @@ def run_window(url: str, out_path: Path) -> int:
     try:
         webview.start(gui="edgechromium", private_mode=False, storage_path=str(profile_dir()))
     except Exception as exc:
-        _write(out_path, {"error": f"could not open the wiki window ({type(exc).__name__}: {exc})"})
+        _write(out_path, {"error": OPEN_FAILED, "detail": f"{type(exc).__name__}: {exc}"})
         return EXIT_FAILED
     if not out_path.exists():
         return EXIT_CLOSED
