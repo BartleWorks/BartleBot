@@ -1,6 +1,6 @@
 {
   "id": "b7620dd3-ad14-4322-94e4-5e18168e14a2",
-  "name": "Scrap Iron Collector",
+  "name": "Counterweight West Scrap Iron Collector",
   "description": "Endlessly collects Scrap Iron and Mist Wood in Counterweight West, Royal Museum, Marleybone",
   "version": "1.0",
   "clients": "all",
@@ -239,5 +239,8 @@
         }
       }
     }
+  ],
+  "history": [
+    "76a28148bc04b1a9a072f95f80bae829f6ab9630e488fa02a0fb1dd3d98b66bb"
   ]
 }

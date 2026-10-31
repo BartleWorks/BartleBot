@@ -481,7 +481,9 @@
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
-        "=Storm Trap Amethyst"
+        "=Storm Trap Amethyst",
+        "=Fire Trap Ruby",
+        "=Ice Trap Sapphire"
       ]
     }
   ],
@@ -794,6 +796,7 @@
     "version": 1
   },
   "history": [
+    "8a592f386b8e70ff482a13aba21eaf5ac8ec16fafd40e7cf03abf3fd1f3b88eb",
     "0eef6f1f1bae3937b8c88c737cae49aa76daca908d0003115395518178a79b9c"
   ]
 }
