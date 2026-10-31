@@ -39,7 +39,7 @@ def test_the_hotkey_settings_fill_in_an_action_the_file_does_not_mention():
     assert sm.authoring_hotkeys["toggle_combat"] == ""
 
 
-@pytest.mark.parametrize(("stored", "read"), [(5.0, 5.0), (0.2, 1.0), (99, 10.0), ("fast", 5.0)])
+@pytest.mark.parametrize(("stored", "read"), [(1.5, 1.5), (5.0, 2.0), (0.2, 1.0), (99, 2.0), ("fast", 2.0)])
 def test_the_speed_multiplier_is_clamped_to_its_range(stored, read):
     sm = SettingsManager.instance()
     sm.set("authoring", "speed_multiplier", value=stored)
