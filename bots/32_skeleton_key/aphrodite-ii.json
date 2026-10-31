@@ -604,7 +604,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6160.0,
+        "x": 6600.0,
         "y": 0.0
       },
       "params": {
@@ -621,7 +621,7 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 6600.0,
+        "x": 7040.0,
         "y": 0.0
       },
       "params": {
@@ -725,7 +725,7 @@
       "node_type": "enter_zone",
       "label": "Exit Skeleton Key room",
       "position": {
-        "x": 5720.0,
+        "x": 6160.0,
         "y": 0.0
       },
       "params": {
@@ -743,13 +743,122 @@
         },
         "stagger": false
       }
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Interact with Chest",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_DM/Interiors/DM_Z08_I03_SkeletonKey2",
+        "interact_xyz": {
+          "x": 13.91,
+          "y": 1976.83,
+          "z": -72.82
+        },
+        "reset_xyz": {
+          "x": 34.34,
+          "y": 1675.72,
+          "z": -72.82
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": false,
+        "animation_delay": 0.0,
+        "sequential": true,
+        "object_use_delay": 2.0
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "t_1",
       "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -788,36 +897,6 @@
     },
     {
       "trigger": "advance",
-      "source": "t_sync_players_1_state_1",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_7",
       "dest": "t_3",
       "when": "SUCCESS",
@@ -838,8 +917,8 @@
     },
     {
       "trigger": "advance",
-      "source": "t_3",
-      "dest": "state_4",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -848,48 +927,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "t_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_4",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "t_5",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -940,6 +979,9 @@
     "version": 1
   },
   "history": [
+    "5c182bdd840e14e80f6e66712426adaa203318e4c82dd64097cd297352759724",
+    "9231f8b85a77ab88029e74991b7fdbb3613c3a28ea0e5a6845d940308f215f66",
+    "a6f539ed49a3cdd55672e2dd6f23cc3cb02c811fb6737f4ff34a5c07f601aab9",
     "82329ed814533df993ae6649f028523f0b672b39d8d0ed96a8ff0f01509f1fcb",
     "b05d505db35204c4f24d05d9ead2ab5545c7409a40625549b82a68f25179eb79"
   ]
