@@ -11,6 +11,7 @@ from typing import Any
 from bartleby.qt.settings import store as settings_store
 from bartleby.runtime.game import game_sizing
 from bartleby.runtime.game.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH, VALID_RESOLUTIONS
+from bartleby.runtime.input import SPEED_VALUE_MAX
 from bartleby.shared.account_store import AccountStore
 from bartleby.shared.strategy_models import atomic_write
 from bartleby.shared.vendor import product_dir, vendor_dir
@@ -106,12 +107,13 @@ DEFAULT_AUTHORING_HOTKEYS: dict[str, str] = {
     "toggle_speed_authoring": "F6",
 }
 
-# The walking-speed multiple the speed toggle applies. 1.0 is the game's own speed.
-SPEED_MULTIPLIER_RANGE = (1.0, 10.0)
+# The walking-speed multiple the speed toggle applies. 1.0 is the game's own speed, and
+# core never writes above 2.0x. A stored value above it reads as the top of the range.
+SPEED_MULTIPLIER_RANGE = (1.0, 1.0 + SPEED_VALUE_MAX / 100)
 
 
 class _AuthoringSettings(BaseModel):
-    speed_multiplier: float = 5.0
+    speed_multiplier: float = SPEED_MULTIPLIER_RANGE[1]
     hotkeys: dict[str, str] = dict(DEFAULT_AUTHORING_HOTKEYS)
 
 
@@ -217,7 +219,7 @@ _DEFAULTS: dict[str, Any] = {
         "bot_library_path": "bots",
     },
     "authoring": {
-        "speed_multiplier": 5.0,
+        "speed_multiplier": SPEED_MULTIPLIER_RANGE[1],
         "hotkeys": dict(DEFAULT_AUTHORING_HOTKEYS),
     },
     # The update check (docs/INSTALLER.md, "The update check"). See gui/update_prompt.py.
@@ -1035,9 +1037,9 @@ class SettingsManager:
         """The walking-speed multiple the authoring speed toggle applies, clamped to its range."""
         low, high = SPEED_MULTIPLIER_RANGE
         try:
-            value = float(self.get("authoring", "speed_multiplier", default=5.0))
+            value = float(self.get("authoring", "speed_multiplier", default=high))
         except (TypeError, ValueError):
-            return 5.0
+            return high
         return min(max(value, low), high)
 
     @speed_multiplier.setter

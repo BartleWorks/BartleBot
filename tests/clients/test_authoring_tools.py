@@ -6,13 +6,13 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from bartleby.runtime.actions import helpers
 from wizwalker import XYZ
 
 from bartlebot.clients import authoring_tools
 from bartlebot.clients.authoring_tools import (
     AuthoringAction,
     AuthoringTools,
-    boosted_speed_value,
     source_index,
 )
 from bartlebot.game.restricted_zones import Restriction
@@ -22,7 +22,7 @@ from tests.conftest import FakeClient
 
 @pytest.fixture(autouse=True)
 def fast(monkeypatch):
-    monkeypatch.setattr(authoring_tools, "SPEED_REAPPLY_INTERVAL", 0.001)
+    monkeypatch.setattr(helpers, "SPEED_REAPPLY_INTERVAL", 0.001)
     monkeypatch.setattr(authoring_tools, "POLL_INTERVAL", 0.001)
     monkeypatch.setattr(authoring_tools, "DIALOG_FAST_POLL_INTERVAL", 0.001)
 
@@ -34,13 +34,6 @@ def _speed_field(client: FakeClient, value: int) -> None:
     client.client_object.speed_multiplier = AsyncMock(side_effect=lambda: state["value"])
     client.client_object.write_speed_multiplier = AsyncMock(side_effect=lambda v: state.update(value=v))
     client.client_object.maybe_read_type_name = AsyncMock(return_value="WizClientObject")
-
-
-def _log_out(client: FakeClient) -> None:
-    """Free *client*'s client object, as a logout does: the hook still points at the memory."""
-    client.client_object.maybe_read_type_name.return_value = ""
-    client.client_object.read_value_from_offset.return_value = 0xFFFFFFFFFFFFFFFF
-    client.speed_state["value"] = 0x1234
 
 
 def _tools(clients: list, *, multiplier: float = 5.0, config=None, on_change=None) -> AuthoringTools:
@@ -77,14 +70,6 @@ def test_the_default_hotkeys_are_the_f_keys_in_order():
     }
 
 
-@pytest.mark.parametrize(
-    ("multiplier", "value"),
-    [(1.0, 0), (2.0, 100), (5.0, 400), (0.5, 0), (1000.0, 0x7FFF)],
-)
-def test_the_speed_field_is_a_percentage_bonus(multiplier, value):
-    assert boosted_speed_value(multiplier) == value
-
-
 def test_the_source_is_the_focused_window_and_falls_back_to_player_one():
     clients = [FakeClient(), FakeClient(), FakeClient()]
     assert source_index(clients, clients[2].window_handle) == 2
@@ -104,7 +89,7 @@ async def test_speed_boosts_every_player_and_gives_back_their_own_speed():
     tools = _tools(clients)
 
     await tools.set_speed(True)
-    await _until(lambda: all(c.speed_state["value"] == 400 for c in clients))
+    await _until(lambda: all(c.speed_state["value"] == 100 for c in clients))
     assert tools.speed_on
 
     await tools.set_speed(False)
@@ -112,124 +97,16 @@ async def test_speed_boosts_every_player_and_gives_back_their_own_speed():
     assert not tools.speed_on
 
 
-async def test_speed_comes_back_after_the_game_rewrites_it_and_restores_the_new_value():
-    client = FakeClient()
-    _speed_field(client, 0)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
-
-    # A zone change: the game writes the player's real speed again, now with a mount.
-    client.speed_state["value"] = 40
-    await _until(lambda: client.speed_state["value"] == 400)
-
-    await tools.set_speed(False)
-    assert client.speed_state["value"] == 40
-
-
-async def test_speed_off_leaves_a_value_the_game_wrote_since():
-    client = FakeClient()
-    _speed_field(client, 0)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
-    task = tools._speed_task
-    task.cancel()  # freeze the loop so the game's write below is not overwritten
-    await asyncio.sleep(0.005)
-    client.speed_state["value"] = 25
-
-    await tools.set_speed(False)
-    assert client.speed_state["value"] == 25
-
-
-async def test_speed_skips_a_player_on_a_loading_screen():
-    client = FakeClient()
-    _speed_field(client, 0)
-    client.is_loading = AsyncMock(return_value=True)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await asyncio.sleep(0.01)
-    client.client_object.write_speed_multiplier.assert_not_awaited()
-    await tools.set_speed(False)
-
-
 async def test_a_released_client_gets_its_speed_back_before_it_is_unhooked():
     client = FakeClient()
     _speed_field(client, 10)
     tools = _tools([client])
     await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
+    await _until(lambda: client.speed_state["value"] == 100)
 
     await tools.release(client)
     assert client.speed_state["value"] == 10
     await tools.set_speed(False)
-
-
-async def test_speed_never_writes_to_a_logged_out_characters_freed_object():
-    client = FakeClient()
-    _speed_field(client, 0)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
-    writes = client.client_object.write_speed_multiplier.await_count
-
-    _log_out(client)
-    await asyncio.sleep(0.02)
-    await tools.set_speed(False)
-    assert client.client_object.write_speed_multiplier.await_count == writes
-    assert client.speed_state["value"] == 0x1234
-
-
-async def test_speed_never_writes_at_character_select(monkeypatch):
-    monkeypatch.setattr(authoring_tools, "at_character_select", AsyncMock(return_value=True))
-    client = FakeClient()
-    _speed_field(client, 0)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await asyncio.sleep(0.02)
-    await tools.set_speed(False)
-    client.client_object.write_speed_multiplier.assert_not_awaited()
-
-
-async def test_speed_never_writes_while_the_character_id_keeps_changing():
-    client = FakeClient()
-    _speed_field(client, 0)
-    ids = iter(range(1, 10_000))
-    client.client_object.read_value_from_offset = AsyncMock(side_effect=lambda *_: next(ids))
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await asyncio.sleep(0.02)
-    await tools.set_speed(False)
-    client.client_object.write_speed_multiplier.assert_not_awaited()
-
-
-async def test_speed_boosts_a_new_character_and_gives_back_only_its_own_speed():
-    client = FakeClient()
-    _speed_field(client, 10)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
-
-    # The next character loads: the hook hands over its object, at its own speed.
-    client.client_object.read_value_from_offset.return_value = 777
-    client.speed_state["value"] = 0
-    await _until(lambda: client.speed_state["value"] == 400)
-
-    await tools.set_speed(False)
-    assert client.speed_state["value"] == 0
-
-
-async def test_speed_off_gives_nothing_back_to_a_different_character():
-    client = FakeClient()
-    _speed_field(client, 10)
-    tools = _tools([client])
-    await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
-
-    # Another character, whose field happens to hold our value.
-    client.client_object.read_value_from_offset.return_value = 777
-    await tools.set_speed(False)
-    assert client.speed_state["value"] == 400
 
 
 # ---------------------------------------------------------------------------
@@ -476,6 +353,6 @@ async def test_a_failing_on_change_does_not_stop_a_toggle():
 
     tools = _tools([client], on_change=boom)
     await tools.set_speed(True)
-    await _until(lambda: client.speed_state["value"] == 400)
+    await _until(lambda: client.speed_state["value"] == 100)
     await tools.set_speed(False)
     assert client.speed_state["value"] == 0

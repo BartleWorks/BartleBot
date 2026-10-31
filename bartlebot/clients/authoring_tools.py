@@ -8,8 +8,10 @@ set a Deimos user reaches for while multiboxing:
 * **TP to player** ports every other player to the source player through the friends list,
   which is the one that crosses zones and realms. It is ``teleport_to_friend``'s hooked-player
   half, run outside a bot.
-* **Speed** multiplies every player's walking speed, and keeps it multiplied across zone
-  changes -- the game rewrites the value on every door.
+* **Speed** multiplies every player's walking speed, up to 2.0x, and keeps it multiplied
+  across zone changes -- the game rewrites the value on every door. It is core's
+  ``SpeedBoost``, on an arbiter of its own: a run, the one other thing that presses, switches
+  it off first.
 * **Auto-combat** fights any battle a player is pulled into, with the open bot's default
   Duel Strategy, or the built-in one when it has none.
 * **Auto-dialogue** advances every player's NPC dialogue as it opens, and declines any side
@@ -42,22 +44,16 @@ from collections.abc import Callable
 from enum import StrEnum
 from types import SimpleNamespace
 
+from bartleby.runtime.actions.helpers import Member, SpeedBoost
+from bartleby.runtime.arbiter import Arbiter
 from bartleby.runtime.game import wizard_names
-from bartleby.runtime.launcher.auto_select import at_character_select
-from bartleby.runtime.timing import DIALOG_FAST_POLL_INTERVAL, POLL_INTERVAL, SPEED_REAPPLY_INTERVAL
+from bartleby.runtime.timing import DIALOG_FAST_POLL_INTERVAL, POLL_INTERVAL
 
 from bartlebot.bot.client_health_monitor import restriction_for
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import _run_combat, resolve_combat
 
 logger = logging.getLogger(__name__)
-
-# The largest value the game's int16 speed field holds.
-_SPEED_VALUE_MAX = 0x7FFF
-
-# The end of a player's client object's type name: ClientObject, or the game's own
-# WizClientObject.
-_CLIENT_OBJECT_TYPE = "ClientObject"
 
 
 class AuthoringAction(StrEnum):
@@ -100,16 +96,6 @@ def slot_keys_armed(*, speed_authoring: bool, game_focused: bool, editing: bool,
     return speed_authoring and game_focused and editing and not run_active
 
 
-def boosted_speed_value(multiplier: float) -> int:
-    """The game's speed field for walking *multiplier* times as fast.
-
-    The field is a percentage *bonus* -- 0 is normal speed, 100 is double -- which is also
-    how a mount's speed reaches it. Below 1x is clamped to normal: slowing a wizard down is
-    not something anyone reaches for, and a negative bonus is untested ground.
-    """
-    return max(0, min(round((multiplier - 1.0) * 100), _SPEED_VALUE_MAX))
-
-
 def source_index(clients: list, hwnd: int | None) -> int:
     """The index of the client whose window is *hwnd*, or 0 (Player 1) when none is."""
     for i, client in enumerate(clients):
@@ -148,20 +134,15 @@ class AuthoringTools:
     ) -> None:
         self._clients = clients
         self._bot_config = bot_config
-        self._speed_multiplier = speed_multiplier
         self._on_change = on_change
         self._run_active = False
 
-        self._speed_task: asyncio.Task | None = None
-        # The field value this toggle writes, fixed when it is switched on: a multiplier
-        # changed in Settings meanwhile would otherwise read the old boost as the game's
-        # own value and "restore" it.
-        self._boost_value = 0
-        # The game's own value per window, refreshed whenever the game rewrites it, with the
-        # character it was read from.
-        self._originals: dict[int, tuple[int, int]] = {}
-        # The character each window's last tick read, for the two-tick rule in ``_boost``.
-        self._characters: dict[int, int] = {}
+        self._speed = SpeedBoost(
+            Arbiter(),
+            lambda: [Member(client, i + 1) for i, client in enumerate(self._clients())],
+            speed_multiplier,
+            on_change=self._changed,
+        )
 
         self._combat_task: asyncio.Task | None = None
         self._fights: dict[int, asyncio.Task] = {}
@@ -178,7 +159,7 @@ class AuthoringTools:
 
     @property
     def speed_on(self) -> bool:
-        return self._speed_task is not None
+        return self._speed.on
 
     @property
     def combat_on(self) -> bool:
@@ -248,69 +229,9 @@ class AuthoringTools:
     # ------------------------------------------------------------------
 
     async def set_speed(self, on: bool) -> None:
-        if on == self.speed_on:
+        if on and not self.speed_on and self._refuse_during_run("Speed"):
             return
-        if on:
-            if self._refuse_during_run("Speed"):
-                return
-            multiplier = self._speed_multiplier()
-            self._boost_value = boosted_speed_value(multiplier)
-            self._speed_task = asyncio.create_task(self._speed_loop())
-            logger.info("Speed on: every player walks at %.1fx", multiplier)
-        else:
-            task, self._speed_task = self._speed_task, None
-            await _cancel(task)
-            for client in list(self._clients()):
-                await self._restore_speed(client)
-            self._originals.clear()
-            self._characters.clear()
-            logger.info("Speed off: every player walks at their own speed")
-        self._changed()
-
-    async def _speed_loop(self) -> None:
-        while True:
-            for client in list(self._clients()):
-                try:
-                    await self._boost(client)
-                except Exception:
-                    # A client mid-zone-change fails every read; the next tick gets it.
-                    logger.debug("Speed: could not boost hwnd=%s", getattr(client, "window_handle", "?"))
-            await asyncio.sleep(SPEED_REAPPLY_INTERVAL)
-
-    async def _boost(self, client) -> None:
-        handle = client.window_handle
-        seen = self._characters.pop(handle, None)
-        character = await _live_character_id(client)
-        if character == wizard_names.NO_CHARACTER:
-            return
-        self._characters[handle] = character
-        # The same character two ticks running. A freed address the heap has since handed to
-        # something else seldom reads as the same id twice.
-        if character != seen:
-            return
-        current = await client.client_object.speed_multiplier()
-        if current == self._boost_value:
-            return
-        # Anything but our own value was written by the game -- a zone change, a mount --
-        # and is the one to give back.
-        self._originals[handle] = (character, current)
-        await client.client_object.write_speed_multiplier(self._boost_value)
-
-    async def _restore_speed(self, client) -> None:
-        self._characters.pop(client.window_handle, None)
-        entry = self._originals.pop(client.window_handle, None)
-        if entry is None:
-            return
-        character, original = entry
-        try:
-            # Only to the character it was read from, and only over our own value: one the
-            # game has written since is already its own.
-            if await _live_character_id(client) != character:
-                return
-            if await client.client_object.speed_multiplier() == self._boost_value:
-                await client.client_object.write_speed_multiplier(original)
-        except Exception:
-            logger.debug("Speed: could not restore hwnd=%s", client.window_handle)
+        await self._speed.set(on)
 
     # ------------------------------------------------------------------
     # Auto-combat
@@ -511,7 +432,7 @@ class AuthoringTools:
         After the unhook nothing can write to it, and a boost left behind lasts until the
         player's next zone change.
         """
-        await self._restore_speed(client)
+        await self._speed.restore(client)
         task = self._fights.pop(client.window_handle, None)
         await _cancel(task)
 
@@ -522,26 +443,6 @@ class AuthoringTools:
         await self.set_auto_combat(False)
         await self.set_auto_dialogue(False)
         self.set_speed_authoring(False)
-
-
-async def _live_character_id(client) -> int:
-    """The id of the character *client*'s client object holds, or NO_CHARACTER if writing to it is unsafe.
-
-    The client hook keeps the last address the game handed it, and nothing clears it when a
-    character logs out: the game frees the object, and the hook goes on pointing at it until
-    the next character loads. A read through it is harmless -- it comes back as a garbage
-    id, which ``wizard_names`` simply drops -- but a write lands in freed heap memory, and the
-    game crashes some time later, with a corrupted heap (0xc0000374) or an access violation
-    in ntdll. Speed's write every tick did exactly that to clients switching characters.
-
-    So before a write: the game is neither loading nor at character select, and the object
-    still reads as a client object, which a freed one's vtable seldom leads to.
-    """
-    if await client.is_loading() or await at_character_select(client):
-        return wizard_names.NO_CHARACTER
-    if not (await client.client_object.maybe_read_type_name()).endswith(_CLIENT_OBJECT_TYPE):
-        return wizard_names.NO_CHARACTER
-    return await wizard_names.read_character_id(client)
 
 
 async def _cancel(task: asyncio.Task | None) -> None:
