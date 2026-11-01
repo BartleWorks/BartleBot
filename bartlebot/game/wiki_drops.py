@@ -65,7 +65,7 @@ _PIP_COST = re.compile(r"^\d+\s*Pips?$", re.IGNORECASE)
 #: game shows the suffix too, or because the item belongs to a category quicksell
 #: never touches (treasure cards, mostly) and so the answer cannot matter.
 KNOWN_KEPT_SUFFIXES: frozenset[str] = frozenset(
-    {"Seed", "Inactive", "Attack", "No Card", "Wizard City", "-3", "-All", "40+360"}
+    {"Seed", "Inactive", "Attack", "No Card", "Wizard City", "-3", "-All", "40+360", "Minion"}
 )
 
 # Classification labels, shared with tools/drop_name_patterns.py.
