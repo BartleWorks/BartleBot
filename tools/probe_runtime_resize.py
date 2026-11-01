@@ -119,6 +119,7 @@ import struct
 import sys
 import tempfile
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -134,21 +135,25 @@ MODULE = "WizardGraphicalClient.exe"
 UI_SIZES = {"Micro": 5, "Tiny": 0, "Small": 1, "Regular": 2, "Large": 3, "Huge": 4}
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
-gdi32 = ctypes.WinDLL("gdi32")
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 user32.SetProcessDpiAwarenessContext.argtypes = [ctypes.c_void_p]
 user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))  # true physical pixels
 
 GWL_STYLE, GWL_EXSTYLE = -16, -20
 WS_CHILD = 0x40000000
-SWP_NOMOVE, SWP_NOZORDER, SWP_NOACTIVATE = 0x2, 0x4, 0x10
-PW_RENDERFULLCONTENT = 2
+SWP_NOSIZE, SWP_NOMOVE, SWP_NOZORDER, SWP_NOACTIVATE = 0x1, 0x2, 0x4, 0x10
 
 
 # --------------------------------------------------------------------------- the hooks
 # Ported from Deimos-Wizard101/libs/wizsprinter/wizwalker/extensions/wizsprinter/resolution_hook.py.
 
-MGR_PENDING_FLAG_OFF = 0x2229B  # byte on the video manager: non-zero => apply a pending mode
+# Where things are on the video manager, read from the function VideoManagerHook matches rather
+# than assumed: the pending byte is +0x2229B on live r806919 and +0x222A3 on the Test realm's exe,
+# and a write to the wrong one sets an unrelated byte and reports success.
+PENDING_TEST_AT = 0x3D  # 80 B9 disp32 00: cmp byte ptr [rcx + disp32], 0
+PENDING_CLEAR_AT = 0x1A0  # C6 83 disp32 00: mov byte ptr [rbx + disp32], 0
+DEVICE_LOAD_AT = 0x4A  # 48 8B 89 disp32: mov rcx, [rcx + disp32], the render device
+DEVICE_SIZE_OFF = 0x1C  # u32 width, u32 height on the device (the function reads them at +0x150)
 
 
 class SetModeResHook(SimpleHook):
@@ -199,16 +204,43 @@ class VideoManagerHook(SimpleHook):
         )
 
 
+async def manager_offsets(handler) -> tuple[int, int]:
+    """(pending byte, device pointer) on the video manager, read from code; raises if they can't be trusted.
+
+    Only before VideoManagerHook is installed: the hook overwrites the bytes its pattern matches.
+    """
+    match = await handler.pattern_scan(VideoManagerHook.pattern, module=MODULE)
+    test = await handler.read_bytes(match + PENDING_TEST_AT, 7)
+    clear = await handler.read_bytes(match + PENDING_CLEAR_AT, 7)
+    device = await handler.read_bytes(match + DEVICE_LOAD_AT, 7)
+    if test[:2] != b"\x80\xb9" or clear[:2] != b"\xc6\x83" or device[:3] != b"\x48\x8b\x89":
+        raise RuntimeError(f"unexpected code: test {test.hex()}, clear {clear.hex()}, device {device.hex()}")
+    pending = struct.unpack("<I", test[2:6])[0]
+    if struct.unpack("<I", clear[2:6])[0] != pending:
+        raise RuntimeError(f"the test and the clear disagree: {test.hex()}, {clear.hex()}")
+    return pending, struct.unpack("<I", device[3:])[0]
+
+
 class Forcer:
     """Both hooks, installed together and always removed together."""
 
-    def __init__(self, client, *, setmode: bool = True) -> None:
+    def __init__(self, client, *, setmode: bool = True, by_node: bool = False) -> None:
+        self.client = client
         self.handler = client.hook_handler
-        self.want_setmode = setmode
+        self.want_setmode = setmode and not by_node
+        self.by_node = by_node
         self.setmode: SetModeResHook | None = None
         self.vm: VideoManagerHook | None = None
+        self.pending_off = 0
+        self.device_off = 0
+        self.resolution_node: int | None = None
 
     async def __aenter__(self) -> Forcer:
+        self.pending_off, self.device_off = await manager_offsets(self.handler)
+        if self.by_node:
+            self.resolution_node = await live_node(self.client, "Resolution")
+            if self.resolution_node is None:
+                raise RuntimeError("no single live Resolution node")
         await self.handler._check_for_autobot()
         try:
             if self.want_setmode:
@@ -244,12 +276,14 @@ class Forcer:
 
     async def apply(self, width: int | None = None, height: int | None = None) -> bool:
         """Trigger the engine's apply; with a size, override set-mode's arguments first."""
+        if width is not None and self.by_node:
+            await write_resolution(self.client, width, height, self.resolution_node)
         if width is not None and self.setmode is not None:
             await self.handler.write_bytes(self.setmode.control_block, struct.pack("<III", 1, width, height))
         mgr = await self.manager()
         if not mgr:
             return False
-        await self.handler.write_bytes(mgr + MGR_PENDING_FLAG_OFF, b"\x01")
+        await self.handler.write_bytes(mgr + self.pending_off, b"\x01")
         return True
 
     async def release(self) -> None:
@@ -284,42 +318,27 @@ def set_client_size(hwnd: int, w: int, h: int) -> None:
     user32.SetWindowPos(hwnd, 0, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE)
 
 
-class BITMAPINFOHEADER(ctypes.Structure):
-    _fields_ = [
-        ("biSize", wt.DWORD),
-        ("biWidth", wt.LONG),
-        ("biHeight", wt.LONG),
-        ("biPlanes", wt.WORD),
-        ("biBitCount", wt.WORD),
-        ("biCompression", wt.DWORD),
-        ("biSizeImage", wt.DWORD),
-        ("biXPelsPerMeter", wt.LONG),
-        ("biYPelsPerMeter", wt.LONG),
-        ("biClrUsed", wt.DWORD),
-        ("biClrImportant", wt.DWORD),
-    ]
-
-
 def screenshot(hwnd: int, path: Path) -> str:
-    """The window's client area as drawn, by PrintWindow; works covered and as a child."""
-    from PIL import Image
+    """The window's client area as it is on screen, with its top-level window on top for the shot.
+
+    Not PrintWindow, which comes back all white from a client once its device has been reset,
+    while the game itself draws normally.
+    """
+    from PIL import ImageGrab
 
     w, h = client_size(hwnd)
     if w <= 0 or h <= 0:
         return "no client area"
-    hdc_win = user32.GetDC(hwnd)
-    hdc = gdi32.CreateCompatibleDC(hdc_win)
-    bmp = gdi32.CreateCompatibleBitmap(hdc_win, w, h)
-    gdi32.SelectObject(hdc, bmp)
-    ok = user32.PrintWindow(hwnd, hdc, PW_RENDERFULLCONTENT | 1)  # | PW_CLIENTONLY
-    bih = BITMAPINFOHEADER(ctypes.sizeof(BITMAPINFOHEADER), w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
-    buf = ctypes.create_string_buffer(w * h * 4)
-    gdi32.GetDIBits(hdc, bmp, 0, h, buf, ctypes.byref(bih), 0)
-    gdi32.DeleteObject(bmp)
-    gdi32.DeleteDC(hdc)
-    user32.ReleaseDC(hwnd, hdc_win)
-    Image.frombuffer("RGBA", (w, h), buf, "raw", "BGRA", 0, 1).convert("RGB").save(path)
-    return f"{path} ({w}x{h}{'' if ok else ', PrintWindow failed'})"
+    root = user32.GetAncestor(hwnd, 2)  # GA_ROOT
+    flags = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
+    user32.SetWindowPos(root, ctypes.c_void_p(-1), 0, 0, 0, 0, flags)  # HWND_TOPMOST
+    time.sleep(0.1)  # the compositor shows it a frame later
+    origin = wt.POINT(0, 0)
+    user32.ClientToScreen(hwnd, ctypes.byref(origin))
+    image = ImageGrab.grab(bbox=(origin.x, origin.y, origin.x + w, origin.y + h), all_screens=True)
+    user32.SetWindowPos(root, ctypes.c_void_p(-2), 0, 0, 0, 0, flags)  # HWND_NOTOPMOST
+    image.convert("RGB").save(path)
+    return f"{path} ({w}x{h})"
 
 
 # --------------------------------------------------------------------------- game reads
@@ -388,7 +407,264 @@ async def check_patterns(client) -> bool:
     return ok
 
 
+# A config node's fields (RESULTS, "WHERE UISIZE LIVES").
+NODE_NAME, NODE_TYPE, NODE_LIVE, NODE_INT, NODE_STRING = 0x50, 0x44, 0x45, 0x14, 0x18
+NODE_CLASS = 0x40  # 0x28 on the class holding the live settings; a second class has 0x20 here
+NODE_PARENT = 0x38  # zero on the copies of Resolution that exist while a window is embedded
+NODE_TYPE_NAMES = {0x00: "string", 0x02: "int", 0x08: "float"}
+
+
+async def find_nodes(client, name: str) -> list[dict]:
+    """Every config node called *name*: a seed scan for the name, then a check of the node around it."""
+    handler = client.hook_handler
+    base = handler.process.process_base.lpBaseOfDll
+    end = base + handler.process.process_base.SizeOfImage
+    found = []
+    for hit in await handler.pattern_scan(re.escape(name.encode()) + b"\0", return_multiple=True):
+        try:
+            raw = await handler.read_bytes(hit - NODE_NAME, NODE_NAME + len(name) + 1)
+        except Exception:  # noqa: BLE001
+            continue
+        vtable = struct.unpack_from("<Q", raw, 0)[0]
+        if not base <= vtable < end or raw[NODE_TYPE] not in NODE_TYPE_NAMES or raw[NODE_LIVE] > 1:
+            continue
+        parent = struct.unpack_from("<Q", raw, NODE_PARENT)[0]
+        live = bool(parent) and raw[NODE_CLASS] == 0x28 and raw[NODE_LIVE] == 1
+        found.append({"address": hit - NODE_NAME, "type": raw[NODE_TYPE], "live": live})
+    return found
+
+
+async def live_node(client, name: str) -> int | None:
+    """The one live node called *name*; the scan is tried three times, and says what it saw."""
+    for attempt in range(3):
+        nodes = await find_nodes(client, name)
+        live = [node["address"] for node in nodes if node["live"]]
+        if len(live) == 1:
+            return live[0]
+        seen = [f"{node['address']:#x} type {node['type']} live {node['live']}" for node in nodes]
+        print(f"  !! {name}, scan {attempt + 1}: {len(live)} live of {seen}")
+        await asyncio.sleep(0.5)
+    return None
+
+
+async def read_c_string(handler, address: int, size: int = 64) -> bytes:
+    return (await handler.read_bytes(address, size)).split(b"\0", 1)[0]
+
+
+# A string node's +0x18 points at an MSVC std::string: 16 bytes inline, then the size at +0x10
+# and the capacity at +0x18. The ladder's longest, 2560x1440, is 9 characters, so a size is
+# always inline while the capacity is 15; the string's own length has to change with it, or the
+# game reads "1024x76" out of "1024x768".
+STRING_SIZE, STRING_CAPACITY, STRING_INLINE = 0x10, 0x18, 15
+
+
+async def read_resolution(client, node: int | None = None) -> tuple[int, bytes]:
+    """The live Resolution node's std::string, and its text."""
+    handler = client.hook_handler
+    node = node or await live_node(client, "Resolution")
+    if node is None:
+        raise RuntimeError("no single live Resolution node")
+    string = struct.unpack("<Q", await handler.read_bytes(node + NODE_STRING, 8))[0]
+    size = struct.unpack("<Q", await handler.read_bytes(string + STRING_SIZE, 8))[0]
+    return string, await handler.read_bytes(await resolution_text_at(handler, string), size)
+
+
+async def resolution_text_at(handler, string: int) -> int:
+    capacity = struct.unpack("<Q", await handler.read_bytes(string + STRING_CAPACITY, 8))[0]
+    if capacity <= STRING_INLINE:
+        return string
+    return struct.unpack("<Q", await handler.read_bytes(string, 8))[0]
+
+
+async def write_resolution(client, width: int, height: int, node: int | None = None) -> None:
+    """Write the live Resolution node's string in place; an apply then takes the new size from it."""
+    handler = client.hook_handler
+    string, _old = await read_resolution(client, node)
+    value = f"{width}x{height}".encode()
+    if len(value) > STRING_INLINE:
+        raise RuntimeError(f"{value!r} is too long")
+    await handler.write_bytes(await resolution_text_at(handler, string), value + b"\0")
+    await handler.write_bytes(string + STRING_SIZE, struct.pack("<Q", len(value)))
+
+
+async def device_size(handler, manager: int, device_off: int) -> tuple[int, int] | None:
+    """The render device's own width and height, which the 1:1 contract says equal the client's."""
+    try:
+        device = struct.unpack("<Q", await handler.read_bytes(manager + device_off, 8))[0]
+        return struct.unpack("<II", await handler.read_bytes(device + DEVICE_SIZE_OFF, 8))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+@dataclass
+class Applied:
+    """One apply, watched from the byte being set until it clears, and for a while after."""
+
+    cleared_ms: float | None
+    events: list[str]
+
+
+async def run_apply(client, forcer, width, height, *, host=None, ui=None, timeout=15.0, after=0.0) -> Applied:
+    """Write the UI size if given as (address, value), set the byte, and record each change until it clears.
+
+    The override is disarmed as soon as the byte clears, and on a timeout. Nothing here embeds
+    the window again: the caller does, so it can look at what the apply left first.
+    """
+    handler = client.hook_handler
+    hwnd = client.window_handle
+    manager = await forcer.manager()
+    if not manager:
+        return Applied(None, ["video manager never captured"])
+    if ui is not None:
+        await handler.write_bytes(ui[0], struct.pack("<i", ui[1]))
+    events: list[str] = []
+    last = None
+    cleared: float | None = None
+    started = time.perf_counter()
+    await forcer.apply(width, height)
+    try:
+        while True:
+            elapsed = (time.perf_counter() - started) * 1000
+            byte = (await handler.read_bytes(manager + forcer.pending_off, 1))[0]
+            state = (
+                byte,
+                user32.GetWindowLongW(hwnd, GWL_STYLE) & 0xFFFFFFFF,
+                user32.GetParent(hwnd),
+                client_size(hwnd),
+                await device_size(handler, manager, forcer.device_off),
+            )
+            if state != last:
+                events.append(
+                    f"{elapsed:7.0f} ms  byte {state[0]}  style {state[1]:#010x}  parent {state[2]:#x}  "
+                    f"client {state[3]}  device {state[4]}"
+                )
+                last = state
+            if cleared is None and byte == 0:
+                cleared = elapsed
+            if cleared is not None and elapsed - cleared >= after * 1000:
+                return Applied(cleared, events)
+            if elapsed > timeout * 1000:
+                events.append(f"{elapsed:7.0f} ms  !! the byte never cleared")
+                return Applied(None, events)
+            if host:
+                host.pump()
+            await asyncio.sleep(0.002)
+    finally:
+        await forcer.release()
+
+
+async def size_problems(client, forcer, width: int, height: int) -> list[str]:
+    """What is wrong with this client at this size: its window, its device, its parentage."""
+    hwnd = client.window_handle
+    manager = await forcer.manager()
+    problems = []
+    if client_size(hwnd) != (width, height):
+        problems.append(f"client {client_size(hwnd)}")
+    device = await device_size(client.hook_handler, manager, forcer.device_off)
+    if device != (width, height):
+        problems.append(f"device {device}")
+    return problems
+
+
+async def click_lands(client) -> str | None:
+    """Open the spellbook by its HUD button, close it by its own: None if both landed, else what didn't."""
+    from bartleby.runtime.actions.node_helpers import _get_window_from_path
+    from bartleby.runtime.paths import BACKPACK_CLOSE_BUTTON_PATH, DECK_CONFIGURATION_PATH, SPELLBOOK_BUTTON_PATH
+
+    async def wait_for(path: list[str], wanted: bool) -> bool:
+        end = time.monotonic() + 4.0
+        while time.monotonic() < end:
+            if (await _get_window_from_path(client.root_window, path) is not None) == wanted:
+                return True
+            await asyncio.sleep(0.05)
+        return False
+
+    button = await _get_window_from_path(client.root_window, SPELLBOOK_BUTTON_PATH)
+    if button is None:
+        return "no spellbook button"
+    await client.mouse_handler.click_window(button)
+    if not await wait_for(DECK_CONFIGURATION_PATH, True):
+        return "the click on the HUD button did not open the spellbook"
+    close = await _get_window_from_path(client.root_window, BACKPACK_CLOSE_BUTTON_PATH)
+    if close is None:
+        return "no close button on the spellbook"
+    await client.mouse_handler.click_window(close)
+    if not await wait_for(DECK_CONFIGURATION_PATH, False):
+        return "the click on the spellbook's close button did not close it"
+    return None
+
+
+def parse_size(value: str) -> tuple[int, int]:
+    width, height = value.lower().split("x")
+    return int(width), int(height)
+
+
 # --------------------------------------------------------------------------- commands
+
+
+async def cmd_pending(client, args) -> None:
+    """Read-only: where the pending byte is, from the code."""
+    handler = client.hook_handler
+    match = await handler.pattern_scan(VideoManagerHook.pattern, module=MODULE)
+    for label, at in (("test", PENDING_TEST_AT), ("clear", PENDING_CLEAR_AT), ("device", DEVICE_LOAD_AT)):
+        print(f"  {label} at match + {at:#x}: {(await handler.read_bytes(match + at, 7)).hex()}")
+    pending, device = await manager_offsets(handler)
+    print(f"  pending byte +{pending:#x}, device pointer +{device:#x}")
+    if args.refs:
+        async with Forcer(client, setmode=False) as forcer:
+            manager = await forcer.manager()
+        print(f"  video manager at {manager:#x}")
+        module_base = handler.process.process_base.lpBaseOfDll
+        module_end = module_base + handler.process.process_base.SizeOfImage
+        hits = pointers_into(client.process_id, manager, manager)
+        slots = [hit for hit in hits if module_base <= hit < module_end]
+        print(f"  {len(hits)} pointer(s), {len(slots)} in the module: {[hex(slot - module_base) for slot in slots]}")
+        code = await handler.read_bytes(module_base + 0x1000, 0x2000000)
+        for slot in slots:
+            reads = []
+            for match in re.finditer(rb"\x48\x8b[\x05\x0d\x15\x1d\x25\x2d\x35\x3d]....", code, re.DOTALL):
+                at = module_base + 0x1000 + match.start()
+                if at + 7 + struct.unpack_from("<i", code, match.start() + 3)[0] == slot:
+                    reads.append(at)
+            print(f"  slot +{slot - module_base:#x}: {len(reads)} mov reads")
+            for at in reads[:6]:
+                nearby = await handler.read_bytes(at, 24)
+                print(f"    +{at - module_base:#x} {nearby.hex(' ', 1)}")
+
+
+async def cmd_nodes(client, args) -> None:
+    """Read-only: the seed scan for each config node named, and a dump of each node."""
+    host = None
+    if args.embed:
+        w, h = client_size(client.window_handle)
+        host = Host(client.window_handle, w, h)
+        await host.settle(args.embed)
+    try:
+        await dump_nodes(client, args)
+    finally:
+        if host:
+            host.close()
+
+
+async def dump_nodes(client, args) -> None:
+    for name in args.names:
+        started = time.perf_counter()
+        nodes = await find_nodes(client, name)
+        print(f"  {name}: {len(nodes)} node(s) in {time.perf_counter() - started:.1f}s")
+        for node in nodes:
+            raw = await client.hook_handler.read_bytes(node["address"], args.span)
+            value = struct.unpack_from("<i", raw, NODE_INT)[0]
+            print(f"    {node['address']:#x} {NODE_TYPE_NAMES[node['type']]}, live {node['live']}, int {value}")
+            pointer = struct.unpack_from("<Q", raw, NODE_STRING)[0]
+            if node["type"] == 0x00 and pointer:
+                print(f"      string at {pointer:#x}: {await read_c_string(client.hook_handler, pointer)!r}")
+                around = await client.hook_handler.read_bytes(pointer - 16, 64)
+                print(f"      around it, from -0x10: {around.hex(' ', 8)}")
+            if args.dump:
+                for off in range(0, len(raw), 16):
+                    row = raw[off : off + 16]
+                    text = "".join(chr(b) if 32 <= b < 127 else "." for b in row)
+                    print(f"      +{off:#05x} {row.hex(' ', 4)}  {text}")
 
 
 async def cmd_info(client, args) -> None:
@@ -404,23 +680,48 @@ async def cmd_info(client, args) -> None:
 class Host:
     """A plain Qt window to embed the game in as a child, as BartleBot's ClientTile does."""
 
-    def __init__(self, hwnd: int, w: int, h: int) -> None:
-        from bartleby.qt.game_embed.win32_window import EmbeddedWindow
-        from PyQt6.QtWidgets import QApplication, QWidget
+    def __init__(self, hwnd: int, w: int, h: int, *, wide: bool = False, follow_focus: bool = False) -> None:
+        from PyQt6.QtGui import QFont
+        from PyQt6.QtWidgets import QApplication, QLabel, QWidget
 
         self.app = QApplication.instance() or QApplication(sys.argv)
         self.widget = QWidget()
         self.widget.setWindowTitle("probe_runtime_resize host")
-        self.widget.resize(max(w, 1400) // 1, max(h, 900))
+        self.widget.resize(1860 if wide else max(w, 1400), max(h, 940))
+        self.label = QLabel(self.widget)
+        self.label.setFont(QFont("Segoe UI", 14))
+        self.label.setWordWrap(True)
+        self.label.setGeometry(10, 780, self.widget.width() - 20, 150)
         self.widget.show()
+        self.follow_focus = False
+        self.windows: dict = {}
         self.pump()
-        self.window = EmbeddedWindow(hwnd)
-        self.window.embed(int(self.widget.winId()))
-        self.window.move(0, 0, w, h)
+        self.add(hwnd, w, h, 0)
+        self.window = self.windows[hwnd][0]
+        self.follow_focus = follow_focus
+
+    def add(self, hwnd: int, w: int, h: int, x: int) -> None:
+        from bartleby.qt.game_embed.win32_window import EmbeddedWindow
+
+        window = EmbeddedWindow(hwnd)
+        window.embed(int(self.widget.winId()))
+        window.move(x, 0, w, h)
+        self.windows[hwnd] = (window, x)
         self.pump()
+
+    def say(self, text: str) -> None:
+        self.label.setText(text)
+        self.pump()
+
+    def countdown(self, end: float) -> None:
+        left = max(0, round(end - time.monotonic()))
+        self.widget.setWindowTitle(f"Ends in {left} s. Close this window to end now; never kill the probe.")
 
     def pump(self) -> None:
         self.app.processEvents()
+        if self.follow_focus and user32.GetForegroundWindow() == int(self.widget.winId()):
+            if not self.window.is_focused():
+                self.window.focus()
 
     async def settle(self, seconds: float) -> None:
         end = time.monotonic() + seconds
@@ -428,19 +729,21 @@ class Host:
             self.pump()
             await asyncio.sleep(0.02)
 
-    def reembed(self, w: int, h: int) -> None:
+    def reembed(self, w: int, h: int, hwnd: int | None = None) -> None:
         """Embed again after the engine's apply put the window back on the desktop."""
         from bartleby.qt.game_embed.win32_window import child_style
 
-        hwnd = self.window.hwnd
+        hwnd = hwnd or self.window.hwnd
+        x = self.windows[hwnd][1]
         style = user32.GetWindowLongW(hwnd, GWL_STYLE) & 0xFFFFFFFF
         user32.SetParent(hwnd, int(self.widget.winId()))
         user32.SetWindowLongW(hwnd, GWL_STYLE, ctypes.c_long(child_style(style)).value)
-        user32.SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_NOZORDER | 0x20)  # SWP_FRAMECHANGED
+        user32.SetWindowPos(hwnd, 0, x, 0, w, h, SWP_NOZORDER | 0x20)  # SWP_FRAMECHANGED
         self.pump()
 
     def close(self) -> None:
-        self.window.restore()
+        for window, _x in self.windows.values():
+            window.restore()
         self.widget.close()
         self.pump()
 
@@ -463,11 +766,11 @@ async def cmd_force(client, args) -> None:
         await describe(client, "before", args.out)
         ui_slot = None
         if args.ui:
-            ui_slot = ui_candidates(args.out / "ui_scan.npz")
-            if len(ui_slot) != 1:
-                print(f"  !! --ui needs exactly one UI size slot from ui-scan, have {len(ui_slot)}")
+            node = await live_node(client, "UISize")
+            if node is None:
+                print("  !! no single live UISize node")
                 return
-            ui_slot = ui_slot[0]
+            ui_slot = node + NODE_INT
             ui_was = struct.unpack("<I", await client.hook_handler.read_bytes(ui_slot, 4))[0]
             await client.hook_handler.write_bytes(ui_slot, struct.pack("<I", UI_SIZES[args.ui]))
             print(f"  UI size slot {ui_slot:#x}: {ui_was} -> {UI_SIZES[args.ui]} ({args.ui})")
@@ -515,13 +818,416 @@ async def cmd_force(client, args) -> None:
             print(f"  restored to top level, client {client_size(hwnd)}")
 
 
+def forcer_for(client, args) -> Forcer:
+    """The node route, or with --hook the set-mode override the probe first proved."""
+    return Forcer(client, by_node=not args.hook)
+
+
+async def cmd_timeline(client, args) -> None:
+    """One apply, every change to the byte, the style, the parent, the window and the device."""
+    hwnd = client.window_handle
+    w0, h0 = client_size(hwnd)
+    host = Host(hwnd, w0, h0) if args.embed else None
+    ui = None
+    ui_was = None
+    if args.ui:
+        node = await live_node(client, "UISize")
+        ui = (node + NODE_INT, UI_SIZES[args.ui])
+        ui_was = struct.unpack("<i", await client.hook_handler.read_bytes(ui[0], 4))[0]
+    try:
+        async with forcer_for(client, args) as forcer:
+            result = await run_apply(client, forcer, args.width, args.height, host=host, ui=ui, after=args.after)
+            print(f"  byte cleared at {result.cleared_ms} ms")
+            for event in result.events:
+                print(f"    {event}")
+            if host:
+                host.reembed(args.width, args.height)
+            elif client_size(hwnd) != (args.width, args.height):
+                set_client_size(hwnd, args.width, args.height)
+            for shot_at, delay in ((0.0, 0.0), (0.1, 0.1), (0.3, 0.2), (1.0, 0.7), (3.0, 2.0)):
+                await (host.settle(delay) if host else asyncio.sleep(delay))
+                print(f"  shot +{shot_at:.1f}s: {screenshot(hwnd, args.out / f'timeline_{shot_at:.1f}.png')}")
+            print(f"  problems: {await size_problems(client, forcer, args.width, args.height) or 'none'}")
+            print(f"  camera {await frustum(client)}")
+            await (host.settle(args.hold) if host else asyncio.sleep(args.hold))
+            back = run_apply(client, forcer, w0, h0, host=host, ui=(ui[0], ui_was) if ui else None)
+            print(f"  back: byte cleared at {(await back).cleared_ms} ms")
+            if host:
+                host.reembed(w0, h0)
+            elif client_size(hwnd) != (w0, h0):
+                set_client_size(hwnd, w0, h0)
+            await (host.settle(0.5) if host else asyncio.sleep(0.5))
+    finally:
+        if host:
+            host.close()
+    print(f"  ended at client {client_size(hwnd)}, style {user32.GetWindowLongW(hwnd, GWL_STYLE) & 0xFFFFFFFF:#010x}")
+
+
+async def cmd_soak(client, args) -> None:
+    """Many resizes on one client with the hooks held, embedded, then give everything back."""
+    from bartleby.runtime.game.game_sizing import ui_size_for
+
+    handler = client.hook_handler
+    hwnd = client.window_handle
+    w0, h0 = client_size(hwnd)
+    node = await live_node(client, "UISize")
+    if node is None:
+        print("  !! no single live UISize node")
+        return
+    slot = node + NODE_INT
+    preferred = struct.unpack("<i", await handler.read_bytes(slot, 4))[0]
+    sizes = [parse_size(size) for size in args.sizes]
+    if args.click:
+        await client.activate_hooks(wait_for_ready=True, timeout=30)
+    host = Host(hwnd, w0, h0)
+    failures = 0
+    times: list[float] = []
+    try:
+        await host.settle(0.5)
+        async with forcer_for(client, args) as forcer:
+            cave = handler._autobot_pos
+            if args.click:
+                await handler.activate_mouseless_cursor_hook()
+                print(f"  click at {w0}x{h0} before any resize: {await click_lands(client) or 'landed'}")
+            print(f"  hooks held; cave at {cave} of {handler.AUTOBOT_SIZE}, {args.count} resizes")
+            for i in range(args.count):
+                width, height = sizes[i % len(sizes)]
+                ui_value = ui_size_for(preferred, (width, height))
+                result = await run_apply(client, forcer, width, height, host=host, ui=(slot, ui_value))
+                if result.cleared_ms is None:
+                    print("\n".join(result.events))
+                    print(f"  !! {i + 1}: the apply never finished; stopping")
+                    failures += 1
+                    break
+                host.reembed(width, height)
+                await host.settle(args.settle)
+                problems = await size_problems(client, forcer, width, height)
+                clicked = await click_lands(client) if args.click else None
+                failures += bool(problems or clicked)
+                times.append(result.cleared_ms)
+                print(
+                    f"  {i + 1:2}: {width}x{height} UI {ui_value}, clear {result.cleared_ms:5.0f} ms, "
+                    f"{problems or 'sizes right'}, click {clicked or ('landed' if args.click else 'not tried')}, "
+                    f"{await frustum(client)}"
+                )
+                if i < len(sizes):
+                    screenshot(hwnd, args.out / f"soak_{width}x{height}.png")
+            print(f"  cave at {handler._autobot_pos} after {len(times)}; {failures} failure(s)")
+            if times:
+                print(f"  clear: min {min(times):.0f}, max {max(times):.0f}, mean {sum(times) / len(times):.0f} ms")
+            result = await run_apply(client, forcer, w0, h0, host=host, ui=(slot, preferred))
+            host.reembed(w0, h0)
+            await host.settle(0.5)
+            print(f"  back at {w0}x{h0} UI {preferred}: {await size_problems(client, forcer, w0, h0) or 'sizes right'}")
+            if args.click:
+                await handler.deactivate_mouseless_cursor_hook()
+    finally:
+        host.close()
+    print(f"  unhooked; client {client_size(hwnd)}")
+
+
+async def cmd_res_node(client, args) -> None:
+    """Does writing the Resolution string node and the byte resize, with no set-mode hook?"""
+    handler = client.hook_handler
+    hwnd = client.window_handle
+    w0, h0 = client_size(hwnd)
+    string, old = await read_resolution(client)
+    print(f"  Resolution string at {string:#x}: {old!r}, {(await handler.read_bytes(string, 32)).hex(' ', 8)}")
+    async with Forcer(client, setmode=False) as forcer:
+        await write_resolution(client, args.width, args.height)
+        try:
+            result = await run_apply(client, forcer, None, None, after=2.0)
+            print(f"  byte cleared at {result.cleared_ms} ms, with no set-mode hook")
+            for event in result.events:
+                print(f"    {event}")
+            print(f"  shot: {screenshot(hwnd, args.out / 'res_node.png')}")
+            manager = await forcer.manager()
+            print(f"  client {client_size(hwnd)}, device {await device_size(handler, manager, forcer.device_off)}")
+        finally:
+            await write_resolution(client, w0, h0)
+        result = await run_apply(client, forcer, None, None, after=1.0)
+        print(f"  string put back, applied again: byte cleared at {result.cleared_ms} ms")
+        manager = await forcer.manager()
+        device = await device_size(handler, manager, forcer.device_off)
+        print(f"  client {client_size(hwnd)}, device {device}")
+
+
+async def cmd_focus(client, args) -> None:
+    """Keyboard focus and a held key across a resize, embedded: the user holds W for the first part."""
+    from wizwalker.constants import Keycode
+
+    handler = client.hook_handler
+    hwnd = client.window_handle
+    w0, h0 = client_size(hwnd)
+    await client.activate_hooks(wait_for_ready=True, timeout=30)
+    host = Host(hwnd, w0, h0, follow_focus=True)
+    window = host.window
+
+    async def phase(label: str, seconds: float) -> None:
+        """How far the wizard walks in this phase, and whether W was down and the game had focus."""
+        moved = 0.0
+        held = focused = samples = 0
+        last = await client.body.position()
+        end = time.monotonic() + seconds
+        while time.monotonic() < end:
+            await host.settle(0.1)
+            now = await client.body.position()
+            moved += ((now.x - last.x) ** 2 + (now.y - last.y) ** 2) ** 0.5
+            last = now
+            samples += 1
+            held += bool(user32.GetAsyncKeyState(0x57) & 0x8000)
+            focused += window.is_focused()
+        print(f"  {label}: walked {moved:7.0f}; W down {held}/{samples}, focused {focused}/{samples}")
+
+    async def resize(width: int, height: int) -> None:
+        result = await run_apply(client, forcer, width, height, host=host)
+        host.reembed(width, height)
+        print(
+            f"  resized to {width}x{height}: clear {result.cleared_ms} ms; focused right after: {window.is_focused()}"
+        )
+
+    try:
+        async with forcer_for(client, args) as forcer:
+            window.focus()
+            print(f"  focused after embedding and focus(): {window.is_focused()}")
+            host.say(f"Find open ground. Then HOLD W and keep holding it. Resize in {args.lead:.0f} s...")
+            await phase("real W, before the resize", args.lead)
+            host.say("RESIZING. KEEP HOLDING W.")
+            host.follow_focus = False
+            print(f"  W down at the resize: {bool(user32.GetAsyncKeyState(0x57) & 0x8000)}")
+            await resize(args.width, args.height)
+            host.say("KEEP HOLDING W. No focus call has been made yet.")
+            await phase("real W, held through, no focus call", 5)
+            window.focus()
+            print(f"  focus() after the resize: {window.is_focused()}")
+            host.say("KEEP HOLDING W. focus() has now been called.")
+            await phase("real W, held through, after focus()", 5)
+            host.say("Let go of W. Then tap-and-hold W again.")
+            await phase("real W, pressed anew", 6)
+            host.say("Let go of W, and leave the keyboard. The probe posts W itself now.")
+            await asyncio.sleep(3)
+            posted = asyncio.create_task(client.send_key(Keycode.W, 9))
+            await phase("posted W, before the resize", 3)
+            await resize(w0, h0)
+            await phase("posted W, held through", 4)
+            await posted
+            await phase("after the posted W ended", 2)
+            host.say("Done.")
+            await host.settle(0.5)
+    finally:
+        host.close()
+    print(f"  unhooked; client {client_size(hwnd)}; {handler._autobot_pos} cave bytes before close")
+
+
+async def cmd_watch(client, args) -> None:
+    """Hold a client at a size while the user plays, with a shot at each change and an optional swap."""
+    from bartleby.runtime.game.game_sizing import ui_size_for
+
+    handler = client.hook_handler
+    hwnd = client.window_handle
+    w0, h0 = client_size(hwnd)
+    node = await live_node(client, "UISize")
+    if node is None:
+        print("  !! no single live UISize node")
+        return
+    slot = node + NODE_INT
+    preferred = struct.unpack("<i", await handler.read_bytes(slot, 4))[0]
+    await client.activate_hooks(wait_for_ready=True, timeout=30)
+    host = Host(hwnd, w0, h0, follow_focus=True)
+    swap_to = parse_size(args.swap) if args.swap else None
+    shots = 0
+
+    async def shot(label: str) -> None:
+        nonlocal shots
+        shots += 1
+        print(f"    shot {screenshot(hwnd, args.out / f'watch_{shots:03}_{label}.png')}")
+
+    async def to_size(forcer, width: int, height: int) -> None:
+        result = await run_apply(
+            client, forcer, width, height, host=host, ui=(slot, ui_size_for(preferred, (width, height)))
+        )
+        host.reembed(width, height)
+        window = host.window
+        window.focus()
+        problems = await size_problems(client, forcer, width, height)
+        print(
+            f"  [{time.strftime('%X')}] resized to {width}x{height}: clear {result.cleared_ms} ms, {problems or 'sizes right'}"
+        )
+
+    async def state() -> tuple:
+        try:
+            zone = await client.zone_name()
+            battle = await client.in_battle()
+            loading = await client.is_loading()
+            dialog = await client.is_in_dialog()
+        except Exception as e:  # noqa: BLE001
+            return (f"unreadable {type(e).__name__}",)
+        return zone, battle, loading, dialog
+
+    try:
+        await host.settle(0.5)
+        async with forcer_for(client, args) as forcer:
+            width, height = args.width, args.height
+            await to_size(forcer, width, height)
+            host.say(args.say or "Play: the probe is watching. It restores this window when it ends.")
+            last = None
+            last_aspect = None
+            end = time.monotonic() + args.seconds
+            while time.monotonic() < end and host.widget.isVisible():
+                host.countdown(end)
+                await host.settle(args.every)
+                if not user32.GetParent(hwnd):
+                    style = user32.GetWindowLongW(hwnd, GWL_STYLE) & 0xFFFFFFFF
+                    print(
+                        f"  [{time.strftime('%X')}] !! the game left its tile: client {client_size(hwnd)}, {style:#010x}"
+                    )
+                    host.reembed(width, height)
+                    window = host.window
+                    window.focus()
+                now = await state()
+                aspect = (await frustum(client))[:13]
+                if now != last or aspect != last_aspect:
+                    labels = ("zone", "battle", "loading", "dialog")
+                    readable = dict(zip(labels, now, strict=False)) if len(now) == 4 else now
+                    print(f"  [{time.strftime('%X')}] {readable}, camera {aspect}, client {client_size(hwnd)}")
+                    await host.settle(1.0)
+                    await shot("battle" if len(now) == 4 and now[1] else "world")
+                    entered = len(now) == 4 and (
+                        not last or len(last) != 4 or (now[1] and not last[1]) or (now[3] and not last[3])
+                    )
+                    if swap_to and last is not None and entered and (now[1] or now[3]):
+                        await to_size(forcer, *swap_to)
+                        await host.settle(3.0)
+                        await shot("swapped")
+                        await to_size(forcer, width, height)
+                        await host.settle(1.0)
+                        await shot("swapped_back")
+                    last, last_aspect = now, aspect
+            host.say("Restoring...")
+            result = await run_apply(client, forcer, w0, h0, host=host, ui=(slot, preferred))
+            host.reembed(w0, h0)
+            await host.settle(0.5)
+            print(
+                f"  back at {w0}x{h0}: clear {result.cleared_ms} ms, {await size_problems(client, forcer, w0, h0) or 'sizes right'}"
+            )
+    finally:
+        host.close()
+    print(f"  unhooked; client {client_size(hwnd)}")
+
+
+async def cmd_pair(clients, args) -> None:
+    """Two clients resizing at once, swapping a large size and a small one, as Main changing hands does."""
+    from bartleby.runtime.game.game_sizing import ui_size_for
+
+    if len(clients) != 2:
+        print(f"  !! needs two clients, have {[c.process_id for c in clients]}")
+        return
+    large, small = parse_size(args.large), parse_size(args.small)
+    first, second = clients
+    sizes = {client: client_size(client.window_handle) for client in clients}
+    slots = {}
+    preferred = {}
+    for client in clients:
+        node = await live_node(client, "UISize")
+        if node is None:
+            print(f"  !! {client.process_id}: no single live UISize node")
+            return
+        slots[client] = node + NODE_INT
+        preferred[client] = struct.unpack("<i", await client.hook_handler.read_bytes(slots[client], 4))[0]
+    if args.click:
+        await asyncio.gather(*(c.activate_hooks(wait_for_ready=True, timeout=30) for c in clients))
+    host = Host(first.window_handle, *sizes[first], wide=True)
+    host.add(second.window_handle, *sizes[second], large[0] + 10)
+
+    async def one(client, forcer, size) -> str:
+        ui = (slots[client], ui_size_for(preferred[client], size))
+        result = await run_apply(client, forcer, *size, host=host, ui=ui)
+        host.reembed(*size, client.window_handle)
+        await host.settle(args.settle)
+        problems = await size_problems(client, forcer, *size)
+        clicked = await click_lands(client) if args.click else None
+        camera = (await frustum(client))[:13]
+        return (
+            f"{size[0]}x{size[1]} UI {ui[1]}, clear {result.cleared_ms} ms, {problems or 'sizes right'}, "
+            f"click {clicked or ('landed' if args.click else 'not tried')}, {camera}"
+        )
+
+    try:
+        await host.settle(0.5)
+        async with forcer_for(first, args) as first_forcer, forcer_for(second, args) as second_forcer:
+            if args.click:
+                await asyncio.gather(*(c.hook_handler.activate_mouseless_cursor_hook() for c in clients))
+            for i in range(args.count):
+                first_size, second_size = (large, small) if i % 2 == 0 else (small, large)
+                started = time.perf_counter()
+                done = await asyncio.gather(
+                    one(first, first_forcer, first_size), one(second, second_forcer, second_size)
+                )
+                print(f"  {i + 1:2}: both in {time.perf_counter() - started:.2f}s, settle and checks included")
+                print(f"      {first.process_id}: {done[0]}")
+                print(f"      {second.process_id}: {done[1]}")
+                screenshot(first.window_handle, args.out / f"pair_{i % 2}_first.png")
+                screenshot(second.window_handle, args.out / f"pair_{i % 2}_second.png")
+            await asyncio.gather(
+                run_apply(first, first_forcer, *sizes[first], host=host, ui=(slots[first], preferred[first])),
+                run_apply(second, second_forcer, *sizes[second], host=host, ui=(slots[second], preferred[second])),
+            )
+            for client in clients:
+                host.reembed(*sizes[client], client.window_handle)
+            await host.settle(0.5)
+            if args.click:
+                await asyncio.gather(*(c.hook_handler.deactivate_mouseless_cursor_hook() for c in clients))
+    finally:
+        host.close()
+    print(f"  unhooked; {[client_size(c.window_handle) for c in clients]}")
+
+
+def files_state(out: Path) -> Path:
+    return out / "files"
+
+
+def cmd_files_snap(install: Path, out: Path) -> None:
+    saved = files_state(out)
+    saved.mkdir(exist_ok=True)
+    for name in ("config.xml", "preferences.xml"):
+        (saved / name).write_bytes((install / "Bin" / name).read_bytes())
+    (saved / "install.json").write_text(json.dumps({"install": str(install)}), encoding="utf-8")
+    print(f"  saved; config UISize={xml_value(saved / 'config.xml', 'UISize')}, ", end="")
+    print(f"preferences Resolution={xml_value(saved / 'preferences.xml', 'Resolution')}")
+
+
+def cmd_files_after(args) -> int:
+    """Compare the game's files with the snapshot; ``restore`` puts the snapshot back."""
+    saved = files_state(args.out)
+    install = Path(json.loads((saved / "install.json").read_text(encoding="utf-8"))["install"])
+    for name, tag in (("config.xml", "UISize"), ("preferences.xml", "Resolution")):
+        before, now = saved / name, install / "Bin" / name
+        same = before.read_bytes() == now.read_bytes()
+        print(
+            f"  {name}: {tag} {xml_value(before, tag)} -> {xml_value(now, tag)}, {'identical' if same else 'changed'}"
+        )
+        if not same:
+            old_lines = before.read_text(encoding="utf-8", errors="replace").splitlines()
+            new_lines = now.read_text(encoding="utf-8", errors="replace").splitlines()
+            changed = [
+                re.sub(r"\s+", " ", b).strip()[:60] for a, b in zip(old_lines, new_lines, strict=False) if a != b
+            ]
+            print(
+                f"    {len(changed)} line(s) differ: tags {sorted({m[1] for c in changed if (m := re.match(r'<(\w+)', c))})}"
+            )
+        if args.action == "restore" and not same:
+            now.write_bytes(before.read_bytes())
+            print("    put back from the snapshot")
+    return 0
+
+
 async def cmd_vm_diff(client, args) -> None:
     saved = args.out / "vm_snapshot.bin"
     meta = args.out / "vm_snapshot.json"
-    span = MGR_PENDING_FLAG_OFF + 0x1000
     if not await check_patterns(client):
         return
     async with Forcer(client, setmode=False) as forcer:
+        span = forcer.pending_off + 0x1000
         mgr = await forcer.manager()
         if not mgr:
             print("  !! video manager never captured")
@@ -754,12 +1460,39 @@ async def cmd_ui_scan(client, args) -> None:
     await describe(client, "ui_applied", args.out)
 
 
+class Tee:
+    """Stdout and a log file, flushed at each write, so a run that is killed keeps its log."""
+
+    def __init__(self, stream, path: Path) -> None:
+        self.stream = stream
+        self.log = path.open("a", encoding="utf-8")
+
+    def write(self, text: str) -> int:
+        self.log.write(text)
+        self.log.flush()
+        self.stream.flush()
+        return self.stream.write(text)
+
+    def flush(self) -> None:
+        self.stream.flush()
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--out", type=Path, default=Path(tempfile.gettempdir()) / "probe_runtime_resize")
     parser.add_argument("--pid", type=int, help="which client, when more than one runs")
+    parser.add_argument("--hook", action="store_true", help="resize by SetModeResHook, not the Resolution node")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("info").set_defaults(fn=cmd_info)
+    pending = sub.add_parser("pending")
+    pending.add_argument("--refs", action="store_true", help="hook for a moment, and list what points at the manager")
+    pending.set_defaults(fn=cmd_pending)
+    nodes = sub.add_parser("nodes")
+    nodes.add_argument("names", nargs="*", default=["UISize", "Resolution"])
+    nodes.add_argument("--dump", action="store_true", help="print each node's bytes")
+    nodes.add_argument("--embed", type=float, default=0.0, help="embed first, and wait this many seconds")
+    nodes.add_argument("--span", type=lambda v: int(v, 0), default=0x80, help="how many bytes of each node to read")
+    nodes.set_defaults(fn=cmd_nodes)
     force = sub.add_parser("force")
     force.add_argument("width", type=int)
     force.add_argument("height", type=int)
@@ -769,6 +1502,47 @@ async def main() -> int:
     force.add_argument("--aspect", action="store_true", help="write the camera frustum to the new aspect")
     force.add_argument("--hold", type=float, default=3.0, help="seconds at the forced size before restoring")
     force.set_defaults(fn=cmd_force)
+    timeline = sub.add_parser("timeline")
+    timeline.add_argument("width", type=int)
+    timeline.add_argument("height", type=int)
+    timeline.add_argument("--embed", action="store_true")
+    timeline.add_argument("--ui", choices=list(UI_SIZES))
+    timeline.add_argument("--after", type=float, default=1.0, help="seconds to keep watching after the byte clears")
+    timeline.add_argument("--hold", type=float, default=2.0)
+    timeline.set_defaults(fn=cmd_timeline)
+    soak = sub.add_parser("soak")
+    soak.add_argument("--count", type=int, default=30)
+    soak.add_argument("--sizes", nargs="+", default=["1024x768", "480x360", "640x480", "800x600"])
+    soak.add_argument("--click", action="store_true", help="open and close the spellbook after each resize")
+    soak.add_argument("--settle", type=float, default=0.3)
+    soak.set_defaults(fn=cmd_soak)
+    res_node = sub.add_parser("res-node")
+    res_node.add_argument("width", type=int)
+    res_node.add_argument("height", type=int)
+    res_node.set_defaults(fn=cmd_res_node)
+    focus = sub.add_parser("focus")
+    focus.add_argument("width", type=int)
+    focus.add_argument("height", type=int)
+    focus.add_argument("--lead", type=float, default=15.0, help="seconds to get ready and hold W")
+    focus.set_defaults(fn=cmd_focus)
+    watch = sub.add_parser("watch")
+    watch.add_argument("width", type=int)
+    watch.add_argument("height", type=int)
+    watch.add_argument("--seconds", type=float, default=120.0)
+    watch.add_argument("--every", type=float, default=1.0)
+    watch.add_argument("--swap", help="on entering combat or a dialog, go to this size and back, e.g. 480x360")
+    watch.add_argument("--say", help="what the host window tells the user")
+    watch.set_defaults(fn=cmd_watch)
+    pair = sub.add_parser("pair")
+    pair.add_argument("--count", type=int, default=6)
+    pair.add_argument("--large", default="1024x768")
+    pair.add_argument("--small", default="480x360")
+    pair.add_argument("--click", action="store_true")
+    pair.add_argument("--settle", type=float, default=0.3)
+    pair.set_defaults(fn_all=cmd_pair)
+    files = sub.add_parser("files")
+    files.add_argument("action", choices=["snap", "compare", "restore"])
+    files.set_defaults(fn=None)
     vm = sub.add_parser("vm-diff")
     vm.add_argument("action", choices=["snap", "compare"])
     vm.set_defaults(fn=cmd_vm_diff)
@@ -778,9 +1552,16 @@ async def main() -> int:
     ui.set_defaults(fn=cmd_ui_scan)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    sys.stdout = Tee(sys.stdout, args.out / f"{args.cmd}.log")
+
+    if args.cmd == "files" and args.action != "snap":
+        return cmd_files_after(args)
 
     async with ClientHandler() as handler:
         clients = handler.get_new_clients()
+        if args.cmd == "pair":
+            await args.fn_all(clients, args)
+            return 0
         if args.pid:
             clients = [c for c in clients if c.process_id == args.pid]
         if len(clients) != 1:
@@ -788,6 +1569,9 @@ async def main() -> int:
             return 1
         client = clients[0]
         print(f"client pid {client.process_id}, hwnd {client.window_handle:#x}")
+        if args.cmd == "files":
+            cmd_files_snap(install_of_client(process_executable(client.process_id)), args.out)
+            return 0
         await args.fn(client, args)
     return 0
 
