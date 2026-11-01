@@ -3,7 +3,9 @@
 BartleBuddy wants the window the user plays in to be large and the followers' small, and
 the client that is played can change mid-session. BartleBot sizes a client only at launch,
 by patching ``preferences.xml`` and ``config.xml`` (bartleby-core/docs/WINDOW_SIZING.md). This probe asks
-what a running client allows, in three parts.
+what a running client allows, in three parts, and then measures what the Live Client Resize
+plan (BartleWorks/BartleBuddy#3) assumes: see RESULTS (2026-11-01), which replace the recipe
+in the earlier RESULTS.
 
 FORCE (Deimos's resolution forcer, without its drag border)
     Two pattern-scanned hooks, ported from Deimos's vendored wizsprinter
@@ -28,7 +30,77 @@ UI-SCAN (where the UI size lives)
     Large 3, Huge 4). ``ui-scan try`` then writes a value to the survivors and triggers a
     mode apply at the current size, to see whether the HUD rescales.
 
-RESULTS (2026-10-28, live r806919, one client launched at 800x600, Regular)
+RESULTS (2026-11-01, the live realm's build, the same offsets as r806919; three client sessions,
+one and two at once, 4:3 and 16:9, on Stage 1 of the plan; a 3840x2160 display, with the game
+sizes of two accounts on 1080p, in physical pixels)
+    THE RECIPE. Write the live ``Resolution`` node's string and the live ``UISize`` node, then
+    set the pending byte. Nothing else: no set-mode hook, no camera write. The game takes the
+    size from the node, moves its own device, window and camera, and draws the HUD as it would
+    have chosen itself. A top-level window follows by itself. An embedded one is popped out as a
+    hidden top-level window by the time the byte clears, and has to be embedded again. A
+    video manager is still needed for the byte: VideoManagerHook captures it, and one static slot
+    also holds it (module + 0x3320FF0, read by 4,168 ``mov``s), so a hook may not be needed at all.
+
+    Each question the plan asked:
+
+    * The set-mode hook? Not needed. It only overrides set-mode's arguments, so the game goes on
+      believing the old size: the HUD stayed at the old scale, and the device's own fields did
+      not move. Writing those fields does nothing either, since the apply rewrites them from
+      the node. ``--hook`` runs that route still, to compare.
+    * The pending byte's offset? Read from code at match + 0x3D and + 0x1A0, which agree: +0x2229B
+      on the live client, and on disk +0x2229B on the live exe, +0x222A3 on the Test realm's, with
+      the device pointer at +0x222A0 and +0x222A8. The Test realm was read from its exe, and
+      never run.
+    * Does the byte clear only once the apply is done? Yes, and that is a good done signal: 18 to 41
+      ms alone, 22 to 602 ms with two clients at once. The clear comes after the device reset
+      in the same function, a failed attempt skips it and retries on the next frame, and on the
+      first shot after it (about 0.1 s) the picture is right. No fixed wait is needed. The old
+      "~1.5 s" was only how long the probe slept.
+    * Thirty in a row, then an unhook and a close? Clean on two clients, embedded, each at four
+      sizes, with the cave flat at 600 bytes. The second was then quit normally, as was the client
+      beside it, with no crash event from either.
+    * Does a click land after a change of size and UI size? Yes, on every one of 72: the HUD's
+      spellbook button opens the book and its close button closes it, 60 in the soaks and 12 with two
+      clients, at 480x360 to 1280x720, Micro to Regular.
+    * The 3D view in the world, in combat and after a zone change? Right, from screenshots at 1280x720
+      and 534x300. A resize also corrects the camera: 1.3333 at 1024x768 from a 16:9 launch, read
+      in the world only. So the launch-aspect limit no longer has the reason it was given.
+    * Two clients at once? Correct, 6 of 6 swaps of 1280x720 and 534x300, each 1.1 to 1.6 s with the
+      settling and a click in each included. No queue is needed.
+    * In combat, or with a dialog open? One swap during card selection: the timer ran on, the cards
+      redrew, and the user played on. The user went through a dialog with a resize in it, with no
+      issues. A swap during a round's animation was not tried.
+    * Focus and a held key? Both hold. W held down through an embedded resize walks 4,277 in the five
+      seconds after it and 4,284 in the next five, with focus throughout and no focus call
+      needed. A posted W holds too, and walking stops when it ends, so nothing sticks. Before the
+      first resize a click on the probe's host takes focus from the game, which is the host's
+      doing, not a tile's: ``follow_focus`` stands in for the tile's grant.
+    * The seed scan? It finds more than two nodes, and the count moves: 2 to 4 ``UISize`` and 2 to
+      5 ``Resolution``. +0x45 alone does not pick the live one, nor does +0x40, which is 0x28 or 0x20
+      from one session to the next. What holds on all three sessions: the live ``UISize`` is the
+      one with +0x45 == 1 and a pointer at +0x18, and the live ``Resolution`` is the one with a
+      pointer at +0x18 under the same parent (+0x38). The other parent holds the defaults, with
+      "autodetect" for ``Resolution``. The other class (a second vtable) never has the pointer, and
+      copies of it come and go, some with +0x45 == 1, as when a window was embedded.
+      Each scan takes 1.1 to 2.4 s.
+    * The string's layout? +0x18 points at an MSVC std::string: 16 bytes inline, the size at +0x10,
+      the capacity at +0x18. Write the text and the size: leave the size and "1024x768" reads as
+      "1024x76". The ladder's longest is 9 characters, so a size fits inline.
+    * What does the game save? On exit ``config.xml`` is rewritten with the file's own ``UISize``,
+      even from a client set to Small, and ``preferences.xml`` is not touched. During a session the
+      user's options menu writes at once, and while a window was embedded both files were
+      rewritten as well, with ``Resolution`` holding the size of the moment: 1024x768 and 1280x720
+      were both seen, written around a resize. A top-level 640x360 was still not on disk after
+      its client quit. Clients share the files. So a temporary size can reach
+      ``preferences.xml``; a temporary ``UISize`` was not seen to reach ``config.xml``.
+
+    Two things learned the hard way. The game's window dies with its host: killing a probe that
+    has it embedded destroys the window, and the process goes on with no window at all, so it needs
+    ending and a relaunch. And PrintWindow returns all white once a device has been reset, while the
+    game draws normally, so ``screenshot`` reads the screen. The white frames in the RESULTS below were
+    probably that, not frames the game drew.
+
+RESULTS (2026-10-28, live r806919, one client launched at 800x600, Regular; the recipe is replaced)
     A running client resizes, UI size included, in about two seconds and inside its tile.
     The recipe, in order:
 
@@ -81,16 +153,17 @@ RESULTS (2026-10-28, live r806919, one client launched at 800x600, Regular)
     the first 0x23000 bytes of the video manager that holds a size: 32 fields moved, frame
     counters and a frustum copy (+0x22A40/44, -/+0.849 -> -/+1.133). ``Resolution`` is a
     string node (type 0x00) like ``UISize``'s: writing it and setting the pending byte might
-    resize through the game's own path with no set-mode hook. Untested.
+    resize through the game's own path with no set-mode hook. It does: RESULTS (2026-11-01).
 
     Deimos's drag border (``WS_THICKFRAME`` plus a WndProc hook) is not needed and is left
     out: a size changes only when the app asks for it.
 
 HOW TO RUN
-    One client, in the world, out of combat. BartleBot closed: this takes hooks of its own,
-    and two processes hooking one client corrupt each other's code cave. Every hook is
-    removed before the probe exits; a probe killed mid-run can leave a jump into freed
-    memory, so restart the client after one.
+    One client, in the world, out of combat (``pair`` takes two). BartleBot closed: this takes
+    hooks of its own, and two processes hooking one client corrupt each other's code cave. Every
+    hook is removed before the probe exits; a probe killed mid-run can leave a jump into freed
+    memory, and takes an embedded window with it, so restart the client after one. Close the
+    host window instead: ``watch`` ends on that, and on its countdown in the title bar.
 
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py info
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py force 960 540 --restore
@@ -103,8 +176,26 @@ HOW TO RUN
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py ui-scan next Small
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py ui-scan try Tiny
 
-    Screenshots and saved state go to ``--out`` (default: the system temp folder), never the
-    repo: they show the wizard, and the repo holds no player data.
+    What the plan measures, each on the Resolution node unless ``--hook``:
+
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py pending --refs
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py nodes UISize Resolution --dump
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py timeline 1024 768 --embed --ui Regular
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py soak --count 30 --click
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py res-node 1024 768
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py focus 1280 720
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py watch 1280 720 --swap 534x300
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py pair --large 1280x720 --small 534x300 --click
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py files snap
+          (then leave a size with timeline --leave, watch the files, and quit the game:)
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py files watch
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py files compare
+
+    ``focus`` and ``watch`` need the user at the game. Tell them what to do, how long it takes and
+    how it ends before starting.
+
+    Screenshots, logs and saved state go to ``--out`` (default: the system temp folder), never
+    the repo: they show the wizard, and the repo holds no player data.
 """
 
 from __future__ import annotations
@@ -116,6 +207,7 @@ import ctypes.wintypes as wt
 import json
 import re
 import struct
+import subprocess
 import sys
 import tempfile
 import time
@@ -408,13 +500,12 @@ async def check_patterns(client) -> bool:
 
 
 # A config node's fields (RESULTS, "WHERE UISIZE LIVES").
-NODE_NAME, NODE_TYPE, NODE_LIVE, NODE_INT, NODE_STRING = 0x50, 0x44, 0x45, 0x14, 0x18
-NODE_CLASS = 0x40  # 0x28 on the class holding the live settings; a second class has 0x20 here
-NODE_PARENT = 0x38  # zero on the copies of Resolution that exist while a window is embedded
+NODE_NAME, NODE_TYPE, NODE_MARK, NODE_INT, NODE_STRING = 0x50, 0x44, 0x45, 0x14, 0x18
+NODE_PARENT = 0x38  # the settings a node belongs to: the user's, or the defaults
 NODE_TYPE_NAMES = {0x00: "string", 0x02: "int", 0x08: "float"}
 
 
-async def find_nodes(client, name: str) -> list[dict]:
+async def scan_nodes(client, name: str) -> list[dict]:
     """Every config node called *name*: a seed scan for the name, then a check of the node around it."""
     handler = client.hook_handler
     base = handler.process.process_base.lpBaseOfDll
@@ -426,12 +517,33 @@ async def find_nodes(client, name: str) -> list[dict]:
         except Exception:  # noqa: BLE001
             continue
         vtable = struct.unpack_from("<Q", raw, 0)[0]
-        if not base <= vtable < end or raw[NODE_TYPE] not in NODE_TYPE_NAMES or raw[NODE_LIVE] > 1:
+        if not base <= vtable < end or raw[NODE_TYPE] not in NODE_TYPE_NAMES or raw[NODE_MARK] > 1:
             continue
-        parent = struct.unpack_from("<Q", raw, NODE_PARENT)[0]
-        live = bool(parent) and raw[NODE_CLASS] == 0x28 and raw[NODE_LIVE] == 1
-        found.append({"address": hit - NODE_NAME, "type": raw[NODE_TYPE], "live": live})
+        found.append(
+            {
+                "address": hit - NODE_NAME,
+                "type": raw[NODE_TYPE],
+                "marked": raw[NODE_MARK] == 1,
+                "text": struct.unpack_from("<Q", raw, NODE_STRING)[0] != 0,
+                "parent": struct.unpack_from("<Q", raw, NODE_PARENT)[0],
+            }
+        )
     return found
+
+
+async def find_nodes(client, name: str) -> list[dict]:
+    """The scan, with each node's ``live`` worked out: every session has several of each name.
+
+    Only one UISize node is both marked and holds a string pointer. It names the user's settings,
+    its parent; the other Resolution of the same class, holding "autodetect", is under the defaults.
+    The second class's copies, some of them there only while a window is embedded, hold no pointer.
+    """
+    nodes = await scan_nodes(client, name)
+    anchors = nodes if name == "UISize" else await scan_nodes(client, "UISize")
+    parents = {node["parent"] for node in anchors if node["marked"] and node["text"]}
+    for node in nodes:
+        node["live"] = node["text"] and node["parent"] in parents and (name != "UISize" or node["marked"])
+    return nodes
 
 
 async def live_node(client, name: str) -> int | None:
@@ -849,6 +961,9 @@ async def cmd_timeline(client, args) -> None:
                 print(f"  shot +{shot_at:.1f}s: {screenshot(hwnd, args.out / f'timeline_{shot_at:.1f}.png')}")
             print(f"  problems: {await size_problems(client, forcer, args.width, args.height) or 'none'}")
             print(f"  camera {await frustum(client)}")
+            print(f"  on disk: {settings_on_disk(install_of_client(process_executable(client.process_id)))}")
+            if args.leave:
+                return
             await (host.settle(args.hold) if host else asyncio.sleep(args.hold))
             back = run_apply(client, forcer, w0, h0, host=host, ui=(ui[0], ui_was) if ui else None)
             print(f"  back: byte cleared at {(await back).cleared_ms} ms")
@@ -1138,6 +1253,7 @@ async def cmd_pair(clients, args) -> None:
         await asyncio.gather(*(c.activate_hooks(wait_for_ready=True, timeout=30) for c in clients))
     host = Host(first.window_handle, *sizes[first], wide=True)
     host.add(second.window_handle, *sizes[second], large[0] + 10)
+    host.say(f"Two clients at once: no input needed. {args.count} swaps, about {args.count * 5} s. It ends by itself.")
 
     async def one(client, forcer, size) -> str:
         ui = (slots[client], ui_size_for(preferred[client], size))
@@ -1182,6 +1298,37 @@ async def cmd_pair(clients, args) -> None:
     print(f"  unhooked; {[client_size(c.window_handle) for c in clients]}")
 
 
+def settings_on_disk(install: Path) -> str:
+    """What the two files hold now, and when each was last written."""
+    preferences, config = install / "Bin" / "preferences.xml", install / "Bin" / "config.xml"
+    return (
+        f"Resolution={xml_value(preferences, 'Resolution')} {time.strftime('%X', time.localtime(preferences.stat().st_mtime))}, "
+        f"UISize={xml_value(config, 'UISize')} {time.strftime('%X', time.localtime(config.stat().st_mtime))}"
+    )
+
+
+def clients_running() -> int:
+    listed = subprocess.run(
+        ["tasklist", "/FI", f"IMAGENAME eq {MODULE}", "/NH"], capture_output=True, text=True, check=False
+    )
+    return listed.stdout.count(MODULE)
+
+
+def cmd_files_watch(install: Path, seconds: float) -> None:
+    """Log each change to the settings files and the number of clients, until no client is left."""
+    last = None
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        now = (settings_on_disk(install), clients_running())
+        if now != last:
+            print(f"  [{time.strftime('%X')}] {now[1]} client(s); {now[0]}")
+            last = now
+        if now[1] == 0:
+            return
+        time.sleep(0.5)
+    print(f"  stopped after {seconds:.0f} s, with {last[1]} client(s) still running")
+
+
 def files_state(out: Path) -> Path:
     return out / "files"
 
@@ -1200,6 +1347,9 @@ def cmd_files_after(args) -> int:
     """Compare the game's files with the snapshot; ``restore`` puts the snapshot back."""
     saved = files_state(args.out)
     install = Path(json.loads((saved / "install.json").read_text(encoding="utf-8"))["install"])
+    if args.action == "watch":
+        cmd_files_watch(install, args.seconds)
+        return 0
     for name, tag in (("config.xml", "UISize"), ("preferences.xml", "Resolution")):
         before, now = saved / name, install / "Bin" / name
         same = before.read_bytes() == now.read_bytes()
@@ -1509,6 +1659,7 @@ async def main() -> int:
     timeline.add_argument("--ui", choices=list(UI_SIZES))
     timeline.add_argument("--after", type=float, default=1.0, help="seconds to keep watching after the byte clears")
     timeline.add_argument("--hold", type=float, default=2.0)
+    timeline.add_argument("--leave", action="store_true", help="stay at this size, for what the game saves on exit")
     timeline.set_defaults(fn=cmd_timeline)
     soak = sub.add_parser("soak")
     soak.add_argument("--count", type=int, default=30)
@@ -1541,7 +1692,8 @@ async def main() -> int:
     pair.add_argument("--settle", type=float, default=0.3)
     pair.set_defaults(fn_all=cmd_pair)
     files = sub.add_parser("files")
-    files.add_argument("action", choices=["snap", "compare", "restore"])
+    files.add_argument("action", choices=["snap", "compare", "restore", "watch"])
+    files.add_argument("--seconds", type=float, default=300.0, help="how long watch waits for the clients to close")
     files.set_defaults(fn=None)
     vm = sub.add_parser("vm-diff")
     vm.add_argument("action", choices=["snap", "compare"])
