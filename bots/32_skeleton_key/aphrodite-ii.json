@@ -667,7 +667,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "G14_DM/DM_Z07_Graveyard",
+        "from_zone": "G14_DM/DM_Z07_Graveyard",
         "to_zone": "G14_DM/Interiors/DM_Z08_I03_SkeletonKey2",
         "interact_xyz": {
           "x": -2877.92,

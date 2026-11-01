@@ -1465,7 +1465,7 @@
         "y": 90.0
       },
       "params": {
-        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
         "to_zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
         "interact_xyz": {
           "x": -465.43,

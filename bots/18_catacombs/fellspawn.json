@@ -953,7 +953,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb1",
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb1",
         "to_zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb2",
         "interact_xyz": {
           "x": -35.41,
