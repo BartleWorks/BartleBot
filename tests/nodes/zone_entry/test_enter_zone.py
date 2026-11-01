@@ -17,13 +17,13 @@ from tests.node_helper_patches import patch_helper
 # Minimal params used across all tests.
 _PARAMS = {"from_zone": "Src", "to_zone": "Dst", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
 
-_REAL_WATCH_GROUP = gtz._watch_group
+_REAL_WATCH_GROUP = gtz.watch_group
 
 
 @pytest.fixture(autouse=True)
 def _no_watcher():
     """The watcher reads zone_name too, which would eat the scripted zone sequences below."""
-    with patch.object(gtz, "_watch_group", new=AsyncMock()):
+    with patch.object(gtz, "watch_group", new=AsyncMock()):
         yield
 
 
@@ -194,6 +194,19 @@ async def test_a_loading_client_is_not_re_teleported_to_the_trigger():
     assert loading.teleport.call_count == 1
 
 
+async def test_a_client_already_loading_gets_no_opening_teleport():
+    """The game moved it before the node started: the teleport would land after it does (#284)."""
+    client = FakeClient()
+    client.zone_name.side_effect = ["Src", "Dst", "Dst"]
+    client.is_loading.side_effect = [True, False, False]
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    client.teleport.assert_not_called()
+
+
 async def test_confirmed_arrival_stops_remaining_trigger_retries():
     """As soon as one client is confirmed in to_zone, a stuck groupmate is not chased through
     the remaining reset_xyz retries — recovery is attempted immediately instead."""
@@ -239,8 +252,9 @@ async def test_loading_screen_awaited():
     """Node waits for is_loading to clear before checking the final zone."""
     client = FakeClient()
     client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
-    # First loading poll → still loading; second → clear.
-    client.is_loading.side_effect = [True, False]
+    # Not yet loading at the opening teleport; then the first loading poll → still loading;
+    # the second → clear.
+    client.is_loading.side_effect = [False, True, False]
 
     with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)

@@ -1,0 +1,1208 @@
+{
+  "id": "bcb9c76c-8fe3-43da-bf02-c2d33dcdacd9",
+  "name": "Fellspawn",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Adept's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ancient Scroll",
+      "category": "Reagents"
+    },
+    {
+      "name": "Angel Oak",
+      "category": "Seeds"
+    },
+    {
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Antique Coins",
+      "category": "Reagents"
+    },
+    {
+      "name": "BBQ Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Beast Wellington",
+      "category": "Snacks"
+    },
+    {
+      "name": "Berserk",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Black Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Blood Moss",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boiled Peanuts",
+      "category": "Seeds"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Brain Jar",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bread Fruit Bush",
+      "category": "Seeds"
+    },
+    {
+      "name": "Brilliant Light",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Crab Alley Chaise",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Decimatoes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Dragonspyre Dragoon Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Dragonspyre Dragoon's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragonspyre Dragoon's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dragonspyre Vanguard Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Dragonspyre Vanguard's Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragonspyre Vanguard's Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragonspyre Vanguard's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Balanced Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragoon's Balanced Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragoon's Balanced Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Deadly Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragoon's Deadly Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragoon's Deadly Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragoon's Deadly Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Deadly Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Deadly Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dragoon's Deadly Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Dragoon's Fiery Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragoon's Fiery Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragoon's Fiery Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragoon's Fiery Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Fiery Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Fiery Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dragoon's Fiery Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Dragoon's Icy Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragoon's Icy Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragoon's Icy Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Icy Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Icy Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dragoon's Icy Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Dragoon's Mythic Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragoon's Mythic Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragoon's Mythic Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Mythic Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Shocking Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragoon's Shocking Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragoon's Shocking Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dragoon's Shocking Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Shocking Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Vibrant Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Dragoon's Vibrant Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragoon's Vibrant Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragoon's Vibrant Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Dragoon's Vibrant Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Dream Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ether Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
+    },
+    {
+      "name": "Expert's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Eye Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Face Palm",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fern Jelly",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fish",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Frostbite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ginormous Apple",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Glowing Taffy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Couch Potatoes",
+      "category": "Seeds"
+    },
+    {
+      "name": "Grandmaster Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Green Snow Apples",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hot Cross Buns",
+      "category": "Snacks"
+    },
+    {
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Mutate Beetle (Storm)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Bird (Ice)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Colossus (Fire)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Kraken (Fire)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Minotaur (Sun)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Phoenix (Sun)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Shark (Ice)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mutate Wyvern (Storm)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mystic Pizza",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Novice's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pizza",
+      "category": "Snacks"
+    },
+    {
+      "name": "Purple Grapes of Wrath",
+      "category": "Seeds"
+    },
+    {
+      "name": "Queen Crape Myrtle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Couch Potatoes",
+      "category": "Seeds"
+    },
+    {
+      "name": "Roasted Drumstick",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rock and Roll Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Rye Bread Fruit Bush",
+      "category": "Seeds"
+    },
+    {
+      "name": "Satyr Chow",
+      "category": "Snacks"
+    },
+    {
+      "name": "Saw Palmetto",
+      "category": "Seeds"
+    },
+    {
+      "name": "Scales",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sirens",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sparkling Blocking Amethyst +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Citrine +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Hematite +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Ruby +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Critical Citrine +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Critical Sapphire +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Damage Amethyst +27",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Damage Jade +27",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Damage Ruby +27",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Amethyst +53",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Citrine +53",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Hematite +54",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Peridot +53",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Ruby +54",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Sapphire +54",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +116",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +117",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +118",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +119",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spring",
+      "category": "Reagents"
+    },
+    {
+      "name": "Stone Skeleton Key",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Vanguard's Balanced Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanguard's Balanced Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vanguard's Balanced Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Balanced Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Vanguard's Deadly Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanguard's Deadly Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vanguard's Deadly Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vanguard's Deadly Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Vanguard's Deadly Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Deadly Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Vanguard's Fiery Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanguard's Fiery Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vanguard's Fiery Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vanguard's Fiery Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Vanguard's Fiery Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Fiery Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Vanguard's Fiery Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Vanguard's Icy Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanguard's Icy Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vanguard's Icy Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vanguard's Icy Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Vanguard's Icy Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Icy Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Vanguard's Mythic Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanguard's Mythic Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vanguard's Mythic Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Vanguard's Mythic Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Mythic Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Vanguard's Mythic Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Vanguard's Shocking Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vanguard's Shocking Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vanguard's Shocking Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Vanguard's Shocking Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Vibrant Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Vanguard's Vibrant Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vanguard's Vibrant Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vanguard's Vibrant Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Vanguard's Vibrant Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Vanguard's Vibrant Sword",
+      "category": "Wands"
+    },
+    {
+      "name": "Veggie Juice",
+      "category": "Snacks"
+    },
+    {
+      "name": "Venus Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Watermelon Slice",
+      "category": "Housing Items"
+    },
+    {
+      "name": "WC Catacombs Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "WC Drains Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "WC Drains Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "WC Elsewhere Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wheat Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "White Tiger Lily",
+      "category": "Seeds"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Seeds",
+    "Housing",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Dragoon's Deadly Helm",
+        "=Dragoon's Fiery Helm",
+        "=Dragoon's Icy Helm",
+        "=Dragoon's Mythic Helm",
+        "=Dragoon's Shocking Helm",
+        "=Dragoon's Vibrant Helm",
+        "=Dragonspyre Vanguard's Helm",
+        "=Vanguard's Balanced Helm",
+        "=Vanguard's Deadly Helm",
+        "=Vanguard's Fiery Helm",
+        "=Vanguard's Icy Helm",
+        "=Vanguard's Mythic Helm",
+        "=Vanguard's Shocking Helm",
+        "=Vanguard's Vibrant Helm",
+        "=Dragonspyre Dragoon's Boots",
+        "=Dragoon's Deadly Boots",
+        "=Dragoon's Fiery Boots",
+        "=Dragoon's Icy Boots",
+        "=Dragoon's Mythic Boots",
+        "=Dragoon's Shocking Boots",
+        "=Dragoon's Vibrant Boots",
+        "=Vanguard's Balanced Boots",
+        "=Vanguard's Deadly Boots",
+        "=Vanguard's Fiery Boots",
+        "=Vanguard's Icy Boots",
+        "=Vanguard's Shocking Boots",
+        "=Vanguard's Vibrant Boots",
+        "=Dragoon's Balanced Charm",
+        "=Dragoon's Deadly Charm",
+        "=Dragoon's Fiery Charm",
+        "=Dragoon's Mythic Charm",
+        "=Dragoon's Shocking Charm",
+        "=Dragonspyre Vanguard's Charm",
+        "=Vanguard's Deadly Charm",
+        "=Vanguard's Fiery Charm",
+        "=Vanguard's Icy Charm",
+        "=Vanguard's Mythic Charm",
+        "=Vanguard's Shocking Charm",
+        "=Vanguard's Vibrant Charm"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Catacombs"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Fathomless Tomb",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Catacombs",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb1",
+        "dungeon_name": "Skeleton Key - Fathomless Tomb",
+        "sigil_xyz": {
+          "x": 7584.67,
+          "y": -10702.09,
+          "z": 6.32
+        },
+        "reset_xyz": {
+          "x": 7925.27,
+          "y": -9735.34,
+          "z": -30.9
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Fellspawn",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "CC_GoldSkeletonKey_Lice_DeepSpawn_B",
+        "wiki_page": "Creature:Fellspawn",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb2",
+        "to_zone": "WizardCity/WC_Streets/WC_Catacombs",
+        "xyz": {
+          "x": 11.72,
+          "y": 1215.53,
+          "z": -375.27
+        },
+        "reset_xyz": {
+          "x": 13.88,
+          "y": 1511.92,
+          "z": -469.41
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "open_skeleton_key_door",
+      "label": "Enter Skeleton Key room",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb1",
+        "to_zone": "WizardCity/WC_Streets/Interiors/WC_SkelKey_FathomlessTomb2",
+        "interact_xyz": {
+          "x": -35.41,
+          "y": 5891.05,
+          "z": -414.57
+        },
+        "xyz": {
+          "x": -24.09,
+          "y": 6149.58,
+          "z": -419.01
+        },
+        "reset_xyz": {
+          "x": -24.09,
+          "y": 5561.58,
+          "z": -424.02
+        }
+      },
+      "stops": {
+        "NO_KEY": "Out of Stone Skeleton Keys"
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to World Hub",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "collect_wisps",
+      "label": "Collect Wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Streets/WC_Catacombs"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  },
+  "history": [
+    "5f66dd692391c9a5f831525f793d37cba5bf40e70d6d1e82e59511dba568dc48",
+    "930ebe09564eb1add52c0af8e3050332934451448d09772d859c458feb91939c",
+    "9cff902e1335396863922a9c8df453a29d1992574c88dd2e6ffaf41ac16717da",
+    "8866dd48500f1317029f44c796206aa625c9058e7de63bf4181609012a8415bb"
+  ]
+}

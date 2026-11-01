@@ -96,8 +96,9 @@ def test_the_option_defaults_to_together():
     assert resolution.value == player_realms.TOGETHER
 
 
-def test_only_teleport_to_friend_merges_players():
-    assert [name for name, spec in NODE_SPECS.items() if spec.merges_players] == ["teleport_to_friend"]
+def test_the_nodes_that_merge_or_need_merged_players():
+    merging = {name for name, spec in NODE_SPECS.items() if spec.merges_players}
+    assert merging == {"open_skeleton_key_door", "teleport_to_friend"}
 
 
 def test_only_the_two_values_are_valid():
@@ -127,9 +128,9 @@ def test_every_merging_node_is_named():
     config = _config("sync_in_zone", "teleport_to_friend", "teleport_to_friend")
     assert player_realms.separate_blocked_by(config) == ["Node 1", "Node 2"]
     assert player_realms.blocked_reason(["Node 1"]) == (
-        "This bot cannot be Separate: its node 'Node 1' puts every player on one realm."
+        "This bot cannot be Separate: its node 'Node 1' needs every player on one realm."
     )
-    assert "nodes 'Node 1', 'Node 2' put" in player_realms.blocked_reason(["Node 1", "Node 2"])
+    assert "nodes 'Node 1', 'Node 2' need" in player_realms.blocked_reason(["Node 1", "Node 2"])
 
 
 def test_the_run_refuses_separate_only_with_a_merging_node():

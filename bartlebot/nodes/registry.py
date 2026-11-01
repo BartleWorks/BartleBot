@@ -24,8 +24,6 @@ from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
 from bartlebot.nodes.interaction.interact import run as interact_run
 from bartlebot.nodes.interaction.interact_menu import NODE_SPEC as _interact_menu_spec
 from bartlebot.nodes.interaction.interact_menu import run as interact_menu_run
-from bartlebot.nodes.interaction.open_skeleton_key_door import NODE_SPEC as _open_skeleton_key_door_spec
-from bartlebot.nodes.interaction.open_skeleton_key_door import run as open_skeleton_key_door_run
 from bartlebot.nodes.interaction.wait_for_dialogue import NODE_SPEC as _wait_for_dialogue_spec
 from bartlebot.nodes.interaction.wait_for_dialogue import run as wait_for_dialogue_run
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
@@ -59,6 +57,8 @@ from bartlebot.nodes.zone_entry.enter_zone import NODE_SPEC as _enter_zone_spec
 from bartlebot.nodes.zone_entry.enter_zone import run as enter_zone_run
 from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter_zone_via_object_spec
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
+from bartlebot.nodes.zone_entry.open_skeleton_key_door import NODE_SPEC as _open_skeleton_key_door_spec
+from bartlebot.nodes.zone_entry.open_skeleton_key_door import run as open_skeleton_key_door_run
 
 NODE_REGISTRY: dict = {
     "change_realm": change_realm_run,
@@ -156,6 +156,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "enter_gauntlet",
             "enter_zone",
             "enter_zone_via_object",
+            "open_skeleton_key_door",
         ],
     ),
     (
@@ -185,7 +186,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "collect_reagent",
             "interact",
             "interact_menu",
-            "open_skeleton_key_door",
             "wait_for_dialogue",
         ],
     ),

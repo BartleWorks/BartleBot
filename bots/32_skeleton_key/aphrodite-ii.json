@@ -500,7 +500,8 @@
         "=Ring of the Chaotic Heart",
         "=Ring of the Usurper",
         "=Signet of Carpathes",
-        "=Signet of the Fire King"
+        "=Signet of the Fire King",
+        "=Cracked Energy Opal +1"
       ]
     }
   ],
@@ -589,7 +590,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Aphrodite II",
       "position": {
-        "x": 5280.0,
+        "x": 4840.0,
         "y": 0.0
       },
       "params": {
@@ -604,7 +605,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6600.0,
+        "x": 6160.0,
         "y": 0.0
       },
       "params": {
@@ -621,7 +622,7 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 7040.0,
+        "x": 6600.0,
         "y": 0.0
       },
       "params": {
@@ -666,10 +667,16 @@
         "y": 0.0
       },
       "params": {
-        "zone": "G14_DM/DM_Z07_Graveyard",
+        "from_zone": "G14_DM/DM_Z07_Graveyard",
+        "to_zone": "G14_DM/Interiors/DM_Z08_I03_SkeletonKey2",
         "interact_xyz": {
           "x": -2877.92,
           "y": -24.27,
+          "z": 0.52
+        },
+        "xyz": {
+          "x": -3353.11,
+          "y": -21.51,
           "z": 0.52
         },
         "reset_xyz": {
@@ -677,6 +684,9 @@
           "y": -27.13,
           "z": 0.52
         }
+      },
+      "stops": {
+        "NO_KEY": "No players have a skeleton key in their inventory"
       }
     },
     {
@@ -697,35 +707,11 @@
       }
     },
     {
-      "id": "state_5",
-      "node_type": "enter_zone",
-      "label": "Enter Skeleton Key room",
-      "position": {
-        "x": 4840.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "G14_DM/DM_Z07_Graveyard",
-        "to_zone": "G14_DM/Interiors/DM_Z08_I03_SkeletonKey2",
-        "xyz": {
-          "x": -3353.11,
-          "y": -21.51,
-          "z": 0.52
-        },
-        "reset_xyz": {
-          "x": -2877.92,
-          "y": -24.27,
-          "z": 0.52
-        },
-        "stagger": false
-      }
-    },
-    {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Exit Skeleton Key room",
       "position": {
-        "x": 6160.0,
+        "x": 5720.0,
         "y": 0.0
       },
       "params": {
@@ -749,7 +735,7 @@
       "node_type": "interact",
       "label": "Interact with Chest",
       "position": {
-        "x": 5720.0,
+        "x": 5280.0,
         "y": 0.0
       },
       "params": {
@@ -765,7 +751,10 @@
           "z": -72.82
         },
         "interact_clients": [
-          1
+          1,
+          2,
+          3,
+          4
         ],
         "has_dialogue": false,
         "animation_delay": 0.0,
@@ -778,7 +767,7 @@
     {
       "trigger": "advance",
       "source": "state_3",
-      "dest": "state_5",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -789,16 +778,6 @@
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -979,6 +958,10 @@
     "version": 1
   },
   "history": [
+    "e9923b449799349dd13d6140085d64ed1f4f0790e0122c082f38f8c39ca9474e",
+    "79a82dbef5f32709d5bad3ee1a297e876e5bf12ccff479ba5ef55429d3986ed9",
+    "f50debe47e63ed15b9552c8614bad7293a508bde1f96c44e2b5e31ee2fe381dc",
+    "b4d78190e27534d2e121d2ea5319d782625596c61f7ef230ee74af0f3f58a53e",
     "5c182bdd840e14e80f6e66712426adaa203318e4c82dd64097cd297352759724",
     "9231f8b85a77ab88029e74991b7fdbb3613c3a28ea0e5a6845d940308f215f66",
     "a6f539ed49a3cdd55672e2dd6f23cc3cb02c811fb6737f4ff34a5c07f601aab9",

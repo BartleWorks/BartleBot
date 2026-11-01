@@ -1,0 +1,1201 @@
+{
+  "id": "8348c393-b8e4-4dcd-b6ba-c143e912d233",
+  "name": "Ra",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Adept's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aether",
+      "category": "Reagents"
+    },
+    {
+      "name": "Agave Leaves",
+      "category": "Reagents"
+    },
+    {
+      "name": "Agave Nectar",
+      "category": "Reagents"
+    },
+    {
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Amber",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ancient Scroll",
+      "category": "Reagents"
+    },
+    {
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Anubis' Astral Staff (Level 20+)",
+      "category": "Wands",
+      "match_name": "Anubis' Astral Staff"
+    },
+    {
+      "name": "Atomic Fireball",
+      "category": "Snacks"
+    },
+    {
+      "name": "Bad Honeyed Dates",
+      "category": "Snacks"
+    },
+    {
+      "name": "Banshee Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blizzard Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blue Urn",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Boiled Peanuts",
+      "category": "Seeds"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Camel",
+      "category": "Mounts"
+    },
+    {
+      "name": "Charred Nirini Robe (Level 20+)",
+      "category": "Robes",
+      "match_name": "Charred Nirini Robe"
+    },
+    {
+      "name": "Check Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Mana Opal +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cracked Defense Amethyst +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Jade +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Onyx +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Peridot +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Ruby +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Crokagator",
+      "category": "Mounts"
+    },
+    {
+      "name": "Dark Sprite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Death Scarab",
+      "category": "Pets"
+    },
+    {
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Effervescent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Evil Snowman Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Expert's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Face Palm",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Mummy",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fire Salamander",
+      "category": "Pets"
+    },
+    {
+      "name": "Flawed Damage Amethyst +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Citrine +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Jade +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Sapphire +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +30",
+      "category": "Jewels"
+    },
+    {
+      "name": "Frost Beetle Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Frosted Sokkwi Footwraps (Level 20+)",
+      "category": "Boots",
+      "match_name": "Frosted Sokkwi Footwraps"
+    },
+    {
+      "name": "Frosty Krokomummy",
+      "category": "Pets"
+    },
+    {
+      "name": "Furious Krokomummy",
+      "category": "Pets"
+    },
+    {
+      "name": "Gator Tots",
+      "category": "Snacks"
+    },
+    {
+      "name": "Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hieroglyphic Fire Tablet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Hieroglyphic Ice Tablet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Hieroglyphic Storm Tablet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Honey Bee Plant",
+      "category": "Seeds"
+    },
+    {
+      "name": "Honey Sickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hurry Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Mummy",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Ice Salamander",
+      "category": "Pets"
+    },
+    {
+      "name": "Ice-Eye Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Karanahn's Charged Greaves (Level 20+)",
+      "category": "Boots",
+      "match_name": "Karanahn's Charged Greaves"
+    },
+    {
+      "name": "Key Limes",
+      "category": "Seeds"
+    },
+    {
+      "name": "Khai Amahte Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok",
+      "category": "Pets"
+    },
+    {
+      "name": "Krok Bird Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Chalkboard",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Insect Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Moon Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Skull Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Snake Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Sun Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krok Tree Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokenkahmen (530)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Krokhotep (440)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Krokhotep (550)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Krokkish Coffee",
+      "category": "Snacks"
+    },
+    {
+      "name": "Kroklava",
+      "category": "Snacks"
+    },
+    {
+      "name": "Krokomummy",
+      "category": "Pets"
+    },
+    {
+      "name": "Krokopatra",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Krokopatra (Minion)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Krokotillian",
+      "category": "Pets"
+    },
+    {
+      "name": "Krokotopia Grand Tent",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Bath Sink",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Bath Tub",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Bed",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Bed Table",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Bookshelf",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Brick Wallpaper",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Cabinet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Catacomb Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Krokotopian Chair",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Cloudburst Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Krokotopian Coffee Table",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Couch",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Cupboards",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Dining Chair",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Dining Table",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Firebrand Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Krokotopian Fireplace",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Hammock",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Houseboat",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Mummy",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Rapture Baton",
+      "category": "Wands"
+    },
+    {
+      "name": "Krokotopian Rod of Frostbite",
+      "category": "Wands"
+    },
+    {
+      "name": "Krokotopian Rug",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Scarab",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Sink",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Sphinx",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Stone Floor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Towel Rack",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokotopian Zenith Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Life Scarab",
+      "category": "Pets"
+    },
+    {
+      "name": "Locust Kabob",
+      "category": "Snacks"
+    },
+    {
+      "name": "Locust Swarm Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Lunar Scepter of Anubis (Level 20+)",
+      "category": "Wands",
+      "match_name": "Lunar Scepter of Anubis"
+    },
+    {
+      "name": "Lunar-Emblem Bed",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mander Palanquin",
+      "category": "Mounts"
+    },
+    {
+      "name": "Manderdrake Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Melting Cheese Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Moon Flower",
+      "category": "Seeds"
+    },
+    {
+      "name": "Moonlight Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Mote of Beauty",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mote of Eternity",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mote of Severity",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mote of Transport",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mote of Wisdom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mummy Cat",
+      "category": "Pets"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nirini Helm of Scorching (Level 20+)",
+      "category": "Hats",
+      "match_name": "Nirini Helm of Scorching"
+    },
+    {
+      "name": "Novice's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Parchment",
+      "category": "Reagents"
+    },
+    {
+      "name": "Pharaoh Taro",
+      "category": "Snacks"
+    },
+    {
+      "name": "Pollen Bombs",
+      "category": "Snacks"
+    },
+    {
+      "name": "Pomegranite",
+      "category": "Snacks"
+    },
+    {
+      "name": "Prickly Bear Cactus",
+      "category": "Seeds"
+    },
+    {
+      "name": "Prince Aka Karanahn",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prince Biti Nirini",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prince Manu Nirini Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prince Meti Karanahn",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prince Suten Sokkwi",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Purple Urn",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ra",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ra's Catacomb Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Catacomb Mocassins",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Catacomb Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Cloudburst Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Cloudburst Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Cloudburst Striders",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Firebrand Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Firebrand Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Firebrand Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Frostbite Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Frostbite Headdress",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Frostbite Jerkin",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Integrity Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Integrity Trackers",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Integrity Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Rapture Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Rapture Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Rapture Headdress",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Rod of Integrity",
+      "category": "Wands"
+    },
+    {
+      "name": "Ra's Speculation Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Speculation Runners",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Speculation Smock",
+      "category": "Robes"
+    },
+    {
+      "name": "Ra's Speculation Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Ra's Zenith Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra's Zenith Headdress",
+      "category": "Hats"
+    },
+    {
+      "name": "Ra's Zenith Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Rally Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Red Urn",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rugged Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sailback Skink",
+      "category": "Pets"
+    },
+    {
+      "name": "Saw Palmetto",
+      "category": "Seeds"
+    },
+    {
+      "name": "Scarab Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Singed Nirini Walkers (Level 20+)",
+      "category": "Boots",
+      "match_name": "Singed Nirini Walkers"
+    },
+    {
+      "name": "Skink",
+      "category": "Pets"
+    },
+    {
+      "name": "Snake in a Basket",
+      "category": "Pets"
+    },
+    {
+      "name": "Sokkwi Frostbitten Armor (Level 20+)",
+      "category": "Robes",
+      "match_name": "Sokkwi Frostbitten Armor"
+    },
+    {
+      "name": "Sokkwi Mantle of Blizzards (Level 20+)",
+      "category": "Hats",
+      "match_name": "Sokkwi Mantle of Blizzards"
+    },
+    {
+      "name": "Solar Pikestaff of Anubis (Level 20+)",
+      "category": "Wands",
+      "match_name": "Solar Pikestaff of Anubis"
+    },
+    {
+      "name": "Starlight Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Starshine Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Stone Skeleton Key",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Storm Mummy",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Storm Salamander",
+      "category": "Pets"
+    },
+    {
+      "name": "Sun Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sunion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sunshine Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Tapestry to School of Balance",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tapestry to The Oasis",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Thunderous Karanahn Veil (Level 20+)",
+      "category": "Hats",
+      "match_name": "Thunderous Karanahn Veil"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Vestment of Ominous Skies (Level 20+)",
+      "category": "Robes",
+      "match_name": "Vestment of Ominous Skies"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Mounts",
+    "Pets",
+    "Housing",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Anubis' Astral Staff",
+        "=Krokotopian Catacomb Wand",
+        "=Krokotopian Cloudburst Scepter",
+        "=Krokotopian Firebrand Wand",
+        "=Krokotopian Rapture Baton",
+        "=Krokotopian Rod of Frostbite",
+        "=Krokotopian Zenith Scepter",
+        "=Lunar Scepter of Anubis",
+        "=Ra's Rod of Integrity",
+        "=Ra's Speculation Wand",
+        "=Solar Pikestaff of Anubis",
+        "=Charred Nirini Robe",
+        "=Nirini Helm of Scorching",
+        "=Singed Nirini Walkers",
+        "=Frosted Sokkwi Footwraps",
+        "=Sokkwi Frostbitten Armor",
+        "=Sokkwi Mantle of Blizzards",
+        "=Karanahn's Charged Greaves",
+        "=Thunderous Karanahn Veil",
+        "=Vestment of Ominous Skies"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Krokotopia/Interiors/KT_HallofDoors"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Skeleton Key dungeon",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/Interiors/KT_HallofDoors",
+        "dungeon_zone": "Krokotopia/Interiors/KT_SkeletonLanding",
+        "dungeon_name": "Skeleton Key - Ra",
+        "sigil_xyz": {
+          "x": 2622.91,
+          "y": 225.79,
+          "z": 1.0
+        },
+        "reset_xyz": {
+          "x": 2054.67,
+          "y": 3.25,
+          "z": 1.0
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Ra",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_WoodenSkeletonKey_Ra",
+        "wiki_page": "Creature:Ra",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/Interiors/KT_SkeletonKeyWood",
+        "to_zone": "Krokotopia/Interiors/KT_SkeletonLanding",
+        "xyz": {
+          "x": 2645.53,
+          "y": 8.11,
+          "z": 1.0
+        },
+        "reset_xyz": {
+          "x": 2192.34,
+          "y": -13.54,
+          "z": 1.0
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "open_skeleton_key_door",
+      "label": "Enter Ra's Reading Room",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/Interiors/KT_SkeletonLanding",
+        "to_zone": "Krokotopia/Interiors/KT_SkeletonKeyWood",
+        "interact_xyz": {
+          "x": 549.54,
+          "y": 8.27,
+          "z": 1.0
+        },
+        "xyz": {
+          "x": 824.87,
+          "y": -1.27,
+          "z": 1.0
+        },
+        "reset_xyz": {
+          "x": 236.64,
+          "y": 21.93,
+          "z": 1.0
+        }
+      },
+      "stops": {
+        "NO_KEY": "Out of Wooden Skeleton Keys"
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Krokotopia/Interiors/KT_HallofDoors"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  },
+  "history": [
+    "ed63bd8173c487f55726fb39206a8fe68f75478d29a742766d86947ae6940579",
+    "32d862c963878bfa0539ac3ea7aa6d85ed9b1eaf0c249d2795f2014621ad7db4"
+  ]
+}

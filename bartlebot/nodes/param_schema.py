@@ -241,7 +241,8 @@ class NodeSpec:
     say whether this dungeon offers Team-Up, the author's param does.
     """
     merges_players: bool = False
-    """Whether this node puts every player on one realm by its nature -- a port onto one player.
+    """Whether this node needs every player on one realm by its nature -- a port onto one player, or
+    one key that opens a door for one instance.
 
     A bot holding such a node cannot be ``Player Realms: Separate``. See
     :mod:`bartlebot.options.player_realms` for the three places that is enforced.

@@ -1198,30 +1198,6 @@
       }
     },
     {
-      "id": "state_17",
-      "node_type": "enter_zone",
-      "label": "Enter Stone Skeleton Key room",
-      "position": {
-        "x": 6600.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
-        "to_zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
-        "xyz": {
-          "x": -686.76,
-          "y": -256.63,
-          "z": 400.2
-        },
-        "reset_xyz": {
-          "x": -483.15,
-          "y": 316.0,
-          "z": 351.08
-        },
-        "stagger": false
-      }
-    },
-    {
       "id": "state_19",
       "node_type": "interact",
       "label": "Open Treasure Chest",
@@ -1489,11 +1465,17 @@
         "y": 90.0
       },
       "params": {
-        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "to_zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
         "interact_xyz": {
           "x": -465.43,
           "y": 172.02,
           "z": 378.16
+        },
+        "xyz": {
+          "x": -686.76,
+          "y": -256.63,
+          "z": 400.2
         },
         "reset_xyz": {
           "x": -436.84,
@@ -1502,7 +1484,7 @@
         }
       },
       "stops": {
-        "FAILURE": "No players have a skeleton key in their inventory"
+        "NO_KEY": "No players have a skeleton key in their inventory"
       }
     }
   ],
@@ -1633,16 +1615,6 @@
           "op": "AND"
         }
       ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
@@ -1788,7 +1760,7 @@
     {
       "trigger": "advance",
       "source": "state_30",
-      "dest": "state_17",
+      "dest": "state_19",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1987,7 +1959,6 @@
       "id": "744b87ee",
       "label": "Stone Skeleton Key",
       "members": [
-        "state_17",
         "state_20",
         "state_19",
         "state_30"
@@ -2031,6 +2002,7 @@
     "version": 1
   },
   "history": [
+    "a8052162101d2feede94043cc1a080ccae1e02e975e8bc511c29d0d01cfd401d",
     "b1e8ffc21e24e1963d3018a1d29c63a22831f802e78106af8d3839ebddf4e0e1",
     "a85dce5ea75970b9a3e1c3cd06f9eddd92c105b491fd7a00a6c4ebdab34164eb",
     "5c91f910bb17048c85a8879670edd9a9269141729934f01d55b25904aa294215",

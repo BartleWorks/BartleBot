@@ -14,6 +14,7 @@ ZONE_AT_END = "The zone every player must be in when the node ends."
 INTERACT_XYZ = "Where players stand to get the interact prompt."
 RESET_XYZ = "A nearby spot where the prompt doesn't appear. Players step here to clear the prompt before trying again."
 INTERACT_PLAYERS = "Which players interact."
+TRANSITION_XYZ = "A spot inside the zone change's trigger. Teleporting here starts the zone change."
 
 SEQUENTIAL_INTERACTION = (
     "When on, players use the object one at a time. Turn it on only for an object that serves one "
