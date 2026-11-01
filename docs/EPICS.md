@@ -321,6 +321,8 @@ wizards the user only watches run small, each whole in its tile, with no client 
 BartleBuddy, and listed here with the others.
 https://claude.ai/artifact/7xXKV8yEcnjyEVFUQMo497
 
+**Complete: all 5 stages landed by 2026-11-01.**
+
 | stage | issue | what |
 |---|---|---|
 | 1 | BartleBuddy #5 | measure in game what the plan still assumes (`tools/probe_runtime_resize.py`) |
@@ -329,9 +331,13 @@ https://claude.ai/artifact/7xXKV8yEcnjyEVFUQMo497
 | 4 | BartleBuddy #8 | the resizer: `ClientResizer`, the `UISize` node, the lease, and giving back |
 | 5 | BartleBuddy #9 | Main changes hands: the window half and the wiring, in game |
 
-The feature doc is core's `docs/WINDOW_SIZING.md`, "Resizing a running client".
+Core's `docs/WINDOW_SIZING.md`, "Resizing a running client" and "Tiles by rung", is the feature as
+built. BartleBot has no part of it yet, and its pin stays at core's `1b1caab`.
 
-The rules every stage keeps:
+After it, each needing a plan of its own: resizing across aspects (BartleBuddy #10), and BartleBot
+adopting it (#308). The stages' leftovers are BartleBuddy #11 to #13.
+
+The rules every stage kept:
 
 - **The 1:1 contract.** The backbuffer equals the client area after every resize, because the
   game maps clicks against it, and a window is never stretched to fit a tile.
@@ -343,4 +349,5 @@ The rules every stage keeps:
   not change, and `tests/game/test_pane_sizing.py` holds them.
 - **The user's own settings** are captured once and given back, as for a launch.
 - **A client that can't be resized behaves as it does today**, and a session with no Side tile
-  never resizes at all.
+  never resizes, unless a game is too large for its tile beside another, which the user chose in
+  Stage 5. One account never does.
