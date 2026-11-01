@@ -1,0 +1,1130 @@
+{
+  "id": "ab69df4a-5010-41c7-b718-78a222e169aa",
+  "name": "Aethyr Elemental",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Aero Dwarf Potted Plant",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aether",
+      "category": "Reagents"
+    },
+    {
+      "name": "Aethyr Cloud",
+      "category": "Mounts"
+    },
+    {
+      "name": "Aethyr Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Agave Leaves",
+      "category": "Reagents"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ancient Scroll",
+      "category": "Reagents"
+    },
+    {
+      "name": "Antheneum Delight",
+      "category": "Snacks"
+    },
+    {
+      "name": "Antique Coins",
+      "category": "Reagents"
+    },
+    {
+      "name": "Aquamarine",
+      "category": "Reagents"
+    },
+    {
+      "name": "Astral Shard",
+      "category": "Reagents"
+    },
+    {
+      "name": "Aztecan Hot Chocolate",
+      "category": "Snacks"
+    },
+    {
+      "name": "Banshee",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bardic Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Bardic Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "BBQ Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Beast Wellington",
+      "category": "Snacks"
+    },
+    {
+      "name": "Black Cat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Black Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Blazing Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Blazing Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Blood Moss",
+      "category": "Reagents"
+    },
+    {
+      "name": "Blue Globulin",
+      "category": "Pets"
+    },
+    {
+      "name": "Bread Fruit Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cap of the Star",
+      "category": "Hats"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Crackling Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Crackling Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Dark Hound",
+      "category": "Pets"
+    },
+    {
+      "name": "Dark Tribute",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Death Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Decimatoes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Discord Grape Jelly",
+      "category": "Snacks"
+    },
+    {
+      "name": "Dragon Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Dragonblade (Balance)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dryad",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dwarven Side Table",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Elemental Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Elemental Spear",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Empyrea Chaos Jungle Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Eye Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fire Dwarf Bed",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fire Dwarf Settee",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fire Passion Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Firespear",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fish Fin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Flawless Opal",
+      "category": "Reagents"
+    },
+    {
+      "name": "Flying Squid Ink",
+      "category": "Reagents"
+    },
+    {
+      "name": "Fortify",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Freezing Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Freezing Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Gallant Rogue's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Gallant Rogue's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Gallant Rogue's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Gleeman's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Gleeman's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Gleeman's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Glowing Taffy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Grandmaster Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Green Globulin",
+      "category": "Pets"
+    },
+    {
+      "name": "Green Tomato",
+      "category": "Snacks"
+    },
+    {
+      "name": "Grim Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Grim Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "High Road Haggis",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hopeful Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Hopeful Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Hot Cross Buns",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ice Dwarf Chair",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Ice Dwarf Settee",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Ice Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Illuminated Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Illuminated Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Immutable Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Immutable Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Imp",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Interstellar Officer's Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Interstellar Warrior Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Kalamar Basket with Handle",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Kalamar Bed",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Kalamar Chair",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lifespear",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lustrous PIP Opal +10%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mass Fire Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mass Myth Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mithril",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mythspear",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nimbari Brazier",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Orichalcum",
+      "category": "Reagents"
+    },
+    {
+      "name": "Pizza",
+      "category": "Snacks"
+    },
+    {
+      "name": "Power Play",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Rhapsodist's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Rhapsodist's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Rhapsodist's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Rock and Roll Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Roly Poly Fishheads",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sandstorm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Satyr Chow",
+      "category": "Snacks"
+    },
+    {
+      "name": "Scales",
+      "category": "Reagents"
+    },
+    {
+      "name": "Scribe's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Scribe's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Scribe's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Shiny Accurate Citrine +12%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Accurate Opal +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Accurate Peridot +12%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Accurate Sapphire +12%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Blocking Citrine +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Blocking Onyx +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Amethyst +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Citrine +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Ruby +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Critical Sapphire +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Damage Amethyst +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Damage Onyx +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Damage Sapphire +25",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Defense Onyx +51",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Defense Sapphire +50",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Healing Opal +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Mending Opal +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shoes of the Star",
+      "category": "Boots"
+    },
+    {
+      "name": "Silver",
+      "category": "Reagents"
+    },
+    {
+      "name": "Songster's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Songster's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Songster's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Sonneteer's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Sonneteer's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Sparkling Accurate Hematite +13%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Accurate Onyx +13%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Accurate Sapphire +13%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Citrine +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Hematite +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Hematite +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Blocking Onyx +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Critical Hematite +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Damage Peridot +27",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Citrine +53",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Jade +56",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Ruby +55",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Defense Sapphire +55",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +117",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +120",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +122",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +123",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +124",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sparkling Health Opal +125",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Spirit Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sprinkle Cupcake",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stardust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Stone Skeleton Key",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Sunstone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sycorax's Blizzard Crook",
+      "category": "Wands"
+    },
+    {
+      "name": "Sycorax's Crook of Illusions",
+      "category": "Wands"
+    },
+    {
+      "name": "Sycorax's Crook of Tempests",
+      "category": "Wands"
+    },
+    {
+      "name": "Sycorax's Crook of the Lost",
+      "category": "Wands"
+    },
+    {
+      "name": "Sycorax's Sandstorm Crook",
+      "category": "Wands"
+    },
+    {
+      "name": "Sycorax's Wildfire Crook",
+      "category": "Wands"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Titanium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Troubador's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Troubador's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Troubador's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Trouper's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Trouper's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Trouper's Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of the Star",
+      "category": "Robes"
+    },
+    {
+      "name": "Turquoise",
+      "category": "Reagents"
+    },
+    {
+      "name": "Veggie Juice",
+      "category": "Snacks"
+    },
+    {
+      "name": "Verdant Zanadu Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Verdant Zanadu Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Verdant Zanadu Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vine",
+      "category": "Reagents"
+    },
+    {
+      "name": "Witch Crook of Sycorax",
+      "category": "Wands"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Mounts",
+    "Pets",
+    "Housing",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "=Cap of the Star",
+        "=Gallant Rogue's Cap",
+        "=Gleeman's Cap",
+        "=Rhapsodist's Cap",
+        "=Scribe's Cap",
+        "=Songster's Cap",
+        "=Sonneteer's Cap",
+        "=Troubador's Cap",
+        "=Trouper's Cap",
+        "=Bardic Tunic",
+        "=Gallant Rogue's Tunic",
+        "=Gleeman's Tunic",
+        "=Rhapsodist's Tunic",
+        "=Scribe's Tunic",
+        "=Songster's Tunic",
+        "=Sonneteer's Tunic",
+        "=Troubador's Tunic",
+        "=Trouper's Tunic",
+        "=Tunic of the Star",
+        "=Bardic Shoes",
+        "=Gallant Rogue's Shoes",
+        "=Gleeman's Shoes",
+        "=Rhapsodist's Shoes",
+        "=Scribe's Shoes",
+        "=Shoes of the Star",
+        "=Songster's Shoes",
+        "=Troubador's Shoes",
+        "=Trouper's Shoes",
+        "=Blazing Zanadu Pendant",
+        "=Crackling Zanadu Pendant",
+        "=Freezing Zanadu Pendant",
+        "=Grim Zanadu Pendant",
+        "=Hopeful Zanadu Pendant",
+        "=Illuminated Zanadu Pendant",
+        "=Immutable Zanadu Pendant",
+        "=Verdant Zanadu Pendant"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Empyrea/EM_Z09_NWAeroplains"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Skeleton Key dungeon",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Empyrea/EM_Z09_NWAeroplains",
+        "dungeon_zone": "Empyrea/Interiors/EM_Z09_SkeletonKey_Landing",
+        "dungeon_name": "Skeleton Key - Aethyr Elemental",
+        "sigil_xyz": {
+          "x": 4242.46,
+          "y": -11481.29,
+          "z": -460.97
+        },
+        "reset_xyz": {
+          "x": 3620.0,
+          "y": -11176.0,
+          "z": -464.94
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Aethyr Elemental",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "EM_GoldSkeletonKey_Elementals_BallAethyr_A_01",
+        "wiki_page": "Creature:Aethyr Elemental",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Empyrea/Interiors/EM_Z09_SkeletonKey_Fight",
+        "to_zone": "Empyrea/EM_Z09_NWAeroplains",
+        "xyz": {
+          "x": -4518.85,
+          "y": -7422.56,
+          "z": 28.24
+        },
+        "reset_xyz": {
+          "x": -4305.21,
+          "y": -7008.87,
+          "z": 20.31
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "open_skeleton_key_door",
+      "label": "Open Skeleton Key Door",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Empyrea/Interiors/EM_Z09_SkeletonKey_Landing",
+        "to_zone": "Empyrea/Interiors/EM_Z09_SkeletonKey_Fight",
+        "interact_xyz": {
+          "x": -3531.54,
+          "y": -6034.12,
+          "z": 1.41
+        },
+        "xyz": {
+          "x": -3445.31,
+          "y": -5979.83,
+          "z": 1.41
+        },
+        "reset_xyz": {
+          "x": -3933.77,
+          "y": -6415.16,
+          "z": 1.41
+        }
+      },
+      "stops": {
+        "NO_KEY": "Out of Stone Skeleton Keys"
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Empyrea/EM_Z09_NWAeroplains"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  },
+  "history": [
+    "6830e9f5444e6cd3b2bd328d4e33a2366dba73fd502af164a54a5e9273f52290",
+    "7117e07c66a26bee4da1dae959a564cf08e4d7bdc4bcb35ccf711a587958d138"
+  ]
+}
