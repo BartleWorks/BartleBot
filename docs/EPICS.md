@@ -313,3 +313,34 @@ The rules every stage kept:
   green. No stage migrates a bot file, a setting or a preference.
 - **No real player data and no game assets** in any of the three repos; core is public
   from Stage 3.
+
+## Live client resize
+
+Epic BartleBuddy #3: a wizard who becomes Main gets a crisp, full-size game in seconds, and the
+wizards the user only watches run small, each whole in its tile, with no client restart. Filed in
+BartleBuddy, and listed here with the others.
+https://claude.ai/artifact/7xXKV8yEcnjyEVFUQMo497
+
+| stage | issue | what |
+|---|---|---|
+| 1 | BartleBuddy #5 | measure in game what the plan still assumes (`tools/probe_runtime_resize.py`) |
+| 2 | BartleBuddy #6 | the forcer in wizwalker, the pending byte read from code, and the pin in all three |
+| 3 | BartleBuddy #7 | tiles by rung: whole Side tiles, Main in what is left, and each tile's target |
+| 4 | BartleBuddy #8 | the resizer: `ClientResizer`, the `UISize` node, the lease, and giving back |
+| 5 | BartleBuddy #9 | Main changes hands: the window half and the wiring, in game |
+
+The feature doc is core's `docs/WINDOW_SIZING.md`, "Resizing a running client".
+
+The rules every stage keeps:
+
+- **The 1:1 contract.** The backbuffer equals the client area after every resize, because the
+  game maps clicks against it, and a window is never stretched to fit a tile.
+- **The ladder.** Every size a client takes is in `VALID_RESOLUTIONS`, with the UI size
+  `ui_size_for` gives it.
+- **The arbiter and the crossing.** A memory write on a client needs a lease, and the GUI holds no
+  wizwalker object.
+- **BartleBot's answers are identical at every stage.** Its grid, window floor and launch fit do
+  not change, and `tests/game/test_pane_sizing.py` holds them.
+- **The user's own settings** are captured once and given back, as for a launch.
+- **A client that can't be resized behaves as it does today**, and a session with no Side tile
+  never resizes at all.
