@@ -6,7 +6,7 @@ from bartleby.runtime.game import dialog_captions
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.help_text import ARRIVAL_NOTE, ZONE_AT_END, ZONE_AT_START
+from bartlebot.nodes.help_text import ARRIVAL_NOTE, TRANSITION_XYZ, ZONE_AT_END, ZONE_AT_START
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.options import player_realms
 
@@ -31,7 +31,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Transition XYZ",
-        help="A spot inside the zone change's trigger. Teleporting here starts the zone change.",
+        help=TRANSITION_XYZ,
         default=None,
         required=True,
     ),
@@ -128,7 +128,7 @@ async def _observe(client) -> tuple[str | None, bool | None, XYZ | None]:
     """A client's (zone, loading, position), each None when its read failed.
 
     A client on a loading screen can raise on a read, and that is a fact worth logging
-    rather than an error: `_watch_group` shows it as the state it is in.
+    rather than an error: `watch_group` shows it as the state it is in.
     """
 
     async def _read(read):
@@ -140,7 +140,7 @@ async def _observe(client) -> tuple[str | None, bool | None, XYZ | None]:
     return tuple(await asyncio.gather(_read(client.zone_name), _read(client.is_loading), _read(client.body.position)))
 
 
-async def _watch_group(machine, clients: list, numbers: list[int]) -> None:
+async def watch_group(machine, clients: list, numbers: list[int]) -> None:
     """Log each client's zone and loading state every time either changes, with where it stood.
 
     Diagnostic only. With Stagger on, one of the three followers sometimes never fires the
@@ -164,24 +164,28 @@ async def _watch_group(machine, clients: list, numbers: list[int]) -> None:
         await asyncio.sleep(POLL_INTERVAL)
 
 
-async def _transition_group(
+async def fire_trigger(
     machine, group: list, numbers: list[int], from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]
-) -> str:
-    """Teleport `group` into the transition bounding box and wait for them to arrive in to_zone.
+) -> bool:
+    """Teleport `group` into the transition bounding box until each has left from_zone.
 
-    Runs the full teleport → dismiss dungeon dialog → leave-from_zone (with reset retry) →
-    wait-for-loading → arrive-in-to_zone sequence for just the clients in `group`. `numbers` is
-    each client's player number and `resets` its reset point, both in `group` order. Returns
-    "SUCCESS" or "FAILURE".
+    Runs the teleport → dismiss dungeon dialog → leave-from_zone (with reset retry) half of a
+    transition for just the clients in `group`. `numbers` is each client's player number and
+    `resets` its reset point, both in `group` order. False only when the game refused the
+    change, having logged it.
 
-    A client that never triggers the transition at all is not failed here: the arrival check
-    at the end runs regardless, and wait_for_zone_with_recovery can still port a client stuck
-    in from_zone straight to a groupmate who made it — a working transition elsewhere in the
-    group is a better fix than retrying a trigger that has already failed a few times.
+    A client that never triggers the transition at all is not failed here: await_arrival runs
+    regardless, and wait_for_zone_with_recovery can still port a client stuck in from_zone
+    straight to a groupmate who made it — a working transition elsewhere in the group is a
+    better fix than retrying a trigger that has already failed a few times.
     """
     safety_delay = machine.get_option("Safety Delay", 3.0)
     attempts = MAX_RETRIES
     to_move = group
+    # A client already loading has triggered, or been moved by the game: a teleport now would
+    # be applied once it lands (#70, #284). The check narrows the window rather than closing
+    # it, since is_loading() turns true a moment after the move starts.
+    teleport = node_helpers.skip_while_loading(lambda c: c.teleport(target))
     for attempt in range(1, attempts + 1):
         if attempt > 1:
             machine.log(f"Attempt {attempt}/{attempts}…", logging.DEBUG)
@@ -189,7 +193,7 @@ async def _transition_group(
         # Teleport whichever clients still need to trigger the transition into the bounding
         # box — the whole group on the first attempt, only the stragglers on a retry.
         machine.log(f"Teleporting {len(to_move)} client(s) to transition bounding box", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(target) for c in to_move])
+        await asyncio.gather(*[teleport(c) for c in to_move])
 
         # Answer the instance prompt if the transition raised one — leaving a dungeon asks
         # before it lets you go, and until that is answered the zone change never fires.
@@ -200,7 +204,7 @@ async def _transition_group(
                 f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}",
                 logging.WARNING,
             )
-            return "FAILURE"
+            return False
 
         # Wait for the group to leave from_zone (zone change triggered by bounding box).
         # Re-teleport only stuck clients to the trigger on each poll; clients that have
@@ -216,9 +220,7 @@ async def _transition_group(
         # The retry answers an instance prompt before it teleports: a prompt that came up late,
         # or that the first answer missed, would otherwise sit there with the client reset
         # around it, and nothing leaves a dungeon until it is answered (#281).
-        retry = node_helpers.ModalAwareRetry(
-            node_helpers.skip_while_loading(lambda c: c.teleport(target)), recognized_only=True
-        )
+        retry = node_helpers.ModalAwareRetry(teleport, recognized_only=True)
         seen_left = await node_helpers.poll_each_until_seen(
             group,
             check_fn=lambda c: _has_left_zone(c, from_zone),
@@ -235,7 +237,7 @@ async def _transition_group(
                 f"FAILURE: the game refused the zone change — {dialog_captions.describe(retry.refusal)}",
                 logging.WARNING,
             )
-            return "FAILURE"
+            return False
         if len(seen_left) == len(group):
             # Zone change triggered for everyone — no more retries needed.
             break
@@ -279,7 +281,16 @@ async def _transition_group(
         )
         break
 
-    # Wait for loading screens to finish.
+    return True
+
+
+async def await_arrival(machine, group: list, numbers: list[int], to_zone: str) -> bool:
+    """Wait out `group`'s loading screens and see every one of them in to_zone.
+
+    The other half of a transition. A client of `group` already there counts as arrived and
+    is someone a straggler can be ported to, so a caller passes everyone it wants recovery
+    to consider, not only the clients it just moved. False having logged why.
+    """
     machine.log("Waiting for loading screen to clear…", logging.DEBUG)
     await node_helpers.poll_until(lambda: node_helpers.none_loading(group), None, POLL_INTERVAL)
 
@@ -297,9 +308,20 @@ async def _transition_group(
             f"FAILURE: clients not in expected zone after transition (expected={to_zone!r}, got={list(set(actual))})",
             logging.WARNING,
         )
-        return "FAILURE"
+        return False
 
-    return "SUCCESS"
+    return True
+
+
+async def _transition_group(
+    machine, group: list, numbers: list[int], from_zone: str, to_zone: str, target: XYZ, resets: list[XYZ]
+) -> str:
+    """Move just the clients in `group` from from_zone to to_zone. "SUCCESS" or "FAILURE"."""
+    if await fire_trigger(machine, group, numbers, from_zone, to_zone, target, resets) and await await_arrival(
+        machine, group, numbers, to_zone
+    ):
+        return "SUCCESS"
+    return "FAILURE"
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -346,7 +368,7 @@ async def run(machine, clients: list, params: dict) -> str:
     await node_helpers.note_realm_peers(machine, clients)
 
     numbers = list(range(1, len(clients) + 1))
-    watcher = asyncio.create_task(_watch_group(machine, clients, numbers))
+    watcher = asyncio.create_task(watch_group(machine, clients, numbers))
     try:
         if stagger:
             machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)

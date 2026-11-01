@@ -23,10 +23,11 @@ logging and timing), are core's `bartleby/runtime/CLAUDE.md`, imported above.
    declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`
    fails otherwise
 
-Use those four names and no others unless the node genuinely has a third outcome. The
-failure pair is `schema.FALLTHROUGH_RETURNS`: a graph that routes neither of them sends
-the run to the bot's recovery state, so a node inventing `"ERROR"` gets no default and
-spins to the no-match limit instead. `docs/RETURN_ROUTING.md` has the rest, including how
+Use those four names and no others unless the node genuinely has a third outcome, as
+`open_skeleton_key_door`'s `NO_KEY` is: trying again cannot fix it, so it must not read as
+a failure. The failure pair is `schema.FALLTHROUGH_RETURNS`: a graph that routes neither of
+them sends the run to the bot's recovery state, so a node inventing `"ERROR"` gets no default
+and spins to the no-match limit instead, which the canvas warns about as an uncovered return. `docs/RETURN_ROUTING.md` has the rest, including how
 an author marks a return value fatal.
 
 ## Nodes never write variables

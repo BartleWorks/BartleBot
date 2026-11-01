@@ -78,6 +78,7 @@ def test_a_node_that_recovers_stragglers_says_so_in_one_wording():
         "enter_dungeon",
         "enter_zone",
         "enter_zone_via_object",
+        "open_skeleton_key_door",
         "teleport_to_marked_location",
         "teleport_to_world_hub",
     ]

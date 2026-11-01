@@ -13,9 +13,9 @@ Every node that reads the option declares :data:`SPEC`, the same object, so it a
 in Options however many nodes read it. The author sets the bot's default; the user may still
 overrule it, as for any bot option.
 
-**A node that merges players by nature** -- ``teleport_to_friend`` ports everyone onto one
-realm, which is its whole purpose -- declares ``NodeSpec.merges_players``, and a bot holding
-one cannot be Separate. That is enforced at three points: the Options and Options rows offer
+**A node that merges players by nature, or needs them merged** -- ``teleport_to_friend`` ports
+everyone onto one realm, and ``open_skeleton_key_door`` spends one key, which opens the door
+for one instance -- declares ``NodeSpec.merges_players``, and a bot holding one cannot be Separate. That is enforced at three points: the Options and Options rows offer
 only Together, the node carries an error while the bot's declared default is Separate, and
 the run refuses to start when the value resolves to Separate anyway (a hand-edited file, a
 leftover override). :func:`separate_blocked_by` is the one rule all three read.
@@ -73,7 +73,7 @@ def _specs(specs=None):
 
 
 def separate_blocked_by(config, specs=None) -> list[str]:
-    """The labels of every state in *config* that puts all players on one realm.
+    """The labels of every state in *config* that needs all players on one realm.
 
     Empty when the bot may be Separate. A state's label, or its id when it has none, is
     what the author sees on the canvas.
@@ -90,7 +90,7 @@ def separate_blocked_by(config, specs=None) -> list[str]:
 def blocked_reason(blockers: list[str]) -> str:
     """Why Separate is not on offer, naming the nodes responsible."""
     names = ", ".join(repr(b) for b in blockers)
-    noun, verb = ("node", "puts") if len(blockers) == 1 else ("nodes", "put")
+    noun, verb = ("node", "needs") if len(blockers) == 1 else ("nodes", "need")
     return f"This bot cannot be Separate: its {noun} {names} {verb} every player on one realm."
 
 

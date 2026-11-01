@@ -231,6 +231,7 @@ def test_recordable_nodes_contains_all_expected_types():
         "mark_location",
         "teleport_to_marked_location",
         "handle_combat",
+        "open_skeleton_key_door",
     }
     assert RECORDABLE_NODES == expected
 
@@ -294,7 +295,7 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
     client = _client()
     # Enough for any workflow: the prompt shows then goes, a load starts then ends, a mob is near.
     client.is_in_npc_range.side_effect = _then_false(True)
-    client.is_loading.side_effect = [True, False]
+    client.is_loading.side_effect = _then_false(False, True)
     client.find_closest_mob.return_value = _mob("Test-Mob")
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
@@ -313,6 +314,151 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
         recording._REGISTRY[node_type].keys()
     )
     assert on_status.call_args_list[-1][0][0].startswith("Done")
+
+
+# ---------------------------------------------------------------------------
+# open_skeleton_key_door  (_KeyDoor: the unlock, then the walk through)
+# ---------------------------------------------------------------------------
+
+_START, _DOOR_SPOT, _STEP, _TRIGGER = XYZ(1.0, 1.0, 1.0), XYZ(2.0, 2.0, 2.0), XYZ(3.0, 3.0, 3.0), XYZ(4.0, 4.0, 4.0)
+_KEY_ROOM = "TestZone/KeyRoom"
+
+
+def _script(client, polls: list[tuple]) -> None:
+    """Drive *client* poll by poll: each is (position, prompt showing, loading after this poll, zone).
+
+    The zone is what it reads from that poll on. The last poll repeats, so a read past the
+    script finds the player where they stopped.
+    """
+    index = {"poll": 0}
+    last = len(polls) - 1
+
+    async def _position():
+        return polls[min(index["poll"], last)][0]
+
+    async def _prompt():
+        return polls[min(index["poll"], last)][1]
+
+    async def _loading():
+        loading = polls[min(index["poll"], last)][2]
+        index["poll"] += 1
+        return loading
+
+    async def _zone():
+        return polls[min(index["poll"], last)][3]
+
+    client.body.position.side_effect = _position
+    client.is_in_npc_range.side_effect = _prompt
+    client.is_loading.side_effect = _loading
+    client.zone_name.side_effect = _zone
+
+
+async def _record_door(client):
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+    await run_recording("open_skeleton_key_door", client, form, on_status, on_btn, try_set_label)
+    return form, on_status
+
+
+async def test_walking_through_after_the_unlock_records_the_whole_door(zero_poll):
+    client = FakeClient()
+    _script(
+        client,
+        [
+            (_START, False, False, "TestZone/Area"),
+            (_DOOR_SPOT, True, False, "TestZone/Area"),
+            (_STEP, False, False, "TestZone/Area"),
+            (_TRIGGER, False, True, "TestZone/Area"),
+            (_TRIGGER, False, False, _KEY_ROOM),
+        ],
+    )
+
+    form, on_status = await _record_door(client)
+
+    assert form.str_fields == {"zone": "TestZone/Area", "to_zone": _KEY_ROOM}
+    assert form.xyz_fields == {
+        "reset_xyz": (1.0, 1.0, 1.0),
+        "interact_xyz": (2.0, 2.0, 2.0),
+        "xyz": (4.0, 4.0, 4.0),
+    }
+    assert on_status.call_args_list[-1][0][0].startswith("Done")
+
+
+async def test_being_carried_in_never_records_where_the_player_stood(zero_poll):
+    """The load came too late to be their walk: the position before it is not in the trigger.
+
+    The door spot would be a Transition XYZ no teleport ever fires, so the trigger waits for
+    the walk back through.
+    """
+    client = FakeClient()
+    _script(
+        client,
+        [
+            (_START, False, False, "TestZone/Area"),
+            (_DOOR_SPOT, True, False, "TestZone/Area"),
+            (_STEP, False, False, "TestZone/Area"),
+            (_STEP, False, True, "TestZone/Area"),  # the carry-in starts
+            (_STEP, False, False, _KEY_ROOM),
+            (_STEP, False, True, _KEY_ROOM),  # walks out the exit
+            (_START, False, False, "TestZone/Area"),
+            (_TRIGGER, False, True, "TestZone/Area"),  # and back through the door
+            (_TRIGGER, False, False, _KEY_ROOM),
+        ],
+    )
+
+    with patch.object(recording, "KEY_DOOR_TELEPORT_CUTOFF", 0):
+        form, on_status = await _record_door(client)
+
+    assert form.str_fields["to_zone"] == _KEY_ROOM
+    assert form.xyz_fields["xyz"] == (4.0, 4.0, 4.0)
+    assert form.xyz_fields["interact_xyz"] == (2.0, 2.0, 2.0)
+    statuses = [c.args[0] for c in on_status.call_args_list]
+    assert any("Walk back through the door" in s for s in statuses)
+    assert statuses[-1].startswith("Done")
+
+
+async def test_walking_through_a_door_already_open_leaves_its_spot_alone(zero_poll):
+    """How to record again without spending a key, so what the door's spot held stays."""
+    client = FakeClient()
+    _script(
+        client,
+        [
+            (_START, False, False, "TestZone/Area"),
+            (_TRIGGER, False, True, "TestZone/Area"),
+            (_TRIGGER, False, False, _KEY_ROOM),
+        ],
+    )
+
+    form, on_status = await _record_door(client)
+
+    assert form.xyz_fields["xyz"] == (4.0, 4.0, 4.0)
+    assert "interact_xyz" not in form.xyz_fields
+    assert "door already open" in on_status.call_args_list[-1][0][0]
+
+
+async def test_stopping_a_door_recording_puts_back_what_the_form_held(zero_poll):
+    client = FakeClient()
+    client.zone_name.return_value = "TestZone/Area"
+    client.body.position.return_value = _DOOR_SPOT
+    waiting = asyncio.Event()
+
+    def not_loading():
+        waiting.set()
+        return False
+
+    client.is_loading.side_effect = not_loading
+    form = FakeParamForm()
+    form.set_xyz("xyz", 9.0, 9.0, 9.0)
+    on_status, on_btn, try_set_label = _callbacks()
+
+    task = asyncio.create_task(run_recording("open_skeleton_key_door", client, form, on_status, on_btn, try_set_label))
+    await waiting.wait()
+    task.cancel()
+    await task
+
+    assert form.xyz_fields == {"xyz": (9.0, 9.0, 9.0)}
+    assert form.str_fields == {}
+    on_btn.assert_called_with("Record")
 
 
 # ---------------------------------------------------------------------------

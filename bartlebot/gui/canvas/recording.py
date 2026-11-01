@@ -1,14 +1,15 @@
 """Async recording workflows for the node editor's Record button.
 
 A workflow follows the player through one kind of step and fills the param form
-with what it captured. There are three, and every recordable node is one of them
-with its own param keys and prompt text:
+with what it captured. Every recordable node is one of these, with its own param
+keys and prompt text:
 
   * ``_WalkIn`` — walk into a zone change (``enter_zone``, ``enter_dungeon``,
     ``enter_gauntlet``).
   * ``_Interact`` — walk up to something and use it, optionally through a loading
     screen (``interact``, ``interact_menu``,
     ``enter_zone_via_object``).
+  * ``_KeyDoor`` — unlock a door and walk through it (``open_skeleton_key_door``).
   * ``_Point`` — the zone and the player's position, at once.
   * ``_Enemy`` — the mob closest to the player, by name (``handle_combat``).
 
@@ -24,7 +25,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from bartleby.runtime.paths import NPC_RANGE_TITLE_PATH
-from bartleby.runtime.timing import RECORDING_POLL_INTERVAL
+from bartleby.runtime.timing import KEY_DOOR_TELEPORT_CUTOFF, RECORDING_POLL_INTERVAL
 
 from bartlebot.game import entity_names, zone_names
 from bartlebot.nodes import node_helpers
@@ -143,6 +144,13 @@ def _transition_label(from_zone: str | None, to_zone: str | None, via: str = "")
     with ``via …`` when the thing used to get there is known."""
     name = _zone_display if _names_differ(from_zone, to_zone) else _zone_segment
     return f"{name(from_zone)} → {name(to_zone)}" + (f" via {via}" if via else "")
+
+
+def _entered_via_label(from_zone: str | None, to_zone: str | None, target: str) -> str:
+    """``Enter <destination> via <target>`` when the zones' names tell them apart, else ``A → B via <target>``."""
+    if target and _names_differ(from_zone, to_zone):
+        return f"Enter {_zone_display(to_zone)} via {target}"
+    return _transition_label(from_zone, to_zone, via=target)
 
 
 #: The labels Record writes, other than a bare zone: ``Interact with …``, ``Defeat …``,
@@ -445,11 +453,87 @@ class _Interact(_Workflow):
         await _wait_out_loading(client)
         to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str(self.destination_key, to_zone)
-        if target and _names_differ(zone, to_zone):
-            try_set_label(f"Enter {_zone_display(to_zone)} via {target}")
-        else:
-            try_set_label(_transition_label(zone, to_zone, via=target))
+        try_set_label(_entered_via_label(zone, to_zone, target))
         return f"Done — {_zone_display(to_zone)}"
+
+
+@dataclass(frozen=True, kw_only=True)
+class _KeyDoor(_Workflow):
+    """Unlock a skeleton key door, and walk through it.
+
+    The zone and the starting position become the reset, and the last position with the
+    prompt showing the door. Walking into the trigger makes the last position before the
+    load the trigger point.
+
+    The game carries a player in by itself about 7 s after they use a key, from wherever
+    they stand, so that last position only counts when the load started soon enough to have
+    been their own walk (KEY_DOOR_TELEPORT_CUTOFF). Otherwise the player walks out and back
+    through the door, which costs no second key, and that load is the walk. A door already
+    open shows no prompt: walking through it records the trigger and leaves the door's spot
+    as it was, which is how to record again without spending a key.
+    """
+
+    def keys(self) -> list[str]:
+        return ["zone", "to_zone", "interact_xyz", "xyz", "reset_xyz"]
+
+    async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
+        zone = await _zone_to_record(client)
+        param_form.set_str("zone", zone)
+        last_pos = await client.body.position()
+        _set_position(param_form, "reset_xyz", last_pos)
+        on_status("Walk to the door…")
+
+        loop = asyncio.get_running_loop()
+        target = ""
+        seen_prompt = False
+        prompt_went_at: float | None = None
+        while True:
+            last_pos = await client.body.position()
+            if await client.is_in_npc_range():
+                _set_position(param_form, "interact_xyz", last_pos)
+                # Read on every poll: the prompt can show before its title is filled in.
+                target = await _npc_range_title(client) or target
+                if not seen_prompt:
+                    on_status("Use your key, then walk into the door…")
+                seen_prompt = True
+                prompt_went_at = None
+            elif seen_prompt and prompt_went_at is None:
+                prompt_went_at = loop.time()
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
+            if await client.is_loading():
+                break
+
+        on_status("Loading…")
+        walked = not seen_prompt or (
+            prompt_went_at is not None and loop.time() - prompt_went_at < KEY_DOOR_TELEPORT_CUTOFF
+        )
+        if walked:
+            _set_position(param_form, "xyz", last_pos)
+        await _wait_out_loading(client)
+        to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
+        param_form.set_str("to_zone", to_zone)
+        try_set_label(_entered_via_label(zone, to_zone, target))
+
+        if not walked:
+            on_status("Carried in by the game. Walk out the exit…")
+            await self._walk_back_through(client, param_form, on_status, zone)
+        if not seen_prompt:
+            return f"Done — {_zone_display(to_zone)} · door already open, Interact XYZ not recorded"
+        return f"Done — {_zone_display(to_zone)}"
+
+    async def _walk_back_through(self, client, param_form, on_status, zone: str | None) -> None:
+        """Follow the player out of the room and back through the door, for the trigger point."""
+        while await client.is_loading() or await _zone_to_record(client) != zone:
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
+        on_status("Walk back through the door…")
+        while True:
+            last_pos = await client.body.position()
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
+            if await client.is_loading():
+                break
+        on_status("Loading…")
+        _set_position(param_form, "xyz", last_pos)
+        await _wait_out_loading(client)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -529,6 +613,7 @@ _REGISTRY: dict[str, _Workflow] = {
     "enter_zone_via_object": _Interact(
         zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone", names_target=True
     ),
+    "open_skeleton_key_door": _KeyDoor(),
     "teleport_to_coordinates": _Point(shows_stop=False),
     "mark_location": _Point(shows_stop=False),
     "teleport_to_marked_location": _Point(sets_label=True),

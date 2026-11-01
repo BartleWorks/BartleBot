@@ -184,8 +184,8 @@ def driven_params(config: BotConfig, library: SubgraphLibrary | None = None) -> 
 
 # The return an inserted node should carry onward. An edge with no ``when`` fires
 # whatever the node did, so a failure flows straight down the success path -- almost
-# never what an author means. Every shipped node type returns SUCCESS/FAILURE or
-# TRUE/FALSE, so there is always a sensible answer.
+# never what an author means. Every shipped node type returns SUCCESS or TRUE, whatever
+# else it can return, so there is always a sensible answer.
 _HAPPY_PATH_RETURNS = ("SUCCESS", "TRUE")
 
 
@@ -406,7 +406,7 @@ def _validate_node(
     merging = NODE_SPECS.get(state.node_type)
     if merging is not None and merging.merges_players and player_realms.declares_separate(config):
         error_reasons.append(
-            f"This node puts every player on one realm, and this bot's {player_realms.OPTION} is "
+            f"This node needs every player on one realm, and this bot's {player_realms.OPTION} is "
             f"{player_realms.SEPARATE}"
         )
 
