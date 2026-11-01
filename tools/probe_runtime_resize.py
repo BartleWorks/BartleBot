@@ -94,6 +94,15 @@ sizes of two accounts on 1080p, in physical pixels)
       its client quit. Clients share the files. So a temporary size can reach
       ``preferences.xml``; a temporary ``UISize`` was not seen to reach ``config.xml``.
 
+    What the recipe became: wizwalker's ``client.video_manager``, with no hook, from Stage 2 of the
+    plan. The manager comes from a pattern over the base constructor's store of ``this`` in the
+    slot, which finds +0x3320FF0 on the live exe and +0x339E570 on the Test realm's (r812087). The
+    destructor's clear is the only other write. ``slot`` runs it on one client: the same object
+    VideoManagerHook captures, and 1280x720 to 854x480 and back with its device and window agreeing,
+    the byte clearing in 88 and 31 ms. Both scans took 0.16 s, the event loop's longest gap 20 ms.
+    The object's vtable does not hold the function VideoManagerHook hooks: entry 89 is an override
+    that calls it directly, so the check on the object is its device's size instead.
+
     Two things learned the hard way. The game's window dies with its host: killing a probe that
     has it embedded destroys the window, and the process goes on with no window at all, so it needs
     ending and a relaunch. And PrintWindow returns all white once a device has been reset, while the
@@ -179,6 +188,7 @@ HOW TO RUN
     What the plan measures, each on the Resolution node unless ``--hook``:
 
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py pending --refs
+        uv run --no-sync --with numpy python tools/probe_runtime_resize.py slot 854 480
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py nodes UISize Resolution --dump
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py timeline 1024 768 --embed --ui Regular
         uv run --no-sync --with numpy python tools/probe_runtime_resize.py soak --count 30 --click
@@ -742,6 +752,74 @@ async def cmd_pending(client, args) -> None:
             for at in reads[:6]:
                 nearby = await handler.read_bytes(at, 24)
                 print(f"    +{at - module_base:#x} {nearby.hex(' ', 1)}")
+
+
+async def largest_gap(gaps: list[float]) -> None:
+    """Keep the longest the event loop has gone without running this, in ``gaps[0]``."""
+    last = time.perf_counter()
+    while True:
+        await asyncio.sleep(0.001)
+        now = time.perf_counter()
+        gaps[0] = max(gaps[0], now - last)
+        last = now
+
+
+async def apply_by_library(client, node: int, width: int, height: int) -> float | None:
+    """A resize through wizwalker's VideoManager, in ms until the byte clears; None if it never does."""
+    started = time.perf_counter()
+    await client.video_manager.apply_resolution(node, width, height)
+    while time.perf_counter() - started < 15.0:
+        if not await client.video_manager.apply_pending():
+            return (time.perf_counter() - started) * 1000
+        await asyncio.sleep(0.002)
+    return None
+
+
+async def cmd_slot(client, args) -> None:
+    """wizwalker's VideoManager, with no hook: its manager against the hook's, then a resize there and back."""
+    video = client.video_manager
+    gaps = [0.0]
+    ticker = asyncio.create_task(largest_gap(gaps))
+    try:
+        started = time.perf_counter()
+        manager = await video.read_base_address()
+        pending = await video.pending_flag_offset()
+        print(
+            f"  both scans took {time.perf_counter() - started:.2f} s, the event loop's longest gap {gaps[0] * 1000:.0f} ms"
+        )
+        gaps[0] = 0.0
+        started = time.perf_counter()
+        await video.read_base_address()
+        print(f"  a second read took {(time.perf_counter() - started) * 1000:.1f} ms")
+    finally:
+        ticker.cancel()
+    print(f"  manager {manager:#x}, pending byte +{pending:#x}")
+    print(f"  device size {await video.read_device_size()}, window {client_size(client.window_handle)}")
+
+    async with Forcer(client, setmode=False) as forcer:
+        hooked = await forcer.manager()
+    print(f"  the hook captures {hooked:#x}: {'the same' if hooked == manager else '!! NOT THE SAME'}")
+    print(
+        f"  code says pending byte +{forcer.pending_off:#x}: {'the same' if forcer.pending_off == pending else '!! NOT THE SAME'}"
+    )
+    if hooked != manager or forcer.pending_off != pending:
+        return
+
+    node = await live_node(client, "Resolution")
+    if node is None:
+        print("  !! no single live Resolution node; not resizing")
+        return
+    hwnd = client.window_handle
+    before = client_size(hwnd)
+    _string, text = await read_resolution(client, node)
+    print(f"  client {before}, the node says {text!r}")
+    for width, height in ((args.width, args.height), before):
+        cleared = await apply_by_library(client, node, width, height)
+        await asyncio.sleep(args.settle)
+        print(
+            f"  {width}x{height}: the byte cleared in {cleared and round(cleared)} ms, client {client_size(hwnd)}, "
+            f"device {await video.read_device_size()}"
+        )
 
 
 async def cmd_nodes(client, args) -> None:
@@ -1637,6 +1715,11 @@ async def main() -> int:
     pending = sub.add_parser("pending")
     pending.add_argument("--refs", action="store_true", help="hook for a moment, and list what points at the manager")
     pending.set_defaults(fn=cmd_pending)
+    slot = sub.add_parser("slot")
+    slot.add_argument("width", type=int)
+    slot.add_argument("height", type=int)
+    slot.add_argument("--settle", type=float, default=1.0)
+    slot.set_defaults(fn=cmd_slot)
     nodes = sub.add_parser("nodes")
     nodes.add_argument("names", nargs="*", default=["UISize", "Resolution"])
     nodes.add_argument("--dump", action="store_true", help="print each node's bytes")
