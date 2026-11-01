@@ -33,9 +33,9 @@ from bartlebot.options import player_realms
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
-        key="zone",
+        key="from_zone",
         type="zone",
-        label="Zone",
+        label="From Zone",
         help=ZONE_AT_START,
         default="",
         required=True,
@@ -117,7 +117,7 @@ class _Door:
 
     machine: object
     clients: list
-    zone: str
+    from_zone: str
     to_zone: str
     trigger: XYZ
     reset: XYZ
@@ -222,7 +222,7 @@ async def _fire_trigger(door: _Door, group: list) -> bool:
         door.machine,
         group,
         door.numbers(group),
-        door.zone,
+        door.from_zone,
         door.to_zone,
         door.trigger,
         [door.reset] * len(group),
@@ -354,13 +354,13 @@ async def run(machine, clients: list, params: dict) -> str:
     or stayed after it; dialogue did not clear within DIALOG_TIMEOUT; not every client reached
     to_zone. NO_KEY: step 3.
     """
-    zone: str = params["zone"]
+    from_zone: str = params["from_zone"]
     to_zone: str = params["to_zone"]
     interact = XYZ(**params["interact_xyz"])
     door = _Door(
         machine=machine,
         clients=clients,
-        zone=zone,
+        from_zone=from_zone,
         to_zone=to_zone,
         trigger=XYZ(**params["xyz"]),
         reset=XYZ(**params["reset_xyz"]),
@@ -368,7 +368,7 @@ async def run(machine, clients: list, params: dict) -> str:
     )
 
     machine.log(
-        f"open_skeleton_key_door: {zone!r} → {to_zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
+        f"open_skeleton_key_door: {from_zone!r} → {to_zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
     )
 
     # 1. A rerun after a fight can find the door open and someone already through it.
@@ -376,10 +376,10 @@ async def run(machine, clients: list, params: dict) -> str:
     zones = await node_helpers.read_zones(clients, poll_interval=POLL_INTERVAL)
     machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     inside = [node_helpers.zone_matches(z, to_zone) for z in zones]
-    wrong = [z for z, here in zip(zones, inside) if not here and not node_helpers.zone_matches(z, zone)]
+    wrong = [z for z, here in zip(zones, inside) if not here and not node_helpers.zone_matches(z, from_zone)]
     if wrong:
         machine.log(
-            f"FAILURE: clients not in expected zone (expected={zone!r} or {to_zone!r}, unexpected={wrong})",
+            f"FAILURE: clients not in expected zone (expected={from_zone!r} or {to_zone!r}, unexpected={wrong})",
             logging.WARNING,
         )
         return "FAILURE"

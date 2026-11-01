@@ -16,7 +16,7 @@ from tests.conftest import FakeClient, FakeMachine, zone_unreadable_at_first
 from tests.node_helper_patches import patch_helper, set_helper
 
 _PARAMS = {
-    "zone": "TestZone",
+    "from_zone": "TestZone",
     "to_zone": "KeyRoom",
     "interact_xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
     "xyz": {"x": 2.0, "y": 0.0, "z": 0.0},
@@ -422,7 +422,7 @@ async def test_a_player_in_neither_zone_fails_before_moving_anyone():
 async def test_a_zone_unreadable_at_first_is_waited_for_not_failed():
     """Just off a loading screen the zone reads None for a moment (#282)."""
     door = _Door([5])
-    zone_unreadable_at_first(door.clients[0], _PARAMS["zone"])
+    zone_unreadable_at_first(door.clients[0], _PARAMS["from_zone"])
     assert await _run(door) == "SUCCESS"
 
 
@@ -450,7 +450,7 @@ async def test_a_challenge_mode_copy_of_to_zone_counts_as_inside():
     clients = [FakeClient(), FakeClient()]
     for client in clients:
         client.zone_name.return_value = "Aquila/Interiors/AQ_Z02_ThroneRoom_Hard"
-    params = {**_PARAMS, "zone": "Aquila/AQ_Z02_Atlantea", "to_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom"}
+    params = {**_PARAMS, "from_zone": "Aquila/AQ_Z02_Atlantea", "to_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom"}
 
     assert await door_node.run(FakeMachine(), clients, params) == "SUCCESS"
     assert all(not c.teleport.called for c in clients)

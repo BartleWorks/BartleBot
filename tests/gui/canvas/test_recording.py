@@ -375,7 +375,7 @@ async def test_walking_through_after_the_unlock_records_the_whole_door(zero_poll
 
     form, on_status = await _record_door(client)
 
-    assert form.str_fields == {"zone": "TestZone/Area", "to_zone": _KEY_ROOM}
+    assert form.str_fields == {"from_zone": "TestZone/Area", "to_zone": _KEY_ROOM}
     assert form.xyz_fields == {
         "reset_xyz": (1.0, 1.0, 1.0),
         "interact_xyz": (2.0, 2.0, 2.0),
@@ -399,7 +399,7 @@ async def test_being_carried_in_never_records_where_the_player_stood(zero_poll):
             (_STEP, False, False, "TestZone/Area"),
             (_STEP, False, True, "TestZone/Area"),  # the carry-in starts
             (_STEP, False, False, _KEY_ROOM),
-            (_STEP, False, True, _KEY_ROOM),  # walks out the exit
+            (_STEP, False, True, _KEY_ROOM),  # leaves, and comes back to the door's zone
             (_START, False, False, "TestZone/Area"),
             (_TRIGGER, False, True, "TestZone/Area"),  # and back through the door
             (_TRIGGER, False, False, _KEY_ROOM),
@@ -414,6 +414,42 @@ async def test_being_carried_in_never_records_where_the_player_stood(zero_poll):
     assert form.xyz_fields["interact_xyz"] == (2.0, 2.0, 2.0)
     statuses = [c.args[0] for c in on_status.call_args_list]
     assert any("Walk back through the door" in s for s in statuses)
+    assert statuses[-1].startswith("Done")
+
+
+async def test_the_way_back_from_a_carry_in_may_cross_other_zones(zero_poll):
+    """The exit leaves the dungeon, so the author teleports out and recalls back in.
+
+    The wait is for the door's zone alone: the world between, and a load on each side of it,
+    neither end the recording nor are taken for the walk through the door.
+    """
+    client = FakeClient()
+    _script(
+        client,
+        [
+            (_START, False, False, "TestZone/Area"),
+            (_DOOR_SPOT, True, False, "TestZone/Area"),
+            (_STEP, False, False, "TestZone/Area"),
+            (_STEP, False, True, "TestZone/Area"),  # the carry-in starts
+            (_STEP, False, False, _KEY_ROOM),
+            (_STEP, False, True, _KEY_ROOM),  # teleports out of the dungeon
+            (_STEP, False, False, "Hub/Central"),
+            (_STEP, False, False, "Hub/Central"),
+            (_START, False, True, "Hub/Central"),  # recalls back in
+            (_START, False, False, "Hub/Central"),
+            (_START, False, False, "TestZone/Area"),
+            (_TRIGGER, False, True, "TestZone/Area"),  # and walks the transition
+            (_TRIGGER, False, False, _KEY_ROOM),
+        ],
+    )
+
+    with patch.object(recording, "KEY_DOOR_TELEPORT_CUTOFF", 0):
+        form, on_status = await _record_door(client)
+
+    assert form.xyz_fields["xyz"] == (4.0, 4.0, 4.0)
+    assert form.str_fields["to_zone"] == _KEY_ROOM
+    statuses = [c.args[0] for c in on_status.call_args_list]
+    assert statuses.index("Walk back through the door…") > statuses.index("Loading…")
     assert statuses[-1].startswith("Done")
 
 

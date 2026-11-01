@@ -467,18 +467,21 @@ class _KeyDoor(_Workflow):
 
     The game carries a player in by itself about 7 s after they use a key, from wherever
     they stand, so that last position only counts when the load started soon enough to have
-    been their own walk (KEY_DOOR_TELEPORT_CUTOFF). Otherwise the player walks out and back
-    through the door, which costs no second key, and that load is the walk. A door already
+    been their own walk (KEY_DOOR_TELEPORT_CUTOFF). Otherwise the player gets back to the
+    door's side of it by whatever route they have and walks through again, which costs no
+    second key, and that load is the walk. The exit leaves the dungeon rather than returning
+    them to the door's room, so the usual route is a teleport out and a recall back in; the
+    wait is for the zone alone, however many loads it takes. A door already
     open shows no prompt: walking through it records the trigger and leaves the door's spot
     as it was, which is how to record again without spending a key.
     """
 
     def keys(self) -> list[str]:
-        return ["zone", "to_zone", "interact_xyz", "xyz", "reset_xyz"]
+        return ["from_zone", "to_zone", "interact_xyz", "xyz", "reset_xyz"]
 
     async def capture(self, client, param_form, on_status, try_set_label, player, safety_delay) -> str:
         zone = await _zone_to_record(client)
-        param_form.set_str("zone", zone)
+        param_form.set_str("from_zone", zone)
         last_pos = await client.body.position()
         _set_position(param_form, "reset_xyz", last_pos)
         on_status("Walk to the door…")
@@ -515,14 +518,14 @@ class _KeyDoor(_Workflow):
         try_set_label(_entered_via_label(zone, to_zone, target))
 
         if not walked:
-            on_status("Carried in by the game. Walk out the exit…")
+            on_status("Carried in by the game. Get back to the door's zone…")
             await self._walk_back_through(client, param_form, on_status, zone)
         if not seen_prompt:
             return f"Done — {_zone_display(to_zone)} · door already open, Interact XYZ not recorded"
         return f"Done — {_zone_display(to_zone)}"
 
     async def _walk_back_through(self, client, param_form, on_status, zone: str | None) -> None:
-        """Follow the player out of the room and back through the door, for the trigger point."""
+        """Wait for the player to be back in *zone*, then follow them through the door, for the trigger point."""
         while await client.is_loading() or await _zone_to_record(client) != zone:
             await asyncio.sleep(RECORDING_POLL_INTERVAL)
         on_status("Walk back through the door…")
