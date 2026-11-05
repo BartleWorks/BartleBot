@@ -365,7 +365,7 @@ BartleBuddy, and listed here with the others. https://claude.ai/artifact/MBsMDvJ
 | 1 | BartleBuddy #15 | measure in game what the design assumes (`tools/probe_multibox.py`) | landed 2026-11-05 |
 | 2 | BartleBuddy #16 | Roles, the Active wizard and the leader | landed 2026-11-04 |
 | 3 | BartleBuddy #17 | the team's behaviors: Speed, Stop following, ports from far away | landed 2026-11-04 |
-| 4 | BartleBuddy #18 | two views, One large and All equal | planned |
+| 4 | BartleBuddy #18 | two views, One large and All equal | landed 2026-11-05 |
 | 5 | BartleBuddy #19 | swapping and focus | planned |
 | 6 | BartleBuddy #20 | hotkeys | planned |
 | 7 | BartleBuddy #21 | in game on both setups, and the last of the old words | planned |
