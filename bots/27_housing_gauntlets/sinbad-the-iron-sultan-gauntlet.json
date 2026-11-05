@@ -1,0 +1,520 @@
+{
+  "id": "879b3c69-907d-420e-996a-719890c09d99",
+  "name": "Sinbad & the Iron Sultan Gauntlet",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Archer Rack",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Blue Vase",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Gilded Sarcophagus",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Ice Prism",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Monkey Tail Goblet",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Qhat Shield",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Roc",
+      "category": "Mounts"
+    },
+    {
+      "name": "Sinbad Boss Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Sinbad Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Sinbad Metallos Roaming Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tempest",
+      "category": "Treasure Cards"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Mounts",
+    "Gauntlet"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "t_11",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend on gauntlet sigil",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_hooked_player": false,
+        "target_player": 0,
+        "to_zone": ""
+      },
+      "notes": "Friend account should be unhooked and standing on the gauntlet sigil. Ensure that there are no conflicting interaction items at the chosen location, such as other gauntlets, the Bank, etc."
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.00023960265835398786,
+        "y": -0.0004109813348458502
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0002396026583,
+        "y": 89.99958901866515
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "dungeon_zone": "Housing_Gauntlet_Sinbad/SP_SinbadGauntlet_Int01",
+        "gauntlet_name": "Sinbad & the Iron Sultan Gauntlet"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "check_health_and_mana",
+      "label": "Check health and mana",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "health_threshold": 0.5,
+        "mana_threshold": 0.15
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_Sinbad/SP_SinbadGauntlet_Int01",
+        "xyz": {
+          "x": 2078.12,
+          "y": -5777.65,
+          "z": -2052.52
+        }
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Interact with Sinbad",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_Sinbad/SP_SinbadGauntlet_Int01",
+        "interact_xyz": {
+          "x": 3378.38,
+          "y": -6003.84,
+          "z": -2052.44
+        },
+        "reset_xyz": {
+          "x": 2930.3,
+          "y": -5810.44,
+          "z": -2052.54
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Enter Metallos from Ferros Harbor",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Housing_Gauntlet_Sinbad/SP_SinbadGauntlet_Int01",
+        "to_zone": "Housing_Gauntlet_Sinbad/SP_SinbadGauntlet_Int02",
+        "xyz": {
+          "x": 3819.44,
+          "y": -2286.17,
+          "z": -1904.48
+        },
+        "reset_xyz": {
+          "x": 3809.02,
+          "y": -3332.37,
+          "z": -2052.53
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Coordinates",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Housing_Gauntlet_Sinbad/SP_SinbadGauntlet_Int02",
+        "xyz": {
+          "x": 1761.98,
+          "y": 3542.05,
+          "z": -3563.75
+        }
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Metallossus",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "HG_Sinbad_Colossus_130",
+        "wiki_page": "Creature:Metallossus (Tier 5)",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "sleep",
+      "label": "Sleep",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 30.0,
+        "use_safety_delay": false
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for Dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "t_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_12",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_sync_players_1_state_2",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in The Commons",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.00023960265835398786,
+          "y": -0.0004109813348458502
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
+    "version": 1
+  },
+  "history": [
+    "8edcec3d2336de2b9d6a4544ff0741571ec617cd27e884f34414dd077705f952",
+    "694009c78506e0dd6ea3117df947d2edf09fbdc0ccd0a40aea8e37a4d0b70c33",
+    "b8e493914f17e1bdad434eb527cfa3af08b04746ea351adb3e2b3e4f0ca0ff0d",
+    "abcfcd444f78199557f73b893fdfd0aa8ef1e67ddd76773556e6d233ae49bc64",
+    "b3dec1c7d422a96d1b1744b2ba2869df42a87674051f541347cf361c77ce8b74",
+    "a269d4c7696d8e407117db16f5576bf640b4ecaad7c701371c37bd7be4c0f480",
+    "bc27d4c5e741a881bd27f3266f4c8c3587e3149c7d049c08c56b461dc0a71089"
+  ]
+}
