@@ -351,3 +351,40 @@ The rules every stage kept:
 - **A client that can't be resized behaves as it does today**, and a session with no Side tile
   never resizes, unless a game is too large for its tile beside another, which the user chose in
   Stage 5. One account never does.
+
+## Multibox roles and views
+
+Epic BartleBuddy #14: a player swaps wizards with one click or one key, and the large tile, the
+keyboard and the team all follow, from a Role per slot and the Active wizard. Filed in
+BartleBuddy, and listed here with the others. https://claude.ai/artifact/MBsMDvJPgGM2aLcRV2PSQt
+
+**In progress. The page is kept current while the stages land.**
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | BartleBuddy #15 | measure in game what the design assumes (`tools/probe_multibox.py`) | landed 2026-11-05 |
+| 2 | BartleBuddy #16 | Roles, the Active wizard and the leader | landed 2026-11-04 |
+| 3 | BartleBuddy #17 | the team's behaviors: Speed, Stop following, ports from far away | landed 2026-11-04 |
+| 4 | BartleBuddy #18 | two views, One large and All equal | planned |
+| 5 | BartleBuddy #19 | swapping and focus | planned |
+| 6 | BartleBuddy #20 | hotkeys | planned |
+| 7 | BartleBuddy #21 | in game on both setups, and the last of the old words | planned |
+
+BartleBuddy's `docs/MULTIBOX.md` is the feature as built, and core's `docs/WINDOW_SIZING.md` the
+resizes under it. BartleBot has no part of it, and its pin stays at core's `1b1caab`.
+
+The rules every stage keeps:
+
+- **The 1:1 contract.** The backbuffer equals the client area after every resize, because the
+  game maps clicks against it, and a window is never stretched to fit a tile.
+- **The ladder.** Every size a client takes is in `VALID_RESOLUTIONS`, with the UI size
+  `ui_size_for` gives it.
+- **The arbiter and the crossing.** Every press and memory write goes through a lease, and the
+  GUI holds no wizwalker object.
+- **BartleBot's answers.** Its equal grid, window floor and launch fit don't change, and its suite
+  stays green against core's merged tree.
+- **One account** never resizes, never scans and shows no team controls.
+- **The 2.0x cap** on the speed field, and the user's own game settings, captured once and given
+  back.
+- **Core merges first**, and every in-game check runs the core case, one or two accounts on 1080p,
+  before four on 4K. A quit is checked from the terminal, never under the debugger.
