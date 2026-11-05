@@ -46,6 +46,7 @@ dev = [
     # Supplies the session-scoped `qapp` fixture the GUI tests share.
     "pytest-qt>=4.5.0",
     "pytest-cov>=6.0",
+    "pytest-rerunfailures>=16.7",
 ]
 package = [
     "pyinstaller>=6.22.3",

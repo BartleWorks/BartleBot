@@ -185,6 +185,9 @@ async def test_a_center_that_works_never_falls_back_to_a_player():
     assert not fight.is_center_blocked(helper)
 
 
+# A known flake (#199): under -n auto load the 0.03 s timeout can end after the first attempt, so
+# only the center was tried; it passes alone. See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 async def test_each_attempt_after_a_blocked_center_tries_the_next_player():
     machine = FakeMachine()
     first, second, late = FakeClient(), FakeClient(), FakeClient()
