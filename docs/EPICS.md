@@ -358,23 +358,29 @@ Epic BartleBuddy #14: a player swaps wizards with one click or one key, and the 
 keyboard and the team all follow, from a Role per slot and the Active wizard. Filed in
 BartleBuddy, and listed here with the others. https://claude.ai/artifact/MBsMDvJPgGM2aLcRV2PSQt
 
-**In progress. The page is kept current while the stages land.**
+**Complete: all 8 stages landed by 2026-11-06.**
 
-| stage | issue | what | status |
-|---|---|---|---|
-| 1 | BartleBuddy #15 | measure in game what the design assumes (`tools/probe_multibox.py`) | landed 2026-11-05 |
-| 2 | BartleBuddy #16 | Roles, the Active wizard and the leader | landed 2026-11-04 |
-| 3 | BartleBuddy #17 | the team's behaviors: Speed, Stop following, ports from far away | landed 2026-11-04 |
-| 4 | BartleBuddy #18 | two views, One large and All equal | landed 2026-11-05 |
-| 5 | BartleBuddy #19 | swapping and focus: fast swaps, the first click, the pause and detached windows | landed 2026-11-05 |
-| 6 | BartleBuddy #20 | hotkeys: keys, defaults and clashes, the game's chat and detached windows | landed 2026-11-06 |
-| 7 | BartleBuddy #23 | a smooth swap: the ring in each resized tile until its game is in | landed 2026-11-06 |
-| 8 | BartleBuddy #21 | in game on both setups, and the last of the old words | planned |
+| stage | issue | what |
+|---|---|---|
+| 1 | BartleBuddy #15 | measure in game what the design assumes (`tools/probe_multibox.py`) |
+| 2 | BartleBuddy #16 | Roles, the Active wizard and the leader |
+| 3 | BartleBuddy #17 | the team's behaviors: Speed, Stop following, ports from far away |
+| 4 | BartleBuddy #18 | two views, One large and All equal |
+| 5 | BartleBuddy #19 | swapping and focus: fast swaps, the first click, the pause and detached windows |
+| 6 | BartleBuddy #20 | hotkeys: keys, defaults and clashes, the game's chat and detached windows |
+| 7 | BartleBuddy #23 | a smooth swap: the ring in each resized tile until its game is in |
+| 8 | BartleBuddy #21 | in game on both setups, and the last of the old words (`tests/test_terms.py`) |
 
 BartleBuddy's `docs/MULTIBOX.md` is the feature as built, and core's `docs/WINDOW_SIZING.md` the
 resizes under it. BartleBot has no part of it, and its pin stays at core's `1b1caab`.
 
-The rules every stage keeps:
+After it, each needing a plan of its own: copying interactions (BartleBuddy #1, #2), combat
+(BartleBot #276), separate instances, scouting and auto-questing (BartleBuddy #26), resizing across aspects
+(BartleBuddy #10), and BartleBot adopting resize (BartleBot #308). The stages' leftovers are BartleBuddy #13
+(flaky tests), #22 (a resize taken back behind a secure screen), #24 (a white frame as a swap's
+rings come off) and #25 (a swallowed cancel in six more places).
+
+The rules every stage kept:
 
 - **The 1:1 contract.** The backbuffer equals the client area after every resize, because the
   game maps clicks against it, and a window is never stretched to fit a tile.
