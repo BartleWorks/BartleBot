@@ -974,35 +974,6 @@
       "stops": {
         "NO_KEY": "Out of Stone Skeleton Keys"
       }
-    },
-    {
-      "id": "state_4",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to World Hub",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "collect_wisps",
-      "label": "Collect Wisps",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true
-      }
     }
   ],
   "transitions": [
@@ -1121,36 +1092,6 @@
       "source": "t_sync_players_1_state_2",
       "dest": "t_1",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "t_sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "state_4",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

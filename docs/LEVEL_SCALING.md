@@ -228,5 +228,6 @@ the default resolves to.
 ## Not done
 
 - **Split travel.** Sending only the players who need scaling, with no mark, would cover the
-  zones where a mark fails. #97 is the same idea for `handle_potions`.
+  zones where a mark fails. `handle_potions` does this for a buyer with no mana to mark: it
+  goes without one and ports back to a player who stayed or recalled (#307).
 - **Migrating the library** and retiring the two old nodes: under #59.

@@ -65,6 +65,30 @@ NODE_SPEC = NodeSpec(
     ),
 )
 
+#: The most mana a mark or a recall ever costs. Either costs this or a tenth of the player's
+#: maximum mana, whichever is smaller (bartleby-core docs/WIZARD101.md).
+MARK_MANA_CAP = 10
+
+
+def mark_mana_cost(max_mana: float) -> float:
+    """The mana a player with `max_mana` spends on one mark or one recall.
+
+    How the game rounds the tenth isn't known. A player just under the cost by rounding gets a
+    mark click with no answer, which handle_potions reads as no mana too.
+    """
+    return min(MARK_MANA_CAP, max_mana / 10)
+
+
+async def short_of_mana(client) -> bool:
+    """Whether `client` has less mana than one mark or one recall costs.
+
+    Against the unscaled maximum: marks and recalls happen outside Challenge Mode dungeons,
+    where the stat caps don't apply.
+    """
+    current, maximum = await asyncio.gather(client.stats.current_mana(), client.stats.max_mana())
+    return current < mark_mana_cost(maximum)
+
+
 #: Where each client last marked in this run, in ``machine.node_scratch``. Every mark goes
 #: through :func:`mark_client`, handle_level_scaling's included, so the record never names a
 #: mark that has since been replaced. A recall that lands elsewhere drops it (:func:`forget`):
