@@ -76,8 +76,9 @@ docs/RELEASING.md, "Testing a draft", has the why behind each step.
 Only for the first release, or when the draft changed bartlebot/updates/,
 bartlebot/packaging/, gui/update_prompt.py or the Velopack pin.
 
-- [ ] Pack a newer version, sign its feed and update the draft to it:
-      docs/INSTALLER.md, "Trying an install, an update and an uninstall".
+- [ ] Pack a newer version, reset its folder's access (icacls <folder> /reset /T), sign
+      its feed and update the draft to it: docs/INSTALLER.md, "Trying an install, an
+      update and an uninstall".
 - [ ] Restart now: the app closes and opens again as the newer version.
 
 ## 5. Publish, in your own account

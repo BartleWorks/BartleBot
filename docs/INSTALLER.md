@@ -310,3 +310,13 @@ trusted, so the feed must still be signed by a key in `TRUSTED_KEYS`: sign it wi
 `tools/sign_feed.py sign` and the key's backup, or build the first version with a
 throwaway key added to `TRUSTED_KEYS` in that build only, never committed. Start the
 installed 0.1.0 with the variable set, and the popup offers 0.1.1.
+
+**A folder another account reads needs its access reset after packing.** `vpk pack` writes
+its packages and Setup.exe in the packing account's temp folder and moves them into the
+output folder, and a moved file keeps its access list: only that account, SYSTEM and
+Administrators can read it. Packed into `C:\Users\Public` for the test account, the update
+then fails with "could not be read: Permission denied" (0.3.0's section 4 did). So run
+`icacls <folder> /reset /T` after packing, which makes every file inherit the folder's
+access. It leaves the files' contents, and so the feed's signature, alone. A release
+downloaded with `gh release download` needs none of this, since `gh` writes each file in
+place.
