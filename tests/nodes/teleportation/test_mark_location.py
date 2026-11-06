@@ -531,3 +531,22 @@ async def test_only_the_clients_without_the_mark_are_checked():
     assert result == "SUCCESS"
     assert huds[marked].clicks == 0
     assert huds[fresh].clicks == 1
+
+
+# ── The mana one mark or recall costs ─────────────────────────────────────────
+
+
+@pytest.mark.parametrize(("max_mana", "cost"), [(1000, 10), (100, 10), (50, 5)])
+def test_a_mark_costs_ten_mana_or_a_tenth_of_the_maximum_whichever_is_smaller(max_mana, cost):
+    assert ml.mark_mana_cost(max_mana) == cost
+
+
+@pytest.mark.parametrize(
+    ("current", "maximum", "short"), [(9, 1000, True), (10, 1000, False), (4, 50, True), (5, 50, False)]
+)
+async def test_short_of_mana_compares_current_mana_with_the_cost(current, maximum, short):
+    client = FakeClient()
+    client.stats.current_mana = AsyncMock(return_value=current)
+    client.stats.max_mana = AsyncMock(return_value=maximum)
+
+    assert await ml.short_of_mana(client) is short
