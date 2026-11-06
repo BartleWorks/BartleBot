@@ -330,6 +330,15 @@ a recall there spends mana every loop where the door costs nothing, so those two
 walk-out exit. A bot's own mark inside the dungeon is not allowed: the recall goes to the
 latest mark.
 
+**Dungeon Farmer refills mana at the hub, wisps first, then potions.** A failed mark,
+usually for want of mana, sends the players to their world's hub to collect wisps, then
+back through Sync in zone. Since v2, a Collect Wisps there that leaves a player short goes
+to Handle Potions, which drinks, or buys first without marking (#307), before the same
+Sync (#311). Unrouted, that failure looped through recovery forever wherever the hub
+teleport point has no mana wisp in range, as at Lemuria. Only a player with no wisp, no
+potion and no gold is left, and the repeated-recovery stop ends that run
+(`docs/RETURN_ROUTING.md`).
+
 **Team-Up is on in Boss and Spellement Farmer and off in Dungeon Farmer; Challenge Mode is
 off in all three.** These are `enter_dungeon` defaults, not locks.
 

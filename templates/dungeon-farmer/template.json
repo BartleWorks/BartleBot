@@ -7,6 +7,13 @@
       "sha256": "5325fb692a7633d0a137643a03cc629c231168186f44df89df9c4a94e48951f3",
       "note": "First release",
       "released": "2026-10-03"
+    },
+    {
+      "version": 2,
+      "file": "v2.json",
+      "sha256": "451a24b74787fc90aa453d14d01f840d8d8a2a817ac37603604938e2d640fb90",
+      "note": "Use or buy a potion when the hub has no wisp for a player who couldn't mark",
+      "released": "2026-11-06"
     }
   ]
 }
