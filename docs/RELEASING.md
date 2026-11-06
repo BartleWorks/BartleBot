@@ -302,8 +302,11 @@ read Velopack's advisories and repeat the install, update and uninstall in
 
 Each version's notes are `release_notes/<version>.md`, written by hand before the tag
 and committed with the version bump. They say what changed for a user, in their words:
-what a release fixes or adds, not which files moved. Write paragraphs and lists, and no
-headings, since the popup draws a markdown heading larger than its own.
+what a release fixes or adds, not which files moved. They are user-facing text, so
+core's `docs/UI_TEXT.md` governs them: a fix is the behavior as it is now, in the present
+tense, with no numbers from one run and nothing about how it works inside. Write
+paragraphs and lists, and no headings, since the popup draws a markdown heading larger
+than its own.
 
 `tools/pack_release.py` composes what `vpk pack --releaseNotes` is given, into
 `dist/release-notes.md`: the version's notes, then the line `INSTALL_NOTES_MARKER`
