@@ -74,6 +74,41 @@ def test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_
     assert not unresolved, f"bots made from a template that does not ship: {unresolved}"
 
 
+def test_every_shipped_bot_is_on_its_templates_latest_version():
+    """A release reaches the shipped bots only when the maintainer reviews them against it.
+
+    Users never get an Official bot's update offered (docs/TEMPLATES.md, Updates), so a
+    shipped bot left on an older base keeps whatever the release fixed. Finish review
+    advances the base whatever was applied, so a reviewed bot is always on the latest.
+    """
+    shipped = project_root()
+    behind = []
+    for path in sorted((shipped / "bots").rglob("*.json")):
+        ref = json.loads(path.read_text(encoding="utf-8")).get("template")
+        if not isinstance(ref, dict):
+            continue
+        template = find_template(ref["id"], shipped, shipped)
+        if template is not None and ref["version"] < template.latest_version:
+            behind.append(f"{path.name}: {template.name} v{ref['version']} of v{template.latest_version}")
+
+    assert not behind, f"shipped bots behind their template: {behind}"
+
+
+def test_dungeon_farmer_falls_back_to_potions_when_the_hub_has_no_wisps():
+    """Unrouted, the hub Collect Wisps' FAILURE looped through recovery forever at Lemuria (#311)."""
+    template = next(t for t in _TEMPLATES if t.folder.name == "dungeon-farmer")
+    config = BotConfig.load(template.folder / f"v{template.latest_version}.json")
+    types = {s.id: s.node_type for s in config.states}
+    edges = {(t.source, t.when): t.dest for t in config.transitions}
+    hub = next(t.source for t in config.transitions if types[t.source] == "teleport_to_world_hub")
+    hub_wisps = edges[(hub, "SUCCESS")]
+    potions = edges[(hub_wisps, "FAILURE")]
+
+    assert types[hub_wisps] == "collect_wisps"
+    assert types[potions] == "handle_potions"
+    assert edges[(potions, "SUCCESS")] == edges[(hub_wisps, "SUCCESS")], "both go on to Sync in zone"
+
+
 @pytest.mark.parametrize("template", _TEMPLATES, ids=lambda t: t.folder.name)
 def test_every_released_file_matches_its_recorded_hash(template):
     changed = [v.file for v in template.index.versions if not sha256_matches(template, v)]

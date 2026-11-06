@@ -410,6 +410,20 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true
       }
+    },
+    {
+      "id": "t_10",
+      "node_type": "handle_potions",
+      "label": "Handle potions at the hub",
+      "position": {
+        "x": -440.0,
+        "y": 180.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.1,
+        "mark_zone": ""
+      }
     }
   ],
   "transitions": [
@@ -572,6 +586,26 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -614,9 +648,10 @@
   ],
   "template": {
     "id": "188f8aed-edbb-4c20-8909-31148443c54f",
-    "version": 1
+    "version": 2
   },
   "history": [
+    "8adb12f7f2bf6ebeae6c0fe0bc28ba90b63fdd5dcec410c98ce2bf74c4a4f339",
     "534897bde47f1ac9a4fe8563da4fa3d2e9586fb1d4900b691a6e220030b51d13",
     "96cd0c0e5ad568a3953d004e4c27707e180c6ccb7233c663f72f7315503931c6",
     "583ff38c954906a99c063d97447e3e53663d01ed938ad2dd2b38ef9759b7f732"
