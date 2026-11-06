@@ -318,7 +318,8 @@ running node never lets it do.
 **The retry cap is per node.** `AppController` passes no `max_consecutive_same_state`, so
 only a node's own `max_consecutive_retries` stops a spinning state, and
 `test_every_self_loop_lands_on_a_node_with_a_retry_cap` fails when a shipped self-loop lands
-on an uncapped node.
+on an uncapped node. A loop through recovery, which no per-node cap sees, stops on the
+machine's repeated-recovery limit (`docs/RETURN_ROUTING.md`, #310).
 
 **Dungeon Farmer leaves by recall; Boss and Spellement Farmer walk out.** Dungeon Farmer
 marks the entrance once per Sync players and recalls to it at the end, because a dungeon's

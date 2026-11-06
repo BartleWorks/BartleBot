@@ -46,6 +46,32 @@ override. That includes a flag-guarded edge whose guard is false at run time -- 
 did not fire, so the port is unrouted *this tick*, and the run recovers rather than
 spinning to the no-match limit.
 
+### The same loop through recovery stops the run
+
+**A run that goes to its recovery state `MAX_REPEATED_RECOVERIES` (3) times in a row for
+the same cause, after running the same states, stops** with a reason the user is shown
+(`BotMachine._note_recovery`, #310). A cause is the state and return value that fell
+through, or the reason ambient combat or the idle popup gave for sending the run there
+(`_recover`). "The same states" is the set run since the previous trip, so a state retried
+inside the lap doesn't hide it. A different cause or a different set starts the count
+again: the run got somewhere new. The first trip's set holds the run's start, so it never
+matches, and three like laps follow it before the stop.
+
+The default edge made this needed. Every unrouted failure now recovers, and recovery
+passes through several states, so neither the same-state limit (`max_consecutive_retries`,
+one state at a time) nor the no-match limit ever sees the loop. #307's Handle Potions
+failing on a mark it couldn't afford looped this way forever, Relog, Sync and Handle
+Potions again.
+
+Two rules were rejected. A count of recoveries per time window, whatever the path, would
+stop a long, healthy session with unrelated transient failures. A bot option for the limit
+is surface nobody has needed yet.
+
+**Not covered: a loop drawn entirely with explicit edges.** A healthy farm lap is a
+repeating cycle too, often with a routed FAILURE in it (Dungeon Farmer's in-dungeon
+Collect Wisps routes its FAILURE onward every lap), so nothing on the state trace alone
+tells the two apart.
+
 ### Reachability follows it
 
 An unrouted failure is an edge the engine takes and the file does not record, so any walk

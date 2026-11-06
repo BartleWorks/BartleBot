@@ -47,6 +47,12 @@ _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 # fight before logging anyone out (#203).
 NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
 
+#: How many trips to the recovery state in a row, each for the same cause and after the same
+#: states, stop the run (#310). The same-state and no-match limits never see a loop through
+#: recovery, since its states keep changing. Three, because every trip runs a relog: two in a
+#: row can be one bad moment, a third is a loop.
+MAX_REPEATED_RECOVERIES = 3
+
 # The node type a log() call is filed under: set in the running node's own task, and so in
 # every task it starts, and nowhere else. A field on the machine said only that some node was
 # running, so a watcher logging beside it was filed under that node. See log().
@@ -124,6 +130,11 @@ class BotMachine:
         self._recovery_gap = recovery_gap
         # When each recent flee happened (monotonic), for the flee limit. See note_flee.
         self._flees: list[float] = []
+        # The states run since the last trip to the recovery state, the last trip's cause and
+        # those states, and how many trips in a row have matched it. See _note_recovery.
+        self._since_recovery: set[str] = set()
+        self._last_recovery: tuple[str, frozenset[str]] | None = None
+        self._repeated_recoveries: int = 0
         # True while run()'s loop is live, so the ambient watcher knows whether a park can come.
         self._running: bool = False
         self._stop_flag = asyncio.Event()
@@ -757,6 +768,9 @@ class BotMachine:
         self._fresh_logins.clear()
         self._reset_variables()
         self._variable_only_streak.clear()
+        self._since_recovery = set()
+        self._last_recovery = None
+        self._repeated_recoveries = 0
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         idle_watcher = asyncio.create_task(self._combat_idle_watcher())
@@ -792,6 +806,7 @@ class BotMachine:
                     self._note_pass(state_id)
                 self._rerunning = False
                 self._states_executed += 1
+                self._since_recovery.add(state_id)
                 self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
@@ -904,13 +919,16 @@ class BotMachine:
                             # TransitionModel behind this edge, and inventing one would
                             # put it in the file the next time the graph is saved.
                             # It clears the no-match counter for us.
-                            self.force_state(
-                                recovery_dest,
-                                reason=(
-                                    f"Unrouted {self.last_result} in state {self._fmt_state(state_id)}"
-                                    f" — recovering to {self._fmt_state(recovery_dest)}"
-                                ),
-                            )
+                            if not self._note_recovery(
+                                f"{self._node_name(state_id)} returned {self.last_result}, which no edge routes"
+                            ):
+                                self.force_state(
+                                    recovery_dest,
+                                    reason=(
+                                        f"Unrouted {self.last_result} in state {self._fmt_state(state_id)}"
+                                        f" — recovering to {self._fmt_state(recovery_dest)}"
+                                    ),
+                                )
                         else:
                             self._no_match_count += 1
                             self._log_machine(
@@ -1277,7 +1295,37 @@ class BotMachine:
                 logging.WARNING,
             )
             return
+        if self._note_recovery(why):
+            return
         self.force_state(dest, reason=f"{why} — recovering to {self._fmt_state(dest)}")
+
+    def _note_recovery(self, cause: str) -> bool:
+        """Count one trip to the recovery state, for *cause*. True when this one stopped the run.
+
+        A trip matches the last one when its cause and the set of states run since that one
+        are both the same: the run went round the same loop for the same reason. A set, so a
+        state run twice in one lap doesn't hide the loop. Anything new starts the count again.
+        """
+        lap = frozenset(self._since_recovery)
+        self._since_recovery = set()
+        if self._last_recovery == (cause, lap):
+            self._repeated_recoveries += 1
+        else:
+            self._last_recovery = (cause, lap)
+            self._repeated_recoveries = 1
+        if self._repeated_recoveries < MAX_REPEATED_RECOVERIES:
+            return False
+        nodes = ", ".join(sorted(self._node_name(s) for s in lap))
+        self._stop_with_reason(
+            f"The bot went back to its recovery state {self._repeated_recoveries} times in a row for the"
+            f" same reason, after running the same nodes ({nodes}). The reason: {cause}. Recovering"
+            " isn't fixing it, so check those nodes before running the bot again."
+        )
+        return True
+
+    def _node_name(self, state_id: str) -> str:
+        """A state as the canvas names it: its label, or its id when it has none."""
+        return self._state_map.get(state_id, {}).get("label") or state_id
 
     async def _combat_idle_watcher(self) -> None:
         """Background task: answer the game's "You Are Idle" popup by fleeing, then recover (#203).
