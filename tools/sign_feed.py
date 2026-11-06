@@ -15,8 +15,9 @@ them fails the release instead of shipping a feed no installed app will accept.
 public key for ``bartlebot/updates/keys.py``. The private key never goes in the repo, a
 log or an issue.
 
-Only ``cryptography`` and ``bartlebot/updates/`` are imported, so the signing job needs
-nothing else installed.
+Only ``cryptography``, ``bartlebot/updates/signature.py`` and ``bartlebot/updates/keys.py``
+are imported, so the signing job needs nothing else installed. ``feed.py`` is not among
+them: it needs the rest of the app, bartleby-core included.
 """
 
 from __future__ import annotations
@@ -33,8 +34,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from bartlebot.updates.feed import verify  # noqa: E402
 from bartlebot.updates.keys import TRUSTED_KEYS  # noqa: E402
+from bartlebot.updates.signature import verify  # noqa: E402
 
 #: The environment variable the signing job is given the private key in.
 KEY_ENV_VAR = "FEED_SIGNING_KEY"

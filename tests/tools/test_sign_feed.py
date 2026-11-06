@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 import tomllib
 
 import pytest
 
 from bartlebot.paths import project_root
-from bartlebot.updates.feed import verify
+from bartlebot.updates.signature import verify
 
 sys.path.insert(0, str(project_root()))
 
@@ -145,6 +146,53 @@ def test_the_last_step_checks_the_feed_on_the_draft_itself():
     assert "gh release download" in last and "releases.win.json.sig" in last
     assert last.index("gh release download") < last.index("sign_feed.py verify drafted/releases.win.json")
     assert publish.index("gh release upload") < publish.index("gh release download")
+
+
+#: What the jobs that run sign_feed.py install: cryptography alone (``--no-project``). So the
+#: script may import the standard library, cryptography, and these modules of the app.
+_SIGNING_JOB_MODULES = {"bartlebot", "bartlebot.updates", "bartlebot.updates.keys", "bartlebot.updates.signature"}
+
+_REFUSE_OTHER_IMPORTS = """
+import runpy, sys
+allowed = set(sys.argv[1].split(","))
+class Refuse:
+    def find_spec(self, name, path=None, target=None):
+        top = name.partition(".")[0]
+        if top in sys.stdlib_module_names or top in ("cryptography", "_cffi_backend") or name in allowed:
+            return None
+        raise ModuleNotFoundError(f"No module named {name!r} in the signing job", name=name)
+sys.meta_path.insert(0, Refuse())
+sys.argv = [sys.argv[2], *sys.argv[3:]]
+runpy.run_path(sys.argv[0], run_name="__main__")
+"""
+
+
+def test_sign_feed_imports_only_cryptography_and_the_signature(tmp_path):
+    """The signing job installs cryptography alone, so anything more fails the release.
+
+    0.3.0's first tag failed this way: sign_feed.py imported verify from feed.py, which
+    imports bartleby-core.
+    """
+    script = project_root() / "tools" / "sign_feed.py"
+    key_file = tmp_path / "key.txt"
+    run = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            _REFUSE_OTHER_IMPORTS,
+            ",".join(_SIGNING_JOB_MODULES),
+            str(script),
+            "generate",
+            str(key_file),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert run.returncode == 0, run.stderr
+    assert key_file.is_file()
 
 
 def test_the_signing_job_installs_the_locked_cryptography():

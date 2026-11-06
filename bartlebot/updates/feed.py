@@ -17,8 +17,6 @@ one that verified, and never a second copy fetched after it.
 
 from __future__ import annotations
 
-import base64
-import binascii
 import json
 import logging
 import os
@@ -31,11 +29,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bartleby.shared.vendor import local_vendor_dir
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from bartlebot.packaging.product import NAME as PRODUCT
 from bartlebot.updates.keys import TRUSTED_KEYS
+from bartlebot.updates.signature import verify
 
 logger = logging.getLogger(__name__)
 
@@ -186,24 +183,6 @@ def read(where: str, name: str) -> bytes:
             return stream.read()
         except (TimeoutError, OSError) as exc:
             raise Unreachable(f"{name} could not be read: {exc}.") from exc
-
-
-def verify(data: bytes, signature: bytes, keys: Iterable[str] = TRUSTED_KEYS) -> bool:
-    """Whether ``signature`` (the ``.sig`` file's contents) is a signature of ``data`` by one of ``keys``."""
-    try:
-        raw = base64.b64decode(signature.strip(), validate=True)
-    except (binascii.Error, ValueError):
-        return False
-    if len(raw) != 64:
-        return False
-    for key in keys:
-        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(key))
-        try:
-            public.verify(raw, data)
-        except InvalidSignature:
-            continue
-        return True
-    return False
 
 
 def parse(data: bytes) -> tuple[Asset, ...]:

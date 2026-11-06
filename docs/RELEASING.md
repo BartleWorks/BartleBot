@@ -234,7 +234,11 @@ the key; `sign`, on `ubuntu-latest`, reads only the feed; and `publish`, on
 
 5. **Sign the feed**: `tools/sign_feed.py sign`, with the key in `FEED_SIGNING_KEY`,
    writes `releases.win.json.sig`. Only `cryptography` is installed for it, at uv.lock's
-   version (`CRYPTOGRAPHY_VERSION`, which a test holds to the lock).
+   version (`CRYPTOGRAPHY_VERSION`, which a test holds to the lock). So `sign_feed.py`
+   imports nothing of the app's but `updates/signature.py` and `updates/keys.py`, never
+   `feed.py`, which needs bartleby-core: 0.3.0's first tag failed here when it did, and
+   `test_sign_feed_imports_only_cryptography_and_the_signature` runs the script with
+   every other import refused.
 6. **Check it against the app's keys**: `tools/sign_feed.py verify` fails the release
    when the signature matches no key in `TRUSTED_KEYS`, so a wrong secret fails here
    rather than shipping a feed no installed copy would accept.

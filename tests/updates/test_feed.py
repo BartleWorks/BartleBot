@@ -1,8 +1,7 @@
-"""Tests for bartlebot/updates/feed.py: the signature, reading the feed, and moving packages."""
+"""Tests for bartlebot/updates/feed.py: reading the feed, refusing a bad signature, and moving packages."""
 
 from __future__ import annotations
 
-import base64
 import json
 import logging
 import sys
@@ -11,7 +10,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from bartlebot.paths import project_root
-from bartlebot.updates import feed
+from bartlebot.updates import feed, signature
 from bartlebot.updates.check import Status, check
 from bartlebot.updates.feed import (
     FEED_NAME,
@@ -25,7 +24,6 @@ from bartlebot.updates.feed import (
     verify,
     version_key,
 )
-from bartlebot.updates.keys import TRUSTED_KEYS
 
 sys.path.insert(0, str(project_root()))
 
@@ -75,44 +73,9 @@ def publish(folder, data: bytes, key: Ed25519PrivateKey | None):
     return folder
 
 
-# -- the signature --------------------------------------------------------------------
-
-
-def test_a_feed_signed_by_a_trusted_key_verifies(key, keys):
-    assert verify(FEED, sign(FEED, key), keys)
-
-
-def test_a_feed_with_one_changed_byte_does_not(key, keys):
-    changed = bytearray(FEED)
-    changed[FEED.index(b"1.2.0")] = ord("9")
-    assert not verify(bytes(changed), sign(FEED, key), keys)
-
-
-def test_a_feed_signed_by_another_key_does_not(key, keys):
-    assert not verify(FEED, sign(FEED, Ed25519PrivateKey.generate()), keys)
-
-
-def test_any_trusted_key_will_do(key):
-    """A key is replaced by a release that trusts both, so either has to verify."""
-    old, new = Ed25519PrivateKey.generate(), key
-    both = (public_text(old), public_text(new))
-    assert verify(FEED, sign(FEED, old), both)
-    assert verify(FEED, sign(FEED, new), both)
-
-
-@pytest.mark.parametrize("signature", [b"", b"not base64 at all!", base64.b64encode(b"short"), b"\x00\xff"])
-def test_a_signature_that_is_not_one_does_not_verify(keys, signature):
-    assert not verify(FEED, signature, keys)
-
-
-def test_every_trusted_key_is_an_ed25519_public_key():
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey  # noqa: PLC0415
-
-    assert TRUSTED_KEYS
-    for key in TRUSTED_KEYS:
-        raw = base64.b64decode(key, validate=True)
-        assert len(raw) == 32
-        Ed25519PublicKey.from_public_bytes(raw)
+def test_the_feeds_verify_is_the_signature_modules():
+    """The app's callers read it from here; the signing job, which cannot import this module, from there."""
+    assert verify is signature.verify
 
 
 # -- fetching ----------------------------------------------------------------------
