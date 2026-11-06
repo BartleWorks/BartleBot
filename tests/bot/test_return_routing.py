@@ -8,7 +8,7 @@ docs/RETURN_ROUTING.md.
 
 import asyncio
 
-from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.machine import MAX_REPEATED_RECOVERIES, BotMachine
 
 # state_a advances to state_b on SUCCESS and routes nothing else. state_c is the
 # recovery state, and its own FAILURE is deliberately unrouted too -- the one port
@@ -173,6 +173,92 @@ async def test_a_config_without_a_recovery_state_keeps_the_old_no_match_behavior
     machine = make_machine(node, config=config)
     await machine.run()
     assert seen == ["state_a"] * 3
+
+
+# ---------------------------------------------------------------------------
+# A loop through recovery stops the run (#310)
+# ---------------------------------------------------------------------------
+
+
+async def test_the_same_loop_through_recovery_stops_the_run():
+    """state_a fails, recovery succeeds, state_a fails again: the states keep changing, so only this sees it."""
+    runs = []
+    stopped = []
+
+    async def node(machine, clients, params):
+        runs.append(machine.state)
+        return "FAILURE" if machine.state == "state_a" else "SUCCESS"
+
+    machine = make_machine(node, on_stopped=stopped.append)
+    await asyncio.wait_for(machine.run(), timeout=2)
+
+    assert machine.is_stopped
+    # The first trip's lap is the run's start, so it matches nothing; three like laps follow.
+    assert runs == ["state_a"] + ["state_c", "state_a"] * MAX_REPEATED_RECOVERIES
+    assert machine.state == "state_a", "the stop leaves the run where it was, not in recovery"
+    assert len(stopped) == 1
+    assert f"{MAX_REPEATED_RECOVERIES} times in a row" in stopped[0]
+    assert "state_a returned FAILURE, which no edge routes" in stopped[0]
+
+
+async def test_a_loop_that_changes_its_path_is_not_stopped():
+    """Failing at state_a, then at state_b, then at state_a: each trip differs from the one before."""
+    runs = []
+    stopped = []
+
+    async def node(machine, clients, params):
+        runs.append(machine.state)
+        if len(runs) >= 20:
+            machine.stop()
+        if machine.state == "state_c":
+            return "SUCCESS"
+        trips = runs.count("state_c")
+        if machine.state == "state_a":
+            return "SUCCESS" if trips % 2 else "FAILURE"
+        return "FAILURE"
+
+    machine = make_machine(node, on_stopped=stopped.append)
+    await asyncio.wait_for(machine.run(), timeout=2)
+
+    assert len(runs) == 20
+    assert stopped == []
+
+
+async def test_a_loop_whose_cause_changes_is_not_stopped():
+    """The same states every lap, but failing with FAILURE, then FALSE, by turns."""
+    runs = []
+    stopped = []
+
+    async def node(machine, clients, params):
+        runs.append(machine.state)
+        if len(runs) >= 20:
+            machine.stop()
+        if machine.state == "state_c":
+            return "SUCCESS"
+        return "FALSE" if runs.count("state_a") % 2 else "FAILURE"
+
+    machine = make_machine(node, on_stopped=stopped.append)
+    await asyncio.wait_for(machine.run(), timeout=2)
+
+    assert len(runs) == 20
+    assert stopped == []
+
+
+async def test_a_trip_to_recovery_from_ambient_combat_or_the_idle_popup_counts_too():
+    """Those reach recovery from outside the run loop, through _recover, and loop just the same."""
+    stopped = []
+
+    async def node(machine, clients, params):
+        return "SUCCESS"
+
+    machine = make_machine(node, on_stopped=stopped.append)
+    for _ in range(MAX_REPEATED_RECOVERIES):
+        assert not machine.is_stopped
+        machine._since_recovery.add("state_a")
+        machine._recover("Ambient combat: the players are not where the interrupted state left them")
+
+    assert machine.is_stopped
+    assert "The reason: Ambient combat" in stopped[0]
 
 
 # ---------------------------------------------------------------------------
