@@ -368,7 +368,8 @@ BartleBuddy, and listed here with the others. https://claude.ai/artifact/MBsMDvJ
 | 4 | BartleBuddy #18 | two views, One large and All equal | landed 2026-11-05 |
 | 5 | BartleBuddy #19 | swapping and focus: fast swaps, the first click, the pause and detached windows | landed 2026-11-05 |
 | 6 | BartleBuddy #20 | hotkeys: keys, defaults and clashes, the game's chat and detached windows | landed 2026-11-06 |
-| 7 | BartleBuddy #21 | in game on both setups, and the last of the old words | planned |
+| 7 | BartleBuddy #23 | a smooth swap: the ring in each resized tile until its game is in | landed 2026-11-06 |
+| 8 | BartleBuddy #21 | in game on both setups, and the last of the old words | planned |
 
 BartleBuddy's `docs/MULTIBOX.md` is the feature as built, and core's `docs/WINDOW_SIZING.md` the
 resizes under it. BartleBot has no part of it, and its pin stays at core's `1b1caab`.
