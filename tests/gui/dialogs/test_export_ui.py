@@ -253,20 +253,9 @@ def test_run_export_writes_nothing_when_the_summary_is_cancelled(qapp, tmp_path,
 # The controller
 # ---------------------------------------------------------------------------
 
-_EXPORT_METHODS = (
-    "_export_sources",
-    "_export_open_document",
-    "_saved_for_export",
-    "_active_bot_strategy",
-    "_export_bot",
-    "_export_subgraph",
-    "_export_bot_strategy",
-)
-
 
 @pytest.fixture
 def harness(qapp, tmp_path, store, monkeypatch):  # noqa: F811
-    from bartlebot.app_controller import AppController  # noqa: PLC0415
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
 
     monkeypatch.setattr(bot_roots, "shipped_bots_dir", lambda: tmp_path / "bots")
@@ -274,8 +263,6 @@ def harness(qapp, tmp_path, store, monkeypatch):  # noqa: F811
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    for name in _EXPORT_METHODS:
-        setattr(h, name, getattr(AppController, name).__get__(h))
     yield h
     canvas.prepare_for_shutdown()
 
@@ -283,7 +270,7 @@ def harness(qapp, tmp_path, store, monkeypatch):  # noqa: F811
 @pytest.fixture
 def captured(monkeypatch) -> _Captured:
     fake = _Captured()
-    monkeypatch.setattr("bartlebot.app_controller.run_export", fake)
+    monkeypatch.setattr("bartlebot.controller.sharing.run_export", fake)
     return fake
 
 
@@ -294,7 +281,7 @@ def test_a_bots_export_offers_its_active_bot_combat_strategy(harness, captured, 
     save_bot_strategy(bcs)
     SettingsManager.instance().set_active_strategy("bot-1", bcs.id)
 
-    harness._export_bot(str(path))
+    harness._sharing.export_bot(str(path))
 
     build, kwargs = captured.calls[0]
     assert kwargs == {"combat_name": "Solo", "offers_decks": True}
@@ -306,7 +293,7 @@ def test_a_bot_with_no_active_strategy_offers_no_checkboxes(harness, captured, t
     path = tmp_path / "farm.json"
     _bot().save(path)
 
-    harness._export_bot(str(path))
+    harness._sharing.export_bot(str(path))
 
     assert captured.calls[0][1] == {"combat_name": None, "offers_decks": False}
 
@@ -316,7 +303,7 @@ def test_file_export_on_an_open_bot_exports_it_as_saved(harness, captured, tmp_p
     _bot().save(path)
     harness._documents.open_bot(str(path))
 
-    harness._export_open_document()
+    harness._sharing.export_open_document()
 
     assert captured.plan.share.main == share_file.ItemRef(kind=share_export.BOT, id="bot-1")
 
@@ -329,18 +316,18 @@ def test_file_export_with_unsaved_changes_asks_to_save_first(harness, captured, 
     harness._documents.has_unsaved_changes = True
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
 
-    assert harness._export_open_document() is None
+    assert harness._sharing.export_open_document() is None
     assert captured.calls == []
 
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Save)
-    harness._export_open_document()
+    harness._sharing.export_open_document()
     assert captured.plan.name == "Renamed", "saved first, then exported"
 
 
 def test_file_export_on_an_open_subgraph_exports_the_definition(harness, captured):
     harness._documents.subgraph_library.save(_defn("sg", "Loop"))
 
-    harness._export_subgraph("sg")
+    harness._sharing.export_subgraph("sg")
 
     assert captured.plan.share.main == share_file.ItemRef(kind=share_export.SUBGRAPH, id="sg")
 
@@ -351,7 +338,7 @@ def test_a_template_is_not_exported(harness, captured, tmp_path, monkeypatch):
     told: list = []
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
 
-    assert harness._export_bot(str(path)) is None
+    assert harness._sharing.export_bot(str(path)) is None
     assert captured.calls == [] and told
 
 
@@ -360,7 +347,7 @@ def test_the_combat_tabs_export_rereads_the_strategy_and_offers_its_decks(harnes
     save_bot_strategy(bcs)
     stale = bcs.model_copy(update={"name": "Stale"})
 
-    harness._export_bot_strategy(stale)
+    harness._sharing.export_bot_strategy(stale)
 
     assert captured.calls[0][1] == {"offers_decks": True}
     assert captured.plan.name == "Solo"

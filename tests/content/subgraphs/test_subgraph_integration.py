@@ -31,6 +31,7 @@ class ControllerHarness:
     def __init__(self, canvas, library: SubgraphLibrary) -> None:
         from bartlebot.app_controller import AppController  # noqa: PLC0415
         from bartlebot.controller.documents import Documents  # noqa: PLC0415
+        from bartlebot.controller.sharing import Sharing  # noqa: PLC0415
         from bartlebot.controller.template_roots import TemplateRoots  # noqa: PLC0415
         from bartlebot.controller.templates import Templates  # noqa: PLC0415
 
@@ -64,6 +65,9 @@ class ControllerHarness:
         # The Rewards prompt is modal; what is under test here is the write behind it.
         self._documents._confirm_rewards_tags = lambda: True
         self._templates = Templates(self._window, self._documents, self._roots)
+        self._sharing = Sharing(
+            self._window, self._documents, MagicMock(), is_running=lambda: self._current_machine is not None
+        )
         self._documents.template_context_changed.connect(self._templates.refresh_template_context)
         canvas.config_changed.connect(self._documents.on_config_changed)
 
