@@ -813,10 +813,10 @@ def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
 
 
 def test_record_into_a_destination_picker_is_never_refused(qapp):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm  # noqa: PLC0415
+    from bartlebot.gui.canvas.param_form import DynamicParamForm  # noqa: PLC0415
     from bartlebot.nodes.param_schema import ParamField  # noqa: PLC0415
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema([ParamField(key="zone", type="nav_zone", label="Zone")], {"zone": ""})
     form.set_str("zone", "Nowhere/Somewhere")
     widget = form.widget("zone")
@@ -848,7 +848,7 @@ def test_the_link_chip_is_one_width_in_both_states(doc, qapp):
 
 
 def test_a_long_linked_name_is_elided_within_the_cap(doc):
-    from bartlebot.gui.canvas.param_panel import _LINK_CHIP_MAX_W  # noqa: PLC0415
+    from bartlebot.gui.canvas.param_form import _LINK_CHIP_MAX_W  # noqa: PLC0415
 
     _input(doc, "world").label = "A world name far too long to fit on any chip at all"
     doc.select_state("gate")

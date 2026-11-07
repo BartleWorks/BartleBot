@@ -142,7 +142,7 @@ whole page scrolls as one -- before, only the params scrolled and the other thre
 pinned under them. The subgraph node page's are the ungrouped inputs, one per input
 group, and Role. What a card *says* is `bartlebot/options/param_cards.py`, which needs no Qt.
 
-- **One row builder, `_DynamicParamForm`, draws both pages' rows**, behind the option
+- **One row builder, `DynamicParamForm` (`canvas/param_form.py`), draws both pages' rows**, behind the option
   surfaces' `[bar][reset][?]` gutter. A row is a head line and a control. Actions on a
   field sit at the *end* of its control line as glyph-only `ActionButton`s (Fill
   current, Go to zone, TP; `row_actions` adds one more, the wiki import), never in a

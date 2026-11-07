@@ -108,7 +108,8 @@ from bartlebot.gui.canvas.edit_scene import (
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
-from bartlebot.gui.canvas.param_panel import _ParamPanel, instance_key_field
+from bartlebot.gui.canvas.param_form import instance_key_field
+from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
     CrumbBar,

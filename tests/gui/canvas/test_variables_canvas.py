@@ -331,7 +331,8 @@ def test_heretical_academys_puzzle_can_be_built_without_touching_the_file(qapp, 
     Enter sets both variables back; a spot that finds a sword remembers where and counts
     it; Which rack switches on the count; Resume search switches on where to go back to.
     """
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _FlagConditionsWidget  # noqa: PLC0415
+    from bartlebot.gui.canvas.param_form import DynamicParamForm  # noqa: PLC0415
+    from bartlebot.gui.canvas.param_panel import _FlagConditionsWidget  # noqa: PLC0415
     from bartlebot.gui.sidebar.sections.variables_section import VariableDialog, VariablesSection  # noqa: PLC0415
     from bartlebot.nodes.control_flow.set_variables import PARAM_SCHEMA  # noqa: PLC0415
 
@@ -375,7 +376,7 @@ def test_heretical_academys_puzzle_can_be_built_without_touching_the_file(qapp, 
 
     # Each set_variables node's rows, in its assignments editor.
     def write(state_id, *rows):
-        form = _DynamicParamForm()
+        form = DynamicParamForm()
         form.set_variables_getter(lambda: list(config.variables))
         form.load_schema(PARAM_SCHEMA, {"assignments": []})
         field = form.widget("assignments")

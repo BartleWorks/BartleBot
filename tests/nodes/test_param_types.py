@@ -18,9 +18,9 @@ _ZONE_TYPES = ("zone", "nav_zone")
 
 
 def _form(fields, params):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+    from bartlebot.gui.canvas.param_form import DynamicParamForm
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(fields, params)
     return form
 
@@ -95,7 +95,7 @@ def test_every_zone_param_is_named_for_one():
 
 
 def test_a_zone_param_gets_the_zone_widget(qapp):
-    from bartlebot.gui.canvas.param_panel import _ZoneWidget
+    from bartlebot.gui.canvas.param_form import _ZoneWidget
 
     form = _form([ParamField(key="where", type="zone", label="Where")], {"where": "WizardCity/*"})
 
@@ -110,9 +110,9 @@ async def test_fill_from_player_writes_the_ordinary_zone_of_a_challenge_mode_cop
         async def zone_name(self):
             return "Aquila/AQ_Z02_Atlantea_Hard"
 
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+    from bartlebot.gui.canvas.param_form import DynamicParamForm
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.set_clients_getter(lambda: [_InCopy()])
     form.load_schema([ParamField(key="where", type="zone", label="Where")], {})
 
@@ -122,7 +122,7 @@ async def test_fill_from_player_writes_the_ordinary_zone_of_a_challenge_mode_cop
 
 
 def test_a_str_param_named_zone_is_a_plain_field(qapp):
-    from bartlebot.gui.canvas.param_panel import _ZoneWidget
+    from bartlebot.gui.canvas.param_form import _ZoneWidget
 
     form = _form([ParamField(key="zone", type="str", label="Zone")], {"zone": "WizardCity/WC_Hub"})
 

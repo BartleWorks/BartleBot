@@ -14,10 +14,10 @@ _ENTRANCE = "Krokotopia/KT_Krokosphinx/KT_EntranceHall"
 
 
 def _form(params, clients=()):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+    from bartlebot.gui.canvas.param_form import DynamicParamForm
     from bartlebot.nodes.teleportation import sync_in_zone
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.set_clients_getter(lambda: list(clients))
     form.load_schema(sync_in_zone.PARAM_SCHEMA, params)
     return form
@@ -59,7 +59,7 @@ def test_a_long_caption_does_not_hold_the_panel_open(qapp):
 
 
 async def test_go_navigates_the_connected_players_to_the_chosen_zone(qapp, monkeypatch):
-    from bartlebot.gui.canvas import param_panel
+    from bartlebot.gui.canvas import param_form
 
     seen = []
     released = asyncio.Event()
@@ -69,7 +69,7 @@ async def test_go_navigates_the_connected_players_to_the_chosen_zone(qapp, monke
         machine.log("step")
         await released.wait()
 
-    monkeypatch.setattr(param_panel.zone_navigation, "navigate", fake_navigate)
+    monkeypatch.setattr(param_form.zone_navigation, "navigate", fake_navigate)
     form = _form({"zone": _ENTRANCE}, clients=["c1", "c2"])
     field = form.widget("zone")
 
@@ -79,40 +79,40 @@ async def test_go_navigates_the_connected_players_to_the_chosen_zone(qapp, monke
     assert not field.go_btn.isEnabled()  # one trip at a time
 
     released.set()
-    await asyncio.gather(*param_panel._NAV_TASKS)
+    await asyncio.gather(*param_form._NAV_TASKS)
     assert field.go_btn.isEnabled()
 
 
 async def test_a_failed_trip_is_logged_and_gives_the_button_back(qapp, monkeypatch, caplog):
-    from bartlebot.gui.canvas import param_panel
+    from bartlebot.gui.canvas import param_form
 
     async def broken_navigate(machine, clients, target):
         raise RuntimeError("boom")
 
-    monkeypatch.setattr(param_panel.zone_navigation, "navigate", broken_navigate)
+    monkeypatch.setattr(param_form.zone_navigation, "navigate", broken_navigate)
     form = _form({"zone": _ENTRANCE}, clients=["c1"])
     field = form.widget("zone")
 
     with caplog.at_level(logging.ERROR):
         field.go_btn.click()
-        await asyncio.gather(*param_panel._NAV_TASKS)
+        await asyncio.gather(*param_form._NAV_TASKS)
 
     assert "Sync in Zone from the properties panel failed" in caplog.text
     assert field.go_btn.isEnabled()
 
 
 def test_go_does_nothing_without_players_or_a_zone(qapp, monkeypatch):
-    from bartlebot.gui.canvas import param_panel
+    from bartlebot.gui.canvas import param_form
 
     called = []
-    monkeypatch.setattr(param_panel.zone_navigation, "navigate", lambda *a: called.append(a))
+    monkeypatch.setattr(param_form.zone_navigation, "navigate", lambda *a: called.append(a))
 
     no_players, no_zone = _form({"zone": _ENTRANCE}), _form({}, clients=["c1"])
     no_players.widget("zone").go_btn.click()
     no_zone.widget("zone").go_btn.click()
 
     assert called == []
-    assert not param_panel._NAV_TASKS
+    assert not param_form._NAV_TASKS
 
 
 class _ZoneClient:
@@ -200,13 +200,13 @@ async def test_picking_a_zone_clears_a_refused_fill(qapp):
 
 
 def test_the_authoring_machine_reads_safety_delay_from_the_app_setting(monkeypatch):
-    from bartlebot.gui.canvas import param_panel
+    from bartlebot.gui.canvas import param_form
 
     class _Settings:
         default_safety_delay = 7.5
 
-    monkeypatch.setattr(param_panel.SettingsManager, "instance", staticmethod(lambda: _Settings()))
-    machine = param_panel._AuthoringMachine()
+    monkeypatch.setattr(param_form.SettingsManager, "instance", staticmethod(lambda: _Settings()))
+    machine = param_form._AuthoringMachine()
 
     assert machine.get_option("Safety Delay") == 7.5
     assert machine.get_option("Other", 1) == 1

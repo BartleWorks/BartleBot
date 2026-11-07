@@ -1,6 +1,6 @@
 """Tests for clipboard XYZ parsing in the parameter panel."""
 
-from bartlebot.gui.canvas.param_panel import parse_xyz_text
+from bartlebot.gui.canvas.param_form import parse_xyz_text
 
 
 def test_parses_json_object():

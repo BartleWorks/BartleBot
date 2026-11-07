@@ -50,6 +50,7 @@ from bartlebot.content.subgraphs.subgraphs import (
 )
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.node_cards import PageFoldBar, TitleEdit, ToFillLabel, record_line
+from bartlebot.gui.canvas.param_form import DynamicParamForm, input_param_field, write_show_descriptions
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
 from bartlebot.gui.widgets.buttons.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.pickers.player_picker import pick_player
@@ -318,7 +319,6 @@ class CallNodePage(QWidget):
         status: RegionStatus | None,
         config: BotConfig,
     ) -> None:
-        from bartlebot.gui.canvas.param_panel import _DynamicParamForm, input_param_field  # noqa: PLC0415
 
         recording.cancel_active_recording()
         self._region, self._defn, self._config = region, defn, config
@@ -364,8 +364,8 @@ class CallNodePage(QWidget):
             inputs = list(defn.inputs) if defn is not None else []
             panels = list(defn.panels) if defn is not None else []
 
-            def make_form() -> _DynamicParamForm:
-                f = _DynamicParamForm()
+            def make_form() -> DynamicParamForm:
+                f = DynamicParamForm()
                 f.set_clients_getter(self._get_clients)
                 f.set_zone_suggestions_getter(self._get_zones)
                 return f
@@ -655,7 +655,6 @@ class CallNodePage(QWidget):
         )
 
     def _set_descriptions_visible(self, shown: bool) -> None:
-        from bartlebot.gui.canvas.param_panel import write_show_descriptions  # noqa: PLC0415
 
         write_show_descriptions(shown)
         for form in self._forms.values():
