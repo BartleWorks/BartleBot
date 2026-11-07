@@ -202,7 +202,7 @@ edge's assignments. Every
 change goes out on `edit_starting` first, so it is one undo step like a panel edit.
 
 **Reading: the edge panel's Conditions** (`canvas/variable_rows.ConditionRow`, inside
-`param_panel._FlagConditionsWidget`). A row picks an option or a variable from one grouped
+`edge_page._FlagConditionsWidget`). A row picks an option or a variable from one grouped
 list. A variable row offers only the comparisons its type takes
 (`variables.comparisons_for`) and its value in **`VariableValueField`**
 (`widgets/inputs/variable_widgets.py`): a checkbox for a bool, a spin box for an int, the enum's

@@ -481,7 +481,7 @@ def test_a_fill_in_row_is_marked_required_with_its_step_in_a_bot(canvas):
 
     canvas.select_state("t_2")
 
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
     assert "enemy" in [f.key for f in form.required_fields()], "blank blocks Run, so the row says so"
     assert form.widget("enemy").placeholderText() == f"Fill in: {_MOB.text}"
     assert form.fill_hint_text("wiki_page") is None, "not a fill-in"
@@ -496,7 +496,7 @@ def test_a_drafts_rows_wear_their_step_or_offer_to_join_one(canvas):
 
     canvas.select_state("t_2")
 
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
     assert form.step_chip_text("enemy") == "Setup step 2"
     assert form.step_button("enemy") is None
     assert form.step_button("wiki_page") is not None
@@ -507,7 +507,7 @@ def test_a_rows_button_adds_the_param_to_a_step_and_its_chip_takes_it_out(canvas
     draft = _draft()
     canvas.setup(draft, mode=BotMode.EDIT)
     canvas.select_state("t_2")
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
 
     canvas.add_setup_target("t_2", "wiki_page", 1)
 

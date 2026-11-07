@@ -22,7 +22,7 @@ GUI_ROOT = PACKAGE / "gui"
 #: Bare ``QPushButton``\ s, keyed ``"<module>:<name>"`` under ``bartlebot/gui/``, and why each
 #: is not an ``ActionButton``.
 ALLOWED_PUSH_BUTTONS: dict[str, str] = {
-    "canvas/param_panel.py:btn": (
+    "canvas/region_page.py:btn": (
         "A region color swatch in the inspector — the background is the data. 22px "
         "square, no label, one of six in a palette row."
     ),

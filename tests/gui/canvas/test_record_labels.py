@@ -104,7 +104,7 @@ async def test_the_player_list_is_written_and_read_through_the_form(interact_pan
     canvas.param_panel.start_record("p2")
     await _settle()
 
-    assert canvas.param_panel.param_form.players("interact_clients") == [2]
+    assert canvas.param_panel.node_page.param_form.players("interact_clients") == [2]
     assert canvas.config.states[0].params["interact_clients"] == [2], "saved to the node, not just shown"
 
 
@@ -122,7 +122,7 @@ async def test_has_dialogue_is_written_through_the_form(interact_panel):
 
 async def test_a_snapshot_puts_has_dialogue_back(interact_panel):
     canvas = interact_panel("", _labels_it(""))
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
     form.set_bool("has_dialogue", True)
     saved = form.snapshot(["has_dialogue"])
 
@@ -148,7 +148,7 @@ async def test_record_watches_for_dialogue_for_the_bots_safety_delay(interact_pa
 
 async def test_a_snapshot_puts_the_player_list_back(interact_panel):
     canvas = interact_panel("", _labels_it(""))
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
     form.set_players("interact_clients", [1, 2])
     saved = form.snapshot(["interact_clients"])
 

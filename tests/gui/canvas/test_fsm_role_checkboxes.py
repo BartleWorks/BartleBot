@@ -53,28 +53,28 @@ def _show(canvas, state_id):
 
 
 def test_checking_initial_moves_the_role(canvas):
-    _show(canvas, "b").request_initial_role()
+    _show(canvas, "b").node_page.request_initial_role()
 
     assert canvas.config.initial == "b"
 
 
 def test_checking_recovery_moves_the_role(canvas):
-    _show(canvas, "b").request_recovery_role()
+    _show(canvas, "b").node_page.request_recovery_role()
 
     assert canvas.config.recovery_state == "b"
 
 
 def test_the_two_roles_are_independent(canvas):
     """Moving one must not drag the other along, even when they start on one state."""
-    _show(canvas, "b").request_initial_role()
+    _show(canvas, "b").node_page.request_initial_role()
 
     assert canvas.config.initial == "b"
     assert canvas.config.recovery_state == "a"
 
 
 def test_a_role_can_be_moved_twice(canvas):
-    _show(canvas, "b").request_initial_role()
-    _show(canvas, "c").request_initial_role()
+    _show(canvas, "b").node_page.request_initial_role()
+    _show(canvas, "c").node_page.request_initial_role()
 
     assert canvas.config.initial == "c"
 
@@ -88,17 +88,17 @@ def test_the_holder_shows_checked_and_disabled(canvas):
     """No click on the holder can mean anything — the role cannot be vacated."""
     panel = _show(canvas, "a")
 
-    assert panel.initial_check.isChecked()
-    assert not panel.initial_check.isEnabled()
-    assert panel.recovery_check.isChecked()
-    assert not panel.recovery_check.isEnabled()
+    assert panel.node_page.initial_check.isChecked()
+    assert not panel.node_page.initial_check.isEnabled()
+    assert panel.node_page.recovery_check.isChecked()
+    assert not panel.node_page.recovery_check.isEnabled()
 
 
 def test_a_non_holder_shows_unchecked_and_enabled(canvas):
     panel = _show(canvas, "b")
 
-    assert not panel.initial_check.isChecked()
-    assert panel.initial_check.isEnabled()
+    assert not panel.node_page.initial_check.isChecked()
+    assert panel.node_page.initial_check.isEnabled()
 
 
 def test_the_shown_node_loses_its_tick_when_the_role_moves_away(canvas):
@@ -109,8 +109,8 @@ def test_the_shown_node_loses_its_tick_when_the_role_moves_away(canvas):
     whichever node is displayed after the move, and here that is the loser.
     """
     panel = _show(canvas, "b")
-    panel.request_initial_role()
-    assert panel.initial_check.isChecked()
+    panel.node_page.request_initial_role()
+    assert panel.node_page.initial_check.isChecked()
 
     # Move it on, without changing what the panel is showing.
     canvas.param_panel.show_state(
@@ -119,26 +119,26 @@ def test_the_shown_node_loses_its_tick_when_the_role_moves_away(canvas):
         recovery_id=canvas.config.recovery_state,
     )
 
-    assert not panel.initial_check.isChecked()
-    assert panel.initial_check.isEnabled()
+    assert not panel.node_page.initial_check.isChecked()
+    assert panel.node_page.initial_check.isEnabled()
 
 
 def test_unchecking_is_refused(canvas):
     """Defensive: the box is disabled, but a click that got through must not clear the role."""
     panel = _show(canvas, "a")
-    panel.initial_check.setEnabled(True)
+    panel.node_page.initial_check.setEnabled(True)
 
-    panel.initial_check.click()
+    panel.node_page.initial_check.click()
 
     assert canvas.config.initial == "a"
-    assert panel.initial_check.isChecked()
+    assert panel.node_page.initial_check.isChecked()
 
 
 def test_clicking_an_enabled_box_moves_the_role(canvas):
     """The click path, not just the public request method."""
     panel = _show(canvas, "b")
 
-    panel.initial_check.click()
+    panel.node_page.initial_check.click()
 
     assert canvas.config.initial == "b"
 
@@ -149,7 +149,7 @@ def test_clicking_an_enabled_box_moves_the_role(canvas):
 
 
 def test_moving_the_initial_state_is_undoable(canvas):
-    _show(canvas, "b").request_initial_role()
+    _show(canvas, "b").node_page.request_initial_role()
     assert canvas.config.initial == "b"
 
     canvas.undo()
@@ -158,7 +158,7 @@ def test_moving_the_initial_state_is_undoable(canvas):
 
 
 def test_moving_the_recovery_state_is_undoable(canvas):
-    _show(canvas, "b").request_recovery_role()
+    _show(canvas, "b").node_page.request_recovery_role()
 
     canvas.undo()
 
@@ -169,7 +169,7 @@ def test_re_requesting_the_role_a_state_already_holds_is_a_no_op(canvas):
     """No config change, and no undo entry for an edit that did nothing."""
     before = canvas.can_undo()
 
-    _show(canvas, "a").request_initial_role()
+    _show(canvas, "a").node_page.request_initial_role()
 
     assert canvas.config.initial == "a"
     assert canvas.can_undo() == before
@@ -182,14 +182,14 @@ def test_moving_the_initial_state_revalidates(canvas):
     # The recovery role has to move off "a" too. An unrouted failure falls through
     # to the recovery state, so while "a" holds that role every node in the graph
     # reaches it and no rearrangement of the initial role can orphan it.
-    _show(canvas, "c").request_recovery_role()
-    _show(canvas, "b").request_initial_role()
+    _show(canvas, "c").node_page.request_recovery_role()
+    _show(canvas, "b").node_page.request_initial_role()
 
     assert "a: Unreachable from initial state" in canvas.validation_warnings()
 
 
 def test_the_node_badge_follows_the_role(canvas):
-    _show(canvas, "b").request_initial_role()
+    _show(canvas, "b").node_page.request_initial_role()
 
     assert not canvas.scene.node_items["a"].is_initial
     assert canvas.scene.node_items["b"].is_initial

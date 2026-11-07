@@ -229,8 +229,10 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 | **Bar A** (`game_view_panel.py`) | the game windows | the clients: how many are hooked, the launch profile, the node they are being driven through |
 | **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
 
-The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
-edge, a plain *region* (reached by selecting a whole region's members, the pill click,
+The **properties panel** (`canvas/param_panel.py`) is a stack of pages, one per selection
+and each its own class, which the panel picks and forwards the signals of: a node
+(`canvas/node_page.py`), an edge (`canvas/edge_page.py`), a plain *region*
+(`canvas/region_page.py`, reached by selecting a whole region's members, the pill click,
 or its collapsed node; label, color, Collapse / Expand -- disabled with the reason when
 `collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, its inputs and input groups as cards with
 Record on a promoted node's band, roles by entry port, Open definition, Detach -- see the
@@ -908,7 +910,7 @@ already has.
   store. `OptionsSection._rename_option` does all three; deleting does the same
   three in reverse.
 - **One option-type → widget mapping**, in `gui/widgets/inputs/option_widgets.py`, used
-  by both surfaces and the Add/Edit dialog. `param_panel._make_widget` stays
+  by both surfaces and the Add/Edit dialog. `DynamicParamForm._make_widget` stays
   separate: it maps *param* fields, a larger vocabulary (zone, xyz, wiki_page)
   no bot option can have. Three copies of this mapping is how the dialog came to
   hardcode `type="bool"` while the rows rendered floats — pressing Edit on

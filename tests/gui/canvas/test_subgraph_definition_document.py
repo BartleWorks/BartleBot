@@ -77,7 +77,7 @@ def test_a_port_shows_the_signature_and_a_node_shows_its_page(doc):
     assert doc.param_panel.showing_signature
     doc.select_state("wisps")
     assert doc.param_panel.shown_state.id == "wisps"
-    assert doc.param_panel.promote_button.isVisibleTo(doc.param_panel)
+    assert doc.param_panel.node_page.promote_button.isVisibleTo(doc.param_panel)
 
 
 def test_a_definition_cannot_run_or_leave_edit_mode(doc):
@@ -103,8 +103,8 @@ def test_linking_to_a_new_input_and_undoing_it(doc):
     wait = _input(doc, "wait")
     assert [(b.state, b.param) for b in wait.bindings] == [("wisps", "timeout")]
     doc.select_state("wisps")
-    assert doc.param_panel.param_form.link_chip("timeout") is not None
-    assert doc.param_panel.param_form.link_button("timeout") is None
+    assert doc.param_panel.node_page.param_form.link_chip("timeout") is not None
+    assert doc.param_panel.node_page.param_form.link_button("timeout") is None
     doc.undo()
     assert not any(i.name == "wait" for i in _meta(doc).inputs)
 
@@ -128,7 +128,7 @@ def test_promoting_a_node_makes_an_input_group_and_locks_its_links(doc):
     assert panel.member == "hub"
     assert ("hub", "zone") not in {(b.state, b.param) for b in _input(doc, "hub").bindings}
     doc.select_state("hub")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     assert chip.locked and chip.text() == panel.label
     assert not doc.unlink_param("hub", "zone"), "a promoted node's param is its group's"
     assert not doc.link_param("hub", "zone", existing="world")
@@ -653,11 +653,11 @@ def test_undo_keeps_the_node_selected(doc):
 
 def test_the_promote_button_turns_into_demote(doc):
     doc.select_state("hub")
-    button = doc.param_panel.promote_button
+    button = doc.param_panel.node_page.promote_button
     assert button.toolTip().startswith("Promote to input group")
     doc.set_node_promoted("hub", True)
     assert button.toolTip().startswith("Demote")
-    assert doc.param_panel.node_cards["params"].summary_parts[0].text == "Promoted"
+    assert doc.param_panel.node_page.node_cards["params"].summary_parts[0].text == "Promoted"
     button.click()
     assert not [p for p in _meta(doc).panels if p.kind == "node"]
 
@@ -712,10 +712,10 @@ def test_promoting_over_existing_links_asks_first(doc, monkeypatch):
     asked = []
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: asked.append(a) or answers.pop(0))
     doc.select_state("hub")
-    doc.param_panel.promote_button.click()
+    doc.param_panel.node_page.promote_button.click()
     assert len(asked) == 1 and "Hub" in asked[0][2]
     assert not [p for p in _meta(doc).panels if p.kind == "node"]
-    doc.param_panel.promote_button.click()
+    doc.param_panel.node_page.promote_button.click()
     assert [p.member for p in _meta(doc).panels if p.kind == "node"] == ["hub"]
 
 
@@ -723,7 +723,7 @@ def test_the_link_button_shows_only_on_hover(doc, qapp):
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
     doc.select_state("wisps")
-    form = doc.param_panel.param_form
+    form = doc.param_panel.node_page.param_form
     row = form.hover_row("timeout")
     assert not row.link_shown
     qapp.sendEvent(row, QEvent(QEvent.Type.Enter))
@@ -736,7 +736,7 @@ def test_a_linked_chip_turns_into_unlink_on_hover_but_a_promoted_one_does_not(do
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
     doc.select_state("tp_b")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     assert chip.text() == "Hub"
     qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
     assert chip.armed and chip.text() == "Unlink"
@@ -745,14 +745,14 @@ def test_a_linked_chip_turns_into_unlink_on_hover_but_a_promoted_one_does_not(do
 
     doc.set_node_promoted("gate", True)
     doc.select_state("gate")
-    locked = doc.param_panel.param_form.link_chip("zone")
+    locked = doc.param_panel.node_page.param_form.link_chip("zone")
     qapp.sendEvent(locked, QEvent(QEvent.Type.Enter))
     assert not locked.armed
 
 
 def test_editing_a_linked_param_edits_its_input_and_the_other_linked_params(doc):
     doc.select_state("tp_b")
-    doc.param_panel.param_form.set_str("zone", "Mooshu/Hub")
+    doc.param_panel.node_page.param_form.set_str("zone", "Mooshu/Hub")
     assert _input(doc, "hub").default == "Mooshu/Hub"
     assert next(s for s in doc.config.states if s.id == "hub").params["zone"] == "Mooshu/Hub"
 
@@ -790,7 +790,7 @@ def test_a_zone_input_linked_with_a_nav_zone_becomes_a_nav_zone(doc):
     assert doc.link_param("nav", "zone", existing="hub")
     assert _input(doc, "hub").type == "nav_zone"
     doc.select_state("tp_b")
-    widget = doc.param_panel.param_form.widget("zone")
+    widget = doc.param_panel.node_page.param_form.widget("zone")
     assert type(widget).__name__ == "_NavZoneField", "a linked zone row edits through the destination picker"
     assert doc.unlink_param("nav", "zone")
     assert _input(doc, "hub").type == "zone", "unlinking loosens it again"
@@ -809,7 +809,7 @@ def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
     assert doc.link_param("nav", "zone", shared=(panel.id, "zone"))
     assert promoted_param_type(doc.config, panel, "zone", NODE_PARAM_SCHEMAS) == "nav_zone"
     doc.select_state("mark")
-    assert doc.param_panel._record_btn.isVisibleTo(doc.param_panel)
+    assert doc.param_panel.node_page._record_btn.isVisibleTo(doc.param_panel)
 
 
 def test_record_into_a_destination_picker_is_never_refused(qapp):
@@ -841,7 +841,7 @@ def test_the_link_chip_is_one_width_in_both_states(doc, qapp):
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
     doc.select_state("gate")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     width = chip.width()
     qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
     assert chip.text() == "Unlink" and chip.width() == width
@@ -852,7 +852,7 @@ def test_a_long_linked_name_is_elided_within_the_cap(doc):
 
     _input(doc, "world").label = "A world name far too long to fit on any chip at all"
     doc.select_state("gate")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     assert chip.width() <= _LINK_CHIP_MAX_W
     assert chip.text().endswith("…")
 

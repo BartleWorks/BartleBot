@@ -196,7 +196,7 @@ def test_importing_in_a_definition_sets_the_page_on_the_node(definition_canvas):
     from bartlebot.content.subgraphs.subgraphs import config_to_definition
 
     panel = definition_canvas.param_panel
-    panel.apply_wiki_import([], "Creature:Lost Soul")
+    panel.node_page.apply_wiki_import([], "Creature:Lost Soul")
 
     assert panel.shown_state.params[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
     saved = config_to_definition(definition_canvas.config)
@@ -206,5 +206,5 @@ def test_importing_in_a_definition_sets_the_page_on_the_node(definition_canvas):
 
 def test_importing_with_no_page_leaves_the_param_alone(definition_canvas):
     panel = definition_canvas.param_panel
-    panel.apply_wiki_import([], None)
+    panel.node_page.apply_wiki_import([], None)
     assert WIKI_PAGE_PARAM not in (panel.shown_state.params or {}) or not panel.shown_state.params[WIKI_PAGE_PARAM]

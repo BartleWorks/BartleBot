@@ -503,11 +503,11 @@ def test_the_region_page_collapses_and_expands(canvas):
         canvas.scene.node_items[sid].setSelected(True)
     panel = canvas.param_panel
     assert panel.shown_region is canvas.config.regions[0]
-    assert panel.region_collapse_button.text() == "Collapse"
-    panel.region_collapse_button.click()
+    assert panel.region_page.region_collapse_button.text() == "Collapse"
+    panel.region_page.region_collapse_button.click()
     assert canvas.config.regions[0].collapsed is True
-    assert panel.region_collapse_button.text() == "Expand"
-    panel.region_collapse_button.click()
+    assert panel.region_page.region_collapse_button.text() == "Expand"
+    panel.region_page.region_collapse_button.click()
     assert canvas.config.regions[0].collapsed is None
 
 
@@ -594,8 +594,8 @@ def test_a_blocked_collapse_is_refused_and_the_button_says_why(canvas):
     # Half of r2 is folded into r1, so it cannot be selected whole; its page is shown directly.
     canvas._show_region_page(canvas.config.regions[1])
     panel = canvas.param_panel
-    assert not panel.region_collapse_button.isEnabled()
-    assert panel.region_collapse_button.toolTip() == "It overlaps the collapsed region 'Middle'."
+    assert not panel.region_page.region_collapse_button.isEnabled()
+    assert panel.region_page.region_collapse_button.toolTip() == "It overlaps the collapsed region 'Middle'."
 
 
 # ---------------------------------------------------------------------------
@@ -636,7 +636,7 @@ def test_the_region_page_shows_run_modes_view(canvas):
     canvas.exit_edit_mode()
     canvas.set_region_collapsed("r1", True)
     canvas._show_region_page(canvas.config.regions[0])
-    button = canvas.param_panel.region_collapse_button
+    button = canvas.param_panel.region_page.region_collapse_button
     assert button.text() == "Expand"
     button.click()
     assert "a4" in canvas.scene.node_items

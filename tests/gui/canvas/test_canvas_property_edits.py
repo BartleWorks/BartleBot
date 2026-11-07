@@ -57,9 +57,9 @@ def test_changing_node_type_updates_the_canvas_node(qapp):
     config = scene.config
 
     panel.show_state(config.states[0], all_states=config.states, all_transitions=config.transitions)
-    idx = panel.node_type_combo.findData("click_path", Qt.ItemDataRole.UserRole)
+    idx = panel.node_page.node_type_combo.findData("click_path", Qt.ItemDataRole.UserRole)
     assert idx >= 0
-    panel.node_type_combo.setCurrentIndex(idx)
+    panel.node_page.node_type_combo.setCurrentIndex(idx)
 
     assert config.states[0].node_type == "click_path"
     assert node.node_type == "click_path"
@@ -74,10 +74,10 @@ def test_changing_node_type_updates_the_output_ports(qapp):
     config = scene.config
 
     panel.show_state(config.states[0], all_states=config.states, all_transitions=config.transitions)
-    idx = panel.node_type_combo.findData("check_health_and_mana", Qt.ItemDataRole.UserRole)
+    idx = panel.node_page.node_type_combo.findData("check_health_and_mana", Qt.ItemDataRole.UserRole)
     if idx < 0:  # condition nodes are the only ones with non-SUCCESS/FAILURE returns
         pytest.skip("no condition node registered to switch to")
-    panel.node_type_combo.setCurrentIndex(idx)
+    panel.node_page.node_type_combo.setCurrentIndex(idx)
 
     assert node.returns == ["TRUE", "FALSE"]
 
@@ -115,7 +115,7 @@ def test_rewiring_an_edge_can_be_undone(qapp):
         states=list(config.states),
         all_transitions=config.transitions,
     )
-    panel.edge_dst_combo.setCurrentIndex(panel.edge_dst_combo.findData("c"))
+    panel.edge_page.edge_dst_combo.setCurrentIndex(panel.edge_page.edge_dst_combo.findData("c"))
     assert config.transitions[0].dest == "c"
 
     canvas.undo()
@@ -136,13 +136,13 @@ def test_changing_the_source_reloads_the_when_choices(qapp):
         states=list(config.states),
         all_transitions=config.transitions,
     )
-    assert panel.when_choices == ["(none)", "SUCCESS", "FAILURE"]
+    assert panel.edge_page.when_choices == ["(none)", "SUCCESS", "FAILURE"]
 
-    panel.edge_src_combo.setCurrentIndex(panel.edge_src_combo.findData("b"))
+    panel.edge_page.edge_src_combo.setCurrentIndex(panel.edge_page.edge_src_combo.findData("b"))
 
     # 'b' is a condition node; its returns replace the action-node ones, and the
     # stored SUCCESS is kept as an entry rather than silently rewritten.
-    assert panel.when_choices == ["(none)", "TRUE", "FALSE", "SUCCESS"]
+    assert panel.edge_page.when_choices == ["(none)", "TRUE", "FALSE", "SUCCESS"]
     assert config.transitions[0].when == "SUCCESS"
 
 
@@ -164,7 +164,7 @@ def test_changing_the_when_condition_reroutes_the_edge(qapp):
         states=list(config.states),
         all_transitions=config.transitions,
     )
-    panel.when_combo.setCurrentIndex(panel.when_combo.findText("FALSE"))
+    panel.edge_page.when_combo.setCurrentIndex(panel.edge_page.when_combo.findText("FALSE"))
 
     assert config.transitions[0].when == "FALSE"
     assert edge.when == "FALSE"
@@ -187,17 +187,17 @@ def test_changing_the_when_condition_rekeys_the_edge_record(qapp):
         states=list(config.states),
         all_transitions=config.transitions,
     )
-    panel.when_combo.setCurrentIndex(panel.when_combo.findText("FALSE"))
+    panel.edge_page.when_combo.setCurrentIndex(panel.edge_page.when_combo.findText("FALSE"))
 
     assert ("a", "FALSE", "b") in [(s, w, d) for s, w, d, _ in scene.edge_items]
     # A follow-up endpoint rewire has to still find the edge.
-    panel.edge_dst_combo.setCurrentIndex(panel.edge_dst_combo.findData("c"))
+    panel.edge_page.edge_dst_combo.setCurrentIndex(panel.edge_page.edge_dst_combo.findData("c"))
     assert ("a", "FALSE", "c") in [(s, w, d) for s, w, d, _ in scene.edge_items]
 
 
 def test_a_duplicate_when_condition_is_refused(qapp, monkeypatch):
     """The source/dest dropdowns guard against duplicates; When has to as well."""
-    from bartlebot.gui.canvas import param_panel as pp
+    from bartlebot.gui.canvas import edge_page as pp
 
     config = _config(
         transitions=[
@@ -219,11 +219,11 @@ def test_a_duplicate_when_condition_is_refused(qapp, monkeypatch):
         states=list(config.states),
         all_transitions=config.transitions,
     )
-    panel.when_combo.setCurrentIndex(panel.when_combo.findText("FALSE"))
+    panel.edge_page.when_combo.setCurrentIndex(panel.edge_page.when_combo.findText("FALSE"))
 
     assert warned
     assert config.transitions[0].when == "TRUE"
-    assert panel.when_combo.currentText() == "TRUE"
+    assert panel.edge_page.when_combo.currentText() == "TRUE"
 
 
 def test_changing_the_when_condition_can_be_undone(qapp):
@@ -240,7 +240,7 @@ def test_changing_the_when_condition_can_be_undone(qapp):
         states=list(config.states),
         all_transitions=config.transitions,
     )
-    panel.when_combo.setCurrentIndex(panel.when_combo.findText("FALSE"))
+    panel.edge_page.when_combo.setCurrentIndex(panel.edge_page.when_combo.findText("FALSE"))
     assert config.transitions[0].when == "FALSE"
 
     canvas.undo()
@@ -275,7 +275,7 @@ def _coord_canvas(qapp):
 
 def test_a_param_edit_can_be_undone(qapp):
     canvas = _coord_canvas(qapp)
-    canvas.param_panel.param_form.widget("zone").setText("Z/Two")
+    canvas.param_panel.node_page.param_form.widget("zone").setText("Z/Two")
 
     canvas.undo()
 
@@ -285,7 +285,7 @@ def test_a_param_edit_can_be_undone(qapp):
 def test_a_cleared_coordinate_box_can_be_undone(qapp):
     """Clearing one box drops the whole coordinate, so losing it to a slip has to be recoverable."""
     canvas = _coord_canvas(qapp)
-    canvas.param_panel.param_form.widget("xyz").axis_edit("y").setText("")
+    canvas.param_panel.node_page.param_form.widget("xyz").axis_edit("y").setText("")
     assert "xyz" not in canvas.config.states[0].params
 
     canvas.undo()
@@ -295,7 +295,7 @@ def test_a_cleared_coordinate_box_can_be_undone(qapp):
 
 def test_a_node_label_edit_can_be_undone(qapp):
     canvas = _coord_canvas(qapp)
-    canvas.param_panel.node_label_edit.setText("Go there")
+    canvas.param_panel.node_page.node_label_edit.setText("Go there")
 
     canvas.undo()
 
@@ -304,7 +304,7 @@ def test_a_node_label_edit_can_be_undone(qapp):
 
 def test_undo_takes_back_the_whole_typing_burst_and_redo_restores_it(qapp):
     canvas = _coord_canvas(qapp)
-    edit = canvas.param_panel.param_form.widget("zone")
+    edit = canvas.param_panel.node_page.param_form.widget("zone")
     for text in ("Z/T", "Z/Tw", "Z/Two"):
         edit.setText(text)
 
@@ -324,7 +324,9 @@ def _switch_type(canvas, state, node_type):
     panel = canvas.param_panel
     config = canvas.scene.config
     panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
-    panel.node_type_combo.setCurrentIndex(panel.node_type_combo.findData(node_type, Qt.ItemDataRole.UserRole))
+    panel.node_page.node_type_combo.setCurrentIndex(
+        panel.node_page.node_type_combo.findData(node_type, Qt.ItemDataRole.UserRole)
+    )
 
 
 @pytest.mark.parametrize("label", [None, "Change Realm"])
@@ -336,7 +338,7 @@ def test_a_label_still_at_its_types_name_follows_a_type_change(qapp, label):
     _switch_type(canvas, state, "click_path")
 
     assert state.label == "Click Path"
-    assert canvas.param_panel.node_label_edit.text() == "Click Path"
+    assert canvas.param_panel.node_page.node_label_edit.text() == "Click Path"
     assert canvas.scene.node_items["a"].label == "Click Path"
 
 
@@ -358,10 +360,10 @@ def test_the_title_placeholder_is_the_node_types_name(qapp):
     config = canvas.scene.config
     panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
 
-    assert panel.node_label_edit.placeholderText() == "Change Realm"
+    assert panel.node_page.node_label_edit.placeholderText() == "Change Realm"
     state.label = "Hop to the Commons"
     _switch_type(canvas, state, "click_path")
-    assert panel.node_label_edit.placeholderText() == "Click Path"
+    assert panel.node_page.node_label_edit.placeholderText() == "Click Path"
 
 
 def test_an_emptied_label_takes_back_its_types_name_when_left(qapp):
@@ -373,11 +375,11 @@ def test_an_emptied_label_takes_back_its_types_name_when_left(qapp):
     config = canvas.scene.config
     panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
 
-    panel.node_label_edit.setText("")
-    panel.node_label_edit.editingFinished.emit()
+    panel.node_page.node_label_edit.setText("")
+    panel.node_page.node_label_edit.editingFinished.emit()
 
     assert state.label == "Change Realm"
-    assert panel.node_label_edit.text() == "Change Realm"
+    assert panel.node_page.node_label_edit.text() == "Change Realm"
     assert canvas.scene.node_items["a"].label == "Change Realm"
 
 
@@ -389,8 +391,8 @@ def test_restoring_an_emptied_label_is_undone_with_the_edit(qapp):
     config = canvas.scene.config
     panel.show_state(state, all_states=config.states, all_transitions=config.transitions)
 
-    panel.node_label_edit.setText("")
-    panel.node_label_edit.editingFinished.emit()
+    panel.node_page.node_label_edit.setText("")
+    panel.node_page.node_label_edit.editingFinished.emit()
     canvas.undo()
 
     assert canvas.config.states[0].label == "Hop to the Commons"

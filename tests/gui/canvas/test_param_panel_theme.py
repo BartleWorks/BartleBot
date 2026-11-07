@@ -25,8 +25,9 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QLabel
 
 from bartlebot.bot.schema import StateModel, TransitionModel
+from bartlebot.gui.canvas.edge_page import _FlagConditionsWidget
 from bartlebot.gui.canvas.param_form import DynamicParamForm
-from bartlebot.gui.canvas.param_panel import _FlagConditionsWidget, _ParamPanel
+from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.nodes.param_schema import ParamField
 
 
@@ -197,36 +198,36 @@ def test_the_node_help_button_recolors(qapp, theme):
     """The '?' beside the node type dropdown: three THEME colors in one sheet set
     once in __init__, which is what kept it in the old palette across a switch."""
     panel = _panel(theme)
-    before = panel._node_help_btn.styleSheet()
+    before = panel.node_page._node_help_btn.styleSheet()
     light_accent = THEME.accent
 
     _switch(qapp, panel, theme, "dark")
 
-    assert panel._node_help_btn.styleSheet() != before
-    assert THEME.accent in panel._node_help_btn.styleSheet()
-    assert light_accent not in panel._node_help_btn.styleSheet()
+    assert panel.node_page._node_help_btn.styleSheet() != before
+    assert THEME.accent in panel.node_page._node_help_btn.styleSheet()
+    assert light_accent not in panel.node_page._node_help_btn.styleSheet()
 
 
 def test_the_node_type_category_headers_recolor(qapp, theme):
     """These carry their color as a model item foreground, not a stylesheet, so
     they need re-setting by hand rather than falling out of a sheet rewrite."""
     panel = _panel(theme)
-    assert panel._node_type_headers, "the dropdown should have category headers"
+    assert panel.node_page._node_type_headers, "the dropdown should have category headers"
     light_muted = QColor(THEME.text_muted)
-    assert panel._node_type_headers[0].foreground().color() == light_muted
+    assert panel.node_page._node_type_headers[0].foreground().color() == light_muted
 
     _switch(qapp, panel, theme, "dark")
 
     assert QColor(THEME.text_muted) != light_muted
-    assert panel._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
+    assert panel.node_page._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
 
 
 def test_the_idle_page_and_status_line_recolor(qapp, theme):
     panel = _panel(theme)
     before = [
         panel._idle_lbl.styleSheet(),
-        panel._record_status_lbl.styleSheet(),
-        panel._flags_lbl.styleSheet(),
+        panel.node_page._record_status_lbl.styleSheet(),
+        panel.edge_page._flags_lbl.styleSheet(),
     ]
     assert all(before), "every one of these should be styled at construction"
 
@@ -234,8 +235,8 @@ def test_the_idle_page_and_status_line_recolor(qapp, theme):
 
     after = [
         panel._idle_lbl.styleSheet(),
-        panel._record_status_lbl.styleSheet(),
-        panel._flags_lbl.styleSheet(),
+        panel.node_page._record_status_lbl.styleSheet(),
+        panel.edge_page._flags_lbl.styleSheet(),
     ]
     assert all(a != b for a, b in zip(after, before))
 
@@ -272,4 +273,4 @@ def test_an_idle_panel_survives_a_switch(qapp, theme):
 
 def _conn_labels(panel) -> list:
     """Every label inside the connections list, at any depth."""
-    return panel._conn_body.findChildren(QLabel)
+    return panel.node_page._conn_body.findChildren(QLabel)

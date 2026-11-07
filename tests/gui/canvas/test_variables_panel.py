@@ -14,8 +14,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QLabel, QSpinBox
 
 from bartlebot.bot.schema import FlagCondition, FlagGroup, VariableModel
+from bartlebot.gui.canvas.edge_page import _FlagConditionsWidget
 from bartlebot.gui.canvas.param_form import DynamicParamForm, _held_text, _HeldParam
-from bartlebot.gui.canvas.param_panel import _FlagConditionsWidget
 from bartlebot.gui.canvas.variable_rows import AssignmentsField
 from bartlebot.gui.widgets.inputs.variable_widgets import NOT_A_VALUE, OPTION, VARIABLE, VariableValueField
 from bartlebot.nodes.control_flow.set_variables import PARAM_SCHEMA

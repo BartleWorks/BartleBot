@@ -220,9 +220,9 @@ def test_a_call_edge_shows_its_first_transition_without_rewiring(canvas):
     _select(canvas, _edge(canvas, REGION, "exit_done", "state_1"))
     panel = canvas.param_panel
     assert panel.shown_transition.source == m("wisps")
-    assert not panel.edge_src_combo.isEnabled()
+    assert not panel.edge_page.edge_src_combo.isEnabled()
     _select(canvas, _edge(canvas, "state_1", "SUCCESS", "state_2"))
-    assert panel.edge_src_combo.isEnabled()
+    assert panel.edge_page.edge_src_combo.isEnabled()
 
 
 def test_a_changed_input_can_be_reset_to_the_default(canvas):
