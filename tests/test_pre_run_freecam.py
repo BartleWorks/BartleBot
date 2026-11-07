@@ -4,7 +4,7 @@ The run locks Exit Freecam, so a camera left detached at Start would stay detach
 the run ended. The step must exit freecam, never teleport, and never raise -- a setup
 problem degrades the run rather than cancelling it.
 
-No QApplication: the method is bound onto a plain harness, as test_pre_run_decks does.
+No QApplication: the method is bound onto a plain harness.
 """
 
 from types import SimpleNamespace
@@ -45,7 +45,7 @@ async def test_exiting_freecam_is_the_first_pre_run_step():
 
     harness = SimpleNamespace(
         _exit_pre_run_freecam=lambda: record("freecam"),
-        _apply_pre_run_decks=lambda: record("decks"),
+        _decks=SimpleNamespace(apply_pre_run_decks=lambda: record("decks")),
         _form_pre_run_group=lambda: record("group"),
         _survey_pre_run_ports=lambda states: record("ports"),
     )

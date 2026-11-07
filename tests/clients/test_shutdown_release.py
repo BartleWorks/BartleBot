@@ -30,7 +30,7 @@ class _GateStub:
         self._choice = choice
         self.asked: list[int] = []
         self.released: list[bool] = []
-        # The unsaved-edits question has tests of its own, in tests/test_autosave.py.
+        # The unsaved-edits question has tests of its own, in tests/controller/test_documents_autosave.py.
         self._documents = SimpleNamespace(close_definitions=lambda: True, confirm_unsaved=lambda title: True)
 
     def _ask_shutdown_choice(self, total: int) -> bool | None:

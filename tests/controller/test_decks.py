@@ -12,58 +12,28 @@ went on with changes or failed, and none when every deck went on clean.
 from __future__ import annotations
 
 import asyncio
-import inspect
 from unittest.mock import MagicMock, call
 
 import pytest
 from bartleby.shared.strategy_models import DeckData
 
 from bartlebot.combat.deck_io import DeckApplyReport
-
-_BOUND = (
-    "_start_deck_job",
-    "_on_deck_job_done",
-    "_active_deck_strategy_id",
-    "_import_deck_for_slot",
-    "_import_all_decks",
-    "_read_slot_deck",
-    "_store_imported_decks",
-    "_saved_decks",
-    "_apply_deck_for_slot",
-    "_apply_all_decks",
-    "_apply_slot_deck",
-    "_report_deck_apply",
-    "_report_apply_all",
-    "_deck_apply_lines",
-    "_describe_skipped",
-    "_warn_deck_failed",
-    "_deck_failure_lines",
-    "_slot_has_client",
-    "_import_deck_for_dialog",
-    "_apply_deck_for_dialog",
-    "_answer_dialog",
-)
+from bartlebot.controller.decks import Decks
 
 
-class DeckJobHarness:
-    """Hosts the deck methods without constructing a real AppController.
+class DeckJobHarness(Decks):
+    """A real ``Decks`` over mock clients, a mock window and a mock open bot.
 
     ``notices`` collects every ``_show_deck_notice`` as (title, body, warn), which is
     the dialog the user would have seen.
     """
 
     def __init__(self, clients: list) -> None:
-        from bartlebot.app_controller import AppController  # noqa: PLC0415
-
-        for name in _BOUND:
-            attr = inspect.getattr_static(AppController, name)
-            setattr(self, name, attr.__func__ if isinstance(attr, staticmethod) else attr.__get__(self))
-        self._client_manager = MagicMock()
-        self._client_manager.clients = clients
-        self._documents = MagicMock(loaded_config=MagicMock(id="bot-1"))
-        self._window = MagicMock()
-        self._documents.on_config_changed = MagicMock()
-        self._deck_task = None
+        client_manager = MagicMock()
+        client_manager.clients = clients
+        documents = MagicMock(loaded_config=MagicMock(id="bot-1"))
+        documents.on_config_changed = MagicMock()
+        super().__init__(MagicMock(), client_manager, documents)
         self.notices: list[tuple[str, str, bool]] = []
 
     def _show_deck_notice(self, title: str, body: str, *, warn: bool) -> None:
@@ -77,12 +47,12 @@ class DeckJobHarness:
 @pytest.fixture
 def strategy(monkeypatch):
     """The active strategy, and a record of every save as a snapshot of its decks."""
-    import bartlebot.app_controller as ac  # noqa: PLC0415
     import bartlebot.combat.strategy_store as store  # noqa: PLC0415
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
 
     settings = MagicMock()
     settings.get_active_strategy = MagicMock(return_value="bcs-1")
-    monkeypatch.setattr(ac.SettingsManager, "instance", staticmethod(lambda: settings))
+    monkeypatch.setattr(deck_module.SettingsManager, "instance", staticmethod(lambda: settings))
 
     bcs = MagicMock()
     bcs.player_decks = {}
@@ -95,7 +65,7 @@ def strategy(monkeypatch):
 @pytest.fixture
 def client_decks(monkeypatch):
     """What each client's deck reads as, keyed by client; an exception is raised instead."""
-    import bartlebot.app_controller as ac  # noqa: PLC0415
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
 
     decks: dict[str, object] = {}
 
@@ -105,7 +75,7 @@ def client_decks(monkeypatch):
             raise result
         return result
 
-    monkeypatch.setattr(ac, "read_deck", _read)
+    monkeypatch.setattr(deck_module, "read_deck", _read)
     return decks
 
 
@@ -173,7 +143,7 @@ async def test_import_all_with_every_slot_failing_saves_nothing(strategy, client
 async def test_import_all_reads_concurrently(strategy, monkeypatch, client_decks):
     """Every read must be in flight together: under a sequential loop the first one
     would wait forever on a barrier only all four can release."""
-    import bartlebot.app_controller as ac  # noqa: PLC0415
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
 
     started = asyncio.Barrier(4)
 
@@ -181,7 +151,7 @@ async def test_import_all_reads_concurrently(strategy, monkeypatch, client_decks
         await started.wait()
         return _preset(1)
 
-    monkeypatch.setattr(ac, "read_deck", _read)
+    monkeypatch.setattr(deck_module, "read_deck", _read)
     async with asyncio.timeout(5):
         await DeckJobHarness(["c1", "c2", "c3", "c4"])._import_all_decks()
 
@@ -197,9 +167,9 @@ async def test_import_all_reads_no_client_past_the_fourth(strategy, client_decks
 
 
 async def test_import_all_without_an_active_strategy_reads_nothing(strategy, client_decks, monkeypatch):
-    import bartlebot.app_controller as ac  # noqa: PLC0415
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
 
-    ac.SettingsManager.instance().get_active_strategy.return_value = None
+    deck_module.SettingsManager.instance().get_active_strategy.return_value = None
 
     await DeckJobHarness(["c1"])._import_all_decks()  # c1 has no entry: a read would KeyError
 
@@ -238,7 +208,7 @@ def apply_results(monkeypatch):
 
     Also records which clients were applied to, under the key ``"applied"``.
     """
-    import bartlebot.app_controller as ac  # noqa: PLC0415
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
 
     results: dict[str, object] = {"applied": []}
 
@@ -249,7 +219,7 @@ def apply_results(monkeypatch):
             raise result
         return result
 
-    monkeypatch.setattr(ac, "apply_deck", _apply)
+    monkeypatch.setattr(deck_module, "apply_deck", _apply)
     return results
 
 
@@ -397,7 +367,7 @@ async def test_a_dialog_import_answers_the_dialog_and_saves_no_strategy(strategy
     harness = DeckJobHarness(["c1"])
     answers: list[object] = []
 
-    assert harness._import_deck_for_dialog(1, answers.append)
+    assert harness.import_deck_for_dialog(1, answers.append)
     await harness._deck_task
 
     [deck] = answers
@@ -411,7 +381,7 @@ async def test_a_dialog_import_that_fails_answers_with_the_reason_and_warns(stra
     harness = DeckJobHarness(["c1"])
     answers: list[object] = []
 
-    harness._import_deck_for_dialog(1, answers.append)
+    harness.import_deck_for_dialog(1, answers.append)
     await harness._deck_task
 
     assert answers == ["timed out"]
@@ -422,7 +392,7 @@ async def test_a_dialog_apply_sends_the_deck_it_was_given(apply_results):
     harness = DeckJobHarness(["c1", "c2"])
     answers: list[object] = []
 
-    assert harness._apply_deck_for_dialog(2, _deck(), answers.append)
+    assert harness.apply_deck_for_dialog(2, _deck(), answers.append)
     await harness._deck_task
 
     assert apply_results["applied"] == ["c2"]
@@ -435,7 +405,7 @@ async def test_a_dialog_apply_that_fails_answers_with_the_reason(apply_results):
     harness = DeckJobHarness(["c1"])
     answers: list[object] = []
 
-    harness._apply_deck_for_dialog(1, _deck(), answers.append)
+    harness.apply_deck_for_dialog(1, _deck(), answers.append)
     await harness._deck_task
 
     assert len(answers) == 1 and isinstance(answers[0], str)
@@ -446,18 +416,18 @@ async def test_a_dialog_request_while_a_deck_job_runs_is_refused(client_decks):
     harness = DeckJobHarness(["c1"])
     harness._deck_task = MagicMock()
 
-    assert not harness._import_deck_for_dialog(1, lambda _r: None)
-    assert not harness._apply_deck_for_dialog(1, _deck(), lambda _r: None)
+    assert not harness.import_deck_for_dialog(1, lambda _r: None)
+    assert not harness.apply_deck_for_dialog(1, _deck(), lambda _r: None)
 
 
 async def test_a_dialog_request_for_a_slot_without_a_client_is_refused(monkeypatch):
-    import bartlebot.app_controller as ac  # noqa: PLC0415
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
 
     warned = MagicMock()
-    monkeypatch.setattr(ac.QMessageBox, "warning", warned)
+    monkeypatch.setattr(deck_module.QMessageBox, "warning", warned)
     harness = DeckJobHarness(["c1"])
 
-    assert not harness._import_deck_for_dialog(2, lambda _r: None)
+    assert not harness.import_deck_for_dialog(2, lambda _r: None)
     warned.assert_called_once()
 
 
@@ -468,5 +438,5 @@ async def test_a_dialog_that_closed_before_the_answer_does_not_break_the_job(str
     def closed(_result):
         raise RuntimeError("wrapped C/C++ object has been deleted")
 
-    harness._import_deck_for_dialog(1, closed)
+    harness.import_deck_for_dialog(1, closed)
     await harness._deck_task  # no raise
