@@ -5,7 +5,6 @@ BotCanvas  — top-level widget; owns the scene, toolbars, and properties panel.
 
 import enum
 import logging
-import time
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -93,6 +92,7 @@ from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_form import instance_key_field
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.run_status import IDLE, PAUSED, RUNNING, RunStatus
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
     CrumbBar,
@@ -119,10 +119,6 @@ logger = logging.getLogger(__name__)
 _TB_RUN = 0  # toolbar stack index for Run mode
 _TB_EDIT = 1  # toolbar stack index for Edit mode
 
-_IDLE = "idle"
-_RUNNING = "running"
-_PAUSED = "paused"
-
 
 #: The Edit button's tooltip, and what it says on an Official bot, which it offers to copy (#149).
 _EDIT_TIP = "Enter Edit Mode"
@@ -130,14 +126,6 @@ _MAKE_COPY_TIP = "Official bots can't be changed. Click to make your own copy to
 #: Edit mode's Save, and what it says while its dot marks unsaved changes (#267).
 _SAVE_TIP = "Save (Ctrl+S)"
 _SAVE_UNSAVED_TIP = "Save (Ctrl+S) — you have unsaved changes"
-
-
-def _status_dot_color(state: str) -> str:
-    if state == _RUNNING:
-        return THEME.success
-    if state == _PAUSED:
-        return THEME.status_paused
-    return THEME.text_muted  # idle / fallback
 
 
 _ICON_SIZE = QSize(32, 32)
@@ -410,9 +398,9 @@ class BotCanvas(QWidget):
         # for it asks for a copy instead. Set by the controller; see set_read_only.
         self._read_only = False
         self._mode = BotMode.RUN
-        self._run_state = _IDLE
-        self._start_time: float | None = None
-        self._active_state: str | None = None
+        # Idle, running or paused, the node the run is in, and its clock.
+        self._run = RunStatus(self)
+        self._run.ticked.connect(self._emit_bot_status)
         # What the signature page's selection lights (#155), kept so a rebuilt scene
         # puts the rings back.
         self._link_lit: list[str] = []
@@ -428,10 +416,6 @@ class BotCanvas(QWidget):
         # The flat transitions behind the edge on the properties panel, when it is a
         # call node's: a flag edit on the first is copied to the rest.
         self._shown_edge_models: list = []
-
-        self._tick_timer = QTimer(self)
-        self._tick_timer.setInterval(1000)
-        self._tick_timer.timeout.connect(self._tick)
 
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
@@ -993,7 +977,7 @@ class BotCanvas(QWidget):
         self._announce_setup_left()
         self._refresh_crumb()
         self._toolbar.set_config(None)
-        self._active_state = None
+        self._run.forget_active()
         self.set_read_only(False)
         self._edit_btn.setEnabled(False)
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -1174,7 +1158,7 @@ class BotCanvas(QWidget):
 
     def _apply_run_btn_state(self) -> None:
         """Sync Run button enabled/tooltip from external readiness + validation errors."""
-        if self._run_state != _IDLE or self._mode != BotMode.RUN:
+        if not self._run.is_idle or self._mode != BotMode.RUN:
             return
         if self.is_definition:
             self._run_pause_btn.setEnabled(False)
@@ -1293,15 +1277,13 @@ class BotCanvas(QWidget):
             sm.set("canvas", "show_failure_edges", value=self._failure_edge_mode != FAILURE_EDGES_NONE)
         self._apply_failure_edge_visibility()
 
-    def _active_state_label(self) -> str:
-        """Return the display label for the current active state, falling back to its id."""
-        if not self._active_state:
-            return ""
+    def _state_label(self, state_id: str) -> str:
+        """The display label of the state *state_id*, falling back to its id."""
         if self._config:
-            state = next((s for s in self._config.states if s.id == self._active_state), None)
+            state = next((s for s in self._config.states if s.id == state_id), None)
             if state and state.label:
                 return state.label
-        return self._active_state
+        return state_id
 
     def _emit_bot_status(self) -> None:
         """Show the run/edit state in Bar B, and announce it for everyone else.
@@ -1313,13 +1295,7 @@ class BotCanvas(QWidget):
         if self._mode == BotMode.EDIT:
             self._publish_status(THEME.text_muted, "Editing", "", "")
             return
-        color = _status_dot_color(self._run_state)
-        if self._run_state == _IDLE:
-            self._publish_status(color, "Idle", "", "")
-        elif self._run_state == _RUNNING:
-            self._publish_status(color, "Running", self._active_state_label(), self._elapsed_str())
-        elif self._run_state == _PAUSED:
-            self._publish_status(color, "Paused", self._active_state_label(), self._elapsed_str())
+        self._publish_status(*self._run.describe(self._state_label))
 
     def _publish_status(self, color: str, status: str, state_label: str, elapsed: str) -> None:
         self._toolbar.set_status(color, status, elapsed)
@@ -1390,33 +1366,29 @@ class BotCanvas(QWidget):
         self._run_pause_btn.set_icon_name(icon_name)
 
     def set_running(self) -> None:
-        self._run_state = _RUNNING
+        self._run.start()
         self._set_run_icon("pause")
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
         self._edit_btn.setEnabled(False)
-        self._start_time = time.monotonic()
-        self._tick_timer.start()
         self._emit_bot_status()
         self.tab_switch.emit("log")
         logger.info("=== Bot started ===")
 
     def set_paused(self) -> None:
-        self._run_state = _PAUSED
+        self._run.pause()
         self._set_run_icon("play")
         self._run_pause_btn.setEnabled(True)
         self._emit_bot_status()
         logger.info("=== Paused ===")
 
     def set_idle(self) -> None:
-        self._run_state = _IDLE
+        left = self._run.stop()
         self._set_run_icon("play")
         self._run_pause_btn.setEnabled(False)  # re-enabled by set_run_enabled
         self.stop_button.setEnabled(False)
         self._edit_btn.setEnabled(self._config is not None)
-        self._tick_timer.stop()
-        self._set_node_active(self._active_state, False)
-        self._active_state = None
+        self._set_node_active(left, False)
         self._emit_bot_status()
         logger.info("=== Bot stopped ===")
 
@@ -1436,8 +1408,7 @@ class BotCanvas(QWidget):
 
     def set_state(self, state_id: str) -> None:
         """Highlight the active FSM state node -- or, for a member of an instance, its call node."""
-        self._set_node_active(self._active_state, False)
-        self._active_state = state_id
+        self._set_node_active(self._run.enter(state_id), False)
         node = self._set_node_active(state_id, True)
         # Only a node on show: in a subgraph node's body this follows the run from
         # member to member, and a run that leaves the body is not chased out of it.
@@ -1461,13 +1432,13 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
 
     def _on_run_pause_clicked(self) -> None:
-        if self._run_state == _IDLE:
+        if self._run.state == IDLE:
             self.run_requested.emit()
-        elif self._run_state == _RUNNING:
+        elif self._run.state == RUNNING:
             self.set_paused()
             self.pause_requested.emit()
-        elif self._run_state == _PAUSED:
-            self._run_state = _RUNNING
+        elif self._run.state == PAUSED:
+            self._run.resume()
             self._set_run_icon("pause")
             self._emit_bot_status()
             logger.info("=== Resumed ===")
@@ -1498,7 +1469,7 @@ class BotCanvas(QWidget):
 
         On an Official bot, asks for Make my own copy instead and stays in Run mode.
         """
-        if self._run_state != _IDLE:
+        if not self._run.is_idle:
             return
         if self._read_only and not self.is_definition:
             self.copy_requested.emit()
@@ -1943,8 +1914,8 @@ class BotCanvas(QWidget):
         if self._scene.expanded != self._opened_regions():
             self._scene.set_expanded(self._opened_regions())
         self._scene.refresh_region_states(self._compose_report)
-        if self._active_state:
-            self._set_node_active(self._active_state, True)
+        if self._run.active_state:
+            self._set_node_active(self._run.active_state, True)
         self._scene.set_link_lit(self._link_lit)
         self._refresh_collapse_buttons()
         self._apply_levels()
@@ -3332,7 +3303,7 @@ class BotCanvas(QWidget):
         ``_on_selection_changed``, which reaches into the properties panel.  Nothing
         should be repainting a panel on the way to being deleted.
         """
-        self._tick_timer.stop()
+        self._run.shutdown()
         self._validation_timer.stop()
         if self._press_tracer is not None:
             self._press_tracer.stop()
@@ -3639,14 +3610,3 @@ class BotCanvas(QWidget):
         state = self._param_panel.shown_state
         if state is not None and any(s is state for s in config.states):
             self._show_state_page(state)
-
-    def _tick(self) -> None:
-        self._emit_bot_status()
-
-    def _elapsed_str(self) -> str:
-        if self._start_time is None:
-            return "00:00:00"
-        s = int(time.monotonic() - self._start_time)
-        h, rem = divmod(s, 3600)
-        m, sec = divmod(rem, 60)
-        return f"{h:02d}:{m:02d}:{sec:02d}"
