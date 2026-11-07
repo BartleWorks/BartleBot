@@ -340,9 +340,9 @@ def test_saving_a_region_as_a_subgraph_opens_the_new_definition(harness, library
 
 
 def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
-    from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel, _BotCard  # noqa: PLC0415
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(library)
     panel.refresh()
     keys = [panel._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(panel._cat_list.count())]
@@ -358,7 +358,7 @@ def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
 
 
 def _subgraph_cards(panel):
-    from bartlebot.gui.canvas.bot_canvas import _BotCard  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import _BotCard  # noqa: PLC0415
 
     return [c for c in panel.findChildren(_BotCard) if c.isVisibleTo(panel)]
 
@@ -369,9 +369,9 @@ def _show_subgraphs(panel):
 
 
 def test_a_right_click_on_a_subgraph_card_does_not_open_it(qapp, library):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(library)
     panel.refresh()
     _show_subgraphs(panel)
@@ -383,13 +383,13 @@ def test_a_right_click_on_a_subgraph_card_does_not_open_it(qapp, library):
 
 
 def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     lib = SubgraphLibrary(shipped, user)
     sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
     lib.reload()
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(lib)
     asked = []
     panel.delete_subgraph_requested.connect(asked.append)
@@ -412,13 +412,13 @@ def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_p
 
 
 def test_a_subgraph_cards_rename_is_offered_on_the_users_own_only(qapp, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     lib = SubgraphLibrary(shipped, user)
     sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
     lib.reload()
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(lib)
     asked = []
     panel.rename_subgraph_requested.connect(asked.append)
@@ -627,10 +627,10 @@ def test_deleting_a_modified_built_in_reverts_it(qapp, tmp_path, monkeypatch):
 
 
 def test_the_library_stays_in_the_subgraphs_folder_after_a_delete(qapp, library):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     library.save(sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"}))
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(library)
     panel.refresh()
     _show_subgraphs(panel)

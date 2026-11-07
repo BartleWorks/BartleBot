@@ -418,9 +418,9 @@ def test_new_bot_opens_on_no_folder_with_nothing_to_go_by(harness):
 
 
 def test_the_library_panel_names_the_folder_it_is_showing(qapp):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.add_category_row("\0all", "All")
     panel.add_category_row("13_aquila", "Aquila")
 

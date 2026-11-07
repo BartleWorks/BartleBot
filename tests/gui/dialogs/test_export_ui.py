@@ -25,7 +25,7 @@ from bartlebot.combat.strategy_store import (
 from bartlebot.combat.strategy_workset import StrategyWorkingSet
 from bartlebot.content import bot_roots, share_export, store_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
-from bartlebot.gui.canvas.bot_canvas import EXPORT_TEXT, _BotLibraryPanel
+from bartlebot.gui.canvas.bot_library import EXPORT_TEXT, BotLibraryPanel
 from bartlebot.gui.combat_strategies.dialog import EXPORT_UNSAVED_TIP, CombatStrategyDialog
 from bartlebot.gui.dialogs import export_dialog
 from bartlebot.gui.dialogs.export_dialog import NOTHING_TO_SEND, Choices, ExportDialog, run_export
@@ -73,7 +73,7 @@ class _Captured:
 
 
 def test_a_bot_card_offers_export(qapp):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     asked: list[str] = []
     panel.export_bot_requested.connect(asked.append)
 
@@ -83,7 +83,7 @@ def test_a_bot_card_offers_export(qapp):
 
 
 def test_a_subgraph_card_offers_export(qapp, tmp_path):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     library = SubgraphLibrary(tmp_path)
     library.save(_defn("sg", "Loop"))
     panel.set_subgraph_library(library)

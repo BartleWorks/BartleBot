@@ -21,10 +21,10 @@ from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import DEV_ENV_VAR, SOURCE_LABELS, Origin
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates import template_diff
-from bartlebot.gui.canvas.bot_canvas import (
-    BotMode,
+from bartlebot.gui.canvas.bot_canvas import BotMode
+from bartlebot.gui.canvas.bot_library import (
+    BotLibraryPanel,
     _BotCard,
-    _BotLibraryPanel,
     _BotMeta,
     _read_bot_meta,
     filter_bot_metas,
@@ -331,7 +331,7 @@ def test_a_copy_says_which_official_bot_it_came_from(qapp):
     assert card.meta_text == forked_from_text("Jade Oni")
 
 
-def _cards(panel: _BotLibraryPanel) -> list[_BotCard]:
+def _cards(panel: BotLibraryPanel) -> list[_BotCard]:
     layout = panel._cards_layout
     return [w for i in range(layout.count()) if isinstance(w := layout.itemAt(i).widget(), _BotCard)]
 
@@ -340,7 +340,7 @@ def test_the_library_shows_each_bots_source_and_filters_by_it(qapp, official_pat
     answer("My Jade Oni")
     harness._open_bot(str(official_path))
     assert harness._make_own_copy()
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     panel._cat_list.setCurrentRow(
         next(i for i in range(panel._cat_list.count()) if panel._cat_list.item(i).text() == "All")
@@ -368,7 +368,7 @@ def test_the_subgraphs_folder_shows_each_definitions_source(qapp, tmp_path):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     SubgraphLibrary(shipped).save(sync_players_definition())
     SubgraphLibrary(user).save(sync_players_definition().model_copy(update={"id": "mine", "name": "My sync"}))
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(SubgraphLibrary(shipped, user))
     panel.refresh()
     panel._cat_list.setCurrentRow(

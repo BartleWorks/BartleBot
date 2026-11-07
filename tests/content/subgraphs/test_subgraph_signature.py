@@ -259,10 +259,10 @@ def test_nothing_linking_it_means_nothing_to_warn_about(harness, library, monkey
 
 
 def _panel_over(shipped, user):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     lib = SubgraphLibrary(shipped, user)
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(lib)
     panel.refresh()
     _show_subgraphs(panel)

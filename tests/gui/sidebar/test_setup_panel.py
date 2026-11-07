@@ -667,7 +667,7 @@ def test_opening_and_saving_a_bot_with_steps_left_changes_nothing_in_its_file(ha
 
 
 def test_a_library_row_says_how_many_setup_steps_are_left(qapp, store, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import _BotCard, _read_bot_meta  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import _BotCard, _read_bot_meta  # noqa: PLC0415
 
     half = tmp_path / "trolls.json"
     bot = _bot()
@@ -1195,7 +1195,7 @@ def test_opening_a_bot_behind_reads_its_update_and_finishing_brings_the_newer_st
 
 
 def test_a_library_row_says_when_the_template_has_moved_on(qapp, store, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import UPDATE_AVAILABLE_TEXT, _BotCard, _read_bot_meta  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import UPDATE_AVAILABLE_TEXT, _BotCard, _read_bot_meta  # noqa: PLC0415
 
     path = tmp_path / "trolls.json"
     _bot().save(path)
@@ -1360,7 +1360,7 @@ def test_a_library_row_counts_a_files_steps_once_until_the_file_changes(qapp, st
     """Counting validates the whole file, and the library reads every bot each time it is listed."""
     import os  # noqa: PLC0415
 
-    from bartlebot.gui.canvas.bot_canvas import _read_bot_meta  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import _read_bot_meta  # noqa: PLC0415
 
     counted: list[int] = []
     real = setup_steps.left_in_file

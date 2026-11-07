@@ -10,7 +10,8 @@ from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.content import bot_roots, store_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
-from bartlebot.gui.canvas.bot_canvas import BotCanvas, _BotLibraryPanel
+from bartlebot.gui.canvas.bot_canvas import BotCanvas
+from bartlebot.gui.canvas.bot_library import BotLibraryPanel
 from bartlebot.settings_manager import SettingsManager
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 
@@ -48,7 +49,7 @@ def test_a_users_bot_card_offers_delete(qapp, folders):
     _, user = folders
     path = user / "mine.json"
     _bot().save(path)
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     asked: list[str] = []
     panel.delete_bot_requested.connect(asked.append)
 
@@ -64,7 +65,7 @@ def test_an_official_bots_delete_is_grayed_out_with_the_reason(qapp, folders):
     path = shipped / "official.json"
     _bot("official").save(path)
 
-    action = _action(_BotLibraryPanel().bot_menu(path), DELETE_TEXT)
+    action = _action(BotLibraryPanel().bot_menu(path), DELETE_TEXT)
 
     assert not action.isEnabled()
     assert "Official bots can't be deleted" in action.toolTip()
