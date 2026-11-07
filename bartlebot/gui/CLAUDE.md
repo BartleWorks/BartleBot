@@ -54,7 +54,9 @@ inferred from the edges crossing it (`subgraphs.boundary_ports`, the same rule *
 region as subgraph* uses), so an edge added or deleted there can change them --
 `_refresh_folds`, on `graph_changed`, rebuilds when it does. Nothing caches these: the
 scene is rebuilt from the config on undo, `replace_config`, paste, detach and delete,
-and the mapping is rebuilt with it.
+and the mapping is rebuilt with it. The mapping is `canvas/display_map.py`'s `DisplayMap`,
+which the scene owns and rebuilds at the top of every `setup`; it needs no Qt, and the
+scene keeps the items.
 
 What a member does rolls up onto its node: its errors (`refresh_errors`; an instance's
 filtered by `member_warnings`, a collapsed region's not, since its gaps are the bot's
@@ -106,7 +108,7 @@ the drop: Run mode's collapses are never written, so an expand has nowhere to ma
 
 **Collapsing works in both modes, and means something different in each.** In Edit
 mode it sets the region's saved flag, as one undoable step. In Run mode it is a view:
-`EditScene`'s collapse overrides sit over the saved flags, are never written, and are
+the collapse overrides, held in the scene's `DisplayMap`, sit over the saved flags, are never written, and are
 dropped on entering Edit mode, which is where the saved state is decided. So "is this
 region collapsed" is `EditScene.is_region_collapsed` (or `subgraphs.is_collapsed` with
 the overrides), never `region.collapsed` read directly. `BotCanvas.set_region_collapsed`
