@@ -1172,7 +1172,7 @@ def test_opening_a_bot_behind_reads_its_update_and_finishing_brings_the_newer_st
     _bot().save(path)
     before = path.read_bytes()
     canvas = harness._window.bot_canvas
-    canvas.template_ref_changed.connect(harness._refresh_template_context)
+    canvas.template_ref_changed.connect(harness._templates.refresh_template_context)
 
     harness._documents.open_bot(str(path), mode=BotMode.EDIT)
 
@@ -1249,7 +1249,7 @@ def test_an_undo_across_finish_gives_the_controller_the_older_base_back(harness,
     path = tmp_path / "bots" / "trolls.json"
     _bot().save(path)
     canvas = harness._window.bot_canvas
-    canvas.template_ref_changed.connect(harness._refresh_template_context)
+    canvas.template_ref_changed.connect(harness._templates.refresh_template_context)
     harness._documents.open_bot(str(path), mode=BotMode.EDIT)
 
     assert canvas.finish_template_review()

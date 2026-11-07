@@ -16,7 +16,7 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.controller import documents
 from bartlebot.controller.documents import Documents
-from bartlebot.controller.templates import TemplateRoots
+from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill
 

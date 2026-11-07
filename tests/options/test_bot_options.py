@@ -25,7 +25,7 @@ from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.controller.documents import Documents
-from bartlebot.controller.templates import TemplateRoots
+from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.options.bot_options import (
     SOURCE_APP_SETTING,
     SOURCE_BOT_FILE,

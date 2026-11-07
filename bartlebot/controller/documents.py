@@ -43,7 +43,7 @@ from bartlebot.content.subgraphs.subgraphs import (
     definition_to_config,
 )
 from bartlebot.content.templates import template_store
-from bartlebot.controller.templates import TemplateRoots
+from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
 from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
 from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog

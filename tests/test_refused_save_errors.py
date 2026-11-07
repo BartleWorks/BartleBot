@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot.app_controller import AppController
 from bartlebot.controller.documents import Documents
+from bartlebot.controller.templates import Templates
 
 
 def _controller(errors):
@@ -41,6 +41,6 @@ def test_a_refused_release_draws_the_missing_fields_red(qapp, monkeypatch):
     monkeypatch.setattr(QMessageBox, "critical", lambda *a, **k: None)
     fake = _controller([])
 
-    AppController._show_release_refused(fake, "Dungeon Farmer", ["Required param 'zone' is empty"])
+    Templates._show_release_refused(fake, "Dungeon Farmer", ["Required param 'zone' is empty"])
 
     fake._window.bot_canvas.param_panel.show_required_errors.assert_called_once()

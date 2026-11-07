@@ -10,7 +10,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta
-from bartlebot.controller.templates import DRAFT_FILE_LABEL, TemplateRoots
+from bartlebot.controller.template_roots import DRAFT_FILE_LABEL, TemplateRoots
 
 
 def _config(*, template: bool = False) -> BotConfig:

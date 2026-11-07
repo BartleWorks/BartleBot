@@ -18,7 +18,7 @@ from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.controller.documents import Documents
-from bartlebot.controller.templates import TemplateRoots
+from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.settings_manager import SettingsManager
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 from tests.content.subgraphs.test_subgraphs import SYNC_ID, linked_bot, sync_players_definition

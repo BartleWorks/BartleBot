@@ -31,7 +31,8 @@ class ControllerHarness:
     def __init__(self, canvas, library: SubgraphLibrary) -> None:
         from bartlebot.app_controller import AppController  # noqa: PLC0415
         from bartlebot.controller.documents import Documents  # noqa: PLC0415
-        from bartlebot.controller.templates import TemplateRoots  # noqa: PLC0415
+        from bartlebot.controller.template_roots import TemplateRoots  # noqa: PLC0415
+        from bartlebot.controller.templates import Templates  # noqa: PLC0415
 
         cls = AppController
         for name in (
@@ -44,18 +45,6 @@ class ControllerHarness:
             "_check_restricted_zones",
             "_check_player_realms",
             "_check_variables",
-            "_ask_template_name",
-            "_template_gallery",
-            "_open_templates_dialog",
-            "_edit_template",
-            "_new_template",
-            "_duplicate_template",
-            "_rename_template",
-            "_delete_template",
-            "_open_template",
-            "_refresh_template_context",
-            "_release_template",
-            "_show_release_refused",
         ):
             setattr(self, name, getattr(cls, name).__get__(self))
         self._roots = TemplateRoots()
@@ -74,7 +63,8 @@ class ControllerHarness:
         )
         # The Rewards prompt is modal; what is under test here is the write behind it.
         self._documents._confirm_rewards_tags = lambda: True
-        self._documents.template_context_changed.connect(self._refresh_template_context)
+        self._templates = Templates(self._window, self._documents, self._roots)
+        self._documents.template_context_changed.connect(self._templates.refresh_template_context)
         canvas.config_changed.connect(self._documents.on_config_changed)
 
 

@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.controller.documents import Documents, file_snapshot
-from bartlebot.controller.templates import TemplateRoots
+from bartlebot.controller.template_roots import TemplateRoots
 
 
 def _config() -> BotConfig:

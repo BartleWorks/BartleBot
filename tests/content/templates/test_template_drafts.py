@@ -9,11 +9,10 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
 
-from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta, TransitionModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates.template_store import find_template, load_version, release, save_draft
-from bartlebot.controller import documents, templates
+from bartlebot.controller import documents, template_roots, templates
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.canvas.subgraph_widgets import CrumbMode
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
@@ -30,7 +29,7 @@ def _no_modal_dialogs(monkeypatch):
 
 @pytest.fixture
 def dev(monkeypatch):
-    for module in (app_controller, documents, templates):
+    for module in (documents, templates, template_roots):
         monkeypatch.setattr(module, "dev_mode", lambda: True)
 
 
@@ -67,7 +66,7 @@ def harness(qapp, store, tmp_path):
     h = ControllerHarness(canvas, library)
     h._roots.root = store
     canvas.template_save_requested.connect(lambda: h._documents.save_bot())
-    canvas.template_release_requested.connect(lambda: h._release_template())
+    canvas.template_release_requested.connect(lambda: h._templates.release_template())
     yield h
     canvas.prepare_for_shutdown()
 
@@ -78,7 +77,7 @@ def _draft_path(store) -> str:
 
 def _open(h, monkeypatch) -> None:
     """Open the draft as File › Templates…'s Edit does: as the top-level document, in Edit mode."""
-    assert h._edit_template(find_template(TEMPLATE_ID, h._roots.root))
+    assert h._templates._edit_template(find_template(TEMPLATE_ID, h._roots.root))
     assert h._window.bot_canvas.mode is BotMode.EDIT
 
 
@@ -127,7 +126,7 @@ def test_a_bot_offers_rewards_tags_and_shows_no_crumb(harness, tmp_path):
 
 def test_the_users_own_draft_opens_outside_dev_mode(harness, monkeypatch, store):
     """Since #164 anyone edits their own templates; the store here is one root, so this one is Custom."""
-    for module in (app_controller, documents, templates):
+    for module in (documents, templates, template_roots):
         monkeypatch.setattr(module, "dev_mode", lambda: False)
 
     _open(harness, monkeypatch)
@@ -163,7 +162,7 @@ def test_open_bot_refuses_a_released_version(harness, dev, monkeypatch, store):
 
 def test_open_bot_refuses_an_official_draft_outside_dev_mode(harness, monkeypatch, store, tmp_path):
     """An Official template changes only with an app update: its draft is the maintainer's (#164)."""
-    for module in (app_controller, documents, templates):
+    for module in (documents, templates, template_roots):
         monkeypatch.setattr(module, "dev_mode", lambda: False)
     harness._roots.user_root = tmp_path / "user"
     told = []
@@ -251,11 +250,11 @@ def test_release_saves_unsaved_changes_first_or_does_not_happen(harness, dev, mo
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("Renamed", True))
 
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
-    assert not harness._release_template()
+    assert not harness._templates.release_template()
     assert find_template(TEMPLATE_ID, store).latest_version is None
 
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Save)
-    assert harness._release_template()
+    assert harness._templates.release_template()
     assert load_version(TEMPLATE_ID, 1, store).name == "Boss Farmer, Revised"
 
 
@@ -266,7 +265,7 @@ def test_release_refuses_a_draft_with_a_canvas_error(harness, dev, monkeypatch, 
     monkeypatch.setattr(QMessageBox, "critical", lambda *a, **k: refused.append(a[2]))
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: pytest.fail("asked for a note"))
 
-    assert not harness._release_template()
+    assert not harness._templates.release_template()
 
     assert "Unknown node type" in refused[0]
     assert find_template(TEMPLATE_ID, store).latest_version is None
@@ -276,5 +275,5 @@ def test_cancelling_the_note_releases_nothing(harness, dev, monkeypatch, store):
     _open(harness, monkeypatch)
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("", False))
 
-    assert not harness._release_template()
+    assert not harness._templates.release_template()
     assert find_template(TEMPLATE_ID, store).latest_version is None
