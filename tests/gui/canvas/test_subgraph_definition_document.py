@@ -189,12 +189,12 @@ def harness(qapp, library, tmp_path):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    canvas.open_definition_requested.connect(h._open_definition)
-    canvas.definition_back_requested.connect(h._definition_back)
-    canvas.definition_save_requested.connect(h._on_definition_save_requested)
+    canvas.open_definition_requested.connect(h._documents.open_definition)
+    canvas.definition_back_requested.connect(h._documents.definition_back)
+    canvas.definition_save_requested.connect(h._documents.on_definition_save_requested)
     path = tmp_path / "bots" / "linked.json"
     linked_bot(library.get(SYNC_ID), library).save(path)
-    h._open_bot(str(path))
+    h._documents.open_bot(str(path))
     canvas.enter_edit_mode()
     yield h
     canvas.prepare_for_shutdown()
@@ -209,8 +209,8 @@ def test_opening_a_definition_sets_the_bot_aside(harness):
     bot = canvas.config
     canvas.open_definition_of(REGION)
     assert canvas.is_definition
-    assert len(harness._doc_stack) == 1
-    assert harness._doc_stack[0].doc.config is bot
+    assert len(harness._documents.doc_stack) == 1
+    assert harness._documents.doc_stack[0].doc.config is bot
     assert canvas.crumb_bar.text == "Linked › Sync players"
 
 
@@ -220,17 +220,17 @@ def test_save_bumps_the_version_and_back_recomposes_the_bot(harness, library):
     wisps = next(s for s in canvas.config.states if s.id == "wisps")
     wisps.params["timeout"] = 45
     canvas.config_changed.emit()
-    assert harness._has_unsaved_changes
-    assert harness._save_definition()
+    assert harness._documents.has_unsaved_changes
+    assert harness._documents.save_definition()
     assert library.get(SYNC_ID).version == 2
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
-    assert harness._definition_back()
+    assert harness._documents.definition_back()
     assert not canvas.is_definition
     region = next(r for r in canvas.config.regions if r.id == REGION)
     assert region.source.version == 2
     assert next(s for s in canvas.config.states if s.id == m("wisps")).params["timeout"] == 45
-    assert harness._has_unsaved_changes, "the bot's snapshot moved, so it has something to save"
+    assert harness._documents.has_unsaved_changes, "the bot's snapshot moved, so it has something to save"
     assert canvas.mode == BotMode.EDIT
 
 
@@ -241,11 +241,11 @@ def test_saving_an_unchanged_definition_keeps_its_version(harness, library, monk
     canvas.open_definition_of(REGION)
     written = []
     monkeypatch.setattr(library, "save", written.append)
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert not written
     assert library.get(SYNC_ID).version == 1
     assert canvas.config.definition.version == 1
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
     assert not asked, "nothing to save, so a built-in one is not offered a copy"
 
 
@@ -255,11 +255,11 @@ def test_saving_a_moved_node_writes_it_and_keeps_the_version(harness, library):
     wisps = next(s for s in canvas.config.states if s.id == "wisps")
     wisps.position = {"x": -40.0, "y": 999.0}
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     stored = library.get(SYNC_ID)
     assert stored.version == 1
     assert next(s for s in stored.states if s.id == "wisps").position == {"x": -40.0, "y": 999.0}
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
 
 def test_an_edit_undone_before_saving_keeps_the_version(harness, library):
@@ -271,7 +271,7 @@ def test_an_edit_undone_before_saving_keeps_the_version(harness, library):
     canvas.config_changed.emit()
     wisps.params["timeout"] = before
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert library.get(SYNC_ID).version == 1
 
 
@@ -282,7 +282,7 @@ def test_save_is_refused_while_the_definition_has_errors(harness, library, monke
     canvas.open_definition_of(REGION)
     canvas.config.transitions = [t for t in canvas.config.transitions if t.source != "entry_hub"]
     canvas.scene.setup(canvas.config)
-    assert not harness._save_definition()
+    assert not harness._documents.save_definition()
     assert refused
     assert library.get(SYNC_ID).version == 1
 
@@ -292,11 +292,11 @@ def test_back_with_unsaved_changes_can_discard(harness, library, monkeypatch):
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
-    assert harness._has_unsaved_changes
+    assert harness._documents.has_unsaved_changes
     canvas.step_back()
     assert not canvas.is_definition
     assert library.get(SYNC_ID).version == 1
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
 
 def test_back_can_be_cancelled(harness, monkeypatch):
@@ -304,7 +304,7 @@ def test_back_can_be_cancelled(harness, monkeypatch):
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
-    assert not harness._definition_back()
+    assert not harness._documents.definition_back()
     assert canvas.is_definition
 
 
@@ -313,13 +313,13 @@ def test_a_definition_already_open_is_not_opened_again(harness, monkeypatch):
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
-    assert not harness._open_definition(SYNC_ID)
-    assert told and len(harness._doc_stack) == 1
+    assert not harness._documents.open_definition(SYNC_ID)
+    assert told and len(harness._documents.doc_stack) == 1
 
 
 def test_a_definition_autosaves_under_its_own_id(harness):
     _canvas(harness).open_definition_of(REGION)
-    assert harness._autosave_stem() == f"subgraph_{SYNC_ID}"
+    assert harness._documents.autosave_stem() == f"subgraph_{SYNC_ID}"
 
 
 def test_saving_a_region_as_a_subgraph_opens_the_new_definition(harness, library, monkeypatch):
@@ -330,7 +330,7 @@ def test_saving_a_region_as_a_subgraph_opens_the_new_definition(harness, library
     assert canvas.is_definition
     assert canvas.config.name == "Farm loop"
     assert library.get(canvas.config.definition.id) is not None
-    bot = harness._doc_stack[0].doc.config
+    bot = harness._documents.doc_stack[0].doc.config
     assert any(r.source is not None and r.source.subgraph_id == canvas.config.definition.id for r in bot.regions)
 
 
@@ -476,7 +476,7 @@ def test_save_as_new_starts_from_the_originals_categories(harness, library, monk
     canvas.open_definition_of(REGION)
     shown = _answer_meta_dialog(monkeypatch, "Sync, then fight", categories=["Team", "Combat and Healing"])
 
-    assert harness._save_definition_as()
+    assert harness._documents.save_definition_as()
 
     assert shown[0]["categories"] == ["Team"]
     assert library.get(canvas.config.definition.id).tags == ["Team", "Combat and Healing"]
@@ -487,7 +487,7 @@ def test_renaming_from_the_library_asks_for_no_categories(harness, library, monk
     shown = _answer_meta_dialog(monkeypatch, "Regroup")
     _canvas(harness)
 
-    assert harness._rename_subgraph(SYNC_ID)
+    assert harness._documents.rename_subgraph(SYNC_ID)
 
     assert "categories" not in shown[0]
 
@@ -508,19 +508,19 @@ def test_renaming_a_subgraph_keeps_its_version_and_offers_no_update(harness, lib
     shown = _answer_meta_dialog(monkeypatch, "Regroup", "Everyone in one place.")
     canvas = _canvas(harness)
     bot = canvas.config
-    assert harness._rename_subgraph(SYNC_ID)
+    assert harness._documents.rename_subgraph(SYNC_ID)
     assert shown[0]["name"] == "Sync players", "the dialog starts from the current name"
     stored = library.get(SYNC_ID)
     assert (stored.name, stored.description, stored.version) == ("Regroup", "Everyone in one place.", 1)
     assert [p.name for p in (tmp_path / "library" / "subgraphs").glob("*.json")] == ["regroup.json"]
-    composed, report = harness._compose(bot)
+    composed, report = harness._documents.compose(bot)
     assert report.regions[REGION].kind == "linked"
     assert composed.model_dump() == bot.model_dump(), "the bot links the id, and its label stays its own"
 
 
 def test_renaming_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
     _answer_meta_dialog(monkeypatch, None)
-    assert not harness._rename_subgraph(SYNC_ID)
+    assert not harness._documents.rename_subgraph(SYNC_ID)
     assert library.get(SYNC_ID).name == "Sync players"
 
 
@@ -529,7 +529,7 @@ def test_an_open_definition_is_renamed_in_its_header_not_its_card(harness, libra
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     shown = _answer_meta_dialog(monkeypatch, "Regroup")
     _canvas(harness).open_definition_of(REGION)
-    assert not harness._rename_subgraph(SYNC_ID)
+    assert not harness._documents.rename_subgraph(SYNC_ID)
     assert told and not shown
     assert library.get(SYNC_ID).name == "Sync players"
 
@@ -543,9 +543,9 @@ def test_a_built_in_subgraph_is_not_renamed(qapp, tmp_path, monkeypatch):
     shown = _answer_meta_dialog(monkeypatch, "Regroup")
     canvas = BotCanvas()
     h = ControllerHarness(canvas, lib)
-    assert not h._rename_subgraph(SYNC_ID)
+    assert not h._documents.rename_subgraph(SYNC_ID)
     lib.save(sync_players_definition(version=2))
-    assert not h._rename_subgraph(SYNC_ID), "nor a modified one"
+    assert not h._documents.rename_subgraph(SYNC_ID), "nor a modified one"
     assert not shown and lib.get(SYNC_ID).name == "Sync players"
     canvas.prepare_for_shutdown()
 
@@ -556,10 +556,10 @@ def test_renaming_in_the_header_saves_at_the_same_version(harness, library):
     assert canvas.header.name_editable
     canvas.config.name = "Regroup"
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     stored = library.get(SYNC_ID)
     assert (stored.name, stored.version) == ("Regroup", 1)
-    assert harness._definition_back()
+    assert harness._documents.definition_back()
     region = next(r for r in canvas.config.regions if r.id == REGION)
     assert region.label == "Sync players", "an instance keeps the label it was placed with"
     assert region.source.version == 1
@@ -587,7 +587,7 @@ def test_deleting_a_subgraph_says_who_links_it_and_leaves_them_their_snapshot(ha
     monkeypatch.setattr(QMessageBox, "question", answer)
     canvas = _canvas(harness)
     bot = canvas.config
-    assert harness._delete_subgraph(SYNC_ID)
+    assert harness._documents.delete_subgraph(SYNC_ID)
     assert "1 bot and the subgraph 'Boss outer'" in asked[0]
     assert library.get(SYNC_ID) is None
     assert canvas.config is bot, "the open bot keeps its snapshot"
@@ -596,7 +596,7 @@ def test_deleting_a_subgraph_says_who_links_it_and_leaves_them_their_snapshot(ha
 
 def test_deleting_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
-    assert not harness._delete_subgraph(SYNC_ID)
+    assert not harness._documents.delete_subgraph(SYNC_ID)
     assert library.get(SYNC_ID) is not None
 
 
@@ -605,7 +605,7 @@ def test_an_open_definition_is_not_deleted(harness, library, monkeypatch):
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
     _canvas(harness).open_definition_of(REGION)
-    assert not harness._delete_subgraph(SYNC_ID)
+    assert not harness._documents.delete_subgraph(SYNC_ID)
     assert told and library.get(SYNC_ID) is not None
 
 
@@ -619,9 +619,9 @@ def test_deleting_a_modified_built_in_reverts_it(qapp, tmp_path, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
     canvas = BotCanvas()
     h = ControllerHarness(canvas, lib)
-    assert h._delete_subgraph(SYNC_ID)
+    assert h._documents.delete_subgraph(SYNC_ID)
     assert lib.get(SYNC_ID).version == 1
-    assert not h._delete_subgraph(SYNC_ID), "an unedited built-in has nothing to delete"
+    assert not h._documents.delete_subgraph(SYNC_ID), "an unedited built-in has nothing to delete"
     assert lib.get(SYNC_ID) is not None
     canvas.prepare_for_shutdown()
 
@@ -1381,9 +1381,9 @@ def test_saving_a_category_writes_it_and_keeps_the_version(harness, library):
     canvas.open_definition_of(REGION)
     canvas.config.definition.tags = ["Team"]
     canvas.config_changed.emit()
-    assert harness._has_unsaved_changes
-    assert harness._save_definition()
+    assert harness._documents.has_unsaved_changes
+    assert harness._documents.save_definition()
     stored = library.get(SYNC_ID)
     assert stored.tags == ["Team"]
     assert stored.version == 1
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes

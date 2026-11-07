@@ -7,7 +7,7 @@ around them: the reads run as a task and the dialogs run from its done callback,
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -47,11 +47,11 @@ class _Controller:
         ):
             setattr(self, name, getattr(AppController, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[FakeClient(), FakeClient()])
-        self._loaded_config = _config(node_type)
+        self._documents = MagicMock(loaded_config=_config(node_type))
         self._window = None
         self._run_probe = None
         self._bot_task = None
-        self._recompose_before_run = lambda: True
+        self._documents.recompose_before_run = lambda: True
         self._check_restricted_zones = lambda: True
         self._check_player_realms = lambda: True
         self._check_variables = lambda: True

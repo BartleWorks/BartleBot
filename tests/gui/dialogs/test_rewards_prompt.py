@@ -12,9 +12,11 @@ from types import SimpleNamespace
 import pytest
 from PyQt6.QtWidgets import QDialog
 
-import bartlebot.app_controller as app_controller
-from bartlebot.app_controller import AppController
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.controller import documents
+from bartlebot.controller.documents import Documents
+from bartlebot.controller.templates import TemplateRoots
 from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill
 
@@ -96,32 +98,27 @@ class _FakeDialog:
 def fake_dialog(monkeypatch):
     _FakeDialog.answers = []
     _FakeDialog.asked = 0
-    monkeypatch.setattr(app_controller, "RewardsTagDialog", _FakeDialog)
+    monkeypatch.setattr(documents, "RewardsTagDialog", _FakeDialog)
     return _FakeDialog
 
 
-def _controller(config: BotConfig, path) -> SimpleNamespace:
-    """A stand-in ``self`` with the real save methods bound to it; the window is inert."""
+def _controller(config: BotConfig, path) -> Documents:
+    """A ``Documents`` holding *config* as saved at *path*, with edits; the window is inert."""
     exits: list[bool] = []
-    ns = SimpleNamespace(
-        _loaded_config=config,
-        _last_save_path=str(path),
-        _has_unsaved_changes=True,
-        _clean_snapshot=None,
-        _rewards_declined_for=None,
-        _read_only_open=lambda: False,
-        _delete_autosave=lambda *a: None,
-        exits=exits,
-        _window=SimpleNamespace(
-            bot_canvas=SimpleNamespace(
-                refresh_tags=lambda: None,
-                exit_edit_mode=lambda saved=False: exits.append(saved),
-            ),
+    window = SimpleNamespace(
+        set_unsaved=lambda *a: None,
+        bot_canvas=SimpleNamespace(
+            refresh_tags=lambda: None,
+            exit_edit_mode=lambda saved=False: exits.append(saved),
         ),
     )
-    for name in ("_save_bot", "_confirm_rewards_tags", "_save_and_done"):
-        setattr(ns, name, getattr(AppController, name).__get__(ns))
-    return ns
+    docs = Documents(window, SubgraphLibrary(), TemplateRoots(), clients=lambda: [], is_running=lambda: False)
+    docs._loaded_config = config
+    docs._last_save_path = str(path)
+    docs.has_unsaved_changes = True
+    docs.delete_autosave = lambda *a, **k: None
+    docs.exits = exits
+    return docs
 
 
 def test_cancel_writes_nothing_and_stays_in_edit_mode(tmp_path, fake_dialog):
@@ -129,10 +126,10 @@ def test_cancel_writes_nothing_and_stays_in_edit_mode(tmp_path, fake_dialog):
     fake_dialog.answers = [(QDialog.DialogCode.Rejected, None, [])]
     controller = _controller(_config(), path)
 
-    controller._save_and_done()
+    controller.save_and_done()
 
     assert not path.exists()
-    assert controller._has_unsaved_changes
+    assert controller.has_unsaved_changes
     assert controller.exits == []
 
 
@@ -141,7 +138,7 @@ def test_picking_a_reward_saves_it_into_the_file(tmp_path, fake_dialog):
     fake_dialog.answers = [(QDialog.DialogCode.Accepted, RewardsChoice.TAGGED, ["Pets"])]
     controller = _controller(_config(), path)
 
-    controller._save_and_done()
+    controller.save_and_done()
 
     assert BotConfig.load(path).tags == ["Pets", "Boss"]
     assert controller.exits == [True]
@@ -152,9 +149,9 @@ def test_done_on_an_unchanged_bot_leaves_without_writing_or_asking(tmp_path, fak
     path = tmp_path / "bot.json"
     config = _config()
     controller = _controller(config, path)
-    controller._clean_snapshot = app_controller._file_snapshot(config)
+    controller.clean_snapshot = documents.file_snapshot(config)
 
-    controller._save_and_done()
+    controller.save_and_done()
 
     assert not path.exists()
     assert fake_dialog.asked == 0
@@ -166,8 +163,8 @@ def test_save_without_is_not_asked_again_this_open(tmp_path, fake_dialog):
     fake_dialog.answers = [(QDialog.DialogCode.Accepted, RewardsChoice.WITHOUT, [])]
     controller = _controller(_config(), path)
 
-    assert controller._save_bot()
-    assert controller._save_bot()
+    assert controller.save_bot()
+    assert controller.save_bot()
 
     assert fake_dialog.asked == 1
     assert BotConfig.load(path).tags == ["Boss"]
@@ -176,6 +173,6 @@ def test_save_without_is_not_asked_again_this_open(tmp_path, fake_dialog):
 def test_a_bot_with_a_reward_is_never_asked(tmp_path, fake_dialog):
     controller = _controller(_config(["Gear", "Boss"]), tmp_path / "bot.json")
 
-    assert controller._save_bot()
+    assert controller.save_bot()
 
     assert fake_dialog.asked == 0

@@ -314,7 +314,7 @@ def test_a_bot_with_no_active_strategy_offers_no_checkboxes(harness, captured, t
 def test_file_export_on_an_open_bot_exports_it_as_saved(harness, captured, tmp_path):
     path = tmp_path / "farm.json"
     _bot().save(path)
-    harness._open_bot(str(path))
+    harness._documents.open_bot(str(path))
 
     harness._export_open_document()
 
@@ -324,9 +324,9 @@ def test_file_export_on_an_open_bot_exports_it_as_saved(harness, captured, tmp_p
 def test_file_export_with_unsaved_changes_asks_to_save_first(harness, captured, tmp_path, monkeypatch):
     path = tmp_path / "farm.json"
     _bot().save(path)
-    harness._open_bot(str(path))
-    harness._loaded_config.name = "Renamed"
-    harness._has_unsaved_changes = True
+    harness._documents.open_bot(str(path))
+    harness._documents.loaded_config.name = "Renamed"
+    harness._documents.has_unsaved_changes = True
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
 
     assert harness._export_open_document() is None
@@ -338,7 +338,7 @@ def test_file_export_with_unsaved_changes_asks_to_save_first(harness, captured, 
 
 
 def test_file_export_on_an_open_subgraph_exports_the_definition(harness, captured):
-    harness._subgraph_library.save(_defn("sg", "Loop"))
+    harness._documents.subgraph_library.save(_defn("sg", "Loop"))
 
     harness._export_subgraph("sg")
 

@@ -28,7 +28,7 @@ only for a DSL with no answer yet (just imported, or after a wizsprinter bump).
 `BotCanvas.replace_config(config, desc)` swaps the loaded `BotConfig` for another object
 and rebuilds the scene, header and properties panel from it, then emits
 `config_changed` so the controller and both sidebars follow — the same path undo takes
-through `_restore`, and the same rule `AppController._on_config_changed` already
+through `_restore`, and the same rule `Documents.on_config_changed` already
 states: a surface holding a config object must re-bind on that signal or its edits go
 nowhere. The pre-run subgraph recompose (`docs/SUBGRAPHS.md`) is the second caller
 after undo. In EDIT mode a `desc` pushes the outgoing config onto the undo stack first,
@@ -128,7 +128,7 @@ its level of detail instead -- the plus did the former first, and was never a bu
 Opening a definition (double-click a call node, *Open definition*, or the library's
 Subgraphs folder) sets the open document aside with `BotCanvas.take_document()`, which
 takes its config, undo history, camera and compose report. `restore_document()` puts it
-back. The controller keeps the stack (`AppController._doc_stack`), and Save, Close,
+back. The controller's `Documents` keeps the stack (`controller/documents.py`), and Save, Close,
 autosave and crash recovery branch on `config.is_definition`. Going back recomposes
 the document underneath from the library, as a run does. The definition's own signature
 (inputs, panels, id and version) rides on `BotConfig.definition`, so undo and autosave
@@ -435,7 +435,7 @@ Stepping out: the close button and Alt+Left go one level, out of a definition wh
 nothing is focused. **Esc dismisses before it leaves** — the search bar, then a level,
 then the selection, and only then the definition — so a stray Esc never lands on the
 Save / Discard prompt. An earlier segment steps straight back to it, prompting at each
-definition closed on the way (`AppController._back_to_document`).
+definition closed on the way (`Documents.back_to_document`).
 
 A definition's crumb carries **Save**, **Save as…** and, only for an Official
 (modified) one, **Revert**. The labels are short on purpose: the bar sits over the graph.

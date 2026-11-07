@@ -13,11 +13,11 @@ from PyQt6.QtCore import QEvent, QPointF
 from PyQt6.QtGui import QEnterEvent, QIcon
 from PyQt6.QtWidgets import QDialog, QLabel, QMessageBox
 
-from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel, TemplateMeta, TemplateRef
 from bartlebot.content.new_bot import BotDetails, starting_points
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates.template_store import release, save_draft
+from bartlebot.controller import documents
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.dialogs import new_bot_dialog
 from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
@@ -327,38 +327,38 @@ def harness(qapp, store, tmp_path, monkeypatch):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    h._templates_root = store
+    h._roots.root = store
     yield h
     canvas.prepare_for_shutdown()
 
 
 def _answer(monkeypatch, *args, **kwargs) -> None:
-    monkeypatch.setattr(app_controller, "NewBotDialog", lambda *a, **k: _Answers(*args, **kwargs))
+    monkeypatch.setattr(documents, "NewBotDialog", lambda *a, **k: _Answers(*args, **kwargs))
 
 
 def test_create_saves_the_bot_at_once_and_opens_it_for_editing(harness, store, tmp_path, monkeypatch):
     path = tmp_path / "bots" / "13_aquila" / "lamia.json"
     _answer(monkeypatch, starting_points(store)[0], BotDetails(name="Lamia", tags=["Boss"]), path)
 
-    assert harness._new_bot()
+    assert harness._documents.new_bot()
 
     on_disk = BotConfig.load(path)
     assert on_disk.template == TemplateRef(id=TEMPLATE_ID, version=1)
     assert on_disk.template_meta is None and on_disk.id != TEMPLATE_ID
     assert (on_disk.name, on_disk.tags) == ("Lamia", ["Boss"])
-    assert harness._loaded_config.id == on_disk.id
-    assert harness._last_save_path == str(path)
-    assert not harness._has_unsaved_changes
+    assert harness._documents.loaded_config.id == on_disk.id
+    assert harness._documents.last_save_path == str(path)
+    assert not harness._documents.has_unsaved_changes
     assert harness._window.bot_canvas.mode is BotMode.EDIT
 
 
 def test_saving_a_bot_just_created_changes_nothing_in_its_file(harness, store, tmp_path, monkeypatch):
     path = tmp_path / "bots" / "lamia.json"
     _answer(monkeypatch, starting_points(store)[0], BotDetails(name="Lamia"), path)
-    harness._new_bot()
+    harness._documents.new_bot()
     written = path.read_bytes()
 
-    assert harness._save_bot()
+    assert harness._documents.save_bot()
 
     assert path.read_bytes() == written
 
@@ -367,7 +367,7 @@ def test_a_blank_bot_is_saved_with_no_template(harness, tmp_path, monkeypatch):
     path = tmp_path / "bots" / "scratch.json"
     _answer(monkeypatch, None, BotDetails(name="Scratch"), path)
 
-    assert harness._new_bot()
+    assert harness._documents.new_bot()
 
     on_disk = BotConfig.load(path)
     assert on_disk.template is None
@@ -379,10 +379,10 @@ def test_cancelling_creates_nothing(harness, tmp_path, monkeypatch):
     path = tmp_path / "bots" / "lamia.json"
     _answer(monkeypatch, None, BotDetails(name="Lamia"), path, accepted=False)
 
-    assert not harness._new_bot()
+    assert not harness._documents.new_bot()
 
     assert not path.exists()
-    assert harness._loaded_config is None
+    assert harness._documents.loaded_config is None
 
 
 def test_a_bot_that_cannot_be_written_is_not_opened(harness, tmp_path, monkeypatch):
@@ -390,9 +390,9 @@ def test_a_bot_that_cannot_be_written_is_not_opened(harness, tmp_path, monkeypat
     blocker.write_text("a file where the library folder should be", encoding="utf-8")
     _answer(monkeypatch, None, BotDetails(name="Lamia"), blocker / "lamia.json")
 
-    assert not harness._new_bot()
+    assert not harness._documents.new_bot()
 
-    assert harness._loaded_config is None
+    assert harness._documents.loaded_config is None
 
 
 def test_new_bot_opens_on_the_open_bots_folder(harness, tmp_path, monkeypatch):
@@ -400,21 +400,21 @@ def test_new_bot_opens_on_the_open_bots_folder(harness, tmp_path, monkeypatch):
     SettingsManager.instance().set("canvas", "bot_library_path", value=str(bots_dir))
     path = bots_dir / "13_aquila" / "lamia.json"
     _answer(monkeypatch, None, BotDetails(name="Lamia"), path)
-    harness._new_bot()
+    harness._documents.new_bot()
 
-    assert harness._new_bot_folder() == "13_aquila"
+    assert harness._documents._new_bot_folder() == "13_aquila"
 
 
 def test_a_bot_outside_the_library_gives_new_bot_no_folder(harness, tmp_path, monkeypatch):
     SettingsManager.instance().set("canvas", "bot_library_path", value=str(tmp_path / "bots"))
     _answer(monkeypatch, None, BotDetails(name="Lamia"), tmp_path / "elsewhere" / "13_aquila" / "lamia.json")
-    harness._new_bot()
+    harness._documents.new_bot()
 
-    assert harness._new_bot_folder() is None
+    assert harness._documents._new_bot_folder() is None
 
 
 def test_new_bot_opens_on_no_folder_with_nothing_to_go_by(harness):
-    assert harness._new_bot_folder() is None
+    assert harness._documents._new_bot_folder() is None
 
 
 def test_the_library_panel_names_the_folder_it_is_showing(qapp):

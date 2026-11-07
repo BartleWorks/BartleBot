@@ -43,10 +43,10 @@ def harness(qapp, library, tmp_path):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    canvas.open_definition_requested.connect(h._open_definition)
+    canvas.open_definition_requested.connect(h._documents.open_definition)
     path = tmp_path / "bots" / "linked.json"
     linked_bot(library.get(SYNC_ID), library).save(path)
-    h._open_bot(str(path))
+    h._documents.open_bot(str(path))
     canvas.enter_edit_mode()
     yield h
     canvas.prepare_for_shutdown()
@@ -219,7 +219,7 @@ def test_a_signature_change_warns_naming_the_bots_and_saves_on_yes(harness, libr
 
     monkeypatch.setattr(QMessageBox, "warning", answer)
     _rename_exit_in_the_open_document(harness)
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert len(asked) == 1
     assert "renames the Exit 'Done' to 'Finished'" in asked[0] and "used by Linked" in asked[0]
     assert library.get(SYNC_ID).version == 2
@@ -228,9 +228,9 @@ def test_a_signature_change_warns_naming_the_bots_and_saves_on_yes(harness, libr
 def test_cancelling_the_warning_writes_nothing(harness, library, monkeypatch):
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: QMessageBox.StandardButton.Cancel)
     _rename_exit_in_the_open_document(harness)
-    assert not harness._save_definition()
+    assert not harness._documents.save_definition()
     assert library.get(SYNC_ID).version == 1
-    assert harness._has_unsaved_changes
+    assert harness._documents.has_unsaved_changes
 
 
 def test_an_edit_that_keeps_the_signature_saves_without_a_warning(harness, library, monkeypatch):
@@ -240,7 +240,7 @@ def test_an_edit_that_keeps_the_signature_saves_without_a_warning(harness, libra
     canvas.open_definition_of(REGION)
     next(s for s in canvas.config.states if s.id == "wisps").params["timeout"] = 45
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert not warned
 
 
@@ -249,7 +249,7 @@ def test_nothing_linking_it_means_nothing_to_warn_about(harness, library, monkey
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: warned.append(a))
     _rename_exit_in_the_open_document(harness)
     (tmp_path / "bots" / "linked.json").unlink()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert not warned
 
 

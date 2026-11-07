@@ -30,27 +30,12 @@ class ControllerHarness:
 
     def __init__(self, canvas, library: SubgraphLibrary) -> None:
         from bartlebot.app_controller import AppController  # noqa: PLC0415
+        from bartlebot.controller.documents import Documents  # noqa: PLC0415
+        from bartlebot.controller.templates import TemplateRoots  # noqa: PLC0415
 
         cls = AppController
         for name in (
-            "_compose",
-            "_recompose_before_run",
-            "_new_bot",
-            "_new_bot_folder",
-            "_open_bot",
-            "_close_bot",
-            "_confirm_unsaved",
             "_confirm_shutdown",
-            "_save_bot",
-            "_save_bot_as",
-            "_do_autosave",
-            "_delete_autosave",
-            "_autosave_path",
-            "_on_config_changed",
-            "_mark_unsaved",
-            "_enable_save_actions",
-            "_read_only_open",
-            "_make_own_copy",
             "_on_run_requested",
             "_on_run_probe_done",
             "_refuse_while_fighting",
@@ -59,34 +44,7 @@ class ControllerHarness:
             "_check_restricted_zones",
             "_check_player_realms",
             "_check_variables",
-            "_start_enabled",
-            "_autosave_stem",
-            "_close_definitions",
-            "_open_definition",
-            "_push_current",
-            "_show_definition",
-            "_refresh_definition_context",
-            "_on_definition_save_requested",
-            "_save_definition",
-            "_confirm_signature_change",
-            "_mark_definition_saved",
-            "_definition_back",
-            "_leave_definition",
-            "_refused_for_errors",
-            "_save_definition_as",
-            "_revert_definition",
-            "_delete_subgraph",
-            "_delete_bot",
-            "_rename_subgraph",
-            "_bots_linking",
-            "_open_definition_ids",
-            "_reshow_definition",
-            "_back_to_document",
-            "_file_label",
-            "_may_edit_template",
-            "_template_roots",
             "_ask_template_name",
-            "_user_bots_dirs",
             "_template_gallery",
             "_open_templates_dialog",
             "_edit_template",
@@ -100,25 +58,24 @@ class ControllerHarness:
             "_show_release_refused",
         ):
             setattr(self, name, getattr(cls, name).__get__(self))
-        self._subgraph_library = library
-        self._templates_root = None
-        self._templates_user_root = None
+        self._roots = TemplateRoots()
         self._run_probe = None
-        self._loaded_config: BotConfig | None = None
-        self._last_save_path: str | None = None
-        self._official_open = False
-        self._has_unsaved_changes = False
-        self._clean_snapshot = None
-        self._rewards_declined_for = None
-        # The Rewards prompt is modal; what is under test here is the write behind it.
-        self._confirm_rewards_tags = lambda: True
-        self._doc_stack = []
         self._current_machine = None
         self._bot_task = None
         self._client_manager = MagicMock(clients=[])
         self._window = MagicMock()
         self._window.bot_canvas = canvas
-        canvas.config_changed.connect(self._on_config_changed)
+        self._documents = Documents(
+            self._window,
+            library,
+            self._roots,
+            clients=lambda: self._client_manager.clients,
+            is_running=lambda: self._current_machine is not None,
+        )
+        # The Rewards prompt is modal; what is under test here is the write behind it.
+        self._documents._confirm_rewards_tags = lambda: True
+        self._documents.template_context_changed.connect(self._refresh_template_context)
+        canvas.config_changed.connect(self._documents.on_config_changed)
 
 
 def _v2_definition():
@@ -161,43 +118,43 @@ def harness(qapp, library):
 
 def test_open_composes_linked_region_from_library(harness, library, bot_file):
     library.save(_v2_definition())
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
 
     config = harness._window.bot_canvas.config
-    assert harness._loaded_config is config
+    assert harness._documents.loaded_config is config
     assert config.regions[0].source.version == 2
     assert m("rest") in config.regions[0].members
     assert {s.id: s for s in config.states}[m("gate")].params["zone"] == "Mooshu"
     # Drawn as its call node, like every member.
     assert harness._window.bot_canvas.scene.call_node_of(m("rest")) is not None
     assert harness._window.bot_canvas.compose_report.regions[REGION].kind == "linked"
-    assert not harness._has_unsaved_changes, "an open is never an edit"
+    assert not harness._documents.has_unsaved_changes, "an open is never an edit"
 
 
 def test_open_does_not_rewrite_the_file(harness, library, bot_file):
     before = bot_file.read_bytes()
     library.save(_v2_definition())
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
     assert bot_file.read_bytes() == before
 
 
 def test_save_writes_refreshed_snapshot_and_version(harness, library, bot_file):
     library.save(_v2_definition())
-    harness._open_bot(str(bot_file))
-    harness._save_bot()
+    harness._documents.open_bot(str(bot_file))
+    harness._documents.save_bot()
 
     raw = json.loads(bot_file.read_text(encoding="utf-8"))
     region = next(r for r in raw["regions"] if r["id"] == REGION)
     assert region["source"]["version"] == 2
     assert m("rest") in region["members"]
     assert any(s["id"] == m("rest") for s in raw["states"])
-    assert BotConfig.load(bot_file).model_dump() == harness._loaded_config.model_dump()
+    assert BotConfig.load(bot_file).model_dump() == harness._documents.loaded_config.model_dump()
 
 
 def test_missing_definition_keeps_snapshot_and_warns(harness, library, bot_file):
     snapshot = BotConfig.load(bot_file)
     library.delete(SYNC_ID)
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
 
     canvas = harness._window.bot_canvas
     assert canvas.config.model_dump() == snapshot.model_dump()
@@ -212,7 +169,7 @@ def test_held_region_when_a_used_port_would_vanish(harness, library, bot_file):
     defn.states = [s for s in defn.states if s.id != "entry_hub"]
     defn.transitions = [t for t in defn.transitions if t.source != "entry_hub"]
     library.save(defn)
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
 
     canvas = harness._window.bot_canvas
     assert canvas.compose_report.regions[REGION].kind == "held"
@@ -245,7 +202,7 @@ def _cycle_bot(library: SubgraphLibrary) -> BotConfig:
 def test_cycle_is_an_error_and_disables_run(harness, library, tmp_path):
     path = tmp_path / "cycle.json"
     _cycle_bot(library).save(path)
-    harness._open_bot(str(path))
+    harness._documents.open_bot(str(path))
 
     canvas = harness._window.bot_canvas
     canvas.set_run_enabled(True)
@@ -258,14 +215,14 @@ def test_cycle_is_an_error_and_disables_run(harness, library, tmp_path):
 
 
 def test_cycle_refuses_the_run_with_a_dialog(harness, library, tmp_path, monkeypatch):
-    from bartlebot import app_controller  # noqa: PLC0415
+    from bartlebot.controller import documents  # noqa: PLC0415
 
     path = tmp_path / "cycle.json"
     _cycle_bot(library).save(path)
-    harness._open_bot(str(path))
+    harness._documents.open_bot(str(path))
     shown = []
-    monkeypatch.setattr(app_controller.QMessageBox, "critical", lambda *a, **k: shown.append(a))
-    assert harness._recompose_before_run() is False
+    monkeypatch.setattr(documents.QMessageBox, "critical", lambda *a, **k: shown.append(a))
+    assert harness._documents.recompose_before_run() is False
     assert len(shown) == 1 and "Subgraph Cycle" in shown[0][1]
 
 
@@ -277,12 +234,12 @@ def test_cycle_refuses_the_run_with_a_dialog(harness, library, tmp_path, monkeyp
 async def test_run_recompose_swaps_config_before_machine_build(harness, library, bot_file, monkeypatch):
     from bartlebot.gui.dialogs import safety_warning_dialog  # noqa: PLC0415
 
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
     library.save(_v2_definition())
     seen: list[BotConfig] = []
 
     async def fake_start() -> None:
-        seen.append(harness._loaded_config)
+        seen.append(harness._documents.loaded_config)
 
     harness._start_bot = fake_start
     harness._confirm_combat = lambda: True
@@ -303,14 +260,14 @@ async def test_run_recompose_swaps_config_before_machine_build(harness, library,
 
 
 def test_run_recompose_marks_unsaved_and_logs_once_per_region(harness, library, bot_file, caplog):
-    harness._open_bot(str(bot_file))
-    assert not harness._has_unsaved_changes
+    harness._documents.open_bot(str(bot_file))
+    assert not harness._documents.has_unsaved_changes
     library.save(_v2_definition())
 
-    with caplog.at_level(logging.INFO, logger="bartlebot.app_controller"):
-        assert harness._recompose_before_run() is True
+    with caplog.at_level(logging.INFO, logger="bartlebot.controller.documents"):
+        assert harness._documents.recompose_before_run() is True
 
-    assert harness._has_unsaved_changes
+    assert harness._documents.has_unsaved_changes
     harness._window.set_save_enabled.assert_called_with(True)
     lines = [r.getMessage() for r in caplog.records if "Subgraph region" in r.getMessage()]
     assert lines == ["Subgraph region 'Sync players' updated to library version 2"]
@@ -318,12 +275,12 @@ def test_run_recompose_marks_unsaved_and_logs_once_per_region(harness, library, 
 
 
 def test_run_recompose_is_silent_when_nothing_changed(harness, bot_file, caplog):
-    harness._open_bot(str(bot_file))
-    before = harness._loaded_config
-    with caplog.at_level(logging.INFO, logger="bartlebot.app_controller"):
-        assert harness._recompose_before_run() is True
-    assert harness._loaded_config is before
-    assert not harness._has_unsaved_changes
+    harness._documents.open_bot(str(bot_file))
+    before = harness._documents.loaded_config
+    with caplog.at_level(logging.INFO, logger="bartlebot.controller.documents"):
+        assert harness._documents.recompose_before_run() is True
+    assert harness._documents.loaded_config is before
+    assert not harness._documents.has_unsaved_changes
     assert not [r for r in caplog.records if "Subgraph region" in r.getMessage()]
 
 
@@ -333,19 +290,19 @@ def test_run_recompose_is_silent_when_nothing_changed(harness, bot_file, caplog)
 
 
 def test_save_as_keeps_member_ids(harness, library, bot_file, tmp_path, monkeypatch):
-    from bartlebot import app_controller  # noqa: PLC0415
+    from bartlebot.controller import documents  # noqa: PLC0415
 
     library.save(_v2_definition())
-    harness._open_bot(str(bot_file))
-    original_id = harness._loaded_config.id
+    harness._documents.open_bot(str(bot_file))
+    original_id = harness._documents.loaded_config.id
     fork = tmp_path / "fork.json"
-    monkeypatch.setattr(app_controller.QFileDialog, "getSaveFileName", lambda *a, **k: (str(fork), ""))
+    monkeypatch.setattr(documents.QFileDialog, "getSaveFileName", lambda *a, **k: (str(fork), ""))
 
-    harness._save_bot_as()
+    harness._documents.save_bot_as()
 
     saved = BotConfig.load(fork)
     assert saved.id != original_id
-    assert saved.regions[0].members == harness._loaded_config.regions[0].members
+    assert saved.regions[0].members == harness._documents.loaded_config.regions[0].members
     assert saved.regions[0].source.subgraph_id == SYNC_ID
     assert saved.regions[0].source.version == 2
     rid = saved.regions[0].id
@@ -353,7 +310,7 @@ def test_save_as_keeps_member_ids(harness, library, bot_file, tmp_path, monkeypa
 
 
 def test_undo_after_replace_config_restores_previous_graph(harness, library, bot_file):
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
     canvas = harness._window.bot_canvas
     canvas.enter_edit_mode()
     before = canvas.config.model_dump()
@@ -368,11 +325,11 @@ def test_undo_after_replace_config_restores_previous_graph(harness, library, bot
     canvas.undo()
     assert canvas.config.model_dump() == before
     assert m("rest") not in canvas.scene.node_items
-    assert harness._loaded_config is canvas.config, "the controller follows the swap both ways"
+    assert harness._documents.loaded_config is canvas.config, "the controller follows the swap both ways"
 
 
 def test_replace_config_in_run_mode_pushes_no_undo(harness, library, bot_file):
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
     canvas = harness._window.bot_canvas
     assert canvas.mode == BotMode.RUN
     library.save(_v2_definition())
@@ -385,12 +342,12 @@ def test_replace_config_in_run_mode_pushes_no_undo(harness, library, bot_file):
 
 
 def test_autosave_carries_composed_members(harness, library, bot_file):
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
     library.save(_v2_definition())
-    harness._recompose_before_run()
+    harness._documents.recompose_before_run()
 
-    harness._do_autosave()
-    autosave = harness._autosave_path()
+    harness._documents.do_autosave()
+    autosave = harness._documents.autosave_path()
     assert autosave.exists()
     recovered = BotConfig.load(autosave)
     assert m("rest") in recovered.regions[0].members
@@ -401,7 +358,7 @@ def test_autosave_carries_composed_members(harness, library, bot_file):
 
 def test_setup_and_close_clear_the_report(harness, library, bot_file):
     library.delete(SYNC_ID)
-    harness._open_bot(str(bot_file))
+    harness._documents.open_bot(str(bot_file))
     canvas = harness._window.bot_canvas
     assert canvas.compose_report.regions
     canvas.setup(BotConfig.load(bot_file))

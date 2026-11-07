@@ -26,7 +26,7 @@ class PreRunDeckHarness:
         self._apply_one_pre_run_deck = AppController._apply_one_pre_run_deck.__get__(self)
         self._client_manager = MagicMock()
         self._client_manager.clients = clients
-        self._loaded_config = MagicMock(id="bot-1")
+        self._documents = MagicMock(loaded_config=MagicMock(id="bot-1"))
 
 
 @pytest.fixture

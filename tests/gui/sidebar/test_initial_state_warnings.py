@@ -47,7 +47,7 @@ def _shut_down_harness_canvases():
 
 
 class _Harness:
-    """Canvas + both sidebars wired the way MainWindow and AppController._on_config_changed wire them."""
+    """Canvas + both sidebars wired the way MainWindow and Documents.on_config_changed wire them."""
 
     def __init__(self, config):
         from bartlebot.gui.canvas.bot_canvas import BotCanvas

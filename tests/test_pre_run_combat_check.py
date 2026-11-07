@@ -12,6 +12,7 @@ import logging
 import shutil
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 from bartleby.shared.combat_defaults import PREFERENCE_KEYS, TeamSize
@@ -53,7 +54,7 @@ class _Controller:
         for name in ("_confirm_combat", "_check_combat", "_log_combat_sources"):
             setattr(self, name, getattr(AppController, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[object()] * clients)
-        self._loaded_config = _bot()
+        self._documents = MagicMock(loaded_config=_bot())
         self._window = None
 
 

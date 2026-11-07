@@ -60,9 +60,9 @@ class DeckJobHarness:
             setattr(self, name, attr.__func__ if isinstance(attr, staticmethod) else attr.__get__(self))
         self._client_manager = MagicMock()
         self._client_manager.clients = clients
-        self._loaded_config = MagicMock(id="bot-1")
+        self._documents = MagicMock(loaded_config=MagicMock(id="bot-1"))
         self._window = MagicMock()
-        self._on_config_changed = MagicMock()
+        self._documents.on_config_changed = MagicMock()
         self._deck_task = None
         self.notices: list[tuple[str, str, bool]] = []
 
@@ -132,7 +132,7 @@ async def test_import_all_saves_once_with_every_slot_set(strategy, client_decks)
     assert {slot: deck.normal["Tempest"] for slot, deck in strategy.saves[0].items()} == {1: 1, 2: 2, 3: 3}
     [redraw] = harness.combat_tab.update_deck_slots.call_args_list
     assert sorted(redraw.args[0]) == [1, 2, 3]  # one redraw for every slot, never one per slot
-    harness._on_config_changed.assert_called_once()
+    harness._documents.on_config_changed.assert_called_once()
     assert harness.notices == []
 
 

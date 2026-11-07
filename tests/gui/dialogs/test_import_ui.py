@@ -275,9 +275,9 @@ def test_a_strategy_import_opens_the_strategy_library_on_it(harness, sender, tmp
 
 def test_an_import_replacing_the_open_bot_with_unsaved_changes_writes_nothing(harness, sender, receiver, tmp_path):
     mine = receiver.bot(_bot("bot-1", "Boss Farmer"))
-    harness._open_bot(str(mine))
-    harness._has_unsaved_changes = True
-    harness._clean_snapshot = None
+    harness._documents.open_bot(str(mine))
+    harness._documents.has_unsaved_changes = True
+    harness._documents.clean_snapshot = None
     sender.bot(_bot("bot-1", "Boss Farmer, theirs"))
     path = _send_bot(sender, tmp_path, _bot("bot-1", "Boss Farmer, theirs"))
     before = mine.read_bytes()
@@ -290,7 +290,7 @@ def test_an_import_replacing_the_open_bot_with_unsaved_changes_writes_nothing(ha
 
 def test_an_import_replacing_the_open_bot_reopens_it(harness, sender, receiver, tmp_path, monkeypatch):
     mine = receiver.bot(_bot("bot-1", "Boss Farmer"))
-    harness._open_bot(str(mine))
+    harness._documents.open_bot(str(mine))
     theirs = _bot("bot-1", "Boss Farmer, theirs")
     sender.bot(theirs)
     monkeypatch.setattr(
@@ -299,13 +299,13 @@ def test_an_import_replacing_the_open_bot_reopens_it(harness, sender, receiver, 
 
     harness._import_share_file(str(_send_bot(sender, tmp_path, theirs)))
 
-    assert harness._loaded_config.name == "Boss Farmer, theirs"
-    assert Path(harness._last_save_path) == mine
+    assert harness._documents.loaded_config.name == "Boss Farmer, theirs"
+    assert Path(harness._documents.last_save_path) == mine
     assert harness.library_dialogs == [], "the bot is in front of the user already"
 
 
 def test_a_bot_imported_with_another_open_opens_the_library_on_it(harness, sender, receiver, tmp_path):
-    harness._open_bot(str(receiver.bot(_bot("bot-mine", "Mine"), "mine")))
+    harness._documents.open_bot(str(receiver.bot(_bot("bot-mine", "Mine"), "mine")))
     bot, _ = _sender_setup(sender)
 
     result = harness._import_share_file(str(_send_bot(sender, tmp_path, bot)))
@@ -368,7 +368,7 @@ def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
 def test_a_combat_strategy_for_the_open_bot_rebinds_the_combat_tab(harness, sender, receiver, tmp_path):
     bot = _bot()
     receiver_path = receiver.bot(bot)
-    harness._open_bot(str(receiver_path))
+    harness._documents.open_bot(str(receiver_path))
     bcs = _combat()
     bcs.state_assignments = []
     sender.bot(bot)

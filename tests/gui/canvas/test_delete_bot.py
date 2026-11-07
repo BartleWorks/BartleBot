@@ -96,7 +96,7 @@ def test_the_confirmation_names_the_bot_and_counts_its_strategies(harness, folde
     save_bot_strategy(BotCombatStrategy(name="Solo", bot_id="mine"))
     asked = _answer(monkeypatch, QMessageBox.StandardButton.Ok)
 
-    assert harness._delete_bot(str(path))
+    assert harness._documents.delete_bot(str(path))
 
     assert "'Jade Oni'" in asked[0] and "1 Bot Combat Strategy" in asked[0]
     assert not path.exists()
@@ -110,7 +110,7 @@ def test_cancelling_deletes_nothing(harness, folders, monkeypatch):
     SettingsManager.instance().set_option_override("mine", "safety_delay", 5.0)
     _answer(monkeypatch, QMessageBox.StandardButton.Cancel)
 
-    assert not harness._delete_bot(str(path))
+    assert not harness._documents.delete_bot(str(path))
 
     assert path.exists()
     assert SettingsManager.instance().get_option_override("mine", "safety_delay") == 5.0
@@ -122,7 +122,7 @@ def test_an_official_bot_is_never_deleted(harness, folders, monkeypatch):
     _bot("official").save(path)
     asked = _answer(monkeypatch, QMessageBox.StandardButton.Ok)
 
-    assert not harness._delete_bot(str(path))
+    assert not harness._documents.delete_bot(str(path))
 
     assert path.exists() and not asked
 
@@ -134,9 +134,9 @@ def test_the_open_bot_is_not_deleted(harness, folders, monkeypatch):
     told: list[tuple] = []
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     asked = _answer(monkeypatch, QMessageBox.StandardButton.Ok)
-    harness._last_save_path = str(path)
+    harness._documents._last_save_path = str(path)
 
-    assert not harness._delete_bot(str(path))
+    assert not harness._documents.delete_bot(str(path))
 
     assert path.exists() and told and not asked
 
@@ -150,6 +150,6 @@ def test_a_deleted_bots_recovery_file_goes_with_it(harness, folders, monkeypatch
     recovery.write_text("{}", encoding="utf-8")
     _answer(monkeypatch, QMessageBox.StandardButton.Ok)
 
-    assert harness._delete_bot(str(path))
+    assert harness._documents.delete_bot(str(path))
 
     assert not recovery.exists()

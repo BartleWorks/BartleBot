@@ -398,12 +398,12 @@ def harness(qapp, library, tmp_path):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    canvas.open_definition_requested.connect(h._open_definition)
-    canvas.definition_back_requested.connect(h._definition_back)
-    canvas.document_back_requested.connect(h._back_to_document)
+    canvas.open_definition_requested.connect(h._documents.open_definition)
+    canvas.definition_back_requested.connect(h._documents.definition_back)
+    canvas.document_back_requested.connect(h._documents.back_to_document)
     path = tmp_path / "bots" / "linked.json"
     linked_bot(library.get(SYNC_ID), library).save(path)
-    h._open_bot(str(path))
+    h._documents.open_bot(str(path))
     canvas.enter_edit_mode()
     yield h
     canvas.prepare_for_shutdown()
@@ -422,7 +422,7 @@ def test_back_to_a_document_closes_what_is_above_it(harness):
     QTest.mouseClick(canvas.crumb_bar.segment_labels[0], Qt.MouseButton.LeftButton)
 
     assert not canvas.is_definition
-    assert harness._doc_stack == []
+    assert harness._documents.doc_stack == []
 
 
 def test_back_to_a_document_stops_when_one_is_cancelled(harness, monkeypatch):
@@ -431,7 +431,7 @@ def test_back_to_a_document_stops_when_one_is_cancelled(harness, monkeypatch):
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
 
-    assert not harness._back_to_document(0)
+    assert not harness._documents.back_to_document(0)
 
     assert canvas.is_definition
 
@@ -440,9 +440,9 @@ def test_save_as_makes_a_new_definition_and_edits_it(harness, library):
     canvas = harness._window.bot_canvas
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
-    assert harness._has_unsaved_changes
+    assert harness._documents.has_unsaved_changes
 
-    assert harness._save_definition_as("Sync players, faster", "A copy")
+    assert harness._documents.save_definition_as("Sync players, faster", "A copy")
 
     new_id = canvas.config.definition.id
     assert new_id != SYNC_ID
@@ -450,11 +450,11 @@ def test_save_as_makes_a_new_definition_and_edits_it(harness, library):
     assert (copy.name, copy.description, copy.version) == ("Sync players, faster", "A copy", 1)
     assert ("tp_a", "zone") in {(b.state, b.param) for i in copy.inputs for b in i.bindings}
     assert library.get(SYNC_ID).version == 1, "the original is untouched"
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
     assert not canvas.can_undo(), "undo would reach back into the original"
     assert canvas.crumb_bar.text == "Linked › Sync players, faster"
 
-    assert harness._definition_back()
+    assert harness._documents.definition_back()
     region = next(r for r in canvas.config.regions if r.id == REGION)
     assert region.source.subgraph_id == SYNC_ID, "the bot keeps linking the original"
 
@@ -467,7 +467,7 @@ def test_save_as_is_refused_while_the_definition_has_errors(harness, library, mo
     canvas.config.transitions = [t for t in canvas.config.transitions if t.source != "entry_hub"]
     canvas.scene.setup(canvas.config)
 
-    assert not harness._save_definition_as("Copy", None)
+    assert not harness._documents.save_definition_as("Copy", None)
     assert refused
     assert library.ids() == [SYNC_ID]
 
@@ -491,10 +491,10 @@ def test_revert_discards_the_copy_and_shows_the_built_in(qapp, two_roots, monkey
     canvas.set_subgraph_library(two_roots)
     h = ControllerHarness(canvas, two_roots)
     try:
-        assert h._open_definition(SYNC_ID)
+        assert h._documents.open_definition(SYNC_ID)
         assert canvas.crumb_bar.revert_button.isVisibleTo(canvas.crumb_bar)
 
-        assert h._revert_definition()
+        assert h._documents.revert_definition()
 
         assert two_roots.origin(SYNC_ID) is Origin.SHIPPED
         assert canvas.config.definition.version == 1
@@ -513,8 +513,8 @@ def test_revert_can_be_cancelled(qapp, two_roots, monkeypatch):
     canvas.set_subgraph_library(two_roots)
     h = ControllerHarness(canvas, two_roots)
     try:
-        h._open_definition(SYNC_ID)
-        assert not h._revert_definition()
+        h._documents.open_definition(SYNC_ID)
+        assert not h._documents.revert_definition()
         assert two_roots.origin(SYNC_ID) is Origin.SHIPPED_OVERRIDE
     finally:
         canvas.prepare_for_shutdown()

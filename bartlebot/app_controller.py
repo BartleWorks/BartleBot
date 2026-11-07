@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
-from datetime import datetime
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +24,7 @@ from bartleby.runtime.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartleby.shared.preferences import PreferenceStore
 from bartleby.shared.vendor import VENDOR
 from PyQt6.QtCore import QObject, Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.bot import variables
@@ -41,23 +38,15 @@ from bartlebot.combat.combat_resolution import CombatResolver, Level, describe_r
 from bartlebot.combat.combat_warnings import CombatCheck, check_combat
 from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.combat.flee_marks import FleeMarks
-from bartlebot.content import bot_delete, bot_fork, bot_roots, new_bot, share_export, share_import
-from bartlebot.content.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
-from bartlebot.content.store_roots import DEV_ENV_VAR, Origin, dev_mode, pill_text
-from bartlebot.content.subgraphs.subgraph_signature import signature_changes
-from bartlebot.content.subgraphs.subgraph_signature import warning_text as signature_warning_text
-from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary, bots_linking, count_subgraph_uses
-from bartlebot.content.subgraphs.subgraphs import (
-    ComposeReport,
-    compose_bot,
-    config_to_definition,
-    definition_change,
-    definition_to_config,
-)
+from bartlebot.content import bot_roots, share_export, share_import
+from bartlebot.content.store_roots import DEV_ENV_VAR, dev_mode
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates import setup_steps, template_diff, template_gallery, template_store
+from bartlebot.controller.documents import Documents, file_snapshot, matches_clean, world_folder
+from bartlebot.controller.templates import TemplateRoots
 from bartlebot.game import restricted_zones, zone_names
 from bartlebot.gui.canvas import recording
-from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument
+from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.combat_strategies.deck_link import DeckClientLink
 from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.debug.game_hang_trace import GameHangTracer
@@ -67,10 +56,6 @@ from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.dialogs.first_run_dialog import needs_asking, setup_pages
 from bartlebot.gui.dialogs.import_dialog import TITLE as IMPORT_TITLE
 from bartlebot.gui.dialogs.import_dialog import ask_for_file, confirm_import
-from bartlebot.gui.dialogs.make_copy_dialog import TITLE as MAKE_COPY_TITLE
-from bartlebot.gui.dialogs.make_copy_dialog import MakeCopyDialog
-from bartlebot.gui.dialogs.new_bot_dialog import NewBotDialog
-from bartlebot.gui.dialogs.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.dialogs.templates_dialog import TemplatesDialog, TemplatesVerb
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.share_drop import ShareFileDrops, is_share_file
@@ -89,14 +74,6 @@ if TYPE_CHECKING:
 #: What a PlayerCard shows for a zone it could not read; never a real zone name.
 _ZONE_PLACEHOLDER = "—"
 
-#: An autosave of a definition document is named for the definition, not a file.
-_DEFINITION_AUTOSAVE_PREFIX = "subgraph_"
-
-#: Nor is a template draft's: every draft is a ``draft.json``, so its stem says nothing.
-_TEMPLATE_AUTOSAVE_PREFIX = "template_"
-
-#: What the header and the window title call a template draft's file.
-_DRAFT_FILE_LABEL = "template draft"
 
 #: Player slots with a deck card on the Combat tab; a group is at most four wizards, so
 #: Import all reads no client past the fourth.
@@ -109,52 +86,9 @@ _DECK_JOB_FAILED = "failed — see the log for details"
 _DECK_WINDOW_NOTE = "The game's deck window may be left open or partially edited — check the client before retrying."
 
 
-@dataclass
-class _DocumentFrame:
-    """A document set aside while a definition is open on top of it.
-
-    Everything the controller holds for the open document -- the canvas's own state,
-    the file it came from, whether it has unsaved changes -- so going back puts it
-    exactly as it was.
-    """
-
-    doc: CanvasDocument
-    path: str | None
-    unsaved: bool
-    clean: dict | None = None
-
-
-def _file_snapshot(config: BotConfig | None) -> dict | None:
-    """What ``config`` would write to disk: the baseline an autosave is compared against.
-
-    Taken wherever a document is opened or saved. The dirty flag alone cannot say
-    whether anything changed -- leaving Edit mode, or an edit typed and reverted,
-    raises it too (#122) -- so an autosave that would only restate this is skipped.
-    """
-    return config.file_dump() if config is not None else None
-
-
 #: Every export's title, and what it says on a template, which is shared after 1.0.0 (#165).
 EXPORT_TITLE = "Export"
 TEMPLATE_EXPORT_TEXT = "Templates can't be shared yet. Export a bot made from one instead."
-
-
-def _matches_clean(config: BotConfig | None, snapshot: dict | None) -> bool:
-    """Whether ``config`` is still what was last opened or saved. False when there is no snapshot."""
-    return snapshot is not None and _file_snapshot(config) == snapshot
-
-
-def _same_bot_content(autosave_path: Path, original_path: Path) -> bool:
-    """Whether a recovery file holds the same bot as its original. False when either will not load.
-
-    Both go through ``BotConfig`` rather than being compared as text, so a file an
-    older version wrote -- different formatting, a default spelled out -- still matches.
-    """
-    try:
-        return BotConfig.load(autosave_path).file_dump() == BotConfig.load(original_path).file_dump()
-    except Exception:
-        logger.debug("Could not compare %s with %s", autosave_path, original_path, exc_info=True)
-        return False
 
 
 def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str]) -> tuple[list[str], list[str]]:
@@ -224,18 +158,8 @@ class AppController(QObject):
         # Every bot's fights fled on a default, for as long as the app is open: the Combat
         # tab marks them (Stage 7 of epic #201). See _on_machine_fight_fled.
         self._flee_marks = FleeMarks()
-        self._loaded_config: BotConfig | None = None
-        self._last_save_path: str | None = None
-        # Whether the open bot is an Official one, opened from the install directory: it
-        # is never edited or saved in place, and Edit mode offers Make my own copy (#149).
-        self._official_open: bool = False
-        # One view of the subgraph library for the session, reloaded on every open and
-        # before every run so a definition edited on disk reaches the bot that links it.
-        self._subgraph_library = SubgraphLibrary()
-        # Where the template store is: the project root, or a test's tmp_path.
-        self._templates_root: Path | None = None
-        # The user root the template store writes, when not the default; a test's tmp_path.
-        self._templates_user_root: Path | None = None
+        # Where the template store is; tests point it at a tmp_path.
+        self._roots = TemplateRoots()
         if dev_mode():
             logger.warning(
                 "%s is set: bots, templates, subgraphs and combat strategies are read from and saved to %s",
@@ -263,29 +187,22 @@ class AppController(QObject):
         self._shutdown_task: asyncio.Task | None = None
         self._clients_released: bool = False
 
-        # Documents under the open one, bottom first: a bot, then each definition
-        # opened from it. Empty while a bot, or a definition opened on its own, is on top.
-        self._doc_stack: list[_DocumentFrame] = []
-
-        # Auto-save state, behind _has_unsaved_changes and _clean_snapshot: setting
-        # either refreshes the unsaved marks.
-        self._unsaved: bool = False
-        # The open document as last opened or saved; None when there is no such state
-        # to return to (a recovered file). See _file_snapshot.
-        self._clean: dict | None = None
-        # The id of the open bot whose author chose Save Without at the Rewards prompt:
-        # asked once per open, and remembered nowhere else. See rewards_tag_dialog.
-        self._rewards_declined_for: str | None = None
-        self._auto_save_timer = QTimer(self)
-        self._auto_save_timer.setSingleShot(False)
-        self._auto_save_timer.timeout.connect(self._do_autosave)
-
         self._window = MainWindow()
         self._client_manager = ClientManager(
             handler=self._handler,
             game_view=self._window.game_view,
             drops_widget=self._window.right_sidebar.drops,
-            get_recovery_state=lambda: self._loaded_config.recovery_state if self._loaded_config else None,
+            get_recovery_state=self._recovery_state,
+        )
+        # The open document, the ones set aside under it, and every flow on them.
+        clients = self._client_manager
+        self._documents = Documents(
+            self._window,
+            SubgraphLibrary(),
+            self._roots,
+            clients=lambda: clients.clients,
+            is_running=lambda: self._current_machine is not None,
+            parent=self,
         )
         self._window.set_auto_select_driver(self._client_manager.drive_client_in)
 
@@ -293,7 +210,7 @@ class AppController(QObject):
         # from inside a game window. See bartlebot.clients.authoring_tools and gui.global_hotkeys.
         self._authoring = AuthoringTools(
             clients=lambda: self._client_manager.clients,
-            bot_config=lambda: self._loaded_config,
+            bot_config=lambda: self._documents.loaded_config,
             speed_multiplier=lambda: SettingsManager.instance().speed_multiplier,
             on_change=self._refresh_authoring_bar,
         )
@@ -314,10 +231,10 @@ class AppController(QObject):
         self._window.show()
         # The taskbar asked for the icon while start-up held the thread; see refresh_taskbar_icon.
         QTimer.singleShot(0, lambda: refresh_taskbar_icon(self._window))
-        self._reconfigure_autosave_timer()
+        self._documents.reconfigure_autosave_timer()
         self._prune_dead_strategy_settings()
         self._restore_game_display_settings()
-        self._check_crash_recovery()
+        self._documents.check_crash_recovery()
         # A share file dropped anywhere on the window imports it (#171); one named at
         # launch, as a double-clicked file is (#27), once the window is up.
         self._share_drops = ShareFileDrops(self)
@@ -335,6 +252,25 @@ class AppController(QObject):
         self._hang_tracer = GameHangTracer(self._hooked_windows) if dev_mode() else None
         if self._hang_tracer is not None:
             self._hang_tracer.start()
+
+    def _recovery_state(self) -> str | None:
+        """The open bot's recovery state, where a client that reconnects resumes."""
+        config = self._documents.loaded_config
+        return config.recovery_state if config is not None else None
+
+    @property
+    def subgraph_library(self) -> SubgraphLibrary:
+        """The session's view of the two subgraph roots. Tests swap in a ``tmp_path`` one."""
+        return self._documents.subgraph_library
+
+    @subgraph_library.setter
+    def subgraph_library(self, library: SubgraphLibrary) -> None:
+        self._documents.subgraph_library = library
+
+    @property
+    def document_depth(self) -> int:
+        """How many documents sit under the open one."""
+        return self._documents.document_depth
 
     def _hooked_windows(self) -> list[tuple[str, int]]:
         """Each hooked client's window, by player number, for the game hang tracer."""
@@ -398,49 +334,50 @@ class AppController(QObject):
         w = self._window
 
         # File operations — connect directly to exposed QAction signals
-        w.action_new.triggered.connect(lambda: self._new_bot())
-        w.action_open.triggered.connect(lambda: self._open_bot())
-        w.action_close.triggered.connect(lambda: self._close_bot())
-        w.action_save.triggered.connect(lambda: self._save_bot())
-        w.action_save_as.triggered.connect(lambda: self._save_bot_as())
+        w.action_new.triggered.connect(lambda: self._documents.new_bot())
+        w.action_open.triggered.connect(lambda: self._documents.open_bot())
+        w.action_close.triggered.connect(lambda: self._documents.close_bot())
+        w.action_save.triggered.connect(lambda: self._documents.save_bot())
+        w.action_save_as.triggered.connect(lambda: self._documents.save_bot_as())
         w.action_templates.triggered.connect(lambda: self._open_templates_dialog())
         w.action_export.triggered.connect(lambda: self._export_open_document())
         w.action_import.triggered.connect(lambda: self._import_share_file())
         w.action_setup.triggered.connect(lambda: self._rerun_setup())
-        w.open_recent_requested.connect(self._open_bot)
+        w.open_recent_requested.connect(self._documents.open_bot)
 
         # Canvas signals
-        w.bot_canvas.config_changed.connect(self._on_config_changed)
+        w.bot_canvas.config_changed.connect(self._documents.on_config_changed)
         # A finished template review, or an undo across one: the base moved.
         w.bot_canvas.template_ref_changed.connect(self._refresh_template_context)
+        self._documents.template_context_changed.connect(self._refresh_template_context)
         w.bot_canvas.mode_changed.connect(self._on_mode_changed)
         w.bot_canvas.run_requested.connect(self._on_run_requested)
         w.bot_canvas.pause_requested.connect(self._pause_bot)
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
-        w.bot_canvas.save_requested.connect(lambda: self._save_bot())
-        w.bot_canvas.save_done.connect(self._save_and_done)
-        w.bot_canvas.open_definition_requested.connect(self._open_definition)
-        w.bot_canvas.definition_back_requested.connect(self._definition_back)
-        w.bot_canvas.definition_save_requested.connect(self._on_definition_save_requested)
-        w.bot_canvas.definition_save_as_requested.connect(lambda: self._save_definition_as())
-        w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
-        w.bot_canvas.delete_subgraph_requested.connect(lambda sid: self._delete_subgraph(sid))
-        w.bot_canvas.rename_subgraph_requested.connect(lambda sid: self._rename_subgraph(sid))
+        w.bot_canvas.save_requested.connect(lambda: self._documents.save_bot())
+        w.bot_canvas.save_done.connect(self._documents.save_and_done)
+        w.bot_canvas.open_definition_requested.connect(self._documents.open_definition)
+        w.bot_canvas.definition_back_requested.connect(self._documents.definition_back)
+        w.bot_canvas.definition_save_requested.connect(self._documents.on_definition_save_requested)
+        w.bot_canvas.definition_save_as_requested.connect(lambda: self._documents.save_definition_as())
+        w.bot_canvas.definition_revert_requested.connect(lambda: self._documents.revert_definition())
+        w.bot_canvas.delete_subgraph_requested.connect(lambda sid: self._documents.delete_subgraph(sid))
+        w.bot_canvas.rename_subgraph_requested.connect(lambda sid: self._documents.rename_subgraph(sid))
         w.bot_canvas.export_bot_requested.connect(lambda path: self._export_bot(path))
-        w.bot_canvas.delete_bot_requested.connect(lambda path: self._delete_bot(path))
+        w.bot_canvas.delete_bot_requested.connect(lambda path: self._documents.delete_bot(path))
         w.bot_canvas.export_subgraph_requested.connect(lambda sid: self._export_subgraph(sid))
-        w.bot_canvas.document_back_requested.connect(self._back_to_document)
-        w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
+        w.bot_canvas.document_back_requested.connect(self._documents.back_to_document)
+        w.bot_canvas.template_save_requested.connect(lambda: self._documents.save_bot())
         w.bot_canvas.template_release_requested.connect(lambda: self._release_template())
-        w.bot_canvas.template_close_requested.connect(lambda: self._close_bot())
-        w.bot_canvas.copy_requested.connect(lambda: self._make_own_copy())
+        w.bot_canvas.template_close_requested.connect(lambda: self._documents.close_bot())
+        w.bot_canvas.copy_requested.connect(lambda: self._documents.make_own_copy())
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
         # Ctrl+R records from the game window last in focus, as Bar A's buttons act on it.
         w.bot_canvas.set_preferred_player_getter(
             lambda: source_index(self._client_manager.clients, w.game_view.last_focused_hwnd)
         )
-        w.bot_canvas.set_subgraph_library(self._subgraph_library)
+        w.bot_canvas.set_subgraph_library(self._documents.subgraph_library)
         w.left_sidebar.set_clients_getter(lambda: self._client_manager.clients)
 
         def _zone_getter() -> list[str]:
@@ -453,15 +390,15 @@ class AppController(QObject):
         w.bot_canvas.set_zone_getter(_zone_getter)
 
         # Left sidebar config changes
-        w.left_sidebar.config_changed.connect(self._on_config_changed)
-        w.left_sidebar.metadata_changed.connect(self._on_metadata_changed)
+        w.left_sidebar.config_changed.connect(self._documents.on_config_changed)
+        w.left_sidebar.metadata_changed.connect(self._documents.on_metadata_changed)
         w.left_sidebar.edit_starting.connect(w.bot_canvas.note_edit_starting)
         w.left_sidebar.declarations_changed.connect(w.bot_canvas.reshow_properties)
         # A declaration edit -- an option's or a variable's -- changes what validation finds
         # without touching the graph, so nothing on the canvas would recheck it. Only the
         # sidebar's: the canvas rechecks its own edits already.
         w.left_sidebar.config_changed.connect(w.bot_canvas.revalidate)
-        w.right_sidebar.config_changed.connect(self._on_config_changed)
+        w.right_sidebar.config_changed.connect(self._documents.on_config_changed)
 
         # Deck import / apply requests from Combat tab
         w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
@@ -551,7 +488,7 @@ class AppController(QObject):
         w.set_shutdown_handler(self._confirm_shutdown)
 
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
-        w.settings_applied.connect(self._reconfigure_autosave_timer)
+        w.settings_applied.connect(self._documents.reconfigure_autosave_timer)
         w.settings_applied.connect(w.right_sidebar.log_panel.apply_settings)
         w.settings_applied.connect(self._apply_theme)
 
@@ -605,7 +542,7 @@ class AppController(QObject):
             return True
         if self._shutdown_task is not None:
             return False  # already releasing; the task will close the window
-        if not self._close_definitions() or not self._confirm_unsaved("Quit BartleBot"):
+        if not self._documents.close_definitions() or not self._documents.confirm_unsaved("Quit BartleBot"):
             return False
         hooked = len(self._client_manager.clients)
         unhooked = len(self._client_manager.unhooked_clients)
@@ -773,406 +710,9 @@ class AppController(QObject):
     # Subgraphs
     # ------------------------------------------------------------------
 
-    @property
-    def subgraph_library(self) -> SubgraphLibrary:
-        """The session's view of the two subgraph roots. Tests swap in a ``tmp_path`` one."""
-        return self._subgraph_library
-
-    @subgraph_library.setter
-    def subgraph_library(self, library: SubgraphLibrary) -> None:
-        self._subgraph_library = library
-
-    def _compose(self, config: BotConfig) -> tuple[BotConfig, ComposeReport]:
-        """Recompose every linked region of ``config`` from the library, reloaded first.
-
-        The result is what the app holds in memory; the file the config came from is
-        never written here (see docs/SUBGRAPHS.md). ``compose_bot`` raising is a bug
-        in composition, not in the library, and a bug there must not make a bot
-        unopenable: it is logged and the snapshot in the file is used as-is.
-        """
-        self._subgraph_library.reload()
-        try:
-            return compose_bot(config, self._subgraph_library)
-        except Exception:
-            logger.exception("Composing subgraphs failed; using the bot file's snapshot")
-            return config, ComposeReport()
-
-    def _recompose_before_run(self) -> bool:
-        """Refresh linked regions from the library before a run. Returns whether to proceed.
-
-        Silent by design: one log line per region that changed and the banner entry
-        the canvas draws from the report, never a dialog -- see docs/SUBGRAPHS.md.
-        The one refusal is a cycle, which has no snapshot worth running. A changed
-        region swaps the in-memory config, exactly as an undo does, and marks the bot
-        unsaved so the refreshed snapshot reaches disk on the next save.
-        """
-        if self._loaded_config is None:
-            return True
-        before = self._loaded_config
-        composed, report = self._compose(before)
-        canvas = self._window.bot_canvas
-        if composed is not before and composed.model_dump() != before.model_dump():
-            for region_id, label in _changed_linked_regions(before, composed):
-                status = report.regions.get(region_id)
-                version = status.library_version if status is not None else None
-                logger.info("Subgraph region '%s' updated to library version %s", label, version)
-            canvas.replace_config(composed, "Update subgraphs")
-            self._loaded_config = composed
-            # An Official bot runs the refreshed regions without anything to save (#149).
-            self._mark_unsaved()
-        canvas.set_compose_report(report)
-        labels = {r.id: (r.label or r.id) for r in composed.regions}
-        cycles = [(labels.get(rid, rid), s.reasons) for rid, s in report.regions.items() if s.kind == "cycle"]
-        if not cycles:
-            return True
-        lines = "\n".join(f"\u2022 {label}: {'; '.join(reasons)}" for label, reasons in cycles)
-        logger.critical("Refusing to run: %d subgraph region(s) contain a cycle", len(cycles))
-        QMessageBox.critical(
-            self._window,
-            "Subgraph Cycle",
-            "This bot cannot be run. A linked subgraph contains itself:\n\n"
-            f"{lines}\n\n"
-            "Fix the definition in the subgraph library, or detach the region.",
-        )
-        return False
-
     # ------------------------------------------------------------------
     # File operations
     # ------------------------------------------------------------------
-
-    def _new_bot(self) -> bool:
-        """New Bot: ask for a starting point and the bot's details, then save the bot and open it for editing.
-
-        Saved before it is opened, so the file exists from the start: a plain Save can
-        never land on a template, and a bot abandoned half set up stays in the library.
-        False when nothing was created.
-        """
-        if not self._close_definitions():
-            return False
-        # Written to the user's own folder, offering every world folder either root has.
-        bots_dir = bot_roots.user_bots_dir()
-        dialog = NewBotDialog(
-            new_bot.starting_points(self._templates_root, self._templates_user_root),
-            bots_dir,
-            self._window,
-            initial_folder=self._new_bot_folder(),
-            folder_sources=(bot_roots.shipped_bots_dir(),),
-        )
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return False
-        if not self._confirm_unsaved("New Bot"):
-            return False
-        # Composed before it is written, so the file holds what opening it would make
-        # of it and the first Save after that changes nothing.
-        config, _report = self._compose(new_bot.create_bot(dialog.start, dialog.details()))
-        path = dialog.target_path()
-        try:
-            config.save(path)
-        except Exception as e:
-            QMessageBox.critical(self._window, "Failed to create bot", str(e))
-            return False
-        self._open_bot(str(path), mode=BotMode.EDIT)
-        return True
-
-    def _new_bot_folder(self) -> str | None:
-        """The library folder New Bot opens on: the one being looked at, else the open bot's."""
-        looking_at = self._window.bot_canvas.library_folder()
-        if looking_at is not None:
-            return looking_at
-        return _world_folder(self._last_save_path)
-
-    def _open_bot(self, path: str | None = None, *, mode: BotMode = BotMode.RUN) -> None:
-        if not self._close_definitions():
-            return
-        if path is None:
-            path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot File", "", "Bot Files (*.json)")
-        if not path:
-            return
-        if not self._confirm_unsaved("Open Bot"):
-            return
-        try:
-            config = BotConfig.load(path)
-        except Exception as e:
-            QMessageBox.critical(self._window, "Failed to load bot", str(e))
-            return
-        if config.is_template and not self._may_edit_template(config, path):
-            return
-        config, report = self._compose(config)
-        old_save_path = self._last_save_path
-        self._delete_autosave(old_save_path)
-        self._has_unsaved_changes = False
-        self._loaded_config = config
-        self._last_save_path = path
-        self._rewards_declined_for = None
-        # An Official bot is read-only and only ever opens in Run mode (#149).
-        self._official_open = not config.is_template and bot_roots.is_shipped(path)
-        if self._official_open:
-            mode = BotMode.RUN
-        self._window.set_bot_name(config.name, self._file_label(config, path))
-        self._window.bot_canvas.set_read_only(self._official_open)
-        self._window.bot_canvas.setup(config, mode=mode)
-        # After setup and compose, which the open does not count as edits either.
-        self._clean_snapshot = _file_snapshot(config)
-        self._window.bot_canvas.set_compose_report(report)
-        self._refresh_template_context()
-        self._window.left_sidebar.set_config(config)
-        self._window.right_sidebar.set_config(config)
-        self._enable_save_actions()
-        self._window.set_close_enabled(True)
-        self._window.set_start_enabled(self._start_enabled())
-        if not config.is_template:
-            # A draft is reached through File › Templates…, never as a recent bot.
-            self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
-        self._window.bot_canvas.refresh_placeholder()
-
-    def _close_bot(self) -> None:
-        if self._loaded_config is None:
-            return
-        if self._loaded_config.is_definition:
-            # Close is the document on top: a definition goes back to what it was opened from.
-            self._definition_back()
-            return
-        if not self._confirm_unsaved("Close Bot"):
-            return
-        self._delete_autosave(stem=self._autosave_stem())
-        self._loaded_config = None
-        self._last_save_path = None
-        self._official_open = False
-        self._has_unsaved_changes = False
-        self._clean_snapshot = None
-        self._rewards_declined_for = None
-        self._window.bot_canvas.close_bot()
-        self._window.left_sidebar.set_config(None)
-        self._window.right_sidebar.set_config(None)
-        self._window.set_bot_name(None, None)
-        self._window.set_save_enabled(False)
-        self._window.set_close_enabled(False)
-        self._window.set_start_enabled(False)
-
-    def _confirm_unsaved(self, title: str) -> bool:
-        """Ask about the open bot's unsaved edits before something replaces it. False to stay put.
-
-        Save saves, and stays put if the save is cancelled or fails. Discard drops the edits
-        and their recovery file, so the next launch does not offer them back. Open, New Bot
-        and Quit used to replace an edited bot without asking, deleting its recovery file on
-        the way (#154). The flag is raised by edits that change nothing, too: ask only when
-        one did. A definition on top is closed first, by ``_close_definitions``.
-        """
-        config = self._loaded_config
-        if config is None or not self._has_unsaved_changes or _matches_clean(config, self._clean_snapshot):
-            return True
-        reply = QMessageBox.question(
-            self._window,
-            title,
-            f"Save your changes to '{config.name}' first?",
-            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Save,
-        )
-        if reply == QMessageBox.StandardButton.Save:
-            return self._save_bot() and not self._has_unsaved_changes
-        if reply != QMessageBox.StandardButton.Discard:
-            return False
-        self._delete_autosave(stem=self._autosave_stem())
-        self._has_unsaved_changes = False
-        return True
-
-    def _save_and_done(self) -> None:
-        """Done: back to Run mode, but only once the save has gone through.
-
-        A save the author cancels -- at the Rewards prompt, or in the file dialog --
-        leaves them where they were, editing. A bot still as it was opened or last saved
-        is not written again: Done is Edit mode's one way back to Run mode (#267), and leaving
-        after only looking would otherwise rewrite the file and ask about Rewards.
-        """
-        if _matches_clean(self._loaded_config, self._clean_snapshot) or self._save_bot():
-            self._window.bot_canvas.exit_edit_mode(saved=True)
-
-    def _confirm_rewards_tags(self) -> bool:
-        """Ask for a Rewards tag if the bot has none. False when the author cancels the save.
-
-        Asked once per open: Save Without is remembered against the bot's id until it is
-        closed or reopened. A template draft is never asked.
-        """
-        config = self._loaded_config
-        if (
-            config is None
-            or config.id == self._rewards_declined_for
-            or not wants_rewards_prompt(config.tags, config.is_template)
-        ):
-            return True
-        dialog = RewardsTagDialog(suggested_tags(config.states), self._window)
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return False
-        if dialog.choice is RewardsChoice.TAGGED:
-            config.tags = normalize_tags([*config.tags, *dialog.selected_tags()])
-            self._window.bot_canvas.refresh_tags()
-        else:
-            self._rewards_declined_for = config.id
-        return True
-
-    def _save_bot(self) -> bool:
-        """Save the open document. False when nothing was written: cancelled, refused or failed."""
-        if self._loaded_config is None:
-            return False
-        if self._loaded_config.is_definition:
-            return self._save_definition()
-        if self._read_only_open():
-            # An Official bot is never changed, so there is nothing to write: Save As
-            # makes a plain copy, and Edit mode offers Make my own copy (#149).
-            return False
-        if self._last_save_path is None:
-            return self._save_bot_as()
-        if not self._loaded_config.is_template and not bot_roots.may_write(self._last_save_path):
-            # An Official bot, or one recovered from a crash in it: the install directory is
-            # replaced by every update, so the save goes to a copy in the user's own folder.
-            return self._save_bot_as()
-        if self._loaded_config.is_template:
-            refused = template_store.draft_name_refused(self._loaded_config, **self._template_roots())
-            if refused:
-                QMessageBox.information(self._window, "Save Template", refused)
-                return False
-        if not self._confirm_rewards_tags():
-            return False
-        try:
-            if not self._loaded_config.is_template:
-                # A template keeps no history: a released version is hashed by its bytes.
-                bot_roots.record_save(self._loaded_config, self._last_save_path)
-            self._loaded_config.save(self._last_save_path)
-            self._has_unsaved_changes = False
-            self._clean_snapshot = _file_snapshot(self._loaded_config)
-            if self._loaded_config.is_template:
-                self._delete_autosave(stem=self._autosave_stem())
-            else:
-                self._delete_autosave()
-        except Exception as e:
-            QMessageBox.critical(self._window, "Failed to save bot", str(e))
-            return False
-        return True
-
-    def _save_bot_as(self) -> bool:
-        """Save the open bot to a file the user names. False when nothing was written."""
-        if self._loaded_config is None:
-            return False
-        if self._loaded_config.is_definition:
-            # A definition lives in the library under its id, not in a file the user names.
-            return self._save_definition()
-        if self._loaded_config.is_template:
-            # A copy would be a second draft of one template, or a bot carrying
-            # template_meta; a bot is started from a template with New Bot instead.
-            QMessageBox.information(
-                self._window,
-                "Save Bot As",
-                "A template draft is only saved in place. Release it to make a version New Bot offers.",
-            )
-            return False
-        path, _ = QFileDialog.getSaveFileName(
-            self._window, "Save Bot As", str(_save_as_start(self._last_save_path)), "Bot Files (*.json)"
-        )
-        if not path:
-            return False
-        if not path.endswith(".json"):
-            path += ".json"
-        if not bot_roots.may_write(path):
-            QMessageBox.information(
-                self._window,
-                "Save Bot As",
-                "That folder belongs to BartleBot's installation, which every update replaces, "
-                "so a bot saved there would be lost. Choose a folder of your own.",
-            )
-            return False
-        # After the file dialog, not before: cancelling the dialog should ask nothing.
-        if not self._confirm_rewards_tags():
-            return False
-        old_save_path = self._last_save_path
-        # A fork gets its own identity. The copy would otherwise share the original's
-        # id, and with it every value the user has stored against that bot -- and the
-        # remembered combat strategy, which is a fork's to choose again.
-        # Its history goes too: what the original was copied from is not the copy's own past.
-        old_id = self._loaded_config.id
-        old_history = self._loaded_config.history
-        old_sent = self._loaded_config.sent_sha256
-        self._loaded_config.id = str(uuid4())
-        self._loaded_config.history = []
-        self._loaded_config.sent_sha256 = None
-        try:
-            self._loaded_config.save(path)
-        except Exception as e:
-            # Nothing was written, so the file on disk is still the original and the
-            # loaded bot is still that bot. Keeping the minted id here would orphan
-            # every value the user has stored against it for the rest of the session.
-            self._loaded_config.id = old_id
-            self._loaded_config.history = old_history
-            self._loaded_config.sent_sha256 = old_sent
-            QMessageBox.critical(self._window, "Failed to save bot", str(e))
-            return False
-        if self._rewards_declined_for == old_id:
-            # Still the same open document, under its new identity.
-            self._rewards_declined_for = self._loaded_config.id
-        self._last_save_path = path
-        self._has_unsaved_changes = False
-        self._clean_snapshot = _file_snapshot(self._loaded_config)
-        self._delete_autosave(old_save_path)
-        # The copy is the user's own: editable, and saved in place from now on.
-        self._official_open = False
-        self._window.bot_canvas.set_read_only(False)
-        self._window.set_save_enabled(True)
-        self._window.set_bot_name(self._loaded_config.name, Path(path).name)
-        self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
-        self._window.bot_canvas.refresh_placeholder()
-        # A new id resolves against a different set of stored values -- none, for a
-        # fresh fork -- so every surface displaying one has to re-resolve. Without
-        # this, Option Values goes on showing the original's overrides against a bot that
-        # does not have them, and only a reopen tells the truth.
-        self._window.left_sidebar.refresh_options(self._loaded_config)
-        # The combat half of the same re-resolve: the active strategy and the BCS
-        # list are both keyed on the id, and a fork inherits neither.
-        self._window.left_sidebar.rebind_identity()
-        # And the template half: the canvas holds the base version's setup steps and the
-        # update waiting against the bot's id, so under the new one it had neither, and
-        # a copy of a half set up bot lost its Setup errors until it was reopened.
-        self._refresh_template_context()
-        return True
-
-    def _make_own_copy(self) -> bool:
-        """Make my own copy of the open Official bot, and open the copy in Edit mode (#149).
-
-        Asked when Edit mode is asked for on an Official bot. The copy is a fork
-        (:mod:`bartlebot.content.bot_fork`): a new id recording the Official bot's, in the user's
-        own folder, written at once as New Bot writes a new bot. Unlike Save As, it takes
-        every option value, Bot Combat Strategy and the active pick with it, so it runs
-        exactly as the Official bot did. False when cancelled or nothing was written.
-        """
-        config, path = self._loaded_config, self._last_save_path
-        if config is None or path is None or not self._read_only_open():
-            return False
-        dialog = MakeCopyDialog(config.name, self._window)
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return False
-        try:
-            # The file as it ships, not the composed copy in memory: its hash is the record.
-            official = BotConfig.load(path)
-            fork, _report = self._compose(bot_fork.make_fork(official, dialog.name))
-            target = bot_fork.fork_path(path, bot_roots.user_bots_dir(), _world_folder(path))
-            target.parent.mkdir(parents=True, exist_ok=True)
-            fork.save(target)
-        except Exception as e:
-            logger.exception("Could not make a copy of %s", path)
-            QMessageBox.critical(self._window, MAKE_COPY_TITLE, f"Could not make your copy:\n\n{e}")
-            return False
-        logger.info("Made a copy of the Official bot '%s' at %s", official.name, target)
-        try:
-            bot_fork.carry_over(official.id, fork.id, SettingsManager.instance())
-        except Exception:
-            # The copy exists and opens; what did not come with it is the user's to set again.
-            logger.exception("Could not carry the option values and combat setup over to the copy")
-            QMessageBox.warning(
-                self._window,
-                MAKE_COPY_TITLE,
-                "Your copy was made, but not all of its option values and Bot Combat Strategies "
-                "could be copied from the Official bot. See the log for details.",
-            )
-        self._open_bot(str(target), mode=BotMode.EDIT)
-        return True
 
     # ------------------------------------------------------------------
     # Export (#170)
@@ -1180,12 +720,12 @@ class AppController(QObject):
 
     def _export_sources(self) -> share_export.Sources:
         """Where an export reads from: the session's subgraph library, reloaded, and the real stores."""
-        self._subgraph_library.reload()
-        return share_export.Sources(subgraph_library=self._subgraph_library)
+        self._documents.subgraph_library.reload()
+        return share_export.Sources(subgraph_library=self._documents.subgraph_library)
 
     def _export_open_document(self) -> Path | None:
         """File › Export…: the open bot, or the open subgraph definition, as saved. The path written, or None."""
-        config = self._loaded_config
+        config = self._documents.loaded_config
         if config is None:
             return None
         if config.is_template:
@@ -1193,16 +733,18 @@ class AppController(QObject):
             return None
         if not self._saved_for_export():
             return None
-        config = self._loaded_config
+        config = self._documents.loaded_config
         if config.is_definition:
             return self._export_subgraph(config.definition.id)
-        if self._last_save_path is None:
+        if self._documents.last_save_path is None:
             return None
-        return self._export_bot(self._last_save_path)
+        return self._export_bot(self._documents.last_save_path)
 
     def _saved_for_export(self) -> bool:
         """Whether the open document is saved, offering to save it first. A share file carries what is saved."""
-        if not self._has_unsaved_changes or _matches_clean(self._loaded_config, self._clean_snapshot):
+        if not self._documents.has_unsaved_changes or matches_clean(
+            self._documents.loaded_config, self._documents.clean_snapshot
+        ):
             return True
         reply = QMessageBox.question(
             self._window,
@@ -1210,7 +752,7 @@ class AppController(QObject):
             "Export sends what is saved. Save your changes first?",
             QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
         )
-        return reply == QMessageBox.StandardButton.Save and self._save_bot()
+        return reply == QMessageBox.StandardButton.Save and self._documents.save_bot()
 
     def _active_bot_strategy(self, bot_id: str):
         """The Bot Combat Strategy a bot's export offers: the user's active pick for it, or None.
@@ -1241,7 +783,7 @@ class AppController(QObject):
         official = bot_roots.is_shipped(path)
         combat = self._active_bot_strategy(bot.id)
 
-        folder = _world_folder(path)
+        folder = world_folder(path)
 
         def build(choices):
             return share_export.export_bot(
@@ -1260,7 +802,7 @@ class AppController(QObject):
     def _export_subgraph(self, subgraph_id: str) -> Path | None:
         """Export… on a subgraph: the definition as saved, and the subgraphs it nests."""
         sources = self._export_sources()
-        defn = self._subgraph_library.get(subgraph_id)
+        defn = self._documents.subgraph_library.get(subgraph_id)
         if defn is None:
             QMessageBox.information(self._window, EXPORT_TITLE, "That subgraph could not be read from the library.")
             return None
@@ -1449,12 +991,16 @@ class AppController(QObject):
 
     def _open_document_ids(self) -> tuple[str | None, set[str]]:
         """``(the open bot's file, the ids of every open definition)``, the bot under any definitions."""
-        configs = [frame.doc.config for frame in self._doc_stack]
-        if self._loaded_config is not None:
-            configs.append(self._loaded_config)
+        configs = [frame.doc.config for frame in self._documents.doc_stack]
+        if self._documents.loaded_config is not None:
+            configs.append(self._documents.loaded_config)
         definitions = {c.definition.id for c in configs if c.is_definition}
-        bot_path = self._doc_stack[0].path if self._doc_stack else self._last_save_path
-        if self._loaded_config is not None and not self._doc_stack and self._loaded_config.is_definition:
+        bot_path = self._documents.doc_stack[0].path if self._documents.doc_stack else self._documents.last_save_path
+        if (
+            self._documents.loaded_config is not None
+            and not self._documents.doc_stack
+            and self._documents.loaded_config.is_definition
+        ):
             bot_path = None
         return bot_path, definitions
 
@@ -1469,7 +1015,10 @@ class AppController(QObject):
         if not over:
             return True
         bot_path, definitions = self._open_document_ids()
-        if any(r.kind == share_export.SUBGRAPH and r.id in definitions for r in over) and not self._close_definitions():
+        if (
+            any(r.kind == share_export.SUBGRAPH and r.id in definitions for r in over)
+            and not self._documents.close_definitions()
+        ):
             return False
         bot_row = next(
             (
@@ -1485,9 +1034,11 @@ class AppController(QObject):
         )
         if bot_row is None:
             return True
-        if not self._close_definitions():
+        if not self._documents.close_definitions():
             return False
-        if self._has_unsaved_changes and not _matches_clean(self._loaded_config, self._clean_snapshot):
+        if self._documents.has_unsaved_changes and not matches_clean(
+            self._documents.loaded_config, self._documents.clean_snapshot
+        ):
             QMessageBox.information(
                 self._window,
                 IMPORT_TITLE,
@@ -1501,16 +1052,16 @@ class AppController(QObject):
         self, plan: share_import.ImportPlan, result: share_import.ImportResult | None, reopen: str | None
     ) -> None:
         """Bring every surface up to date with what was written, then show the main item where it went."""
-        self._subgraph_library.reload()
+        self._documents.subgraph_library.reload()
         self._window.bot_canvas.refresh_subgraph_listing()
         if result is None:
             return
         share_import.assign_active_picks(result, SettingsManager.instance())
         if reopen is not None:
-            self._open_bot(reopen)
-        elif self._loaded_config is not None and not self._loaded_config.is_definition:
+            self._documents.open_bot(reopen)
+        elif self._documents.loaded_config is not None and not self._documents.loaded_config.is_definition:
             # A Bot Combat Strategy for the open bot: its list, and maybe its pick, changed.
-            if any(bot_id == self._loaded_config.id for _bcs, bot_id in result.strategies_added):
+            if any(bot_id == self._documents.loaded_config.id for _bcs, bot_id in result.strategies_added):
                 self._window.left_sidebar.rebind_identity()
         self._select_imported(plan, result)
 
@@ -1521,7 +1072,9 @@ class AppController(QObject):
         target = main.target_id if main is not None else plan.share.main.id
         if kind == share_export.BOT_COMBAT_STRATEGY:
             # A Bot Combat Strategy is shown with its bot, unless that bot is the one open.
-            if main is None or (self._loaded_config is not None and self._loaded_config.id == main.item.bot_id):
+            if main is None or (
+                self._documents.loaded_config is not None and self._documents.loaded_config.id == main.item.bot_id
+            ):
                 return
             kind, target = share_export.BOT, main.item.bot_id
         if kind == share_export.BOT:
@@ -1529,7 +1082,9 @@ class AppController(QObject):
             if path is None:
                 found = self._export_sources().bot_file(target)
                 path = found.path if found is not None else None
-            open_bot = self._last_save_path if not self._doc_stack else self._doc_stack[0].path
+            open_bot = (
+                self._documents.last_save_path if not self._documents.doc_stack else self._documents.doc_stack[0].path
+            )
             if path is not None and not (open_bot and Path(open_bot).resolve() == Path(path).resolve()):
                 # The open bot is already in front of the user: reopened, never revealed.
                 self._window.bot_canvas.reveal_in_library(path=path)
@@ -1552,61 +1107,23 @@ class AppController(QObject):
     @property
     def templates_root(self) -> Path | None:
         """The root the template store is under: None for the project root. Tests point it at a ``tmp_path``."""
-        return self._templates_root
+        return self._roots.root
 
     @templates_root.setter
     def templates_root(self, root: Path | None) -> None:
-        self._templates_root = root
-
-    def _file_label(self, config: BotConfig, path: str | Path | None) -> str:
-        """What the header calls the open document's file: a draft's name says nothing, every one is draft.json."""
-        if config.is_template:
-            return _DRAFT_FILE_LABEL
-        return Path(path).name if path else "Untitled"
+        self._roots.root = root
 
     @property
     def templates_user_root(self) -> Path | None:
         """The user root the template store writes: None for the default. Tests point it at a ``tmp_path``."""
-        return self._templates_user_root
+        return self._roots.user_root
 
     @templates_user_root.setter
     def templates_user_root(self, root: Path | None) -> None:
-        self._templates_user_root = root
-
-    def _may_edit_template(self, config: BotConfig, path: str) -> bool:
-        """Whether a template file may be opened for editing. Says why not.
-
-        Only a draft, never a released version. The user's own template's draft always;
-        an Official one's only in dev mode, where its maintainer edits it (#164).
-        """
-        if Path(path).name != template_store.DRAFT_FILE:
-            why = f"This is a released version of the template '{config.name}', which is never edited."
-            hint = "To start a bot from a template, use New Bot."
-        elif dev_mode():
-            return True
-        else:
-            template = template_store.find_template(config.id, self._templates_root, self._templates_user_root)
-            if (
-                template is not None
-                and template.origin is Origin.USER
-                and template.draft_path.resolve() == Path(path).resolve()
-            ):
-                return True
-            why = f"This is the draft of the Official template '{config.name}', which changes only with an app update."
-            hint = "To make one of your own from it, use Duplicate in File › Templates…."
-        QMessageBox.information(self._window, "Open Bot", f"{why}\n\n{hint}")
-        return False
-
-    def _template_roots(self) -> dict[str, Path | None]:
-        """The template store's two roots, as every store function takes them."""
-        return {"root": self._templates_root, "user_root": self._templates_user_root}
-
-    def _user_bots_dirs(self) -> tuple[Path, ...]:
-        """Where the user's own bots are: what the Templates dialog counts, and Delete names."""
-        return (bot_roots.user_bots_dir(),)
+        self._roots.user_root = root
 
     def _template_gallery(self) -> list[template_gallery.GalleryEntry]:
-        return template_gallery.gallery(self._user_bots_dirs(), dev=dev_mode(), **self._template_roots())
+        return template_gallery.gallery(self._roots.user_bots_dirs(), dev=dev_mode(), **self._roots.kwargs())
 
     def _open_templates_dialog(self) -> bool:
         """File › Templates…: every template, and the verbs that make templates of your own (#164).
@@ -1614,7 +1131,7 @@ class AppController(QObject):
         Edit, New and Duplicate end the dialog and open a draft for editing; Rename and
         Delete happen while it stays open. True when a draft was opened.
         """
-        if not self._close_definitions():
+        if not self._documents.close_definitions():
             return False
         dialog = TemplatesDialog(
             self._template_gallery, self._window, rename=self._rename_template, delete=self._delete_template
@@ -1632,8 +1149,8 @@ class AppController(QObject):
         """Open ``template``'s draft as the top-level document, in Edit mode. False when it did not open."""
         open_now = self._open_template()
         if open_now is None or open_now.id != template.id:
-            self._open_bot(str(template.draft_path), mode=BotMode.EDIT)
-        return self._loaded_config is not None and self._loaded_config.id == template.id
+            self._documents.open_bot(str(template.draft_path), mode=BotMode.EDIT)
+        return self._documents.loaded_config is not None and self._documents.loaded_config.id == template.id
 
     def _ask_template_name(self, title: str, label: str, text: str = "", template_id: str | None = None) -> str | None:
         """Ask for a template's name until it is one no other template has. None when cancelled or blank.
@@ -1647,7 +1164,7 @@ class AppController(QObject):
             name = name.strip()
             if not ok or not name:
                 return None
-            taken = template_store.name_clash(name, template_id, **self._template_roots())
+            taken = template_store.name_clash(name, template_id, **self._roots.kwargs())
             if taken is None:
                 return name
             prompt = f"There is already a template called '{taken}'.\n\n{label}"
@@ -1659,7 +1176,7 @@ class AppController(QObject):
         if name is None:
             return False
         try:
-            template = template_store.new_template(name, **self._template_roots())
+            template = template_store.new_template(name, **self._roots.kwargs())
         except (OSError, ValueError) as exc:
             QMessageBox.critical(self._window, "New Template", f"Could not create the template:\n\n{exc}")
             return False
@@ -1667,7 +1184,7 @@ class AppController(QObject):
 
     def _duplicate_template(self, source: template_store.Template) -> bool:
         """Duplicate: fork ``source`` into a template of the user's own, and open its draft."""
-        taken = [t.name for t in template_store.list_templates(**self._template_roots())]
+        taken = [t.name for t in template_store.list_templates(**self._roots.kwargs())]
         name = self._ask_template_name(
             "Duplicate Template",
             f"What is your copy of {source.name} called?",
@@ -1676,7 +1193,7 @@ class AppController(QObject):
         if name is None:
             return False
         try:
-            fork = template_store.duplicate_template(source, name, **self._template_roots())
+            fork = template_store.duplicate_template(source, name, **self._roots.kwargs())
         except (OSError, LookupError, ValueError) as exc:
             QMessageBox.critical(self._window, "Duplicate Template", f"Could not copy {source.name}:\n\n{exc}")
             return False
@@ -1694,19 +1211,19 @@ class AppController(QObject):
         if name is None or name == current:
             return False
         try:
-            template_store.rename_template(template.id, name, **self._template_roots())
+            template_store.rename_template(template.id, name, **self._roots.kwargs())
         except (OSError, PermissionError, ValueError) as exc:
             QMessageBox.warning(self._window, "Rename Template", f"Could not rename {template.name}:\n\n{exc}")
             return False
         open_draft = self._open_template()
         if open_draft is not None and open_draft.id == template.id:
-            config = self._loaded_config
+            config = self._documents.loaded_config
             config.name = name
-            if not self._has_unsaved_changes:
-                self._clean_snapshot = _file_snapshot(config)
-            self._window.set_bot_name(config.name, self._file_label(config, self._last_save_path))
+            if not self._documents.has_unsaved_changes:
+                self._documents.clean_snapshot = file_snapshot(config)
+            self._window.set_bot_name(config.name, self._roots.file_label(config, self._documents.last_save_path))
             self._window.bot_canvas.refresh_name()
-        if template_store.rename_waits_for_release(template, **self._template_roots()):
+        if template_store.rename_waits_for_release(template, **self._roots.kwargs()):
             QMessageBox.information(
                 self._window,
                 "Rename Template",
@@ -1722,11 +1239,11 @@ class AppController(QObject):
         is closed first, unsaved changes and all: they belong to what is being deleted.
         """
         template = entry.template
-        refused = template_store.deletion_refused(template, **self._template_roots())
+        refused = template_store.deletion_refused(template, **self._roots.kwargs())
         if refused:
             QMessageBox.information(self._window, "Delete Template", refused)
             return False
-        bots = template_store.bots_based_on(template.id, *self._user_bots_dirs())
+        bots = template_store.bots_based_on(template.id, *self._roots.user_bots_dirs())
         if bots:
             listed = "\n".join(f"• {b}" for b in bots[:12])
             more = f"\n…and {len(bots) - 12} more" if len(bots) > 12 else ""
@@ -1747,12 +1264,12 @@ class AppController(QObject):
             return False
         open_draft = self._open_template()
         if open_draft is not None and open_draft.id == template.id:
-            self._has_unsaved_changes = False
-            self._close_bot()
-            if self._loaded_config is not None:
+            self._documents.has_unsaved_changes = False
+            self._documents.close_bot()
+            if self._documents.loaded_config is not None:
                 return False
         try:
-            template_store.delete_template(template.id, **self._template_roots())
+            template_store.delete_template(template.id, **self._roots.kwargs())
         except (OSError, PermissionError) as exc:
             QMessageBox.critical(self._window, "Delete Template", f"Could not delete {template.name}:\n\n{exc}")
             return False
@@ -1762,11 +1279,11 @@ class AppController(QObject):
 
     def _open_template(self) -> template_store.Template | None:
         """The template whose draft is the open document, or None."""
-        config = self._loaded_config
-        if config is None or not config.is_template or self._last_save_path is None:
+        config = self._documents.loaded_config
+        if config is None or not config.is_template or self._documents.last_save_path is None:
             return None
-        template = template_store.find_template(config.id, self._templates_root, self._templates_user_root)
-        if template is None or Path(self._last_save_path).resolve() != template.draft_path.resolve():
+        template = template_store.find_template(config.id, self._roots.root, self._roots.user_root)
+        if template is None or Path(self._documents.last_save_path).resolve() != template.draft_path.resolve():
             return None
         return template
 
@@ -1777,17 +1294,15 @@ class AppController(QObject):
         from a template, the setup steps of its base version, which it does not carry,
         and the update waiting for it when the template has released since.
         """
-        config = self._loaded_config
+        config = self._documents.loaded_config
         if config is None:
             return
         if not config.is_template:
             if not config.is_definition:
                 canvas = self._window.bot_canvas
-                canvas.set_base_setup_steps(
-                    setup_steps.steps_for(config, self._templates_root, self._templates_user_root)
-                )
+                canvas.set_base_setup_steps(setup_steps.steps_for(config, self._roots.root, self._roots.user_root))
                 origin = (
-                    template_store.find_template(config.template.id, self._templates_root, self._templates_user_root)
+                    template_store.find_template(config.template.id, self._roots.root, self._roots.user_root)
                     if config.template is not None
                     else None
                 )
@@ -1800,8 +1315,8 @@ class AppController(QObject):
                 # (#149). Developer mode never marks one Official, so its maintainer still can.
                 update = (
                     None
-                    if self._official_open
-                    else template_diff.load_update(config, self._templates_root, self._templates_user_root)
+                    if self._documents.official_open
+                    else template_diff.load_update(config, self._roots.root, self._roots.user_root)
                 )
                 canvas.set_template_update(update)
             return
@@ -1809,7 +1324,7 @@ class AppController(QObject):
         if template is None:
             self._window.bot_canvas.set_template_context(None)
             return
-        reserved = template_store.used_ids(template.id, self._templates_root, self._templates_user_root)
+        reserved = template_store.used_ids(template.id, self._roots.root, self._roots.user_root)
         self._window.bot_canvas.set_template_context(template.latest_version, reserved)
 
     def _release_template(self) -> bool:
@@ -1819,14 +1334,14 @@ class AppController(QObject):
         the release does not happen. The template store refuses anything else wrong,
         having written nothing.
         """
-        config = self._loaded_config
+        config = self._documents.loaded_config
         template = self._open_template()
         if config is None or template is None:
             QMessageBox.warning(
                 self._window, "Release", "Only a template's draft, opened from File › Templates…, can be released."
             )
             return False
-        if self._has_unsaved_changes and not _matches_clean(config, self._clean_snapshot):
+        if self._documents.has_unsaved_changes and not matches_clean(config, self._documents.clean_snapshot):
             reply = QMessageBox.question(
                 self._window,
                 "Release",
@@ -1834,7 +1349,7 @@ class AppController(QObject):
                 QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
                 QMessageBox.StandardButton.Save,
             )
-            if reply != QMessageBox.StandardButton.Save or not self._save_bot():
+            if reply != QMessageBox.StandardButton.Save or not self._documents.save_bot():
                 return False
         errors = self._window.bot_canvas.validation_errors()
         draft = BotConfig.load(template.draft_path)
@@ -1842,9 +1357,9 @@ class AppController(QObject):
             draft,
             template,
             errors,
-            self._subgraph_library,
-            root=self._templates_root,
-            user_root=self._templates_user_root,
+            self._documents.subgraph_library,
+            root=self._roots.root,
+            user_root=self._roots.user_root,
         )
         if problems:
             self._show_release_refused(template.name, problems)
@@ -1863,9 +1378,9 @@ class AppController(QObject):
                 template.id,
                 note,
                 errors,
-                root=self._templates_root,
-                user_root=self._templates_user_root,
-                library=self._subgraph_library,
+                root=self._roots.root,
+                user_root=self._roots.user_root,
+                library=self._documents.subgraph_library,
             )
         except template_store.ReleaseRefused as exc:
             self._show_release_refused(template.name, exc.problems)
@@ -1905,555 +1420,6 @@ class AppController(QObject):
     # ------------------------------------------------------------------
     # Definition documents
     # ------------------------------------------------------------------
-
-    @property
-    def document_depth(self) -> int:
-        """How many documents sit under the open one."""
-        return len(self._doc_stack)
-
-    def _open_definition(self, subgraph_id: str) -> bool:
-        """Open a subgraph definition as a document, on top of whatever is open.
-
-        The document underneath is set aside whole -- canvas, undo history, file,
-        unsaved flag -- and comes back when this one closes. A definition already open
-        further down is refused, since editing it twice at once has no good answer.
-        """
-        self._subgraph_library.reload()
-        defn = self._subgraph_library.get(subgraph_id)
-        if defn is None:
-            QMessageBox.warning(self._window, "Open Definition", "That subgraph is not in the library.")
-            return False
-        if subgraph_id in self._open_definition_ids():
-            QMessageBox.information(
-                self._window, "Open Definition", f"'{defn.name}' is already open: go back to it to edit it."
-            )
-            return False
-        self._push_current()
-        self._show_definition(definition_to_config(defn), unsaved=False)
-        logger.info("Opened subgraph '%s' v%d as a document", defn.name, defn.version)
-        return True
-
-    def _push_current(self) -> None:
-        """Set the open document aside on the stack, if there is one."""
-        if self._loaded_config is None:
-            return
-        # The one underneath stops autosaving while it is covered, so its latest
-        # edits reach a recovery file now rather than being held only in memory.
-        self._do_autosave()
-        doc = self._window.bot_canvas.take_document()
-        if doc is not None:
-            self._doc_stack.append(
-                _DocumentFrame(doc, self._last_save_path, self._has_unsaved_changes, self._clean_snapshot)
-            )
-
-    def _show_definition(self, config: BotConfig, *, unsaved: bool) -> None:
-        canvas = self._window.bot_canvas
-        config, report = self._compose(config)
-        self._loaded_config = config
-        self._last_save_path = None
-        self._has_unsaved_changes = unsaved
-        canvas.setup(config, mode=BotMode.EDIT)
-        # A recovered definition has no saved state here to fall back to.
-        self._clean_snapshot = None if unsaved else _file_snapshot(config)
-        canvas.set_compose_report(report)
-        self._refresh_definition_context()
-        # The sidebars describe a bot: its options, combat, drops. A definition has none.
-        self._window.left_sidebar.set_config(None)
-        self._window.right_sidebar.set_config(None)
-        self._window.set_bot_name(config.name, "subgraph")
-        self._window.set_save_enabled(True)
-        self._window.set_close_enabled(True)
-        self._window.set_start_enabled(False)
-
-    def _refresh_definition_context(self) -> None:
-        """Hand the canvas the crumb's path -- every document under this one -- and what its header says."""
-        config = self._loaded_config
-        if config is None or config.definition is None:
-            return
-        path = [frame.doc.config.name for frame in self._doc_stack]
-        origin = self._subgraph_library.origin(config.definition.id)
-        used_by = self._bots_linking(config.definition.id)
-        # "· Official updated" on a modified Official one whose Official one has changed
-        # since, beside the Revert the header offers it in Edit mode (#169).
-        updated = self._subgraph_library.official_updated(config.definition.id)
-        self._window.bot_canvas.set_definition_context(
-            path,
-            origin=f"Source: {pill_text(origin, official_updated=updated)}",
-            used_by=used_by,
-            can_revert=origin == Origin.SHIPPED_OVERRIDE,
-            can_rename=origin == Origin.USER,
-        )
-
-    def _bots_linking(self, subgraph_id: str) -> int:
-        """How many bot files in the library link ``subgraph_id``."""
-        return count_subgraph_uses(*bot_roots.library_dirs()).get(subgraph_id, 0)
-
-    def _open_definition_ids(self) -> set[str]:
-        """The ids of every definition open as a document, on top or set aside under it."""
-        configs = [f.doc.config for f in self._doc_stack]
-        if self._loaded_config is not None:
-            configs.append(self._loaded_config)
-        return {c.definition.id for c in configs if c.definition is not None}
-
-    def _delete_subgraph(self, subgraph_id: str) -> bool:
-        """Delete a definition from the library, from its card there. False when refused or cancelled.
-
-        Deleting removes the user's file only (:mod:`bartlebot.content.store_roots`), so a
-        modified Official one is reverted rather than deleted, and an unedited one has
-        nothing to delete. What linked the definition is never broken by it: a bot keeps
-        the snapshot it was saved with and runs that, flagged ``missing``, as does a bot
-        linking another definition that nested it (docs/SUBGRAPHS.md). It is still
-        asked first, naming them, because from then on none of them gets an update.
-        Refused while the definition is open, since the document would save it back.
-        """
-        library = self._subgraph_library
-        library.reload()
-        defn = library.get(subgraph_id)
-        origin = library.origin(subgraph_id)
-        if defn is None or origin not in (Origin.USER, Origin.SHIPPED_OVERRIDE):
-            return False
-        revert = origin is Origin.SHIPPED_OVERRIDE
-        title = "Revert to Official" if revert else "Delete Subgraph"
-        verb = "revert" if revert else "delete"
-        if subgraph_id in self._open_definition_ids():
-            QMessageBox.information(self._window, title, f"'{defn.name}' is open. Close it first, then {verb} it.")
-            return False
-        if revert:
-            # The id stays, so whatever links it follows the Official one from its next compose.
-            text = (
-                f"Revert '{defn.name}' to the Official version?\n\n"
-                "Your changes to it are lost, and every bot linking it uses the Official version "
-                "from now on. This can't be undone."
-            )
-        else:
-            text = f"Delete '{defn.name}' from the library?"
-            users = []
-            if n := self._bots_linking(subgraph_id):
-                users.append(f"{n} bot{'s' if n != 1 else ''}")
-            users.extend(f"the subgraph '{d.name}'" for d in library.nesting(subgraph_id))
-            if users:
-                listed = users[0] if len(users) == 1 else f"{', '.join(users[:-1])} and {users[-1]}"
-                text += (
-                    f"\n\nIt is used by {listed}. Each keeps running the copy it was last saved with, "
-                    "flagged as a missing subgraph, and gets no more changes to it."
-                )
-            text += "\n\nThis can't be undone."
-        reply = QMessageBox.question(
-            self._window,
-            title,
-            text,
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
-        )
-        if reply != QMessageBox.StandardButton.Ok:
-            return False
-        try:
-            library.delete(subgraph_id)
-        except OSError as exc:
-            QMessageBox.critical(self._window, title, f"Could not {verb} '{defn.name}':\n\n{exc}")
-            return False
-        # A recovery file holds edits to a definition that is no longer there to take them.
-        self._delete_autosave(stem=f"{_DEFINITION_AUTOSAVE_PREFIX}{subgraph_id}")
-        if revert:
-            logger.info("Reverted subgraph '%s' to the Official version", defn.name)
-        else:
-            logger.info("Deleted subgraph '%s' from the library", defn.name)
-        canvas = self._window.bot_canvas
-        canvas.refresh_subgraph_listing()
-        if self._loaded_config is not None:
-            # The open document's banner says what its links compose to now. Its config
-            # follows at the next open or run, as for any library change.
-            _, report = self._compose(self._loaded_config)
-            canvas.set_compose_report(report)
-        return True
-
-    def _delete_bot(self, path: str) -> bool:
-        """Delete a bot from its card in the library. False when refused, cancelled or it failed.
-
-        The user's own bots only: an Official one ships in the install directory and would
-        be back with the next launch. Nothing links a bot, so no other bot is affected,
-        a fork included (:mod:`bartlebot.content.bot_delete`); the confirmation names the
-        Bot Combat Strategies that go with it, as they are the user's work. Refused while
-        the bot is open, since the document would save it back.
-        """
-        title = "Delete Bot"
-        if bot_roots.is_shipped(path):
-            return False
-        try:
-            plan = bot_delete.plan_deletion(path)
-        except Exception as e:
-            QMessageBox.critical(self._window, title, f"The bot could not be read:\n\n{e}")
-            return False
-        if self._last_save_path is not None and _same_file(self._last_save_path, path):
-            QMessageBox.information(self._window, title, f"'{plan.name}' is open. Close it first, then delete it.")
-            return False
-        text = f"Delete the bot '{plan.name}'?"
-        if n := len(plan.strategy_ids):
-            text += f"\n\nIts {n} Bot Combat Strateg{'ies' if n != 1 else 'y'} will be deleted with it."
-        text += "\n\nThis can't be undone."
-        reply = QMessageBox.question(
-            self._window,
-            title,
-            text,
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
-        )
-        if reply != QMessageBox.StandardButton.Ok:
-            return False
-        settings = SettingsManager.instance()
-        try:
-            bot_delete.delete_bot(plan, settings)
-        except OSError as exc:
-            QMessageBox.critical(self._window, title, f"Could not delete '{plan.name}':\n\n{exc}")
-            return False
-        # A recovery file holds edits to a bot that is no longer there to take them. Autosaves
-        # are named by file stem, so one the open document is writing under is left alone.
-        if self._loaded_config is None or self._autosave_stem() != Path(path).stem:
-            self._delete_autosave(path)
-        self._window.update_recent_menu(settings.recent_bot_files)
-        self._window.bot_canvas.refresh_subgraph_listing()
-        return True
-
-    def _rename_subgraph(self, subgraph_id: str) -> bool:
-        """Rename a definition, and edit its description, from its card in the library. False when refused or cancelled.
-
-        Written at the version it has: a bot links the id, and an instance keeps the
-        label it was given when it was placed, so nothing that links it changes and
-        none of them is offered an update (:func:`~bartlebot.content.subgraphs.subgraphs.definition_change`).
-        The user's own definitions only. An Official one's name is the shipped file's,
-        and renaming it would make a copy that stops its updates arriving -- in dev
-        mode every definition is the user's, so that is where an Official one is renamed.
-        Refused while the definition is open, whose header renames it instead.
-        """
-        library = self._subgraph_library
-        library.reload()
-        defn = library.get(subgraph_id)
-        if defn is None or library.origin(subgraph_id) is not Origin.USER:
-            return False
-        title = "Rename Subgraph"
-        if subgraph_id in self._open_definition_ids():
-            QMessageBox.information(
-                self._window, title, f"'{defn.name}' is open. Rename it there, in its header in Edit mode."
-            )
-            return False
-        from bartlebot.gui.canvas.subgraph_widgets import SubgraphMetaDialog  # noqa: PLC0415
-
-        dlg = SubgraphMetaDialog(
-            self._window, name=defn.name, description=defn.description or "", title=title, commit_text="Rename"
-        )
-        if not dlg.exec():
-            return False
-        if (dlg.name, dlg.description) == (defn.name, defn.description):
-            return False
-        renamed = defn.model_copy(update={"name": dlg.name, "description": dlg.description})
-        try:
-            library.save(renamed)
-        except OSError as exc:
-            QMessageBox.critical(self._window, title, f"Could not rename '{defn.name}':\n\n{exc}")
-            return False
-        if renamed.name != defn.name:
-            logger.info("Renamed subgraph '%s' to '%s'", defn.name, renamed.name)
-        else:
-            logger.info("Changed the description of subgraph '%s'", defn.name)
-        self._window.bot_canvas.refresh_subgraph_listing()
-        return True
-
-    def _on_definition_save_requested(self, then_back: bool) -> None:
-        if self._save_definition() and then_back:
-            self._definition_back()
-
-    def _save_definition(self) -> bool:
-        """Write the open definition to the library as its next version. False when refused or cancelled.
-
-        Only a change to what runs makes a new version (#158): a definition identical
-        to the library's copy is not written at all, and one that differs only in
-        layout or in name and description (:func:`~bartlebot.content.subgraphs.subgraphs.definition_change`)
-        is written at the version it has. Refused while
-        the document has errors: a definition that cannot compose must not reach the
-        bots that link it. A shipped definition is saved as the user's
-        own copy, which shadows it until reverted -- asked first, since from then on
-        the shipped one's updates stop arriving.
-        """
-        config = self._loaded_config
-        if config is None or config.definition is None:
-            return False
-        if self._refused_for_errors(config, "Save to Library"):
-            return False
-        library = self._subgraph_library
-        library.reload()
-        sid = config.definition.id
-        try:
-            defn = config_to_definition(config)
-        except ValueError as exc:
-            QMessageBox.critical(self._window, "Save to Library", str(exc))
-            return False
-        stored = library.get(sid)
-        change = definition_change(stored, defn) if stored is not None else "content"
-        if change == "none":
-            # Nothing to write: a new version would send every linking bot an update
-            # that changes nothing, and an Official one would gain a copy that shadows it.
-            config.definition.version = stored.version
-            self._mark_definition_saved(config)
-            logger.info("Subgraph '%s' is unchanged; kept version %d", config.name, stored.version)
-            return True
-        if library.origin(sid) == Origin.SHIPPED and not dev_mode():
-            reply = QMessageBox.question(
-                self._window,
-                "Save to Library",
-                f"'{config.name}' is Official. Saving makes a modified copy of it, which every bot "
-                "linking it uses from now on, in place of the Official one's updates.\n\n"
-                "Save the modified copy?",
-                QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Save,
-            )
-            if reply != QMessageBox.StandardButton.Save:
-                return False
-        if stored is not None and not self._confirm_signature_change(stored, defn):
-            return False
-        if change in ("layout", "meta"):
-            version = stored.version
-        else:
-            version = max(config.definition.version, stored.version if stored is not None else 0) + 1
-        defn = defn.model_copy(update={"version": version})
-        try:
-            library.save(defn)
-        except Exception as exc:
-            QMessageBox.critical(self._window, "Save to Library", f"Could not save '{config.name}':\n\n{exc}")
-            return False
-        config.definition.version = version
-        self._mark_definition_saved(config)
-        logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
-        return True
-
-    def _confirm_signature_change(self, stored, defn) -> bool:
-        """Warn before a save that changes what a linking bot depends on (#169). False when cancelled.
-
-        Asked only when the save removes or renames an input or a port, or adds an input
-        with no default (:mod:`bartlebot.content.subgraphs.subgraph_signature`), and only when a bot or
-        another definition links this one: with nothing linking it, nothing can break.
-        A warning, never a refusal: a bot that cannot take the change is held on its
-        snapshot.
-        """
-        changes = signature_changes(stored, defn)
-        if not changes:
-            return True
-        users = bots_linking(defn.id, *bot_roots.library_dirs())
-        users += [f"the subgraph '{d.name}'" for d in self._subgraph_library.nesting(defn.id)]
-        if not users:
-            return True
-        reply = QMessageBox.warning(
-            self._window,
-            "Save to Library",
-            signature_warning_text(defn.name, changes, users),
-            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Save,
-        )
-        if reply != QMessageBox.StandardButton.Save:
-            return False
-        logger.info("Saving subgraph '%s' with %d signature change(s) used by %d", defn.name, len(changes), len(users))
-        return True
-
-    def _mark_definition_saved(self, config: BotConfig) -> None:
-        self._has_unsaved_changes = False
-        self._clean_snapshot = _file_snapshot(config)
-        self._delete_autosave(stem=self._autosave_stem())
-        self._refresh_definition_context()
-
-    def _refused_for_errors(self, config: BotConfig, title: str) -> bool:
-        """Say what blocks saving the open definition, if anything does. True when it is refused."""
-        errors = self._window.bot_canvas.validation_errors()
-        if not errors:
-            return False
-        listed = "\n".join(f"\u2022 {e}" for e in errors[:12])
-        more = f"\n\u2026and {len(errors) - 12} more" if len(errors) > 12 else ""
-        self._window.bot_canvas.param_panel.show_required_errors()
-        QMessageBox.critical(self._window, title, f"Fix these before saving '{config.name}':\n\n{listed}{more}")
-        return True
-
-    def _save_definition_as(
-        self, name: str | None = None, description: str | None = None, categories: list[str] | None = None
-    ) -> bool:
-        """Save the open definition as a new one, and go on editing the new one. False when refused or cancelled.
-
-        Save As, as for a file: the copy gets its own id at version 1, and the
-        document becomes the copy. The bots linking the original -- the one this was
-        opened from included -- keep linking it, since the copy is a new thing nothing
-        uses yet. Asks for a name, description and categories, starting from the
-        original's, unless a name is given; ``categories`` None keeps the original's.
-        """
-        config = self._loaded_config
-        if config is None or config.definition is None:
-            return False
-        if self._refused_for_errors(config, "Save as New Subgraph"):
-            return False
-        if name is None:
-            from bartlebot.gui.canvas.subgraph_widgets import SubgraphMetaDialog  # noqa: PLC0415
-
-            dlg = SubgraphMetaDialog(
-                self._window,
-                name=f"{config.name} (copy)",
-                description=config.description or "",
-                categories=list(config.definition.tags),
-                title="Save as New Subgraph",
-            )
-            if not dlg.exec():
-                return False
-            name, description, categories = dlg.name, dlg.description, dlg.categories
-        try:
-            defn = config_to_definition(config, version=1)
-        except ValueError as exc:
-            QMessageBox.critical(self._window, "Save as New Subgraph", str(exc))
-            return False
-        update = {"id": str(uuid4()), "name": name, "description": description}
-        if categories is not None:
-            update["tags"] = list(categories)
-        defn = defn.model_copy(update=update)
-        try:
-            self._subgraph_library.save(defn)
-        except Exception as exc:
-            QMessageBox.critical(self._window, "Save as New Subgraph", f"Could not save '{name}':\n\n{exc}")
-            return False
-        # The unsaved edits went into the copy; the original's recovery file has nothing left to recover.
-        self._delete_autosave(stem=self._autosave_stem())
-        self._reshow_definition(defn)
-        logger.info("Saved subgraph '%s' as a new subgraph", defn.name)
-        return True
-
-    def _revert_definition(self) -> bool:
-        """Discard the user's copy of an Official definition, and show the Official one. False when cancelled.
-
-        Deleting the user copy is the revert (:mod:`bartlebot.content.store_roots`). Every bot
-        linking it follows the Official one from its next compose, and unsaved edits
-        in the document go with the copy, so it asks first.
-        """
-        config = self._loaded_config
-        if config is None or config.definition is None:
-            return False
-        sid = config.definition.id
-        library = self._subgraph_library
-        if library.origin(sid) != Origin.SHIPPED_OVERRIDE:
-            return False
-        reply = QMessageBox.question(
-            self._window,
-            "Revert to Official",
-            f"Revert '{config.name}' to the Official version?\n\n"
-            "Your changes to it are lost, and every bot linking it uses the Official version "
-            "from now on. This can't be undone.",
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
-        )
-        if reply != QMessageBox.StandardButton.Ok:
-            return False
-        library.delete(sid)
-        shipped = library.get(sid)
-        if shipped is None:
-            QMessageBox.critical(
-                self._window, "Revert to Official", f"The Official '{config.name}' could not be loaded."
-            )
-            return False
-        self._delete_autosave(stem=self._autosave_stem())
-        self._reshow_definition(shipped)
-        logger.info("Reverted subgraph '%s' to the Official version %d", shipped.name, shipped.version)
-        return True
-
-    def _reshow_definition(self, defn) -> None:
-        """Put ``defn`` in place of the open definition, saved, keeping the camera.
-
-        A fresh document rather than an edit to this one: its undo history belongs to
-        a definition with a different id or content, and undoing into it would save
-        over the wrong file.
-        """
-        canvas = self._window.bot_canvas
-        camera = canvas.view.camera_state()
-        self._show_definition(definition_to_config(defn), unsaved=False)
-        canvas.view.restore_camera(camera)
-
-    def _back_to_document(self, depth: int) -> bool:
-        """Close definitions until ``depth`` documents sit under the open one, asking at each. False if one was cancelled."""
-        while len(self._doc_stack) > depth and self._loaded_config is not None and self._loaded_config.is_definition:
-            if not self._definition_back():
-                return False
-        return True
-
-    def _definition_back(self) -> bool:
-        """Close the open definition, asking about unsaved changes first. False when the user cancels."""
-        config = self._loaded_config
-        if config is None or config.definition is None:
-            return True
-        if self._has_unsaved_changes and not _matches_clean(config, self._clean_snapshot):
-            reply = QMessageBox.question(
-                self._window,
-                "Close Definition",
-                f"Save your changes to '{config.name}' to the library?",
-                QMessageBox.StandardButton.Save
-                | QMessageBox.StandardButton.Discard
-                | QMessageBox.StandardButton.Cancel,
-                QMessageBox.StandardButton.Save,
-            )
-            if reply == QMessageBox.StandardButton.Cancel:
-                return False
-            if reply == QMessageBox.StandardButton.Save and not self._save_definition():
-                return False
-        self._leave_definition()
-        return True
-
-    def _leave_definition(self) -> None:
-        """Drop the open definition and put back the document underneath, recomposed from the library."""
-        stem = self._autosave_stem()
-        self._delete_autosave(stem=stem)
-        canvas = self._window.bot_canvas
-        if not self._doc_stack:
-            self._loaded_config = None
-            self._last_save_path = None
-            self._official_open = False
-            self._has_unsaved_changes = False
-            self._clean_snapshot = None
-            canvas.close_bot()
-            self._window.set_bot_name(None, None)
-            self._window.set_save_enabled(False)
-            self._window.set_close_enabled(False)
-            self._window.set_start_enabled(False)
-            return
-        frame = self._doc_stack.pop()
-        canvas.restore_document(frame.doc)
-        config = frame.doc.config
-        self._loaded_config = config
-        self._last_save_path = frame.path
-        self._has_unsaved_changes = frame.unsaved
-        self._clean_snapshot = frame.clean
-        # What was just edited is linked from here, most likely: take it now, as a
-        # run would, so the call node shows the new ports straight away.
-        composed, report = self._compose(config)
-        if composed is not config and composed.model_dump() != config.model_dump():
-            canvas.replace_config(composed, "Update subgraphs")
-            self._loaded_config = composed
-            self._has_unsaved_changes = True
-        canvas.set_compose_report(report)
-        if self._read_only_open():
-            # An Official bot has nothing to save: what composed differently is shown, not kept.
-            self._has_unsaved_changes = False
-        loaded = self._loaded_config
-        if loaded.is_definition:
-            self._refresh_definition_context()
-            self._window.set_bot_name(loaded.name, "subgraph")
-            self._window.set_start_enabled(False)
-        else:
-            self._window.left_sidebar.set_config(loaded)
-            self._window.right_sidebar.set_config(loaded)
-            self._window.left_sidebar.set_editable(canvas.mode == BotMode.EDIT)
-            self._window.right_sidebar.set_editable(canvas.mode == BotMode.EDIT)
-            self._window.set_bot_name(loaded.name, self._file_label(loaded, self._last_save_path))
-            self._refresh_template_context()
-            self._window.set_start_enabled(self._start_enabled())
-        self._enable_save_actions()
-        self._window.set_close_enabled(True)
-
-    def _close_definitions(self) -> bool:
-        """Close every definition document open, top down. False if the user cancelled one."""
-        while self._loaded_config is not None and self._loaded_config.is_definition:
-            if not self._definition_back():
-                return False
-        return True
 
     # ------------------------------------------------------------------
     # Bot control
@@ -2558,9 +1524,9 @@ class AppController(QObject):
 
     def _active_deck_strategy_id(self, action: str) -> str | None:
         """The Bot Combat Strategy a deck import or apply works on, or None to skip it."""
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return None
-        bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        bcs_id = SettingsManager.instance().get_active_strategy(self._documents.loaded_config.id)
         if not bcs_id:
             logger.warning("No active Bot Combat Strategy — deck %s skipped", action)
             return None
@@ -2640,7 +1606,7 @@ class AppController(QObject):
         except Exception:
             logger.exception("Failed to save BotCombatStrategy after deck import")
         self._window.left_sidebar.combat_tab.update_deck_slots(decks)
-        self._on_config_changed()
+        self._documents.on_config_changed()
 
     def _saved_decks(self) -> dict[int, DeckData] | None:
         """The active strategy's non-empty decks by slot, or None if there is no strategy."""
@@ -2841,9 +1807,9 @@ class AppController(QObject):
         QTimer.singleShot(0, lambda: box(self._window, title, body))
 
     def _on_run_requested(self) -> None:
-        if not self._client_manager.clients or self._loaded_config is None:
+        if not self._client_manager.clients or self._documents.loaded_config is None:
             return
-        if not self._recompose_before_run():
+        if not self._documents.recompose_before_run():
             return
         if not self._check_restricted_zones():
             return
@@ -2857,8 +1823,8 @@ class AppController(QObject):
         )
 
         clients = self._client_manager.clients
-        players = level_scaling_players(self._loaded_config, len(clients))
-        friends_list = uses_friends_list(self._loaded_config, len(clients))
+        players = level_scaling_players(self._documents.loaded_config, len(clients))
+        friends_list = uses_friends_list(self._documents.loaded_config, len(clients))
         # Who is in a fight, and whether a level scaling player already has an elixir, are
         # memory reads, which are async, and what they feed is a blocking dialog, which must
         # not open inside a task (see "qasync + Python 3.13" in bartlebot/gui/CLAUDE.md). So
@@ -2911,7 +1877,7 @@ class AppController(QObject):
 
     def _finish_run_request(self, elixir_players, quick_teleport_players) -> None:
         """The rest of the run sequence: the dialogs that ask, then the run itself."""
-        if not self._client_manager.clients or self._loaded_config is None:
+        if not self._client_manager.clients or self._documents.loaded_config is None:
             return
         from bartlebot.gui.dialogs.safety_warning_dialog import (  # noqa: PLC0415
             SafetyWarningDialog,
@@ -2919,7 +1885,7 @@ class AppController(QObject):
         )
 
         safety_warnings = collect_safety_warnings(
-            self._loaded_config, self._client_manager.clients, elixir_players, quick_teleport_players
+            self._documents.loaded_config, self._client_manager.clients, elixir_players, quick_teleport_players
         )
         if safety_warnings:
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
@@ -2946,9 +1912,9 @@ class AppController(QObject):
         client never travels: there is no arena to be seen standing in and no hooks
         to tear out.
         """
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return True
-        found = restricted_zones.check_bot_config(self._loaded_config)
+        found = restricted_zones.check_bot_config(self._documents.loaded_config)
         if not found:
             return True
         logger.critical("Refusing to run: bot names %d restricted zone(s)", len(found))
@@ -2970,10 +1936,10 @@ class AppController(QObject):
         The Options and Option Values rows already refuse the choice, so this is what a hand-edited
         file or an override from before the node was added reaches.
         """
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return True
-        value = option_values.option_value(self._loaded_config, player_realms.OPTION, player_realms.TOGETHER)
-        reason = player_realms.run_refusal(self._loaded_config, value)
+        value = option_values.option_value(self._documents.loaded_config, player_realms.OPTION, player_realms.TOGETHER)
+        reason = player_realms.run_refusal(self._documents.loaded_config, value)
         if reason is None:
             return True
         logger.warning("Refusing to run: %s is Separate in a bot with a merging node", player_realms.OPTION)
@@ -2987,9 +1953,9 @@ class AppController(QObject):
         variable, or a write its type refuses, is a graph that cannot run as drawn
         (``bartlebot.bot.variables``). Warnings are the author's and never stop a run.
         """
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return True
-        reason = variables.run_refusal(self._loaded_config)
+        reason = variables.run_refusal(self._documents.loaded_config)
         if reason is None:
             return True
         logger.warning("Refusing to run: the bot's variables have errors")
@@ -3059,38 +2025,38 @@ class AppController(QObject):
         Parsing every DSL the run could reach takes a noticeable moment on a large
         library, so this runs under a wait cursor.
         """
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return CombatCheck()
 
-        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._documents.loaded_config.id)
         num_clients = len(self._client_manager.clients)
 
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
-            return check_combat(active_bcs_id, num_clients, self._loaded_config)
+            return check_combat(active_bcs_id, num_clients, self._documents.loaded_config)
         finally:
             QApplication.restoreOverrideCursor()
 
     def _log_combat_sources(self) -> None:
         """Log one line naming where the run's fights get their duel strategies, before the first node."""
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return
         try:
-            pick = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
-            resolver = CombatResolver(self._loaded_config, len(self._client_manager.clients), pick)
+            pick = SettingsManager.instance().get_active_strategy(self._documents.loaded_config.id)
+            resolver = CombatResolver(self._documents.loaded_config, len(self._client_manager.clients), pick)
             logger.info(describe_run(resolver))
         except Exception:
             logger.warning("Could not name the run's combat strategies", exc_info=True)
 
     async def _start_bot(self) -> None:
         """Build the machine, run the pre-run setup, then the run. Stop works throughout."""
-        if not self._client_manager.clients or self._loaded_config is None:
+        if not self._client_manager.clients or self._documents.loaded_config is None:
             return
         machine = BotMachine(
             clients=self._client_manager.clients,
-            config=self._loaded_config.to_machine_config(node_specs=NODE_SPECS),
+            config=self._documents.loaded_config.to_machine_config(node_specs=NODE_SPECS),
             node_registry=NODE_REGISTRY,
-            bot_config=self._loaded_config,
+            bot_config=self._documents.loaded_config,
             on_state_change=self._on_machine_state_change,
             on_transition=self._on_machine_transition,
             on_drop=self._on_machine_drop,
@@ -3100,7 +2066,7 @@ class AppController(QObject):
             on_stopped=self._on_machine_stopped,
             recovery_gap=self._client_manager.recovery_gap_for,
             on_variable_change=self._on_machine_variable_change,
-            on_fight_fled=partial(self._on_machine_fight_fled, self._loaded_config.id),
+            on_fight_fled=partial(self._on_machine_fight_fled, self._documents.loaded_config.id),
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -3159,7 +2125,7 @@ class AppController(QObject):
             remove_gui_callback(log_cb)
             self._client_manager.set_machine(None)
             self._current_machine = None
-            self._window.set_start_enabled(self._start_enabled())
+            self._window.set_start_enabled(self._documents.start_enabled())
             self._window.action_import.setEnabled(True)
 
     async def _run_pre_run_setup(self) -> None:
@@ -3269,9 +2235,9 @@ class AppController(QObject):
         """Apply saved deck presets to each connected client before the FSM starts."""
         from bartlebot.combat.strategy_store import load_bot_strategy  # noqa: PLC0415
 
-        if self._loaded_config is None:
+        if self._documents.loaded_config is None:
             return
-        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._documents.loaded_config.id)
         if not active_bcs_id:
             return
         try:
@@ -3478,114 +2444,14 @@ class AppController(QObject):
     # Signal handlers
     # ------------------------------------------------------------------
 
-    def _on_metadata_changed(self) -> None:
-        """Mark the bot dirty for an edit that cannot have changed its option set.
-
-        The description is the case this exists for.  ``_on_config_changed`` ends in
-        ``refresh_options``, which recomposes both option surfaces and rebuilds every
-        row when the composed list moved -- around 55ms on a 67-state bot, and it was
-        being paid once per *character* typed into the description box, which is what
-        made that field unusable.  Nothing composes an option from prose, so there is
-        nothing here to rebuild: the guard in ``refresh_options`` would now
-        skip it either way, and this still saves the recompose and the description's
-        own round trip.
-        """
-        self._mark_unsaved()
-
-    @property
-    def _has_unsaved_changes(self) -> bool:
-        """The dirty flag. Raised by an edit that changes nothing too (#122): compare
-        against ``_clean_snapshot`` before treating it as a change."""
-        return self._unsaved
-
-    @_has_unsaved_changes.setter
-    def _has_unsaved_changes(self, unsaved: bool) -> None:
-        self._unsaved = unsaved
-        self._show_unsaved()
-
-    @property
-    def _clean_snapshot(self) -> dict | None:
-        return self._clean
-
-    @_clean_snapshot.setter
-    def _clean_snapshot(self, snapshot: dict | None) -> None:
-        self._clean = snapshot
-        self._show_unsaved()
-
-    def _show_unsaved(self) -> None:
-        """Mark the window while the open document differs from its file (#267).
-
-        Properties rather than calls at each site, since the flag and the snapshot are
-        set from some two dozen places. Only a raised flag is compared, so a save or an open
-        costs nothing here, and an edit undone back to the file clears the mark.
-        """
-        self._window.set_unsaved(self._unsaved and not _matches_clean(self._loaded_config, self._clean))
-
-    def _mark_unsaved(self) -> None:
-        """Raise the unsaved flag and enable Save -- except on an Official bot, which is never saved (#149)."""
-        if self._read_only_open():
-            return
-        self._has_unsaved_changes = True
-        self._window.set_save_enabled(True)
-
-    def _enable_save_actions(self) -> None:
-        """Enable Save and Save As for the open document. On an Official bot only Save As,
-        which makes a copy: there is nothing of its own to save."""
-        if self._read_only_open():
-            self._window.set_save_enabled(False, save_as=True)
-        else:
-            self._window.set_save_enabled(True)
-
-    def _read_only_open(self) -> bool:
-        """Whether the document on top is an Official bot. A definition opened over one is not."""
-        config = self._loaded_config
-        return self._official_open and config is not None and not config.is_definition
-
-    def _on_config_changed(self) -> None:
-        canvas_config = self._window.bot_canvas.config
-        if canvas_config is not None:
-            # First, so the flag below is raised for the document now on top.
-            self._loaded_config = canvas_config
-        self._mark_unsaved()
-        if canvas_config is not None and canvas_config.is_definition:
-            # No sidebars to follow and no options to compose: a definition has neither.
-            self._window.bot_canvas.refresh_initial(canvas_config.initial)
-            self._window.bot_canvas.refresh_edge_flags()
-            self._window.set_bot_name(canvas_config.name, "subgraph")
-            return
-        if canvas_config is not None:
-            # Undo/redo replaces the canvas's config object; the sidebar has to
-            # follow it or its edits go nowhere.  No-op the rest of the time.
-            self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
-            self._window.right_sidebar.sync_config(canvas_config)
-        if self._loaded_config is not None:
-            self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
-            self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)
-            # An edge is drawn dashed while it is conditional, and deleting an option
-            # strips its conditions off every transition that guarded on it -- from a
-            # surface with no way to reach the canvas.  Cheap: each edge is only
-            # repainted when its own flag actually moved.
-            self._window.bot_canvas.refresh_edge_flags()
-            self._window.left_sidebar.refresh_options(self._loaded_config)
-            self._window.set_bot_name(
-                self._loaded_config.name, self._file_label(self._loaded_config, self._last_save_path)
-            )
-
     def _on_mode_changed(self, mode: BotMode) -> None:
         self._window.left_sidebar.set_editable(mode == BotMode.EDIT)
         self._window.right_sidebar.set_editable(mode == BotMode.EDIT)
         if mode == BotMode.RUN:
-            self._window.set_start_enabled(self._start_enabled())
-
-    def _start_enabled(self) -> bool:
-        return (
-            bool(self._client_manager.clients)
-            and self._loaded_config is not None
-            and not self._loaded_config.is_definition
-        )
+            self._window.set_start_enabled(self._documents.start_enabled())
 
     def _on_clients_changed(self, clients: list) -> None:
-        self._window.set_start_enabled(self._start_enabled())
+        self._window.set_start_enabled(self._documents.start_enabled())
         self._window.set_client_summary(len(clients))
         self._window.left_sidebar.combat_tab.set_client_count(len(clients))
         self._refresh_authoring_bar()
@@ -3604,220 +2470,3 @@ class AppController(QObject):
 
         sm = SettingsManager.instance()
         apply_app_theme(self._app, sm.theme, sm.custom_theme)
-
-    def _reconfigure_autosave_timer(self) -> None:
-        """Read current settings and start/stop/reconfigure the auto-save timer."""
-        sm = SettingsManager.instance()
-        enabled = sm.get_general("auto_save_enabled", default=True)
-        interval_sec = sm.get_general("auto_save_interval_seconds", default=300)
-        interval_ms = max(30, interval_sec) * 1000
-        self._auto_save_timer.stop()
-        if enabled:
-            self._auto_save_timer.setInterval(interval_ms)
-            self._auto_save_timer.start()
-
-    def _autosave_stem(self) -> str:
-        """The recovery file's stem: the bot file's, or for a definition document the definition's id."""
-        config = self._loaded_config
-        if config is not None and config.definition is not None:
-            return f"{_DEFINITION_AUTOSAVE_PREFIX}{config.definition.id}"
-        if config is not None and config.is_template:
-            return f"{_TEMPLATE_AUTOSAVE_PREFIX}{config.id}"
-        return Path(self._last_save_path).stem if self._last_save_path else "_unsaved"
-
-    def _autosave_path(self) -> Path:
-        """Derive the recovery file path for the currently loaded config."""
-        return SettingsManager.autosave_dir() / f"{self._autosave_stem()}.autosave.json"
-
-    def _do_autosave(self) -> None:
-        """Timer callback — write a recovery file if there are unsaved changes."""
-        if not self._has_unsaved_changes or self._loaded_config is None:
-            return
-        # The config is read-only while the bot is running, nothing new to save.
-        if self._current_machine is not None:
-            return
-        if _matches_clean(self._loaded_config, self._clean_snapshot):
-            # Nothing to recover: no edit was made, or every one was undone. A copy
-            # identical to the file would only be offered back at the next launch (#122).
-            self._has_unsaved_changes = False
-            self._delete_autosave(stem=self._autosave_stem())
-            return
-        try:
-            self._loaded_config.save(self._autosave_path())
-            logger.debug("Auto-saved recovery file: %s", self._autosave_path())
-            if self._last_save_path and not self._loaded_config.is_definition:
-                SettingsManager.instance().set_autosave_origin(self._autosave_stem(), self._last_save_path)
-        except Exception:
-            logger.exception("Auto-save failed")
-
-    def _delete_autosave(self, save_path: str | None = None, *, stem: str | None = None) -> None:
-        """Remove the recovery file after a successful manual save."""
-        if stem is None:
-            stem = Path(save_path).stem if save_path else "_unsaved"
-        p = SettingsManager.autosave_dir() / f"{stem}.autosave.json"
-        try:
-            if p.exists():
-                p.unlink()
-                logger.debug("Deleted auto-save file: %s", p)
-        except OSError:
-            logger.warning("Could not delete auto-save file %s", p)
-        SettingsManager.instance().remove_autosave_origin(stem)
-
-    def _check_crash_recovery(self) -> None:
-        """Scan the autosave directory at startup and offer to restore newer files."""
-        candidates = []
-        for autosave_path in sorted(SettingsManager.autosave_dir().glob("*.autosave.json")):
-            stem = autosave_path.name.replace(".autosave.json", "")
-            if stem == "_unsaved" or stem.startswith(_DEFINITION_AUTOSAVE_PREFIX):
-                # A definition's recovery file has no bot file to compare against; it
-                # only exists while that definition had unsaved changes.
-                original_path: Path | None = None
-                is_candidate = True
-            else:
-                original_path = self._find_original_for_stem(stem)
-                if original_path and original_path.exists():
-                    is_candidate = autosave_path.stat().st_mtime > original_path.stat().st_mtime
-                    if is_candidate and _same_bot_content(autosave_path, original_path):
-                        # Newer, but restating the file: nothing to offer (#122).
-                        self._delete_autosave(stem=stem)
-                        continue
-                else:
-                    is_candidate = True
-            if is_candidate:
-                candidates.append(
-                    {
-                        "autosave_path": autosave_path,
-                        "original_path": original_path,
-                        "modified": datetime.fromtimestamp(autosave_path.stat().st_mtime),
-                    }
-                )
-        if candidates:
-            self._offer_recovery(candidates)
-
-    def _find_original_for_stem(self, stem: str) -> Path | None:
-        """Resolve the original bot file for an auto-save stem.
-
-        Prefers the origin recorded at auto-save time (set_autosave_origin), which
-        stores the exact path the auto-save was derived from. Falls back to a
-        stem match against recent_bot_files for auto-saves written before that
-        mapping existed.
-        """
-        origin = SettingsManager.instance().get_autosave_origin(stem)
-        if origin:
-            return Path(origin)
-        for recent_path in SettingsManager.instance().recent_bot_files:
-            p = Path(recent_path)
-            if p.stem == stem:
-                return p
-        return None
-
-    def _offer_recovery(self, candidates: list[dict]) -> None:
-        """Show the RecoveryDialog and act on the user's choices."""
-        from bartlebot.gui.dialogs.recovery_dialog import RecoveryDialog  # noqa: PLC0415
-
-        dlg = RecoveryDialog(candidates, parent=self._window)
-        if dlg.exec():
-            chosen = dlg.selected_candidates()
-        else:
-            chosen = []
-
-        chosen_paths = {c["autosave_path"] for c in chosen}
-
-        # Restore chosen candidates (last one loaded becomes the active config).
-        for c in chosen:
-            autosave_path: Path = c["autosave_path"]
-            original_path: Path | None = c.get("original_path")
-            try:
-                config = BotConfig.load(autosave_path)
-            except Exception as e:
-                QMessageBox.warning(
-                    self._window,
-                    "Recovery failed",
-                    f"Could not load recovery file:\n{autosave_path}\n\n{e}",
-                )
-                chosen_paths.discard(autosave_path)
-                continue
-            if config.is_definition:
-                self._push_current()
-                self._show_definition(config, unsaved=True)
-                continue
-            config, report = self._compose(config)
-            self._loaded_config = config
-            self._last_save_path = str(original_path) if original_path else None
-            # Unsaved edits to recover, so never read-only: a Save of an Official bot's
-            # becomes Save As, into the user's own folder.
-            self._official_open = False
-            self._window.bot_canvas.set_read_only(False)
-            display_name = self._file_label(config, original_path) if original_path else "Untitled (recovered)"
-            self._window.set_bot_name(config.name, display_name)
-            self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
-            self._window.bot_canvas.set_compose_report(report)
-            self._refresh_template_context()
-            self._window.left_sidebar.set_config(config)
-            self._window.right_sidebar.set_config(config)
-            self._window.set_save_enabled(True)
-            self._window.set_close_enabled(True)
-            self._window.set_start_enabled(self._start_enabled())
-            # Mark dirty so the user is reminded to save and autosave continues.
-            self._has_unsaved_changes = True
-            self._clean_snapshot = None
-
-        # Delete autosave files that were not chosen (discarded by the user).
-        for c in candidates:
-            if c["autosave_path"] not in chosen_paths:
-                try:
-                    c["autosave_path"].unlink()
-                except OSError:
-                    pass
-
-
-def _same_file(a: str | Path, b: str | Path) -> bool:
-    """Whether two paths name one file, however each was spelled."""
-    try:
-        return Path(a).resolve() == Path(b).resolve()
-    except OSError:
-        return Path(a) == Path(b)
-
-
-def _world_folder(path: str | Path | None) -> str | None:
-    """The library folder ``path`` is in, under either root, or None for one outside the library."""
-    if path is None:
-        return None
-    parent = Path(path).resolve().parent
-    roots = {d.resolve() for d in bot_roots.library_dirs()}
-    return parent.name if parent.parent in roots else None
-
-
-def _save_as_start(last_save_path: str | Path | None) -> Path:
-    """Where Save As opens: the user's own folder, in the open bot's world folder, under its file name.
-
-    The user's folder rather than the open file's, which may be an Official bot's in the
-    install directory, where nothing may be written (#168). The folder is not created here:
-    opening a dialog writes nothing, and the save makes it if the user keeps the path.
-    """
-    folder = bot_roots.user_bots_dir()
-    world = _world_folder(last_save_path)
-    if world is not None:
-        folder = folder / world
-    return folder / Path(last_save_path).name if last_save_path else folder
-
-
-def _changed_linked_regions(before: BotConfig, after: BotConfig) -> list[tuple[str, str]]:
-    """``(region id, label)`` for each linked region whose members or version differ between the two."""
-
-    def snapshot(config: BotConfig, region_id: str) -> tuple | None:
-        region = next((r for r in config.regions if r.id == region_id), None)
-        if region is None or region.source is None:
-            return None
-        members = set(region.members)
-        states = tuple(s.model_dump() for s in config.states if s.id in members)
-        internal = tuple(t.model_dump() for t in config.transitions if t.source in members and t.dest in members)
-        return region.source.version, states, internal
-
-    changed: list[tuple[str, str]] = []
-    for region in after.regions:
-        if region.source is None:
-            continue
-        if snapshot(before, region.id) != snapshot(after, region.id):
-            changed.append((region.id, region.label or region.id))
-    return changed
