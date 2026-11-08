@@ -335,7 +335,8 @@ https://claude.ai/artifact/7xXKV8yEcnjyEVFUQMo497
 | 5 | BartleBuddy #9 | Main changes hands: the window half and the wiring, in game |
 
 Core's `docs/WINDOW_SIZING.md`, "Resizing a running client" and "Tiles by rung", is the feature as
-built. BartleBot has no part of it yet, and its pin stays at core's `1b1caab`.
+built. BartleBot has no part of it yet, though it carries the code since its pin moved to core's
+`v0.2.1`.
 
 After it, each needing a plan of its own: resizing across aspects (BartleBuddy #10), and BartleBot
 adopting it (#308). The stages' leftovers are BartleBuddy #11 to #13.
@@ -375,7 +376,8 @@ BartleBuddy, and listed here with the others. https://claude.ai/artifact/MBsMDvJ
 | 8 | BartleBuddy #21 | in game on both setups, and the last of the old words (`tests/test_terms.py`) |
 
 BartleBuddy's `docs/MULTIBOX.md` is the feature as built, and core's `docs/WINDOW_SIZING.md` the
-resizes under it. BartleBot has no part of it, and its pin stays at core's `1b1caab`.
+resizes under it. BartleBot has no part of it, though it carries the code since its pin moved to
+core's `v0.2.1`.
 
 After it, each needing a plan of its own: copying interactions (BartleBuddy #1, #2), combat
 (BartleBot #276), separate instances, scouting and auto-questing (BartleBuddy #26), resizing across aspects

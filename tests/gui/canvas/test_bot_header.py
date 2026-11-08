@@ -14,10 +14,10 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QResizeEvent
-from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QApplication, QSizePolicy, QWidget
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui.canvas.bot_header import BotHeader, _ElidedLabel
+from bartlebot.gui.canvas.bot_header import BotHeader, _MetaLabel
 from bartlebot.gui.widgets.pills.tag_pill import SuggestedTagPill, TagPill
 
 
@@ -36,7 +36,7 @@ def _config(**overrides) -> BotConfig:
     return BotConfig(**data)
 
 
-def _squeeze(label: _ElidedLabel, width: int) -> None:
+def _squeeze(label: _MetaLabel, width: int) -> None:
     """Narrow *label* and deliver the resize.
 
     A hidden widget banks its resize until it is shown, and these never are — so the
@@ -333,25 +333,51 @@ def test_a_longer_status_word_does_not_move_the_run_buttons(qapp):
 def test_a_long_caption_shortens_rather_than_shoving_the_run_button_off_center(qapp):
     """The filename and the author both use this; between them they are what would
     otherwise set the width of the whole left column."""
-    label = _ElidedLabel("a_very_long_bot_filename_that_will_not_fit_in_the_bar.json")
+    label = _MetaLabel("a_very_long_bot_filename_that_will_not_fit_in_the_bar.json")
     wide = label.sizeHint().width()
 
     _squeeze(label, wide // 4)
 
     assert label.full_text().endswith(".json")  # what it holds is untouched
-    assert label.text() != label.full_text()  # what it draws is elided
+    assert label.shown_text() != label.full_text()  # what it draws is elided
     assert label.toolTip() == label.full_text()  # and the whole of it is still reachable
 
 
 def test_an_elided_label_grows_back_when_the_room_returns(qapp):
-    """QLabel sizes itself from ``text()``, which here is already shortened -- so a
-    label that had elided once would keep asking for the shorter width forever."""
-    label = _ElidedLabel("a_long_caption_that_will_be_squeezed.json")
+    """The hint is the full text's, never the elided form's -- or a label that had
+    elided once would keep asking for the shorter width forever."""
+    label = _MetaLabel("a_long_caption_that_will_be_squeezed.json")
     wide = label.sizeHint().width()
 
     _squeeze(label, wide // 4)
 
     assert label.sizeHint().width() == wide
+
+
+def test_the_filename_yields_entirely_to_the_name_field_in_a_crowded_row(qapp):
+    """Core keeps a minimum of "…" and a character; in Edit mode that stub took 24px off
+    the name field being typed in, to say nothing the tooltip does not."""
+    label = _MetaLabel("a_very_long_bot_filename_that_will_not_fit_in_the_bar.json")
+
+    assert label.minimumSizeHint().width() == 0
+    assert label.sizePolicy().horizontalPolicy() == QSizePolicy.Policy.Maximum
+
+
+def test_the_metadata_lines_keep_their_color_across_a_theme_switch(qapp):
+    """A color token, re-read on the label's own StyleChange, where a stylesheet held it before."""
+    from bartleby.qt.theming import theme as theme_mod
+    from PyQt6.QtCore import QEvent
+
+    label = _MetaLabel("· jade_oni.json")
+    before = theme_mod.active_theme()
+    other = theme_mod.LIGHT if before is theme_mod.DARK else theme_mod.DARK
+    try:
+        theme_mod.set_theme_instance(other)
+        QApplication.sendEvent(label, QEvent(QEvent.Type.StyleChange))
+
+        assert label.palette().color(label.foregroundRole()).name().lower() == other.text_subtle.lower()
+    finally:
+        theme_mod.set_theme_instance(before)
 
 
 def test_the_tags_stay_on_one_line_rather_than_stacking(header, qapp):

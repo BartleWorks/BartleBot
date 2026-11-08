@@ -27,15 +27,16 @@ from tests.node_helper_patches import patch_helper
 # API drift guard
 #
 # Validates that every method mocked in FakeClient still exists on the real
-# SprintyClient (which inherits from WizWalker's Client).  When the WizSprinter
-# pin in pyproject.toml is bumped, any renamed or removed method will cause an
-# immediate ImportError here rather than silently passing stale tests.
+# SprintyClient (which inherits from WizWalker's Client).  When the wizwalker or
+# wizsprinter pin in pyproject.toml moves, a renamed or removed method raises
+# AttributeError as pytest loads this file, rather than leaving stale tests passing.
 #
-# The MagicMock attributes — body, root_window, stats, mouse_handler,
-# combat_handler — are instance attributes set in WizWalker's Client.__init__,
-# not class-level attributes, so hasattr(SprintyClient, name) cannot see them.
-# They are excluded from this check and must be verified manually when the pin
-# changes.
+# The MagicMock attributes — body, client_object, duel, mouse_handler, root_window,
+# stats — are instance attributes set in WizWalker's Client.__init__ (SprintyClient
+# adds none), not class-level attributes, so hasattr(SprintyClient, name) cannot see
+# them. They are excluded from this check and must be verified manually when the pin
+# changes. A client has no combat handler: code that needs one builds
+# wizwalker.combat.CombatHandler(client) itself, as core's capture_from_combat does.
 # ---------------------------------------------------------------------------
 _FAKED_METHODS = frozenset(
     {
@@ -103,8 +104,6 @@ class FakeClient:
         # as a separate client, the way real windows behave.
         FakeClient._next_handle += 1
         self.window_handle = FakeClient._next_handle
-        self.combat_handler = MagicMock()
-        self.combat_handler.get_members = AsyncMock(return_value=[])
         self.zone_name = AsyncMock(return_value="TestZone")
         self.teleport = AsyncMock()
         self.is_loading = AsyncMock(return_value=False)
@@ -154,7 +153,7 @@ class FakeClient:
         self.client_object.read_value_from_offset = AsyncMock(return_value=FakeClient._next_handle * 1000)
         # No name behavior by default, so the memory name route answers None and callers
         # fall through to the character-page route. Tests that want the memory route give
-        # this a behavior — see tests/game/test_wizard_names.py.
+        # this a behavior — see core's tests/runtime/game/test_wizard_names.py.
         self.client_object.inactive_behaviors = AsyncMock(return_value=[])
         # This character's global id, and what it has loaded. By default every FakeClient
         # a test makes has every other loaded -- one zone, realm and instance, which is
