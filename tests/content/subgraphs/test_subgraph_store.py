@@ -48,7 +48,6 @@ def test_user_root_shadows_shipped(tmp_path):
     assert load_subgraph("sg-a", shipped).name == "Shipped", "the shipped file is untouched"
 
 
-
 def test_official_subgraphs_reads_the_shipped_root_alone_by_name_and_skips_a_broken_file(tmp_path):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     _defn("sg-b", name="beta").save(shipped / "subgraphs" / "beta.json")
@@ -58,6 +57,7 @@ def test_official_subgraphs_reads_the_shipped_root_alone_by_name_and_skips_a_bro
     save_subgraph(_defn("sg-c", name="Mine"), shipped, user)
 
     assert [d.name for d in official_subgraphs(shipped)] == ["Alpha", "beta"]
+
 
 def test_origin_of_matrix(tmp_path):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
