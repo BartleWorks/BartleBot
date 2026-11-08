@@ -8,13 +8,13 @@ Quicksell sells your drops when a backpack fills, so a long run doesn't stop for
 
 ## Turn quicksell on
 
-Quicksell starts off. To turn it on for every bot, open **File › Settings…**, select **Bot**, and check **Quicksell**. To turn it on for one bot, open the bot's **Options** tab and switch on the **Quicksell** card's header.
+Quicksell starts off. To turn it on for every bot, open **File › Settings…**, select **Bot**, and check **Quicksell**. To turn it on for one bot, open the bot's **Options** tab and switch on the [**Quicksell**](../../reference/options.md#quicksell) card's header.
 
 When quicksell is off, nothing is sold. A full backpack overflows into the character's bank, and once the bank is full too, only Crowns items are kept.
 
 ## What quicksell sells, and when
 
-A bot sells at the step its author placed for it. At that step, BartleBot checks each player's backpack and jewel pouch. If either is full, it opens the game's quicksell window, selects everything, unselects what your settings keep, and sells. A player whose backpack has room sells nothing.
+A bot sells at the [Quicksell](../../reference/utility.md#quicksell) step its author placed for it. At that step, BartleBot checks each player's backpack and jewel pouch. If either is full, it opens the game's quicksell window, selects everything, unselects what your settings keep, and sells. A player whose backpack has room sells nothing.
 
 These are never sold, since the game's quicksell window doesn't list them: reagents, snacks, spellements, mounts and treasure cards.
 
@@ -23,13 +23,13 @@ These are never sold, since the game's quicksell window doesn't list them: reage
 BartleBot keeps an item when any of these keep it:
 
 - **The game's item lock**, above.
-- **The sell switches**: turn off **Sell Pets**, **Sell Socket Wrenches** or **Sell Skeleton Keys** to keep every item of that kind.
+- **The sell switches**: turn off [**Sell Pets**](../../reference/options.md#sell-pets), [**Sell Socket Wrenches**](../../reference/options.md#sell-socket-wrenches) or [**Sell Skeleton Keys**](../../reference/options.md#sell-skeleton-keys) to keep every item of that kind.
 - **The bot's keep list**, in the **Quicksell** card of the bot's **Options** tab.
 - **Your Always keep list**, in Settings › Bot, which every bot keeps.
 
 ### The bot's keep list
 
-The **Quicksell Keep List** row shows the drops the bot can find, each with a tick box:
+The [**Quicksell Keep List**](../../reference/options.md#quicksell-keep-list) row shows the drops the bot can find, each with a tick box:
 
 - **Check an item** to keep that item and nothing else.
 - **Type a keyword** in the **Add a keyword** field to keep every item whose name contains it. "giver" keeps every Giver jewel.

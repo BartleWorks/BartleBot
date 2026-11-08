@@ -37,17 +37,17 @@ BartleBot doesn't launch a game that wouldn't fit. A profile that doesn't fit is
 
 ## Choose whether players share a realm
 
-Players on different realms are in different fights and different dungeons. The **Player Realms** option, in the bot's **Options** tab, says how a bot arranges them:
+Players on different realms are in different fights and different dungeons. The [**Player Realms**](../../reference/options.md#player-realms) option, in the bot's **Options** tab, says how a bot arranges them:
 
 - **Together**, the usual choice: every player on one realm. A player found on another realm is brought to the others before a fight or a dungeon.
 - **Separate**: each player keeps its own realm, and BartleBot never moves one onto another's. Reagent collectors use it, so players don't compete for the same spawns.
 
-A bot with a step that brings everyone onto one realm, such as teleporting to a friend or opening a Skeleton Key door, can't be Separate, and the row says why. With one player, there's nothing to arrange and both choices are grayed.
+A bot with a step that brings everyone onto one realm, such as [Teleport to Friend](../../reference/teleportation.md#teleport-to-friend) or [Open Skeleton Key Door](../../reference/zone-entry.md#open-skeleton-key-door), can't be Separate, and the row says why. With one player, there's nothing to arrange and both choices are grayed.
 
-**Favorite Realm**, in Settings › Bot, is where Change Realm and Sync in Zone send players. A game BartleBot launches also gets the game's Remember Realm option, so a relogged player comes back to the realm it left.
+[**Favorite Realm**](../../reference/options.md#favorite-realm), in Settings › Bot, is where [Change Realm](../../reference/utility.md#change-realm) and [Sync in Zone](../../reference/teleportation.md#sync-in-zone) send players. A game BartleBot launches also gets the game's Remember Realm option, so a relogged player comes back to the realm it left.
 
 ## Players who aren't yours
 
 A dungeon with a player in it who isn't on your team fails to enter, and the bot takes its recovery path. Another player in a fight breaks the bot's combat.
 
-Team-Up is the exception. With **Team-Up** on, a bot joins the game's Team-Up queue, which can take up to an hour and brings in players who aren't yours. **Minimum Team Size** is how many the queue waits for. With more than one of your players, each queues alone and may land in a different copy of the dungeon. The bot brings them together when they arrive, and stops if the game refuses. The **Safety Check** says so before the run.
+Team-Up is the exception. With [**Team-Up**](../../reference/options.md#team-up) on, an [Enter Dungeon](../../reference/zone-entry.md#enter-dungeon) step joins the game's Team-Up queue, which can take up to an hour and brings in players who aren't yours. [**Minimum Team Size**](../../reference/options.md#minimum-team-size) is how many the queue waits for. With more than one of your players, each queues alone and may land in a different copy of the dungeon. The bot brings them together when they arrive, and stops if the game refuses. The **Safety Check** says so before the run.

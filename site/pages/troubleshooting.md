@@ -50,7 +50,7 @@ A player reached a PvP zone, or a PvP fight, during a run. BartleBot stopped the
 
 The **Player Realms** message says a step in the bot needs every player on one realm, and names it. The bot's **Player Realms** option is Separate.
 
-Set **Player Realms** back to **Together** in the bot's **Options** tab, then run it again.
+Set [**Player Realms**](reference/options.md#player-realms) back to **Together** in the bot's **Options** tab, then run it again.
 
 ## "Player 1 is in a fight"
 
@@ -79,7 +79,7 @@ A **Bot Stopped** message says why. The most common ones:
 
 - **"The bot stopped at", a step, and "which returned"**: the bot's author marked that result as a stop. The rest of the message says why, such as a player in the wrong world. Do what it says, then run the bot again.
 - **"cannot be closed and relaunched automatically"**: a game froze or crashed, and BartleBot couldn't launch it again. See [Clients Cannot Be Recovered](#clients-cannot-be-recovered).
-- **"The bot went back to its recovery state", a number, "times in a row for the same reason"**: the bot keeps failing at the same place, and starting again doesn't help. The message names the steps and the reason. Look at those steps in the game: a moved NPC, a closed door, or a player in the wrong place. A higher Safety Delay helps on a slow connection. If an Official bot does this, [open an issue](#opening-an-issue).
+- **"The bot went back to its recovery state", a number, "times in a row for the same reason"**: the bot keeps failing at the same place, and starting again doesn't help. The message names the steps and the reason. Look at those steps in the game: a moved NPC, a closed door, or a player in the wrong place. A higher [Safety Delay](reference/options.md#safety-delay) helps on a slow connection. If an Official bot does this, [open an issue](#opening-an-issue).
 - **"The players fled", a number, "fights within 10 minutes"**: see [the next entry](#the-players-fled-fights).
 
 With no message, the log names the last step. A step that fails too many times in a row stops the bot with "consecutive ticks without advancing", and a step with nowhere to go next with "Reached terminal state".
@@ -89,12 +89,12 @@ With no message, the log names the last step. A step that fails too many times i
 BartleBot flees a fight when none of your players can still deal damage, and three fled fights stop the bot.
 
 1. Check each player's deck holds damage cards they can cast at their level.
-2. Check they have mana. In a bot that uses potions, **Refill potions**, in Settings › Bot, buys more when they run out.
+2. Check they have mana. In a bot that uses potions, [**Refill potions**](reference/options.md#refill-potions), in Settings › Bot, buys more when they run out.
 3. Check the bot's **Combat** tab, and the strategy each player fights with.
 
 ## Quicksell didn't sell { #quicksell-didnt-sell }
 
-The Quicksell step ends in FAILURE, with a log line such as "FAILURE: quicksell open button did not appear", and the backpack stays full.
+The [Quicksell](reference/utility.md#quicksell) step ends in FAILURE, with a log line such as "FAILURE: quicksell open button did not appear", and the backpack stays full.
 
 1. Close whatever is open in that player's game window, such as a dialog or a shop, so the backpack can open.
 2. Raise **Safety Delay** if the connection is slow.
@@ -108,7 +108,7 @@ The log says a player couldn't find a friend, or the group didn't form.
 
 1. Check every account is on the others' friends lists, and the wizard a bot teleports to is online.
 2. Turn off **Dblclick Go To Friend** in each game's **Options › Gameplay Options 4**. BartleBot turns it off only in the games it launches.
-3. Check the wizard's name in **Friend Name**, in Settings › Bot or the bot's **Options** tab.
+3. Check the wizard's name in [**Friend Name**](reference/options.md#friend-name), in Settings › Bot or the bot's **Options** tab.
 
 ## A launch profile is grayed out
 

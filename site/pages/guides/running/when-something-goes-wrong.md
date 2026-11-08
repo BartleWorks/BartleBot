@@ -34,7 +34,7 @@ A game gets slower the longer it stays logged in, and logging out is the only th
 - BartleBot waits for a fight to end before it relogs, and skips the relog while any game couldn't be brought back.
 - A single game that nears a limit Windows puts on what it can draw is relogged early, before it starts to fail.
 
-A bot can also hold a Relog step of its own, which logs out through the game's menu and back in. It takes seconds and closes nothing.
+A bot can also hold a [Relog](../../reference/utility.md#relog) step of its own, which logs out through the game's menu and back in. It takes seconds and closes nothing.
 
 ## Fights no step started
 
@@ -52,11 +52,11 @@ Three fled fights within 10 minutes stop the bot, since something is wrong with 
 
 ## Level scaling elixirs at the start of a run
 
-A bot that level scales its players gives each one the elixir from the Scales of Knowledge, unless the player already has an elixir. The game draws every elixir the same way, so BartleBot can't tell a level scaling elixir from another kind, and it never cancels one.
+A bot that level scales its players, with [Handle Level Scaling](../../reference/utility.md#handle-level-scaling), gives each one the elixir from the Scales of Knowledge, unless the player already has an elixir. The game draws every elixir the same way, so BartleBot can't tell a level scaling elixir from another kind, and it never cancels one.
 
 So before a run, the **Safety Check** names any level scaling player who already has an elixir. If it's another kind, that player runs unscaled. If it's a level scaling elixir taken earlier, it runs out before the others' and costs an extra trip. To start everyone together, cancel the elixir in the game, then run.
 
-Which players are level scaled is the **Level Scaling Players** option, in the bot's **Options** tab.
+Which players are level scaled is the [**Level Scaling Players**](../../reference/options.md#level-scaling-players) option, in the bot's **Options** tab.
 
 ## When BartleBot gives up
 

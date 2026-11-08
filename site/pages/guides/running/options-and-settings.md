@@ -1,10 +1,10 @@
 # Options and Settings
 
-A bot's options are the choices it leaves to you, such as Safety Delay or what quicksell keeps. This page explains where each value comes from, how to set your own for one bot or for every bot, and which Settings tab holds what.
+A bot's options are the choices it leaves to you, such as [Safety Delay](../../reference/options.md#safety-delay) or what [quicksell](../../reference/options.md#quicksell) keeps. This page explains where each value comes from, how to set your own for one bot or for every bot, and which Settings tab holds what.
 
 ## Where an option's value comes from
 
-Every option row names where its value comes from, at the right of the row. The first of these that has a value is the one the run uses:
+Every option row names where its value comes from, at the right of the row. [Bot options](../../reference/options.md#where-a-value-comes-from) in the Reference has each option's own levels. The first of these that has a value is the one the run uses:
 
 | The row says | The value is | Set it in |
 | --- | --- | --- |
@@ -13,7 +13,7 @@ Every option row names where its value comes from, at the right of the row. The 
 | **App settings** | yours, for every bot that leaves it to you | **File › Settings…** |
 | **Default** | BartleBot's own, when nothing else answers | nowhere |
 
-So a value you set for one bot wins over everything else, and an author's choice wins over your app setting. Most bots leave Safety Delay, Favorite Realm, Friend Name, Refill Potions and quicksell's switches to your app settings, so one change in Settings reaches all of them.
+So a value you set for one bot wins over everything else, and an author's choice wins over your app setting. Most bots leave Safety Delay, [Favorite Realm](../../reference/options.md#favorite-realm), [Friend Name](../../reference/options.md#friend-name), [Refill Potions](../../reference/options.md#refill-potions) and quicksell's switches to your app settings, so one change in Settings reaches all of them.
 
 !!! info "Why your values live apart from the bot"
 
@@ -29,8 +29,8 @@ The options sit in folding cards, always in this order:
 
 | Card | Holds |
 | --- | --- |
-| **This dungeon** | the options the bot's author added, and Challenge Mode |
-| **Team** | Player Realms, Team-Up and Minimum Team Size, Level Scaling Players, and Friend Name |
+| **This dungeon** | the options the bot's author added, and [Challenge Mode](../../reference/options.md#challenge-mode) |
+| **Team** | [Player Realms](../../reference/options.md#player-realms), [Team-Up](../../reference/options.md#team-up) and [Minimum Team Size](../../reference/options.md#minimum-team-size), [Level Scaling Players](../../reference/options.md#level-scaling-players), and Friend Name |
 | **Quicksell** | quicksell's switch, the sell switches and the keep list. [Quicksell and keep lists](quicksell.md) has them |
 | **General** | Safety Delay, Refill Potions and Favorite Realm |
 
@@ -47,7 +47,7 @@ Open **File › Settings…** and select **Bot**. Its rows are the app settings 
 - **Automatically group players**: puts every player in one group when a run starts. Every account must be on the others' friends lists.
 - **Friend Name**: the wizard a bot teleports to when it doesn't name one of your players.
 - **Refill potions**: buys potions when a player runs out, which costs gold.
-- **Favorite Realm**: where Change Realm and Sync in Zone send players.
+- **Favorite Realm**: where [Change Realm](../../reference/utility.md#change-realm) and [Sync in Zone](../../reference/teleportation.md#sync-in-zone) send players.
 - **Quicksell**, the sell switches, **Always keep** and **Quicksell reminder**: [Quicksell and keep lists](quicksell.md) has them.
 - **Set archmastery with decks**: sets a deck's archmastery school when it's applied.
 

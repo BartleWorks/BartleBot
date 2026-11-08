@@ -15,7 +15,7 @@ Select **Run bot**, the play button in the bot canvas's toolbar, or press F5 (**
 Before the first step, BartleBot checks the run. Some checks refuse to start and say what to fix. [Troubleshooting](../../troubleshooting.md) has each one:
 
 - **Restricted Zone**: the bot names a PvP zone or Beastmoon. [PvP](pvp.md) has why.
-- **Player Realms**: the bot keeps players on separate realms, but holds a step that brings them together.
+- **Player Realms**: the bot's [Player Realms](../../reference/options.md#player-realms) option keeps players on separate realms, but the bot holds a step that brings them together.
 - **Players in a Fight**: a player is in a fight. Finish or flee it first.
 - **Run Bot**: a player has an action on a key BartleBot can't press.
 

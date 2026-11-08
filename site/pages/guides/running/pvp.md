@@ -21,4 +21,4 @@ To carry on, move every player out of the zone yourself, then hook the games aga
 
 ## PvE is allowed, raids included
 
-Every PvE zone is allowed, whatever it holds: dungeons, bosses, Challenge Mode, gauntlets, raids, and the library's **Raid** bots. Challenge Mode fights use some of PvP's rules, such as match timers, and BartleBot fights them as the PvE fights they are.
+Every PvE zone is allowed, whatever it holds: dungeons, bosses, [Challenge Mode](../../reference/options.md#challenge-mode), gauntlets, raids, and the library's **Raid** bots. Challenge Mode fights use some of PvP's rules, such as match timers, and BartleBot fights them as the PvE fights they are.
