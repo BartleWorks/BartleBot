@@ -57,6 +57,7 @@ from bartlebot.content.subgraphs.subgraphs import entry_nodes, exit_nodes, port_
 from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
 from bartlebot.gui.widgets.pills.source_pill import source_pill
 from bartlebot.gui.widgets.pills.tag_pill import TagPill
+from bartlebot.nodes.help_text import retry_limit_note
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
 from bartlebot.settings_manager import SettingsManager
@@ -384,9 +385,8 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
         # ── Max retries note ───────────────────────────────────────
         if spec.max_consecutive_retries is not None:
-            retries_label = QLabel(
-                f"⚠ The bot will stop after {spec.max_consecutive_retries} consecutive failures on this node."
-            )
+            # The site's reference says the same, from the same function.
+            retries_label = QLabel(f"⚠ {retry_limit_note(spec.max_consecutive_retries)}")
             retries_label.setWordWrap(True)
             retries_label.setStyleSheet(f"color: {THEME.warning}; font-size: {THEME.font_subtext_px}px;")
             self._layout.addWidget(retries_label)

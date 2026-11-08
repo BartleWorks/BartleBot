@@ -51,3 +51,8 @@ UI_PATH_NOTE = "Copy UI paths from the UI Tree Browser."
 def seconds(value: float) -> str:
     """A hint for a duration: "1 second", "10 seconds"."""
     return f"{value:g} second{'' if value == 1 else 's'}"
+
+
+def retry_limit_note(limit: int) -> str:
+    """What a node's ``max_consecutive_retries`` means to its author, on the node browser's page and the site's."""
+    return f"The bot stops after {limit} consecutive failures on this node."
