@@ -25,6 +25,9 @@ from bartlebot.gui.settings.quicksell_group import QuicksellSettings
 from bartlebot.gui.settings.realm_delay_rows import favorite_realm_row, safety_delay_row
 from bartlebot.settings_manager import SettingsManager, default_for
 
+#: The Friend Name row's title, which the site's reference names (bartlebot.nodes.reference.SETTING_ROWS).
+FRIEND_NAME_TITLE = "Friend Name"
+
 _INTRO = (
     "Defaults for every bot. A bot's own value overrides these, and a value you set in its Options tab overrides both."
 )
@@ -79,7 +82,7 @@ class BotTab(SettingsForm):
         self._friend_name_edit.setPlaceholderText("Wizard name")
         self.add_row(
             SettingRow(
-                "Friend Name",
+                FRIEND_NAME_TITLE,
                 "Who a bot teleports to when it doesn't name one of your players.",
                 self._friend_name_edit,
                 default=_default("default_friend_name"),

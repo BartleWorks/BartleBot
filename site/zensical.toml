@@ -33,8 +33,18 @@ nav = [
   { "Guides" = [
     "guides/index.md",
   ] },
+  # The pages tools/build_site_reference.py writes, in the order bartlebot.nodes.reference.page_names
+  # gives (tests/nodes/test_reference.py).
   { "Reference" = [
     "reference/index.md",
+    "reference/zone-entry.md",
+    "reference/teleportation.md",
+    "reference/combat-and-healing.md",
+    "reference/interaction.md",
+    "reference/control-flow.md",
+    "reference/utility.md",
+    "reference/options.md",
+    "reference/subgraphs.md",
   ] },
   { "Troubleshooting" = "troubleshooting.md" },
 ]
