@@ -69,4 +69,4 @@ Quicksell clears out the drops you don't want, so you never run out of backpack 
 
 !!! info "BartleBot is currently in public beta"
 
-    If something goes wrong, please [open an issue](https://github.com/BartleWorks/BartleBot/issues) with as much information as possible, including the log files from the session where the issue occurred. [Troubleshooting](troubleshooting.md#where-the-logs-are) says where they are.
+    If something goes wrong, please [open an issue](https://github.com/BartleWorks/BartleBot/issues) with as much information as possible, including the log files from the session where the issue occurred. [Troubleshooting](troubleshooting.md#where-the-logs-are) says where they are. Before your first run, read [Safety](guides/running/safety.md), which says what running a bot risks for your account.

@@ -32,6 +32,16 @@ nav = [
   { "Getting started" = "getting-started.md" },
   { "Guides" = [
     "guides/index.md",
+    { "Running bots" = [
+      "guides/running/library.md",
+      "guides/running/running-a-bot.md",
+      "guides/running/options-and-settings.md",
+      "guides/running/quicksell.md",
+      "guides/running/accounts-clients-and-realms.md",
+      "guides/running/when-something-goes-wrong.md",
+      "guides/running/safety.md",
+      "guides/running/pvp.md",
+    ] },
   ] },
   { "Reference" = [
     # The pages tools/build_site_reference.py writes, in the order

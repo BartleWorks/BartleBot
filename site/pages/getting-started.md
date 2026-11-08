@@ -55,7 +55,7 @@ The game is still yours to play: click into a window and play as you normally wo
 
 The bot canvas shows the bot library while no bot is open. **Recent** lists the bots you opened last, and **All** lists every bot. Narrow the list with the tag filters, or by where a bot comes from: **Official**, or your own. The search box finds a bot by its name, its author, or a drop.
 
-Official bots come with BartleBot, are tested in game, and are updated with the app. You can run one and set its options as it is. To change its steps, open it and select the pencil in the bot canvas's toolbar: BartleBot asks to **Make my own copy**, which keeps your options and combat setup for it.
+Official bots come with BartleBot, are tested in game, and are updated with the app. [The bot library](guides/running/library.md) has more on finding one. You can run one and set its options as it is. To change its steps, open it and select the pencil in the bot canvas's toolbar: BartleBot asks to **Make my own copy**, which keeps your options and combat setup for it.
 
 Select a bot's card to open it. To get back to the library, use **File › Close Bot** or **File › Browse Bot Library…**.
 
@@ -65,7 +65,7 @@ Read the bot's description before you run it. If it names a place to start, take
 
 The **Options** tab in the left sidebar shows every option the bot uses, in folding cards: **This dungeon**, **Team**, **Quicksell** and **General**. [Bot options](reference/options.md) in the Reference describes each option a node adds. Each row shows the value the run will use. When that value comes from your app settings, the row says so.
 
-Change any row to set your own value for this bot. Your values are kept in your settings, and the bot stays as it is. A row you've changed is marked with a colored bar, and its revert button puts it back.
+Change any row to set your own value for this bot. [Options and Settings](guides/running/options-and-settings.md) has where each row's value comes from. Your values are kept in your settings, and the bot stays as it is. A row you've changed is marked with a colored bar, and its revert button puts it back.
 
 Options can't be changed while the bot runs, since a run reads them when it starts.
 
@@ -75,11 +75,11 @@ Select **Run bot**, the play button in the bot canvas's toolbar, or press **F5**
 
 Before the first step, BartleBot may stop to ask about something:
 
-- **Safety Check** lists what this bot will do that could cost you something, such as items or gold. Read it, then select **Run Bot** or cancel.
+- **Safety Check** lists what this bot will do that could cost you something, such as items or gold. Read it, then select **Run Bot** or cancel. [Safety](guides/running/safety.md) has what each warning means, and what running a bot risks for your account.
 - **Clients Cannot Be Recovered** names the games BartleBot couldn't bring back after a crash, usually because their account isn't saved. You can run anyway.
 - **Players in a Fight** and **Run Bot** refuse to start, and say what to fix first. [Troubleshooting](troubleshooting.md) has the second one.
 
-While it runs, the bot canvas shows the step the bot is on, and the **Log** tab says what each step did.
+While it runs, the bot canvas shows the step the bot is on. The **Log** tab shows warnings and errors at first. Set its **Min level** to INFO to see what each step did. [Running a bot](guides/running/running-a-bot.md) has more on watching a run.
 
 ## Pause or stop
 
@@ -88,7 +88,7 @@ While it runs, the bot canvas shows the step the bot is on, and the **Log** tab 
 
 ## Read the run summary
 
-When a run ends, because you stopped it or because the bot did, the **Log** tab ends with a summary of the run:
+When a run ends, because you stopped it or because the bot did, the log ends with a summary of the run. The **Log** tab shows it while its **Min level** is INFO:
 
 ```text
 === run finished in 1h 02m 15s ===

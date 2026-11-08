@@ -409,7 +409,7 @@ https://claude.ai/artifact/MztJCi7kb275XQwDChrQaP
 |---|---|---|---|
 | 1 | #312 | structure: the four-section nav, edit links, `site/CLAUDE.md`, the same-branch rule, Getting started and Troubleshooting | landed |
 | 2 | #313 | the reference, rendered from `NODE_SPECS`, the node-declared options and the Official subgraphs, committed and checked current | landed |
-| 3 | #314 | guides for running bots, Safety and PvP among them | planned |
+| 3 | #314 | guides for running bots, Safety and PvP among them, and Troubleshooting's entries for them | landed |
 | 4 | #315 | guides for making bots | planned |
 | 5 | #316 | help from the app: `HELP_TOPICS`, F1, a `?` on each dialog, and the Help menu | planned |
 | 6 | #317 | the combat guide, after #213 | planned |
