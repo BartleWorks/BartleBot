@@ -14,6 +14,8 @@ or the older tests can see:
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from bartleby.qt import screen_fit
 from bartleby.qt.settings.rows import ScrollableTab, SettingRow
@@ -44,6 +46,22 @@ def test_the_bot_settings_have_a_tab_of_their_own(qapp):
 
     dlg.open_tab("bot")
     assert dlg.tabs.tabText(dlg.tabs.currentIndex()) == "Bot"
+
+
+def test_every_settings_tab_the_apps_text_names_is_a_tab(qapp):
+    """A message naming a tab that was renamed sends the user to nothing: Accounts became Game."""
+    from bartlebot.paths import project_root  # noqa: PLC0415
+
+    dlg = SettingsDialog()
+    titles = {dlg.tabs.tabText(i) for i in range(dlg.tabs.count())}
+    named = {
+        (path.relative_to(project_root()).as_posix(), match[1])
+        for path in (project_root() / "bartlebot").rglob("*.py")
+        for match in re.finditer(r"Settings [›→] ([A-Z][a-z]+)", path.read_text(encoding="utf-8"))
+    }
+
+    assert named
+    assert sorted((where, tab) for where, tab in named if tab not in titles) == []
 
 
 def test_accepting_the_dialog_applies_every_tab(qapp):

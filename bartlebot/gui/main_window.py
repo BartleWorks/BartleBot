@@ -1198,7 +1198,7 @@ class MainWindow(QMainWindow):
                 self._tell_later(
                     QMessageBox.critical,
                     "Launch failed",
-                    f"No stored password for '{display_name}'.\nPlease add the account in Settings → Accounts.",
+                    f"No stored password for '{display_name}'.\nAdd the password in Settings › Game.",
                 )
                 return
             # Claim the slot at the moment of launching, so launching two accounts

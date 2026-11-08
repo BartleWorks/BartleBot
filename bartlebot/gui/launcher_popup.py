@@ -36,7 +36,7 @@ class LauncherPopup(QWidget):
 
         profiles = SettingsManager.instance().launch_profiles
         if not profiles:
-            layout.addWidget(QLabel("No launch profiles configured.\nGo to Settings → Accounts."))
+            layout.addWidget(QLabel("No launch profiles configured.\nAdd one in Settings › Game."))
             return
 
         for profile in profiles:

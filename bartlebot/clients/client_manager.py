@@ -541,7 +541,7 @@ class ClientManager(CoreClientManager):
             display = CredentialStore.display_name(username, self._alias_for(username))
             self.recovery_error.emit(
                 f"No stored password for account '{display}'.\n\n"
-                "Open Settings → Accounts and save the password, then restart the bot."
+                "Open Settings › Game and save the password, then restart the bot."
             )
             if machine:
                 machine.stop()
@@ -675,7 +675,7 @@ class ClientManager(CoreClientManager):
         self.recovery_error.emit(
             f"{names} {'have' if len(targets) > 1 else 'has'} been relaunched and "
             f"{'are' if len(targets) > 1 else 'is'} waiting at character select.\n\n"
-            "Log in to resume the run, or turn on Settings → Game → "
+            "Log in to resume the run, or turn on Settings › Game › "
             "Automatically select a character to have this done for you."
         )
 
