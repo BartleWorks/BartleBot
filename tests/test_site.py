@@ -392,7 +392,7 @@ def _quoted_messages() -> list[tuple[str, str, str]]:
     from bartlebot.nodes.utility import quicksell  # noqa: PLC0415
     from bartlebot.options import player_realms  # noqa: PLC0415
 
-    controller = _source("bartlebot/app_controller.py")
+    controller = _source("bartlebot/controller/run.py")
     machine = _source("bartlebot/bot/machine.py")
     manager = _source("bartlebot/clients/client_manager.py")
     trouble, guide = "troubleshooting.md", "guides/running/"
@@ -635,7 +635,7 @@ def _making_quotes() -> list[tuple[str, str, str]]:
 
     from bartlebot.content import share_import  # noqa: PLC0415
     from bartlebot.content.templates import setup_steps  # noqa: PLC0415
-    from bartlebot.gui.canvas import bot_canvas  # noqa: PLC0415
+    from bartlebot.gui.canvas import bot_canvas, bot_library  # noqa: PLC0415
     from bartlebot.gui.dialogs import export_dialog, import_dialog  # noqa: PLC0415
     from bartlebot.gui.dialogs import templates_dialog as gallery  # noqa: PLC0415
     from bartlebot.gui.sidebar import setup_panel  # noqa: PLC0415
@@ -643,9 +643,9 @@ def _making_quotes() -> list[tuple[str, str, str]]:
     templates, canvas, edges, sharing = (
         f"guides/making/{name}.md" for name in ("new-bot-and-templates", "the-canvas", "edges-and-failure", "sharing")
     )
-    panel = _source("bartlebot/gui/canvas/param_panel.py")
+    panel = _source("bartlebot/gui/canvas/param_form.py") + _source("bartlebot/gui/canvas/node_page.py")
     setup = _source("bartlebot/gui/sidebar/setup_panel.py")
-    controller = _source("bartlebot/app_controller.py")
+    controller = _source("bartlebot/controller/run.py")
     exporting = _source("bartlebot/gui/dialogs/export_dialog.py")
     newer = share_match.update_message("BartleBot", "9.9.9", "BartleBot")
     review = (
@@ -664,7 +664,7 @@ def _making_quotes() -> list[tuple[str, str, str]]:
     return [
         (templates, '"Fill in:"', panel),
         (templates, f'"{setup_steps.ERROR_PREFIX.strip()}"', setup_steps.ERROR_PREFIX),
-        (templates, f'"{bot_canvas.UPDATE_AVAILABLE_TEXT}"', bot_canvas.UPDATE_AVAILABLE_TEXT),
+        (templates, f'"{bot_library.UPDATE_AVAILABLE_TEXT}"', bot_library.UPDATE_AVAILABLE_TEXT),
         (templates, '"You changed this too."', setup),
         (templates, '"Can\'t apply:"', setup),
         (templates, '"Setup step"', panel),
