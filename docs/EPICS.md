@@ -411,7 +411,7 @@ https://claude.ai/artifact/MztJCi7kb275XQwDChrQaP
 | 2 | #313 | the reference, rendered from `NODE_SPECS`, the node-declared options and the Official subgraphs, committed and checked current | landed |
 | 3 | #314 | guides for running bots, Safety and PvP among them, and Troubleshooting's entries for them | landed |
 | 4 | #315 | guides for making bots, and the first bot built across them | landed |
-| 5 | #316 | help from the app: `HELP_TOPICS`, F1, a `?` on each dialog, and the Help menu | planned |
+| 5 | #316 | help from the app: `HELP_TOPICS`, F1, a `?` on each dialog, and the Help menu | landed |
 | 6 | #317 | the combat guide, after #213 | planned |
 
 `site/CLAUDE.md` holds the site's rules as built: what goes on the site, in the app and in
