@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.content.share_export import FILE_TYPES, NOUNS, Disposition, Entry, ExportPlan
+from bartlebot.gui.context_help import set_help_topic
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,7 @@ class ExportDialog(QDialog):
         self._build = build
         self._plan = build(Choices())
         self.setWindowTitle(f"Export {NOUNS[self._plan.kind]}")
+        set_help_topic(self, "export")
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)

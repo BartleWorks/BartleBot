@@ -63,6 +63,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.inputs.option_widgets import (
@@ -146,6 +147,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         super().__init__(parent)
         edit_mode = existing_option is not None
         self.setWindowTitle("Edit Option" if edit_mode else "Add Option")
+        set_help_topic(self, "options_edit")
         self.setModal(True)
         self.setMinimumWidth(_DIALOG_MIN_W)
         self._existing_names = [n for n in existing_names if n != existing_option.name] if edit_mode else existing_names
@@ -385,6 +387,7 @@ class OptionsSection(SidebarSection):
 
     def __init__(self, parent=None, settings: SettingsManager | None = None):
         super().__init__("Options", parent)
+        set_help_topic(self, "options_edit")
         self._config: BotConfig | None = None
         self._settings = settings
         self._editable: bool = False

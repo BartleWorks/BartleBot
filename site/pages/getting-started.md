@@ -6,7 +6,7 @@ This page takes you from installing BartleBot to the end of your first run, in t
 
 Follow [Installing BartleBot](install.md). When the installer finishes, BartleBot opens and starts its setup.
 
-## Answer setup's questions
+## Answer setup's questions { #answer-setups-questions }
 
 Setup asks one question per page, and each answer is a setting you can change later. To go through it again, open **File › Set up BartleBot…**.
 
@@ -42,6 +42,8 @@ BartleBot's window has four areas. Hide or show each one from the **View** menu,
 - **The left sidebar**, on its left, holds the open bot's **Options** and **Combat** tabs.
 - **The right sidebar**, on its right, holds **Players**, **Drops** and **Log**.
 - **The bot canvas**, along the bottom, shows the bot library, and then the bot you open.
+
+Press F1 to open the page of this guide about what you're looking at, or select the **?** beside a dialog's close button. The **Help** menu opens the guide, Troubleshooting and the folder of logs.
 
 ## Launch the game
 

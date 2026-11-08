@@ -59,6 +59,7 @@ from bartlebot.content.new_bot import (
     unique_file_name,
 )
 from bartlebot.game import card_art
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.widgets.cards.card_art_tile import art_icon
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.pickers.tag_picker import tag_icon
@@ -156,6 +157,7 @@ class NewBotDialog(QDialog):
         are other folders whose world folders are offered too, the shipped one's above all."""
         super().__init__(parent)
         self.setWindowTitle("New Bot")
+        set_help_topic(self, "new_bot")
         self.setMinimumSize(600, 460)
         # Wide enough that a card's blurb is two or three lines, so the gallery fits.
         self.resize(720, 520)

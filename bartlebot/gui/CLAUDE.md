@@ -405,6 +405,28 @@ way into Edit mode goes through `enter_edit_mode`, which emits `copy_requested` 
 and the controller offers Make my own copy (`gui/dialogs/make_copy_dialog.py`). A new way into
 Edit mode must go through `enter_edit_mode` too, and check the mode after it.
 
+## A new surface names its page for F1
+
+F1, each dialog's `?` and Help › User Guide open a page of the site through
+`gui/context_help.py`, and the page comes from `packaging/help_topics.HELP_TOPICS` (epic #25,
+Stage 5). **A new dialog or panel that has a page calls `set_help_topic(self, "<topic>")`**
+in its constructor, before it is shown, adding the topic to the map: a dialog gets Windows'
+own `?` beside its close button from it, and F1 walks up from the focus to the nearest
+topic, stopping at the window, so a dialog without one opens the guide's home rather than
+the main window's page. A surface whose page changes with what it shows adds
+`context_help_url()`, asked first (the main window by mode, the node browser by the node
+shown, Settings by its tab). Three rules:
+
+- **F1 is an application event filter, never a `QShortcut`**: a window's shortcuts are
+  blocked while a modal dialog is open, which is when F1 is wanted most. So Help › User
+  Guide shows `\tF1` in its text and binds nothing, and a widget that must have F1 itself
+  is named in `_records_keys`, as the key binding fields are.
+- **The `?` is drawn by Windows only on a window with no minimize or maximize button.** A
+  dialog given either loses it silently, and the help test checks the flag, not the pixels.
+- **A test that triggers help patches `context_help.open_url`**, and code reaches it
+  through the module (`context_help.open_url(...)`), never a name imported from it, or the
+  patch misses and the test opens the user's browser.
+
 ## One crumb bar, and the levels behind it
 
 `canvas/subgraph_widgets.CrumbBar` is the one overlay that says where the canvas is, in

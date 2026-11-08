@@ -19,7 +19,7 @@ So a value you set for one bot wins over everything else, and an author's choice
 
     BartleBot keeps your values in your settings, on this computer, and the bot file never changes. That's what lets you set options on an Official bot without a copy, and what lets you share a bot without sharing your Friend Name or your realm.
 
-## Set your own value for one bot
+## Set your own value for one bot { #set-your-own-value-for-one-bot }
 
 1. Open the bot, and select the **Options** tab in the left sidebar.
 2. Change the row. It now says **Your value**, and a colored bar marks it.
@@ -38,7 +38,7 @@ A bot shows only the options its steps use. **Show descriptions** above the card
 
 Options can't be changed while the bot runs, since a run reads them when it starts. A copy you make of an Official bot keeps the values you set for it.
 
-## Set a value for every bot
+## Set a value for every bot { #set-a-value-for-every-bot }
 
 Open **File › Settings…** and select **Bot**. Its rows are the app settings the bots fall back to:
 
@@ -53,7 +53,7 @@ Open **File › Settings…** and select **Bot**. Its rows are the app settings 
 
 An app setting changes every bot that leaves the option to it, from the next run. A bot whose author chose a value, or where you set your own, keeps that one.
 
-## Which Settings tab holds what
+## Which Settings tab holds what { #which-settings-tab-holds-what }
 
 | Tab | Holds |
 | --- | --- |

@@ -1349,7 +1349,10 @@ class AppController(QObject):
         self._open_setup(setup_pages(PreferenceStore(), rerun=True), rerun=True)
 
     def _open_setup(self, pages: list[FirstRunPage], *, rerun: bool) -> None:
+        from bartlebot.gui.context_help import set_help_topic  # noqa: PLC0415 - beside its one use
+
         dialog = FirstRunDialog(pages, rerun=rerun, parent=self._window)
+        set_help_topic(dialog, "setup")
         dialog.exec()
         # Whatever was answered is on disk, finished or not: the combat page may have changed
         # the Team default, and the Accounts and Launch profile pages the accounts and

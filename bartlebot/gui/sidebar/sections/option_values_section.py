@@ -77,6 +77,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.sidebar.strategy_panel import LOCKED
 from bartlebot.gui.widgets.buttons.toggle_switch import ToggleSwitch
@@ -193,6 +194,7 @@ class OptionValuesSection(SidebarSection):
 
     def __init__(self, parent=None, settings: SettingsManager | None = None):
         super().__init__("Bot Settings", parent)
+        set_help_topic(self, "options")
         self._config: BotConfig | None = None
         self._settings = settings
         self._rows: list[QWidget] = []

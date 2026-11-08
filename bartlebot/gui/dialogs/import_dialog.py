@@ -45,6 +45,7 @@ from bartlebot.content.share_import import (
     affected_text,
     headline,
 )
+from bartlebot.gui.context_help import set_help_topic
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class ImportDialog(QDialog):
         self._detailed = self._plan.asks
         self._combos: dict[tuple[str, str], QComboBox] = {}
         self.setWindowTitle(TITLE)
+        set_help_topic(self, "import")
 
         layout = QVBoxLayout(self)
         layout.setSpacing(8)

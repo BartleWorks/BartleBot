@@ -20,7 +20,7 @@ Running a bot carries risks for your account, your items and the players around 
 
 Raise it on a slow connection: 3 to 5 seconds in North America, 5 to 10 elsewhere. Set it for every bot as **Default Safety Delay**, in Settings › Bot, or for one bot in its **Options** tab. A longer delay makes a run slower.
 
-## Read the Safety Check before a run
+## Read the Safety Check before a run { #read-the-safety-check-before-a-run }
 
 When a bot could cost you something, **Safety Check** lists it before the first step. Read each warning, then select **Run Bot** or **Cancel**. **Run Bot** isn't highlighted, so you stop and read, but Enter still runs. What you change or check in the dialog is saved only when you run.
 

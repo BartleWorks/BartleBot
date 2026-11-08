@@ -16,11 +16,13 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter, QVBoxLayout, QWidget
 
 from bartlebot.game.pane_sizing import BOTCANVAS_DEFAULT_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH
-from bartlebot.gui import window_panes
-from bartlebot.gui.canvas.bot_canvas import BotCanvas
+from bartlebot.gui import context_help, window_panes
+from bartlebot.gui.canvas.bot_canvas import BotCanvas, BotMode
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
+from bartlebot.packaging.help_topics import REPORT_PROBLEM_URL, TROUBLESHOOTING, help_url, page_url
+from bartlebot.packaging.product import product
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 
@@ -75,6 +77,10 @@ class MainWindow(QMainWindow):
 
         self._build_menu()
         self._build_central()
+        # F1 and every dialog's ?, app-wide; the game keeps F1 while it has the keyboard.
+        self._context_help = context_help.ContextHelp(
+            self, game_has_keyboard=lambda: self.game_view.focused_hwnd is not None
+        )
         # After _build_central, not inside _build_menu: whether an entry can launch is
         # asked of the game view, which _build_central is what creates.
         self._rebuild_launch_menu()
@@ -233,10 +239,33 @@ class MainWindow(QMainWindow):
         # the screen the window is on, both of which move while the menu is closed.
         self._launch_menu.aboutToShow.connect(self._rebuild_launch_menu)
 
-        # Help menu. Check for Updates runs the startup check on demand, whatever the
+        # Help menu: the site's pages, the logs and the issue tracker (epic #25, Stage 5),
+        # then Check for Updates, which runs the startup check on demand, whatever the
         # setting; AppController enables it in an installed build only (gui/update_prompt.py).
         help_menu = menu_bar.addMenu("Help")
         help_menu.setToolTipsVisible(True)
+        # The key is shown, not bound: F1 is ContextHelp's, on the application, so it also
+        # works in a modal dialog, which blocks a window's shortcuts. Text after a tab is
+        # what a menu draws in the shortcut column.
+        self.action_user_guide = QAction("User Guide\tF1", self)
+        self.action_user_guide.setToolTip("Open the page about what's in front of you")
+        self.action_user_guide.triggered.connect(
+            lambda: context_help.open_url(context_help.help_url_for(self.focusWidget() or self))
+        )
+        help_menu.addAction(self.action_user_guide)
+        self.action_troubleshooting = QAction("Troubleshooting", self)
+        self.action_troubleshooting.setToolTip("Open the page of problems and what to try")
+        self.action_troubleshooting.triggered.connect(lambda: context_help.open_url(page_url(TROUBLESHOOTING)))
+        help_menu.addAction(self.action_troubleshooting)
+        self.action_open_logs = QAction("Open Logs Folder", self)
+        self.action_open_logs.setToolTip("Open the folder of session logs, to attach one to an issue")
+        self.action_open_logs.triggered.connect(lambda: context_help.open_folder(product().log_dir))
+        help_menu.addAction(self.action_open_logs)
+        self.action_report_problem = QAction("Report a Problem", self)
+        self.action_report_problem.setToolTip("Open a new issue on GitHub. Issues are public.")
+        self.action_report_problem.triggered.connect(lambda: context_help.open_url(REPORT_PROBLEM_URL))
+        help_menu.addAction(self.action_report_problem)
+        help_menu.addSeparator()
         self.action_check_updates = QAction("Check for Updates…", self)
         self.action_check_updates.setEnabled(False)
         help_menu.addAction(self.action_check_updates)
@@ -269,6 +298,10 @@ class MainWindow(QMainWindow):
         self._title_bar.set_title(self.windowTitle())
         self.windowTitleChanged.connect(self._title_bar.set_title)
         self._frame = NativeFrame(self, self._title_bar)
+
+    def context_help_url(self) -> str:
+        """F1 on the window: running a bot in Run mode, the canvas in Edit mode (``gui/context_help.py``)."""
+        return help_url("edit_mode" if self.bot_canvas.mode == BotMode.EDIT else "run_mode")
 
     @property
     def title_bar(self) -> TitleBar:
