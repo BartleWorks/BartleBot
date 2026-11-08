@@ -888,6 +888,18 @@ class SettingsManager:
     def launch_profiles(self, value: list[dict]) -> None:
         self._accounts.set_launch_profiles(value)
 
+    def reload_accounts(self) -> bool:
+        """Read the vendor's accounts file again. Whether its accounts or profiles changed.
+
+        The store is read once at start and refreshed only by its own writes, so an
+        account BartleBuddy adds while this app runs stays invisible until something asks
+        for the file again (#303). Every write reaches disk as it is made, so a fresh store
+        loses nothing the old one held.
+        """
+        before = (self._accounts.accounts, self._accounts.launch_profiles)
+        self._accounts = AccountStore(self._accounts.path.parent)
+        return (self._accounts.accounts, self._accounts.launch_profiles) != before
+
     @property
     def recent_launches(self) -> list[dict]:
         """List of {type, id} dicts for recently launched accounts/profiles."""

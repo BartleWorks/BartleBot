@@ -543,6 +543,10 @@ class MainWindow(QMainWindow):
             self._title_bar.set_maximized(self.isMaximized())
         if kind in (QEvent.Type.WindowStateChange, QEvent.Type.StyleChange):
             self._sync_window_edge()
+        if kind == QEvent.Type.ActivationChange and self.isActiveWindow():
+            # Coming back from BartleBuddy is when an account added there would be missed:
+            # Quick Launch, the Launch menu and the popup all draw what the store last read.
+            self.reread_accounts()
 
     def _sync_window_edge(self) -> None:
         """Where the window ends, drawn once: Windows' border, or else our bottom rule (#271).
@@ -977,6 +981,15 @@ class MainWindow(QMainWindow):
         """
         self._after_card_action(True)
 
+    def reread_accounts(self) -> None:
+        """Read the vendor's accounts file again, and catch up if another product changed it (#303).
+
+        Called as Settings or setup opens and whenever this window is activated. Only a
+        change rebuilds anything: activation comes with every dialog that closes.
+        """
+        if SettingsManager.instance().reload_accounts():
+            self.catch_up_with_accounts()
+
     def fit_layout_to_launches(self) -> None:
         """Fit the global resolution and the panes to the screen, after setup (epic #215).
 
@@ -1076,6 +1089,8 @@ class MainWindow(QMainWindow):
         """
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
 
+        # Its Accounts and Game tabs draw the store, which BartleBuddy may have changed since.
+        self.reread_accounts()
         # Handed the live game area so its resolution pickers judge a launch the same
         # way the Launch menu behind them does — a splitter drag moves both.
         dlg = SettingsDialog(self, live_game_area=self.live_game_area)

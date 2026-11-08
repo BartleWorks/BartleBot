@@ -739,7 +739,12 @@ class AppController(QObject):
         self._open_setup(setup_pages(prefs), rerun=False)
 
     def _rerun_setup(self) -> None:
-        """File › Set up BartleBot…: every page that applies, on the current values."""
+        """File › Set up BartleBot…: every page that applies, on the current values.
+
+        The accounts are read again first: the Accounts and Launch profile pages draw
+        them, and BartleBuddy may have changed them since this app last read the file.
+        """
+        self._window.reread_accounts()
         self._open_setup(setup_pages(PreferenceStore(), rerun=True), rerun=True)
 
     def _open_setup(self, pages: list[FirstRunPage], *, rerun: bool) -> None:

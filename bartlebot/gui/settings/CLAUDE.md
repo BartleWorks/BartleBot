@@ -33,7 +33,10 @@ and `PreferenceStore` has no cache, so a read sees the other product's last writ
 `AccountStore` does cache, and its callers write whole lists from that copy, so within a
 key it merges per entry (an account by `username`, a profile by `name`) against what it
 last read: only the entries it changed are applied, and the other product's adds, edits
-and removes stand. A list is one value only for a preference.
+and removes stand. A list is one value only for a preference. Its copy is read again by
+`SettingsManager.reload_accounts`, which `MainWindow.reread_accounts` calls as Settings or
+setup opens and whenever the window is activated (#303); a surface drawing accounts that
+can open without any of those rereads too.
 
 One rule about the settings dialog itself, and where the rest went:
 
