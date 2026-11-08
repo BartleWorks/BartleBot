@@ -204,7 +204,9 @@ async def test_a_cancellation_escaping_a_node_is_its_failure(caplog):
         return "SUCCESS"
 
     transitions = []
-    machine = make_machine(node, on_transition=lambda prev, result, nxt: transitions.append((prev, result, nxt)))
+    machine = make_machine(
+        node, on_transition=lambda prev, result, nxt, _taken: transitions.append((prev, result, nxt))
+    )
     with caplog.at_level(logging.ERROR):
         await asyncio.wait_for(machine.run(), timeout=1.0)
 
@@ -407,7 +409,7 @@ async def test_on_transition_args_on_success():
             machine.stop()
         return "SUCCESS"
 
-    await make_machine(node, on_transition=lambda p, r, n: log.append((p, r, n))).run()
+    await make_machine(node, on_transition=lambda p, r, n, _t: log.append((p, r, n))).run()
     # Third call sets stop before advance, so only two transitions are logged.
     assert log == [
         ("state_a", "SUCCESS", "state_b"),
@@ -426,7 +428,7 @@ async def test_on_transition_args_on_failure_retry():
             machine.stop()
         return "FAILURE"
 
-    await make_machine(node, on_transition=lambda p, r, n: log.append((p, r, n))).run()
+    await make_machine(node, on_transition=lambda p, r, n, _t: log.append((p, r, n))).run()
     assert log == [
         ("state_a", "FAILURE", "state_a"),
         ("state_a", "FAILURE", "state_a"),
@@ -457,7 +459,7 @@ async def test_on_transition_receives_failure_after_node_exception():
         machine.stop()
         return "SUCCESS"
 
-    await make_machine(node, on_transition=lambda p, r, n: log.append((p, r, n))).run()
+    await make_machine(node, on_transition=lambda p, r, n, _t: log.append((p, r, n))).run()
     # Exception on first call → FAILURE self-loop; second call stops before advance.
     assert log == [("state_a", "FAILURE", "state_a")]
 
@@ -494,7 +496,7 @@ async def test_on_transition_exception_does_not_crash_fsm():
             machine.stop()
         return "SUCCESS"
 
-    def bad_callback(prev, result, next_):
+    def bad_callback(prev, result, next_, taken):
         raise RuntimeError("GUI crash")
 
     await make_machine(node, on_transition=bad_callback).run()

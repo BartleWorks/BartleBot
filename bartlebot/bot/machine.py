@@ -101,7 +101,7 @@ class BotMachine:
         node_registry: dict,
         bot_config: "BotConfig | None" = None,
         on_state_change: Callable[[str], None] | None = None,
-        on_transition: Callable[[str, str, str], None] | None = None,
+        on_transition: Callable[[str, str, str, str], None] | None = None,
         on_drop: Callable[[str, int, int], None] | None = None,
         max_consecutive_same_state: int | None = None,
         on_client_disconnected: Callable[[int], None] | None = None,
@@ -118,6 +118,8 @@ class BotMachine:
         self._registry = node_registry
         self._bot_config = bot_config
         self._on_state_change = on_state_change
+        # Called after every advance with (prev, result, next, taken): taken names the edge's
+        # condition and writes as the Transition line does (_taken_edge_text), "" for none.
         self._on_transition = on_transition
         self._on_drop = on_drop
         self._on_client_disconnected = on_client_disconnected
@@ -383,6 +385,18 @@ class BotMachine:
                 self._on_variable_change(name, old, value)
             except Exception:
                 logger.exception("on_variable_change callback raised for %r", name)
+
+    def _taken_edge_text(self) -> str:
+        """The condition and the writes of the edge the last advance took, as the log names them.
+
+        A statechart's ``event [guard] / action`` without the event: `` [swords == 2]``,
+        `` / swords + 1``, both, or "" for an edge with neither. The leading space is
+        there so a caller can put it straight after the result.
+        """
+        text = f" [{self._taken_guard}]" if self._taken_guard else ""
+        if self._taken_assign:
+            text += f" / {variables.describe_assignments(self._taken_assign)}"
+        return text
 
     def _apply_taken_assignments(self) -> None:
         """Apply the writes of the edge the last advance took, if it had any (#189).
@@ -902,14 +916,13 @@ class BotMachine:
                         self._taken_assign = None
                         fired = await self.advance()
                         recovery_dest = None if fired else self._fallthrough_dest(state_id, self.last_result)
+                        # What chose the edge taken and what it set, for the log line and the canvas's.
+                        taken = ""
                         if fired:
                             self._no_match_count = 0
-                            guard = f" [{self._taken_guard}]" if self._taken_guard else ""
-                            if self._taken_assign:
-                                # A statechart's ``event [guard] / action``: the arrows are the log's own.
-                                guard += f" / {variables.describe_assignments(self._taken_assign)}"
+                            taken = self._taken_edge_text()
                             self._log_machine(
-                                f"Transition: {self._fmt_state(prev_state)} --{self.last_result}{guard}-->"
+                                f"Transition: {self._fmt_state(prev_state)} --{self.last_result}{taken}-->"
                                 f" {self._fmt_state(self.state)}",
                                 logging.INFO,
                             )
@@ -945,7 +958,7 @@ class BotMachine:
                                 self.stop()
                         if self._on_transition:
                             try:
-                                self._on_transition(prev_state, self.last_result or "", self.state)
+                                self._on_transition(prev_state, self.last_result or "", self.state, taken)
                             except Exception:
                                 logger.exception(
                                     "on_transition callback raised on transition %r → %r",
