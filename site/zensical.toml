@@ -1,5 +1,6 @@
-# The download site, published to GitHub Pages by .github/workflows/site.yml.
-# docs/RELEASING.md ("The download site") says how to preview and publish it.
+# The site: the download page and BartleBot's manual, published to GitHub Pages by
+# .github/workflows/site.yml. docs/RELEASING.md ("The download site") says how to preview
+# and publish it, and site/CLAUDE.md how a page is written.
 #
 #     uv run --group site zensical serve -f site/zensical.toml
 #
@@ -15,14 +16,27 @@ site_url = "https://bartleworks.github.io/BartleBot/"
 site_description = "A Wizard101 bot for the repetitive parts of the game."
 repo_url = "https://github.com/BartleWorks/BartleBot"
 repo_name = "BartleWorks/BartleBot"
+# Each hand-written page's edit link: its source on master. A page whose front matter says
+# `generated: true` shows none (overrides/main.html), since it is rewritten by a script.
+edit_uri = "edit/master/site/pages/"
 copyright = "BartleBot is free software under the GPL 3.0. It is not made by or affiliated with KingsIsle Entertainment."
 docs_dir = "pages"
 # Inside site/, beside its source: `build/` is ignored at every depth (.gitignore).
 site_dir = "build"
 extra_css = ["stylesheets/extra.css"]
+# Every page under pages/ is in the nav, and every entry is a page (tests/test_site.py).
+# site/CLAUDE.md says which of the four kinds a new page is, and so where it goes.
 nav = [
   { "Home" = "index.md" },
   { "Installing" = "install.md" },
+  { "Getting started" = "getting-started.md" },
+  { "Guides" = [
+    "guides/index.md",
+  ] },
+  { "Reference" = [
+    "reference/index.md",
+  ] },
+  { "Troubleshooting" = "troubleshooting.md" },
 ]
 
 [project.theme]
@@ -34,8 +48,11 @@ favicon = "assets/bartlebot.svg"
 # to anyone but GitHub.
 font = false
 features = [
+  "content.action.edit",
   "navigation.footer",
+  "navigation.indexes",
   "navigation.instant",
+  "navigation.sections",
   "navigation.tracking",
   "navigation.top",
   "search.highlight",
