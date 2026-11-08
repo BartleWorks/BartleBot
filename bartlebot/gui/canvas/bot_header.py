@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 
 from bartleby.qt.theming.theme import THEME
 from bartleby.qt.theming.themed import ThemedMixin
+from bartleby.qt.widgets.labels.elided_label import ElidedLabel
 from bartleby.qt.widgets.pills.pill import NeutralPill
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics
@@ -207,7 +208,7 @@ def _let_shrink(w: QWidget) -> None:
 
     ``Ignored`` is what drops the minimum: the column is then sized by stretch alone
     and the metadata elides and wraps inside whatever it is given, which is how this
-    bar is meant to degrade.  It is safe here and not on ``_ElidedLabel`` because a
+    bar is meant to degrade.  It is safe here and not on ``_MetaLabel`` because a
     grid column carries the stretch; a widget in a row of stretch-0 siblings that
     asks for nothing gets nothing.
     """
@@ -216,82 +217,50 @@ def _let_shrink(w: QWidget) -> None:
     w.setSizePolicy(policy)
 
 
-class _ElidedLabel(ThemedMixin, QLabel):
-    """A one-line label that shortens its text rather than widening the bar.
+class _MetaLabel(ElidedLabel):
+    """One of the header's metadata lines: the file, the author, a definition's provenance.
 
-    The author and the filename share line 1 with the bot name, and either of them
-    long enough to push the rest off the end would make the whole header claim a
-    minimum width the canvas has to honor.  ``QLabel`` has no elide mode of its own,
-    so the text is elided against the width Qt actually gave us, on every resize.
+    Core's :class:`ElidedLabel`, which elides rather than widening the bar, shows the full
+    text as the tooltip while it is cut short, and counts the margins in its hint. The
+    author and the filename share line 1 with the bot name, and either of them long
+    enough to push the rest off the end would make the whole header claim a minimum
+    width the canvas has to honor. Three things are the header's own:
+
+    * ``Maximum``, not ``Preferred`` or ``Ignored``: the label asks for the width its full
+      text wants and settles for less, but never takes more, so the row's trailing stretch
+      gets the slack. Ignored asks for nothing, which in a row of stretch-0 widgets is
+      exactly what it gets -- the author line vanished that way.
+    * no minimum width, where core keeps room for "…" and a character. In Edit mode line 1
+      is crowded below about 1300px, and the filename yields to the name field entirely:
+      a "· j…" stub says nothing the tooltip would not, and costs the field being typed
+      in the width it takes.
+    * the body size set on the font, not in a stylesheet, because the label measures its
+      own text and ``_align_meta_baselines`` measures its font;
+    * :meth:`set_baseline_shift`.
     """
 
-    def __init__(self, text: str = "", *, color: str = "text_subtle", parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._full = text
-        self._color_token = color
-        # Maximum, not Ignored: the label asks for the width its full text wants and
-        # settles for less. Ignored asks for nothing, which in a row of stretch-0
-        # widgets is exactly what it gets -- the author line vanished that way.
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent, color="text_subtle")
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
-        self.refresh_theme_styles()
-        self._apply_elide()
-
-    def setText(self, text: str) -> None:  # noqa: N802 - Qt override
-        self._full = text
-        self._apply_elide()
-        self.updateGeometry()
-
-    def full_text(self) -> str:
-        """The unelided text, which is what a test should assert against."""
-        return self._full
-
-    def sizeHint(self) -> QSize:  # noqa: N802 - Qt override
-        """Sized by the *full* text, never the elided one.
-
-        QLabel derives its hint from ``text()``, which here is already shortened --
-        so a label that once elided would keep asking for the shorter width and never
-        grow back when the window did.
-
-        The margins are added back in because ``set_baseline_shift`` puts the label's
-        vertical nudge there: a hint that ignored them would have the layout hand the
-        label its text height exactly, and the nudge would then squeeze the text
-        rather than move it.
-        """
-        metrics = QFontMetrics(self.font())
-        pad = self.contentsMargins()
-        return QSize(
-            metrics.horizontalAdvance(self._full) + _LABEL_PADDING_PX + pad.left() + pad.right(),
-            metrics.height() + pad.top() + pad.bottom(),
-        )
+        font = self.font()
+        font.setPixelSize(THEME.font_body_px)
+        self.setFont(font)
 
     def minimumSizeHint(self) -> QSize:  # noqa: N802 - Qt override
-        """Zero width: eliding is only possible for a label allowed to be narrow."""
-        pad = self.contentsMargins()
-        return QSize(0, QFontMetrics(self.font()).height() + pad.top() + pad.bottom())
+        """Zero width: the line yields entirely to the name field when the row is short."""
+        return QSize(0, super().minimumSizeHint().height())
 
     def set_baseline_shift(self, pixels: int) -> None:
         """Move the text *pixels* down (negative: up) without moving the box's center.
 
         Padding one side and letting the layout re-center the taller box moves the
-        text by half of what was added, so the padding is twice the shift wanted.
+        text by half of what was added, so the padding is twice the shift wanted. The
+        hint counts the margins, so the layout hands the label room for the padding,
+        and the nudge moves the text rather than squeezing it.
         """
         pad = 2 * pixels
         self.setContentsMargins(0, max(pad, 0), 0, max(-pad, 0))
         self.updateGeometry()
-
-    def resizeEvent(self, event) -> None:  # noqa: N802 - Qt override
-        super().resizeEvent(event)
-        self._apply_elide()
-
-    def _apply_elide(self) -> None:
-        metrics = QFontMetrics(self.font())
-        pad = self.contentsMargins()
-        room = max(0, self.width() - pad.left() - pad.right())
-        super().setText(metrics.elidedText(self._full, Qt.TextElideMode.ElideRight, room))
-        self.setToolTip(self._full if super().text() != self._full else "")
-
-    def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_body_px}px;")
 
 
 class _TemplateChip(NeutralPill):
@@ -385,7 +354,7 @@ class BotHeader(ThemedMixin, QWidget):
 
         # Elided, and the only thing in the row that stretches: a long filename has
         # to shorten rather than shove the run buttons off center.
-        self._file_lbl = _ElidedLabel(color="text_subtle")
+        self._file_lbl = _MetaLabel()
 
         title = QWidget()
         title_row = QHBoxLayout(title)
@@ -402,7 +371,7 @@ class BotHeader(ThemedMixin, QWidget):
         self._template_chip.clicked.connect(self.template_chip_clicked)
         title_row.addWidget(self._template_chip, 0, Qt.AlignmentFlag.AlignVCenter)
         self._template_chip.setVisible(False)
-        self._authors_lbl = _ElidedLabel()
+        self._authors_lbl = _MetaLabel()
         self._authors_edit = QLineEdit()
         self._authors_edit.setPlaceholderText("Author(s)")
         self._authors_edit.setFixedWidth(180)
@@ -439,7 +408,7 @@ class BotHeader(ThemedMixin, QWidget):
         policy = self._tags_field.sizePolicy()
         policy.setRetainSizeWhenHidden(True)
         self._tags_field.setSizePolicy(policy)
-        self._definition_lbl = _ElidedLabel(color="text_subtle")
+        self._definition_lbl = _MetaLabel()
         self._definition_lbl.setVisible(False)
 
         self._tag_row = QWidget()
