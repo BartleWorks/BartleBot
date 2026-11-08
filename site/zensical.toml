@@ -33,9 +33,9 @@ nav = [
   { "Guides" = [
     "guides/index.md",
   ] },
-  # The pages tools/build_site_reference.py writes, in the order bartlebot.nodes.reference.page_names
-  # gives (tests/nodes/test_reference.py).
   { "Reference" = [
+    # The pages tools/build_site_reference.py writes, in the order
+    # bartlebot.nodes.reference.page_names gives (tests/nodes/test_reference.py).
     "reference/index.md",
     "reference/zone-entry.md",
     "reference/teleportation.md",
