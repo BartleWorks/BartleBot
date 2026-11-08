@@ -40,7 +40,7 @@ Official bots come with BartleBot. Each one is tested in game, and an app update
 
 You don't need a copy to run one. Its options and its combat setup are yours to change from the **Options** and **Combat** tabs, and BartleBot keeps them in your settings, apart from the bot. [Options and Settings](options-and-settings.md) has how.
 
-Your own bots are the ones you make with **New Bot**, copy, or import. Right-click one's card to **Export…** it as a share file, or **Delete Bot…**.
+Your own bots are the ones you make with [**New Bot**](../making/new-bot-and-templates.md#new-bot), copy, or [import](../making/sharing.md#import). Right-click one's card to **Export…** it as a share file, or **Delete Bot…**.
 
 ## Make your own copy of an Official bot
 
