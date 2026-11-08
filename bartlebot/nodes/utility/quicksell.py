@@ -3,6 +3,7 @@
 import asyncio
 import enum
 import logging
+import math
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -174,6 +175,13 @@ NODE_SPEC = NodeSpec(
 from bartleby.runtime.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # noqa: E402
 
 _ROWS_PER_PAGE = 10
+
+#: Pages the page loop walks past what the two bags can hold before it gives up (#247).
+#:
+#: The cap is there for a next-page arrow that reads enabled but never advances, which
+#: would otherwise keep the loop going for good. Stopping short of the last real page
+#: leaves its keep-list items checked, so they would be sold: the margin errs long.
+_PAGE_MARGIN = 5
 
 #: Marks a keep-list entry as one item rather than a keyword: ``"=Couch Potatoes"``.
 #:
@@ -673,7 +681,8 @@ async def _process_client(machine, client, keep_list: list[str], sell_pets: bool
     # Switch to jewel page and check fullness.
     await game_keys.press(client, GameAction.JEWELS, 0.1)
     await asyncio.sleep(POLL_INTERVAL)
-    jewel_full = await _is_jewel_backpack_full(client)
+    jewel = await _jewel_space(client)
+    jewel_full = jewel is not None and jewel[0] >= jewel[1]
     machine.log(f"quicksell: jewel pouch — {'full' if jewel_full else 'not full'}", logging.DEBUG)
 
     # If nothing is full, return early
@@ -682,10 +691,13 @@ async def _process_client(machine, client, keep_list: list[str], sell_pets: bool
 
     full_desc = " and ".join(t for t, f in [("inventory", inventory_full), ("jewel", jewel_full)] if f)
     machine.log(f"quicksell: {full_desc} backpack full — opening quicksell UI")
-    return await _run_quicksell(machine, client, keep_list, sell_pets, safety_delay)
+    capacity = total + (jewel[1] if jewel is not None else 0)
+    return await _run_quicksell(machine, client, keep_list, sell_pets, safety_delay, capacity)
 
 
-async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool, safety_delay: float) -> str:
+async def _run_quicksell(
+    machine, client, keep_list: list[str], sell_pets: bool, safety_delay: float, capacity: int
+) -> str:
     """Open the quicksell UI from the jewel page and sell all unkeep-listed items."""
     # Wait for the quicksell open button to be visible, then click it.
     machine.log("quicksell: waiting for quicksell open button", logging.DEBUG)
@@ -755,7 +767,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool,
         await asyncio.sleep(POLL_INTERVAL)
 
     # Page through items and uncheck any that match the keep_list.
-    await _process_quicksell_pages(client, keep_list)
+    await _process_quicksell_pages(machine, client, keep_list, _max_pages(capacity))
 
     # Wait for the sell button to be ready and click it.
     machine.log("quicksell: waiting for sell button (QUICKSELL_SELL_BUTTON)", logging.DEBUG)
@@ -910,8 +922,18 @@ async def _cancel_button(client) -> list[str] | None:
     return None
 
 
-async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
-    """Page through the quicksell UI and uncheck items that match any keep_list keyword."""
+def _max_pages(capacity: int) -> int:
+    """The most quicksell pages the bags' ``capacity`` items can fill, plus ``_PAGE_MARGIN``."""
+    return math.ceil(max(capacity, 0) / _ROWS_PER_PAGE) + _PAGE_MARGIN
+
+
+async def _process_quicksell_pages(machine, client, keep_list: list[str], max_pages: int) -> None:
+    """Page through the quicksell UI and uncheck items that match any keep_list keyword.
+
+    Walks at most ``max_pages`` pages, so an arrow that reads enabled but never advances
+    cannot keep it going for good (#247).
+    """
+    pages = 0
     while True:
         for row in range(_ROWS_PER_PAGE):
             text = await node_helpers.get_text_by_path(client, quicksell_item_title_path(row))
@@ -920,26 +942,33 @@ async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
             if matching_keyword(text, keep_list) is not None:
                 # Uncheck this item so it is not sold.
                 await node_helpers.click_by_path(client, quicksell_item_checkbox_path(row))
+        pages += 1
 
         # Advance to the next page if the button is enabled, else stop.
-        if await node_helpers.is_enabled_by_path(client, QUICKSELL_NEXT_PAGE_PATH):
-            await node_helpers.click_by_path(client, QUICKSELL_NEXT_PAGE_PATH)
-            await asyncio.sleep(POLL_INTERVAL)
-        else:
-            break
+        if not await node_helpers.is_enabled_by_path(client, QUICKSELL_NEXT_PAGE_PATH):
+            return
+        if pages >= max_pages:
+            machine.log(
+                f"quicksell: stopped after {pages} pages with the next-page arrow still enabled; "
+                "keep-list items on any later page will be sold",
+                logging.WARNING,
+            )
+            return
+        await node_helpers.click_by_path(client, QUICKSELL_NEXT_PAGE_PATH)
+        await asyncio.sleep(POLL_INTERVAL)
 
 
-async def _is_jewel_backpack_full(client) -> bool:
-    """Check jewel pouch fullness by reading the 'X/Y' capacity text in the jewel page UI."""
+async def _jewel_space(client) -> tuple[int, int] | None:
+    """The jewel pouch's used and total slots, from its 'X/Y' text, or None if unreadable."""
     # The game wraps the value in HTML (e.g. "<center>100/100"), so strip tags first.
     text = node_helpers.strip_html(await node_helpers.get_text_by_path(client, JEWEL_INVENTORY_SPACE_PATH))
     parts = text.split("/")
     if len(parts) != 2:
-        return False
+        return None
     try:
-        return int(parts[0].strip()) >= int(parts[1].strip())
+        return int(parts[0].strip()), int(parts[1].strip())
     except ValueError:
-        return False
+        return None
 
 
 async def _close_backpack(machine, client) -> str:
