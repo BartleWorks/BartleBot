@@ -196,7 +196,7 @@ the installed app never takes theirs. A packaged build that is not installed, su
 CI's, shares the installed app's name.
 
 This keeps one *window* per user. It does not keep two processes off one game client: a
-checkout, BartleBuddy or another tool can still hook it. That is #233.
+checkout, BartleBuddy or another tool can still hook it. That is BartleWorks/bartleby-core#7.
 
 ## The update check
 

@@ -175,7 +175,7 @@ a plan of its own.
 The rules every stage kept:
 
 - **The duels keep their ids**, and BartleBuddy reads them from
-  `bartlebot/shared/combat_defaults.py`. Everything that changes is in the player
+  core's `bartleby/shared/combat_defaults.py`. Everything that changes is in the player
   strategies they link.
 - **`LAST_RESORT_DSL` is Default's text, word for word.**
 - **Every shipped strategy that buffs enchants ahead first**, and the cheat-boss supports
@@ -194,7 +194,7 @@ Epic #215: the first time BartleBot opens, it walks the user through everything 
 run needs, Quick or Custom, and the whole walk can be run again from the File menu.
 https://claude.ai/artifact/DMYNo3NfYVLYPogsHACncx
 
-**All seven stages landed by 2026-10-15; the page is kept current until the close-out.**
+**Complete: all seven stages landed by 2026-10-15.**
 
 | stage | issue | what |
 |---|---|---|
@@ -209,6 +209,9 @@ https://claude.ai/artifact/DMYNo3NfYVLYPogsHACncx
 `docs/FIRST_RUN.md` is the feature as built: the pages, what each writes, and when each
 counts as answered. `bartlebot/gui/CLAUDE.md` has the rules for writing a page.
 
+BartleBuddy's setup, its one Later card, was done by #298 in #167, which moved the
+shared pages to core. The stages' leftovers are #303, #320 and #321.
+
 The rules every stage kept:
 
 - **Every page writes a choice, and there is no Skip.** A page that only explains gets
@@ -219,7 +222,7 @@ The rules every stage kept:
   page writes an app setting or a shared preference, the level a Settings row writes.
 - **What both products need is written where both read it.** The game folder, accounts,
   launch profiles and the combat answer go in `preferences.json` and `accounts.json`,
-  with their Qt-free code in `bartlebot/shared/`.
+  with their Qt-free code in `bartlebot/shared/` (core's `bartleby/shared/` since #167).
 - **An answered page is never shown on a first run.** A user who answered the combat
   question in #209, or in BartleBuddy, is not asked it again.
 
@@ -249,7 +252,7 @@ is the procedure each release follows.
 After it, each needing a plan of its own: refusing a release that removes shipped content
 (#166) and `.bbtemplate` share files (#165). The stages' leftover is #250, publishing
 0.1.0 and the first update fetched from GitHub. Filed before the plan and left out of
-it: #233 (one process per game client) and #234 (wizwalker's cache under `Bartleby`).
+it: #233 (one process per game client, now BartleWorks/bartleby-core#7) and #234 (wizwalker's cache under `Bartleby`).
 
 The rules every stage kept:
 
@@ -295,7 +298,7 @@ rest the page lists).
 
 After it, each needing a plan of its own: BartleBot on the arbiter and core's helpers
 (#301), live resize of a running client (BartleBuddy #3) and packaging BartleBuddy
-(BartleBuddy #4). The stages' leftovers are #300 and #302 to #304, and BartleBuddy #1 and
+(BartleBuddy #4). The stages' leftovers are #300 and #302 (now BartleWorks/bartleby-core#10 and #13), #303 and #304, and BartleBuddy #1 and
 #2 from Stage 8.
 
 The rules every stage kept:

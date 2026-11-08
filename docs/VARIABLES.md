@@ -73,7 +73,7 @@ through to recovery, and a rerun after an ambient fight leave values alone. The 
 resets a value where the loop begins, usually with an edge assignment on the way into the
 dungeon, and a recovery goes back in through that same edge. There is no reset on
 entering the first node: no shipped bot loops back to its first node, so it would only
-ever fire at startup (#191).
+ever fire at startup (#13, which took in #191).
 
 ## Edge assignments
 
