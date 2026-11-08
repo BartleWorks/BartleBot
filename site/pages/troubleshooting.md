@@ -118,6 +118,15 @@ Quick Launch grays a profile whose games wouldn't fit in the game view, and says
 - Drag a sidebar's edge, or hide one from the **View** menu, to give the game view more room.
 - Launch fewer games at once.
 
+## "Made with a newer BartleBot" { #made-with-a-newer-bartlebot }
+
+An import is refused before anything is written, because the share file came from a newer BartleBot than yours, or needs an Official item your BartleBot doesn't have yet. The message names the sender's version.
+
+1. Select **Help › Check for Updates…**, and install the update.
+2. Import the file again.
+
+If BartleBot is already up to date, the version the message names isn't released yet. Import the file once it is.
+
 ## Where the logs are
 
 BartleBot writes a log of each session to:

@@ -42,6 +42,14 @@ nav = [
       "guides/running/safety.md",
       "guides/running/pvp.md",
     ] },
+    { "Making bots" = [
+      "guides/making/new-bot-and-templates.md",
+      "guides/making/the-canvas.md",
+      "guides/making/edges-and-failure.md",
+      "guides/making/variables-and-conditions.md",
+      "guides/making/subgraphs.md",
+      "guides/making/sharing.md",
+    ] },
   ] },
   { "Reference" = [
     # The pages tools/build_site_reference.py writes, in the order

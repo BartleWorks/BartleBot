@@ -500,3 +500,205 @@ def test_a_page_naming_a_node_type_or_a_setting_key_is_found(tmp_path):
         ("guide.md", "default_safety_delay"),
         ("guide.md", "teleport_to_friend"),
     ]
+
+
+#: The making-bots guides, in the order the nav lists them (Stage 4 of epic #25). Read in
+#: this order, they build a first bot from a blank one.
+MAKING_GUIDES = [
+    "guides/making/new-bot-and-templates.md",
+    "guides/making/the-canvas.md",
+    "guides/making/edges-and-failure.md",
+    "guides/making/variables-and-conditions.md",
+    "guides/making/subgraphs.md",
+    "guides/making/sharing.md",
+]
+
+
+def _section(page: str, heading: str) -> str:
+    """The text under one heading of *page*, up to the next heading of any level."""
+    text = _page(page)
+    start = re.search(rf"^#+ {re.escape(heading)}\b.*$", text, re.M)
+    assert start is not None, f"{page} has no heading {heading!r}"
+    rest = text[start.end() :]
+    end = re.search(r"^#+ ", rest, re.M)
+    return rest[: end.start()] if end else rest
+
+
+def test_the_making_bots_guides_are_a_section_after_running_bots_listed_under_a_heading_of_their_own():
+    guides = next(entry["Guides"] for entry in CONFIG["nav"] if isinstance(entry, dict) and "Guides" in entry)
+    making = _page("guides/index.md").split("\n## Making bots\n", 1)
+
+    assert guides[1:] == [{"Running bots": RUNNING_GUIDES}, {"Making bots": MAKING_GUIDES}]
+    assert len(making) == 2
+    assert [page for page in MAKING_GUIDES if f"]({page.removeprefix('guides/')})" not in making[1]] == []
+
+
+def test_the_first_bot_starts_where_new_bot_leaves_off_and_ends_in_a_run():
+    """The walk Done when asks for: a blank bot, two nodes in a loop, then the failure edge and Run."""
+    new_bot = _page("guides/making/new-bot-and-templates.md")
+    build = _section("guides/making/the-canvas.md", "Build a first bot")
+    finish = _section("guides/making/edges-and-failure.md", "Finish the first bot")
+
+    assert "](the-canvas.md#build-a-first-bot)" in new_bot
+    assert "](new-bot-and-templates.md#new-bot)" in build
+    assert "](edges-and-failure.md#finish-the-first-bot)" in build
+    assert "**FAILURE** port to [Sleep](" in finish
+    assert "**Run bot**" in finish
+
+
+@pytest.fixture
+def blank_canvas(qapp):
+    """A new blank bot open in Edit mode, as New Bot leaves it."""
+    from bartlebot.content.new_bot import BotDetails, create_bot  # noqa: PLC0415
+    from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas, BotMode  # noqa: PLC0415
+
+    canvas = BotCanvas()
+    canvas.set_subgraph_library(SubgraphLibrary())
+    canvas.setup(create_bot(None, BotDetails(name="Wisps")), mode=BotMode.EDIT)
+    yield canvas
+    canvas.prepare_for_shutdown()
+
+
+def test_the_first_bot_has_the_errors_and_warnings_the_guides_say_at_each_step(blank_canvas):
+    """Built as the pages tell the reader to, the bot reports what they promise, and nothing once finished."""
+    from PyQt6.QtCore import QPointF  # noqa: PLC0415
+
+    from bartlebot.bot.schema import TransitionModel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_canvas import NO_NODES_ERROR  # noqa: PLC0415
+
+    canvas = blank_canvas
+    assert canvas.validation_errors() == [NO_NODES_ERROR]
+    assert NO_NODES_ERROR in _page("guides/making/new-bot-and-templates.md")
+
+    wisps = canvas.scene.create_state_at("collect_wisps", QPointF(0, 0))
+    sleep = canvas.scene.create_state_at("sleep", QPointF(440, 0))
+    config = canvas.config
+    assert (config.initial, config.recovery_state) == (wisps, wisps)
+    assert canvas.validation_warnings() == ["Sleep: Unreachable from initial state"]
+
+    next(s for s in config.states if s.id == sleep).params["duration"] = 30
+    for source, dest in ((wisps, sleep), (sleep, wisps)):
+        config.transitions.append(TransitionModel(trigger="advance", source=source, dest=dest, when="SUCCESS"))
+    warning = "Collect Wisps: Uncovered return value: 'FAILURE'"
+    assert (canvas.validation_errors(), canvas.validation_warnings()) == ([], [warning])
+    assert f'"{warning.split(": ", 1)[1]}"' in _section("guides/making/the-canvas.md", "Build a first bot")
+
+    config.transitions.append(TransitionModel(trigger="advance", source=wisps, dest=sleep, when="FAILURE"))
+    assert (canvas.validation_errors(), canvas.validation_warnings()) == ([], [])
+
+
+def test_new_bot_and_templates_lists_every_official_template_by_its_cards_first_line(tmp_path):
+    from bartlebot.content.new_bot import starting_points  # noqa: PLC0415
+
+    official = starting_points(project_root(), tmp_path)
+    table = _section("guides/making/new-bot-and-templates.md", "The Official templates")
+    rows = dict(re.findall(r"^\| \*\*(.+?)\*\* \| (.+?) \|$", table, re.M))
+
+    assert official, "no Official template was read"
+    assert sorted(rows) == sorted(point.name for point in official)
+    assert [p.name for p in official if not p.summary.startswith(rows[p.name])] == []
+
+
+def test_the_canvas_lists_every_node_record_fills_and_no_other():
+    from bartlebot.gui.canvas.recording import RECORDABLE_NODES  # noqa: PLC0415
+    from bartlebot.nodes.registry import node_display_name  # noqa: PLC0415
+
+    table = _section("guides/making/the-canvas.md", "Record from the game")
+
+    assert sorted(re.findall(r"^\| \[(.+?)\]\(", table, re.M)) == sorted(map(node_display_name, RECORDABLE_NODES))
+
+
+def test_the_canvas_quotes_what_record_says_it_fills():
+    from bartlebot.gui.canvas.recording import recording_hint  # noqa: PLC0415
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
+
+    hint = recording_hint("enter_dungeon", NODE_PARAM_SCHEMAS["enter_dungeon"], {})
+
+    assert f'"{hint}"' in _section("guides/making/the-canvas.md", "Record from the game")
+
+
+def test_edges_and_failure_quotes_each_failure_edge_view_as_its_button_does():
+    from bartlebot.gui.canvas.bot_canvas import _FAILURE_EDGE_TOOLTIPS  # noqa: PLC0415
+
+    table = _section("guides/making/edges-and-failure.md", "Show or hide failure edges")
+
+    assert [tip for tip in _FAILURE_EDGE_TOOLTIPS.values() if f'| "{tip}" |' not in table] == []
+
+
+def _making_quotes() -> list[tuple[str, str, str]]:
+    """(page, the words it quotes, where the app says them): each quote the making-bots guides make.
+
+    A quote in quotation marks or bold is matched with them on the page, and without them in the app.
+    """
+    from bartleby.shared import share_match  # noqa: PLC0415
+
+    from bartlebot.content import share_import  # noqa: PLC0415
+    from bartlebot.content.templates import setup_steps  # noqa: PLC0415
+    from bartlebot.gui.canvas import bot_canvas  # noqa: PLC0415
+    from bartlebot.gui.dialogs import export_dialog, import_dialog  # noqa: PLC0415
+    from bartlebot.gui.dialogs import templates_dialog as gallery  # noqa: PLC0415
+    from bartlebot.gui.sidebar import setup_panel  # noqa: PLC0415
+
+    templates, canvas, edges, sharing = (
+        f"guides/making/{name}.md" for name in ("new-bot-and-templates", "the-canvas", "edges-and-failure", "sharing")
+    )
+    panel = _source("bartlebot/gui/canvas/param_panel.py")
+    setup = _source("bartlebot/gui/sidebar/setup_panel.py")
+    controller = _source("bartlebot/app_controller.py")
+    exporting = _source("bartlebot/gui/dialogs/export_dialog.py")
+    newer = share_match.update_message("BartleBot", "9.9.9", "BartleBot")
+    review = (
+        setup_panel.APPLY_TEXT,
+        setup_panel.USE_TEMPLATE_TEXT,
+        setup_panel.KEEP_MINE_TEXT,
+        setup_panel.FINISH_REVIEW_TEXT,
+        setup_panel.LATER_TEXT,
+        setup_panel.ADD_STEP_TEXT,
+        gallery.EDIT_TEXT,
+        gallery.DUPLICATE_TEXT,
+        gallery.RENAME_TEXT,
+        gallery.DELETE_TEXT,
+    )
+    shown_once = {share_import.OUTCOME_TEXT[share_import.Outcome.COPIED]}
+    return [
+        (templates, '"Fill in:"', panel),
+        (templates, f'"{setup_steps.ERROR_PREFIX.strip()}"', setup_steps.ERROR_PREFIX),
+        (templates, f'"{bot_canvas.UPDATE_AVAILABLE_TEXT}"', bot_canvas.UPDATE_AVAILABLE_TEXT),
+        (templates, '"You changed this too."', setup),
+        (templates, '"Can\'t apply:"', setup),
+        (templates, '"Setup step"', panel),
+        *((templates, f"**{text}**", text) for text in review),
+        (canvas, f"**{bot_canvas._EDIT_TIP}**", bot_canvas._EDIT_TIP),
+        (canvas, '"recovery · not drawn"', panel),
+        (canvas, '"Walk to sigil…"', _source("bartlebot/gui/canvas/recording.py")),
+        (canvas, "**Save and finish editing**", _source("bartlebot/gui/canvas/bot_canvas.py")),
+        (canvas, "**Save Without**", _source("bartlebot/gui/dialogs/rewards_tag_dialog.py")),
+        (edges, '"recovery · not drawn"', panel),
+        (
+            edges,
+            '"Uncovered return value"',
+            _source("bartlebot/gui/canvas/edit_scene.py").replace("{label}", "return value"),
+        ),
+        (edges, '"Reached terminal state"', _source("bartlebot/bot/machine.py")),
+        (edges, '"The bot stopped at"', controller),
+        (edges, '"which returned FAILURE."', controller.replace("{result}", "FAILURE")),
+        *((sharing, f'"{text}"', text) for text in share_import.OUTCOME_TEXT.values() if text not in shown_once),
+        *((sharing, f"**{text}**", text) for text in share_import.ACTION_TEXT.values()),
+        *((sharing, f'"{heading}"', heading) for heading, _kinds in export_dialog.GROUPS),
+        (sharing, f'"{import_dialog.CHOICES_HEADING}"', import_dialog.CHOICES_HEADING),
+        (sharing, f'"{import_dialog.REST_HEADING}"', import_dialog.REST_HEADING),
+        (sharing, f"**{export_dialog.COMMIT_TEXT}**", export_dialog.COMMIT_TEXT),
+        (sharing, '"Include its decks"', exporting),
+        (sharing, '"Include my Bot Combat Strategy"', exporting),
+        (sharing, '"Made with a newer BartleBot"', newer),
+        ("troubleshooting.md", '"Made with a newer BartleBot"', newer),
+    ]
+
+
+def test_the_making_bots_guides_quote_each_message_as_the_app_shows_it():
+    """A message reworded in the app fails here until the page that quotes it says the same."""
+    quoted = _making_quotes()
+
+    assert [(page, words) for page, words, _app in quoted if words not in _page(page)] == []
+    assert [(page, words) for page, words, app in quoted if words.strip('"*') not in app] == []
