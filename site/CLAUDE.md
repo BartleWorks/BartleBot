@@ -118,6 +118,11 @@ decoration.
   hyphens: "Where the logs are" is `#where-the-logs-are`. A heading that other pages or the
   app link to keeps its anchor when its words change: give it an explicit id,
   `## Where the logs are { #where-the-logs-are }`.
+- **A page the app opens** is named in `bartlebot/packaging/help_topics.py`'s
+  `HELP_TOPICS`, which F1, each dialog's `?` and the Help menu open. A heading named there
+  has an explicit id and keeps it, and a page named there keeps its path:
+  `tests/packaging/test_help_topics.py` fails a topic whose page or id is gone. Moving
+  what a topic points at is a change to the map, in the same branch.
 - **A node, a bot option or an Official subgraph** is linked to its reference entry the
   first time a page names it, and is plain text after that. A node is on its node browser
   group's page, and its anchor is its type with hyphens:
