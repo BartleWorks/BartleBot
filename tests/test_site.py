@@ -342,3 +342,161 @@ def test_the_rule_files_say_a_change_a_user_can_see_updates_its_page_in_the_same
     assert "### A change a user can see updates the site in the same branch" in root
     assert "**A change a user can see ships with its site page.**" in tests
     assert (SITE / "CLAUDE.md").is_file()
+
+
+#: The running-bots guides, in the order the nav lists them (Stage 3 of epic #25).
+RUNNING_GUIDES = [
+    "guides/running/library.md",
+    "guides/running/running-a-bot.md",
+    "guides/running/options-and-settings.md",
+    "guides/running/quicksell.md",
+    "guides/running/accounts-clients-and-realms.md",
+    "guides/running/when-something-goes-wrong.md",
+    "guides/running/safety.md",
+    "guides/running/pvp.md",
+]
+
+
+def _source(relative: str) -> str:
+    """A module's text with each string the formatter split across lines joined up again."""
+    text = (project_root() / relative).read_text(encoding="utf-8")
+    return re.sub(r'"\s*\n\s*f?"', "", text)
+
+
+def test_the_running_bots_guides_are_a_section_under_guides_each_listed_on_its_index():
+    guides = next(entry["Guides"] for entry in CONFIG["nav"] if isinstance(entry, dict) and "Guides" in entry)
+    index = _page("guides/index.md")
+
+    assert guides[0] == "guides/index.md"
+    assert {"Running bots": RUNNING_GUIDES} in guides
+    assert [page for page in RUNNING_GUIDES if f"]({page.removeprefix('guides/')})" not in index] == []
+    assert "!!! info" not in index
+
+
+def test_the_landing_page_and_getting_started_link_the_safety_page():
+    assert "](guides/running/safety.md)" in _page("index.md")
+    assert "](guides/running/safety.md)" in _page("getting-started.md")
+
+
+def test_troubleshootings_last_two_sections_stay_where_the_logs_are_then_opening_an_issue():
+    headings = re.findall(r"^## (.+)$", _page("troubleshooting.md"), re.M)
+
+    assert headings[-2:] == ["Where the logs are", "Opening an issue"]
+
+
+def _quoted_messages() -> list[tuple[str, str, str]]:
+    """(page, the words it quotes, where the app says them): each quote a guide or Troubleshooting makes."""
+    from bartlebot.clients import recovery_readiness, run_probe  # noqa: PLC0415
+    from bartlebot.gui.dialogs import safety_warning_dialog as safety  # noqa: PLC0415
+    from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415
+    from bartlebot.nodes.utility import quicksell  # noqa: PLC0415
+    from bartlebot.options import player_realms  # noqa: PLC0415
+
+    controller = _source("bartlebot/app_controller.py")
+    machine = _source("bartlebot/bot/machine.py")
+    manager = _source("bartlebot/clients/client_manager.py")
+    trouble, guide = "troubleshooting.md", "guides/running/"
+    return [
+        (trouble, "This bot cannot be run. It sends a client to a zone BartleBot does not automate", controller),
+        (trouble, "The bot was stopped: a client entered", controller),
+        (trouble, "This bot cannot be Separate", player_realms.blocked_reason(["Teleport to Friend"])),
+        (trouble, "Player 1 is in a fight", run_probe.refusal_text([1])),
+        (trouble, "clients cannot be recovered automatically if they crash", recovery_readiness.warning_text(["x"], 2)),
+        (trouble, recovery_readiness.NO_ACCOUNT, recovery_readiness.NO_ACCOUNT),
+        (trouble, "no password saved", recovery_readiness.NO_PASSWORD),
+        (trouble, "No stored password for account", manager),
+        (trouble, "waiting at character select", manager),
+        (trouble, "The bot stopped at", controller),
+        (trouble, "which returned", controller),
+        (trouble, "cannot be closed and relaunched automatically", machine),
+        (trouble, "The bot went back to its recovery state", machine),
+        (trouble, "times in a row for the same reason", machine),
+        (trouble, "The players fled", machine),
+        (trouble, "fights within", machine),
+        (trouble, "consecutive ticks without advancing", machine),
+        (trouble, "Reached terminal state", machine),
+        (trouble, "FAILURE: quicksell open button did not appear", _source("bartlebot/nodes/utility/quicksell.py")),
+        (
+            guide + "safety.md",
+            "This bot sells drops when your backpack is full.",
+            NODE_SPECS["quicksell"].safety_warning,
+        ),
+        (guide + "safety.md", "This bot's author has it sell", safety.declared_sales_message(["Sell Pets"])),
+        (guide + "safety.md", "With quicksell off, nothing is sold.", quicksell.SAFETY_WARNING_DISABLED),
+        (guide + "safety.md", "This bot teleports to collect", NODE_SPECS["collect_reagent"].safety_warning),
+        (guide + "safety.md", "This bot teleports to collect", NODE_SPECS["collect_item"].safety_warning),
+        (
+            guide + "safety.md",
+            "This bot teleports your players to another wizard",
+            NODE_SPECS["teleport_to_friend"].safety_warning,
+        ),
+        (guide + "safety.md", "Team-Up is on with more than one player.", NODE_SPECS["enter_dungeon"].safety_warning),
+        (
+            guide + "safety.md",
+            "A level scaling player already has an elixir active.",
+            safety.level_scaling_warning([1]).message,
+        ),
+        (
+            guide + "safety.md",
+            "The game's Dblclick Go To Friend option is on",
+            safety.quick_friend_teleport_warning([1]).message,
+        ),
+        (guide + "safety.md", "Gameplay Options 4", safety.QUICK_FRIEND_TELEPORT_SETTING),
+        (guide + "quicksell.md", safety.QUICKSELL_OPT_OUT_LABEL, safety.QUICKSELL_OPT_OUT_LABEL),
+    ]
+
+
+def test_the_guides_and_troubleshooting_quote_each_message_as_the_app_shows_it():
+    """A message reworded in the app fails here until the page that quotes it says the same."""
+    quoted = _quoted_messages()
+
+    assert [(page, words) for page, words, _app in quoted if words not in _page(page)] == []
+    assert [(page, words) for page, words, app in quoted if words not in app] == []
+
+
+def test_options_and_settings_names_each_level_as_an_option_row_does():
+    from bartlebot.options import bot_options  # noqa: PLC0415
+
+    page = _page("guides/running/options-and-settings.md")
+    levels = [
+        bot_options.SOURCE_OVERRIDE,
+        bot_options.SOURCE_BOT_FILE,
+        bot_options.SOURCE_APP_SETTING,
+        bot_options.SOURCE_NODE_DEFAULT,
+    ]
+
+    assert [level for level in levels if f"| **{level}** |" not in page] == []
+
+
+def code_names_on(pages: Path, names: set[str]) -> list[tuple[str, str]]:
+    """(page, name) for each node type or setting key a hand-written page names, as a whole word."""
+    found = []
+    for page in _markdown_pages(pages):
+        if _front_matter_generated(page):
+            continue
+        text = page.read_text(encoding="utf-8")
+        found += [(page.relative_to(pages).as_posix(), n) for n in sorted(names) if re.search(rf"\b{n}\b", text)]
+    return found
+
+
+def _code_names() -> set[str]:
+    """Node types and app setting keys with an underscore: words no page has a reason to use."""
+    from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415
+    from bartlebot.settings_manager import _DEFAULTS  # noqa: PLC0415
+
+    keys = {key for section in _DEFAULTS.values() if isinstance(section, dict) for key in section}
+    return {name for name in (*NODE_SPECS, *keys) if "_" in name}
+
+
+def test_no_hand_written_page_names_a_node_type_or_a_setting_key():
+    assert code_names_on(PAGES, _code_names()) == []
+
+
+def test_a_page_naming_a_node_type_or_a_setting_key_is_found(tmp_path):
+    (tmp_path / "guide.md").write_text("Set default_safety_delay, then add a teleport_to_friend.\n", encoding="utf-8")
+    (tmp_path / "fine.md").write_text("Set **Default Safety Delay**, then add Teleport to Friend.\n", encoding="utf-8")
+
+    assert code_names_on(tmp_path, {"default_safety_delay", "teleport_to_friend"}) == [
+        ("guide.md", "default_safety_delay"),
+        ("guide.md", "teleport_to_friend"),
+    ]
