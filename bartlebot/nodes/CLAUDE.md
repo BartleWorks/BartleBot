@@ -22,6 +22,10 @@ logging and timing), are core's `bartleby/runtime/CLAUDE.md`, imported above.
    in on Option Values and Options (`bartlebot/options/option_groups.py`). Reuse the group an existing
    declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`
    fails otherwise
+8. Rerun `uv run python tools/build_site_reference.py` and commit the pages it writes under
+   `site/pages/reference/`. The site's Reference is rendered from every spec, so a new node,
+   or any change to a spec's text, fails `test_the_committed_reference_is_current` until it
+   is rerun (`site/CLAUDE.md`, *Generated pages*)
 
 Use those four names and no others unless the node genuinely has a third outcome, as
 `open_skeleton_key_door`'s `NO_KEY` is: trying again cannot fix it, so it must not read as

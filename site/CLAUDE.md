@@ -119,8 +119,12 @@ decoration.
   app link to keeps its anchor when its words change: give it an explicit id,
   `## Where the logs are { #where-the-logs-are }`.
 - **A node, a bot option or an Official subgraph** is linked to its reference entry the
-  first time a page names it, and is plain text after that. A node's anchor is its type
-  with hyphens: `[Collect Wisps](../../reference/combat-and-healing.md#collect-wisps)`.
+  first time a page names it, and is plain text after that. A node is on its node browser
+  group's page, and its anchor is its type with hyphens:
+  `[Collect Wisps](../../reference/combat-and-healing.md#collect-wisps)` from a guide. An
+  option's anchor is its name, lowercased with hyphens, on `reference/options.md`
+  (`#safety-delay`, `#team-up`), and an Official subgraph's is its name on
+  `reference/subgraphs.md` (`#sync-players`).
 - **Never into `docs/`, or to a source file on GitHub** (`/blob/`, `/tree/`, `/raw/`): a
   user reads the site, not the code. An issue, a release or the new-issue page is fine.
   `tests/test_site.py` fails either.
@@ -152,6 +156,28 @@ A page written by a script says so in its front matter, `generated: true`, with 
 naming the script. `overrides/main.html` draws it without the edit link, since an edit
 there is lost at the next render. Its text is fixed where it comes from and the script is
 rerun. Only pages under `reference/` carry the mark (`tests/test_site.py`).
+
+**The Reference is every page under `reference/`**, written by
+`uv run python tools/build_site_reference.py` from `bartlebot/nodes/reference.py`: the
+index, a page per node browser group in `NODE_CATEGORIES`' order, Bot options and
+Subgraphs. Its words are the app's own, so a fix goes where the app reads it:
+
+| what reads wrong | fix it in |
+|---|---|
+| a node's description, params, returns, usage notes, safety warning or see also | its `NodeSpec`, under core's `UI_TEXT.md` N rules |
+| an option's description or default | the node's `BotOptionSpec`, or the shared text in `bot_options.py` |
+| which Settings row an option names | `SETTING_ROWS` in `bartlebot/nodes/reference.py` |
+| a subgraph's name, description, inputs or ports | the definition under `subgraphs/` |
+| a page's own framing (openers, the four levels, labels) | `bartlebot/nodes/reference.py` |
+
+Then rerun the tool and commit its pages in the same branch.
+`test_the_committed_reference_is_current` fails until then, and names the command. The
+committed output is what the site builds, since `site.yml` runs on Ubuntu with the `site`
+group alone, and the node specs import wizwalker, which runs only on Windows. A new page
+the tool writes goes in `zensical.toml`'s Reference section, in the order the tool gives
+(`test_the_nav_lists_the_reference_pages_in_the_order_they_are_rendered`). The reference
+adds no text of its own per node: a node that needs a sentence more gets it in its spec,
+and the node browser shows it too.
 
 ## What never goes on the site
 

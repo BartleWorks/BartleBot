@@ -17,6 +17,7 @@ from bartlebot.content.subgraphs.subgraph_store import (
     delete_subgraph,
     list_subgraphs,
     load_subgraph,
+    official_subgraphs,
     origin_of,
     save_subgraph,
 )
@@ -45,6 +46,17 @@ def test_user_root_shadows_shipped(tmp_path):
     assert load_subgraph("sg-a", shipped, user).name == "Mine"
     assert [d.name for d in list_subgraphs(shipped, user)] == ["Mine"]
     assert load_subgraph("sg-a", shipped).name == "Shipped", "the shipped file is untouched"
+
+
+def test_official_subgraphs_reads_the_shipped_root_alone_by_name_and_skips_a_broken_file(tmp_path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    _defn("sg-b", name="beta").save(shipped / "subgraphs" / "beta.json")
+    _defn("sg-a", name="Alpha").save(shipped / "subgraphs" / "alpha.json")
+    (shipped / "subgraphs" / "broken.json").write_text('{"id": "sg-x"}', encoding="utf-8")
+    save_subgraph(_defn("sg-a", name="My Alpha"), shipped, user)
+    save_subgraph(_defn("sg-c", name="Mine"), shipped, user)
+
+    assert [d.name for d in official_subgraphs(shipped)] == ["Alpha", "beta"]
 
 
 def test_origin_of_matrix(tmp_path):

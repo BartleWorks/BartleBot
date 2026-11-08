@@ -25,9 +25,9 @@ Setup shows only the pages it needs, so you may not see all of these:
 | **Add your Wizard101 accounts** | Your logins, which BartleBot uses to launch the game and to bring it back after a crash or disconnect. Passwords are stored in Windows Credential Manager. Without an account, you start the game yourself, and bots can't recover from a crash. | Launch › Manage Wizard101 Accounts… |
 | **Which accounts do you play together?** | Shown with two or more accounts. The checked accounts become a launch profile, in order, so the first is Player 1. | Settings › Game |
 | **How should your team fight bosses?** | Shown with two or more accounts. **One hitter, the others support**, or **Everyone attacks**. Solo fights use Default Solo Duel. | Settings › Combat, or one bot's Combat tab |
-| **What should bots sell?** | What quicksell sells when a backpack fills. Quicksell starts off. | Settings › Bot, or one bot's Options tab |
-| **Set your favorite realm and Safety Delay** | The realm Change Realm moves every player to, and how long the game server gets to answer an action: 3 to 5 seconds in North America, 5 to 10 elsewhere. | Settings › Bot, or one bot's Options tab |
-| **Choose a few more options** | Custom setup only. **Extract game art**, **Automatically group players**, which needs every account on the others' friends lists, and **Refill potions**, which spends gold. | Settings › General and Settings › Bot |
+| **What should bots sell?** | What [quicksell](reference/options.md#quicksell) sells when a backpack fills: [pets](reference/options.md#sell-pets), [Socket Wrenches](reference/options.md#sell-socket-wrenches), [Skeleton Keys](reference/options.md#sell-skeleton-keys), and what to always keep. Quicksell starts off. | Settings › Bot, or one bot's Options tab |
+| **Set your favorite realm and Safety Delay** | Your [Favorite Realm](reference/options.md#favorite-realm), where [Change Realm](reference/utility.md#change-realm) moves every player, and the [Safety Delay](reference/options.md#safety-delay), how long the game server gets to answer an action: 3 to 5 seconds in North America, 5 to 10 elsewhere. | Settings › Bot, or one bot's Options tab |
+| **Choose a few more options** | Custom setup only. **Extract game art**, **Automatically group players**, which needs every account on the others' friends lists, and [**Refill potions**](reference/options.md#refill-potions), which spends gold. | Settings › General and Settings › Bot |
 | **Extracting game art…** | Nothing to answer. BartleBot copies spell card pictures and icons from your game files, about 35 MB. Closing setup stops it. | Settings › General › Game art |
 
 !!! warning "Before you turn quicksell on"
@@ -63,7 +63,7 @@ Read the bot's description before you run it. If it names a place to start, take
 
 ## Check the bot's options
 
-The **Options** tab in the left sidebar shows every option the bot uses, in folding cards: **This dungeon**, **Team**, **Quicksell** and **General**. Each row shows the value the run will use. When that value comes from your app settings, the row says so.
+The **Options** tab in the left sidebar shows every option the bot uses, in folding cards: **This dungeon**, **Team**, **Quicksell** and **General**. [Bot options](reference/options.md) in the Reference describes each option a node adds. Each row shows the value the run will use. When that value comes from your app settings, the row says so.
 
 Change any row to set your own value for this bot. Your values are kept in your settings, and the bot stays as it is. A row you've changed is marked with a colored bar, and its revert button puts it back.
 

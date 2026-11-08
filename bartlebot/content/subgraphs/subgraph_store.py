@@ -56,6 +56,23 @@ def list_subgraphs(root: str | Path | None = None, user_root: str | Path | None 
     return list(by_id.values())
 
 
+def official_subgraphs(root: str | Path | None = None) -> list[SubgraphDefinition]:
+    """The definitions in the shipped root alone, by name: what every install has, whatever its user root holds.
+
+    The site's reference lists these (``bartlebot.nodes.reference``), so a user's own
+    subgraph, or a developer's draft in developer mode, never reaches it. A file that
+    fails to load is skipped, as :func:`list_subgraphs` skips one.
+    """
+    shipped, _user = resolve_roots(root, None)
+    found = []
+    for p in index_dir(_subgraph_dir(shipped)).values():
+        try:
+            found.append(SubgraphDefinition.load(p))
+        except Exception:
+            logger.warning("Skipping unloadable subgraph definition %s", p, exc_info=True)
+    return sorted(found, key=lambda defn: defn.name.casefold())
+
+
 def load_subgraph(
     subgraph_id: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> SubgraphDefinition:

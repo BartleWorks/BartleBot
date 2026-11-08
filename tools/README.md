@@ -54,6 +54,12 @@ works with against the one coming, so a Test realm patch can be read before it i
 | `drop_categories.py` | surveys the drop categories across the library; rerun after importing bots, since quicksell must classify each one |
 | `drop_name_patterns.py` | surveys the `(...)` suffixes on drop names that `bartlebot/game/wiki_drops.py` has no rule for |
 
+## The site
+
+| tool | does |
+|---|---|
+| `build_site_reference.py` | writes the site's Reference pages, `site/pages/reference/`, from the node specs, the node-declared options and the Official subgraphs, and deletes a generated page no longer produced; `--check` only reports what is out of date (`site/CLAUDE.md`, *Generated pages*) |
+
 ## Building the app
 
 | tool | does |
