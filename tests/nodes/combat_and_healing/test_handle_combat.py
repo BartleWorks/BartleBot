@@ -362,6 +362,9 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
     assert len(_log_lines(machine, "Client 0: target not found")) == 1
 
 
+# A known flake (#199): under -n auto load the 0.2 s timeout can end after one retry, so find ran
+# only three times; it passes alone. See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 async def test_a_target_that_never_returns_fails_at_the_timeout_and_says_so_once():
     client = FakeClient()
     entity = FakeEntity()
