@@ -1,8 +1,8 @@
 """Stage 2 of #37: linked regions compose on open and before a run, save as a snapshot, and flag.
 
-The controller's file and run methods are bound onto a harness that holds a real
-``BotCanvas`` and a mock window around it, the way ``PreRunDeckHarness`` hosts the
-pre-run deck methods: the production code paths run, nothing else is constructed.
+``ControllerHarness`` builds the controller's real collaborators -- ``Documents``,
+``Templates``, ``Sharing`` and ``Run`` -- around a real ``BotCanvas`` in a mock window:
+the production code paths run, and the app itself is never constructed.
 The subgraph library is a ``tmp_path`` one, so no test reads the developer's roots.
 The definition is the synthetic seven-node "sync players" chain from
 ``test_subgraphs``; nothing here is a real character.
