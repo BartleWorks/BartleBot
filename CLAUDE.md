@@ -38,7 +38,7 @@ whenever it is held for over a second, writes every thread's stack, taken during
 freeze, to `logs/stalls/`. The game hang tracer (`bartlebot/gui/debug/game_hang_trace.py`)
 logs a WARNING whenever a game window goes over a second without answering, saying what its
 thread was waiting on, as Windows' wait chain traversal names it. The run trace
-(core's `bartleby.runtime.run_trace`, started by `app_controller.start_run_trace`) writes a
+(core's `bartleby.runtime.run_trace`, started by `controller/run.py`'s `start_run_trace`) writes a
 timeline of every run to `logs/trace/`: spans for
 the pre-run steps, each node and each combat round's phases, every key and click with the
 function that sent it, UI-tree walks, memory reads and event-loop stalls.
@@ -79,7 +79,7 @@ Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 | `content/` | the stores for user and Official content, and how a bot is made: store and bot roots, bot folders, tags, forks, New Bot, share export and import. `content/templates/` and `content/subgraphs/` hold those two |
 | `clients/` | game clients at run time: the client manager, recovery and relog, porting, the run's pre-checks, the authoring tools |
 | `options/` | bot-option resolution (`docs/BOT_OPTIONS.md`), Player Realms included |
-| `controller/` | the flows `AppController` wires together, each taking what it needs explicitly: the open document and everything done to it, the definition stack and autosave (`documents`), File › Templates… and a draft's Release (`templates`), Export and Import of share files (`sharing`), deck import and apply (`decks`), and the template store's roots both share (`template_roots`) |
+| `controller/` | the flows `AppController` wires together, each taking what it needs explicitly: the open document and everything done to it, the definition stack and autosave (`documents`), File › Templates… and a draft's Release (`templates`), Export and Import of share files (`sharing`), deck import and apply (`decks`), the run from its checks to its machine callbacks (`run`), and the template store's roots both share (`template_roots`) |
 | `packaging/` | the app as a product and a packaged build: BartleBot's `Product` for core (`product.py`), `--self-check`, whether this process is one, and Velopack's install hooks, which write the install key and the file types (`docs/RELEASING.md`, `docs/INSTALLER.md`) |
 | `updates/` | the update check: the feed, its signature and the trusted keys, and staging an update for Velopack (`docs/INSTALLER.md`) |
 | `gui/` | everything Qt. Dialogs in `dialogs/`, developer tracers in `debug/`, reusable widgets in `widgets/` by kind (`buttons/`, `labels/`, `inputs/`, `pickers/`, `pills/`, `cards/`, `layout/`), and one subpackage per surface (`canvas/`, `sidebar/`, `settings/`, `game_embed/`, `combat_strategies/`) |

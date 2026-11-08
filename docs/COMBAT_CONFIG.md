@@ -437,7 +437,7 @@ and `resolve_combat()` in `bartlebot/nodes/combat_runner.py` wraps it, returning
 `source_label` names the duel and the level in the user's words, plus what was passed
 over on the way: `duel strategy 'Default Team Duel' (your Team default; this bot has no
 Bot Combat Strategy)`, or `duel strategy 'Boss' (via state assignment for 'fight_1';
-your Bot Combat Strategy 'Farm')`. `AppController._start_bot` logs one line before the
+your Bot Combat Strategy 'Farm')`. `Run._start_bot` (`controller/run.py`) logs one line before the
 first node, naming the run's sources fight by fight with fights that share one grouped
 (`describe_run`). **Never log a strategy's contents in place of the label**, and never
 log a wizard name. The label is the older precedent for the logging `BotMachine.get_option`
@@ -490,7 +490,7 @@ The notices, grouped so that a setup says each thing once rather than once per f
   same sentence is the duel's health (`HealthStatus.SLOT_ORDER`): a ⚠ in the warning color
   on its card and the Combat tab, and a line under Combat Order in the duel editor.
 
-Each is logged once. `AppController._confirm_combat` logs `unassigned` and `slot_order`: the
+Each is logged once. `Run._confirm_combat` logs `unassigned` and `slot_order`: the
 fallbacks are in the line `_log_combat_sources` writes before the first node
 (`describe_run`), which names every fight's source, the pick's included, and logging
 both would say each fallback twice.

@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig
+from bartlebot.controller import run as run_module
 from bartlebot.gui.dialogs import safety_warning_dialog
 from bartlebot.nodes.utility import handle_level_scaling
 from tests.conftest import FakeClient
@@ -33,19 +33,19 @@ def _config(node_type: str) -> BotConfig:
 
 
 class _Controller:
-    """Hosts the AppController methods under test, with every other pre-run check passing."""
+    """Hosts the run methods under test, with every other pre-run check passing."""
 
     def __init__(self, node_type: str) -> None:
-        from bartlebot.app_controller import AppController  # noqa: PLC0415
+        from bartlebot.controller.run import Run  # noqa: PLC0415
 
         for name in (
-            "_on_run_requested",
+            "on_run_requested",
             "_on_run_probe_done",
             "_refuse_while_fighting",
             "_refuse_unpressable_keys",
             "_finish_run_request",
         ):
-            setattr(self, name, getattr(AppController, name).__get__(self))
+            setattr(self, name, getattr(Run, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[FakeClient(), FakeClient()])
         self._documents = MagicMock(loaded_config=_config(node_type))
         self._window = None
@@ -98,7 +98,7 @@ async def test_an_elixir_already_active_warns_before_the_run_and_accepting_start
     read = _elixirs(monkeypatch, [2])
     controller = _Controller("handle_level_scaling")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert read.await_args.args[1] == [1, 2]
@@ -111,7 +111,7 @@ async def test_the_warning_blocks_outside_any_task(dialogs, monkeypatch):
     _elixirs(monkeypatch, [1])
     controller = _Controller("handle_level_scaling")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert dialogs.in_task == [False]
@@ -122,7 +122,7 @@ async def test_cancelling_the_warning_does_not_start_the_run(dialogs, monkeypatc
     dialogs.accept = False
     controller = _Controller("handle_level_scaling")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert controller.started == 0
@@ -132,7 +132,7 @@ async def test_no_elixir_active_starts_the_run_with_no_dialog(dialogs, monkeypat
     _elixirs(monkeypatch, [])
     controller = _Controller("handle_level_scaling")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert dialogs.warnings == []
@@ -143,7 +143,7 @@ async def test_a_bot_that_never_level_scales_reads_no_elixir(dialogs, monkeypatc
     read = _elixirs(monkeypatch, [1])
     controller = _Controller("sleep")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     read.assert_not_awaited()
@@ -155,7 +155,7 @@ async def test_a_read_that_fails_still_starts_the_run(dialogs, monkeypatch):
     _elixirs(monkeypatch, RuntimeError("memory read failed"))
     controller = _Controller("handle_level_scaling")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert dialogs.warnings == []
@@ -166,8 +166,8 @@ async def test_a_second_press_during_the_read_does_not_start_two_runs(dialogs, m
     _elixirs(monkeypatch, [])
     controller = _Controller("handle_level_scaling")
 
-    controller._on_run_requested()
-    controller._on_run_requested()
+    controller.on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert controller.started == 1
@@ -184,7 +184,7 @@ def refusals(monkeypatch):
             shown.texts.append(text)
             shown.in_task.append(asyncio.current_task() is not None)
 
-    monkeypatch.setattr(app_controller, "QMessageBox", FakeBox)
+    monkeypatch.setattr(run_module, "QMessageBox", FakeBox)
     return shown
 
 
@@ -193,7 +193,7 @@ async def test_a_player_in_a_fight_refuses_the_run(dialogs, refusals, monkeypatc
     controller = _Controller("handle_level_scaling")
     controller._client_manager.clients[1].in_battle.return_value = True
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert controller.started == 0
@@ -206,7 +206,7 @@ async def test_a_player_in_a_fight_refuses_the_run(dialogs, refusals, monkeypatc
 async def test_nobody_in_a_fight_shows_no_refusal(dialogs, refusals, monkeypatch):
     controller = _Controller("sleep")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert refusals.texts == []
@@ -217,7 +217,7 @@ async def test_a_fight_that_cannot_be_read_does_not_refuse_the_run(dialogs, refu
     controller = _Controller("sleep")
     controller._client_manager.clients[0].in_battle.side_effect = RuntimeError("memory read failed")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert refusals.texts == []
@@ -234,7 +234,7 @@ async def test_an_action_a_player_cannot_have_pressed_refuses_the_run(dialogs, r
     keys.append(Binding("NPCInteract", PREFIX + "ctrl.x"))
     game_keys.use_map(controller._client_manager.clients[1], KeyMap(keys, source="memory"))
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert controller.started == 0
@@ -250,7 +250,7 @@ async def test_a_team_run_with_dblclick_go_to_friend_on_warns_before_it_starts(d
     monkeypatch.setattr(run_probe, "quick_teleport_players", lambda clients: (2,))
     controller = _Controller("sleep")
 
-    controller._on_run_requested()
+    controller.on_run_requested()
     await controller.settle()
 
     assert [w.details[0] for w in dialogs.warnings[0]] == [("Dblclick Go To Friend on", "Player 2")]

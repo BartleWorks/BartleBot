@@ -101,6 +101,7 @@ class _ReleaseStub:
             self._client_manager.shutdown = AsyncMock(side_effect=RuntimeError("boom"))
         else:
             self._client_manager.shutdown = AsyncMock(return_value=survivors or [])
+        self._run = SimpleNamespace(stop_bot=self._stop_bot)
 
     def _stop_bot(self) -> None:
         self.stopped = True

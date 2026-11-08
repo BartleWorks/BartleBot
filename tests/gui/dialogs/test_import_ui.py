@@ -329,7 +329,7 @@ def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
     monkeypatch.setattr("bartlebot.controller.sharing.raise_window", raised.append)
     modal = [True]
     monkeypatch.setattr(
-        "bartlebot.app_controller.QApplication.activeModalWidget", lambda: object() if modal[0] else None
+        "bartlebot.controller.sharing.QApplication.activeModalWidget", lambda: object() if modal[0] else None
     )
     monkeypatch.setattr("bartleby.qt.app.single_instance.BUSY_RETRY_MS", 10)
     bot, _ = _sender_setup(sender)
@@ -366,7 +366,7 @@ def test_a_combat_strategy_for_the_open_bot_rebinds_the_combat_tab(harness, send
 def test_no_way_in_imports_while_a_bot_runs(harness, sender, receiver, tmp_path, monkeypatch):
     bot, bcs = _sender_setup(sender)
     path = str(_send_bot(sender, tmp_path, bot, bcs))
-    harness._current_machine = object()
+    harness._run._current_machine = object()
     monkeypatch.setattr(
         "bartlebot.controller.sharing.ask_for_file", lambda _w: pytest.fail("File › Import… must not ask for a file")
     )

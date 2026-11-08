@@ -26,32 +26,16 @@ from tests.content.subgraphs.test_subgraphs import REGION, SYNC_ID, _t, linked_b
 
 
 class ControllerHarness:
-    """Hosts the AppController methods under test without constructing the app."""
+    """The controller's collaborators, real, around a real canvas in a mock window: the app is not built."""
 
     def __init__(self, canvas, library: SubgraphLibrary) -> None:
-        from bartlebot.app_controller import AppController  # noqa: PLC0415
         from bartlebot.controller.documents import Documents  # noqa: PLC0415
+        from bartlebot.controller.run import Run  # noqa: PLC0415
         from bartlebot.controller.sharing import Sharing  # noqa: PLC0415
         from bartlebot.controller.template_roots import TemplateRoots  # noqa: PLC0415
         from bartlebot.controller.templates import Templates  # noqa: PLC0415
 
-        cls = AppController
-        for name in (
-            "_confirm_shutdown",
-            "_on_run_requested",
-            "_on_run_probe_done",
-            "_refuse_while_fighting",
-            "_refuse_unpressable_keys",
-            "_finish_run_request",
-            "_check_restricted_zones",
-            "_check_player_realms",
-            "_check_variables",
-        ):
-            setattr(self, name, getattr(cls, name).__get__(self))
         self._roots = TemplateRoots()
-        self._run_probe = None
-        self._current_machine = None
-        self._bot_task = None
         self._client_manager = MagicMock(clients=[])
         self._window = MagicMock()
         self._window.bot_canvas = canvas
@@ -60,13 +44,21 @@ class ControllerHarness:
             library,
             self._roots,
             clients=lambda: self._client_manager.clients,
-            is_running=lambda: self._current_machine is not None,
+            is_running=lambda: self._run.is_running,
         )
         # The Rewards prompt is modal; what is under test here is the write behind it.
         self._documents._confirm_rewards_tags = lambda: True
         self._templates = Templates(self._window, self._documents, self._roots)
-        self._sharing = Sharing(
-            self._window, self._documents, MagicMock(), is_running=lambda: self._current_machine is not None
+        self._sharing = Sharing(self._window, self._documents, MagicMock(), is_running=lambda: self._run.is_running)
+        self._run = Run(
+            self._window,
+            self._client_manager,
+            self._documents,
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            on_run_starting=lambda: None,
+            on_run_ended=lambda: None,
         )
         self._documents.template_context_changed.connect(self._templates.refresh_template_context)
         canvas.config_changed.connect(self._documents.on_config_changed)
@@ -235,16 +227,16 @@ async def test_run_recompose_swaps_config_before_machine_build(harness, library,
     async def fake_start() -> None:
         seen.append(harness._documents.loaded_config)
 
-    harness._start_bot = fake_start
-    harness._confirm_combat = lambda: True
-    harness._confirm_recovery_gaps = lambda: True
+    harness._run._start_bot = fake_start
+    harness._run._confirm_combat = lambda: True
+    harness._run._confirm_recovery_gaps = lambda: True
     harness._client_manager.clients = [MagicMock(in_battle=AsyncMock(return_value=False))]
     monkeypatch.setattr(safety_warning_dialog, "collect_safety_warnings", lambda *a: [])
 
-    harness._on_run_requested()
-    await asyncio.wait([harness._run_probe])  # the reads before the run's dialogs
+    harness._run.on_run_requested()
+    await asyncio.wait([harness._run._run_probe])  # the reads before the run's dialogs
     await asyncio.sleep(0)
-    await harness._bot_task
+    await harness._run._bot_task
 
     assert len(seen) == 1
     started = seen[0]

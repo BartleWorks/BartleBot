@@ -100,7 +100,7 @@ Three rules:
   otherwise have fired. Otherwise a routed return could not be made fatal without deleting
   its edge.
 - **The reason reaches the user, not only the session log.** `BotMachine` stops itself and
-  then calls `on_explicit_stop`; `AppController._on_machine_explicit_stop` puts the reason
+  then calls `on_explicit_stop`; `Run._on_machine_explicit_stop` puts the reason
   in a dialog, deferred through the event loop for the Python 3.13 re-entrancy trap in
   `CLAUDE.md`. The machine stops *before* the callback for the same reason the
   restricted-zone stop does: the FSM has to halt with no GUI attached.

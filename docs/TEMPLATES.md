@@ -315,7 +315,7 @@ state's own failure is exempt from the default edge. Escalating to a hard relog 
 a node cannot work: `ClientManager.relog_clients` waits for the machine to park, which a
 running node never lets it do.
 
-**The retry cap is per node.** `AppController` passes no `max_consecutive_same_state`, so
+**The retry cap is per node.** `Run._start_bot` passes no `max_consecutive_same_state`, so
 only a node's own `max_consecutive_retries` stops a spinning state, and
 `test_every_self_loop_lands_on_a_node_with_a_retry_cap` fails when a shipped self-loop lands
 on an uncapped node. A loop through recovery, which no per-node cap sees, stops on the

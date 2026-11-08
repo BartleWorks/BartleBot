@@ -249,23 +249,23 @@ async def test_a_failed_recovery_regroup_leaves_the_port_map_alone(settings):
 
 
 class PreRunHarness:
-    """Hosts the pre-run grouping method without constructing a real AppController."""
+    """Hosts the pre-run grouping method without constructing a real Run."""
 
     def __init__(self, clients: list) -> None:
-        from bartlebot.app_controller import AppController  # noqa: PLC0415
+        from bartlebot.controller.run import Run  # noqa: PLC0415
 
-        self._form_pre_run_group = AppController._form_pre_run_group.__get__(self)
+        self._form_pre_run_group = Run._form_pre_run_group.__get__(self)
         self._client_manager = MagicMock()
         self._client_manager.clients = clients
 
 
 @pytest.fixture
 def app_settings(monkeypatch):
-    import bartlebot.app_controller as ac  # noqa: PLC0415
+    import bartlebot.controller.run as run_module  # noqa: PLC0415
 
     stub = MagicMock()
     stub.auto_group_players = True
-    monkeypatch.setattr(ac.SettingsManager, "instance", staticmethod(lambda: stub))
+    monkeypatch.setattr(run_module.SettingsManager, "instance", staticmethod(lambda: stub))
     return stub
 
 

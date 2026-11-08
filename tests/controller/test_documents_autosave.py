@@ -14,7 +14,6 @@ from unittest.mock import MagicMock
 import pytest
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.controller.documents import Documents
@@ -57,7 +56,7 @@ def asked(monkeypatch) -> list[str]:
         titles.append(title)
         return QMessageBox.StandardButton.Discard
 
-    monkeypatch.setattr(app_controller.QMessageBox, "question", question)
+    monkeypatch.setattr(QMessageBox, "question", question)
     return titles
 
 
@@ -235,7 +234,7 @@ def test_opening_another_bot_asks_about_a_real_edit(harness, asked, library, tmp
 
 
 def test_cancel_keeps_the_edited_bot_open(harness, monkeypatch, library, tmp_path):
-    monkeypatch.setattr(app_controller.QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
     _edit_and_autosave(harness)
 
     harness._documents.open_bot(str(_other_bot(library, tmp_path)))
@@ -261,6 +260,10 @@ def test_discarding_on_close_removes_the_bots_own_recovery_file(harness, asked):
 
 
 def test_quitting_asks_about_a_real_edit(harness, asked):
+    from bartlebot.app_controller import AppController  # noqa: PLC0415
+
+    # The quit gate is the controller's own; it asks the open document first.
+    harness._confirm_shutdown = AppController._confirm_shutdown.__get__(harness)
     harness._clients_released = False
     harness._shutdown_task = None
     harness._client_manager = MagicMock(clients=[], unhooked_clients=[])
