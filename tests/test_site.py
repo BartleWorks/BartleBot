@@ -333,3 +333,12 @@ def test_getting_started_quotes_every_setup_page_as_the_app_shows_it(setup_headi
 
     assert [heading for heading in setup_headings if f"**{heading}**" not in page] == []
     assert [choice for choice in choices if f"**{choice}**" not in page] == []
+
+
+def test_the_rule_files_say_a_change_a_user_can_see_updates_its_page_in_the_same_branch():
+    root = (project_root() / "CLAUDE.md").read_text(encoding="utf-8")
+    tests = (project_root() / "tests" / "CLAUDE.md").read_text(encoding="utf-8")
+
+    assert "### A change a user can see updates the site in the same branch" in root
+    assert "**A change a user can see ships with its site page.**" in tests
+    assert (SITE / "CLAUDE.md").is_file()

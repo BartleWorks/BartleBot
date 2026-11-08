@@ -54,4 +54,4 @@ Include:
 - **The bot**, by its name in the library, and whether it's Official or your own.
 - **The log** of the session where it happened, from [the logs folder](#where-the-logs-are). Drag the file into the issue. The log calls your players P1, P2 and so on, and names no wizard or account.
 - **The version**, shown under BartleBot's name on Quick Launch.
-- **A screenshot**, if it shows the problem. Crop out wizard names, chat and anything else that identifies your account.
+- **A screenshot**, if it shows the problem. Turn on **Streamer mode** in Settings › General first, which hides your wizards' names, and crop out chat and anything else that identifies your account.
