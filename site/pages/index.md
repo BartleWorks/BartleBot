@@ -9,7 +9,7 @@ hide:
 ## Why BartleBot?
 
 - **Robust failure recovery** Bots reliably run overnight, even through failed zone loading screens, internet disconnects, and game crashes.
-- **Combat system overhaul** New features and improvements to combat behavior, configurable per-bot combat profiles that include duel and player-specific strategies, and saving/loading decks.
+- **Combat system overhaul** New features and improvements to combat behavior, a configurable Bot Combat Strategy per bot, holding duel and player strategies, and saving/loading decks.
 - **Code-free state machine editor** Create bots by recording in-game actions instead of writing code, while retaining the ability to perform advanced behaviors via configurable options and control flow features.
 - **Extensive reuse** Use libraries of common flows and actions, automatic updates, and other features from modern architectures.
 - **Quality-of-life features** Quicksell handling, auto-grouping, and more!
