@@ -225,6 +225,11 @@ async def _set_sigil_mode(machine, client, challenge: bool, safety_delay: float)
     return await _mode_matches(client, challenge)
 
 
+async def _on_its_way(client, from_zone: str) -> bool:
+    """True once this client is on its way in: on a loading screen, or out of from_zone."""
+    return await client.is_loading() or await node_helpers.all_left_zone([client], from_zone)
+
+
 async def _enter_normal(machine, clients: list, from_zone: str, challenge_mode: bool, safety_delay: float) -> bool:
     """Enter through the sigil itself: set the mode, press X, answer the prompt, leave.
 
@@ -259,18 +264,30 @@ async def _enter_normal(machine, clients: list, from_zone: str, challenge_mode: 
         )
         return False
 
-    # Bounded by Safety Delay rather than the full zone-change budget: this is only checking
-    # whether the trigger fired, not waiting out a loading screen — that budget belongs to
-    # the arrival check the caller runs afterward.
+    # Press X again for anyone still on the sigil: the game sometimes drops one client's
+    # press. Bounded by those presses rather than the full zone-change budget: this is only
+    # checking whether the sigil took, not waiting out a loading screen — that budget belongs
+    # to the arrival check the caller runs afterward.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
-    if not await node_helpers.poll_until(
-        lambda: node_helpers.all_left_zone(clients, from_zone), safety_delay, POLL_INTERVAL
-    ):
+    pressed = await node_helpers.press_interact_until_through(
+        machine,
+        clients,
+        showing=node_helpers.DUNGEON_ENTRANCE_PROMPT.showing,
+        through=lambda c: _on_its_way(c, from_zone),
+        spacing=safety_delay,
+        poll_interval=POLL_INTERVAL,
+    )
+    if pressed.refusal:
+        machine.log(
+            f"FAILURE: could not enter the dungeon — {dialog_captions.describe(pressed.refusal)}",
+            logging.WARNING,
+        )
+        return False
+    if len(pressed.through) < len(clients):
         zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
         machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", logging.DEBUG)
-        stuck = [z for z in zones_at_timeout if node_helpers.zone_matches(z, from_zone)]
         machine.log(
-            f"{len(stuck)} client(s) never left {from_zone!r} after {safety_delay:.1f}s; "
+            f"{len(clients) - len(pressed.through)} client(s) never left {from_zone!r}; "
             "continuing to the recovery-aware arrival check",
             logging.DEBUG,
         )
@@ -384,7 +401,8 @@ async def run(machine, clients: list, params: dict) -> str:
          teleport to the sigil until the entrance prompt shows. FAILURE if it never does.
       2. One tail or the other, chosen by the Team-Up option:
          - normal: toggle Challenge Mode if it was asked for, press X, answer the
-           instance prompt, wait to leave from_zone.
+           instance prompt, wait to leave from_zone, pressing X again, Safety Delay apart and
+           up to MAX_RETRIES times, for anyone still at the prompt.
          - team-up: click Team-Up, tick the team size, join the queue, and wait up to an
            hour with anti-AFK keypresses.
       1b. Player Realms: Together -- ensure_together() on the sigil: anyone not seen with the

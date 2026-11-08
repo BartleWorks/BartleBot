@@ -1761,3 +1761,138 @@ async def test_pick_up_whose_prompt_stays_is_not_collected():
     client.is_in_npc_range.return_value = True
 
     assert await nh.pick_up(client, XYZ(1.0, 2.0, 3.0), 0.05, 0) is nh.Pickup.NOT_DISMISSED
+
+
+# ---------------------------------------------------------------------------
+# press_interact_until_through — a dropped press sent again
+# ---------------------------------------------------------------------------
+
+
+async def _always(_client):
+    return True
+
+
+async def _never(_client):
+    return False
+
+
+async def _pressed_once_more(client):
+    """Through once the helper has pressed it: the first press, before the call, was dropped."""
+    return client.send_key.await_count >= 1
+
+
+async def test_a_press_the_game_dropped_is_sent_again():
+    """The 2026-11-07 gauntlet loop: one client left on the sigil while the rest loaded in."""
+    machine = FakeMachine()
+    client = FakeClient()
+
+    pressed = await nh.press_interact_until_through(
+        machine, [client], showing=_always, through=_pressed_once_more, spacing=0.01, poll_interval=0
+    )
+
+    assert pressed == nh.PressedThrough(through={0}, refusal=None)
+    assert client.send_key.await_count == 1
+    assert any("P1 is still at the prompt; pressing X again (1/3)" in line[0] for line in machine.logs)
+
+
+async def test_a_client_already_through_is_never_pressed_again():
+    clients = [FakeClient(), FakeClient()]
+
+    pressed = await nh.press_interact_until_through(
+        FakeMachine(), clients, showing=_always, through=_always, spacing=0, poll_interval=0
+    )
+
+    assert pressed.through == {0, 1}
+    for client in clients:
+        client.send_key.assert_not_called()
+
+
+async def test_only_the_client_left_behind_is_pressed_again():
+    behind, through = FakeClient(), FakeClient()
+
+    async def is_through(client):
+        return client is through or client.send_key.await_count >= 1
+
+    pressed = await nh.press_interact_until_through(
+        FakeMachine(), [through, behind], showing=_always, through=is_through, spacing=0.01, poll_interval=0
+    )
+
+    assert pressed.through == {0, 1}
+    through.send_key.assert_not_called()
+    assert behind.send_key.await_count == 1
+
+
+async def test_a_client_whose_prompt_has_gone_is_not_pressed():
+    """X with no prompt up lands on whatever stands nearby."""
+    client = FakeClient()
+
+    pressed = await nh.press_interact_until_through(
+        FakeMachine(), [client], showing=_never, through=_never, spacing=0.01, poll_interval=0
+    )
+
+    assert pressed.through == set()
+    client.send_key.assert_not_called()
+
+
+async def test_a_loading_client_is_not_pressed():
+    """Its press was taken; one more would land wherever it arrives."""
+    client = FakeClient()
+    client.is_loading.return_value = True
+
+    await nh.press_interact_until_through(
+        FakeMachine(), [client], showing=_always, through=_never, spacing=0.01, poll_interval=0
+    )
+
+    client.send_key.assert_not_called()
+
+
+async def test_a_client_never_through_is_pressed_max_retries_times_then_left_to_the_caller():
+    client = FakeClient()
+
+    pressed = await nh.press_interact_until_through(
+        FakeMachine(), [client], showing=_always, through=_never, spacing=0.01, poll_interval=0
+    )
+
+    assert pressed.through == set()
+    assert client.send_key.await_count == nh.MAX_RETRIES
+
+
+async def test_presses_are_a_safety_delay_apart_counted_from_the_call(monkeypatch):
+    """A press the server has taken but not answered yet must not be sent twice.
+
+    On a clock that moves a tenth of the spacing per poll and at no other time, so the gaps
+    are the helper's own: a wall clock read after the press can land a tick past the read the
+    helper decided on, and under -n auto load it did.
+    """
+    loop = asyncio.get_event_loop()
+    now = [loop.time()]
+    monkeypatch.setattr(loop, "time", lambda: now[0])
+    client = FakeClient()
+    pressed_at: list[float] = []
+    client.send_key.side_effect = lambda *_args: pressed_at.append(now[0])
+
+    async def tick(_client):
+        now[0] += 0.01
+        return False
+
+    start = now[0]
+    await nh.press_interact_until_through(
+        FakeMachine(), [client], showing=_always, through=tick, spacing=0.1, poll_interval=0
+    )
+
+    assert len(pressed_at) == nh.MAX_RETRIES
+    gaps = [b - a for a, b in zip([start, *pressed_at], pressed_at)]
+    assert all(gap >= 0.1 - 1e-9 for gap in gaps)
+    assert all(gap < 0.1 + 0.02 for gap in gaps)
+
+
+async def test_a_refusal_is_returned_and_nothing_is_pressed():
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER,))
+    client = FakeClient()
+    with patches[0], patches[1], _caption_patch("You cannot change Areas while in a Gauntlet."):
+        pressed = await nh.press_interact_until_through(
+            FakeMachine(), [client], showing=_always, through=_never, spacing=0.01, poll_interval=0
+        )
+
+    assert pressed.refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE
+    client.send_key.assert_not_called()

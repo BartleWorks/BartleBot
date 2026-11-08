@@ -59,6 +59,11 @@ NODE_SPEC = NodeSpec(
 from bartleby.runtime.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
+async def _loading_or_arrived(client, dungeon_zone: str) -> bool:
+    """True once this client is on its way in: on a loading screen, or already in dungeon_zone."""
+    return await client.is_loading() or node_helpers.zone_matches(await client.zone_name(), dungeon_zone)
+
+
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: game_keys.press(client, GameAction.INTERACT), client.is_loading()
@@ -68,11 +73,13 @@ async def run(machine, clients: list, params: dict) -> str:
          seconds. Return FAILURE if the prompt does not appear.
       2. Press X on all clients simultaneously.
       3. Poll for a dungeon warning dialog for Safety Delay seconds; confirm it if present.
+      3b. Press X again for any client still at the prompt and not on its way in, Safety Delay
+          apart, up to MAX_RETRIES times: the game sometimes drops one client's press.
       4. Wait for all loading screens to finish.
       5. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
 
-    FAILURE: gauntlet entrance prompt never appeared within the timeout; not all clients
-    reached dungeon_zone after loading.
+    FAILURE: gauntlet entrance prompt never appeared within the timeout; the game refused
+    the entry; not all clients reached dungeon_zone after loading.
     """
     dungeon_zone: str = params["dungeon_zone"]
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
@@ -98,6 +105,23 @@ async def run(machine, clients: list, params: dict) -> str:
     if refusal := await node_helpers.answer_instance_prompts(clients, safety_delay, POLL_INTERVAL):
         machine.log(
             f"FAILURE: could not enter the gauntlet — {dialog_captions.describe(refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
+
+    # 3b. A dropped press leaves a client on the sigil while the rest load in, and a relog of
+    #     the whole team was what it used to cost.
+    pressed = await node_helpers.press_interact_until_through(
+        machine,
+        clients,
+        showing=lambda c: node_helpers.is_visible_by_path(c, node_helpers.GAUNTLET_ENTRANCE_PATH),
+        through=lambda c: _loading_or_arrived(c, dungeon_zone),
+        spacing=safety_delay,
+        poll_interval=POLL_INTERVAL,
+    )
+    if pressed.refusal:
+        machine.log(
+            f"FAILURE: could not enter the gauntlet — {dialog_captions.describe(pressed.refusal)}",
             logging.WARNING,
         )
         return "FAILURE"

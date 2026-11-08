@@ -203,7 +203,8 @@ async def test_prompt_retry_then_success():
 async def test_loading_screen_awaited():
     """Node waits for loading screen to clear before checking the final zone."""
     client = _happy_client()
-    client.is_loading.side_effect = [True, False]
+    # Loading as the sigil takes it and still loading when the wait for it starts, then not.
+    client.is_loading.side_effect = itertools.chain([True, True], itertools.repeat(False))
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
@@ -212,7 +213,7 @@ async def test_loading_screen_awaited():
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert client.is_loading.call_count >= 2
+    assert client.is_loading.call_count >= 3
 
 
 async def test_wrong_dungeon_zone_fails():
@@ -888,3 +889,58 @@ async def test_a_separate_bot_counts_as_together_in_the_dungeon():
     a, b = FakeClient(), FakeClient()
     assert await ed._all_seen(machine, [a, b])
     a.get_base_entity_list.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# A dropped press of X
+# ---------------------------------------------------------------------------
+
+
+def _on_the_sigil(presses_needed: list[int], clients: list):
+    """Clients sent to the sigil, each going in on its nth press of X, and is_visible_by_path to match.
+
+    The entrance prompt shows while a client stands on the sigil and has not gone in, and its
+    zone flips from Hub to Dungeon then, so the node's prompt, zone and arrival reads run unpatched.
+    """
+    from bartleby.runtime.paths import DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH
+
+    needed = {id(c): n for c, n in zip(clients, presses_needed)}
+
+    def entered(client) -> bool:
+        return client.send_key.await_count >= needed[id(client)]
+
+    def on_sigil(client) -> bool:
+        last = client.teleport.call_args
+        return last is not None and last.args[0].x == _PARAMS["sigil_xyz"]["x"]
+
+    for client in clients:
+        client.zone_name.side_effect = lambda c=client: "Dungeon" if entered(c) else "Hub"
+
+    async def prompt_up(client, path):
+        return list(path) == list(DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) and on_sigil(client) and not entered(client)
+
+    return prompt_up
+
+
+async def test_a_player_whose_press_was_dropped_is_pressed_again_and_goes_in():
+    clients = [FakeClient(), FakeClient()]
+    prompt_up = _on_the_sigil([1, 2], clients)
+    machine = FakeMachine(options={"Safety Delay": 0.01})
+
+    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(nh, "is_visible_by_path", new=prompt_up):
+        result = await ed.run(machine, clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert [c.send_key.await_count for c in clients] == [1, 2]
+    assert any("P2 is still at the prompt; pressing X again" in line[0] for line in machine.logs)
+
+
+async def test_x_is_pressed_once_when_everyone_goes_in():
+    clients = [FakeClient(), FakeClient()]
+    prompt_up = _on_the_sigil([1, 1], clients)
+
+    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(nh, "is_visible_by_path", new=prompt_up):
+        result = await ed.run(FakeMachine(options={"Safety Delay": 0.01}), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert [c.send_key.await_count for c in clients] == [1, 1]
