@@ -61,6 +61,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot import variables
 from bartlebot.bot.schema import VariableModel
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.widgets.inputs.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.inputs.option_widgets import TYPE_LABELS
 from bartlebot.gui.widgets.inputs.variable_widgets import VariableValueField
@@ -112,6 +113,7 @@ class VariableDialog(ThemedMixin, QDialog):
         super().__init__(parent)
         editing = existing is not None
         self.setWindowTitle("Edit Variable" if editing else "Add Variable")
+        set_help_topic(self, "variables")
         self.setModal(True)
         self.setMinimumWidth(_DIALOG_MIN_W)
         self._config = config
@@ -329,6 +331,7 @@ class VariablesSection(SidebarSection):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("Variables", parent)
+        set_help_topic(self, "variables")
         self._config: BotConfig | None = None
         self._editable = False
         self._rows: dict[str, QWidget] = {}

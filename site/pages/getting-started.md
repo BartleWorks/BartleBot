@@ -43,6 +43,8 @@ BartleBot's window has four areas. Hide or show each one from the **View** menu,
 - **The right sidebar**, on its right, holds **Players**, **Drops** and **Log**.
 - **The bot canvas**, along the bottom, shows the bot library, and then the bot you open.
 
+Press F1 to open the page of this guide about what you're looking at, or select the **?** beside a dialog's close button. The **Help** menu opens the guide, Troubleshooting and the folder of logs.
+
 ## Launch the game
 
 Quick Launch lists your accounts on the left and your launch profiles on the right. Select one and select **Launch**, or double-click its card. The **Launch** menu has the same choices.

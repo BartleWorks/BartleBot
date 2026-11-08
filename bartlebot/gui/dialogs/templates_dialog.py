@@ -46,6 +46,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.combat.strategy_tags import SOURCE
 from bartlebot.content.store_roots import SOURCE_LABELS
 from bartlebot.content.templates.template_gallery import GalleryEntry
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.widgets.pickers.tag_picker import TagPickerButton, source_vocabulary, tag_icon
 from bartlebot.gui.widgets.pills.source_pill import source_pill
 
@@ -95,6 +96,7 @@ class TemplatesDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Templates")
+        set_help_topic(self, "templates")
         self.setMinimumSize(600, 460)
         self.resize(760, 560)
         self._load = load

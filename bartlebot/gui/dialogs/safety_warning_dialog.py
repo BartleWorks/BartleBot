@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import handle_level_scaling, quicksell
@@ -442,6 +443,7 @@ class SafetyWarningDialog(QDialog):
     def __init__(self, warnings: list[SafetyWarning], parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Safety Check")
+        set_help_topic(self, "safety_check")
         self.setMinimumWidth(440)
         self._edits: list[tuple[str, QLineEdit]] = []
         self._opt_outs: list[tuple[QCheckBox, Callable[[Any], None]]] = []

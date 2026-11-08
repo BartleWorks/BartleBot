@@ -33,6 +33,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.game import entity_names
+from bartlebot.gui.context_help import set_help_topic
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ class EntityBrowserDialog(QDialog):
 
     def _build_ui(self) -> None:
         self.setWindowTitle("Entity Browser")
+        set_help_topic(self, "entity_browser")
         self.resize(560, 440)
 
         root_layout = QVBoxLayout(self)

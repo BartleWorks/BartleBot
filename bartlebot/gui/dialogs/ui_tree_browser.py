@@ -47,6 +47,7 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.nodes.node_helpers import strip_html
 
 logger = logging.getLogger(__name__)
@@ -302,6 +303,7 @@ class UITreeBrowserDialog(QDialog):
 
     def _build_ui(self) -> None:
         self.setWindowTitle("UI Tree Browser")
+        set_help_topic(self, "ui_tree_browser")
         self.resize(760, 520)
 
         root_layout = QVBoxLayout(self)

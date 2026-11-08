@@ -54,12 +54,14 @@ from bartlebot.content.subgraphs.subgraph_store import (
 )
 from bartlebot.content.subgraphs.subgraph_tags import CATEGORY, SOURCE, SUBGRAPH_CATEGORIES, subgraph_matches
 from bartlebot.content.subgraphs.subgraphs import entry_nodes, exit_nodes, port_name
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.widgets.pickers.tag_picker import SUBGRAPH_VOCABULARY, TagPickerButton, source_vocabulary
 from bartlebot.gui.widgets.pills.source_pill import source_pill
 from bartlebot.gui.widgets.pills.tag_pill import TagPill
 from bartlebot.nodes.help_text import retry_limit_note
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY, node_display_name
+from bartlebot.packaging.help_topics import node_help_url
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -649,6 +651,8 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         self._use_counts: dict[str, int] | None = None  # computed on first subgraph selection
 
         self.setWindowTitle("Node Browser" if mode == "view" else "Add Node")
+        # F1 and the ? open the shown node's reference entry (context_help_url), else this.
+        set_help_topic(self, "node_browser")
         self.setMinimumSize(860, 520)
         self._restore_geometry()
 
@@ -842,6 +846,12 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
     def selected_node_type(self) -> str | None:
         """Returns the chosen node_type key, or None if nothing was selected."""
         return self._selected_node_type
+
+    def context_help_url(self) -> str | None:
+        """F1 here: the shown node's reference entry, or None for a subgraph or nothing shown."""
+        if self._selected_node_type in NODE_SPECS:
+            return node_help_url(self._selected_node_type)
+        return None
 
     # ------------------------------------------------------------------
     # List population

@@ -155,6 +155,7 @@ from bartlebot.gui.combat_strategies.dsl_checks import DeferredDslChecks
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
+from bartlebot.gui.context_help import set_help_topic
 from bartlebot.gui.dialogs.export_dialog import run_export
 from bartlebot.gui.widgets.cards.strategy_card import StrategyCard
 from bartlebot.gui.widgets.labels.step_heading import Step, StepHeading
@@ -1423,6 +1424,7 @@ class CombatStrategyDialog(QDialog):
             self.setWindowTitle(flow.title)
         else:
             self.setWindowTitle("Pick a Combat Strategy" if mode is DialogMode.PICK else "Combat Strategies")
+        set_help_topic(self, "combat_strategies")
         self.setMinimumSize(880, 560)
         # Wider than the minimum so the card sidebar isn't fighting the detail
         # pane for space by default — see issue #44 — and wide enough that a card

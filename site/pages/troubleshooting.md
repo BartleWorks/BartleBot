@@ -135,13 +135,13 @@ BartleBot writes a log of each session to:
 %APPDATA%\Bartleby\BartleBot\logs
 ```
 
-Paste that into the address bar of File Explorer to open it. Each file is named for the date and time BartleBot started, such as `bartlebot_2026-11-07_21-49-03.log`. BartleBot keeps the 10 most recent.
+Open it with **Help › Open Logs Folder**, or paste that into the address bar of File Explorer. Each file is named for the date and time BartleBot started, such as `bartlebot_2026-11-07_21-49-03.log`. BartleBot keeps the 10 most recent.
 
 The **Log** tab in the right sidebar shows the same session as it happens. Its **Export** button saves what it shows to a file.
 
 ## Opening an issue
 
-[Open an issue](https://github.com/BartleWorks/BartleBot/issues/new) on GitHub. Issues are public, so anyone can read what you attach.
+[Open an issue](https://github.com/BartleWorks/BartleBot/issues/new) on GitHub, or select **Help › Report a Problem**. Issues are public, so anyone can read what you attach.
 
 Include:
 
