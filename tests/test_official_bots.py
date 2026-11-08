@@ -21,10 +21,10 @@ from bartlebot.content import bot_roots
 from bartlebot.content.store_roots import DEV_ENV_VAR, SOURCE_LABELS, Origin
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
 from bartlebot.content.templates import template_diff
-from bartlebot.gui.canvas.bot_canvas import (
-    BotMode,
+from bartlebot.gui.canvas.bot_canvas import BotMode
+from bartlebot.gui.canvas.bot_library import (
+    BotLibraryPanel,
     _BotCard,
-    _BotLibraryPanel,
     _BotMeta,
     _read_bot_meta,
     filter_bot_metas,
@@ -94,7 +94,7 @@ class _Answer:
 def answer(monkeypatch):
     def install_answer(name: str | None) -> _Answer:
         fake = _Answer(name)
-        monkeypatch.setattr("bartlebot.app_controller.MakeCopyDialog", fake)
+        monkeypatch.setattr("bartlebot.controller.documents.MakeCopyDialog", fake)
         return fake
 
     return install_answer
@@ -106,7 +106,7 @@ def answer(monkeypatch):
 
 
 def test_an_official_bot_opens_read_only_and_in_run_mode(harness, official_path):
-    harness._open_bot(str(official_path), mode=BotMode.EDIT)
+    harness._documents.open_bot(str(official_path), mode=BotMode.EDIT)
 
     canvas = harness._window.bot_canvas
     assert canvas.is_read_only
@@ -115,7 +115,7 @@ def test_an_official_bot_opens_read_only_and_in_run_mode(harness, official_path)
 
 
 def test_asking_for_edit_mode_asks_for_a_copy_instead(harness, official_path):
-    harness._open_bot(str(official_path))
+    harness._documents.open_bot(str(official_path))
     canvas = harness._window.bot_canvas
     asked: list[bool] = []
     canvas.copy_requested.connect(lambda: asked.append(True))
@@ -129,12 +129,12 @@ def test_asking_for_edit_mode_asks_for_a_copy_instead(harness, official_path):
 
 def test_an_official_bot_is_never_marked_unsaved_or_written(harness, official_path):
     before = official_path.read_bytes()
-    harness._open_bot(str(official_path))
+    harness._documents.open_bot(str(official_path))
 
     harness._window.bot_canvas.config_changed.emit()
 
-    assert not harness._has_unsaved_changes
-    assert not harness._save_bot()
+    assert not harness._documents.has_unsaved_changes
+    assert not harness._documents.save_bot()
     assert official_path.read_bytes() == before
 
 
@@ -147,9 +147,9 @@ def test_run_mode_option_values_still_apply_to_an_official_bot(harness, official
     bot.options = [BotOptionModel(name="laps", type="int", default=1)]
     bot.save(official_path)
     SettingsManager.instance().set_option_override(OFFICIAL_ID, "laps", 3)
-    harness._open_bot(str(official_path))
+    harness._documents.open_bot(str(official_path))
 
-    assert option_value(harness._loaded_config, "laps") == 3
+    assert option_value(harness._documents._loaded_config, "laps") == 3
 
 
 def test_the_template_review_is_not_offered_on_an_official_bot(harness, official_path, tmp_path, monkeypatch):
@@ -159,8 +159,8 @@ def test_the_template_review_is_not_offered_on_an_official_bot(harness, official
     user_bot = bot_roots.user_bots_dir() / "mine.json"
     _bot("mine", "Mine").save(user_bot)
 
-    harness._open_bot(str(official_path))
-    harness._open_bot(str(user_bot))
+    harness._documents.open_bot(str(official_path))
+    harness._documents.open_bot(str(user_bot))
 
     assert offered == [None, "update"]
 
@@ -168,7 +168,7 @@ def test_the_template_review_is_not_offered_on_an_official_bot(harness, official
 def test_developer_mode_edits_an_official_bot_in_place(harness, official_path, monkeypatch):
     monkeypatch.setenv(DEV_ENV_VAR, "1")
 
-    harness._open_bot(str(official_path), mode=BotMode.EDIT)
+    harness._documents.open_bot(str(official_path), mode=BotMode.EDIT)
 
     assert not harness._window.bot_canvas.is_read_only
     assert harness._window.bot_canvas.mode is BotMode.EDIT
@@ -180,9 +180,9 @@ def test_save_as_leaves_a_plain_copy_that_is_the_users_to_edit(harness, official
     target = bot_roots.user_bots_dir() / "copy.json"
     monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *_a: (str(target), "")))
     SettingsManager.instance().set_option_override(OFFICIAL_ID, "laps", 3)
-    harness._open_bot(str(official_path))
+    harness._documents.open_bot(str(official_path))
 
-    assert harness._save_bot_as()
+    assert harness._documents.save_bot_as()
 
     assert not harness._window.bot_canvas.is_read_only
     copy = BotConfig.load(target)
@@ -199,9 +199,9 @@ def test_save_as_starts_the_copy_with_no_history_and_leaves_the_original_its_own
     bot.history = ["an-older-id"]
     bot.save(original)
     monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *_a: (str(target), "")))
-    harness._open_bot(str(original))
+    harness._documents.open_bot(str(original))
 
-    assert harness._save_bot_as()
+    assert harness._documents.save_bot_as()
 
     assert BotConfig.load(target).history == []
     assert BotConfig.load(original).history == ["an-older-id"]
@@ -220,9 +220,9 @@ def test_make_my_own_copy_writes_a_fork_and_opens_it_in_edit_mode(harness, offic
     save_bot_strategy(bcs)
     settings.set_active_strategy(OFFICIAL_ID, bcs.id)
     asked = answer("My Jade Oni")
-    harness._open_bot(str(official_path))
+    harness._documents.open_bot(str(official_path))
     # As AppController._wire connects it.
-    harness._window.bot_canvas.copy_requested.connect(lambda: harness._make_own_copy())
+    harness._window.bot_canvas.copy_requested.connect(lambda: harness._documents.make_own_copy())
 
     harness._window.bot_canvas.enter_edit_mode()
 
@@ -232,7 +232,7 @@ def test_make_my_own_copy_writes_a_fork_and_opens_it_in_edit_mode(harness, offic
     assert fork.name == "My Jade Oni"
     assert fork.id != OFFICIAL_ID
     assert fork.forked_from is not None and fork.forked_from.id == OFFICIAL_ID
-    assert harness._last_save_path == str(target)
+    assert harness._documents.last_save_path == str(target)
     assert harness._window.bot_canvas.mode is BotMode.EDIT
     assert not harness._window.bot_canvas.is_read_only
     assert settings.get_option_override(fork.id, "laps") == 3
@@ -243,12 +243,12 @@ def test_make_my_own_copy_writes_a_fork_and_opens_it_in_edit_mode(harness, offic
 
 def test_cancelling_make_my_own_copy_writes_nothing(harness, official_path, answer):
     answer(None)
-    harness._open_bot(str(official_path))
+    harness._documents.open_bot(str(official_path))
 
-    assert not harness._make_own_copy()
+    assert not harness._documents.make_own_copy()
 
     assert not bot_roots.user_bots_dir().exists() or not any(bot_roots.user_bots_dir().rglob("*.json"))
-    assert harness._last_save_path == str(official_path)
+    assert harness._documents.last_save_path == str(official_path)
     assert harness._window.bot_canvas.mode is BotMode.RUN
 
 
@@ -256,9 +256,9 @@ def test_make_my_own_copy_is_only_offered_on_an_official_bot(harness, answer):
     asked = answer("Mine")
     user_bot = bot_roots.user_bots_dir() / "mine.json"
     _bot("mine", "Mine").save(user_bot)
-    harness._open_bot(str(user_bot))
+    harness._documents.open_bot(str(user_bot))
 
-    assert not harness._make_own_copy()
+    assert not harness._documents.make_own_copy()
     assert asked.asked == []
 
 
@@ -331,16 +331,16 @@ def test_a_copy_says_which_official_bot_it_came_from(qapp):
     assert card.meta_text == forked_from_text("Jade Oni")
 
 
-def _cards(panel: _BotLibraryPanel) -> list[_BotCard]:
+def _cards(panel: BotLibraryPanel) -> list[_BotCard]:
     layout = panel._cards_layout
     return [w for i in range(layout.count()) if isinstance(w := layout.itemAt(i).widget(), _BotCard)]
 
 
 def test_the_library_shows_each_bots_source_and_filters_by_it(qapp, official_path, harness, answer):
     answer("My Jade Oni")
-    harness._open_bot(str(official_path))
-    assert harness._make_own_copy()
-    panel = _BotLibraryPanel()
+    harness._documents.open_bot(str(official_path))
+    assert harness._documents.make_own_copy()
+    panel = BotLibraryPanel()
     panel.refresh()
     panel._cat_list.setCurrentRow(
         next(i for i in range(panel._cat_list.count()) if panel._cat_list.item(i).text() == "All")
@@ -368,7 +368,7 @@ def test_the_subgraphs_folder_shows_each_definitions_source(qapp, tmp_path):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     SubgraphLibrary(shipped).save(sync_players_definition())
     SubgraphLibrary(user).save(sync_players_definition().model_copy(update={"id": "mine", "name": "My sync"}))
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(SubgraphLibrary(shipped, user))
     panel.refresh()
     panel._cat_list.setCurrentRow(

@@ -10,10 +10,10 @@ touched and left empty, or after a refused save.
 from bartleby.qt.theming.theme import THEME
 from PyQt6.QtWidgets import QLabel
 
-from bartlebot.gui.canvas.param_panel import (
+from bartlebot.gui.canvas.param_form import (
     ZONE_GLOB_HELP,
     ZONE_PLACEHOLDER,
-    _DynamicParamForm,
+    DynamicParamForm,
     _NavZoneField,
     _ZoneWidget,
 )
@@ -28,8 +28,8 @@ DEST = ParamField(key="dest", type="nav_zone", label="Zone", required=True, defa
 PAGE = ParamField(key="wiki_page", type="wiki_page", label="Wiki page", default="")
 
 
-def _form(schema, params=None, **kwargs) -> _DynamicParamForm:
-    form = _DynamicParamForm()
+def _form(schema, params=None, **kwargs) -> DynamicParamForm:
+    form = DynamicParamForm()
     form.load_schema(schema, params or {}, **kwargs)
     return form
 

@@ -9,16 +9,15 @@ file against its original before offering it.
 from __future__ import annotations
 
 import os
-from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot import app_controller
-from bartlebot.app_controller import AppController
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.controller.documents import Documents
+from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.settings_manager import SettingsManager
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 from tests.content.subgraphs.test_subgraphs import SYNC_ID, linked_bot, sync_players_definition
@@ -39,8 +38,7 @@ def harness(qapp, library, tmp_path):
     h = ControllerHarness(canvas, library)
     path = tmp_path / "linked.json"
     linked_bot(library.get(SYNC_ID), library).save(path)
-    h._close_bot = AppController._close_bot.__get__(h)
-    h._open_bot(str(path))
+    h._documents.open_bot(str(path))
     yield h
     canvas.prepare_for_shutdown()
 
@@ -58,7 +56,7 @@ def asked(monkeypatch) -> list[str]:
         titles.append(title)
         return QMessageBox.StandardButton.Discard
 
-    monkeypatch.setattr(app_controller.QMessageBox, "question", question)
+    monkeypatch.setattr(QMessageBox, "question", question)
     return titles
 
 
@@ -67,8 +65,8 @@ def test_edit_then_done_is_not_a_change(harness):
     canvas.enter_edit_mode()
     canvas.exit_edit_mode()
 
-    assert not harness._has_unsaved_changes
-    harness._do_autosave()
+    assert not harness._documents.has_unsaved_changes
+    harness._documents.do_autosave()
     assert not _autosave().exists()
 
 
@@ -78,67 +76,67 @@ def test_done_announces_an_edit_that_did_not_announce_itself(harness):
     canvas.config.name = "Renamed"
     canvas.exit_edit_mode()
 
-    assert harness._has_unsaved_changes
+    assert harness._documents.has_unsaved_changes
 
 
 def test_the_autosave_skips_a_flag_raised_without_a_change(harness):
-    harness._on_config_changed()
+    harness._documents.on_config_changed()
 
-    harness._do_autosave()
+    harness._documents.do_autosave()
 
     assert not _autosave().exists()
-    assert not harness._has_unsaved_changes, "the flag comes down once the check finds nothing"
+    assert not harness._documents.has_unsaved_changes, "the flag comes down once the check finds nothing"
 
 
 def test_close_does_not_ask_about_a_flag_raised_without_a_change(harness, asked):
-    harness._on_config_changed()
+    harness._documents.on_config_changed()
 
-    harness._close_bot()
+    harness._documents.close_bot()
 
     assert asked == []
-    assert harness._loaded_config is None
+    assert harness._documents.loaded_config is None
 
 
 def test_close_asks_about_a_real_edit(harness, asked):
-    harness._loaded_config.name = "Renamed"
-    harness._on_config_changed()
+    harness._documents.loaded_config.name = "Renamed"
+    harness._documents.on_config_changed()
 
-    harness._close_bot()
+    harness._documents.close_bot()
 
     assert asked == ["Close Bot"]
 
 
 def test_a_real_edit_is_autosaved(harness):
-    harness._loaded_config.name = "Renamed"
-    harness._on_config_changed()
+    harness._documents.loaded_config.name = "Renamed"
+    harness._documents.on_config_changed()
 
-    harness._do_autosave()
+    harness._documents.do_autosave()
 
     assert BotConfig.load(_autosave()).name == "Renamed"
 
 
 def test_undoing_back_to_the_saved_bot_removes_the_autosave(harness):
-    original = harness._loaded_config.name
-    harness._loaded_config.name = "Renamed"
-    harness._on_config_changed()
-    harness._do_autosave()
+    original = harness._documents.loaded_config.name
+    harness._documents.loaded_config.name = "Renamed"
+    harness._documents.on_config_changed()
+    harness._documents.do_autosave()
     assert _autosave().exists()
 
-    harness._loaded_config.name = original
-    harness._on_config_changed()
-    harness._do_autosave()
+    harness._documents.loaded_config.name = original
+    harness._documents.on_config_changed()
+    harness._documents.do_autosave()
 
     assert not _autosave().exists()
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
 
 def test_a_save_moves_the_baseline(harness):
-    harness._loaded_config.name = "Renamed"
-    harness._on_config_changed()
-    harness._save_bot()
-    harness._on_config_changed()  # e.g. Done after Save
+    harness._documents.loaded_config.name = "Renamed"
+    harness._documents.on_config_changed()
+    harness._documents.save_bot()
+    harness._documents.on_config_changed()  # e.g. Done after Save
 
-    harness._do_autosave()
+    harness._documents.do_autosave()
 
     assert not _autosave().exists()
 
@@ -176,10 +174,11 @@ def _scan(tmp_path, autosaved: BotConfig | str) -> tuple[list, object]:
     SettingsManager.instance().set_autosave_origin("farm", str(original))
 
     offered: list = []
-    ns = SimpleNamespace(_offer_recovery=offered.append)
-    for name in ("_check_crash_recovery", "_find_original_for_stem", "_delete_autosave"):
-        setattr(ns, name, getattr(AppController, name).__get__(ns))
-    ns._check_crash_recovery()
+    docs = Documents(
+        MagicMock(), SubgraphLibrary(tmp_path / "lib"), TemplateRoots(), clients=lambda: [], is_running=lambda: False
+    )
+    docs._offer_recovery = offered.append
+    docs.check_crash_recovery()
     return offered, recovery
 
 
@@ -211,9 +210,9 @@ def test_startup_offers_a_recovery_file_that_will_not_load(tmp_path):
 
 
 def _edit_and_autosave(harness) -> None:
-    harness._loaded_config.name = "Renamed"
-    harness._on_config_changed()
-    harness._do_autosave()
+    harness._documents.loaded_config.name = "Renamed"
+    harness._documents.on_config_changed()
+    harness._documents.do_autosave()
     assert _autosave().exists()
 
 
@@ -227,26 +226,26 @@ def test_opening_another_bot_asks_about_a_real_edit(harness, asked, library, tmp
     _edit_and_autosave(harness)
     other = _other_bot(library, tmp_path)
 
-    harness._open_bot(str(other))
+    harness._documents.open_bot(str(other))
 
     assert asked == ["Open Bot"]
-    assert harness._last_save_path == str(other)
+    assert harness._documents.last_save_path == str(other)
     assert not _autosave().exists(), "a discarded edit is not offered back at the next launch"
 
 
 def test_cancel_keeps_the_edited_bot_open(harness, monkeypatch, library, tmp_path):
-    monkeypatch.setattr(app_controller.QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
     _edit_and_autosave(harness)
 
-    harness._open_bot(str(_other_bot(library, tmp_path)))
+    harness._documents.open_bot(str(_other_bot(library, tmp_path)))
 
-    assert harness._loaded_config.name == "Renamed"
-    assert harness._has_unsaved_changes
+    assert harness._documents.loaded_config.name == "Renamed"
+    assert harness._documents.has_unsaved_changes
     assert _autosave().exists()
 
 
 def test_opening_over_an_unedited_bot_asks_nothing(harness, asked, library, tmp_path):
-    harness._open_bot(str(_other_bot(library, tmp_path)))
+    harness._documents.open_bot(str(_other_bot(library, tmp_path)))
 
     assert asked == []
 
@@ -254,13 +253,17 @@ def test_opening_over_an_unedited_bot_asks_nothing(harness, asked, library, tmp_
 def test_discarding_on_close_removes_the_bots_own_recovery_file(harness, asked):
     _edit_and_autosave(harness)
 
-    harness._close_bot()
+    harness._documents.close_bot()
 
     assert asked == ["Close Bot"]
     assert not _autosave().exists()
 
 
 def test_quitting_asks_about_a_real_edit(harness, asked):
+    from bartlebot.app_controller import AppController  # noqa: PLC0415
+
+    # The quit gate is the controller's own; it asks the open document first.
+    harness._confirm_shutdown = AppController._confirm_shutdown.__get__(harness)
     harness._clients_released = False
     harness._shutdown_task = None
     harness._client_manager = MagicMock(clients=[], unhooked_clients=[])

@@ -12,18 +12,19 @@ import logging
 import shutil
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 from bartleby.shared.combat_defaults import PREFERENCE_KEYS, TeamSize
 from bartleby.shared.preferences import PreferenceStore
 from bartleby.shared.strategy_models import DuelCombatStrategy, PlayerAssignment, PlayerCombatStrategy
 
-from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.combat import strategy_store
 from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.combat_resolution import CombatResolver
 from bartlebot.combat.combat_warnings import check_combat
+from bartlebot.controller import run as run_module
 from bartlebot.gui.dialogs import combat_faults_dialog
 from bartlebot.paths import project_root
 
@@ -45,15 +46,15 @@ def _bot() -> BotConfig:
 
 
 class _Controller:
-    """Hosts AppController's combat check, with *pick* as the bot's Bot Combat Strategy."""
+    """Hosts the run's combat check, with *pick* as the bot's Bot Combat Strategy."""
 
     def __init__(self, clients: int) -> None:
-        from bartlebot.app_controller import AppController  # noqa: PLC0415
+        from bartlebot.controller.run import Run  # noqa: PLC0415
 
         for name in ("_confirm_combat", "_check_combat", "_log_combat_sources"):
-            setattr(self, name, getattr(AppController, name).__get__(self))
+            setattr(self, name, getattr(Run, name).__get__(self))
         self._client_manager = SimpleNamespace(clients=[object()] * clients)
-        self._loaded_config = _bot()
+        self._documents = MagicMock(loaded_config=_bot())
         self._window = None
 
 
@@ -66,13 +67,13 @@ def world(tmp_path: Path, monkeypatch, qapp):
     state = SimpleNamespace(roots=(shipped, user), prefs=prefs, pick=None, shown=[], answer=False)
 
     monkeypatch.setattr(
-        app_controller, "check_combat", functools.partial(check_combat, root=shipped, user_root=user, prefs=prefs)
+        run_module, "check_combat", functools.partial(check_combat, root=shipped, user_root=user, prefs=prefs)
     )
     monkeypatch.setattr(
-        app_controller, "CombatResolver", functools.partial(CombatResolver, root=shipped, user_root=user, prefs=prefs)
+        run_module, "CombatResolver", functools.partial(CombatResolver, root=shipped, user_root=user, prefs=prefs)
     )
     settings = SimpleNamespace(get_active_strategy=lambda _bot_id: state.pick)
-    monkeypatch.setattr(app_controller, "SettingsManager", SimpleNamespace(instance=lambda: settings))
+    monkeypatch.setattr(run_module, "SettingsManager", SimpleNamespace(instance=lambda: settings))
 
     def confirm_run(_parent, faults):
         state.shown.append(list(faults))
@@ -168,7 +169,7 @@ def test_a_notice_opens_no_dialog_and_is_logged_once(world, make, caplog):
     """Once across the check and the run-start line, which say the same of a fallback (epic #201 review, R4)."""
     expected = make(world)
 
-    with caplog.at_level(logging.INFO, logger=app_controller.__name__):
+    with caplog.at_level(logging.INFO, logger=run_module.__name__):
         controller = _Controller(2)
         assert controller._confirm_combat() is True
         controller._log_combat_sources()

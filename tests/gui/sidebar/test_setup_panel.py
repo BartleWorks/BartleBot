@@ -481,7 +481,7 @@ def test_a_fill_in_row_is_marked_required_with_its_step_in_a_bot(canvas):
 
     canvas.select_state("t_2")
 
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
     assert "enemy" in [f.key for f in form.required_fields()], "blank blocks Run, so the row says so"
     assert form.widget("enemy").placeholderText() == f"Fill in: {_MOB.text}"
     assert form.fill_hint_text("wiki_page") is None, "not a fill-in"
@@ -496,7 +496,7 @@ def test_a_drafts_rows_wear_their_step_or_offer_to_join_one(canvas):
 
     canvas.select_state("t_2")
 
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
     assert form.step_chip_text("enemy") == "Setup step 2"
     assert form.step_button("enemy") is None
     assert form.step_button("wiki_page") is not None
@@ -507,7 +507,7 @@ def test_a_rows_button_adds_the_param_to_a_step_and_its_chip_takes_it_out(canvas
     draft = _draft()
     canvas.setup(draft, mode=BotMode.EDIT)
     canvas.select_state("t_2")
-    form = canvas.param_panel.param_form
+    form = canvas.param_panel.node_page.param_form
 
     canvas.add_setup_target("t_2", "wiki_page", 1)
 
@@ -633,7 +633,7 @@ def harness(qapp, store, tmp_path):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    h._templates_root = store
+    h._roots.root = store
     yield h
     canvas.prepare_for_shutdown()
 
@@ -642,7 +642,7 @@ def test_opening_a_bot_made_from_a_template_brings_its_steps_and_names_it(harnes
     path = tmp_path / "bots" / "trolls.json"
     _bot().save(path)
 
-    harness._open_bot(str(path), mode=BotMode.EDIT)
+    harness._documents.open_bot(str(path), mode=BotMode.EDIT)
 
     canvas = harness._window.bot_canvas
     assert canvas.has_setup_steps and canvas.setup_steps_left == 3
@@ -655,8 +655,8 @@ def test_opening_and_saving_a_bot_with_steps_left_changes_nothing_in_its_file(ha
     _bot().save(path)
     before = path.read_bytes()
 
-    harness._open_bot(str(path), mode=BotMode.EDIT)
-    assert harness._save_bot()
+    harness._documents.open_bot(str(path), mode=BotMode.EDIT)
+    assert harness._documents.save_bot()
 
     assert path.read_bytes() == before, "the steps are read from the template, never written into the bot"
 
@@ -667,7 +667,7 @@ def test_opening_and_saving_a_bot_with_steps_left_changes_nothing_in_its_file(ha
 
 
 def test_a_library_row_says_how_many_setup_steps_are_left(qapp, store, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import _BotCard, _read_bot_meta  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import _BotCard, _read_bot_meta  # noqa: PLC0415
 
     half = tmp_path / "trolls.json"
     bot = _bot()
@@ -1172,16 +1172,16 @@ def test_opening_a_bot_behind_reads_its_update_and_finishing_brings_the_newer_st
     _bot().save(path)
     before = path.read_bytes()
     canvas = harness._window.bot_canvas
-    canvas.template_ref_changed.connect(harness._refresh_template_context)
+    canvas.template_ref_changed.connect(harness._templates.refresh_template_context)
 
-    harness._open_bot(str(path), mode=BotMode.EDIT)
+    harness._documents.open_bot(str(path), mode=BotMode.EDIT)
 
     assert canvas.header.template_chip.text() == "Mob Farmer v1 \u2192 v2"
     assert [c.title for c in canvas.template_review.changes] == [
         "Add 'Collect wisps'",
         "Defeat mobs \u00b7 Max Duration (s)",
     ]
-    assert harness._save_bot() and path.read_bytes() == before, "reading an update writes nothing"
+    assert harness._documents.save_bot() and path.read_bytes() == before, "reading an update writes nothing"
 
     for change in list(canvas.template_review.changes):
         assert canvas.apply_template_change(change.id)
@@ -1190,12 +1190,12 @@ def test_opening_a_bot_behind_reads_its_update_and_finishing_brings_the_newer_st
     assert canvas.header.template_chip.text() == "Mob Farmer v2"
     assert canvas.template_review is None
     assert canvas.setup_steps_left == 4, "the newer version's step came with the new base"
-    assert harness._save_bot()
+    assert harness._documents.save_bot()
     assert BotConfig.load(path).template == TemplateRef(id=TEMPLATE_ID, version=2)
 
 
 def test_a_library_row_says_when_the_template_has_moved_on(qapp, store, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import UPDATE_AVAILABLE_TEXT, _BotCard, _read_bot_meta  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import UPDATE_AVAILABLE_TEXT, _BotCard, _read_bot_meta  # noqa: PLC0415
 
     path = tmp_path / "trolls.json"
     _bot().save(path)
@@ -1226,14 +1226,14 @@ def test_save_as_keeps_the_copys_setup_steps_and_its_review(harness, store, tmp_
     release(TEMPLATE_ID, _NOTE, root=store, today=date(2026, 10, 2))
     path = tmp_path / "bots" / "trolls.json"
     _bot().save(path)
-    harness._open_bot(str(path), mode=BotMode.EDIT)
+    harness._documents.open_bot(str(path), mode=BotMode.EDIT)
     canvas = harness._window.bot_canvas
     assert canvas.setup_steps_left == 3 and canvas.template_review is not None
     copy = tmp_path / "bots" / "copy.json"
     monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(copy), "")))
     monkeypatch.setattr(type(harness), "_confirm_rewards_tags", lambda self: True, raising=False)
 
-    assert harness._save_bot_as()
+    assert harness._documents.save_bot_as()
 
     assert canvas.config.id != "bot-mob"
     assert canvas.has_setup_steps and canvas.setup_steps_left == 3
@@ -1249,8 +1249,8 @@ def test_an_undo_across_finish_gives_the_controller_the_older_base_back(harness,
     path = tmp_path / "bots" / "trolls.json"
     _bot().save(path)
     canvas = harness._window.bot_canvas
-    canvas.template_ref_changed.connect(harness._refresh_template_context)
-    harness._open_bot(str(path), mode=BotMode.EDIT)
+    canvas.template_ref_changed.connect(harness._templates.refresh_template_context)
+    harness._documents.open_bot(str(path), mode=BotMode.EDIT)
 
     assert canvas.finish_template_review()
     assert canvas.header.template_chip.text() == "Mob Farmer v2" and canvas.template_review is None
@@ -1360,7 +1360,7 @@ def test_a_library_row_counts_a_files_steps_once_until_the_file_changes(qapp, st
     """Counting validates the whole file, and the library reads every bot each time it is listed."""
     import os  # noqa: PLC0415
 
-    from bartlebot.gui.canvas.bot_canvas import _read_bot_meta  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import _read_bot_meta  # noqa: PLC0415
 
     counted: list[int] = []
     real = setup_steps.left_in_file

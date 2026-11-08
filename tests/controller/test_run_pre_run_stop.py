@@ -5,7 +5,7 @@ the client order or a gear set. Stop used to reach only the machine, which nothi
 until the first node, so every deck apply and the whole group formation ran to the end
 before the bot stopped. Now Stop cancels the setup and the run never begins.
 
-No QApplication: _start_bot and _stop_bot are bound onto a harness whose window, sidebars
+No QApplication: _start_bot and stop_bot are bound onto a harness whose window, sidebars
 and the rest are mocks.
 """
 
@@ -16,8 +16,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from bartlebot import app_controller
-from bartlebot.app_controller import AppController
+from bartlebot.controller import run as run_module
+from bartlebot.controller.run import Run
 
 
 class _Machine:
@@ -33,8 +33,8 @@ class _Harness:
     """Any attribute _start_bot touches that a test does not set is a mock."""
 
     def __init__(self) -> None:
-        self._start_bot = AppController._start_bot.__get__(self)
-        self._stop_bot = AppController._stop_bot.__get__(self)
+        self._start_bot = Run._start_bot.__get__(self)
+        self.stop_bot = Run.stop_bot.__get__(self)
         self._pre_run = None
         self._current_machine = None
         self._client_manager = MagicMock(clients=[MagicMock()])
@@ -62,11 +62,11 @@ class _Harness:
 @pytest.fixture(autouse=True)
 def quiet(monkeypatch):
     """The machine, the wake lock and the log bridge, none of which this is about."""
-    monkeypatch.setattr(app_controller, "BotMachine", _Machine)
+    monkeypatch.setattr(run_module, "BotMachine", _Machine)
     # wakepy is imported as the run starts, so the patch is on the module it comes from.
     monkeypatch.setattr("wakepy.keep", SimpleNamespace(running=lambda **_k: contextlib.nullcontext()))
-    monkeypatch.setattr(app_controller, "add_gui_callback", lambda _cb: None)
-    monkeypatch.setattr(app_controller, "remove_gui_callback", lambda _cb: None)
+    monkeypatch.setattr(run_module, "add_gui_callback", lambda _cb: None)
+    monkeypatch.setattr(run_module, "remove_gui_callback", lambda _cb: None)
 
 
 async def test_stop_during_the_setup_cancels_it_and_the_run_never_begins():
@@ -75,7 +75,7 @@ async def test_stop_during_the_setup_cancels_it_and_the_run_never_begins():
     await harness.setup_started.wait()
     machine = harness._current_machine
 
-    harness._stop_bot()
+    harness.stop_bot()
     await asyncio.wait_for(task, timeout=1.0)
 
     assert harness.setup_cancelled

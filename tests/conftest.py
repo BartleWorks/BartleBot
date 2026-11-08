@@ -419,7 +419,7 @@ class ModalScreen:
 
 
 class FakeParamForm:
-    """Minimal stub for _DynamicParamForm used by recording workflows.
+    """Minimal stub for DynamicParamForm used by recording workflows.
 
     Recording workflows write through four methods, and snapshot/restore around them:
       - set_str(key, value)      — stores a string field

@@ -6,12 +6,12 @@ cannot reach a bot file through the panel, and that the two target modes visibly
 each other.
 """
 
-from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+from bartlebot.gui.canvas.param_form import DynamicParamForm
 from bartlebot.nodes.teleportation.teleport_to_friend import PARAM_SCHEMA
 
 
-def _form(params: dict) -> _DynamicParamForm:
-    form = _DynamicParamForm()
+def _form(params: dict) -> DynamicParamForm:
+    form = DynamicParamForm()
     form.load_schema(PARAM_SCHEMA, params)
     return form
 

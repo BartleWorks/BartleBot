@@ -135,7 +135,7 @@ them (`_note_variable_only_step`).
 ## Validation
 
 `variables.check(config)` returns errors and warnings, with no Qt. An error refuses the
-run (`AppController._check_variables`, beside the restricted-zone and Player Realms
+run (`Run._check_variables`, beside the restricted-zone and Player Realms
 checks); a warning is the author's. Both are on the canvas badge, each line headed
 `Variables:`, and an error disables Run as any other does. A problem's `states` mark those
 nodes too, so the node a condition or a write is on turns red or amber like one with a
@@ -202,7 +202,7 @@ edge's assignments. Every
 change goes out on `edit_starting` first, so it is one undo step like a panel edit.
 
 **Reading: the edge panel's Conditions** (`canvas/variable_rows.ConditionRow`, inside
-`param_panel._FlagConditionsWidget`). A row picks an option or a variable from one grouped
+`edge_page._FlagConditionsWidget`). A row picks an option or a variable from one grouped
 list. A variable row offers only the comparisons its type takes
 (`variables.comparisons_for`) and its value in **`VariableValueField`**
 (`widgets/inputs/variable_widgets.py`): a checkbox for a bool, a spin box for an int, the enum's

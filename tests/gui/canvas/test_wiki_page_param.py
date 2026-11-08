@@ -11,12 +11,12 @@ from __future__ import annotations
 import pytest
 
 from bartlebot.game.wiki_pages import WIKI_HOST, WIKI_PAGE_PARAM, resolve_wiki_page
-from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _WikiPageLineEdit
+from bartlebot.gui.canvas.param_form import DynamicParamForm, _WikiPageLineEdit
 from bartlebot.nodes.combat_and_healing.handle_combat import PARAM_SCHEMA
 
 
 def _form(params=None):
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(PARAM_SCHEMA, params or {})
     return form
 
@@ -196,7 +196,7 @@ def test_importing_in_a_definition_sets_the_page_on_the_node(definition_canvas):
     from bartlebot.content.subgraphs.subgraphs import config_to_definition
 
     panel = definition_canvas.param_panel
-    panel.apply_wiki_import([], "Creature:Lost Soul")
+    panel.node_page.apply_wiki_import([], "Creature:Lost Soul")
 
     assert panel.shown_state.params[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
     saved = config_to_definition(definition_canvas.config)
@@ -206,5 +206,5 @@ def test_importing_in_a_definition_sets_the_page_on_the_node(definition_canvas):
 
 def test_importing_with_no_page_leaves_the_param_alone(definition_canvas):
     panel = definition_canvas.param_panel
-    panel.apply_wiki_import([], None)
+    panel.node_page.apply_wiki_import([], None)
     assert WIKI_PAGE_PARAM not in (panel.shown_state.params or {}) or not panel.shown_state.params[WIKI_PAGE_PARAM]

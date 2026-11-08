@@ -159,9 +159,9 @@ def test_an_edges_page_lists_what_it_sets_and_hands_it_back_unchanged(canvas):
     canvas.setup(_bot())
     canvas.enter_edit_mode()
     _select(canvas, _edge_to(canvas, "enter", "spot"))
-    field = canvas.param_panel._edge_assign_field
+    field = canvas.param_panel.edge_page._edge_assign_field
     assert field.value() == [{"variable": "swords", "op": "set", "value": 0}]
-    assert canvas.param_panel._assign_lbl.text() == "When taken, set"
+    assert canvas.param_panel.edge_page._assign_lbl.text() == "When taken, set"
 
     _select(canvas, _edge_to(canvas, "spot", "spot"))
     assert field.value() == []
@@ -174,7 +174,7 @@ def test_adding_a_row_lands_on_the_edge_as_one_undo_step_and_relabels_it(canvas)
     edge = _edge_to(canvas, "which", "rack")
     _select(canvas, edge)
     trans = canvas.scene.transitions_of(edge)[0]
-    field = canvas.param_panel._edge_assign_field
+    field = canvas.param_panel.edge_page._edge_assign_field
 
     row = field.add_row()
     row.variable.setCurrentText("found")
@@ -192,7 +192,7 @@ def test_removing_the_last_row_takes_the_assignment_and_its_label_away(canvas):
     canvas.enter_edit_mode()
     edge = _edge_to(canvas, "spot", "which")
     _select(canvas, edge)
-    field = canvas.param_panel._edge_assign_field
+    field = canvas.param_panel.edge_page._edge_assign_field
     field.rows[0].remove_btn.click()
     assert canvas.scene.transitions_of(edge)[0].assign == []
     assert not edge.label.isVisible()
@@ -206,7 +206,7 @@ def test_with_no_variables_the_list_says_where_to_declare_one(canvas):
     canvas.setup(config)
     canvas.enter_edit_mode()
     _select(canvas, _edge_to(canvas, "spot", "spot"))
-    field = canvas.param_panel._edge_assign_field
+    field = canvas.param_panel.edge_page._edge_assign_field
     assert not field.add_btn.isEnabled()
     assert field.add_row() is None
 
@@ -219,7 +219,7 @@ def test_a_rename_on_the_options_tab_reshows_the_rows_with_the_new_name(canvas):
     variables.rename(config, "swords", "blades")
     config.variables[0] = VariableModel(name="blades", type="int")
     canvas.reshow_properties()
-    assert canvas.param_panel._edge_assign_field.value() == [{"variable": "blades", "op": "add", "value": 1}]
+    assert canvas.param_panel.edge_page._edge_assign_field.value() == [{"variable": "blades", "op": "add", "value": 1}]
     canvas.refresh_edge_flags()
     assert _edge_to(canvas, "spot", "which").label.shown_text == "→ blades + 1"
 
@@ -256,7 +256,7 @@ def test_every_transition_a_call_nodes_edge_stands_for_takes_its_assignments(qap
         canvas.enter_edit_mode()
         edge = next(e for s, w, d, e in canvas.scene.edge_items if (s, w, d) == (REGION, "exit_done", "state_1"))
         _select(canvas, edge)
-        row = canvas.param_panel._edge_assign_field.add_row()
+        row = canvas.param_panel.edge_page._edge_assign_field.add_row()
         row.op.setCurrentIndex(row.op.findData("toggle"))
         models = canvas.scene.transitions_of(edge)
         assert models and all([(a.variable, a.op) for a in t.assign] == [("synced", "toggle")] for t in models)

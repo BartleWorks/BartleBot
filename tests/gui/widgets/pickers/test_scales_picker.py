@@ -96,9 +96,9 @@ def test_a_key_no_longer_in_the_table_is_kept_and_marked(qapp):
 
 
 def test_the_form_gives_a_scales_param_the_picker_and_reads_its_key_back(qapp):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+    from bartlebot.gui.canvas.param_form import DynamicParamForm
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     key = next(iter(scales.load()))
     form.load_schema([ParamField(key="scales", type="scales", label="Scales")], {"scales": key})
 
@@ -149,9 +149,9 @@ def test_a_default_that_cannot_be_read_leaves_the_prompt(qapp):
 
 
 def test_the_node_form_hands_the_picker_the_open_bots_default(qapp):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+    from bartlebot.gui.canvas.param_form import DynamicParamForm
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.set_default_scales_getter(lambda: _TABLE["spyre"])
     form.load_schema([ParamField(key="scales", type="scales", label="Scales")], {})
 

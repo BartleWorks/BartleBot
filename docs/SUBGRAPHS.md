@@ -124,7 +124,7 @@ The pre-run recompose is silent — one log line per changed region and a banner
 never a dialog — because a dialog on every run of every bot is noise the user learns to
 click through. The run itself is what tests the update.
 
-Where this happens: `AppController._compose` reloads the session's `SubgraphLibrary`
+Where this happens: `Documents.compose` (`bartlebot/controller/documents.py`) reloads the session's `SubgraphLibrary`
 and composes (`compose_bot`); `_open_bot` and crash recovery call it after
 `BotConfig.load`, and `_recompose_before_run` calls it first in the run slot, ahead of
 the restricted-zone check. A changed result goes in through `BotCanvas.replace_config`,
@@ -171,7 +171,7 @@ definition deletes or reverts it. A definition's file is named after it
 A definition leaves the library from its card in the Bot Library's Subgraphs folder
 (right-click, #161), and the menu says which of the three it is: *Delete Subgraph…* on a
 custom one, *Revert to Official…* on a modified Official one, and a grayed-out Delete on an
-unedited Official one, which has no user file to remove. `AppController._delete_subgraph`
+unedited Official one, which has no user file to remove. `Documents.delete_subgraph`
 asks first, naming the bots and the other definitions that link it — they are not
 broken, since each keeps its snapshot and composes as `missing`, but none gets another
 update — and refuses while the definition is open as a document. With `BARTLEBOT_DEV`
@@ -179,7 +179,7 @@ set the roots are one directory, so every definition is custom and Delete remove
 repo's file, which git then shows.
 
 A definition is renamed two ways (#160): *Rename…* on the same card menu, which edits the
-name and description in a dialog (`AppController._rename_subgraph`, refused while the
+name and description in a dialog (`Documents.rename_subgraph`, refused while the
 definition is open), or the open document's header name in Edit mode, then Save.
 Either writes at the version it has: `definition_change` calls a changed name or
 description `"meta"`, which, like `"layout"`, reaches no bot's run — a bot links the
@@ -292,7 +292,7 @@ between users that drifts between spellings cannot be filtered.
 
 A definition's signature is what a bot linking it depends on: its inputs, whose values an
 instance stores by name, and its ports, which the bot's edges attach to. Saving a
-definition (`AppController._save_definition`) warns, naming every bot and definition that
+definition (`Documents.save_definition`) warns, naming every bot and definition that
 links it, when the save:
 
 | change | why it can break a bot |

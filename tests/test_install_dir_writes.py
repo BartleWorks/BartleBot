@@ -164,25 +164,25 @@ def test_save_as_on_an_official_bot_saves_a_copy_in_the_users_folder(install, ha
     before = shipped.read_bytes()
     target = bot_roots.user_bots_dir() / "04_mooshu" / "jade-oni.json"
     offered = _answer_save_as(monkeypatch, target)
-    harness._open_bot(str(shipped))
+    harness._documents.open_bot(str(shipped))
 
-    assert not harness._save_bot(), "an Official bot is read-only: Save has nothing to write (#149)"
+    assert not harness._documents.save_bot(), "an Official bot is read-only: Save has nothing to write (#149)"
     assert offered == []
-    assert harness._save_bot_as()
+    assert harness._documents.save_bot_as()
 
     assert offered == [str(target)], "Save As opens on the same world folder and name, in the user's folder"
     assert shipped.read_bytes() == before
     assert BotConfig.load(target).id != "official"
-    assert harness._last_save_path == str(target)
+    assert harness._documents.last_save_path == str(target)
 
 
 def test_save_as_into_the_install_directory_is_refused(install, harness, monkeypatch):
     told: list[str] = []
     monkeypatch.setattr(QMessageBox, "information", lambda _p, _t, text: told.append(text))
     _answer_save_as(monkeypatch, install / "elsewhere" / "copy.json")
-    harness._open_bot(str(install / "bots" / "04_mooshu" / "jade-oni.json"))
+    harness._documents.open_bot(str(install / "bots" / "04_mooshu" / "jade-oni.json"))
 
-    assert not harness._save_bot_as()
+    assert not harness._documents.save_bot_as()
 
     assert not (install / "elsewhere").exists()
     assert told and "every update replaces" in told[0]

@@ -77,7 +77,7 @@ def test_a_port_shows_the_signature_and_a_node_shows_its_page(doc):
     assert doc.param_panel.showing_signature
     doc.select_state("wisps")
     assert doc.param_panel.shown_state.id == "wisps"
-    assert doc.param_panel.promote_button.isVisibleTo(doc.param_panel)
+    assert doc.param_panel.node_page.promote_button.isVisibleTo(doc.param_panel)
 
 
 def test_a_definition_cannot_run_or_leave_edit_mode(doc):
@@ -103,8 +103,8 @@ def test_linking_to_a_new_input_and_undoing_it(doc):
     wait = _input(doc, "wait")
     assert [(b.state, b.param) for b in wait.bindings] == [("wisps", "timeout")]
     doc.select_state("wisps")
-    assert doc.param_panel.param_form.link_chip("timeout") is not None
-    assert doc.param_panel.param_form.link_button("timeout") is None
+    assert doc.param_panel.node_page.param_form.link_chip("timeout") is not None
+    assert doc.param_panel.node_page.param_form.link_button("timeout") is None
     doc.undo()
     assert not any(i.name == "wait" for i in _meta(doc).inputs)
 
@@ -128,7 +128,7 @@ def test_promoting_a_node_makes_an_input_group_and_locks_its_links(doc):
     assert panel.member == "hub"
     assert ("hub", "zone") not in {(b.state, b.param) for b in _input(doc, "hub").bindings}
     doc.select_state("hub")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     assert chip.locked and chip.text() == panel.label
     assert not doc.unlink_param("hub", "zone"), "a promoted node's param is its group's"
     assert not doc.link_param("hub", "zone", existing="world")
@@ -189,12 +189,12 @@ def harness(qapp, library, tmp_path):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    canvas.open_definition_requested.connect(h._open_definition)
-    canvas.definition_back_requested.connect(h._definition_back)
-    canvas.definition_save_requested.connect(h._on_definition_save_requested)
+    canvas.open_definition_requested.connect(h._documents.open_definition)
+    canvas.definition_back_requested.connect(h._documents.definition_back)
+    canvas.definition_save_requested.connect(h._documents.on_definition_save_requested)
     path = tmp_path / "bots" / "linked.json"
     linked_bot(library.get(SYNC_ID), library).save(path)
-    h._open_bot(str(path))
+    h._documents.open_bot(str(path))
     canvas.enter_edit_mode()
     yield h
     canvas.prepare_for_shutdown()
@@ -209,8 +209,8 @@ def test_opening_a_definition_sets_the_bot_aside(harness):
     bot = canvas.config
     canvas.open_definition_of(REGION)
     assert canvas.is_definition
-    assert len(harness._doc_stack) == 1
-    assert harness._doc_stack[0].doc.config is bot
+    assert len(harness._documents.doc_stack) == 1
+    assert harness._documents.doc_stack[0].doc.config is bot
     assert canvas.crumb_bar.text == "Linked › Sync players"
 
 
@@ -220,17 +220,17 @@ def test_save_bumps_the_version_and_back_recomposes_the_bot(harness, library):
     wisps = next(s for s in canvas.config.states if s.id == "wisps")
     wisps.params["timeout"] = 45
     canvas.config_changed.emit()
-    assert harness._has_unsaved_changes
-    assert harness._save_definition()
+    assert harness._documents.has_unsaved_changes
+    assert harness._documents.save_definition()
     assert library.get(SYNC_ID).version == 2
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
-    assert harness._definition_back()
+    assert harness._documents.definition_back()
     assert not canvas.is_definition
     region = next(r for r in canvas.config.regions if r.id == REGION)
     assert region.source.version == 2
     assert next(s for s in canvas.config.states if s.id == m("wisps")).params["timeout"] == 45
-    assert harness._has_unsaved_changes, "the bot's snapshot moved, so it has something to save"
+    assert harness._documents.has_unsaved_changes, "the bot's snapshot moved, so it has something to save"
     assert canvas.mode == BotMode.EDIT
 
 
@@ -241,11 +241,11 @@ def test_saving_an_unchanged_definition_keeps_its_version(harness, library, monk
     canvas.open_definition_of(REGION)
     written = []
     monkeypatch.setattr(library, "save", written.append)
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert not written
     assert library.get(SYNC_ID).version == 1
     assert canvas.config.definition.version == 1
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
     assert not asked, "nothing to save, so a built-in one is not offered a copy"
 
 
@@ -255,11 +255,11 @@ def test_saving_a_moved_node_writes_it_and_keeps_the_version(harness, library):
     wisps = next(s for s in canvas.config.states if s.id == "wisps")
     wisps.position = {"x": -40.0, "y": 999.0}
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     stored = library.get(SYNC_ID)
     assert stored.version == 1
     assert next(s for s in stored.states if s.id == "wisps").position == {"x": -40.0, "y": 999.0}
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
 
 def test_an_edit_undone_before_saving_keeps_the_version(harness, library):
@@ -271,7 +271,7 @@ def test_an_edit_undone_before_saving_keeps_the_version(harness, library):
     canvas.config_changed.emit()
     wisps.params["timeout"] = before
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     assert library.get(SYNC_ID).version == 1
 
 
@@ -282,7 +282,7 @@ def test_save_is_refused_while_the_definition_has_errors(harness, library, monke
     canvas.open_definition_of(REGION)
     canvas.config.transitions = [t for t in canvas.config.transitions if t.source != "entry_hub"]
     canvas.scene.setup(canvas.config)
-    assert not harness._save_definition()
+    assert not harness._documents.save_definition()
     assert refused
     assert library.get(SYNC_ID).version == 1
 
@@ -292,11 +292,11 @@ def test_back_with_unsaved_changes_can_discard(harness, library, monkeypatch):
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
-    assert harness._has_unsaved_changes
+    assert harness._documents.has_unsaved_changes
     canvas.step_back()
     assert not canvas.is_definition
     assert library.get(SYNC_ID).version == 1
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes
 
 
 def test_back_can_be_cancelled(harness, monkeypatch):
@@ -304,7 +304,7 @@ def test_back_can_be_cancelled(harness, monkeypatch):
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
     canvas.link_param("tp_a", "zone", existing="hub")
-    assert not harness._definition_back()
+    assert not harness._documents.definition_back()
     assert canvas.is_definition
 
 
@@ -313,13 +313,13 @@ def test_a_definition_already_open_is_not_opened_again(harness, monkeypatch):
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
-    assert not harness._open_definition(SYNC_ID)
-    assert told and len(harness._doc_stack) == 1
+    assert not harness._documents.open_definition(SYNC_ID)
+    assert told and len(harness._documents.doc_stack) == 1
 
 
 def test_a_definition_autosaves_under_its_own_id(harness):
     _canvas(harness).open_definition_of(REGION)
-    assert harness._autosave_stem() == f"subgraph_{SYNC_ID}"
+    assert harness._documents.autosave_stem() == f"subgraph_{SYNC_ID}"
 
 
 def test_saving_a_region_as_a_subgraph_opens_the_new_definition(harness, library, monkeypatch):
@@ -330,7 +330,7 @@ def test_saving_a_region_as_a_subgraph_opens_the_new_definition(harness, library
     assert canvas.is_definition
     assert canvas.config.name == "Farm loop"
     assert library.get(canvas.config.definition.id) is not None
-    bot = harness._doc_stack[0].doc.config
+    bot = harness._documents.doc_stack[0].doc.config
     assert any(r.source is not None and r.source.subgraph_id == canvas.config.definition.id for r in bot.regions)
 
 
@@ -340,9 +340,9 @@ def test_saving_a_region_as_a_subgraph_opens_the_new_definition(harness, library
 
 
 def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
-    from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel, _BotCard  # noqa: PLC0415
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(library)
     panel.refresh()
     keys = [panel._cat_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(panel._cat_list.count())]
@@ -358,7 +358,7 @@ def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
 
 
 def _subgraph_cards(panel):
-    from bartlebot.gui.canvas.bot_canvas import _BotCard  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import _BotCard  # noqa: PLC0415
 
     return [c for c in panel.findChildren(_BotCard) if c.isVisibleTo(panel)]
 
@@ -369,9 +369,9 @@ def _show_subgraphs(panel):
 
 
 def test_a_right_click_on_a_subgraph_card_does_not_open_it(qapp, library):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(library)
     panel.refresh()
     _show_subgraphs(panel)
@@ -383,13 +383,13 @@ def test_a_right_click_on_a_subgraph_card_does_not_open_it(qapp, library):
 
 
 def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     lib = SubgraphLibrary(shipped, user)
     sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
     lib.reload()
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(lib)
     asked = []
     panel.delete_subgraph_requested.connect(asked.append)
@@ -412,13 +412,13 @@ def test_a_subgraph_cards_menu_deletes_reverts_or_explains_by_origin(qapp, tmp_p
 
 
 def test_a_subgraph_cards_rename_is_offered_on_the_users_own_only(qapp, tmp_path):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     lib = SubgraphLibrary(shipped, user)
     sync_players_definition().save(shipped / "subgraphs" / "sync-players.json")
     lib.reload()
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(lib)
     asked = []
     panel.rename_subgraph_requested.connect(asked.append)
@@ -476,7 +476,7 @@ def test_save_as_new_starts_from_the_originals_categories(harness, library, monk
     canvas.open_definition_of(REGION)
     shown = _answer_meta_dialog(monkeypatch, "Sync, then fight", categories=["Team", "Combat and Healing"])
 
-    assert harness._save_definition_as()
+    assert harness._documents.save_definition_as()
 
     assert shown[0]["categories"] == ["Team"]
     assert library.get(canvas.config.definition.id).tags == ["Team", "Combat and Healing"]
@@ -487,7 +487,7 @@ def test_renaming_from_the_library_asks_for_no_categories(harness, library, monk
     shown = _answer_meta_dialog(monkeypatch, "Regroup")
     _canvas(harness)
 
-    assert harness._rename_subgraph(SYNC_ID)
+    assert harness._documents.rename_subgraph(SYNC_ID)
 
     assert "categories" not in shown[0]
 
@@ -508,19 +508,19 @@ def test_renaming_a_subgraph_keeps_its_version_and_offers_no_update(harness, lib
     shown = _answer_meta_dialog(monkeypatch, "Regroup", "Everyone in one place.")
     canvas = _canvas(harness)
     bot = canvas.config
-    assert harness._rename_subgraph(SYNC_ID)
+    assert harness._documents.rename_subgraph(SYNC_ID)
     assert shown[0]["name"] == "Sync players", "the dialog starts from the current name"
     stored = library.get(SYNC_ID)
     assert (stored.name, stored.description, stored.version) == ("Regroup", "Everyone in one place.", 1)
     assert [p.name for p in (tmp_path / "library" / "subgraphs").glob("*.json")] == ["regroup.json"]
-    composed, report = harness._compose(bot)
+    composed, report = harness._documents.compose(bot)
     assert report.regions[REGION].kind == "linked"
     assert composed.model_dump() == bot.model_dump(), "the bot links the id, and its label stays its own"
 
 
 def test_renaming_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
     _answer_meta_dialog(monkeypatch, None)
-    assert not harness._rename_subgraph(SYNC_ID)
+    assert not harness._documents.rename_subgraph(SYNC_ID)
     assert library.get(SYNC_ID).name == "Sync players"
 
 
@@ -529,7 +529,7 @@ def test_an_open_definition_is_renamed_in_its_header_not_its_card(harness, libra
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     shown = _answer_meta_dialog(monkeypatch, "Regroup")
     _canvas(harness).open_definition_of(REGION)
-    assert not harness._rename_subgraph(SYNC_ID)
+    assert not harness._documents.rename_subgraph(SYNC_ID)
     assert told and not shown
     assert library.get(SYNC_ID).name == "Sync players"
 
@@ -543,9 +543,9 @@ def test_a_built_in_subgraph_is_not_renamed(qapp, tmp_path, monkeypatch):
     shown = _answer_meta_dialog(monkeypatch, "Regroup")
     canvas = BotCanvas()
     h = ControllerHarness(canvas, lib)
-    assert not h._rename_subgraph(SYNC_ID)
+    assert not h._documents.rename_subgraph(SYNC_ID)
     lib.save(sync_players_definition(version=2))
-    assert not h._rename_subgraph(SYNC_ID), "nor a modified one"
+    assert not h._documents.rename_subgraph(SYNC_ID), "nor a modified one"
     assert not shown and lib.get(SYNC_ID).name == "Sync players"
     canvas.prepare_for_shutdown()
 
@@ -556,10 +556,10 @@ def test_renaming_in_the_header_saves_at_the_same_version(harness, library):
     assert canvas.header.name_editable
     canvas.config.name = "Regroup"
     canvas.config_changed.emit()
-    assert harness._save_definition()
+    assert harness._documents.save_definition()
     stored = library.get(SYNC_ID)
     assert (stored.name, stored.version) == ("Regroup", 1)
-    assert harness._definition_back()
+    assert harness._documents.definition_back()
     region = next(r for r in canvas.config.regions if r.id == REGION)
     assert region.label == "Sync players", "an instance keeps the label it was placed with"
     assert region.source.version == 1
@@ -587,7 +587,7 @@ def test_deleting_a_subgraph_says_who_links_it_and_leaves_them_their_snapshot(ha
     monkeypatch.setattr(QMessageBox, "question", answer)
     canvas = _canvas(harness)
     bot = canvas.config
-    assert harness._delete_subgraph(SYNC_ID)
+    assert harness._documents.delete_subgraph(SYNC_ID)
     assert "1 bot and the subgraph 'Boss outer'" in asked[0]
     assert library.get(SYNC_ID) is None
     assert canvas.config is bot, "the open bot keeps its snapshot"
@@ -596,7 +596,7 @@ def test_deleting_a_subgraph_says_who_links_it_and_leaves_them_their_snapshot(ha
 
 def test_deleting_a_subgraph_can_be_cancelled(harness, library, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
-    assert not harness._delete_subgraph(SYNC_ID)
+    assert not harness._documents.delete_subgraph(SYNC_ID)
     assert library.get(SYNC_ID) is not None
 
 
@@ -605,7 +605,7 @@ def test_an_open_definition_is_not_deleted(harness, library, monkeypatch):
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
     _canvas(harness).open_definition_of(REGION)
-    assert not harness._delete_subgraph(SYNC_ID)
+    assert not harness._documents.delete_subgraph(SYNC_ID)
     assert told and library.get(SYNC_ID) is not None
 
 
@@ -619,18 +619,18 @@ def test_deleting_a_modified_built_in_reverts_it(qapp, tmp_path, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
     canvas = BotCanvas()
     h = ControllerHarness(canvas, lib)
-    assert h._delete_subgraph(SYNC_ID)
+    assert h._documents.delete_subgraph(SYNC_ID)
     assert lib.get(SYNC_ID).version == 1
-    assert not h._delete_subgraph(SYNC_ID), "an unedited built-in has nothing to delete"
+    assert not h._documents.delete_subgraph(SYNC_ID), "an unedited built-in has nothing to delete"
     assert lib.get(SYNC_ID) is not None
     canvas.prepare_for_shutdown()
 
 
 def test_the_library_stays_in_the_subgraphs_folder_after_a_delete(qapp, library):
-    from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel  # noqa: PLC0415
+    from bartlebot.gui.canvas.bot_library import BotLibraryPanel  # noqa: PLC0415
 
     library.save(sync_players_definition().model_copy(update={"id": "mine", "name": "Mine"}))
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.set_subgraph_library(library)
     panel.refresh()
     _show_subgraphs(panel)
@@ -653,11 +653,11 @@ def test_undo_keeps_the_node_selected(doc):
 
 def test_the_promote_button_turns_into_demote(doc):
     doc.select_state("hub")
-    button = doc.param_panel.promote_button
+    button = doc.param_panel.node_page.promote_button
     assert button.toolTip().startswith("Promote to input group")
     doc.set_node_promoted("hub", True)
     assert button.toolTip().startswith("Demote")
-    assert doc.param_panel.node_cards["params"].summary_parts[0].text == "Promoted"
+    assert doc.param_panel.node_page.node_cards["params"].summary_parts[0].text == "Promoted"
     button.click()
     assert not [p for p in _meta(doc).panels if p.kind == "node"]
 
@@ -712,10 +712,10 @@ def test_promoting_over_existing_links_asks_first(doc, monkeypatch):
     asked = []
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: asked.append(a) or answers.pop(0))
     doc.select_state("hub")
-    doc.param_panel.promote_button.click()
+    doc.param_panel.node_page.promote_button.click()
     assert len(asked) == 1 and "Hub" in asked[0][2]
     assert not [p for p in _meta(doc).panels if p.kind == "node"]
-    doc.param_panel.promote_button.click()
+    doc.param_panel.node_page.promote_button.click()
     assert [p.member for p in _meta(doc).panels if p.kind == "node"] == ["hub"]
 
 
@@ -723,7 +723,7 @@ def test_the_link_button_shows_only_on_hover(doc, qapp):
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
     doc.select_state("wisps")
-    form = doc.param_panel.param_form
+    form = doc.param_panel.node_page.param_form
     row = form.hover_row("timeout")
     assert not row.link_shown
     qapp.sendEvent(row, QEvent(QEvent.Type.Enter))
@@ -736,7 +736,7 @@ def test_a_linked_chip_turns_into_unlink_on_hover_but_a_promoted_one_does_not(do
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
     doc.select_state("tp_b")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     assert chip.text() == "Hub"
     qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
     assert chip.armed and chip.text() == "Unlink"
@@ -745,14 +745,14 @@ def test_a_linked_chip_turns_into_unlink_on_hover_but_a_promoted_one_does_not(do
 
     doc.set_node_promoted("gate", True)
     doc.select_state("gate")
-    locked = doc.param_panel.param_form.link_chip("zone")
+    locked = doc.param_panel.node_page.param_form.link_chip("zone")
     qapp.sendEvent(locked, QEvent(QEvent.Type.Enter))
     assert not locked.armed
 
 
 def test_editing_a_linked_param_edits_its_input_and_the_other_linked_params(doc):
     doc.select_state("tp_b")
-    doc.param_panel.param_form.set_str("zone", "Mooshu/Hub")
+    doc.param_panel.node_page.param_form.set_str("zone", "Mooshu/Hub")
     assert _input(doc, "hub").default == "Mooshu/Hub"
     assert next(s for s in doc.config.states if s.id == "hub").params["zone"] == "Mooshu/Hub"
 
@@ -790,7 +790,7 @@ def test_a_zone_input_linked_with_a_nav_zone_becomes_a_nav_zone(doc):
     assert doc.link_param("nav", "zone", existing="hub")
     assert _input(doc, "hub").type == "nav_zone"
     doc.select_state("tp_b")
-    widget = doc.param_panel.param_form.widget("zone")
+    widget = doc.param_panel.node_page.param_form.widget("zone")
     assert type(widget).__name__ == "_NavZoneField", "a linked zone row edits through the destination picker"
     assert doc.unlink_param("nav", "zone")
     assert _input(doc, "hub").type == "zone", "unlinking loosens it again"
@@ -809,14 +809,14 @@ def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
     assert doc.link_param("nav", "zone", shared=(panel.id, "zone"))
     assert promoted_param_type(doc.config, panel, "zone", NODE_PARAM_SCHEMAS) == "nav_zone"
     doc.select_state("mark")
-    assert doc.param_panel._record_btn.isVisibleTo(doc.param_panel)
+    assert doc.param_panel.node_page._record_btn.isVisibleTo(doc.param_panel)
 
 
 def test_record_into_a_destination_picker_is_never_refused(qapp):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm  # noqa: PLC0415
+    from bartlebot.gui.canvas.param_form import DynamicParamForm  # noqa: PLC0415
     from bartlebot.nodes.param_schema import ParamField  # noqa: PLC0415
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema([ParamField(key="zone", type="nav_zone", label="Zone")], {"zone": ""})
     form.set_str("zone", "Nowhere/Somewhere")
     widget = form.widget("zone")
@@ -841,18 +841,18 @@ def test_the_link_chip_is_one_width_in_both_states(doc, qapp):
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
     doc.select_state("gate")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     width = chip.width()
     qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
     assert chip.text() == "Unlink" and chip.width() == width
 
 
 def test_a_long_linked_name_is_elided_within_the_cap(doc):
-    from bartlebot.gui.canvas.param_panel import _LINK_CHIP_MAX_W  # noqa: PLC0415
+    from bartlebot.gui.canvas.param_form import _LINK_CHIP_MAX_W  # noqa: PLC0415
 
     _input(doc, "world").label = "A world name far too long to fit on any chip at all"
     doc.select_state("gate")
-    chip = doc.param_panel.param_form.link_chip("zone")
+    chip = doc.param_panel.node_page.param_form.link_chip("zone")
     assert chip.width() <= _LINK_CHIP_MAX_W
     assert chip.text().endswith("…")
 
@@ -1381,9 +1381,9 @@ def test_saving_a_category_writes_it_and_keeps_the_version(harness, library):
     canvas.open_definition_of(REGION)
     canvas.config.definition.tags = ["Team"]
     canvas.config_changed.emit()
-    assert harness._has_unsaved_changes
-    assert harness._save_definition()
+    assert harness._documents.has_unsaved_changes
+    assert harness._documents.save_definition()
     stored = library.get(SYNC_ID)
     assert stored.tags == ["Team"]
     assert stored.version == 1
-    assert not harness._has_unsaved_changes
+    assert not harness._documents.has_unsaved_changes

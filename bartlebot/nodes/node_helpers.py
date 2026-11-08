@@ -397,6 +397,74 @@ async def poll_each_until_seen(
         await asyncio.sleep(poll_interval)
 
 
+class PressedThrough(NamedTuple):
+    """What press_interact_until_through() saw: who was seen through, by index, and the game's refusal if it refused."""
+
+    through: set[int]
+    refusal: str | None
+
+
+async def press_interact_until_through(
+    machine,
+    clients: list,
+    *,
+    showing: Callable[[object], Awaitable[bool]],
+    through: Callable[[object], Awaitable[bool]],
+    spacing: float,
+    poll_interval: float = POLL_INTERVAL,
+) -> PressedThrough:
+    """Press Interact again on any client whose first press the game dropped, until each is through.
+
+    A dropped press leaves a client standing at its prompt while the rest load in. Pressed
+    once only, it was failed by the arrival check after the full zone-change wait, and
+    recovery relogged the whole team for one lost key: Enter Gauntlet did that four times
+    running on 2026-11-07, and the recovery-loop guard stopped the run. A client is pressed
+    again, up to MAX_RETRIES times, while it is
+
+    - not `through`: on a loading screen, or past the zone change, as the caller reads it,
+    - not loading,
+    - still `showing` its prompt, so a press never lands on whatever stands behind a prompt
+      that has gone, and
+    - `spacing` seconds past its last press. That is the Safety Delay a server round trip is
+      given: a press the server has taken but not yet answered must not be sent twice.
+
+    A modal is answered before any press, recognized dialogs only, as ModalAwareRetry does for
+    the other retry loops, so the entry prompt a second press raises is answered too.
+
+    Call it after the first press and its instance prompt; the first spacing runs from the
+    call. Bounded by the presses it may make: a client not through after its last one is left
+    to the caller's arrival check.
+    """
+    loop = asyncio.get_event_loop()
+    index = {id(c): i for i, c in enumerate(clients)}
+    last_press = dict.fromkeys(range(len(clients)), loop.time())
+    presses = dict.fromkeys(range(len(clients)), 0)
+
+    async def _press(client) -> None:
+        i = index[id(client)]
+        if presses[i] >= MAX_RETRIES or loop.time() - last_press[i] < spacing:
+            return
+        if await client.is_loading() or not await showing(client):
+            return
+        last_press[i] = loop.time()
+        presses[i] += 1
+        machine.log(
+            f"P{i + 1} is still at the prompt; pressing X again ({presses[i]}/{MAX_RETRIES})",
+            logging.INFO,
+        )
+        await game_keys.press(client, GameAction.INTERACT, 0.1)
+
+    retry = ModalAwareRetry(_press, recognized_only=True)
+    seen = await poll_each_until_seen(
+        clients,
+        check_fn=through,
+        action_fn=retry,
+        timeout=spacing * (MAX_RETRIES + 1),
+        poll_interval=poll_interval,
+    )
+    return PressedThrough(through=seen, refusal=retry.refusal)
+
+
 class TurnResult(NamedTuple):
     """What happened on one client's turn at a shared object, from take_turns().
 

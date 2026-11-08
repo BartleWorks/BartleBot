@@ -21,9 +21,11 @@ from unittest.mock import AsyncMock
 import pytest
 
 from bartlebot import settings_manager as sm_mod
-from bartlebot.app_controller import AppController
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel
+from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
+from bartlebot.controller.documents import Documents
+from bartlebot.controller.template_roots import TemplateRoots
 from bartlebot.options.bot_options import (
     SOURCE_APP_SETTING,
     SOURCE_BOT_FILE,
@@ -419,38 +421,36 @@ def test_save_as_mints_a_new_id(tmp_path, monkeypatch):
     original_id = config.id
     controller = _save_as_controller(config)
 
-    AppController._save_bot_as(controller)
+    controller.save_bot_as()
 
     assert config.id != original_id
     assert BotConfig.load(dest).id == config.id
 
 
 def _save_as_controller(config, refreshed=None, rebound=None):
-    """A stand-in ``self`` for ``_save_bot_as``.
+    """A ``Documents`` holding *config*, around a stand-in window, for ``save_bot_as``.
 
-    Driven through the real method — it touches the window only to relabel it
+    Driven through the real method -- it touches the window only to relabel it
     and to re-resolve the option and combat surfaces, and standing up a
     MainWindow would test Qt rather than the fork.
     """
-    return SimpleNamespace(
-        _loaded_config=config,
-        _last_save_path=None,
-        _has_unsaved_changes=True,
-        _delete_autosave=lambda *a: None,
-        _rewards_declined_for=None,
-        _confirm_rewards_tags=lambda: True,
-        _refresh_template_context=lambda: None,
-        _window=SimpleNamespace(
-            set_bot_name=lambda *a: None,
-            set_save_enabled=lambda *a, **k: None,
-            update_recent_menu=lambda *a: None,
-            bot_canvas=SimpleNamespace(refresh_placeholder=lambda: None, set_read_only=lambda _read_only: None),
-            left_sidebar=SimpleNamespace(
-                refresh_options=lambda cfg: (refreshed if refreshed is not None else []).append(cfg.id),
-                rebind_identity=lambda: (rebound if rebound is not None else []).append(config.id),
-            ),
+    window = SimpleNamespace(
+        set_bot_name=lambda *a: None,
+        set_save_enabled=lambda *a, **k: None,
+        set_unsaved=lambda *a: None,
+        update_recent_menu=lambda *a: None,
+        bot_canvas=SimpleNamespace(refresh_placeholder=lambda: None, set_read_only=lambda _read_only: None),
+        left_sidebar=SimpleNamespace(
+            refresh_options=lambda cfg: (refreshed if refreshed is not None else []).append(cfg.id),
+            rebind_identity=lambda: (rebound if rebound is not None else []).append(config.id),
         ),
     )
+    docs = Documents(window, SubgraphLibrary(), TemplateRoots(), clients=lambda: [], is_running=lambda: False)
+    docs._loaded_config = config
+    docs.has_unsaved_changes = True
+    docs.delete_autosave = lambda *a, **k: None
+    docs._confirm_rewards_tags = lambda: True
+    return docs
 
 
 def test_save_as_re_resolves_the_value_surfaces(tmp_path, monkeypatch):
@@ -464,7 +464,7 @@ def test_save_as_re_resolves_the_value_surfaces(tmp_path, monkeypatch):
     config = _config()
     refreshed: list[str] = []
 
-    AppController._save_bot_as(_save_as_controller(config, refreshed))
+    _save_as_controller(config, refreshed).save_bot_as()
 
     # Refreshed once, and against the *new* identity — refreshing before the mint
     # would re-resolve the original's overrides and look exactly like the bug.
@@ -482,7 +482,7 @@ def test_save_as_re_binds_the_combat_tab(tmp_path, monkeypatch):
     config = _config()
     rebound: list[str] = []
 
-    AppController._save_bot_as(_save_as_controller(config, rebound=rebound))
+    _save_as_controller(config, rebound=rebound).save_bot_as()
 
     assert rebound == [config.id]
 
@@ -498,7 +498,7 @@ def test_a_failed_save_as_leaves_the_combat_tab_alone(tmp_path, monkeypatch):
     config = _config()
     rebound: list[str] = []
 
-    AppController._save_bot_as(_save_as_controller(config, rebound=rebound))
+    _save_as_controller(config, rebound=rebound).save_bot_as()
 
     assert rebound == []
 
@@ -516,10 +516,10 @@ def test_a_failed_save_as_keeps_the_bot_its_identity(tmp_path, monkeypatch):
     refreshed: list[str] = []
     controller = _save_as_controller(config, refreshed)
 
-    AppController._save_bot_as(controller)
+    controller.save_bot_as()
 
     assert config.id == original_id
-    assert controller._last_save_path is None
+    assert controller.last_save_path is None
     assert refreshed == []
 
 

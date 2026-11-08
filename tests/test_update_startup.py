@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import asyncio
+from unittest.mock import MagicMock
 
 from bartleby.qt.title_bar.title_bar import TitleBar
 from PyQt6.QtCore import QObject
@@ -13,6 +14,7 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenuBar, QWidget
 
 from bartlebot.app_controller import AppController
+from bartlebot.controller.run import Run
 
 
 class _Window(QWidget):
@@ -32,9 +34,16 @@ class _Controller(QObject):
     def __init__(self) -> None:
         super().__init__()
         self._window = _Window()
-        self._current_machine = None
-        self._bot_task = None
-        self._run_probe = None
+        self._run = Run(
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            on_run_starting=lambda: None,
+            on_run_ended=lambda: None,
+        )
 
 
 def _controller() -> _Controller:
@@ -63,11 +72,11 @@ async def test_a_bot_starting_or_running_holds_the_popup_back(qapp):
     ns = _controller()
     assert not ns._bot_busy()
 
-    ns._bot_task = asyncio.get_running_loop().create_future()
+    ns._run._bot_task = asyncio.get_running_loop().create_future()
     assert ns._bot_busy(), "the run is starting"
-    ns._bot_task.set_result(None)
+    ns._run._bot_task.set_result(None)
     assert not ns._bot_busy()
 
-    ns._current_machine = object()
+    ns._run._current_machine = object()
     assert ns._bot_busy()
     assert ns._updates.busy()

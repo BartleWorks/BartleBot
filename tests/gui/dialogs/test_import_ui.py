@@ -184,26 +184,11 @@ def test_the_file_menu_has_import_and_the_window_takes_drops(qapp):
 # The controller
 # ---------------------------------------------------------------------------
 
-_IMPORT_METHODS = (
-    "_import_from_arguments",
-    "listen_for_launches",
-    "_on_later_launch",
-    "_import_handed_over",
-    "_import_dropped",
-    "_import_share_file",
-    "_import_blocked_by_run",
-    "_open_document_ids",
-    "_clear_for_import",
-    "_after_import",
-    "_select_imported",
-)
-
 
 @pytest.fixture
 def harness(qapp, tmp_path, receiver, monkeypatch):
     from unittest.mock import MagicMock  # noqa: PLC0415
 
-    from bartlebot.app_controller import AppController  # noqa: PLC0415
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
 
     monkeypatch.setattr(bot_roots, "shipped_bots_dir", lambda: receiver.shipped / "bots")
@@ -212,10 +197,8 @@ def harness(qapp, tmp_path, receiver, monkeypatch):
     canvas = BotCanvas()
     canvas.set_subgraph_library(sources.subgraphs)
     h = ControllerHarness(canvas, sources.subgraphs)
-    for name in _IMPORT_METHODS:
-        setattr(h, name, getattr(AppController, name).__get__(h))
-    h._export_sources = lambda: receiver.sources()
-    h._app = MagicMock()
+    h._sharing._export_sources = lambda: receiver.sources()
+    h._sharing._app = MagicMock()
     # Revealing an item with a document open opens the modal library dialog: recorded instead.
     h.library_dialogs = []
     monkeypatch.setattr(canvas, "open_library_dialog", lambda **kw: h.library_dialogs.append(kw))
@@ -223,7 +206,7 @@ def harness(qapp, tmp_path, receiver, monkeypatch):
     monkeypatch.setattr(QMessageBox, "warning", lambda _p, _t, text: h.warnings.append(text))
     monkeypatch.setattr(QMessageBox, "information", lambda _p, _t, text: h.warnings.append(text))
     # The summary is accepted as it opens: what it would show is tested above.
-    monkeypatch.setattr("bartlebot.app_controller.confirm_import", lambda _parent, build: build({}))
+    monkeypatch.setattr("bartlebot.controller.sharing.confirm_import", lambda _parent, build: build({}))
     yield h
     canvas.prepare_for_shutdown()
 
@@ -231,7 +214,7 @@ def harness(qapp, tmp_path, receiver, monkeypatch):
 def test_an_imported_bot_is_written_selected_in_the_library_and_its_strategy_picked(harness, sender, tmp_path):
     bot, bcs = _sender_setup(sender)
 
-    result = harness._import_share_file(str(_send_bot(sender, tmp_path, bot, bcs)))
+    result = harness._sharing.import_share_file(str(_send_bot(sender, tmp_path, bot, bcs)))
 
     path = result.bot_paths["bot-1"]
     assert path.parent.name == WORLD
@@ -245,7 +228,7 @@ def test_a_refused_file_says_why_and_writes_nothing(harness, receiver, tmp_path)
     path.write_text("not json", encoding="utf-8")
     before = receiver.files()
 
-    assert harness._import_share_file(str(path)) is None
+    assert harness._sharing.import_share_file(str(path)) is None
 
     assert harness.warnings == [share_import.NOT_A_SHARE_FILE]
     assert receiver.files() == before
@@ -255,7 +238,7 @@ def test_a_subgraph_import_selects_it_in_the_subgraphs_folder(harness, sender, r
     defn = _defn("sg", "Loop")
     sender.subgraph(defn)
 
-    harness._import_share_file(str(_export(share_export.export_subgraph(defn, sender.sources()), tmp_path)))
+    harness._sharing.import_share_file(str(_export(share_export.export_subgraph(defn, sender.sources()), tmp_path)))
 
     assert load_subgraph("sg", receiver.shipped, receiver.user).name == "Loop"
     card = harness._window.bot_canvas.library_panel.selected_card()
@@ -266,7 +249,7 @@ def test_a_strategy_import_opens_the_strategy_library_on_it(harness, sender, tmp
     pcs = PlayerCombatStrategy(id="p1", name="Hitter")
     path = _export(share_export.export_player(pcs, sender.sources()), tmp_path)
 
-    harness._import_share_file(str(path))
+    harness._sharing.import_share_file(str(path))
 
     harness._window.left_sidebar.combat_tab.open_combat_dialog.assert_called_once()
     args, kwargs = harness._window.left_sidebar.combat_tab.open_combat_dialog.call_args
@@ -275,40 +258,40 @@ def test_a_strategy_import_opens_the_strategy_library_on_it(harness, sender, tmp
 
 def test_an_import_replacing_the_open_bot_with_unsaved_changes_writes_nothing(harness, sender, receiver, tmp_path):
     mine = receiver.bot(_bot("bot-1", "Boss Farmer"))
-    harness._open_bot(str(mine))
-    harness._has_unsaved_changes = True
-    harness._clean_snapshot = None
+    harness._documents.open_bot(str(mine))
+    harness._documents.has_unsaved_changes = True
+    harness._documents.clean_snapshot = None
     sender.bot(_bot("bot-1", "Boss Farmer, theirs"))
     path = _send_bot(sender, tmp_path, _bot("bot-1", "Boss Farmer, theirs"))
     before = mine.read_bytes()
     plan = share_import.plan_import(share_import.read(path), receiver.sources(), {(BOT, "bot-1"): Action.REPLACE})
 
-    assert harness._clear_for_import(plan) is False
+    assert harness._sharing._clear_for_import(plan) is False
     assert "unsaved changes" in harness.warnings[-1]
     assert mine.read_bytes() == before
 
 
 def test_an_import_replacing_the_open_bot_reopens_it(harness, sender, receiver, tmp_path, monkeypatch):
     mine = receiver.bot(_bot("bot-1", "Boss Farmer"))
-    harness._open_bot(str(mine))
+    harness._documents.open_bot(str(mine))
     theirs = _bot("bot-1", "Boss Farmer, theirs")
     sender.bot(theirs)
     monkeypatch.setattr(
-        "bartlebot.app_controller.confirm_import", lambda _parent, build: build({(BOT, "bot-1"): Action.REPLACE})
+        "bartlebot.controller.sharing.confirm_import", lambda _parent, build: build({(BOT, "bot-1"): Action.REPLACE})
     )
 
-    harness._import_share_file(str(_send_bot(sender, tmp_path, theirs)))
+    harness._sharing.import_share_file(str(_send_bot(sender, tmp_path, theirs)))
 
-    assert harness._loaded_config.name == "Boss Farmer, theirs"
-    assert Path(harness._last_save_path) == mine
+    assert harness._documents.loaded_config.name == "Boss Farmer, theirs"
+    assert Path(harness._documents.last_save_path) == mine
     assert harness.library_dialogs == [], "the bot is in front of the user already"
 
 
 def test_a_bot_imported_with_another_open_opens_the_library_on_it(harness, sender, receiver, tmp_path):
-    harness._open_bot(str(receiver.bot(_bot("bot-mine", "Mine"), "mine")))
+    harness._documents.open_bot(str(receiver.bot(_bot("bot-mine", "Mine"), "mine")))
     bot, _ = _sender_setup(sender)
 
-    result = harness._import_share_file(str(_send_bot(sender, tmp_path, bot)))
+    result = harness._sharing.import_share_file(str(_send_bot(sender, tmp_path, bot)))
 
     assert harness.library_dialogs == [{"reveal": (result.bot_paths["bot-1"], None)}]
 
@@ -316,11 +299,11 @@ def test_a_bot_imported_with_another_open_opens_the_library_on_it(harness, sende
 def test_files_named_at_launch_are_imported_and_nothing_else(harness, sender, tmp_path):
     bot, _ = _sender_setup(sender)
     path = _send_bot(sender, tmp_path, bot)
-    harness._app.arguments.return_value = ["bartlebot.py", str(tmp_path / "missing.bbot"), "--flag", str(path)]
+    harness._sharing._app.arguments.return_value = ["bartlebot.py", str(tmp_path / "missing.bbot"), "--flag", str(path)]
     imported: list[str] = []
-    harness._import_share_file = imported.append
+    harness._sharing.import_share_file = imported.append
 
-    harness._import_from_arguments()
+    harness._sharing.import_from_arguments()
 
     assert imported == [str(path)]
 
@@ -329,9 +312,9 @@ def test_files_a_later_launch_hands_over_are_imported_and_nothing_else(harness, 
     bot, _ = _sender_setup(sender)
     path = _send_bot(sender, tmp_path, bot)
     imported: list[str] = []
-    harness._import_share_file = imported.append
+    harness._sharing.import_share_file = imported.append
 
-    harness._import_handed_over([str(tmp_path / "missing.bbot"), "--flag", str(path)])
+    harness._sharing._import_handed_over([str(tmp_path / "missing.bbot"), "--flag", str(path)])
 
     assert imported == [str(path)]
 
@@ -343,18 +326,18 @@ def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
     from bartleby.qt.app.single_instance import SingleInstance  # noqa: PLC0415
 
     raised = []
-    monkeypatch.setattr("bartlebot.app_controller.raise_window", raised.append)
+    monkeypatch.setattr("bartlebot.controller.sharing.raise_window", raised.append)
     modal = [True]
     monkeypatch.setattr(
-        "bartlebot.app_controller.QApplication.activeModalWidget", lambda: object() if modal[0] else None
+        "bartlebot.controller.sharing.QApplication.activeModalWidget", lambda: object() if modal[0] else None
     )
     monkeypatch.setattr("bartleby.qt.app.single_instance.BUSY_RETRY_MS", 10)
     bot, _ = _sender_setup(sender)
     path = _send_bot(sender, tmp_path, bot)
     imported: list[str] = []
-    harness._import_share_file = imported.append
+    harness._sharing.import_share_file = imported.append
     instance = SingleInstance(bartlebot_product, name="unused")
-    harness.listen_for_launches(instance)
+    harness._sharing.listen_for_launches(instance)
 
     instance.arguments_received.emit([str(path)])
 
@@ -368,13 +351,13 @@ def test_a_later_launch_raises_the_window_and_imports_once_no_dialog_is_open(
 def test_a_combat_strategy_for_the_open_bot_rebinds_the_combat_tab(harness, sender, receiver, tmp_path):
     bot = _bot()
     receiver_path = receiver.bot(bot)
-    harness._open_bot(str(receiver_path))
+    harness._documents.open_bot(str(receiver_path))
     bcs = _combat()
     bcs.state_assignments = []
     sender.bot(bot)
     plan = share_export.export_bot_strategy(bcs, sender.sources())
 
-    harness._import_share_file(str(_export(plan, tmp_path)))
+    harness._sharing.import_share_file(str(_export(plan, tmp_path)))
 
     harness._window.left_sidebar.rebind_identity.assert_called()
     assert SettingsManager.instance().get_active_strategy("bot-1") == "bcs-1"
@@ -383,21 +366,21 @@ def test_a_combat_strategy_for_the_open_bot_rebinds_the_combat_tab(harness, send
 def test_no_way_in_imports_while_a_bot_runs(harness, sender, receiver, tmp_path, monkeypatch):
     bot, bcs = _sender_setup(sender)
     path = str(_send_bot(sender, tmp_path, bot, bcs))
-    harness._current_machine = object()
+    harness._run._current_machine = object()
     monkeypatch.setattr(
-        "bartlebot.app_controller.ask_for_file", lambda _w: pytest.fail("File › Import… must not ask for a file")
+        "bartlebot.controller.sharing.ask_for_file", lambda _w: pytest.fail("File › Import… must not ask for a file")
     )
     monkeypatch.setattr(
-        "bartlebot.app_controller.confirm_import", lambda _p, _b: pytest.fail("no summary during a run")
+        "bartlebot.controller.sharing.confirm_import", lambda _p, _b: pytest.fail("no summary during a run")
     )
     before = receiver.files()
 
-    assert harness._import_share_file(path) is None
-    assert harness._import_share_file() is None
-    harness._import_dropped([path, path])
-    harness._app.arguments.return_value = ["bartlebot", path]
-    harness._import_from_arguments()
-    harness._import_handed_over([path])
+    assert harness._sharing.import_share_file(path) is None
+    assert harness._sharing.import_share_file() is None
+    harness._sharing.import_dropped([path, path])
+    harness._sharing._app.arguments.return_value = ["bartlebot", path]
+    harness._sharing.import_from_arguments()
+    harness._sharing._import_handed_over([path])
 
     assert len(harness.warnings) == 5
     assert all("Stop the running bot" in w for w in harness.warnings)

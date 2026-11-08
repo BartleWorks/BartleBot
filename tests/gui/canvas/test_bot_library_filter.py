@@ -15,7 +15,7 @@ from PyQt6.QtCore import QEvent, QPointF, Qt
 from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QLabel
 
-from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, _read_bot_meta, filter_bot_metas
+from bartlebot.gui.canvas.bot_library import BotLibraryPanel, _BotCard, _BotMeta, _read_bot_meta, filter_bot_metas
 from bartlebot.gui.widgets.pickers.tag_picker import group_accent
 
 
@@ -216,7 +216,7 @@ def test_a_tag_no_bot_carries_yields_nothing():
 # ---------------------------------------------------------------------------
 
 
-def _cards(panel: _BotLibraryPanel) -> list:
+def _cards(panel: BotLibraryPanel) -> list:
     """The card widgets currently in the panel, ignoring the trailing stretch."""
     layout = panel._cards_layout
     return [w for i in range(layout.count()) if (w := layout.itemAt(i).widget()) is not None]
@@ -226,14 +226,14 @@ def test_the_panel_lists_nothing_until_it_is_shown(qapp):
     """It is BotCanvas's placeholder, and a canvas that opens a bot hides it before it
     is ever painted — listing in the constructor read every file in bots/ and built a
     card widget for each one, for a panel nobody was going to see."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
 
     assert panel._all_metas == []
     assert _cards(panel) == []
 
 
 def test_showing_the_panel_lists_the_library(qapp):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
 
     panel.show()
 
@@ -243,7 +243,7 @@ def test_showing_the_panel_lists_the_library(qapp):
 
 def test_a_second_show_does_not_relist(qapp):
     """Only the first show pays for the scan; re-showing keeps what is there."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.show()
     metas = panel._all_metas
 
@@ -258,7 +258,7 @@ def test_a_listing_builds_its_cards_once(qapp):
     row already emits currentRowChanged — the list was cleared, so row 0 is always a
     change — so every card was built, torn down and built again, and on a profile with
     no recent files that is the whole library twice."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     real = panel._show_cards
     calls = []
 
@@ -278,7 +278,7 @@ def test_the_category_list_offers_all_after_recent(qapp):
     of going back to a bot you ran yesterday. All sits under it as the fallback —
     without it there is no way back to the whole library once a world is clicked,
     and nothing for a cross-world tag filter to be scoped to."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     rows = [panel._cat_list.item(i).text() for i in range(panel._cat_list.count())]
 
@@ -291,7 +291,7 @@ def test_the_category_list_offers_all_after_recent(qapp):
 
 def test_the_selected_category_is_the_first_row(qapp):
     """The ordering above *is* the default, so the two cannot drift apart."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
 
     assert panel._cat_list.currentRow() == 0
@@ -300,7 +300,7 @@ def test_the_selected_category_is_the_first_row(qapp):
 def test_switching_category_keeps_the_tag_filter(qapp):
     """It used to clear it, because a filter replaced the listing rather than
     narrowing it. Now that they compose, clearing is just discarding the user's work."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     panel._set_tag_selection(["Gear"])
 
@@ -311,7 +311,7 @@ def test_switching_category_keeps_the_tag_filter(qapp):
 
 def test_a_category_narrows_what_the_tags_search(qapp):
     """The world is one more facet, so it intersects rather than being overridden."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel._all_metas = list(ALL)
     panel._category_map = {"13_aquila": [OLYMPUS]}
     panel._cat_list.clear()
@@ -358,7 +358,7 @@ def library(tmp_path, monkeypatch):
     card_art.forget_cache()
 
 
-def _rows(panel: _BotLibraryPanel) -> list[tuple[str, str]]:
+def _rows(panel: BotLibraryPanel) -> list[tuple[str, str]]:
     items = [panel._cat_list.item(i) for i in range(panel._cat_list.count())]
     return [(item.data(Qt.ItemDataRole.UserRole), item.text()) for item in items]
 
@@ -366,7 +366,7 @@ def _rows(panel: _BotLibraryPanel) -> list[tuple[str, str]]:
 def test_a_folder_row_is_captioned_by_its_category_and_keyed_by_its_name(qapp, library):
     """MooShu, not the "Mooshu" a title-cased folder name gave, and the lookup survives
     the caption differing from the folder."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
 
     assert _rows(panel)[1:] == [
@@ -380,7 +380,7 @@ def test_a_folder_row_is_captioned_by_its_category_and_keyed_by_its_name(qapp, l
 
 
 def test_an_empty_folder_is_not_listed(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
 
     assert "26_gardening" not in [key for key, _ in _rows(panel)]
@@ -388,7 +388,7 @@ def test_an_empty_folder_is_not_listed(qapp, library):
 
 def test_with_no_art_extracted_no_row_has_an_icon(qapp, library):
     """The ordinary case: rows keep their compact height, and nothing is logged."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
 
     assert all(panel._cat_list.item(i).icon().isNull() for i in range(panel._cat_list.count()))
@@ -408,7 +408,7 @@ def test_extracted_badges_decorate_all_and_the_known_folders(qapp, library, tmp_
     card_art.index_path().write_text(json.dumps({"icons": icons}), encoding="utf-8")
     card_art.forget_cache()
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     with_icon = {
         panel._cat_list.item(i).data(Qt.ItemDataRole.UserRole)
@@ -422,7 +422,7 @@ def test_extracted_badges_decorate_all_and_the_known_folders(qapp, library, tmp_
 
 def test_loose_files_are_listed_as_other(qapp, library):
     (library / "loose.json").write_text('{"name": "Loose"}', encoding="utf-8")
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
 
     assert _rows(panel)[-1] == (panel._OTHER_KEY, panel._OTHER)
@@ -436,12 +436,12 @@ def test_loose_files_are_listed_as_other(qapp, library):
 # ---------------------------------------------------------------------------
 
 
-def _select_key(panel: _BotLibraryPanel, key: str) -> None:
+def _select_key(panel: BotLibraryPanel, key: str) -> None:
     panel._cat_list.setCurrentRow([k for k, _ in _rows(panel)].index(key))
 
 
 def test_all_searches_everything_so_names_no_scope(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, panel._ALL_KEY)
 
@@ -449,7 +449,7 @@ def test_all_searches_everything_so_names_no_scope(qapp, library):
 
 
 def test_a_folder_names_itself_in_the_search_field_before_anything_is_typed(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, "04_mooshu")
 
@@ -459,7 +459,7 @@ def test_a_folder_names_itself_in_the_search_field_before_anything_is_typed(qapp
 
 
 def test_removing_the_scope_searches_every_folder_keeping_the_query(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, "04_mooshu")
     panel._search.setText("graveyard")
@@ -473,7 +473,7 @@ def test_removing_the_scope_searches_every_folder_keeping_the_query(qapp, librar
 
 
 def test_an_empty_folder_says_how_many_other_bots_match_and_offers_them(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, "04_mooshu")
 
@@ -488,7 +488,7 @@ def test_an_empty_folder_says_how_many_other_bots_match_and_offers_them(qapp, li
 
 def test_the_count_is_plural_past_one(qapp, library):
     _write_bot(library / "31_four_dungeons", "Mine Shaft")
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, "04_mooshu")
 
@@ -498,7 +498,7 @@ def test_the_count_is_plural_past_one(qapp, library):
 
 
 def test_nothing_anywhere_offers_no_wider_search(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, "04_mooshu")
 
@@ -509,7 +509,7 @@ def test_nothing_anywhere_offers_no_wider_search(qapp, library):
 
 
 def test_all_with_no_match_offers_no_wider_search(qapp, library):
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     _select_key(panel, panel._ALL_KEY)
 
@@ -526,8 +526,8 @@ def test_all_with_no_match_offers_no_wider_search(qapp, library):
 # ---------------------------------------------------------------------------
 
 
-def _listed_panel(metas: list[_BotMeta]) -> _BotLibraryPanel:
-    panel = _BotLibraryPanel()
+def _listed_panel(metas: list[_BotMeta]) -> BotLibraryPanel:
+    panel = BotLibraryPanel()
     panel._all_metas = list(metas)
     panel._cat_list.clear()
     panel.add_category_row(panel._ALL_KEY, panel._ALL)
@@ -571,7 +571,7 @@ def test_the_empty_hint_does_not_linger_among_kept_cards(qapp):
 
 def test_a_refresh_builds_new_cards(qapp, library):
     """The files were re-read, so a kept card may describe a version that is gone."""
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.refresh()
     # Hold the cards themselves, not their ids: a freed card's id is free for the
     # next allocation, so a new card can come back with an old one's id.
@@ -687,7 +687,7 @@ def test_the_panel_chrome_recolors_on_a_theme_switch(qapp, theme):
     """The search bar, category list and card area — none of which rebuild
     themselves, and all of which needed a restart before."""
     theme("light")
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     before = (panel._top_bar.styleSheet(), panel._cat_list.styleSheet(), panel._cards_area.styleSheet())
 
     _switch(qapp, panel, theme, "dark")
@@ -701,7 +701,7 @@ def test_the_clear_button_recolors_while_it_exists(qapp, theme):
     """It is rebuilt on every selection change, so it is absent most of the time
     and stale in between."""
     theme("light")
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel._set_tag_selection(["Gear"])
     assert panel._clear_btn is not None
     before = panel._clear_btn.styleSheet()
@@ -721,12 +721,12 @@ def _tagged_bot(folder: Path, name: str, tag: str) -> None:
     (folder / f"{name}.json").write_text(json.dumps({"name": name, "tags": [tag]}), encoding="utf-8")
 
 
-def _rows_with_icons(panel: _BotLibraryPanel) -> set[str]:
+def _rows_with_icons(panel: BotLibraryPanel) -> set[str]:
     items = [panel._cat_list.item(i) for i in range(panel._cat_list.count())]
     return {item.data(Qt.ItemDataRole.UserRole) for item in items if not item.icon().isNull()}
 
 
-def _pills(panel: _BotLibraryPanel) -> list:
+def _pills(panel: BotLibraryPanel) -> list:
     from bartlebot.gui.widgets.pills.tag_pill import TagPill  # noqa: PLC0415
 
     return [pill for card in _cards(panel) for pill in card.findChildren(TagPill)]
@@ -738,7 +738,7 @@ def test_art_extracted_while_the_library_shows_badges_and_medallions_at_once(qap
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 
     _tagged_bot(library / "31_four_dungeons", "Gold Run", "Gold")
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.show()
     panel._cat_list.setCurrentRow(2)
     assert _rows_with_icons(panel) == set()
@@ -759,7 +759,7 @@ def test_a_library_hidden_behind_an_open_bot_relists_when_next_shown(qapp, libra
 
     from tests.extracted_art import write_extracted_art  # noqa: PLC0415
 
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     panel.show()
     panel.hide()
 

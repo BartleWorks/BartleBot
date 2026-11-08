@@ -14,7 +14,6 @@ import pytest
 from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
 
-from bartlebot import app_controller
 from bartlebot.bot.schema import BotConfig, SetupStep, SetupTarget, StateModel, TemplateMeta, TransitionModel
 from bartlebot.content.new_bot import BotDetails, create_bot, starting_points
 from bartlebot.content.store_roots import Origin
@@ -45,6 +44,7 @@ from bartlebot.content.templates.template_store import (
     renamed_in_draft,
     save_draft,
 )
+from bartlebot.controller import documents, template_roots, templates
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.paths import project_root
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
@@ -96,7 +96,8 @@ def _add(config: BotConfig, state_id: str, x: float = 880.0) -> None:
 @pytest.fixture
 def real(tmp_path, monkeypatch):
     """The shipped templates and subgraphs, with the user root on a ``tmp_path``, outside dev mode."""
-    monkeypatch.setattr(app_controller, "dev_mode", lambda: False)
+    for module in (documents, templates, template_roots):
+        monkeypatch.setattr(module, "dev_mode", lambda: False)
     return project_root(), tmp_path / "user"
 
 
@@ -109,11 +110,11 @@ def real_harness(qapp, real, no_modals):
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    h._templates_root = shipped
-    h._templates_user_root = user
-    h._user_bots_dirs = lambda: (user / "bots",)
-    canvas.template_save_requested.connect(lambda: h._save_bot())
-    canvas.template_release_requested.connect(lambda: h._release_template())
+    h._roots.root = shipped
+    h._roots.user_root = user
+    h._roots.user_bots_dirs = lambda: (user / "bots",)
+    canvas.template_save_requested.connect(lambda: h._documents.save_bot())
+    canvas.template_release_requested.connect(lambda: h._templates.release_template())
     yield h
     canvas.prepare_for_shutdown()
 
@@ -127,11 +128,11 @@ def test_a_user_duplicates_boss_farmer_changes_it_releases_v1_and_makes_a_bot_fr
     answers = iter([("My Boss Farmer", True), ("First release of mine", True)])
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: next(answers))
 
-    assert h._duplicate_template(boss)
+    assert h._templates._duplicate_template(boss)
 
     canvas = h._window.bot_canvas
     assert canvas.mode is BotMode.EDIT
-    fork = find_template(h._loaded_config.id, shipped, user)
+    fork = find_template(h._documents.loaded_config.id, shipped, user)
     assert fork.origin is Origin.USER and fork.name == "My Boss Farmer"
     own = fork_prefix(fork.id)
     added = canvas.scene.create_state_at("quicksell", QPointF(2000.0, 2000.0))
@@ -637,13 +638,14 @@ def no_modals(monkeypatch):
 def harness(qapp, roots, tmp_path, monkeypatch, no_modals):
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
 
-    monkeypatch.setattr(app_controller, "dev_mode", lambda: False)
+    for module in (documents, templates, template_roots):
+        monkeypatch.setattr(module, "dev_mode", lambda: False)
     library = SubgraphLibrary(tmp_path / "library")
     canvas = BotCanvas()
     canvas.set_subgraph_library(library)
     h = ControllerHarness(canvas, library)
-    h._templates_root, h._templates_user_root = roots
-    h._user_bots_dirs = lambda: (tmp_path / "bots",)
+    h._roots.root, h._roots.user_root = roots
+    h._roots.user_bots_dirs = lambda: (tmp_path / "bots",)
     yield h
     canvas.prepare_for_shutdown()
 
@@ -652,20 +654,20 @@ def test_an_official_draft_is_refused_and_your_own_opens(harness, roots, monkeyp
     told = []
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a[2]))
 
-    harness._open_bot(str(_official(roots).draft_path))
-    assert harness._loaded_config is None and "Duplicate" in told[0]
+    harness._documents.open_bot(str(_official(roots).draft_path))
+    assert harness._documents.loaded_config is None and "Duplicate" in told[0]
 
     mine = new_template("Mine", root=roots[0], user_root=roots[1])
-    assert harness._edit_template(mine)
-    assert harness._loaded_config.id == mine.id and harness._window.bot_canvas.mode is BotMode.EDIT
+    assert harness._templates._edit_template(mine)
+    assert harness._documents.loaded_config.id == mine.id and harness._window.bot_canvas.mode is BotMode.EDIT
 
 
 def test_new_asks_for_a_name_and_opens_a_blank_draft(harness, roots, monkeypatch):
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("Mob Sweeper", True))
 
-    assert harness._new_template()
+    assert harness._templates._new_template()
 
-    config = harness._loaded_config
+    config = harness._documents.loaded_config
     assert config.is_template and config.name == "Mob Sweeper" and config.states == []
     assert find_template(config.id, *roots).origin is Origin.USER
 
@@ -673,21 +675,21 @@ def test_new_asks_for_a_name_and_opens_a_blank_draft(harness, roots, monkeypatch
 def test_cancelling_duplicate_writes_nothing(harness, roots, monkeypatch):
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("", False))
 
-    assert not harness._duplicate_template(_official(roots))
+    assert not harness._templates._duplicate_template(_official(roots))
     assert [t.id for t in list_templates(*roots)] == [OFFICIAL_ID]
 
 
 def test_renaming_the_open_draft_renames_the_document_too(harness, roots, monkeypatch):
     mine = new_template("Mine", root=roots[0], user_root=roots[1])
-    harness._edit_template(mine)
+    harness._templates._edit_template(mine)
     monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("Renamed", True))
-    entry = next(e for e in harness._template_gallery() if e.id == mine.id)
+    entry = next(e for e in harness._templates._template_gallery() if e.id == mine.id)
 
-    assert harness._rename_template(entry)
+    assert harness._templates._rename_template(entry)
 
-    assert harness._loaded_config.name == "Renamed"
+    assert harness._documents.loaded_config.name == "Renamed"
     assert harness._window.bot_canvas.crumb_bar.text == "Template draft · Renamed"
-    harness._save_bot()
+    harness._documents.save_bot()
     assert find_template(mine.id, *roots).name == "Renamed", "the next save keeps the new name"
 
 
@@ -701,9 +703,9 @@ def test_a_taken_name_asks_again_with_what_was_typed(harness, roots, monkeypatch
 
     monkeypatch.setattr(QInputDialog, "getText", get_text)
 
-    assert harness._new_template()
+    assert harness._templates._new_template()
 
-    assert harness._loaded_config.name == "Mob Sweeper"
+    assert harness._documents.loaded_config.name == "Mob Sweeper"
     assert asked[1] == (
         "There is already a template called 'Official Farmer'.\n\nWhat is the template called?",
         "official farmer",
@@ -714,10 +716,10 @@ def test_saving_a_draft_renamed_in_its_header_to_a_taken_name_is_refused(harness
     told = []
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a[2]))
     mine = new_template("Mine", root=roots[0], user_root=roots[1])
-    harness._edit_template(mine)
-    harness._loaded_config.name = "Official Farmer"
+    harness._templates._edit_template(mine)
+    harness._documents.loaded_config.name = "Official Farmer"
 
-    assert not harness._save_bot()
+    assert not harness._documents.save_bot()
 
     assert "Official Farmer" in told[0]
     assert load_draft(mine.id, *roots).name == "Mine"
@@ -727,8 +729,8 @@ def test_delete_names_the_bots_made_from_it_closes_its_open_draft_and_deletes(ha
     fork = duplicate_template(_official(roots), "Mine", root=roots[0], user_root=roots[1])
     release(fork.id, "v1", root=roots[0], user_root=roots[1])
     _bot_from(roots, fork.id, tmp_path / "bots", "Lord Nightshade")
-    harness._edit_template(find_template(fork.id, *roots))
-    harness._has_unsaved_changes = True
+    harness._templates._edit_template(find_template(fork.id, *roots))
+    harness._documents.has_unsaved_changes = True
     asked = []
 
     def answer(*a, **k):
@@ -736,21 +738,21 @@ def test_delete_names_the_bots_made_from_it_closes_its_open_draft_and_deletes(ha
         return QMessageBox.StandardButton.Yes
 
     monkeypatch.setattr(QMessageBox, "warning", answer)
-    entry = next(e for e in harness._template_gallery() if e.id == fork.id)
+    entry = next(e for e in harness._templates._template_gallery() if e.id == fork.id)
 
-    assert harness._delete_template(entry)
+    assert harness._templates._delete_template(entry)
 
     assert "Lord Nightshade" in asked[0] and "keep running" in asked[0]
-    assert harness._loaded_config is None
+    assert harness._documents.loaded_config is None
     assert find_template(fork.id, *roots) is None
 
 
 def test_declining_delete_keeps_the_template(harness, roots, monkeypatch):
     mine = new_template("Mine", root=roots[0], user_root=roots[1])
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: QMessageBox.StandardButton.Cancel)
-    entry = next(e for e in harness._template_gallery() if e.id == mine.id)
+    entry = next(e for e in harness._templates._template_gallery() if e.id == mine.id)
 
-    assert not harness._delete_template(entry)
+    assert not harness._templates._delete_template(entry)
     assert find_template(mine.id, *roots) is not None
 
 
@@ -768,7 +770,7 @@ def test_the_templates_dialog_hands_its_request_to_the_controller(harness, roots
             self.edit_button.click()
             return self.result()
 
-    monkeypatch.setattr(app_controller, "TemplatesDialog", _Pick)
+    monkeypatch.setattr(templates, "TemplatesDialog", _Pick)
 
-    assert harness._open_templates_dialog()
-    assert harness._loaded_config.id == mine.id
+    assert harness._templates.open_templates_dialog()
+    assert harness._documents.loaded_config.id == mine.id

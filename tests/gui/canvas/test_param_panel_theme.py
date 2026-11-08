@@ -1,6 +1,6 @@
 """The properties panel's themed widgets, and the shapes they use.
 
-``_DynamicParamForm`` holds references, because ``load_schema`` clears and refills
+``DynamicParamForm`` holds references, because ``load_schema`` clears and refills
 them in step with the widgets. ``_FlagConditionsWidget`` cannot: groups and rows come
 and go as the user edits, so it names its parts with objectNames and sets one sheet on
 itself, which styles a row built *after* a theme switch with no bookkeeping.
@@ -25,11 +25,9 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QLabel
 
 from bartlebot.bot.schema import StateModel, TransitionModel
-from bartlebot.gui.canvas.param_panel import (
-    _DynamicParamForm,
-    _FlagConditionsWidget,
-    _ParamPanel,
-)
+from bartlebot.gui.canvas.edge_page import _FlagConditionsWidget
+from bartlebot.gui.canvas.param_form import DynamicParamForm
+from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.nodes.param_schema import ParamField
 
 
@@ -52,7 +50,7 @@ SCHEMA = [
 
 
 # ---------------------------------------------------------------------------
-# _DynamicParamForm
+# DynamicParamForm
 # ---------------------------------------------------------------------------
 
 
@@ -60,7 +58,7 @@ def test_the_required_marker_color_is_rebuilt(qapp, theme):
     """The marker is THEME.error inside rich text, not a stylesheet — a restyle that
     only re-set stylesheets would leave the asterisk in the old palette."""
     theme("light")
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(SCHEMA, {})
     form.show_required_errors()  # the marker is muted until the field's emptiness is shown
     label, _field = form._field_labels[0]
@@ -76,7 +74,7 @@ def test_the_required_marker_color_is_rebuilt(qapp, theme):
 
 def test_field_labels_recolor(qapp, theme):
     theme("light")
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(SCHEMA, {})
     before = [lbl.styleSheet() for lbl, _ in form._field_labels]
 
@@ -89,7 +87,7 @@ def test_no_field_label_carries_a_margin_of_its_own(qapp, theme):
     """Rows are spaced by the form's layout (#142): a margin on the head line would push
     it below the gutter's buttons, which top-align with the row."""
     theme("light")
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(SCHEMA, {})
 
     _switch(qapp, form, theme, "dark")
@@ -100,7 +98,7 @@ def test_no_field_label_carries_a_margin_of_its_own(qapp, theme):
 def test_the_default_hint_folds_behind_the_rows_question_mark(qapp, theme):
     """It was a muted line of its own under the field; it is the end of the row's description now."""
     theme("light")
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(SCHEMA, {})
 
     assert form.description("note").text() == "Default: empty"
@@ -112,7 +110,7 @@ def test_the_empty_required_border_is_re_derived(qapp, theme):
     """The red border is applied outside load_schema, so it is only re-derived by
     re-running the validation the restyle calls."""
     theme("light")
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(SCHEMA, {})
     zone = form.widget("zone")
     assert THEME.error not in zone.styleSheet(), "not before it has been left empty"
@@ -128,7 +126,7 @@ def test_the_empty_required_border_is_re_derived(qapp, theme):
 
 def test_a_placeholder_form_recolors(qapp, theme):
     theme("light")
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema([], {})
     before = form._muted_labels[0].styleSheet()
 
@@ -200,36 +198,36 @@ def test_the_node_help_button_recolors(qapp, theme):
     """The '?' beside the node type dropdown: three THEME colors in one sheet set
     once in __init__, which is what kept it in the old palette across a switch."""
     panel = _panel(theme)
-    before = panel._node_help_btn.styleSheet()
+    before = panel.node_page._node_help_btn.styleSheet()
     light_accent = THEME.accent
 
     _switch(qapp, panel, theme, "dark")
 
-    assert panel._node_help_btn.styleSheet() != before
-    assert THEME.accent in panel._node_help_btn.styleSheet()
-    assert light_accent not in panel._node_help_btn.styleSheet()
+    assert panel.node_page._node_help_btn.styleSheet() != before
+    assert THEME.accent in panel.node_page._node_help_btn.styleSheet()
+    assert light_accent not in panel.node_page._node_help_btn.styleSheet()
 
 
 def test_the_node_type_category_headers_recolor(qapp, theme):
     """These carry their color as a model item foreground, not a stylesheet, so
     they need re-setting by hand rather than falling out of a sheet rewrite."""
     panel = _panel(theme)
-    assert panel._node_type_headers, "the dropdown should have category headers"
+    assert panel.node_page._node_type_headers, "the dropdown should have category headers"
     light_muted = QColor(THEME.text_muted)
-    assert panel._node_type_headers[0].foreground().color() == light_muted
+    assert panel.node_page._node_type_headers[0].foreground().color() == light_muted
 
     _switch(qapp, panel, theme, "dark")
 
     assert QColor(THEME.text_muted) != light_muted
-    assert panel._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
+    assert panel.node_page._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
 
 
 def test_the_idle_page_and_status_line_recolor(qapp, theme):
     panel = _panel(theme)
     before = [
         panel._idle_lbl.styleSheet(),
-        panel._record_status_lbl.styleSheet(),
-        panel._flags_lbl.styleSheet(),
+        panel.node_page._record_status_lbl.styleSheet(),
+        panel.edge_page._flags_lbl.styleSheet(),
     ]
     assert all(before), "every one of these should be styled at construction"
 
@@ -237,8 +235,8 @@ def test_the_idle_page_and_status_line_recolor(qapp, theme):
 
     after = [
         panel._idle_lbl.styleSheet(),
-        panel._record_status_lbl.styleSheet(),
-        panel._flags_lbl.styleSheet(),
+        panel.node_page._record_status_lbl.styleSheet(),
+        panel.edge_page._flags_lbl.styleSheet(),
     ]
     assert all(a != b for a, b in zip(after, before))
 
@@ -275,4 +273,4 @@ def test_an_idle_panel_survives_a_switch(qapp, theme):
 
 def _conn_labels(panel) -> list:
     """Every label inside the connections list, at any depth."""
-    return panel._conn_body.findChildren(QLabel)
+    return panel.node_page._conn_body.findChildren(QLabel)

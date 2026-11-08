@@ -47,7 +47,7 @@ def _shut_down_harness_canvases():
 
 
 class _Harness:
-    """Canvas + both sidebars wired the way MainWindow and AppController._on_config_changed wire them."""
+    """Canvas + both sidebars wired the way MainWindow and Documents.on_config_changed wire them."""
 
     def __init__(self, config):
         from bartlebot.gui.canvas.bot_canvas import BotCanvas
@@ -93,11 +93,11 @@ class _Harness:
         whole path: selection → panel → request → canvas mutation.
         """
         self._show(state_id)
-        self.canvas.param_panel.request_initial_role()
+        self.canvas.param_panel.node_page.request_initial_role()
 
     def choose_recovery(self, state_id):
         self._show(state_id)
-        self.canvas.param_panel.request_recovery_role()
+        self.canvas.param_panel.node_page.request_recovery_role()
 
     def undo_an_edit(self):
         """Make an undoable graph edit and undo it, so the canvas swaps in a new config."""

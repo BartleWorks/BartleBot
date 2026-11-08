@@ -21,9 +21,9 @@ _NAMES = ParamField(key="names", type="str", label="Names", default="")
 
 
 def _form(fields, params):
-    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+    from bartlebot.gui.canvas.param_form import DynamicParamForm
 
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(fields, params)
     return form
 

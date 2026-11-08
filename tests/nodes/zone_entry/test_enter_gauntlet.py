@@ -82,3 +82,48 @@ async def test_loading_screen_awaited():
 
     assert result == "SUCCESS"
     assert client.is_loading.call_count >= 2
+
+
+def _on_the_sigil(presses_needed: list[int], clients: list):
+    """Clients on a gauntlet sigil, each going in on its nth press of X, and is_visible_by_path to match.
+
+    The entrance prompt shows until a client goes in, and its zone flips from the house to
+    the gauntlet then, so the node's own prompt, zone and arrival reads run unpatched.
+    """
+    needed = {id(c): n for c, n in zip(clients, presses_needed)}
+
+    def entered(client) -> bool:
+        return client.send_key.await_count >= needed[id(client)]
+
+    for client in clients:
+        client.zone_name.side_effect = lambda c=client: _PARAMS["dungeon_zone"] if entered(c) else "Housing/Dorm"
+
+    async def prompt_up(client, path):
+        return list(path) == list(nh.GAUNTLET_ENTRANCE_PATH) and not entered(client)
+
+    return prompt_up
+
+
+async def test_a_player_whose_press_was_dropped_is_pressed_again_and_goes_in():
+    """2026-11-07: one player left on the sigil four times running, and the run was stopped."""
+    clients = [FakeClient(), FakeClient()]
+    prompt_up = _on_the_sigil([1, 2], clients)
+    machine = FakeMachine(options={"Safety Delay": 0.01})
+
+    with patch.object(eg, "POLL_INTERVAL", 0), patch.object(nh, "is_visible_by_path", new=prompt_up):
+        result = await eg.run(machine, clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert [c.send_key.await_count for c in clients] == [1, 2]
+    assert any("P2 is still at the prompt; pressing X again" in line[0] for line in machine.logs)
+
+
+async def test_x_is_pressed_once_when_everyone_goes_in():
+    clients = [FakeClient(), FakeClient()]
+    prompt_up = _on_the_sigil([1, 1], clients)
+
+    with patch.object(eg, "POLL_INTERVAL", 0), patch.object(nh, "is_visible_by_path", new=prompt_up):
+        result = await eg.run(FakeMachine(options={"Safety Delay": 0.01}), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert [c.send_key.await_count for c in clients] == [1, 1]

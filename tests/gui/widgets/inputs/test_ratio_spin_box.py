@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QDoubleSpinBox
 
-from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+from bartlebot.gui.canvas.param_form import DynamicParamForm
 from bartlebot.gui.widgets.inputs.ratio_spin_box import RatioSpinBox
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 
@@ -83,7 +83,7 @@ def test_every_threshold_is_a_ratio_field_drawn_as_a_percent(qapp, node_type, ke
     field = next(f for f in schema if f.key == key)
     assert field.type == "ratio" and 0.0 <= field.default <= 1.0
     assert "0.0" not in field.help and "ratio" not in field.help, "the help speaks in percent too"
-    form = _DynamicParamForm()
+    form = DynamicParamForm()
     form.load_schema(schema, {key: 0.25})
 
     widget = form.widget(key)

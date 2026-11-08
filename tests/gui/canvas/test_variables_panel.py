@@ -14,7 +14,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QCheckBox, QComboBox, QLabel, QSpinBox
 
 from bartlebot.bot.schema import FlagCondition, FlagGroup, VariableModel
-from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _FlagConditionsWidget, _held_text, _HeldParam
+from bartlebot.gui.canvas.edge_page import _FlagConditionsWidget
+from bartlebot.gui.canvas.param_form import DynamicParamForm, _held_text, _HeldParam
 from bartlebot.gui.canvas.variable_rows import AssignmentsField
 from bartlebot.gui.widgets.inputs.variable_widgets import NOT_A_VALUE, OPTION, VARIABLE, VariableValueField
 from bartlebot.nodes.control_flow.set_variables import PARAM_SCHEMA
@@ -216,8 +217,8 @@ def test_the_flat_form_loads_variable_rows_too(qapp):
 # ---------------------------------------------------------------------------
 
 
-def _form(rows, decls=DECLS) -> _DynamicParamForm:
-    form = _DynamicParamForm()
+def _form(rows, decls=DECLS) -> DynamicParamForm:
+    form = DynamicParamForm()
     form.set_variables_getter(lambda: list(decls))
     form.load_schema(PARAM_SCHEMA, {"assignments": rows})
     return form

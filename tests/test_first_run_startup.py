@@ -84,7 +84,7 @@ def startup(qapp, monkeypatch, tmp_path):
     ns = SimpleNamespace(_window=_Window(state.events))
     for name in ("_after_window_shown", "_offer_first_run", "_rerun_setup", "_open_setup"):
         setattr(ns, name, getattr(AppController, name).__get__(ns))
-    ns._import_from_arguments = lambda: state.events.append("import")
+    ns._sharing = SimpleNamespace(import_from_arguments=lambda: state.events.append("import"))
     ns._updates = SimpleNamespace(check_at_startup=lambda: None)
 
     def answer(dialog: FirstRunDialog) -> int:

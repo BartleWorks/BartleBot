@@ -81,6 +81,12 @@ from bartlebot.content.subgraphs import signature_tree as st
 from bartlebot.content.subgraphs.signature_tree import GROUP, INPUT, NODE, TreeRow
 from bartlebot.content.subgraphs.subgraphs import binding_type, nested_key
 from bartlebot.gui.canvas.node_cards import PageFoldBar
+from bartlebot.gui.canvas.param_form import (
+    DynamicParamForm,
+    input_param_field,
+    instance_key_label,
+    write_show_descriptions,
+)
 from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard, UiStateFoldStore
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.options import param_cards
@@ -939,11 +945,6 @@ class SignaturePage(ThemedMixin, QWidget):
         return row
 
     def _input_detail(self, inp: SubgraphInput, item: _TreeItem, detail: QWidget, layout: QVBoxLayout) -> None:
-        from bartlebot.gui.canvas.param_panel import (  # noqa: PLC0415 - param_panel imports this module
-            _DynamicParamForm,
-            input_param_field,
-            instance_key_label,
-        )
 
         config = self._config
         assert config is not None
@@ -959,7 +960,7 @@ class SignaturePage(ThemedMixin, QWidget):
         layout.addWidget(self._field_row("Help", help_edit, detail))
 
         # The one row builder: the default is drawn exactly as a param of its type is.
-        default = _DynamicParamForm(detail)
+        default = DynamicParamForm(detail)
         default.set_clients_getter(self._get_clients)
         default.set_zone_suggestions_getter(self._get_zones)
         field = replace(input_param_field(config, inp, self._library), label="Default", required=False)
@@ -1071,7 +1072,6 @@ class SignaturePage(ThemedMixin, QWidget):
         layout.addWidget(self._footer(detail, show, demote))
 
     def _set_descriptions_visible(self, shown: bool) -> None:
-        from bartlebot.gui.canvas.param_panel import write_show_descriptions  # noqa: PLC0415
 
         write_show_descriptions(shown)
         for form in self._forms:

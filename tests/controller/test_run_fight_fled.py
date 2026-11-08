@@ -1,6 +1,6 @@
 """How a flee reaches the Combat tab (epic #201, Stage 7).
 
-``AppController._on_machine_fight_fled``, bound to a stand-in as the other controller tests
+``Run._on_machine_fight_fled``, bound to a stand-in as the other controller tests
 do: the machine's ``on_fight_fled`` callback, with the bot id bound when the machine is built.
 """
 
@@ -10,9 +10,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from bartlebot.app_controller import AppController
 from bartlebot.combat.combat_resolution import Level
 from bartlebot.combat.flee_marks import FleeMarks
+from bartlebot.controller.run import Run
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def controller():
     refreshes: list[str] = []
     tab = SimpleNamespace(refresh_source=lambda: refreshes.append("refresh"))
     ns = SimpleNamespace(_flee_marks=FleeMarks(), _window=SimpleNamespace(left_sidebar=SimpleNamespace(combat_tab=tab)))
-    ns.fled = AppController._on_machine_fight_fled.__get__(ns)
+    ns.fled = Run._on_machine_fight_fled.__get__(ns)
     ns.refreshes = refreshes
     return ns
 

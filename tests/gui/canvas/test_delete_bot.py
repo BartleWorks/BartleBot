@@ -10,7 +10,8 @@ from bartlebot.combat.bot_strategy_models import BotCombatStrategy
 from bartlebot.combat.strategy_store import list_bot_strategies, save_bot_strategy
 from bartlebot.content import bot_roots, store_roots
 from bartlebot.content.subgraphs.subgraph_store import SubgraphLibrary
-from bartlebot.gui.canvas.bot_canvas import BotCanvas, _BotLibraryPanel
+from bartlebot.gui.canvas.bot_canvas import BotCanvas
+from bartlebot.gui.canvas.bot_library import BotLibraryPanel
 from bartlebot.settings_manager import SettingsManager
 from tests.content.subgraphs.test_subgraph_integration import ControllerHarness
 
@@ -48,7 +49,7 @@ def test_a_users_bot_card_offers_delete(qapp, folders):
     _, user = folders
     path = user / "mine.json"
     _bot().save(path)
-    panel = _BotLibraryPanel()
+    panel = BotLibraryPanel()
     asked: list[str] = []
     panel.delete_bot_requested.connect(asked.append)
 
@@ -64,7 +65,7 @@ def test_an_official_bots_delete_is_grayed_out_with_the_reason(qapp, folders):
     path = shipped / "official.json"
     _bot("official").save(path)
 
-    action = _action(_BotLibraryPanel().bot_menu(path), DELETE_TEXT)
+    action = _action(BotLibraryPanel().bot_menu(path), DELETE_TEXT)
 
     assert not action.isEnabled()
     assert "Official bots can't be deleted" in action.toolTip()
@@ -95,7 +96,7 @@ def test_the_confirmation_names_the_bot_and_counts_its_strategies(harness, folde
     save_bot_strategy(BotCombatStrategy(name="Solo", bot_id="mine"))
     asked = _answer(monkeypatch, QMessageBox.StandardButton.Ok)
 
-    assert harness._delete_bot(str(path))
+    assert harness._documents.delete_bot(str(path))
 
     assert "'Jade Oni'" in asked[0] and "1 Bot Combat Strategy" in asked[0]
     assert not path.exists()
@@ -109,7 +110,7 @@ def test_cancelling_deletes_nothing(harness, folders, monkeypatch):
     SettingsManager.instance().set_option_override("mine", "safety_delay", 5.0)
     _answer(monkeypatch, QMessageBox.StandardButton.Cancel)
 
-    assert not harness._delete_bot(str(path))
+    assert not harness._documents.delete_bot(str(path))
 
     assert path.exists()
     assert SettingsManager.instance().get_option_override("mine", "safety_delay") == 5.0
@@ -121,7 +122,7 @@ def test_an_official_bot_is_never_deleted(harness, folders, monkeypatch):
     _bot("official").save(path)
     asked = _answer(monkeypatch, QMessageBox.StandardButton.Ok)
 
-    assert not harness._delete_bot(str(path))
+    assert not harness._documents.delete_bot(str(path))
 
     assert path.exists() and not asked
 
@@ -133,9 +134,9 @@ def test_the_open_bot_is_not_deleted(harness, folders, monkeypatch):
     told: list[tuple] = []
     monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: told.append(a))
     asked = _answer(monkeypatch, QMessageBox.StandardButton.Ok)
-    harness._last_save_path = str(path)
+    harness._documents._last_save_path = str(path)
 
-    assert not harness._delete_bot(str(path))
+    assert not harness._documents.delete_bot(str(path))
 
     assert path.exists() and told and not asked
 
@@ -149,6 +150,6 @@ def test_a_deleted_bots_recovery_file_goes_with_it(harness, folders, monkeypatch
     recovery.write_text("{}", encoding="utf-8")
     _answer(monkeypatch, QMessageBox.StandardButton.Ok)
 
-    assert harness._delete_bot(str(path))
+    assert harness._documents.delete_bot(str(path))
 
     assert not recovery.exists()

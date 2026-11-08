@@ -60,7 +60,7 @@ Two things follow, and the bot can fix neither during a run:
 - A player with a different elixir active reads as level scaled and runs unscaled.
 - A level scaling elixir taken earlier runs out before the others', which costs another trip.
 
-So the run request warns instead. `AppController._on_run_requested` reads the indicator on
+So the run request warns instead. `Run.on_run_requested` (`controller/run.py`) reads the indicator on
 every Level Scaling Player when the bot holds a level scaling node, and
 `level_scaling_warning` adds a safety warning naming the players who already have one. The
 read is async and the dialog blocks, so the read runs as a task and the dialogs run from its

@@ -28,7 +28,7 @@ only for a DSL with no answer yet (just imported, or after a wizsprinter bump).
 `BotCanvas.replace_config(config, desc)` swaps the loaded `BotConfig` for another object
 and rebuilds the scene, header and properties panel from it, then emits
 `config_changed` so the controller and both sidebars follow — the same path undo takes
-through `_restore`, and the same rule `AppController._on_config_changed` already
+through `_restore`, and the same rule `Documents.on_config_changed` already
 states: a surface holding a config object must re-bind on that signal or its edits go
 nowhere. The pre-run subgraph recompose (`docs/SUBGRAPHS.md`) is the second caller
 after undo. In EDIT mode a `desc` pushes the outgoing config onto the undo stack first,
@@ -54,7 +54,9 @@ inferred from the edges crossing it (`subgraphs.boundary_ports`, the same rule *
 region as subgraph* uses), so an edge added or deleted there can change them --
 `_refresh_folds`, on `graph_changed`, rebuilds when it does. Nothing caches these: the
 scene is rebuilt from the config on undo, `replace_config`, paste, detach and delete,
-and the mapping is rebuilt with it.
+and the mapping is rebuilt with it. The mapping is `canvas/display_map.py`'s `DisplayMap`,
+which the scene owns and rebuilds at the top of every `setup`; it needs no Qt, and the
+scene keeps the items.
 
 What a member does rolls up onto its node: its errors (`refresh_errors`; an instance's
 filtered by `member_warnings`, a collapsed region's not, since its gaps are the bot's
@@ -106,7 +108,7 @@ the drop: Run mode's collapses are never written, so an expand has nowhere to ma
 
 **Collapsing works in both modes, and means something different in each.** In Edit
 mode it sets the region's saved flag, as one undoable step. In Run mode it is a view:
-`EditScene`'s collapse overrides sit over the saved flags, are never written, and are
+the collapse overrides, held in the scene's `DisplayMap`, sit over the saved flags, are never written, and are
 dropped on entering Edit mode, which is where the saved state is decided. So "is this
 region collapsed" is `EditScene.is_region_collapsed` (or `subgraphs.is_collapsed` with
 the overrides), never `region.collapsed` read directly. `BotCanvas.set_region_collapsed`
@@ -126,7 +128,7 @@ its level of detail instead -- the plus did the former first, and was never a bu
 Opening a definition (double-click a call node, *Open definition*, or the library's
 Subgraphs folder) sets the open document aside with `BotCanvas.take_document()`, which
 takes its config, undo history, camera and compose report. `restore_document()` puts it
-back. The controller keeps the stack (`AppController._doc_stack`), and Save, Close,
+back. The controller's `Documents` keeps the stack (`controller/documents.py`), and Save, Close,
 autosave and crash recovery branch on `config.is_definition`. Going back recomposes
 the document underneath from the library, as a run does. The definition's own signature
 (inputs, panels, id and version) rides on `BotConfig.definition`, so undo and autosave
@@ -142,7 +144,7 @@ whole page scrolls as one -- before, only the params scrolled and the other thre
 pinned under them. The subgraph node page's are the ungrouped inputs, one per input
 group, and Role. What a card *says* is `bartlebot/options/param_cards.py`, which needs no Qt.
 
-- **One row builder, `_DynamicParamForm`, draws both pages' rows**, behind the option
+- **One row builder, `DynamicParamForm` (`canvas/param_form.py`), draws both pages' rows**, behind the option
   surfaces' `[bar][reset][?]` gutter. A row is a head line and a control. Actions on a
   field sit at the *end* of its control line as glyph-only `ActionButton`s (Fill
   current, Go to zone, TP; `row_actions` adds one more, the wiki import), never in a
@@ -229,8 +231,10 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 | **Bar A** (`game_view_panel.py`) | the game windows | the clients: how many are hooked, the launch profile, the node they are being driven through |
 | **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
 
-The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
-edge, a plain *region* (reached by selecting a whole region's members, the pill click,
+The **properties panel** (`canvas/param_panel.py`) is a stack of pages, one per selection
+and each its own class, which the panel picks and forwards the signals of: a node
+(`canvas/node_page.py`), an edge (`canvas/edge_page.py`), a plain *region*
+(`canvas/region_page.py`, reached by selecting a whole region's members, the pill click,
 or its collapsed node; label, color, Collapse / Expand -- disabled with the reason when
 `collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, its inputs and input groups as cards with
 Record on a promoted node's band, roles by entry port, Open definition, Detach -- see the
@@ -453,7 +457,7 @@ Stepping out: the close button and Alt+Left go one level, out of a definition wh
 nothing is focused. **Esc dismisses before it leaves** — the search bar, then a level,
 then the selection, and only then the definition — so a stray Esc never lands on the
 Save / Discard prompt. An earlier segment steps straight back to it, prompting at each
-definition closed on the way (`AppController._back_to_document`).
+definition closed on the way (`Documents.back_to_document`).
 
 A definition's crumb carries **Save**, **Save as…** and, only for an Official
 (modified) one, **Revert**. The labels are short on purpose: the bar sits over the graph.
@@ -930,7 +934,7 @@ already has.
   store. `OptionsSection._rename_option` does all three; deleting does the same
   three in reverse.
 - **One option-type → widget mapping**, in `gui/widgets/inputs/option_widgets.py`, used
-  by both surfaces and the Add/Edit dialog. `param_panel._make_widget` stays
+  by both surfaces and the Add/Edit dialog. `DynamicParamForm._make_widget` stays
   separate: it maps *param* fields, a larger vocabulary (zone, xyz, wiki_page)
   no bot option can have. Three copies of this mapping is how the dialog came to
   hardcode `type="bool"` while the rows rendered floats — pressing Edit on

@@ -27,8 +27,8 @@ from bartlebot.content.subgraphs.subgraph_tags import (
     subgraph_tag_group,
 )
 from bartlebot.content.subgraphs.subgraphs import config_to_definition, definition_change, definition_to_config
-from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, filter_bot_metas
 from bartlebot.gui.canvas.bot_header import BotHeader
+from bartlebot.gui.canvas.bot_library import BotLibraryPanel, _BotCard, _BotMeta, filter_bot_metas
 from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog, subgraph_key
 from bartlebot.gui.widgets.pickers.tag_picker import BOT_VOCABULARY, SUBGRAPH_VOCABULARY
 from bartlebot.gui.widgets.pills.tag_pill import TagPill
@@ -210,24 +210,24 @@ def test_filtering_metas_by_category_uses_the_category_groups():
 
 
 @pytest.fixture
-def panel(qapp, tmp_path) -> _BotLibraryPanel:
+def panel(qapp, tmp_path) -> BotLibraryPanel:
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     SubgraphLibrary(shipped).save(_defn(tags=["Team"]))
     SubgraphLibrary(user).save(_defn("fight", "Fight loop", tags=["Combat and Healing"]))
     SubgraphLibrary(user).save(_defn("plain", "Plain"))
-    p = _BotLibraryPanel()
+    p = BotLibraryPanel()
     p.set_subgraph_library(SubgraphLibrary(shipped, user))
     p.refresh()
     return p
 
 
-def _select(panel: _BotLibraryPanel, caption: str) -> None:
+def _select(panel: BotLibraryPanel, caption: str) -> None:
     panel._cat_list.setCurrentRow(
         next(i for i in range(panel._cat_list.count()) if panel._cat_list.item(i).text() == caption)
     )
 
 
-def _names(panel: _BotLibraryPanel) -> list[str]:
+def _names(panel: BotLibraryPanel) -> list[str]:
     layout = panel._cards_layout
     cards = [w for i in range(layout.count()) if isinstance(w := layout.itemAt(i).widget(), _BotCard)]
     return [c.findChild(QLabel).text() for c in cards]

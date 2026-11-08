@@ -11,7 +11,7 @@ Three enforcement points, and none of them is optional:
 
 | where | what |
 |---|---|
-| `check_bot_config` → `AppController._check_restricted_zones` | refuses to *start* a bot naming a restricted zone; runs first in `_on_run_requested`, and unlike the other pre-run dialogs it has no "continue" |
+| `check_bot_config` → `Run._check_restricted_zones` (`controller/run.py`) | refuses to *start* a bot naming a restricted zone; runs first in `on_run_requested`, and unlike the other pre-run dialogs it has no "continue" |
 | `ClientHealthMonitor._restricted_zone_watcher` | polls every 0.25 s during a run; stops the FSM and unhooks every client |
 | `check_duel` | reads the current duel's own flags and team make-up, catching a PvP zone no rule names |
 
