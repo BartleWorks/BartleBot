@@ -379,7 +379,7 @@ def test_the_landing_page_and_getting_started_link_the_safety_page():
 
 
 def test_troubleshootings_last_two_sections_stay_where_the_logs_are_then_opening_an_issue():
-    headings = re.findall(r"^## (.+)$", _page("troubleshooting.md"), re.M)
+    headings = re.findall(r"^## (.+?)(?: \{ #[a-z0-9-]+ \})?$", _page("troubleshooting.md"), re.M)
 
     assert headings[-2:] == ["Where the logs are", "Opening an issue"]
 

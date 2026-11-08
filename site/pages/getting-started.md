@@ -6,7 +6,7 @@ This page takes you from installing BartleBot to the end of your first run, in t
 
 Follow [Installing BartleBot](install.md). When the installer finishes, BartleBot opens and starts its setup.
 
-## Answer setup's questions
+## Answer setup's questions { #answer-setups-questions }
 
 Setup asks one question per page, and each answer is a setting you can change later. To go through it again, open **File › Set up BartleBot…**.
 

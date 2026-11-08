@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT))
 
 from bartleby.shared.vendor import VENDOR  # noqa: E402
 
+from bartlebot.packaging.help_topics import page_url  # noqa: E402
 from bartlebot.packaging.product import NAME as PRODUCT  # noqa: E402
 from bartlebot.updates.feed import INSTALL_NOTES_MARKER, REPOSITORY  # noqa: E402
 from tools.build_package import NAME  # noqa: E402
@@ -58,7 +59,7 @@ DEFAULT_OUT = ROOT / "releases"
 NOTES_DIR = ROOT / "release_notes"
 #: The download site's install page, which every release's footer links. It covers
 #: SmartScreen, Smart App Control and antivirus, so the release page does not repeat them.
-INSTALL_URL = "https://bartleworks.github.io/BartleBot/install/"
+INSTALL_URL = page_url("install.md")
 #: What follows every release's own notes on its GitHub page, for someone who arrives there
 #: to install it rather than through the site.
 INSTALL_FOOTER = (

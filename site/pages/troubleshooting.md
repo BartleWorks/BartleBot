@@ -127,7 +127,7 @@ An import is refused before anything is written, because the share file came fro
 
 If BartleBot is already up to date, the version the message names isn't released yet. Import the file once it is.
 
-## Where the logs are
+## Where the logs are { #where-the-logs-are }
 
 BartleBot writes a log of each session to:
 

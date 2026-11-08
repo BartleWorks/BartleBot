@@ -2,7 +2,7 @@
 
 BartleBot can run one game or several at once, each in its own tile of the game view. This page covers saving your accounts, launching and connecting games, running a team of players, and keeping them on one realm or apart.
 
-## Add your accounts
+## Add your accounts { #add-your-accounts }
 
 An account is one Wizard101 login. BartleBot uses it to launch the game, log in, and launch it again after a crash.
 
