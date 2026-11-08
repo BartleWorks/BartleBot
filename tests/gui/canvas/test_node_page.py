@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from bartlebot.bot.schema import StateModel
+from PyQt6.QtWidgets import QLabel
+
+from bartlebot.bot.schema import FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.gui.canvas.node_page import NodePage
 
 STATE = StateModel(id="a", node_type="sleep", label="Wait")
@@ -24,3 +26,24 @@ def test_clear_lets_go_of_the_state_so_an_edit_no_longer_reaches_it(qapp):
 
     assert page.state is None
     assert shown.label == "Wait"
+
+
+def _chips(page, name):
+    return [w.text() for w in page.findChildren(QLabel, name)]
+
+
+def test_an_incoming_edge_with_a_condition_is_not_shown_as_always(qapp):
+    """#198: the condition chip names what the edge is taken on, and its tooltip holds it whole."""
+    source = StateModel(id="s", node_type="branch", label="Which rack")
+    guard = [FlagGroup(flags=[FlagCondition(variable="Next Search Point", compare="==", value=2)])]
+    edges = [
+        TransitionModel(trigger="advance", source="s", dest="a", flag_groups=guard),
+        TransitionModel(trigger="advance", source="s", dest="a", when="SUCCESS"),
+    ]
+    page = NodePage()
+    page.show_state(STATE, [STATE, source], edges, "s", "s")
+
+    # The sleep node's own unrouted SUCCESS is the other one.
+    assert _chips(page, "conn_return_chip") == ["SUCCESS", "SUCCESS"]
+    (condition,) = page.findChildren(QLabel, "conn_condition_chip")
+    assert (condition.full_text(), condition.toolTip()) == ("Next Search Point == 2", "Next Search Point == 2")

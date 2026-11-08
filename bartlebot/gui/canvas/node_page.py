@@ -871,10 +871,12 @@ class NodePage(ThemedMixin, QWidget):
         if incoming:
             self._conn_body_layout.addWidget(self._conn_heading("Incoming", spaced=bool(routes)))
             for t in incoming:
+                chip_text, condition = param_cards.edge_chips(t.when, t)
                 row = self._make_conn_row(
                     t,
                     badge_text=None,
-                    chip_text=t.when or "always",
+                    chip_text=chip_text,
+                    condition=condition,
                     node_label=state_map.get(t.source, t.source),
                     node_id=t.source,
                     is_outgoing=False,
@@ -898,10 +900,12 @@ class NodePage(ThemedMixin, QWidget):
     def _make_route_row(self, route, state_map: dict[str, str], descriptions: dict[str, str]) -> QWidget:
         """One outgoing route: its priority, its return, and where it goes -- the undrawn ones say so."""
         if route.kind == param_cards.EDGE:
+            chip_text, condition = param_cards.edge_chips(route.when, route.transition)
             body = self._make_conn_row(
                 route.transition,
                 badge_text=str(route.priority),
-                chip_text=route.when or "always",
+                chip_text=chip_text,
+                condition=condition,
                 node_label=state_map.get(route.dest, route.dest),
                 node_id=route.dest,
                 is_outgoing=True,
@@ -910,7 +914,7 @@ class NodePage(ThemedMixin, QWidget):
             body = self._make_conn_row(
                 None,
                 badge_text="",
-                chip_text=route.when or "always",
+                chip_text=route.when or param_cards.ALWAYS,
                 node_label=state_map.get(route.dest, route.dest) if route.dest else "",
                 node_id=route.dest,
                 is_outgoing=True,
@@ -957,13 +961,20 @@ class NodePage(ThemedMixin, QWidget):
         self,
         transition: TransitionModel | None,
         badge_text: str | None,
-        chip_text: str,
+        chip_text: str | None,
         node_label: str,
         node_id: str | None,
         is_outgoing: bool,
         note: tuple[str, str] | None = None,
+        condition: str | None = None,
     ) -> QWidget:
-        """Build a single connection row widget: a route, or an edge coming in."""
+        """Build a single connection row widget: a route, or an edge coming in.
+
+        *chip_text* is the return that takes it, or None for an edge only its condition
+        decides. *condition* is what the edge's canvas label says (``param_cards.edge_chips``),
+        drawn as a chip of its own that elides, with the whole of it in its tooltip, so a
+        long condition never widens the page past the sidebar.
+        """
         row = QWidget()
         row.setStyleSheet(f"QWidget {{ border-radius: 4px; }}QWidget:hover {{ background: {THEME.surface}; }}")
         if transition is not None:
@@ -981,25 +992,41 @@ class NodePage(ThemedMixin, QWidget):
             badge.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_micro_px}px; font-weight: 600;")
             layout.addWidget(badge)
 
-        # Condition chip
-        chip_text_upper = chip_text.upper()
-        if chip_text_upper in ("SUCCESS", "TRUE"):
-            chip_bg = THEME.chip_success_bg
-            chip_fg = "#ffffff"
-        elif chip_text_upper in ("FAILURE", "FALSE"):
-            chip_bg = THEME.chip_failure_bg
-            chip_fg = "#ffffff"
-        elif chip_text == "always":
-            chip_bg = THEME.surface
-            chip_fg = THEME.text_muted
-        else:
-            chip_bg = THEME.chip_neutral_bg
-            chip_fg = "#ffffff"
-        chip = QLabel(chip_text)
-        chip.setStyleSheet(
-            f"background: {chip_bg}; color: {chip_fg}; border-radius: 3px;"
-            f" font-size: {THEME.font_subtext_px}px; font-weight: 600; padding: 1px 5px;"
-        )
+        # Return chip
+        chip = None
+        if chip_text is not None:
+            chip_text_upper = chip_text.upper()
+            if chip_text_upper in ("SUCCESS", "TRUE"):
+                chip_bg = THEME.chip_success_bg
+                chip_fg = "#ffffff"
+            elif chip_text_upper in ("FAILURE", "FALSE"):
+                chip_bg = THEME.chip_failure_bg
+                chip_fg = "#ffffff"
+            elif chip_text == param_cards.ALWAYS:
+                chip_bg = THEME.surface
+                chip_fg = THEME.text_muted
+            else:
+                chip_bg = THEME.chip_neutral_bg
+                chip_fg = "#ffffff"
+            chip = QLabel(chip_text)
+            chip.setObjectName("conn_return_chip")
+            chip.setStyleSheet(
+                f"background: {chip_bg}; color: {chip_fg}; border-radius: 3px;"
+                f" font-size: {THEME.font_subtext_px}px; font-weight: 600; padding: 1px 5px;"
+            )
+
+        # Condition chip: the edge's canvas label. ElidedLabel paints its own text, so its
+        # color is a token it holds, not the stylesheet's.
+        condition_chip = None
+        if condition is not None:
+            condition_chip = ElidedLabel(condition, color="chip_text")
+            condition_chip.setObjectName("conn_condition_chip")
+            condition_chip.setStyleSheet(
+                f"background: {THEME.chip_neutral_bg}; border-radius: 3px;"
+                f" font-size: {THEME.font_subtext_px}px; padding: 1px 5px;"
+            )
+            condition_chip.setFont(THEME.ui_font(THEME.font_subtext_px))
+            condition_chip.setToolTip(condition)
         arrow = QLabel("→" if is_outgoing else "←")
         arrow.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
@@ -1012,7 +1039,10 @@ class NodePage(ThemedMixin, QWidget):
         name_lbl.setCursor(Qt.CursorShape.PointingHandCursor)
         name_lbl.setToolTip(f"Navigate to: {node_label}")
 
-        layout.addWidget(chip)
+        if chip is not None:
+            layout.addWidget(chip)
+        if condition_chip is not None:
+            layout.addWidget(condition_chip)
         if node_label:
             layout.addWidget(arrow)
             layout.addWidget(name_lbl, 1 if note is None else 0)

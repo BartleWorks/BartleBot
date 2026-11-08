@@ -1,6 +1,6 @@
 """The pure half of the node page's and subgraph node page's folding cards (#142)."""
 
-from bartlebot.bot.schema import StateModel, TransitionModel
+from bartlebot.bot.schema import AssignmentModel, FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.options import param_cards as pc
 from bartlebot.options.option_groups import summary_text
@@ -10,8 +10,12 @@ def _state(sid="a", stops=None):
     return StateModel(id=sid, node_type="enter_dungeon", stops=stops)
 
 
-def _t(src, dest, when=None):
-    return TransitionModel(trigger="advance", source=src, dest=dest, when=when)
+def _t(src, dest, when=None, **fields):
+    return TransitionModel(trigger="advance", source=src, dest=dest, when=when, **fields)
+
+
+SWORDS_1 = [FlagGroup(flags=[FlagCondition(variable="Swords Found", compare="==", value=1)])]
+ADD_SWORD = [AssignmentModel(variable="Swords Found", op="add", value=1)]
 
 
 ZONE = ParamField(key="from_zone", type="zone", label="From Zone", required=True, default="")
@@ -149,6 +153,39 @@ def test_an_edge_on_a_return_the_node_does_not_declare_is_still_listed():
         _state(), ["SUCCESS"], [_t("a", "b", "TIMEOUT"), _t("a", "c", "SUCCESS")], recovery_state=None
     )
     assert [r.when for r in routes] == ["SUCCESS", "TIMEOUT"]
+
+
+def test_an_edge_with_a_condition_names_it_beside_its_return():
+    """#198: the condition and the writes, as the canvas label says them, ride beside the return."""
+    t = _t("a", "b", "SUCCESS", flag_groups=SWORDS_1, assign=ADD_SWORD)
+    assert pc.edge_chips("SUCCESS", t) == ("SUCCESS", "Swords Found == 1 → Swords Found + 1")
+
+
+def test_a_conditioned_edge_on_every_return_is_not_called_always():
+    t = _t("a", "b", flag_groups=SWORDS_1)
+    assert pc.edge_chips(None, t) == (None, "Swords Found == 1")
+
+
+def test_an_edge_that_only_writes_is_still_always_taken():
+    t = _t("a", "b", assign=ADD_SWORD)
+    assert pc.edge_chips(None, t) == (pc.ALWAYS, "→ Swords Found + 1")
+
+
+def test_a_plain_edge_wears_its_return_or_always_alone():
+    assert pc.edge_chips("FAILURE", _t("a", "b", "FAILURE")) == ("FAILURE", None)
+    assert pc.edge_chips(None, _t("a", "b")) == (pc.ALWAYS, None)
+
+
+def test_the_folded_line_names_an_edges_condition():
+    routes = pc.outgoing_routes(
+        _state(),
+        ["SUCCESS", "FAILURE"],
+        [_t("a", "b", "SUCCESS", flag_groups=SWORDS_1, assign=ADD_SWORD), _t("a", "c", flag_groups=SWORDS_1)],
+        recovery_state=None,
+    )
+    assert summary_text(pc.routes_summary(routes, {"b": "Rack 1", "c": "Rack 2"})) == (
+        "SUCCESS if Swords Found == 1 → Rack 1 · if Swords Found == 1 → Rack 2"
+    )
 
 
 def test_the_signature_page_folds_a_written_description_and_opens_an_empty_one():

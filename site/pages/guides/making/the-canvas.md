@@ -56,7 +56,7 @@ Now the bot has one warning, on Collect Wisps: "Uncovered return value: 'FAILURE
 Select a node to open its page in **Properties**. At the top is the node's label, which you can type over, and a gray line saying what kind of node it is. **Show descriptions** and **Collapse all** act on the whole page. Under them are four cards:
 
 - **Parameters**: the node's settings, one row each. The `?` beside a row shows what it does, and the reset button beside that puts the default back. A required row that's still empty shows a red asterisk, and the card's band says how many are left to fill. Some rows have buttons at the end: **Fill current** reads a connected player's zone or position, the play button takes every player to a zone, and the teleport button to a position. Right-click a position's boxes to copy or paste it.
-- **Connections**: where each thing the node returns goes. A FAILURE or FALSE with no edge says "recovery · not drawn".
+- **Connections**: where each thing the node returns goes, and the edges that come in. A FAILURE or FALSE with no edge says "recovery · not drawn". An edge with a condition, or one that changes a variable, shows that in a gray chip, as its label on the canvas does. Point at the chip to read all of it.
 - **Notes**: anything you want to remember about this step. The bot doesn't read it.
 - **Role**: **Initial state** and **Recovery state**. Checking one moves that role here from the node that held it.
 
