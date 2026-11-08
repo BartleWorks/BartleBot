@@ -10,21 +10,20 @@ Wizard101 bot automation app. Python 3.13+, PyQt6, qasync, transitions FSM.
 uv run python bartlebot.py
 ```
 
-To author shipped bots, templates, subgraphs or combat strategies, run with
-`BARTLEBOT_DEV=1`. That points every store's user root at the repo, so a save lands in
-`bots/`, `templates/`, `subgraphs/` or `strategies/` where git sees it, instead of in an
-`%APPDATA%` copy that shadows the repo's or, for a bot or template, is never seen by
-anyone else. `bartlebot/content/store_roots.py` has the detail, and `bartlebot/content/bot_roots.py` the
+To author shipped bots, templates, subgraphs or combat strategies, run with `BARTLEBOT_DEV=1`.
+That points every store's user root at the repo, so a save lands in `bots/`, `templates/`,
+`subgraphs/` or `strategies/` where git sees it, instead of in an `%APPDATA%` copy that shadows
+the repo's or, for a bot or template, is never seen by anyone else.
+`bartlebot/content/store_roots.py` has the detail, and `bartlebot/content/bot_roots.py` the
 bots' part; logs stay in the repo's `logs/` too. The suite clears it, and
 `test_every_linked_bot_resolves_under_the_shipped_root_alone` and
-`test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone` catch
-a definition or template that only exists on your machine. File › Templates… opens a
-template's draft for anyone, but only the user's own: dev mode is what makes the shipped
-templates under `templates/` editable, since there every template is the user's. Only
-Release on the draft's crumb writes a version users are offered
-(`bartlebot/content/templates/template_store.py`). New Bot copies the latest released version into a new
-bot, records it in the bot's `template`, and saves the file at once
-(`bartlebot/content/new_bot.py`).
+`test_every_shipped_bot_made_from_a_template_resolves_under_the_shipped_root_alone` catch a
+definition or template that only exists on your machine. File › Templates… opens a template's
+draft for anyone, but only the user's own: dev mode is what makes the shipped templates under
+`templates/` editable, since there every template is the user's. Only Release on the draft's
+crumb writes a version users are offered (`bartlebot/content/templates/template_store.py`). New
+Bot copies the latest released version into a new bot, records it in the bot's `template`, and
+saves the file at once (`bartlebot/content/new_bot.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/debug/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
@@ -53,10 +52,8 @@ uv run pytest -n auto   # same suite in parallel
 uv run pytest --cov     # serial plus a coverage report; what CI runs (reported, not gated)
 uv run ruff check       # lint
 uv run ruff format      # auto-format
-uv run --group site zensical serve -f site/zensical.toml   # preview the download site
+uv run --group site zensical serve -f site/zensical.toml   # preview the site
 ```
-
-Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 
 ## Architecture
 
@@ -110,11 +107,12 @@ counterpart. The `docs/` ones are read on purpose.
 | `bartlebot/bot/CLAUDE.md` | the machine: callback guards, `machine.log()` |
 | `bartlebot/nodes/CLAUDE.md` | adding a node, and why nodes never write variables |
 | `tests/CLAUDE.md` | what a change ships with, where a test goes, the doubles |
+| `site/CLAUDE.md` | the site, which is the manual: what goes there, in the app or in `docs/`, the four kinds of page and where each lives, the voice on top of core's `UI_TEXT.md`, headings, admonitions, links, screenshots, generated pages, and checking a page |
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and when its warning is shown |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels and how to name them, the two storage roots, a Bot Combat Strategy's own strategies and the own-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: a definition as a node type (inputs, ports, panels), an instance that sets inputs and nothing else, derived member ids, follow-latest with snapshot fallback, the authoring verbs, the two roots, categories, and what a signature change warns about |
-| `docs/EPICS.md` | the index of epic plans, each on a private claude.ai page: Subgraph Calls, Official and Shared Content (#173), Runtime Control Flow (#16), Combat Defaults (#201), Default Strategies (#218), First-Run Setup (#215), Installer and Updater (#27), Shared Library Extraction (#167), Live Client Resize (BartleBuddy #3) and Multibox Roles and Views (BartleBuddy #14), each with its stage-to-issue table, its feature doc and the rules every stage kept; a complete page is frozen |
+| `docs/EPICS.md` | the index of epic plans, each on a private claude.ai page: Subgraph Calls, Official and Shared Content (#173), Runtime Control Flow (#16), Combat Defaults (#201), Default Strategies (#218), First-Run Setup (#215), Installer and Updater (#27), Shared Library Extraction (#167), Live Client Resize (BartleBuddy #3), Multibox Roles and Views (BartleBuddy #14) and User Documentation (#25), each with its stage-to-issue table, its feature doc and the rules every stage kept; a complete page is frozen |
 | `docs/SHARING.md` | share files: the format, the extension and what rides inside for each kind, what never travels (settings, anything that executes), Export: where it is on each item's menu, and the summary, and Import: its ways in, what is refused, matching by id, what Import as copy rewrites, and where things go |
 | `docs/TEMPLATES.md` | the template store, template-owned ids and a fork's prefixes, release, user templates and File › Templates…, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
@@ -136,13 +134,16 @@ built record. Both are user-level skills, in `~/.claude/skills/`.
 
 The family's conventions are core's, imported above. BartleBot's own:
 
+### A change a user can see updates the site in the same branch
+
+Its page under `site/pages/` changes, or one is added, before the branch merges (`site/CLAUDE.md`).
+
 ### Bot files hold no player data
 
-Bot files under `bots/` are the easy one to miss: a parameter holding a real
-character name is *functional*, so redacting it by find-and-replace breaks the
-bot. Move it out of the file instead, as `friend_name` was — see "When no
-bot should ever store a value" in `docs/BOT_OPTIONS.md`.
-`test_no_bot_stores_a_friend_name` keeps it out.
+Bot files under `bots/` are the easy one to miss: a parameter holding a real character name
+is *functional*, so redacting it by find-and-replace breaks the bot. Move it out of the file
+instead, as `friend_name` was — see "When no bot should ever store a value" in
+`docs/BOT_OPTIONS.md`. `test_no_bot_stores_a_friend_name` keeps it out.
 
 ### Game art is extracted, never shipped
 
@@ -191,8 +192,7 @@ node param:
 | this dungeon, but bot-wide (quicksell's keep list) | a bot option with a real default |
 
 An option resolves through four levels, most local first — user override, then the
-declaration if it is non-null, then the app setting, then `BotOptionSpec.default`.
-**Never apply a setting by rewriting a param or a declaration on load**: it makes
-the level below unreachable and silently rewrites the user's file. Resolve at run
-time instead. `docs/BOT_OPTIONS.md` has the rest, including the two surfaces that
-edit them.
+declaration if it is non-null, then the app setting, then `BotOptionSpec.default`. **Never
+apply a setting by rewriting a param or a declaration on load**: it makes the level below
+unreachable and silently rewrites the user's file. Resolve at run time instead.
+`docs/BOT_OPTIONS.md` has the rest, including the two surfaces that edit them.

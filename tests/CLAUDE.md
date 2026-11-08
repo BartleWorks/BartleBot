@@ -5,6 +5,12 @@
 What every change ships with here. The ways this suite goes slow or flaky are core's
 `tests/CLAUDE.md`, imported above.
 
+- **A change a user can see ships with its site page.** The page under `site/pages/` that
+  describes the behavior is updated, or a new one added and put in the nav, in the same
+  branch, and a screenshot it makes wrong is retaken (the root `CLAUDE.md`'s Key
+  Conventions; `site/CLAUDE.md` has how). `tests/test_site.py` and the strict build check
+  the links, the nav and the images; whether the words still match the app is the
+  read-through's to check.
 - **Where a test goes:** the test for `bartlebot/a/b/c.py` is `tests/a/b/test_c.py`. A
   test named `test_<module>_<aspect>.py`, or one that drives a module through another
   name, sits beside that module's test. Tests of a top-level module (`app_controller`,
