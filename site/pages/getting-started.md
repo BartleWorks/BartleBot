@@ -63,9 +63,9 @@ Read the bot's description before you run it. If it names a place to start, take
 
 ## Check the bot's options
 
-The **Options** tab in the left sidebar shows every option the bot uses, in folding cards: **This dungeon**, **Team**, **Quicksell** and **General**. Each row shows the value the run will use. When that value comes from your app settings rather than from the bot, the row says so.
+The **Options** tab in the left sidebar shows every option the bot uses, in folding cards: **This dungeon**, **Team**, **Quicksell** and **General**. Each row shows the value the run will use. When that value comes from your app settings, the row says so.
 
-Change any row to set your own value for this bot. Your values are kept in your settings, and the bot itself never changes. A row you've changed is marked with a colored bar, and its revert button puts it back.
+Change any row to set your own value for this bot. Your values are kept in your settings, and the bot stays as it is. A row you've changed is marked with a colored bar, and its revert button puts it back.
 
 Options can't be changed while the bot runs, since a run reads them when it starts.
 
