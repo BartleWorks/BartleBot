@@ -224,7 +224,7 @@ class _MetaLabel(ElidedLabel):
     text as the tooltip while it is cut short, and counts the margins in its hint. The
     author and the filename share line 1 with the bot name, and either of them long
     enough to push the rest off the end would make the whole header claim a minimum
-    width the canvas has to honor. Three things are the header's own:
+    width the canvas has to honor. Four things are the header's own:
 
     * ``Maximum``, not ``Preferred`` or ``Ignored``: the label asks for the width its full
       text wants and settles for less, but never takes more, so the row's trailing stretch
