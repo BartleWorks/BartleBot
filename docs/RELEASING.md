@@ -343,9 +343,11 @@ file that is not there.
 ## The download site
 
 `site/` is the site at `bartleworks.github.io/BartleBot`: a landing page with one download
-button, and the install page. It is built with [Zensical](https://zensical.org/), pinned in
-the `site` dependency group, and is separate from `docs/`, which are the developer docs.
-The rest of the user docs, the node reference and the guides, are #25's.
+button, the install page, and BartleBot's manual: Getting started, the guides, the
+reference and Troubleshooting (epic #25, `docs/EPICS.md`, *User documentation*). It is
+built with [Zensical](https://zensical.org/), pinned in the `site` dependency group, and is
+separate from `docs/`, which are the developer docs. How a page is written, and what goes
+on the site rather than in the app or in `docs/`, is `site/CLAUDE.md`.
 
 ```powershell
 uv run --group site zensical serve -f site/zensical.toml   # preview at localhost:8000
@@ -370,7 +372,9 @@ soon as it is published.
 **`.github/workflows/site.yml`** builds the site on every push to `master` and every pull
 request into it, with `--strict`, which fails the build on a link to a page or an anchor
 that is not there. A missing image is no warning to Zensical, so `tests/test_site.py`
-checks those, with the rest a build cannot see: the button's URL, the logo, which is
+checks those, with the rest a build cannot see: every page in the nav and every nav entry a
+page, no link into `docs/` or to a source file, every image under `pages/images/` shown by a
+page, the edit link on every page but a generated one, the button's URL, the logo, which is
 core's tree on BartleBot's blue (`bartleby.qt.logo.logo_svg`) written out as a file, because a
 page can show only files under `site/pages/`, and no web fonts, so a visit sends nothing to anyone but GitHub. The
 workflow publishes the build to GitHub Pages from `master` only, and only while the repo
@@ -382,8 +386,8 @@ tag:
 1. Turn Pages on, with GitHub Actions as its source:
    `gh api -X POST repos/BartleWorks/BartleBot/pages -f build_type=workflow`
 2. Publish `master`'s site without a commit: `gh workflow run site.yml --ref master`
-3. Open the site from a browser that is signed out of GitHub, and check both pages and
-   the button. Until the first release is published, the button's link answers 404.
+3. Open the site from a browser that is signed out of GitHub, and check the pages, an
+   edit link, and the button. Until the first release is published, the button's link answers 404.
 
 ## Testing a draft
 

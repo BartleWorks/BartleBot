@@ -395,3 +395,38 @@ The rules every stage kept:
   back.
 - **Core merges first**, and every in-game check runs the core case, one or two accounts on 1080p,
   before four on 4K. A quit is checked from the terminal, never under the debugger.
+
+## User documentation
+
+Epic #25: the site at `bartleworks.github.io/BartleBot` grows from a download page into
+the manual, with Getting started, guides for running and making bots, a reference generated
+from the node specs, Troubleshooting, and F1 and a `?` in the app that open the right page.
+https://claude.ai/artifact/MztJCi7kb275XQwDChrQaP
+
+**In progress. The page is kept current while the stages land.**
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | #312 | structure: the four-section nav, edit links, `site/CLAUDE.md`, the same-branch rule, Getting started and Troubleshooting | landed |
+| 2 | #313 | the reference, rendered from `NODE_SPECS`, the node-declared options and the Official subgraphs, committed and checked current | planned |
+| 3 | #314 | guides for running bots, Safety and PvP among them | planned |
+| 4 | #315 | guides for making bots | planned |
+| 5 | #316 | help from the app: `HELP_TOPICS`, F1, a `?` on each dialog, and the Help menu | planned |
+| 6 | #317 | the combat guide, after #213 | planned |
+
+`site/CLAUDE.md` holds the site's rules as built: what goes on the site, in the app and in
+`docs/`, the four kinds of page, the voice on top of core's `docs/UI_TEXT.md`, links,
+screenshots and generated pages. `docs/RELEASING.md`'s "The download site" covers the build
+and the publish. BartleBuddy's docs are left out until it ships, in a plan of their own.
+
+The rules every stage keeps:
+
+- **A page changes in the same branch as the behavior it describes**, the root `CLAUDE.md`'s
+  Key Conventions. A docs pass before each release lets the drift pile up.
+- **Every page is checked against the app**, at the stage's branch point, and the As built
+  names which flows were walked in the live app and which were read from code only.
+- **The reference is the spec's own words.** A gap is fixed in the `NodeSpec`, so the app
+  gains it too, and no page adds text of its own per node.
+- **`install.md` stays plain markdown under its name**, since it is every release's notes.
+- **A visit sends nothing to anyone but GitHub**, and no page or screenshot carries player
+  data or game art.
