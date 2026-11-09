@@ -16,6 +16,7 @@ from bartleby.runtime.paths import (
 from wizwalker import XYZ
 
 from bartlebot.clients import port_map
+from bartlebot.game import zone_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_and_healing import scaled_ratios
 from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -125,7 +126,8 @@ NODE_SPEC = NodeSpec(
     usage_notes=(
         (
             "With Challenge Mode on, thresholds are measured against the lower maximums the next "
-            "entry scales players to, so the same thresholds work in both modes."
+            "entry scales players to, so the same thresholds work in both modes. Inside a Challenge Mode "
+            "dungeon, where the game allows no potions, a player never uses one."
         )
         + "\n\n"
         + (
@@ -152,7 +154,8 @@ async def run(machine, clients: list, params: dict) -> str:
       1. Check health and mana ratios; use potions on clients below threshold that have them,
          waiting up to Safety Delay for each charge to drop (_drink), since use_potion()
          returns once the click is sent. With Challenge Mode on, the ratios are against the
-         scaled max (scaled_ratios).
+         scaled max (scaled_ratios). A client standing in a Challenge Mode zone, where the
+         game forbids potions (#39), is left out (_may_drink).
       2. Identify buying_clients: clients with no potion charges remaining after use.
       3. If refill is disabled or no clients need to buy, return SUCCESS.
       4. Check buying_clients zones:
@@ -214,7 +217,7 @@ async def run(machine, clients: list, params: dict) -> str:
             f"{len(low_clients)} client(s) below threshold — using potions if available",
             logging.DEBUG,
         )
-        await _drink_all(machine, clients, low_clients)
+        await _drink_all(machine, clients, await _may_drink(machine, clients, low_clients))
 
     # 2. Identify buying_clients: those with no potion charges remaining after use. _drink
     #    waited for each charge to drop, so a player that just drank its last potion reads
@@ -511,6 +514,22 @@ async def _drink_all(machine, clients: list, drinkers: list) -> None:
     results = await asyncio.gather(*[_drink(machine, c) for c in drinkers])
     for c, drank in zip(drinkers, results):
         machine.log(f"Player {_number(clients, c)} used a potion: {drank}", logging.DEBUG)
+
+
+async def _may_drink(machine, clients: list, drinkers: list) -> list:
+    """Those of `drinkers` the game lets use a potion: everyone outside a Challenge Mode zone.
+
+    A Challenge Mode dungeon is advanced combat, which forbids potions (#39), so one is
+    never tried there: at best _drink would wait out Safety Delay for a charge that never drops.
+    """
+    zones = await asyncio.gather(*[c.zone_name() for c in drinkers])
+    barred = [c for c, zone in zip(drinkers, zones) if zone_names.challenge_variant_of(zone)]
+    if barred:
+        machine.log(
+            f"Player(s) {_numbers(clients, barred)} are in a Challenge Mode dungeon, "
+            "where potions can't be used; they don't use one"
+        )
+    return [c for c in drinkers if not _contains(barred, c)]
 
 
 async def _drink(machine, client) -> bool:

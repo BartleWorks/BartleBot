@@ -93,7 +93,7 @@ The bot stops after 5 consecutive failures on this node.
 
 **Usage notes**
 
-With Challenge Mode on, thresholds are measured against the lower maximums the next entry scales players to, so the same thresholds work in both modes.
+With Challenge Mode on, thresholds are measured against the lower maximums the next entry scales players to, so the same thresholds work in both modes. Inside a Challenge Mode dungeon, where the game allows no potions, a player never uses one.
 
 A player with too little mana to mark goes to buy anyway. After buying, it teleports to a player who stayed behind or recalled, through the friends list or the group. So does a player whose recall fails. A teleported player lands beside that player, away from its own starting spot. With Player Realms set to Separate, a player only teleports to one that shared its realm before the trip.
 

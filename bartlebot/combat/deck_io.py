@@ -94,6 +94,7 @@ from wizwalker.memory.memory_objects.window import (
 )
 
 from bartlebot.combat.card_kinds import classify_effects
+from bartlebot.game import zone_names
 
 if TYPE_CHECKING:
     from bartleby.shared.strategy_models import DeckData
@@ -115,6 +116,24 @@ class _SlotLogger(logging.LoggerAdapter):
 
 
 logger = _SlotLogger(logging.getLogger(__name__))
+
+
+class DeckPageLocked(RuntimeError):
+    """The game keeps the deck page shut where the player is standing.
+
+    A Challenge Mode dungeon is advanced combat, which locks every spellbook page but
+    Character and Options (#39), so the Deck key does nothing there and an import or an
+    apply could only fail part-way. ``read_deck`` and ``apply_deck`` raise this before a key
+    is pressed, so the caller can say why rather than report a failure.
+    """
+
+
+async def _refuse_where_locked(client) -> None:
+    """Raise :class:`DeckPageLocked` if ``client`` stands in a Challenge Mode zone."""
+    zone = await client.zone_name()
+    if zone_names.challenge_variant_of(zone):
+        raise DeckPageLocked(f"{zone} is a Challenge Mode zone, where the game keeps the deck closed")
+
 
 # --- memory layout (see module docstring) ---------------------------------
 ENTRY_VECTOR_OFFSET = 0x300
@@ -1813,8 +1832,10 @@ async def read_deck(client) -> dict:
     that on four clients at once and read one wizard's deck as empty (#120).
 
     Raises ``RuntimeError`` when the page will not open, so the caller reports
-    the slot as failed rather than saving an empty deck over the real one.
+    the slot as failed rather than saving an empty deck over the real one, and
+    :class:`DeckPageLocked`, without trying, where the game keeps it closed.
     """
+    await _refuse_where_locked(client)
     async with deck_page_open(client) as deck_window:
         if deck_window is None:
             raise RuntimeError("the deck page did not open")
@@ -2194,14 +2215,17 @@ async def apply_deck(
     has its own handling for it.
 
     Raises ``TimeoutError`` if the apply does not finish in time; callers decide
-    whether that is fatal.  Otherwise returns the :class:`DeckApplyReport` from
-    ``write_deck``, which is what the caller shows the user.
+    whether that is fatal.  Raises :class:`DeckPageLocked`, before touching the
+    game, for a player in a Challenge Mode zone.  Otherwise returns the
+    :class:`DeckApplyReport` from ``write_deck``, which is what the caller shows
+    the user.
 
     ``slot`` only labels this apply's log lines, which interleave with the other
     slots' when several decks go on at once.
     """
 
     async def _open_and_write() -> DeckApplyReport:
+        await _refuse_where_locked(client)
         set_archmastery, source = resolve_apply_archmastery(deck)
         if set_archmastery:
             logger.info("Archmastery school will be set to %s (%s)", deck.archmastery_school, source)

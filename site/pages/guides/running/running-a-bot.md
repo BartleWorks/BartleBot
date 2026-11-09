@@ -27,6 +27,8 @@ Others ask, and you choose:
 
 Then BartleBot gets the players ready. It takes every camera out of freecam, applies the decks the combat setup names, and, with **Automatically group players** on, puts every player in one group. Then the first step runs.
 
+A player inside a Challenge Mode dungeon keeps the deck it has, since the game won't open the deck there. The log says which player.
+
 ## Watch the run
 
 - **The bot canvas** highlights the step the bot is on.

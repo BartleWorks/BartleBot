@@ -15,6 +15,7 @@ from unittest.mock import MagicMock
 import pytest
 from bartleby.shared.strategy_models import DeckData
 
+from bartlebot.combat.deck_io import DeckPageLocked
 from bartlebot.controller.decks import Decks
 
 
@@ -182,6 +183,29 @@ async def test_timeout_is_logged_as_an_error(strategy, monkeypatch, caplog):
         await PreRunDeckHarness(["c1", "c2"]).apply_pre_run_decks()
 
     assert "slot 2" in caplog.text
+
+
+async def test_a_player_in_a_challenge_mode_dungeon_keeps_its_deck_and_says_why(strategy, monkeypatch, caplog):
+    """#39: the game keeps the deck closed there, so the run goes on with the deck it has."""
+    import bartlebot.controller.decks as deck_module  # noqa: PLC0415
+
+    finished: list[str] = []
+
+    async def _apply(client, _deck, slot=None):
+        if client == "c1":
+            raise DeckPageLocked("Aquila/AQ_Z03_Tartarus_Hard is a Challenge Mode zone")
+        finished.append(client)
+
+    monkeypatch.setattr(deck_module, "apply_deck", _apply)
+    strategy.player_decks = {1: _deck(), 2: _deck()}
+
+    with caplog.at_level("WARNING", logger="bartlebot.controller.decks"):
+        await PreRunDeckHarness(["c1", "c2"]).apply_pre_run_decks()
+
+    assert finished == ["c2"]
+    [record] = caplog.records
+    assert record.levelname == "WARNING" and "slot 1 not applied" in record.getMessage()
+    assert "Challenge Mode" in record.getMessage() and record.exc_info is None
 
 
 # ---------------------------------------------------------------------------
