@@ -48,6 +48,7 @@ class _Window(QWidget):
         self.left_sidebar = SimpleNamespace(combat_tab=SimpleNamespace(refresh_source=lambda: events.append("refresh")))
         self.fit_layout_to_launches = lambda: events.append("layout")
         self.catch_up_with_accounts = lambda: events.append("accounts")
+        self.reread_accounts = lambda: events.append("reread")
 
 
 class _Launcher(game_install.NoPlaces):
@@ -232,7 +233,8 @@ def test_set_up_again_shows_every_page_once_all_are_answered(startup, team):
         GameArtPage,
     ]
     assert _prefs().get(_TEAM) is None
-    assert startup.events == ["first run", "refresh", "layout", "accounts"]
+    # Read first: BartleBuddy may have changed the accounts the pages draw (#303).
+    assert startup.events == ["reread", "first run", "refresh", "layout", "accounts"]
 
 
 def test_the_file_menu_offers_set_up_after_settings(qapp):

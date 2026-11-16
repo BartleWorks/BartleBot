@@ -288,6 +288,11 @@ condition, `/ swords + 1`, and each write follows on its own line, once. The mac
 `guard`, `assign` and `label` off before it hands the transitions to the `transitions`
 library, which refuses any argument it does not know.
 
+The canvas's own line in the Log tab, `Result: SUCCESS [swords == 2] → rack_2`, names the
+same (#200). The machine hands `on_transition` the text it put after the result, from
+`_taken_edge_text`, rather than the canvas working it out again, and "" when no edge was
+taken. That line stays `GUI_ONLY`, so the session file still says it once.
+
 **The run summary lists each variable's final value**, after the drops:
 `Variables: next_spot = 9, swords = 4`.
 

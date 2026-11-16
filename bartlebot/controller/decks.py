@@ -16,7 +16,7 @@ from bartleby.runtime.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot.combat.deck_io import DeckApplyReport, apply_deck, read_deck
+from bartlebot.combat.deck_io import DeckApplyReport, DeckPageLocked, apply_deck, read_deck
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
@@ -34,6 +34,9 @@ _DECK_SLOTS = 4
 
 #: Why a deck import or apply failed, when the log has the traceback and the user does not.
 _DECK_JOB_FAILED = "failed — see the log for details"
+
+#: Why a deck import or apply was never tried: the player is where the game keeps the deck shut (#39).
+_DECK_LOCKED = "was not tried: the game keeps the deck closed in a Challenge Mode dungeon"
 
 #: Said under every deck failure: a job that dies part-way leaves the game's window as it was.
 _DECK_WINDOW_NOTE = "The game's deck window may be left open or partially edited — check the client before retrying."
@@ -201,6 +204,9 @@ class Decks:
         try:
             preset_dict = await asyncio.wait_for(read_deck(client), timeout=DECK_IMPORT_TIMEOUT)
             deck_data = DeckData(**preset_dict)
+        except DeckPageLocked as locked:
+            logger.warning("Deck import for slot %d skipped: %s", slot, locked)
+            return _DECK_LOCKED
         except TimeoutError:
             logger.error("Deck import for slot %d timed out after %.0fs", slot, DECK_IMPORT_TIMEOUT)
             return "timed out"
@@ -282,6 +288,9 @@ class Decks:
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
             report = await apply_deck(client, deck_data, slot=slot)
+        except DeckPageLocked as locked:
+            logger.warning("Deck apply for slot %d skipped: %s", slot, locked)
+            return _DECK_LOCKED
         except TimeoutError:
             logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
             return "timed out"
@@ -348,7 +357,7 @@ class Decks:
             sections.append("\n".join([heading, *body]))
         if not sections:
             return
-        if failures:
+        if _touched_the_game(failures):
             sections.append(_DECK_WINDOW_NOTE)
         title = "Decks applied, with changes" if all_applied else "Some decks were not applied"
         self._show_deck_notice(title, "\n\n".join(sections), warn=warn)
@@ -405,12 +414,16 @@ class Decks:
         return line
 
     def _warn_deck_failed(self, action: str, failures: dict[int, str]) -> None:
-        """Surface deck import/apply failures, one line per slot, instead of leaving them log-only."""
-        self._show_deck_notice(
-            f"Deck {action} failed",
-            f"{self._deck_failure_lines(action, failures)}\n\n{_DECK_WINDOW_NOTE}",
-            warn=True,
-        )
+        """Surface deck import/apply failures, one line per slot, instead of leaving them log-only.
+
+        A slot that was never tried (_DECK_LOCKED) touched nothing, so when every slot is one
+        the notice says skipped, not failed, and leaves out the note about the game's window.
+        """
+        body = self._deck_failure_lines(action, failures)
+        if _touched_the_game(failures):
+            self._show_deck_notice(f"Deck {action} failed", f"{body}\n\n{_DECK_WINDOW_NOTE}", warn=True)
+        else:
+            self._show_deck_notice(f"Deck {action} skipped", body, warn=True)
 
     @staticmethod
     def _deck_failure_lines(action: str, failures: dict[int, str]) -> str:
@@ -488,6 +501,8 @@ class Decks:
         """
         try:
             await apply_deck(client, deck_data, slot=slot)
+        except DeckPageLocked as locked:
+            logger.warning("Deck for slot %d not applied: %s. The run goes on with the deck it has", slot, locked)
         except TimeoutError:
             # Log only. This runs inside the _start_bot task, and a blocking
             # QMessageBox from an asyncio task deadlocks the qasync loop under
@@ -503,3 +518,8 @@ class Decks:
                 slot,
                 exc_info=True,
             )
+
+
+def _touched_the_game(failures: dict[int, str]) -> bool:
+    """Whether any of *failures* got as far as the game's deck window, unlike a locked slot."""
+    return any(reason != _DECK_LOCKED for reason in failures.values())

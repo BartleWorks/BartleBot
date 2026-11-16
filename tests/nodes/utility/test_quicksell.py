@@ -55,7 +55,7 @@ def _make_patchers(
         ),
         "get_text": patch_helper("get_text_by_path", new_callable=AsyncMock, return_value=get_window_text_returns),
         "jewel_full": patch.object(
-            qs, "_is_jewel_backpack_full", new_callable=AsyncMock, return_value=is_jewel_full_returns
+            qs, "_jewel_space", new_callable=AsyncMock, return_value=(100, 100) if is_jewel_full_returns else (0, 100)
         ),
         "poll_interval": patch.object(qs, "POLL_INTERVAL", 0),
     }
@@ -387,7 +387,7 @@ class _SellScreen:
             patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=self._is_enabled)),
             patch_helper("click_by_path", new=AsyncMock(side_effect=self._click)),
             patch_helper("get_text_by_path", new=AsyncMock(side_effect=self._text)),
-            patch.object(qs, "_is_jewel_backpack_full", new=AsyncMock(return_value=False)),
+            patch.object(qs, "_jewel_space", new=AsyncMock(return_value=(0, 100))),
             patch.object(qs, "POLL_INTERVAL", 0),
             patch.object(qs, "QUICKSELL_COMPLETE_TIMEOUT", complete_timeout),
             patch_helper("WINDOW_CLOSE_RETRY_INTERVAL", 0.01),
@@ -571,20 +571,92 @@ async def test_handles_multiple_clients():
     assert client2.send_key.called
 
 
-async def test_is_jewel_backpack_full_parses_text():
-    """_is_jewel_backpack_full returns True when text is 'X/Y' with X >= Y."""
+async def test_jewel_space_parses_the_pouch_text():
+    """The pouch's "X/Y" text, HTML and all, reads as (X, Y); anything else as None."""
     with patch_helper("get_text_by_path", new_callable=AsyncMock) as mock_text:
-        mock_text.return_value = "100/100"
-        assert await qs._is_jewel_backpack_full(FakeClient()) is True
+        mock_text.return_value = "<center>100/120"
+        assert await qs._jewel_space(FakeClient()) == (100, 120)
 
         mock_text.return_value = "50/100"
-        assert await qs._is_jewel_backpack_full(FakeClient()) is False
+        assert await qs._jewel_space(FakeClient()) == (50, 100)
 
         mock_text.return_value = "bad text"
-        assert await qs._is_jewel_backpack_full(FakeClient()) is False
+        assert await qs._jewel_space(FakeClient()) is None
+
+        mock_text.return_value = "a/b"
+        assert await qs._jewel_space(FakeClient()) is None
 
         mock_text.return_value = ""
-        assert await qs._is_jewel_backpack_full(FakeClient()) is False
+        assert await qs._jewel_space(FakeClient()) is None
+
+
+async def test_an_unreadable_jewel_pouch_is_not_full():
+    client = FakeClient()
+    client.backpack_space.return_value = (50, 100)
+
+    p = _make_patchers()
+    with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["get_text"], p["poll_interval"]:
+        with patch.object(qs, "_jewel_space", new=AsyncMock(return_value=None)):
+            result = await qs.run(_machine(), [client], {})
+
+    assert result == "SUCCESS"
+    assert QUICKSELL_JEWEL_OPEN_PATH not in [c.args[1] for c in mock_click.call_args_list]
+
+
+# ---------------------------------------------------------------------------
+# The page cap (#247): an arrow that reads enabled but never advances
+# ---------------------------------------------------------------------------
+
+
+def test_the_page_cap_covers_both_bags_with_a_margin():
+    assert qs._max_pages(100) == 10 + qs._PAGE_MARGIN
+    assert qs._max_pages(101) == 11 + qs._PAGE_MARGIN
+    assert qs._max_pages(0) == qs._PAGE_MARGIN
+
+
+async def test_a_next_page_arrow_that_never_disables_stops_at_the_cap_and_warns():
+    machine = FakeMachine()
+    with (
+        patch_helper("is_enabled_by_path", new=AsyncMock(return_value=True)),
+        patch_helper("click_by_path", new=AsyncMock(return_value=True)) as mock_click,
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="")),
+        patch.object(qs, "POLL_INTERVAL", 0),
+    ):
+        await qs._process_quicksell_pages(machine, FakeClient(), ["hat"], max_pages=3)
+
+    next_page_clicks = [c for c in mock_click.call_args_list if c.args[1] == QUICKSELL_NEXT_PAGE_PATH]
+    assert len(next_page_clicks) == 2
+    assert _warned(machine, "stopped after 3 pages")
+
+
+async def test_the_last_page_ends_the_walk_without_a_warning():
+    machine = FakeMachine()
+    with (
+        patch_helper("is_enabled_by_path", new=AsyncMock(side_effect=[True, True, False])),
+        patch_helper("click_by_path", new=AsyncMock(return_value=True)) as mock_click,
+        patch_helper("get_text_by_path", new=AsyncMock(return_value="")),
+        patch.object(qs, "POLL_INTERVAL", 0),
+    ):
+        await qs._process_quicksell_pages(machine, FakeClient(), ["hat"], max_pages=3)
+
+    next_page_clicks = [c for c in mock_click.call_args_list if c.args[1] == QUICKSELL_NEXT_PAGE_PATH]
+    assert len(next_page_clicks) == 2
+    assert not [msg for msg, level in machine.logs if level == logging.WARNING]
+
+
+async def test_the_cap_comes_from_the_backpack_and_jewel_pouch_capacities():
+    client = FakeClient()
+    client.backpack_space.return_value = (100, 100)
+
+    p = _make_patchers()
+    with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["poll_interval"]:
+        with (
+            patch.object(qs, "_jewel_space", new=AsyncMock(return_value=(10, 60))),
+            patch.object(qs, "_process_quicksell_pages", new=AsyncMock()) as pages,
+        ):
+            await qs.run(_machine(), [client], {})
+
+    assert pages.call_args.args[3] == qs._max_pages(160)
 
 
 async def test_warns_that_a_keep_list_cannot_spare_a_pet():

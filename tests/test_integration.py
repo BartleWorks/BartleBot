@@ -270,7 +270,7 @@ def _make_machine_for_flag_test(options: list[BotOptionModel], flags: list[FlagC
         config=mc,
         node_registry={"mock": _mock_node},
         bot_config=config,
-        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: transitions_seen.append((prev, result, nxt)),
     )
     return machine, transitions_seen
 
@@ -376,7 +376,7 @@ async def _run_grouped_flag_bot(values: dict[str, bool], groups: list[FlagGroup]
         config=config.to_machine_config(),
         node_registry={"mock": _mock_node},
         bot_config=config,
-        on_transition=lambda prev, result, nxt: seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: seen.append((prev, result, nxt)),
     )
     await machine.run()
     return seen
@@ -463,7 +463,7 @@ async def test_enter_zone_success_advances_state():
         config=mc,
         node_registry=NODE_REGISTRY,
         bot_config=config,
-        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: transitions_seen.append((prev, result, nxt)),
     )
 
     with patch.object(gtz, "POLL_INTERVAL", 0), patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 1.0):
@@ -506,7 +506,7 @@ async def test_enter_zone_failure_self_loops():
         node_registry=NODE_REGISTRY,
         bot_config=config,
         max_consecutive_same_state=2,  # stop after 2 consecutive FAILURE self-loops
-        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: transitions_seen.append((prev, result, nxt)),
     )
 
     with patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 0):
@@ -561,7 +561,7 @@ async def test_stop_during_node_execution_cooperative():
         node_registry={"coop": cooperative_node},
         bot_config=config,
         stop_grace_period=1.0,
-        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: transitions_seen.append((prev, result, nxt)),
     )
 
     task = asyncio.create_task(machine.run())
@@ -610,7 +610,7 @@ async def test_stop_forces_cancellation_after_grace_period():
         node_registry={"blocker": blocking_node},
         bot_config=config,
         stop_grace_period=0.05,
-        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: transitions_seen.append((prev, result, nxt)),
     )
 
     task = asyncio.create_task(machine.run())
@@ -681,7 +681,7 @@ def _dead_client_machine(error, client, transitions_seen: list, before_raise=Non
         config=config.to_machine_config(),
         node_registry={"error_node": error_node},
         bot_config=config,
-        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+        on_transition=lambda prev, result, nxt, _taken: transitions_seen.append((prev, result, nxt)),
     )
     return machine, calls
 

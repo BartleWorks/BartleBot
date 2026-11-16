@@ -174,3 +174,33 @@ def test_the_accounts_list_is_a_copy(settings_dir):
 
 
 THREE = "three@example.com"
+
+
+def test_a_reload_reads_what_the_other_product_wrote_since(settings_dir):
+    """The store is read once at start; BartleBuddy's add stays unseen until it is read again (#303)."""
+    manager = SettingsManager()
+    manager.accounts = _accounts(ONE)
+    AccountStore(manager.account_store.path.parent).set_accounts(_accounts(ONE, TWO))
+
+    assert manager.reload_accounts()
+
+    assert [a["username"] for a in manager.accounts] == [ONE, TWO]
+
+
+def test_a_reload_with_nothing_new_says_so(settings_dir):
+    manager = SettingsManager()
+    manager.accounts = _accounts(ONE)
+
+    assert not manager.reload_accounts()
+
+
+def test_a_write_after_a_reload_keeps_what_the_other_product_added(settings_dir):
+    """The reread is the new base: this app's next write is measured against the file as it is now."""
+    manager = SettingsManager()
+    manager.accounts = _accounts(ONE)
+    AccountStore(manager.account_store.path.parent).set_accounts(_accounts(ONE, TWO))
+    manager.reload_accounts()
+
+    manager.accounts = [*manager.accounts, {"username": THREE, "alias": ""}]
+
+    assert [a["username"] for a in AccountStore(manager.account_store.path.parent).accounts] == [ONE, TWO, THREE]

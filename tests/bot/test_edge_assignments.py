@@ -375,6 +375,21 @@ async def test_a_conditioned_assigning_edge_names_both(caplog):
     assert "Transition: 'a' (A) --SUCCESS [swords == 0] / found toggled--> 'b' (B)" in _messages(caplog)
 
 
+async def test_on_transition_is_handed_the_condition_and_the_writes_of_the_edge_taken():
+    """What the Transition line names after the result, for the canvas's Result line (#200)."""
+    seen = []
+    bot = _bot(
+        [_state("a"), _state("b"), _state("end", "done")],
+        [
+            _edge("a", "b", {"variable": "found", "op": "toggle"}, flags=[_is("swords", 0)]),
+            _edge("a", "end"),
+            _edge("b", "end", ADD_SWORD),
+        ],
+    )
+    await _run(_machine(bot, on_transition=lambda _prev, _result, _next, taken: seen.append(taken)))
+    assert seen == [" [swords == 0] / found toggled", " / swords + 1"]
+
+
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------

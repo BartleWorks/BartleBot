@@ -13,7 +13,11 @@ jobs:
       run:
         shell: bash
     steps:
+      # Every tag and the history behind them, so the suite's released-content guard can
+      # compare the checkout with the latest release (tools/released_content.py).
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

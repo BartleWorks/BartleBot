@@ -65,7 +65,7 @@ def _machine(node, node_type: str = "work", clients=None) -> tuple[BotMachine, l
         config=_config(node_type),
         node_registry={node_type: node, "done": _done_node},
         stop_grace_period=0.1,
-        on_transition=lambda src, result, dst: transitions.append((src, result, dst)),
+        on_transition=lambda src, result, dst, _taken: transitions.append((src, result, dst)),
     )
     return machine, transitions
 

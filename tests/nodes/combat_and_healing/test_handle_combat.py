@@ -333,11 +333,11 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
     """An encounter can hide its mob once the fight begins; the player must not give up then."""
     client = FakeClient()
     entity = FakeEntity()
-    state = {"teleported": False, "lost": False}
+    state = {"teleported": False, "misses": 0}
 
     async def find():
         if state["teleported"]:
-            state["lost"] = True
+            state["misses"] += 1
             return None
         return entity
 
@@ -346,8 +346,9 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
 
     client.find_closest_mob.side_effect = find
     client.tp_to.side_effect = tp
-    # The fight begins only after the target has gone, which the old early exit never saw.
-    client.in_battle.side_effect = lambda: state["lost"]
+    # The fight begins only after the target has been missed three times, which the old early
+    # exit never saw, and which the log must report once, not per miss.
+    client.in_battle.side_effect = lambda: state["misses"] >= 3
 
     with (
         _patch_run_combat(),
@@ -359,13 +360,13 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
+    assert state["misses"] >= 3
     assert len(_log_lines(machine, "Client 0: target not found")) == 1
 
 
-# A known flake (#199): under -n auto load the 0.2 s timeout can end after one retry, so find ran
-# only three times; it passes alone. See core's tests/CLAUDE.md, "Known flakes are marked".
-@pytest.mark.flaky(reruns=2)
 async def test_a_target_that_never_returns_fails_at_the_timeout_and_says_so_once():
+    # Kept looking is asserted as the time it took, a floor that load can only raise: a count of
+    # finds within the timeout came up short when a loaded worker overran it (#199).
     client = FakeClient()
     entity = FakeEntity()
     finds = {"n": 0}
@@ -384,10 +385,14 @@ async def test_a_target_that_never_returns_fails_at_the_timeout_and_says_so_once
         patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01),
     ):
         machine = FakeMachine()
+        loop = asyncio.get_running_loop()
+        started = loop.time()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
+        waited = loop.time() - started
 
     assert result == "FAILURE"
-    assert finds["n"] > 3  # kept looking after the target went, rather than returning at once
+    assert finds["n"] >= 3  # the target was looked for after the teleport, and was gone
+    assert waited >= 0.2  # kept looking until the timeout, rather than returning at once
     assert len(_log_lines(machine, "Client 0: target not found")) == 1
     client.tp_to.assert_awaited_once()
 

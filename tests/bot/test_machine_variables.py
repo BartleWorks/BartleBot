@@ -512,6 +512,34 @@ async def test_a_conditioned_transition_names_its_condition_and_a_plain_one_does
     ]
 
 
+async def test_on_transition_is_handed_the_condition_the_transition_line_names():
+    """The canvas's Result line names it too (#200), from the machine's text rather than its own."""
+    seen = []
+    bot = _switch(_edge("which", "one", _is("swords", 1)))
+    await _run(_machine(bot, on_transition=lambda prev, _result, nxt, taken: seen.append((prev, nxt, taken))))
+    assert seen == [("start", "which", ""), ("which", "one", " [swords == 1]"), ("one", "end", "")]
+
+
+async def test_on_transition_is_handed_nothing_when_no_edge_matched():
+    seen = []
+    bot = _bot([_state("a")], [_edge("a", "a", _is("swords", 5))])
+    on_transition = lambda _prev, result, _next, taken: seen.append((result, taken))  # noqa: E731
+    await _run(_machine(bot, work=_stop_on_second_run(), on_transition=on_transition))
+    assert seen == [("SUCCESS", "")]
+
+
+def _stop_on_second_run():
+    runs = []
+
+    async def node(machine, clients, params):
+        runs.append(1)
+        if len(runs) > 1:
+            machine.stop()
+        return "SUCCESS"
+
+    return node
+
+
 async def test_an_otherwise_edge_beside_conditioned_ones_names_no_condition(caplog):
     bot = _switch(_edge("which", "one", _is("swords", 2)), _edge("which", "two", _is("swords", 3)))
     with caplog.at_level(logging.INFO, logger="bartlebot.bot.machine"):

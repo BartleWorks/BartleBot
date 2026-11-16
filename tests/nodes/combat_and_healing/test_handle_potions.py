@@ -211,6 +211,35 @@ async def test_only_low_clients_use_potions():
     c_low.use_potion.assert_called_once()
 
 
+_CHALLENGE_ZONE = "Aquila/AQ_Z03_Tartarus_Hard"
+
+
+async def test_a_low_player_in_a_challenge_mode_dungeon_uses_no_potion():
+    """#39: advanced combat forbids potions, so one is never tried there."""
+    inside = _well_stocked_client()
+    inside.calc_health_ratio.return_value = 0.1
+    inside.zone_name.return_value = _CHALLENGE_ZONE
+    outside = _well_stocked_client()
+    outside.calc_health_ratio.return_value = 0.1
+    machine = _machine()
+
+    result = await hp.run(machine, [inside, outside], _PARAMS)
+
+    assert result == "SUCCESS"
+    inside.use_potion.assert_not_called()
+    outside.use_potion.assert_called_once()
+    assert any("Player(s) [1] are in a Challenge Mode dungeon" in msg for msg, _ in machine.logs)
+
+
+async def test_the_ordinary_copy_of_a_challenge_mode_dungeon_still_drinks():
+    client = _well_stocked_client()
+    client.calc_health_ratio.return_value = 0.1
+    client.zone_name.return_value = "Aquila/AQ_Z03_Tartarus"
+
+    assert await hp.run(_machine(), [client], _PARAMS) == "SUCCESS"
+    client.use_potion.assert_called_once()
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # run() — refill early exits
 # ══════════════════════════════════════════════════════════════════════════════

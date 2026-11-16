@@ -219,43 +219,48 @@ the key; `sign`, on `ubuntu-latest`, reads only the feed; and `publish`, on
 `build`:
 
 1. **Check the tag**: `tools/release_version.py`, before anything is built.
-2. **Build and self-check**: `tools/build_package.py`, as `package.yml` does. A failing
+2. **Check no released content is gone**: `tools/released_content.py <tag>` compares the
+   checkout with the previous release tag, the newest `v*` tag reachable from the commit
+   other than the one being released, and fails on everything that tag shipped and the
+   checkout does not (*Released content is never removed*, below). The job checks out with
+   `fetch-depth: 0`, since a shallow clone has no tags to compare with.
+3. **Build and self-check**: `tools/build_package.py`, as `package.yml` does. A failing
    self-check fails the release.
-3. **Fetch the previous release**: `vpk download github` puts the latest *published*
+4. **Fetch the previous release**: `vpk download github` puts the latest *published*
    release's full package and feed in `releases/`. With none published yet, it says so
    and exits 0, and the release has no delta.
-4. **Pack**: `tools/pack_release.py <version>`, which composes the release notes and runs
+5. **Pack**: `tools/pack_release.py <version>`, which composes the release notes and runs
    `vpk pack`. It writes Setup.exe, the full package, a delta against the previous
-   release when step 3 found one, and `releases.win.json`, the feed. `vpk` also writes `RELEASES` and
+   release when step 4 found one, and `releases.win.json`, the feed. `vpk` also writes `RELEASES` and
    `assets.win.json`, which it uses itself. Everything goes up as the `releases`
    artifact, and the feed alone as `feed`.
 
 `sign`:
 
-5. **Sign the feed**: `tools/sign_feed.py sign`, with the key in `FEED_SIGNING_KEY`,
+6. **Sign the feed**: `tools/sign_feed.py sign`, with the key in `FEED_SIGNING_KEY`,
    writes `releases.win.json.sig`. Only `cryptography` is installed for it, at uv.lock's
    version (`CRYPTOGRAPHY_VERSION`, which a test holds to the lock). So `sign_feed.py`
    imports nothing of the app's but `updates/signature.py` and `updates/keys.py`, never
    `feed.py`, which needs bartleby-core: 0.3.0's first tag failed here when it did, and
    `test_sign_feed_imports_only_cryptography_and_the_signature` runs the script with
    every other import refused.
-6. **Check it against the app's keys**: `tools/sign_feed.py verify` fails the release
+7. **Check it against the app's keys**: `tools/sign_feed.py verify` fails the release
    when the signature matches no key in `TRUSTED_KEYS`, so a wrong secret fails here
    rather than shipping a feed no installed copy would accept.
 
 `publish`:
 
-7. **Check the feed being published**: the same `verify`, on the `releases` artifact's
+8. **Check the feed being published**: the same `verify`, on the `releases` artifact's
    feed and the signature, so the feed uploaded is byte for byte the one signed.
-8. **Create the draft**: `vpk upload github`, without `--publish`, creates a draft
+9. **Create the draft**: `vpk upload github`, without `--publish`, creates a draft
    release on the tag with every asset.
-9. **Attach the signed feed and its signature**: `gh release upload --clobber`. `vpk`
-   uploads only what it packed, and the feed it uploads is not the one it was given: it
-   writes one listing only this release's packages. The first release had nothing else to
-   list, so its feed came through unchanged; 0.2.0's lost 0.1.0's entry, the signature no
-   longer matched, and every 0.1.0 install refused the update until the signed feed was
-   uploaded by hand. So the signed feed replaces vpk's.
-10. **Check the draft's own feed**: `gh release download` fetches the feed and the
+10. **Attach the signed feed and its signature**: `gh release upload --clobber`. `vpk`
+    uploads only what it packed, and the feed it uploads is not the one it was given: it
+    writes one listing only this release's packages. The first release had nothing else to
+    list, so its feed came through unchanged; 0.2.0's lost 0.1.0's entry, the signature no
+    longer matched, and every 0.1.0 install refused the update until the signed feed was
+    uploaded by hand. So the signed feed replaces vpk's.
+11. **Check the draft's own feed**: `gh release download` fetches the feed and the
     signature back from the draft and `verify` checks them, since what an installed app
     reads is what is on the release, not what was checked before the upload.
 
@@ -266,7 +271,7 @@ what makes users see it, and what makes it the "previous release" the next delta
 against. A draft no one publishes is never offered, so a bad build costs nothing.
 
 **To rebuild a draft, delete it before moving the tag.** A fix found while testing goes in
-a new commit, and the tag moves to it. But step 8 refuses when a release on the tag
+a new commit, and the tag moves to it. But step 9 refuses when a release on the tag
 already exists, draft or not, and fails the run only after the whole build:
 
 ```
@@ -276,7 +281,7 @@ git push -f origin v<version>
 ```
 
 `gh release delete` without `--cleanup-tag` leaves the tag alone. A run that has already
-failed at step 8 needs no new build: delete the draft, then `gh run rerun <run> --failed`
+failed at step 9 needs no new build: delete the draft, then `gh run rerun <run> --failed`
 runs `publish` again on the artifacts `build` and `sign` left. The checklist copy in
 `C:\Users\Public\BartleBot\<version>` stays as it was, so delete it too when the
 checklist changed, or when the ticks were for the build being replaced.
@@ -301,6 +306,30 @@ tried that version. `test_one_velopack_version_for_the_package_and_vpk` holds th
 the tool and the workflow to it, so a bump changes all three at once. Before a bump,
 read Velopack's advisories and repeat the install, update and uninstall in
 `docs/INSTALLER.md`.
+
+### Released content is never removed
+
+Official content reaches users only through app updates, so a user's bots can be based
+on, or link, anything a release shipped. Removing it breaks those bots, or strands them on
+a snapshot. So content a release shipped is retired from the pickers, never removed, and
+step 2 holds every release to that (#166). `tools/released_content.py` lists, and fails
+on, everything the previous release tag shipped that the checkout does not:
+
+- a template version a `template.json` listed, whose file is gone or is no longer listed;
+- a bot, subgraph, duel strategy, player strategy or deck, matched by its `id`.
+
+Matching is by id, so renaming a file or moving it to another folder passes, and so does an
+item that stays but is hidden. A template's draft and `official_set.json` are not
+compared, since no bot links either. The suite runs the same comparison against the newest release tag
+(`test_the_checkout_removes_nothing_the_latest_release_shipped`), so a removal fails the
+merge gate long before a tag, and CI checks out with `fetch-depth: 0` for it. The check
+compares with one release only: four bots 0.1.0 shipped were gone by 0.2.0, before the
+rule bound, and comparing with that tag would still list them.
+
+```bash
+uv run python tools/released_content.py              # against the newest release tag
+uv run python tools/released_content.py --since v0.2.0
+```
 
 ### The release notes
 

@@ -26,6 +26,7 @@ from bartlebot.combat.deck_io import (
     ENTRY_STRIDE,
     SLOTS_PER_PAGE,
     DeckApplyReport,
+    DeckPageLocked,
     ItemSlot,
     _apply_item_toggles,
     _apply_slot,
@@ -743,6 +744,17 @@ async def test_read_deck_raises_when_the_page_will_not_open(monkeypatch):
         await read_deck(client)
 
 
+async def test_read_deck_in_a_challenge_mode_dungeon_presses_no_key(monkeypatch):
+    """#39: the game keeps the deck closed there; reading it would only fail part-way."""
+    client = _read_client(monkeypatch)
+    client.zone_name.return_value = "Aquila/AQ_Z03_Tartarus_Hard"
+
+    with pytest.raises(DeckPageLocked, match="Challenge Mode"):
+        await read_deck(client)
+
+    client.send_key.assert_not_awaited()
+
+
 async def test_a_deck_holding_only_an_archmastery_school_is_still_empty():
     assert DeckData(archmastery_school="Storm").is_empty()
 
@@ -923,6 +935,19 @@ async def test_apply_deck_propagates_write_failures(fake_deck_builder, monkeypat
         await apply_deck(FakeClient(), DeckData(normal={"Tempest": 1}))
 
     assert Failing.instances[0].exited
+
+
+async def test_apply_deck_in_a_challenge_mode_dungeon_touches_nothing(fake_deck_builder):
+    """#39: advanced combat keeps the deck closed, so not even the Deck key is pressed."""
+    _CtxDeckBuilder.instances = []
+    client = FakeClient()
+    client.zone_name.return_value = "Aquila/AQ_Z03_Tartarus_Hard"
+
+    with pytest.raises(DeckPageLocked, match="Challenge Mode"):
+        await apply_deck(client, DeckData(normal={"Tempest": 1}))
+
+    assert _CtxDeckBuilder.instances == []
+    client.send_key.assert_not_awaited()
 
 
 async def test_apply_deck_defaults_to_the_shared_timeout(fake_deck_builder):

@@ -1421,11 +1421,17 @@ class BotCanvas(QWidget):
         # carried 9,589 of these — a fifth of the file.
         logger.info("Entered: %s", state_id, extra=GUI_ONLY)
 
-    def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
+    def on_transition(self, prev_state: str, result: str, next_state: str, taken: str) -> None:
+        """Log the result a node returned and where it led, for the Log tab alone.
+
+        *taken* is what chose the edge and what it set, ``" [swords == 2] / found = true"``,
+        in the machine's own words (``BotMachine._taken_edge_text``), so a switch's choice
+        reads differently for each condition that made it (#200).
+        """
         if prev_state == next_state:
-            logger.info("Result: %s → (retry %s)", result, next_state, extra=GUI_ONLY)
+            logger.info("Result: %s%s → (retry %s)", result, taken, next_state, extra=GUI_ONLY)
         else:
-            logger.info("Result: %s → %s", result, next_state, extra=GUI_ONLY)
+            logger.info("Result: %s%s → %s", result, taken, next_state, extra=GUI_ONLY)
 
     # ------------------------------------------------------------------
     # Toolbar button handlers

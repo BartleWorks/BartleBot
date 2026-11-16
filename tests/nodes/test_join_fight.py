@@ -185,19 +185,23 @@ async def test_a_center_that_works_never_falls_back_to_a_player():
     assert not fight.is_center_blocked(helper)
 
 
-# A known flake (#199): under -n auto load the 0.03 s timeout can end after the first attempt, so
-# only the center was tried; it passes alone. See core's tests/CLAUDE.md, "Known flakes are marked".
-@pytest.mark.flaky(reruns=2)
 async def test_each_attempt_after_a_blocked_center_tries_the_next_player():
+    # The second teleport gets it in, so the run ends on the attempt count, not on a timeout
+    # a loaded worker could reach after the first attempt (#199).
     machine = FakeMachine()
     first, second, late = FakeClient(), FakeClient(), FakeClient()
     fight = await _fight_with(machine, first, second)
     second.body.position.return_value = XYZ(480.0, 600.0, 0.0)
     fight.mark_center_blocked(late)
 
-    await join_fight(machine, late, 1, fight, timeout=0.03)
+    async def teleport(_where):
+        late.in_battle.return_value = late.teleport.await_count >= 2
+
+    late.teleport.side_effect = teleport
+
+    assert await join_fight(machine, late, 1, fight, timeout=5.0) is True
     targets = [tuple(c.args[0]) for c in late.teleport.await_args_list]
-    assert targets[:2] == [tuple(_SEAT), (480.0, 600.0, 0.0)]
+    assert targets == [tuple(_SEAT), (480.0, 600.0, 0.0)]
 
 
 async def test_a_player_whose_position_cannot_be_read_is_passed_over():

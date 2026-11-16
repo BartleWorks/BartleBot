@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from bartleby.shared.strategy_models import DeckData
 
-from bartlebot.combat.deck_io import DeckApplyReport
+from bartlebot.combat.deck_io import DeckApplyReport, DeckPageLocked
 from bartlebot.controller.decks import Decks
 
 
@@ -197,6 +197,20 @@ async def test_single_slot_import_failure_is_reported(strategy, client_decks):
     assert title == "Deck import failed" and "Player 1 timed out" in body
 
 
+async def test_an_import_in_a_challenge_mode_dungeon_is_skipped_not_failed(strategy, client_decks):
+    """#39: nothing was tried, so the notice says so, without the note about the game's window."""
+    client_decks.update({"c1": DeckPageLocked("Aquila/AQ_Z03_Tartarus_Hard is a Challenge Mode zone")})
+    harness = DeckJobHarness(["c1"])
+
+    await harness._import_deck_for_slot(1)
+
+    assert strategy.saves == []
+    [(title, body, _warn)] = harness.notices
+    assert title == "Deck import skipped"
+    assert "Player 1 was not tried" in body and "Challenge Mode" in body
+    assert "deck window may be left open" not in body
+
+
 # ---------------------------------------------------------------------------
 # Apply all
 # ---------------------------------------------------------------------------
@@ -276,6 +290,32 @@ async def test_apply_all_reports_a_failed_slot_alongside_the_others(strategy, ap
     assert "Deck apply for Player 2 failed" in body
     assert "deck window may be left open" in body
     assert warn
+
+
+async def test_apply_all_names_a_slot_in_a_challenge_mode_dungeon_as_not_tried(strategy, apply_results):
+    strategy.player_decks = {1: _deck(), 2: _deck()}
+    apply_results["c1"] = DeckPageLocked("Aquila/AQ_Z03_Tartarus_Hard is a Challenge Mode zone")
+    harness = DeckJobHarness(["c1", "c2"])
+
+    await harness._apply_all_decks()
+
+    [(title, body, _warn)] = harness.notices
+    assert title == "Some decks were not applied"
+    assert "Deck apply for Player 1 was not tried" in body
+    assert "Player 2" not in body
+    assert "deck window may be left open" not in body
+
+
+async def test_a_single_apply_in_a_challenge_mode_dungeon_is_skipped(strategy, apply_results):
+    strategy.player_decks = {1: _deck()}
+    apply_results["c1"] = DeckPageLocked("Aquila/AQ_Z03_Tartarus_Hard is a Challenge Mode zone")
+    harness = DeckJobHarness(["c1"])
+
+    await harness._apply_deck_for_slot(1)
+
+    [(title, body, _warn)] = harness.notices
+    assert title == "Deck apply skipped"
+    assert "deck window may be left open" not in body
 
 
 async def test_apply_all_skips_empty_decks_and_slots_without_a_client(strategy, apply_results):

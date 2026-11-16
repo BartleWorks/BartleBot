@@ -115,7 +115,9 @@ Mode, looked up by `stat_caps.dungeon_level`:
 3. the world's default Scales, or the one level every Scales in the world shares (Azteca).
 
 A player inside a Challenge Mode zone is read plainly, since the game has scaled its max
-already. With no level found the ratios are plain too, which errs toward a potion. Boss
+already, and `handle_potions` never has it use a potion there (#39). Advanced combat locks
+the deck too, so a deck import or apply refuses a player standing in one
+(`deck_io.DeckPageLocked`) and presses no key. With no level found the ratios are plain too, which errs toward a potion. Boss
 rematches have Challenge Mode but enter through a housing item, so nothing gives their
 level; they will need it entered by hand once they are built.
 

@@ -1,10 +1,10 @@
 name: Release
 
-# On a v* tag: checks the tag names the app's version, builds and self-checks the app,
-# packs it with Velopack against the previous release, signs the feed, and creates a
-# DRAFT GitHub Release with every asset and the feed's signature. A maintainer publishes
-# the draft, once what ships has been tested in game. docs/RELEASING.md has why, the
-# version rule, and the signing key.
+# On a v* tag: checks the tag names the app's version and that no content the previous
+# release shipped is gone, builds and self-checks the app, packs it with Velopack against
+# the previous release, signs the feed, and creates a DRAFT GitHub Release with every
+# asset and the feed's signature. A maintainer publishes the draft, once what ships has
+# been tested in game. docs/RELEASING.md has why, the version rule, and the signing key.
 #
 # Three jobs, so the signing key reaches only the one that needs it: `build` runs every
 # dependency's code and never sees it, `sign` reads only the feed, and `publish` uploads.
@@ -37,7 +37,10 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
+      # Every tag and the history behind them, so the content check can find the previous release.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -57,6 +60,12 @@ jobs:
         run: |
           version=$(uv run --no-sync python tools/release_version.py "$GITHUB_REF_NAME")
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Fails the run when the release removes anything the previous release tag shipped:
+      # a released template version, or a bot, subgraph, duel or player strategy or deck.
+      # A user's bots may be based on or link any of it, so it is retired, never removed.
+      - name: Check no released content is gone
+        run: uv run --no-sync python tools/released_content.py "$GITHUB_REF_NAME"
 
       # Builds dist/BartleBot, dist/bartlebot.ico and dist/bartlebot-splash.png, then runs the build's own
       # --self-check, which fails this step on any missing file, module or plugin.

@@ -27,6 +27,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from bartlebot.bot import variables
 from bartlebot.content.templates.setup_steps import field_empty
 from bartlebot.options.option_groups import SummaryPart
 
@@ -321,11 +322,41 @@ def outgoing_routes(
     return routes
 
 
+#: The chip of an edge that every return takes and no condition holds back.
+ALWAYS = "always"
+
+
+def edge_chips(when: str | None, transition: Any) -> tuple[str | None, str | None]:
+    """The two chips a Connections row wears for an edge: the return that takes it, and its label.
+
+    The first is *when*, or :data:`ALWAYS` for an edge that every return takes and no
+    condition holds back, or None for one a condition decides: "always" beside a
+    condition would say the edge is taken whatever the condition is (#198). The second
+    is what the edge's label on the canvas says, whole (``variables.edge_label``): its
+    condition, then what it sets. None for an edge with neither.
+    """
+    label = variables.edge_label(transition) if transition is not None else None
+    if when:
+        return when, label[0] if label else None
+    if label is None:
+        return ALWAYS, None
+    return (None if variables.describe_guard(transition) is not None else ALWAYS), label[0]
+
+
+def _route_when(route: Route) -> str:
+    """What a route's summary says takes it: its return, then the edge's condition, or "always"."""
+    guard = variables.describe_guard(route.transition) if route.transition is not None else None
+    if guard is None:
+        return route.when or ALWAYS
+    condition = f"if {variables.shorten(guard)}"
+    return f"{route.when} {condition}" if route.when else condition
+
+
 def routes_summary(routes: Iterable[Route], labels: Mapping[str, str]) -> list[SummaryPart]:
     """A folded Connections card's line: "SUCCESS → Sync players · FAILURE → recovery"."""
     parts = []
     for route in routes:
-        when = route.when or "always"
+        when = _route_when(route)
         if route.kind == EDGE:
             parts.append(SummaryPart(f"{when} → {labels.get(route.dest, route.dest)}"))
         elif route.kind == RECOVERY:

@@ -560,8 +560,8 @@ class Run:
     def _on_machine_variable_change(self, name: str, old, new) -> None:
         self._window.left_sidebar.variable_values.on_variable_change(name, old, new)
 
-    def _on_machine_transition(self, prev: str, result: str, next_: str) -> None:
-        self._window.bot_canvas.on_transition(prev, result, next_)
+    def _on_machine_transition(self, prev: str, result: str, next_: str, taken: str) -> None:
+        self._window.bot_canvas.on_transition(prev, result, next_, taken)
 
     def _on_machine_drop(self, item: str, qty: int, client_idx: int) -> None:
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)

@@ -72,6 +72,8 @@ Variable swords: 1 → 2
 Transition: 'which' (Which rack) --SUCCESS [swords == 2]--> 'rack_2' (Rack 2)
 ```
 
+The shorter `Result:` line under each, which only the Log tab shows, names them too: `Result: SUCCESS [swords == 2] → rack_2`.
+
 The run summary ends with each variable's last value, as `Variables: next_spot = 9, swords = 4`.
 
 ## When a subgraph is the better tool { #when-not-to-use-one }
