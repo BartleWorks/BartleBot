@@ -13,7 +13,7 @@ def test_the_shipped_caps_hold_every_school_at_every_ten_levels():
     table = stat_caps.load()
     assert sorted(table) == ["Balance", "Death", "Fire", "Ice", "Life", "Myth", "Storm"]
     for levels in table.values():
-        assert sorted(levels) == list(range(10, 181, 10))
+        assert sorted(levels) == list(range(10, stat_caps.MAX_LEVEL + 1, 10))
 
 
 def test_the_caps_are_the_games_own():
@@ -22,7 +22,7 @@ def test_the_caps_are_the_games_own():
 
 @pytest.mark.parametrize(
     ("level", "held_to"),
-    [(1, 10), (10, 10), (89, 90), (90, 90), (91, 100), (100, 100), (175, 180), (180, 180), (0, None)],
+    [(1, 10), (10, 10), (89, 90), (90, 90), (91, 100), (100, 100), (175, 180), (185, 190), (190, 190), (0, None)],
 )
 def test_a_player_is_held_to_the_lowest_step_it_has_not_passed(level, held_to):
     assert stat_caps.band(level) == held_to
@@ -84,6 +84,18 @@ def test_a_world_with_no_default_but_one_level_takes_that_level():
 )
 def test_the_worlds_without_scales_have_their_level_listed(zone, level):
     assert stat_caps.dungeon_level(zone) == level
+
+
+def test_a_level_past_the_max_is_held_to_it():
+    assert stat_caps.band(stat_caps.MAX_LEVEL + 5) == stat_caps.MAX_LEVEL
+
+
+def test_darkmoor_scales_a_max_level_player_down():
+    health, mana = stat_caps.factors(
+        "Fire", 190, stat_caps.dungeon_level("Darkmoor/Interiors/DM_Z05_HereticalAcademy_Adv")
+    )
+    assert health == pytest.approx(13413 / 13952)
+    assert mana == pytest.approx(1.0)
 
 
 def test_a_world_nothing_names_has_no_level():

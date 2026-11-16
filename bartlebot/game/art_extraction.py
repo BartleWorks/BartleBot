@@ -194,6 +194,7 @@ TEXTURE_GLOB = "GUI/**"
 #: Aquila is here despite not being on the spiral door: it has an emblem of its own, and
 #: the zone picker lists it as a world like any other.
 WORLD_TEXTURES: dict[str, str] = {
+    "Ahmarra": "Ahmarra",
     "Aquila": "Aquila",
     "Arcanum": "Arcanum",
     "Avalon": "Avalon",

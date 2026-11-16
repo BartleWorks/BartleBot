@@ -72,6 +72,7 @@ SPIRAL_DOOR_WORLDS: tuple[str, ...] = (
     "Novus",
     "Wallaru",
     "Darkmoor",
+    "Ahmarra",
 )
 """Worlds the World Tree spiral door offers, in progression order.
 
@@ -97,7 +98,7 @@ DUNGEON_WORLDS: tuple[str, ...] = (
 )
 """Nav-map worlds that are dungeons rather than worlds, and so have no world emblem.
 
-``zone_nav`` groups zones into 25 "worlds", but four of those are not on the spiral door
+``zone_nav`` groups zones into 26 "worlds", but four of those are not on the spiral door
 and three of those four are dungeon groups -- Castle Darkmoor, Kembaalung Village, and
 Zigazag. The game ships no ``Button_World_`` texture for any of them, so they take
 the generic dungeon badge instead; see ``WORLD_ICON_SOURCES`` in
