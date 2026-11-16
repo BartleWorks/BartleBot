@@ -11,6 +11,9 @@ WHICH TOOLS
     report every zone not downloaded yet as removed, so they run only with ``--zone-wads``,
     once the install is complete.
 
+    Core's snapshots (dialog captions, name tables, realm names) are core's, with their own
+    dumpers in ``bartleby-core/tools/``, run there (its ``docs/GAME_DATA.md``).
+
 A list of objects with a ``"key"`` (the badge categories) is compared key by key, with a
 note when the order of the shared keys changed, since that order is what the bot library's
 folders follow.
@@ -37,9 +40,6 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT_WAD_TOOLS = (
     "badge_categories",
-    "dialog_captions",
-    "name_tables",
-    "realm_names",
     "spell_names",
     "spell_schools",
     "stat_caps",

@@ -41,3 +41,11 @@ def test_it_never_regenerates_into_the_shipped_data(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["diff_snapshots.py", "--out", str(snapshots.DATA)])
     assert snapshots.main() == 2
     assert "scratch folder" in capsys.readouterr().out
+
+
+def test_every_tool_it_runs_is_one_of_bartlebots_and_writes_a_shipped_file():
+    # Core's dumpers moved to bartleby-core with their snapshots; one left on the list
+    # failed on every run, and compared against a file BartleBot no longer ships.
+    for name in snapshots.ROOT_WAD_TOOLS + snapshots.ZONE_WAD_TOOLS:
+        assert (snapshots.REPO / "tools" / f"dump_{name}.py").is_file(), name
+        assert (snapshots.DATA / f"{name}.json").is_file(), name

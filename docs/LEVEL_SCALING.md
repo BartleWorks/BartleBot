@@ -111,7 +111,8 @@ Mode, looked up by `stat_caps.dungeon_level`:
    (Pit of the Noxii inside Mount Olympus) do not count: in Challenge Mode they are gone and
    the boss is fought at the larger dungeon's level;
 2. Wallaru (170) and Darkmoor (180), which have Challenge Mode and no Scales, from
-   `stat_caps.WORLD_LEVELS_WITHOUT_SCALES`;
+   `stat_caps.WORLD_LEVELS_WITHOUT_SCALES`. Since Ahmarra raised the cap to 190, Darkmoor
+   scales a level 181 to 190 player down too;
 3. the world's default Scales, or the one level every Scales in the world shares (Azteca).
 
 A player inside a Challenge Mode zone is read plainly, since the game has scaled its max
