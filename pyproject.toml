@@ -63,8 +63,8 @@ site = [
 # exact commit. bartleby-core/docs/UPSTREAM.md has both bump workflows and tagging rules.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
-bartleby-core = { git = "https://github.com/BartleWorks/bartleby-core.git", tag = "v0.3.0" }
-wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "6a64fcf4adc5a1337dc5507ac824de3380e91bdc" }
+bartleby-core = { git = "https://github.com/BartleWorks/bartleby-core.git", tag = "v0.4.0" }
+wizwalker = { git = "https://github.com/BartleWorks/wizwalker.git", rev = "78929a93c056aa4e301c256484e8c28811c60051" }
 wizsprinter = { git = "https://github.com/BartleWorks/wizsprinter.git", rev = "088fc838bda285c8b06d2f235fb5671126035f59" }
 
 [tool.pytest.ini_options]

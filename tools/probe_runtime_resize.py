@@ -103,6 +103,12 @@ sizes of two accounts on 1080p, in physical pixels)
     The object's vtable does not hold the function VideoManagerHook hooks: entry 89 is an override
     that calls it directly, so the check on the object is its device's size instead.
 
+    On Ahmarra's live build, r813697 (2026-11-16, BartleBuddy #30), VidRestart is no longer inlined
+    into the frame function, so VideoManagerHook moved to the frame function's test of the byte and
+    reads the byte there, and wizwalker reads it from VidRestart's clear: the two agree, +0x222A3.
+    ``slot`` on one of two clients at 2560x1440: the same object, 854x480 and back, the byte
+    clearing in 67 and 31 ms, both scans 0.17 s, the longest gap 17 ms.
+
     Two things learned the hard way. The game's window dies with its host: killing a probe that
     has it embedded destroys the window, and the process goes on with no window at all, so it needs
     ending and a relaunch. And PrintWindow returns all white once a device has been reset, while the
@@ -249,13 +255,17 @@ SWP_NOSIZE, SWP_NOMOVE, SWP_NOZORDER, SWP_NOACTIVATE = 0x1, 0x2, 0x4, 0x10
 # --------------------------------------------------------------------------- the hooks
 # Ported from Deimos-Wizard101/libs/wizsprinter/wizwalker/extensions/wizsprinter/resolution_hook.py.
 
-# Where things are on the video manager, read from the function VideoManagerHook matches rather
-# than assumed: the pending byte is +0x2229B on live r806919 and +0x222A3 on the Test realm's exe,
-# and a write to the wrong one sets an unrelated byte and reports success.
-PENDING_TEST_AT = 0x3D  # 80 B9 disp32 00: cmp byte ptr [rcx + disp32], 0
-PENDING_CLEAR_AT = 0x1A0  # C6 83 disp32 00: mov byte ptr [rbx + disp32], 0
-DEVICE_LOAD_AT = 0x4A  # 48 8B 89 disp32: mov rcx, [rcx + disp32], the render device
-DEVICE_SIZE_OFF = 0x1C  # u32 width, u32 height on the device (the function reads them at +0x150)
+# Where things are on the video manager, read from the code VideoManagerHook matches rather
+# than assumed: the pending byte is +0x2229B on live r806919 and +0x222A3 on r813697, and a
+# write to the wrong one sets an unrelated byte and reports success. On r813697 the frame
+# function (GamebryoClient::PreRender) tests the byte and calls VidRestart, which applies the
+# change; r806919 had VidRestart inlined there. wizwalker reads the byte from VidRestart's clear,
+# so the probe reads it from PreRender's test, which makes the comparison in `slot` a real one.
+PENDING_TEST_AT = 0x3  # 80 B9 disp32 00: cmp byte ptr [rcx + disp32], 0
+VID_RESTART_CALL_AT = 0xC  # E8 rel32: call VidRestart
+VID_RESTART_BODY = b"\x48\x8b\xd9\x48\x8b\x89"  # mov rbx, rcx; mov rcx, [rcx + device], after its prologue
+PENDING_CLEAR_AT = 0x100  # C6 83 disp32 00 at the body + 0x100: mov byte ptr [rbx + disp32], 0
+DEVICE_SIZE_OFF = 0x1C  # u32 width, u32 height on the device
 
 
 class SetModeResHook(SimpleHook):
@@ -283,16 +293,13 @@ class SetModeResHook(SimpleHook):
 
 
 class VideoManagerHook(SimpleHook):
-    """Capture the video manager (rcx) at the per-frame pending-mode check."""
+    """Capture the video manager (rcx) at the per-frame pending-mode check, PreRender's, as r813697 builds it."""
 
-    pattern = (
-        rb"\x48\x8B\xC4\x48\x89\x58\x10\x48\x89\x70\x18\x55\x57\x41\x56"
-        rb"\x48\x8D\x68\x88\x48\x81\xEC\x60\x01\x00\x00"
-        rb"\x0F\x29\x70\xD8\x0F\x29\x78\xC8\x44\x0F\x29\x40\xB8"
-        rb"\x48\x8B\x05....\x48\x33\xC4\x48\x89\x45\x20\x48\x8B\xD9"
-    )
-    instruction_length = 7
-    noops = 2
+    pattern = rb"\x48\x8B\xD9\x80\xB9....\x00\x74.\xE8....\x84\xC0"
+    # mov rbx, rcx; cmp byte ptr [rcx + pending], 0. rax is dead here: the je's target and the
+    # call both set it before reading it.
+    instruction_length = 10
+    noops = 5
     exports = [("manager_ptr", 8)]
 
     async def bytecode_generator(self, packed_exports):
@@ -301,8 +308,7 @@ class VideoManagerHook(SimpleHook):
             b"\x48\xb8"
             + mgr  # mov rax, manager_ptr
             + b"\x48\x89\x08"  # mov [rax], rcx
-            + b"\x48\x8b\xc4"  # original: mov rax, rsp
-            + b"\x48\x89\x58\x10"  # original: mov [rax+0x10], rbx
+            + await self.read_bytes(self.jump_address, self.instruction_length)  # the original two
         )
 
 
@@ -313,10 +319,16 @@ async def manager_offsets(handler) -> tuple[int, int]:
     """
     match = await handler.pattern_scan(VideoManagerHook.pattern, module=MODULE)
     test = await handler.read_bytes(match + PENDING_TEST_AT, 7)
-    clear = await handler.read_bytes(match + PENDING_CLEAR_AT, 7)
-    device = await handler.read_bytes(match + DEVICE_LOAD_AT, 7)
-    if test[:2] != b"\x80\xb9" or clear[:2] != b"\xc6\x83" or device[:3] != b"\x48\x8b\x89":
-        raise RuntimeError(f"unexpected code: test {test.hex()}, clear {clear.hex()}, device {device.hex()}")
+    call = await handler.read_bytes(match + VID_RESTART_CALL_AT, 5)
+    vid_restart = match + VID_RESTART_CALL_AT + 5 + struct.unpack("<i", call[1:])[0]
+    opening = await handler.read_bytes(vid_restart, 0x40)
+    body = opening.find(VID_RESTART_BODY)
+    if test[:2] != b"\x80\xb9" or test[6] != 0 or call[0] != 0xE8 or body < 0:
+        raise RuntimeError(f"unexpected code: test {test.hex()}, call {call.hex()}, VidRestart {opening.hex()}")
+    device = await handler.read_bytes(vid_restart + body + 3, 7)
+    clear = await handler.read_bytes(vid_restart + body + PENDING_CLEAR_AT, 7)
+    if clear[:2] != b"\xc6\x83" or clear[6] != 0:
+        raise RuntimeError(f"unexpected code: clear {clear.hex()}")
     pending = struct.unpack("<I", test[2:6])[0]
     if struct.unpack("<I", clear[2:6])[0] != pending:
         raise RuntimeError(f"the test and the clear disagree: {test.hex()}, {clear.hex()}")
@@ -728,8 +740,7 @@ async def cmd_pending(client, args) -> None:
     """Read-only: where the pending byte is, from the code."""
     handler = client.hook_handler
     match = await handler.pattern_scan(VideoManagerHook.pattern, module=MODULE)
-    for label, at in (("test", PENDING_TEST_AT), ("clear", PENDING_CLEAR_AT), ("device", DEVICE_LOAD_AT)):
-        print(f"  {label} at match + {at:#x}: {(await handler.read_bytes(match + at, 7)).hex()}")
+    print(f"  PreRender's check and call at {match:#x}: {(await handler.read_bytes(match, 17)).hex()}")
     pending, device = await manager_offsets(handler)
     print(f"  pending byte +{pending:#x}, device pointer +{device:#x}")
     if args.refs:
