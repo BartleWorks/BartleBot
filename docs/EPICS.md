@@ -435,3 +435,29 @@ The rules every stage keeps:
 - **`install.md` stays plain markdown under its name**, since it is every release's notes.
 - **A visit sends nothing to anyone but GitHub**, and no page or screenshot carries player
   data or game art.
+
+## Walking routes
+
+Epic #322: every wizard moved by walking, along routes planned from each zone's own files,
+for when the server reset long written teleports. https://claude.ai/artifact/Ged4jK6Q1erSRjQ4uearvQ
+
+**Shelved on 2026-11-16, before any stage started.** Ahmarra's live build lets long written
+teleports hold again, so the nodes' teleports work and walking is not needed to keep the
+library running. The issues stay open, out of the 0.4.0 milestone. What existed is on the
+`walking-shelf` branch of each repo, which is `master` as it stood: here the four probes
+(`probe_walk_route.py`, `probe_walk_input.py`, `probe_walk_zones.py`, `probe_mob_paths.py`),
+in core `bartleby.runtime.movement` and `docs/WALKING.md`, and in BartleBuddy the followers.
+Bringing it back is a revert of each repo's merge that removed it. The game's rules of
+movement, kept current, are core's `docs/WIZARD101.md`, *Moving*.
+
+| stage | issue | what |
+|---|---|---|
+| 1 | core #14 | route planning and the shipped zone maps |
+| 2 | core #15 | walking a route: `RouteWalker` on a movement lease |
+| 3 | core #16 | doors and hops, the hop's limit measured |
+| 4 | #323 | the run's helpers walk |
+| 5 | #324 | fights and pickups by walking |
+| 6 | #325 | the other movers walk, and a guard that nothing else writes a position |
+| 7 | #326 | authoring for walking |
+| 8 | core #17 | verified links |
+| 9 | #327 | the bot library on live |
