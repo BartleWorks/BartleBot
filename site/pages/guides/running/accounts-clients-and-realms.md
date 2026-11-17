@@ -26,7 +26,7 @@ A launch profile starts several accounts at once, in the order you give them, so
 
 - **Player numbers** follow the order of the cards in the **Players** tab. Drag a card to reorder the players while no bot runs.
 - **Grouping**: with **Automatically group players** on, in Settings › Bot, a run puts every player in one group before its first step, and again after a crash. Every account must be on the others' friends lists.
-- **Teleporting to each other** goes through the friends list. BartleBot turns off the game's quick friend teleport in the games it launches, since it closes the list on a click. A game you started yourself keeps your own setting, and the **Safety Check** says so before a run. Turn **Dblclick Go To Friend** off in the game's **Options › Gameplay Options 4**.
+- **Teleporting to each other** goes through the friends list. When the players are in one group, [Sync in Zone](../../reference/teleportation.md#sync-in-zone) and potion refills use the game's quicker **Teleport to Leader** to reach the group's leader, outside a fight. BartleBot turns off the game's quick friend teleport in the games it launches, since it closes the list on a click. A game you started yourself keeps your own setting, and the **Safety Check** says so before a run. Turn **Dblclick Go To Friend** off in the game's **Options › Gameplay Options 4**.
 - **Unhook** and **Rehook**, on a player's card, take a game out of BartleBot's control and give it back, leaving the window open.
 
 ## Fit the game windows

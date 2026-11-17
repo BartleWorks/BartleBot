@@ -40,7 +40,7 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from bartleby.runtime.clients import sightings
+from bartleby.runtime.clients import group_manager, sightings
 from bartleby.runtime.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
 
 from bartlebot.clients import port_map
@@ -343,7 +343,7 @@ class _Trip:
                 return await self.together()
 
         ports = await self.ports()
-        leader = self.choose_leader(zones, ports, check)
+        leader = self.choose_leader(zones, ports, check, await self.leads(ports))
         if leader is None:
             return self.failed(f"no route to {self.target!r} from where any client is: {sorted(set(zones))}")
         self.leader = leader
@@ -358,16 +358,36 @@ class _Trip:
             return await self.together()
         return await self.solo(leader)
 
-    def choose_leader(self, zones: list[str], ports: port_map.PortMap, check: sightings.Sightings):
+    async def leads(self, ports: port_map.PortMap) -> list[bool | None]:
+        """Whether each client leads its group, by the HUD, read only where someone shares its group.
+
+        One HUD read each and no window, so it costs nothing next to the route; a client nobody
+        of ours is grouped with reads as None without one.
+        """
+
+        async def one(client) -> bool | None:
+            return await group_manager.hud_leads(client) if ports.may_lead(client, self.clients) else None
+
+        return list(await asyncio.gather(*(one(c) for c in self.clients)))
+
+    def choose_leader(
+        self,
+        zones: list[str],
+        ports: port_map.PortMap,
+        check: sightings.Sightings,
+        leads: list[bool | None] | None = None,
+    ):
         """A client already there that others can port to, then the client in the largest group
         that already sees itself, then the one the most others can port to, then the one with the
-        cheapest route, then player order.
+        cheapest route, then the group's leader, then player order.
 
         One already there first because a port is one loading screen for any number of clients,
         while a leader that travels costs a whole route and still has the others port to it --
         including the one that was already there. The largest group next because everyone the
         leader does not see has to move; the rest is choose_navigator's old ranking, for who can
-        reach the target and be reached.
+        reach the target and be reached. Between clients that tie on all of that, the one that
+        leads its group (`leads`, from self.leads) travels, so the others can take Teleport to
+        Leader to it (port_map.LEADER).
         """
         best = None
         for index, (client, zone) in enumerate(zip(self.clients, zones)):
@@ -375,7 +395,15 @@ class _Trip:
             if route is None:
                 continue
             reach = ports.reach(client, self.clients)
-            key = (not (route == [] and reach), -len(check.group_of(index)), -len(reach), route_cost(route), index)
+            leading = bool(leads) and leads[index] is True
+            key = (
+                not (route == [] and reach),
+                -len(check.group_of(index)),
+                -len(reach),
+                route_cost(route),
+                not leading,
+                index,
+            )
             if best is None or key < best[0]:
                 best = (key, client)
         return None if best is None else best[1]

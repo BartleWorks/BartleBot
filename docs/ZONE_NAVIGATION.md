@@ -294,16 +294,24 @@ together.
 
 The client that travels -- the leader -- is one already in the target zone that others can port to,
 then one in the largest group that already sees itself (see below), then the one the most others can
-port to, then the one with the cheapest route, then the lowest player number. A client already there
+port to, then the one with the cheapest route, then the one the HUD shows leading the game's group
+(`_Trip.leads`, read only where another client shares its group, and with no window), then the
+lowest player number. The group leader breaks a tie so that the others can take Teleport to Leader to
+it. A client already there
 outranks a larger group elsewhere: following the group costs a whole route and still moves the client
 that was there, where porting to it is one loading screen for everyone. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
 cannot port to one another travel together instead, regrouping first if they are split: at the hub
 within one world, at home across worlds.
 
 **Who can port to whom** is `bartlebot/clients/port_map.py`, surveyed in pre-run setup: every client's
-online friends list, then the Group tab if the friends lists leave a pair unconnected. A port goes
-through the friends list where there is one, else through the group (the member's roster line, then
-Go To Player). Ports run in waves, so a client with no route to the traveller still gets there
+online friends list, then who shares a group. That is pre-run grouping's states when there are some;
+else, when the HUD shows every client grouped and exactly one leading, that leader's roster alone,
+one social-window visit; else, only if the friends lists leave a pair unconnected, every Group tab.
+A port goes by the HUD's Teleport to Leader when the two share a group and the target leads it, then
+through the friends list, then through the group (the member's roster line, then Go To Player).
+Leadership is never surveyed: `port_waves` reads `hud_leads` on each possible target once per wave,
+since a crash or relog hands the group on, and a target in battle or loading reads None and is not
+offered it. A recovery regroup's `set_groups` rebuilds the group and leader routes together. Ports run in waves, so a client with no route to the traveller still gets there
 through someone who already has. A route that fails is dropped for the rest of the run, and a client
 that cannot port at all travels there itself once the others have arrived.
 

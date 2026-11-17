@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from bartleby.runtime.clients import group_manager
 from bartleby.runtime.game import wizard_names
 
 from bartlebot.clients import port_map
@@ -615,6 +616,55 @@ async def test_a_split_start_follows_the_client_with_the_cheapest_route(monkeypa
     assert game.groups == [[2]]
     assert game.calls[0][1]["from_zone"] == _S1
     assert game.waves == [([1], [2])]
+
+
+def _grouped(game: _Game, leader: int, monkeypatch) -> list:
+    """Everyone friends and in one group that player `leader` leads, by the HUD; and the record of its reads."""
+    names = _NAMES[: len(game.clients)]
+    game.survey.return_value = port_map.PortMap.from_survey(
+        names, [[n for n in names if n != me] for me in names], [tuple(names) for _ in names]
+    )
+    read: list = []
+
+    async def hud_leads(client):
+        read.append(client)
+        return game.number(client) == leader
+
+    monkeypatch.setattr(group_manager, "hud_leads", hud_leads)
+    return read
+
+
+async def test_between_clients_that_tie_the_group_leader_travels(monkeypatch):
+    """So the others can take Teleport to Leader to it once it arrives."""
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+    read = _grouped(game, 2, monkeypatch)
+
+    outcome = await _go(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert game.groups == [[2], [2], [2]]
+    assert game.waves == [([1], [2])]
+    assert read == game.clients, "each client's leadership is read once, with no window"
+
+
+async def test_the_group_leader_does_not_outrank_a_cheaper_route(monkeypatch):
+    game = _Game(monkeypatch, [_DELTA, _S1], friends=True)
+    _grouped(game, 1, monkeypatch)
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[2]]
+
+
+async def test_leadership_is_not_read_when_nobody_shares_a_group(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+    hud = AsyncMock()
+    monkeypatch.setattr(group_manager, "hud_leads", hud)
+
+    assert (await _go(game, _nav(*_LONG), _ISLAND)).success
+    assert game.groups == [[1], [1], [1]]
+    hud.assert_not_awaited()
 
 
 async def test_a_client_already_there_is_the_one_the_others_port_to(monkeypatch):
