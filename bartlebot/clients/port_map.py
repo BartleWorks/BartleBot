@@ -139,10 +139,16 @@ class PortMap:
         """
         return any(LEADER in self._kinds(c, dst) for c in clients if c is not dst)
 
-    def demote(self, src, dst, route: str) -> None:
-        """Stop offering `route` from `src` to `dst`: it failed, and will not be tried again this run."""
-        pair = (_key(wizard_names.cached_name(src)), _key(wizard_names.cached_name(dst)))
-        self._routes.get(pair, set()).discard(route)
+    def demote(self, src, dst, route: str) -> bool:
+        """Stop offering `route` from `src` to `dst`: it failed, and will not be tried again this run.
+
+        Returns whether it was still offered, so a caller can tell a demotion from a no-op.
+        """
+        kinds = self._kinds(src, dst)
+        if route not in kinds:
+            return False
+        kinds.discard(route)
+        return True
 
     def friends_everywhere(self, names: Sequence[str | None]) -> bool:
         """Whether every one of these named clients has the friends-list route to every other."""
@@ -176,7 +182,7 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     input goes to its own window -- then closed. Then who is in a group with whom, which puts
     the leader route and the group route in reach: from `states` when pre-run grouping has
     just read them, else from the one leader's roster when the HUD shows every client grouped
-    and one of them leading (_leader_rosters), which is one social-window visit in all. Only
+    and one of them leading (group_manager.leader_roster), one social-window visit in all. Only
     when that cannot vouch for everyone and the friends lists leave a pair unconnected is
     every Group tab read, at a visit per client.
     """
@@ -203,27 +209,15 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
 async def _leader_rosters(clients: list, names: Sequence[str | None]) -> list[tuple[str, ...]] | None:
     """Each client's Group tab roster as the one leader among them shows it, from one visit.
 
-    None unless the HUD shows every client grouped and exactly one leading, read with no
-    window opened (group_manager.hud_grouped, hud_leads). A wizard is in one group at most, so
-    every one of ours that the leader's roster lists shares its roster, and one it does not
-    list gets an empty one: it is grouped elsewhere, with nobody of ours to lead it. The same
-    reasoning as group_manager.is_grouped's one-leader fast path, which core keeps private.
+    None unless the HUD shows every client grouped and exactly one leading, and that leader's
+    roster lists it (group_manager.leader_roster). A wizard is in one group at most, so every
+    one of ours that the roster lists shares it, and one it does not list gets an empty one:
+    it is grouped elsewhere, with nobody of ours to lead it.
     """
-    grouped, leads = await asyncio.gather(
-        asyncio.gather(*(group_manager.hud_grouped(c) for c in clients)),
-        asyncio.gather(*(group_manager.hud_leads(c) for c in clients)),
-    )
-    if not all(g is True for g in grouped) or any(lead is None for lead in leads):
+    found = await group_manager.leader_roster(clients)
+    if found is None or not found.lists(names[found.index]):
         return None
-    leaders = [i for i, lead in enumerate(leads) if lead]
-    if len(leaders) != 1:
-        return None
-    leader = clients[leaders[0]]
-    state = await run_trace.traced(group_manager.read_group_state(leader), "port_survey.leader_roster", client=leader)
-    listed = {key for member in state.roster if (key := _key(member))}
-    if not state.grouped or _key(names[leaders[0]]) not in listed:
-        return None
-    return [state.roster if _key(name) in listed else () for name in names]
+    return [found.state.roster if found.lists(name) else () for name in names]
 
 
 async def _online_friends(client) -> list[str] | None:
@@ -250,8 +244,12 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
 
     Each wave sends every waiting client with a route to someone who has arrived, in ROUTES'
     order; whoever lands counts as arrived for the next wave, which is how a client with no
-    route to the first arrival still gets there through another. Stops when nobody is waiting
-    or a wave moves nobody. `clients` is only for naming players by number in the log.
+    route to the first arrival still gets there through another. A batch that fails demotes its
+    route, and its movers go into the next wave on their next one, so a failed Teleport to
+    Leader falls back to the friends list in the same call. Stops when nobody is waiting, or a
+    wave moves nobody and demotes nothing: a refusal (a friend busy) demotes nothing, so it is
+    not retried on its own, and since every other wave moves a client or uses up a route, the
+    loop ends. `clients` is only for naming players by number in the log.
 
     Each wave reads, once per arrived client, whether it leads its group, and only for one a
     waiting client shares a group with (PortMap.may_lead). Read every wave rather than kept,
@@ -275,22 +273,22 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
                     break
         if not batches:
             break
-        landed = await asyncio.gather(
+        outcomes = await asyncio.gather(
             *(
                 _port_batch(machine, movers, target, route, port_map, number)
                 for (_, route), (target, movers) in batches.items()
             )
         )
-        moved = [client for batch in landed for client in batch]
-        if not moved:
+        moved = [client for landed, _ in outcomes for client in landed]
+        if not moved and not any(demoted for _, demoted in outcomes):
             break
         arrived += moved
         waiting = [c for c in waiting if not any(c is m for m in moved)]
     return waiting
 
 
-async def _port_batch(machine, movers: list, target, route: str, port_map: PortMap, number) -> list:
-    """Port `movers` to `target` along `route`, and return the ones that landed with it.
+async def _port_batch(machine, movers: list, target, route: str, port_map: PortMap, number) -> tuple[list, bool]:
+    """Port `movers` to `target` along `route`; return the ones that landed with it, and whether a route was demoted.
 
     Landing is the target's zone *and* its realm, the second told by the two seeing each
     other (#130): a port that fails silently can leave a mover in the right zone on the
@@ -309,9 +307,7 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
         machine.log(f"The {route} route from player(s) {who} to player {to} could not start", logging.WARNING)
-        for client in movers:
-            port_map.demote(client, target, route)
-        return []
+        return [], _demote(port_map, movers, target, route)
     if result.refusal:
         machine.log(f"Port to player {to} refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
 
@@ -341,9 +337,14 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
             f"Player(s) {[number(c) for c in in_zone if c not in landed]} reached player {to}'s zone but not its realm",
             logging.WARNING,
         )
+    demoted = False
     if not result.refusal:
         # A refusal is the moment (a friend busy), not the route; anything else that did not land is.
-        for client in movers:
-            if not any(client is c for c in landed):
-                port_map.demote(client, target, route)
-    return landed
+        strays = [client for client in movers if not any(client is c for c in landed)]
+        demoted = _demote(port_map, strays, target, route)
+    return landed, demoted
+
+
+def _demote(port_map: PortMap, movers: list, target, route: str) -> bool:
+    """Demote `route` from each of `movers` to `target`; whether any of them still had it."""
+    return any([port_map.demote(client, target, route) for client in movers])

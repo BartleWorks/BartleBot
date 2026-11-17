@@ -306,14 +306,17 @@ within one world, at home across worlds.
 **Who can port to whom** is `bartlebot/clients/port_map.py`, surveyed in pre-run setup: every client's
 online friends list, then who shares a group. That is pre-run grouping's states when there are some;
 else, when the HUD shows every client grouped and exactly one leading, that leader's roster alone,
-one social-window visit; else, only if the friends lists leave a pair unconnected, every Group tab.
+one social-window visit (core's `group_manager.leader_roster`); else, only if the friends lists leave a pair unconnected, every Group tab.
 A port goes by the HUD's Teleport to Leader when the two share a group and the target leads it, then
 through the friends list, then through the group (the member's roster line, then Go To Player).
 Leadership is never surveyed: `port_waves` reads `hud_leads` on each possible target once per wave,
 since a crash or relog hands the group on, and a target in battle or loading reads None and is not
 offered it. A recovery regroup's `set_groups` rebuilds the group and leader routes together. Ports run in waves, so a client with no route to the traveller still gets there
-through someone who already has. A route that fails is dropped for the rest of the run, and a client
-that cannot port at all travels there itself once the others have arrived.
+through someone who already has. A route that fails is dropped for the rest of the run, and its movers
+try their next route in the next wave of the same call, so a failed Teleport to Leader falls back to the
+friends list at once. The waves end when one moves nobody and drops no route: a refusal (a friend busy)
+drops nothing, so it is not retried on its own. A client that cannot port at all travels there itself
+once the others have arrived.
 
 **A client that misses a step** while travelling together gets one more go at it alone; for a walk
 through a gate that has been opened, only the walk is retried. A client that misses it again stays

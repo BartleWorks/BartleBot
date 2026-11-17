@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from bartleby.runtime.clients import group_manager
-from bartleby.runtime.clients.group_manager import GroupState
+from bartleby.runtime.clients.group_manager import GroupState, LeaderRoster
 from bartleby.runtime.game import wizard_names
 
 from bartlebot.clients import port_map
@@ -74,18 +74,9 @@ def _leading(*leaders):
     return hud_leads, read
 
 
-def _set_hud(monkeypatch, clients, grouped, leads):
-    """The HUD, per client in order: whether each reads grouped, and whether each leads."""
-    by_grouped, by_leads = dict(zip(clients, grouped)), dict(zip(clients, leads))
-
-    async def hud_grouped(client):
-        return by_grouped[client]
-
-    async def hud_leads(client):
-        return by_leads[client]
-
-    monkeypatch.setattr(group_manager, "hud_grouped", hud_grouped)
-    monkeypatch.setattr(group_manager, "hud_leads", hud_leads)
+def _no_one_leader(monkeypatch):
+    """The HUD names no one leader among the clients, so there is no roster to read on the cheap."""
+    monkeypatch.setattr(group_manager, "leader_roster", AsyncMock(return_value=None))
 
 
 def _friends(monkeypatch, clients, lists):
@@ -257,16 +248,14 @@ async def test_the_survey_skips_the_group_tab_when_friends_connect_everyone(monk
     set_helper(monkeypatch, "list_online_friends", AsyncMock(side_effect=lambda c: friends[c]))
     close = AsyncMock(return_value=True)
     set_helper(monkeypatch, "close_friends_list", close)
-    _set_hud(monkeypatch, clients, [False, False], [False, False])
-    states, visit = AsyncMock(), AsyncMock()
+    _no_one_leader(monkeypatch)
+    states = AsyncMock()
     monkeypatch.setattr(group_manager, "read_group_states", states)
-    monkeypatch.setattr(group_manager, "read_group_state", visit)
 
     pm = await port_map.survey(clients, names=[_A, _B])
 
     assert pm.routes(clients[0], clients[1], dst_leads=True) == ["friend"]
     states.assert_not_awaited()
-    visit.assert_not_awaited()
     assert close.await_count == 2
 
 
@@ -275,15 +264,14 @@ async def test_the_survey_reads_only_the_one_leaders_roster(monkeypatch, friends
     """Everyone grouped and one leading, by the HUD: one social-window visit puts all three in its group."""
     clients = _clients(_A, _B, _C)
     _friends(monkeypatch, clients, friends)
-    _set_hud(monkeypatch, clients, [True, True, True], [False, True, False])
-    visit = AsyncMock(return_value=GroupState(True, (_B, _A, _C), leads=True))
-    monkeypatch.setattr(group_manager, "read_group_state", visit)
+    found = AsyncMock(return_value=LeaderRoster(1, GroupState(True, (_B, _A.upper(), _C), leads=True)))
+    monkeypatch.setattr(group_manager, "leader_roster", found)
     states = AsyncMock()
     monkeypatch.setattr(group_manager, "read_group_states", states)
 
     pm = await port_map.survey(clients, names=[_A, _B, _C])
 
-    visit.assert_awaited_once_with(clients[1])
+    found.assert_awaited_once_with(clients)
     states.assert_not_awaited()
     assert pm.routes(clients[0], clients[1], dst_leads=True)[0] == "leader"
     assert pm.routes(clients[2], clients[1], dst_leads=True)[0] == "leader"
@@ -294,9 +282,8 @@ async def test_a_client_the_leaders_roster_leaves_out_has_no_group_route(monkeyp
     """C is grouped somewhere else: with the friends lists connecting everyone, nothing more is read."""
     clients = _clients(_A, _B, _C)
     _friends(monkeypatch, clients, [[_B, _C], [_A, _C], [_A, _B]])
-    _set_hud(monkeypatch, clients, [True, True, True], [True, False, False])
-    visit = AsyncMock(return_value=GroupState(True, (_A, _B), leads=True))
-    monkeypatch.setattr(group_manager, "read_group_state", visit)
+    found = LeaderRoster(0, GroupState(True, (_A, _B), leads=True))
+    monkeypatch.setattr(group_manager, "leader_roster", AsyncMock(return_value=found))
     states = AsyncMock()
     monkeypatch.setattr(group_manager, "read_group_states", states)
 
@@ -308,21 +295,20 @@ async def test_a_client_the_leaders_roster_leaves_out_has_no_group_route(monkeyp
 
 
 @pytest.mark.parametrize(
-    "grouped, leads",
-    [([True, True], [True, True]), ([True, True], [False, None]), ([True, None], [True, None])],
-    ids=["two leaders", "leadership unreadable", "membership unreadable"],
+    "found",
+    [None, LeaderRoster(0, GroupState(True, (_B,))), LeaderRoster(0, GroupState(True, (_A,)))],
+    ids=["no one leader", "a roster without its leader", "a roster without one of ours"],
 )
-async def test_the_survey_reads_every_group_tab_when_the_hud_cannot_vouch(monkeypatch, grouped, leads):
+async def test_the_survey_reads_every_group_tab_when_one_roster_cannot_vouch_for_everyone(monkeypatch, found):
     clients = _clients(_A, _B)
     _friends(monkeypatch, clients, [[], []])
-    _set_hud(monkeypatch, clients, grouped, leads)
-    visit = AsyncMock()
-    monkeypatch.setattr(group_manager, "read_group_state", visit)
-    monkeypatch.setattr(group_manager, "read_group_states", AsyncMock(return_value=[GroupState(True, (_A, _B))] * 2))
+    monkeypatch.setattr(group_manager, "leader_roster", AsyncMock(return_value=found))
+    states = AsyncMock(return_value=[GroupState(True, (_A, _B))] * 2)
+    monkeypatch.setattr(group_manager, "read_group_states", states)
 
     pm = await port_map.survey(clients, names=[_A, _B])
 
-    visit.assert_not_awaited()
+    states.assert_awaited_once()
     assert pm.routes(clients[0], clients[1]) == ["group"]
 
 
@@ -349,7 +335,7 @@ async def test_the_survey_reads_the_group_tab_when_a_pair_is_not_friends(monkeyp
     clients = _clients(_A, _B)
     set_helper(monkeypatch, "list_online_friends", AsyncMock(side_effect=ValueError("No friends online")))
     set_helper(monkeypatch, "close_friends_list", AsyncMock(return_value=True))
-    _set_hud(monkeypatch, clients, [None, None], [None, None])
+    _no_one_leader(monkeypatch)
     monkeypatch.setattr(group_manager, "read_group_states", AsyncMock(return_value=[GroupState(True, (_A, _B))] * 2))
 
     pm = await port_map.survey(clients, names=[_A, _B])
@@ -466,16 +452,82 @@ async def test_leadership_is_read_once_per_target_per_wave_and_only_where_it_can
     assert group_calls == [([c], _A.lower())]
 
 
-async def test_a_leader_route_that_cannot_start_is_demoted(monkeypatch):
+async def test_a_failed_leader_port_falls_back_to_the_friends_list_in_the_same_call(monkeypatch):
     a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
-    pm = PortMap.from_survey([_A, _B], [[], []], [(_A, _B), (_A, _B)])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(_A, _B), (_A, _B)])
     monkeypatch.setattr(group_manager, "hud_leads", AsyncMock(return_value=True))
-    monkeypatch.setattr(
-        group_manager, "port_to_leader", AsyncMock(side_effect=ValueError("the group menu did not open"))
+    leader = AsyncMock(side_effect=ValueError("the group menu did not open"))
+    monkeypatch.setattr(group_manager, "port_to_leader", leader)
+    port, calls = _fake_port([a, b])
+    set_helper(monkeypatch, "port_to_friend", port)
+
+    assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], pm) == []
+    leader.assert_awaited_once()
+    assert calls == [([b], _A.lower())]
+    assert pm.routes(b, a, dst_leads=True) == ["friend", "group"], "the leader route stays demoted"
+
+
+async def test_a_port_that_does_not_land_tries_the_next_route(monkeypatch):
+    """Not only a port that cannot start: one that goes nowhere demotes its route too, and the next is tried."""
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(_A, _B), (_A, _B)])
+    monkeypatch.setattr(group_manager, "hud_leads", AsyncMock(return_value=False))
+    set_helper(
+        monkeypatch, "port_to_friend", AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading=set()))
     )
+    group, calls = _fake_port([a, b])
+    monkeypatch.setattr(group_manager, "port_to_group_member", group)
+
+    assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], pm) == []
+    assert calls == [([b], _A.lower())]
+
+
+async def test_a_refused_port_is_not_retried(monkeypatch):
+    """A refusal is the moment, not the route: nothing is demoted, so no wave follows."""
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(_A, _B), (_A, _B)])
+    monkeypatch.setattr(group_manager, "hud_leads", AsyncMock(return_value=False))
+    refused = AsyncMock(return_value=node_helpers.PortToFriendResult(seen_loading=set(), refusal="busy"))
+    set_helper(monkeypatch, "port_to_friend", refused)
+    group = AsyncMock()
+    monkeypatch.setattr(group_manager, "port_to_group_member", group)
 
     assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], pm) == [b]
-    assert pm.routes(b, a, dst_leads=True) == ["group"]
+    refused.assert_awaited_once()
+    group.assert_not_awaited()
+    assert pm.routes(b, a) == ["friend", "group"]
+
+
+async def test_a_pair_whose_every_route_fails_ends_with_the_mover_still_waiting(monkeypatch):
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(_A, _B), (_A, _B)])
+    monkeypatch.setattr(group_manager, "hud_leads", AsyncMock(return_value=True))
+    leader = AsyncMock(side_effect=ValueError("the group menu did not open"))
+    monkeypatch.setattr(group_manager, "port_to_leader", leader)
+    friend = AsyncMock(side_effect=ValueError("not on the list"))
+    set_helper(monkeypatch, "port_to_friend", friend)
+    group = AsyncMock(side_effect=ValueError("not on the roster"))
+    monkeypatch.setattr(group_manager, "port_to_group_member", group)
+
+    assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], pm) == [b]
+    assert (leader.await_count, friend.await_count, group.await_count) == (1, 1, 1)
+    assert pm.routes(b, a, dst_leads=True) == []
+
+
+async def test_a_client_with_no_routes_left_stays_waiting_while_the_others_arrive(monkeypatch):
+    """B's only route, the group, fails and C's friend port lands: the wave after has nothing for B."""
+    a, b, c = _clients(_A, _B, _C, zones=["Alpha/S1", "Beta/Hub", "Gamma/Hub"])
+    pm = PortMap.from_survey([_A, _B, _C], [[], [], [_A]], [(_A, _B), (_A, _B), ()])
+    monkeypatch.setattr(group_manager, "hud_leads", AsyncMock(return_value=False))
+    group = AsyncMock(side_effect=ValueError("not on the roster"))
+    monkeypatch.setattr(group_manager, "port_to_group_member", group)
+    port, calls = _fake_port([a, b, c])
+    set_helper(monkeypatch, "port_to_friend", port)
+
+    assert await port_map.port_waves(FakeMachine(), [a, b, c], [b, c], [a], pm) == [b]
+    group.assert_awaited_once()
+    assert calls == [([c], _A.lower())]
+    assert c.where == "Alpha/S1"
 
 
 async def test_a_route_that_cannot_start_is_demoted_and_never_names_the_player(monkeypatch):
