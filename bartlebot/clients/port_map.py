@@ -2,8 +2,13 @@
 
 A port is the cheapest zone change there is for a group: one loading screen, from anywhere,
 for any number of clients. Zone navigation leans on it -- one client travels the route and the
-rest port to it -- but a port only works between two of ours who can see each other: friends,
-through the friends list, or failing that members of the same group, through the Group tab.
+rest port to it -- but a port only works between two of ours who can see each other: a member to
+its group leader, by the HUD's Teleport to Leader; friends, through the friends list; or failing
+those, members of the same group, through the Group tab.
+
+Who leads is read at the port, never surveyed: the game has no way to hand leadership on, so it
+moves only when the leader leaves or logs off -- after a crash or a relog -- and a survey's answer
+would outlive it. What the survey keeps is the group, which is what puts a leader in reach.
 
 That is surveyed once before the run (AppController's pre-run setup) rather than discovered by
 failing a port mid-route: a friends list is one text read, while a failed port costs its whole
@@ -32,10 +37,14 @@ from bartlebot.nodes import node_helpers
 
 logger = logging.getLogger(__name__)
 
+LEADER = "leader"
 FRIEND = "friend"
 GROUP = "group"
-ROUTES = (FRIEND, GROUP)
-"""In order of preference: the friends list takes one window, the group route two."""
+ROUTES = (LEADER, FRIEND, GROUP)
+"""In order of preference: Teleport to Leader is two clicks on the HUD and no confirmation, the
+friends list takes one window, the group route two."""
+
+_HOW = {LEADER: "by Teleport to Leader", FRIEND: "through the friends list", GROUP: "through the group"}
 
 
 def _key(name: str | None) -> str | None:
@@ -74,7 +83,9 @@ class PortMap:
         """Build from what a survey read, every argument positionally aligned with the clients.
 
         `friends[i]` is the online friends list client i showed (None when unreadable) and
-        `rosters[i]` the names on its Group tab. Only pairs of our own clients are kept.
+        `rosters[i]` the names on its Group tab. Only pairs of our own clients are kept. A
+        shared group gives both the group route and the leader route, the second offered only
+        while its target leads (routes).
         """
         ours = {key for name in names if (key := _key(name))}
         routes: dict[tuple[str, str], set[str]] = {}
@@ -87,7 +98,7 @@ class PortMap:
                 if dst in ours and dst != src:
                     routes.setdefault((src, dst), set()).add(FRIEND)
         for pair in _group_pairs(names, rosters):
-            routes.setdefault(pair, set()).add(GROUP)
+            routes.setdefault(pair, set()).update((GROUP, LEADER))
         return cls(routes)
 
     def set_groups(self, names: Sequence[str | None], rosters: Sequence[Sequence[str]]) -> None:
@@ -95,21 +106,38 @@ class PortMap:
 
         For after a regroup: a crash drops a client from its group, so the group routes the
         run started with no longer hold, while its friendships do. Friend routes are kept as
-        they are, demotions included; group routes are rebuilt from scratch, since a demoted
-        one failed against a group that no longer exists.
+        they are, demotions included; group and leader routes are rebuilt from scratch, since a
+        demoted one failed against a group that no longer exists. Whoever leads the new group
+        is read at the next port, as always.
         """
         for kinds in self._routes.values():
-            kinds.discard(GROUP)
+            kinds.difference_update((GROUP, LEADER))
         for pair in _group_pairs(names, rosters):
-            self._routes.setdefault(pair, set()).add(GROUP)
+            self._routes.setdefault(pair, set()).update((GROUP, LEADER))
 
-    def routes(self, src, dst) -> list[str]:
-        """The routes client `src` has to client `dst`, preferred first; [] if either name is unknown."""
+    def _kinds(self, src, dst) -> set[str]:
         pair = (_key(wizard_names.cached_name(src)), _key(wizard_names.cached_name(dst)))
         if None in pair:
-            return []
-        kinds = self._routes.get(pair, set())
-        return [route for route in ROUTES if route in kinds]
+            return set()
+        return self._routes.get(pair, set())
+
+    def routes(self, src, dst, dst_leads: bool | None = None) -> list[str]:
+        """The routes client `src` has to client `dst`, preferred first; [] if either name is unknown.
+
+        The leader route needs `dst_leads`, whether `dst` leads its group as the HUD read it
+        just now (group_manager.hud_leads): it is offered only when that is True and the two
+        share a group. Left out, the answer is the routes that need no read, which is what a
+        caller that does not port wants: a shared group always gives the group route too.
+        """
+        kinds = self._kinds(src, dst)
+        return [route for route in ROUTES if route in kinds and (route != LEADER or dst_leads is True)]
+
+    def may_lead(self, dst, clients: Sequence) -> bool:
+        """Whether any of `clients` could reach `dst` by Teleport to Leader, were `dst` to lead.
+
+        Says whose leadership is worth reading: one HUD read each, but only where it can matter.
+        """
+        return any(LEADER in self._kinds(c, dst) for c in clients if c is not dst)
 
     def demote(self, src, dst, route: str) -> None:
         """Stop offering `route` from `src` to `dst`: it failed, and will not be tried again this run."""
@@ -145,9 +173,12 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     """Read who can port to whom. Never raises: whatever cannot be read simply has no route.
 
     Every client's friends list is read concurrently -- one text read each, and each client's
-    input goes to its own window -- then closed. The Group tab is only read when the friends
-    lists leave a pair unconnected, since it costs a social-window visit per client; `states`
-    skips even that when pre-run grouping has just read them.
+    input goes to its own window -- then closed. Then who is in a group with whom, which puts
+    the leader route and the group route in reach: from `states` when pre-run grouping has
+    just read them, else from the one leader's roster when the HUD shows every client grouped
+    and one of them leading (_leader_rosters), which is one social-window visit in all. Only
+    when that cannot vouch for everyone and the friends lists leave a pair unconnected is
+    every Group tab read, at a visit per client.
     """
     if len(clients) < 2:
         return PortMap()
@@ -157,12 +188,42 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     friends = list(
         await asyncio.gather(*(run_trace.traced(_online_friends(c), "port_survey.friends", client=c) for c in clients))
     )
+    if states is not None:
+        return PortMap.from_survey(names, friends, [state.roster for state in states])
     no_rosters = [() for _ in clients]
+    rosters = await _leader_rosters(clients, names)
+    if rosters is not None and all(rosters):
+        return PortMap.from_survey(names, friends, rosters)
     if PortMap.from_survey(names, friends, no_rosters).friends_everywhere(names):
-        return PortMap.from_survey(names, friends, no_rosters)
-    if states is None:
-        states = await group_manager.read_group_states(clients)
+        return PortMap.from_survey(names, friends, rosters or no_rosters)
+    states = await group_manager.read_group_states(clients)
     return PortMap.from_survey(names, friends, [state.roster for state in states])
+
+
+async def _leader_rosters(clients: list, names: Sequence[str | None]) -> list[tuple[str, ...]] | None:
+    """Each client's Group tab roster as the one leader among them shows it, from one visit.
+
+    None unless the HUD shows every client grouped and exactly one leading, read with no
+    window opened (group_manager.hud_grouped, hud_leads). A wizard is in one group at most, so
+    every one of ours that the leader's roster lists shares its roster, and one it does not
+    list gets an empty one: it is grouped elsewhere, with nobody of ours to lead it. The same
+    reasoning as group_manager.is_grouped's one-leader fast path, which core keeps private.
+    """
+    grouped, leads = await asyncio.gather(
+        asyncio.gather(*(group_manager.hud_grouped(c) for c in clients)),
+        asyncio.gather(*(group_manager.hud_leads(c) for c in clients)),
+    )
+    if not all(g is True for g in grouped) or any(lead is None for lead in leads):
+        return None
+    leaders = [i for i, lead in enumerate(leads) if lead]
+    if len(leaders) != 1:
+        return None
+    leader = clients[leaders[0]]
+    state = await run_trace.traced(group_manager.read_group_state(leader), "port_survey.leader_roster", client=leader)
+    listed = {key for member in state.roster if (key := _key(member))}
+    if not state.grouped or _key(names[leaders[0]]) not in listed:
+        return None
+    return [state.roster if _key(name) in listed else () for name in names]
 
 
 async def _online_friends(client) -> list[str] | None:
@@ -187,10 +248,14 @@ async def _online_friends(client) -> list[str] | None:
 async def port_waves(machine, clients: list, waiting: list, arrived: list, port_map: PortMap) -> list:
     """Port every client in `waiting` to one in `arrived`, and return those still waiting.
 
-    Each wave sends every waiting client with a route to someone who has arrived, friends list
-    first; whoever lands counts as arrived for the next wave, which is how a client with no
+    Each wave sends every waiting client with a route to someone who has arrived, in ROUTES'
+    order; whoever lands counts as arrived for the next wave, which is how a client with no
     route to the first arrival still gets there through another. Stops when nobody is waiting
     or a wave moves nobody. `clients` is only for naming players by number in the log.
+
+    Each wave reads, once per arrived client, whether it leads its group, and only for one a
+    waiting client shares a group with (PortMap.may_lead). Read every wave rather than kept,
+    since a crash or a relog moves the leadership mid-run.
     """
     waiting, arrived = list(waiting), list(arrived)
 
@@ -198,10 +263,13 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
         return next((i + 1 for i, c in enumerate(clients) if c is client), 0)
 
     while waiting:
+        maybe = [a for a in arrived if port_map.may_lead(a, waiting)]
+        read = await asyncio.gather(*(group_manager.hud_leads(a) for a in maybe))
+        leads = {id(a): lead for a, lead in zip(maybe, read)}
         batches: dict[tuple[int, str], tuple[object, list]] = {}
         for client in waiting:
             for route in ROUTES:
-                target = next((a for a in arrived if route in port_map.routes(client, a)), None)
+                target = next((a for a in arrived if route in port_map.routes(client, a, leads.get(id(a)))), None)
                 if target is not None:
                     batches.setdefault((id(target), route), (target, []))[1].append(client)
                     break
@@ -229,10 +297,15 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
     wrong realm, which would enter the next dungeon or battle on its own.
     """
     who, to = [number(c) for c in movers], number(target)
-    machine.log(f"Porting player(s) {who} to player {to} through the {'friends list' if route == FRIEND else 'group'}")
-    start = node_helpers.port_to_friend if route == FRIEND else group_manager.port_to_group_member
+    machine.log(f"Porting player(s) {who} to player {to} {_HOW[route]}")
     try:
-        result = await start(movers, (wizard_names.cached_name(target) or "").lower())
+        if route == LEADER:
+            # Teleport to Leader takes no name: each mover goes to its own leader, which the
+            # group and the read just taken say is `target`. The landing check below catches it if not.
+            result = await group_manager.port_to_leader(movers)
+        else:
+            start = node_helpers.port_to_friend if route == FRIEND else group_manager.port_to_group_member
+            result = await start(movers, (wizard_names.cached_name(target) or "").lower())
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
         machine.log(f"The {route} route from player(s) {who} to player {to} could not start", logging.WARNING)
