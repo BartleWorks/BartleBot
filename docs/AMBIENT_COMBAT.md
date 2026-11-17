@@ -21,7 +21,8 @@ design around a guess: ask.
   have time to arrive and a full group can be in by round one.
 - **Porting to a player in a fight works** through the friends list, unless the zone blocks
   teleports. Inside a dungeon it depends on the dungeon. Teleport to Leader is never tried: the
-  group HUD hides in battle, so the fighter's leadership reads None (`port_map.port_waves`).
+  group HUD hides in battle, so the group record proves no one in the fighter's group
+  (`port_map.port_waves`).
 - **Realms are the hazard.** Teleporting to a duel circle's coordinates from another realm starts a
   *separate* fight. Clients in one zone on different realms are normal for reagent bots.
 - **The ghost window.** After a fight, a player cannot be pulled into another for 30s if it stays

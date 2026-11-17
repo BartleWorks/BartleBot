@@ -343,7 +343,7 @@ class _Trip:
                 return await self.together()
 
         ports = await self.ports()
-        leader = self.choose_leader(zones, ports, check, await self.leads(ports))
+        leader = self.choose_leader(zones, ports, check, await self.leads())
         if leader is None:
             return self.failed(f"no route to {self.target!r} from where any client is: {sorted(set(zones))}")
         self.leader = leader
@@ -358,15 +358,19 @@ class _Trip:
             return await self.together()
         return await self.solo(leader)
 
-    async def leads(self, ports: port_map.PortMap) -> list[bool | None]:
-        """Whether each client leads its group, by the HUD, read only where someone shares its group.
+    async def leads(self) -> list[bool | None]:
+        """Whether each client leads a group of others here, by the group record, checked.
 
-        One HUD read each and no window, so it costs nothing next to the route; a client nobody
-        of ours is grouped with reads as None without one.
+        Only a client the record has leading is checked (group_manager.members_led_by: HUD
+        reads and character ids, no click and no window); the rest read None with no read at
+        all. Nothing is learned: a tie-break is not worth a group menu opened.
         """
 
         async def one(client) -> bool | None:
-            return await group_manager.hud_leads(client) if ports.may_lead(client, self.clients) else None
+            record = group_manager.group_record(client)
+            if record is None or record.leader is not client:
+                return None
+            return bool(await group_manager.members_led_by(client, self.clients))
 
         return list(await asyncio.gather(*(one(c) for c in self.clients)))
 
@@ -385,9 +389,9 @@ class _Trip:
         while a leader that travels costs a whole route and still has the others port to it --
         including the one that was already there. The largest group next because everyone the
         leader does not see has to move; the rest is choose_navigator's old ranking, for who can
-        reach the target and be reached. Between clients that tie on all of that, the one that
-        leads its group (`leads`, from self.leads) travels, so the others can take Teleport to
-        Leader to it (port_map.LEADER).
+        reach the target and be reached. Between clients that tie on all of that, the one the
+        group record has leading others (`leads`, from self.leads) travels, so they can take
+        Teleport to Leader to it (port_map.LEADER).
         """
         best = None
         for index, (client, zone) in enumerate(zip(self.clients, zones)):

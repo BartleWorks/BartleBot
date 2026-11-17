@@ -217,14 +217,20 @@ async def test_a_recovery_regroup_updates_the_group_routes_in_the_runs_port_map(
     harness._machine.port_map.set_groups.assert_called_once_with(["W0", "W1"], [("W0", "W1"), ("W0", "W1")])
 
 
-async def test_a_recovery_regroup_puts_the_new_groups_leader_in_reach_by_teleport_to_leader(settings):
-    """The crash broke the group the run was surveyed with; the regroup gives the leader route back."""
+async def test_a_recovery_regroup_offers_teleport_to_leader_again_to_whom_the_record_proves(settings):
+    """The crash broke the group, and Teleport to Leader to player 1 failed against it.
+
+    The regroup's form_group writes core's group record on every path (core's own tests), so
+    the next port proves the mover from it; the port map has to offer the route again, which
+    set_groups does.
+    """
     clients = _clients()
     try:
         for i, client in enumerate(clients):
             wn.remember(client, f"W{i}")
         harness = RegroupHarness(clients)
         harness._machine.port_map = PortMap.from_survey(["W0", "W1"], [[], []], [(), ()])
+        harness._machine.port_map.demote(clients[1], clients[0], "leader")
         after = [GroupState(True, ("W0", "W1")), GroupState(True, ("W0", "W1"))]
 
         with (
@@ -233,8 +239,9 @@ async def test_a_recovery_regroup_puts_the_new_groups_leader_in_reach_by_telepor
         ):
             await harness._regroup_after_recovery()
 
-        assert harness._machine.port_map.routes(clients[1], clients[0], dst_leads=True) == ["leader", "group"]
-        assert harness._machine.port_map.routes(clients[1], clients[0], dst_leads=False) == ["group"]
+        ports = harness._machine.port_map
+        assert ports.routes(clients[1], clients[0], led=[clients[1]]) == ["leader", "group"]
+        assert ports.routes(clients[1], clients[0], led=[]) == ["group"], "only a mover the record proves"
     finally:
         wn.clear_cache()
 

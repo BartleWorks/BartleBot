@@ -6,9 +6,12 @@ rest port to it -- but a port only works between two of ours who can see each ot
 its group leader, by the HUD's Teleport to Leader; friends, through the friends list; or failing
 those, members of the same group, through the Group tab.
 
-Who leads is read at the port, never surveyed: the game has no way to hand leadership on, so it
-moves only when the leader leaves or logs off -- after a crash or a relog -- and a survey's answer
-would outlive it. What the survey keeps is the group, which is what puts a leader in reach.
+Who leads, and who is in the leader's group, is core's group record (group_manager.members_led_by,
+learn_group), checked at every wave of ports and never surveyed: the game has no way to hand
+leadership on, so it moves only when the leader leaves or logs off -- after a crash or a relog --
+and the record is thrown away when a read contradicts it. Teleport to Leader is offered only to a
+mover the record proves in its target's group, since a mover the HUD shows grouped may be in a
+stranger's. What the survey keeps is who shares a group, for the group route.
 
 That is surveyed once before the run (AppController's pre-run setup) rather than discovered by
 failing a port mid-route: a friends list is one text read, while a failed port costs its whole
@@ -26,7 +29,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 
 from bartleby.runtime import run_trace
 from bartleby.runtime.clients import group_manager
@@ -72,6 +75,9 @@ class PortMap:
 
     def __init__(self, routes: dict[tuple[str, str], set[str]] | None = None) -> None:
         self._routes = {pair: set(kinds) for pair, kinds in (routes or {}).items()}
+        # The pairs Teleport to Leader has failed for. The route itself is the group record's
+        # to offer (routes), so only its failures are kept here.
+        self._leader_failed: set[tuple[str, str]] = set()
 
     @classmethod
     def from_survey(
@@ -84,8 +90,7 @@ class PortMap:
 
         `friends[i]` is the online friends list client i showed (None when unreadable) and
         `rosters[i]` the names on its Group tab. Only pairs of our own clients are kept. A
-        shared group gives both the group route and the leader route, the second offered only
-        while its target leads (routes).
+        shared group gives the group route; the leader route needs no survey (routes).
         """
         ours = {key for name in names if (key := _key(name))}
         routes: dict[tuple[str, str], set[str]] = {}
@@ -98,7 +103,7 @@ class PortMap:
                 if dst in ours and dst != src:
                     routes.setdefault((src, dst), set()).add(FRIEND)
         for pair in _group_pairs(names, rosters):
-            routes.setdefault(pair, set()).update((GROUP, LEADER))
+            routes.setdefault(pair, set()).add(GROUP)
         return cls(routes)
 
     def set_groups(self, names: Sequence[str | None], rosters: Sequence[Sequence[str]]) -> None:
@@ -106,45 +111,58 @@ class PortMap:
 
         For after a regroup: a crash drops a client from its group, so the group routes the
         run started with no longer hold, while its friendships do. Friend routes are kept as
-        they are, demotions included; group and leader routes are rebuilt from scratch, since a
-        demoted one failed against a group that no longer exists. Whoever leads the new group
-        is read at the next port, as always.
+        they are, demotions included; group routes are rebuilt from scratch, since a demoted
+        one failed against a group that no longer exists, and a leader route that failed is
+        offered again. The regroup's form_group writes the new group record, which is what
+        proves a leader-route mover at the next port.
         """
         for kinds in self._routes.values():
-            kinds.difference_update((GROUP, LEADER))
+            kinds.discard(GROUP)
         for pair in _group_pairs(names, rosters):
-            self._routes.setdefault(pair, set()).update((GROUP, LEADER))
+            self._routes.setdefault(pair, set()).add(GROUP)
+        self._leader_failed.clear()
 
-    def _kinds(self, src, dst) -> set[str]:
+    def _pair(self, src, dst) -> tuple[str, str] | None:
         pair = (_key(wizard_names.cached_name(src)), _key(wizard_names.cached_name(dst)))
-        if None in pair:
-            return set()
-        return self._routes.get(pair, set())
+        return None if None in pair else pair
 
-    def routes(self, src, dst, dst_leads: bool | None = None) -> list[str]:
+    def routes(self, src, dst, led: Collection | None = None) -> list[str]:
         """The routes client `src` has to client `dst`, preferred first; [] if either name is unknown.
 
-        The leader route needs `dst_leads`, whether `dst` leads its group as the HUD read it
-        just now (group_manager.hud_leads): it is offered only when that is True and the two
-        share a group. Left out, the answer is the routes that need no read, which is what a
-        caller that does not port wants: a shared group always gives the group route too.
+        The leader route needs `led`, the clients the group record proves in a group `dst`
+        leads, read just now (group_manager.members_led_by or learn_group): it is offered when
+        `src` is one of them, unless it has failed between the two. Left out, the answer is
+        the routes that need no read, which is what a caller that does not port wants.
         """
-        kinds = self._kinds(src, dst)
-        return [route for route in ROUTES if route in kinds and (route != LEADER or dst_leads is True)]
+        pair = self._pair(src, dst)
+        if pair is None:
+            return []
+        kinds = self._routes.get(pair, set())
+        proven = led is not None and any(c is src for c in led) and pair not in self._leader_failed
+        return [route for route in ROUTES if (proven if route == LEADER else route in kinds)]
 
-    def may_lead(self, dst, clients: Sequence) -> bool:
-        """Whether any of `clients` could reach `dst` by Teleport to Leader, were `dst` to lead.
+    def leader_candidates(self, dst, clients: Sequence) -> list:
+        """The clients among `clients` worth proving in `dst`'s group: Teleport to Leader has not failed them.
 
-        Says whose leadership is worth reading: one HUD read each, but only where it can matter.
+        Names must be known, as for every route; `dst` itself is left out.
         """
-        return any(LEADER in self._kinds(c, dst) for c in clients if c is not dst)
+        return [c for c in clients if c is not dst and (pair := self._pair(c, dst)) and pair not in self._leader_failed]
 
     def demote(self, src, dst, route: str) -> bool:
         """Stop offering `route` from `src` to `dst`: it failed, and will not be tried again this run.
 
-        Returns whether it was still offered, so a caller can tell a demotion from a no-op.
+        Returns whether it was still offered, so a caller can tell a demotion from a no-op. A
+        failed leader route comes back at a regroup (set_groups).
         """
-        kinds = self._kinds(src, dst)
+        pair = self._pair(src, dst)
+        if pair is None:
+            return False
+        if route == LEADER:
+            if pair in self._leader_failed:
+                return False
+            self._leader_failed.add(pair)
+            return True
+        kinds = self._routes.get(pair, set())
         if route not in kinds:
             return False
         kinds.discard(route)
@@ -182,7 +200,8 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     input goes to its own window -- then closed. Then who is in a group with whom, which puts
     the leader route and the group route in reach: from `states` when pre-run grouping has
     just read them, else from the one leader's roster when the HUD shows every client grouped
-    and one of them leading (group_manager.leader_roster), one social-window visit in all. Only
+    and its leader is known, by an open group menu or the group record
+    (group_manager.leader_roster), one social-window visit in all. Only
     when that cannot vouch for everyone and the friends lists leave a pair unconnected is
     every Group tab read, at a visit per client.
     """
@@ -209,7 +228,7 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
 async def _leader_rosters(clients: list, names: Sequence[str | None]) -> list[tuple[str, ...]] | None:
     """Each client's Group tab roster as the one leader among them shows it, from one visit.
 
-    None unless the HUD shows every client grouped and exactly one leading, and that leader's
+    None unless the HUD shows every client grouped and its leader is known, and that leader's
     roster lists it (group_manager.leader_roster). A wizard is in one group at most, so every
     one of ours that the roster lists shares it, and one it does not list gets an empty one:
     it is grouped elsewhere, with nobody of ours to lead it.
@@ -251,23 +270,24 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
     not retried on its own, and since every other wave moves a client or uses up a route, the
     loop ends. `clients` is only for naming players by number in the log.
 
-    Each wave reads, once per arrived client, whether it leads its group, and only for one a
-    waiting client shares a group with (PortMap.may_lead). Read every wave rather than kept,
-    since a crash or a relog moves the leadership mid-run.
+    Each wave proves, once per arrived client, which waiting clients are in a group it leads,
+    by the group record (_led): checked every wave rather than kept, since a crash or a relog
+    moves the leadership mid-run. A leader-route mover that does not land throws the record
+    away (group_manager.forget_group) before the next wave.
     """
     waiting, arrived = list(waiting), list(arrived)
 
     def number(client) -> int:
         return next((i + 1 for i, c in enumerate(clients) if c is client), 0)
 
+    pool = [*clients, *(c for c in [*waiting, *arrived] if not any(c is k for k in clients))]
+    learned: set[int] = set()
     while waiting:
-        maybe = [a for a in arrived if port_map.may_lead(a, waiting)]
-        read = await asyncio.gather(*(group_manager.hud_leads(a) for a in maybe))
-        leads = {id(a): lead for a, lead in zip(maybe, read)}
+        led = await _led(pool, arrived, waiting, port_map, learned)
         batches: dict[tuple[int, str], tuple[object, list]] = {}
         for client in waiting:
             for route in ROUTES:
-                target = next((a for a in arrived if route in port_map.routes(client, a, leads.get(id(a)))), None)
+                target = next((a for a in arrived if route in port_map.routes(client, a, led.get(id(a)))), None)
                 if target is not None:
                     batches.setdefault((id(target), route), (target, []))[1].append(client)
                     break
@@ -287,6 +307,53 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
     return waiting
 
 
+async def _led(clients: list, arrived: list, waiting: list, port_map: PortMap, learned: set[int]) -> dict[int, list]:
+    """For each arrived client, keyed by id, the waiting clients the group record proves in a group it leads.
+
+    Only for a target some waiting client could take Teleport to Leader to
+    (PortMap.leader_candidates); the rest are left out with no read. `learned` holds the ids
+    of the targets already learned in this call, which are not learned again (_proven).
+    """
+
+    async def one(target) -> list:
+        candidates = port_map.leader_candidates(target, waiting)
+        if not candidates:
+            return []
+        proven = await _proven(target, clients, candidates, learned)
+        return [c for c in candidates if any(c is p for p in proven)]
+
+    found = await asyncio.gather(*(one(a) for a in arrived))
+    return {id(a): members for a, members in zip(arrived, found)}
+
+
+async def _proven(target, clients: list, candidates: list, learned: set[int]) -> list:
+    """The clients the group record proves in a group `target` leads, learning it where it must.
+
+    A valid record answers with HUD reads and no click (members_led_by). The group is learned
+    (learn_group: `target`'s group menu read, and its roster where it leads) when there is no
+    record of `target` leading and both it and a candidate read grouped, or when the record
+    leaves out a candidate the HUD shows grouped (missing_from_record), whom the player may
+    have added by hand. Never twice on one target in one call (`learned`), and never on a
+    target the record holds as a member of someone else's group, which does not lead. Every
+    one of a bot's clients is automated, so a click on `target` takes nothing from a player.
+    `clients` is everyone, so that what is learned is the whole group and not only the
+    candidates.
+    """
+    proven = await group_manager.members_led_by(target, clients)
+    if id(target) in learned:
+        return proven or []
+    if proven is None:
+        if group_manager.group_record(target) is not None:
+            return []
+        grouped = await asyncio.gather(*(group_manager.hud_grouped(c) for c in (target, *candidates)))
+        if grouped[0] is not True or True not in grouped[1:]:
+            return []
+    elif not await group_manager.missing_from_record(target, candidates, proven):
+        return proven
+    learned.add(id(target))
+    return await group_manager.learn_group(target, clients)
+
+
 async def _port_batch(machine, movers: list, target, route: str, port_map: PortMap, number) -> tuple[list, bool]:
     """Port `movers` to `target` along `route`; return the ones that landed with it, and whether a route was demoted.
 
@@ -299,7 +366,7 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
     try:
         if route == LEADER:
             # Teleport to Leader takes no name: each mover goes to its own leader, which the
-            # group and the read just taken say is `target`. The landing check below catches it if not.
+            # group record, checked this wave, says is `target`. The landing check below catches it if not.
             result = await group_manager.port_to_leader(movers)
         else:
             start = node_helpers.port_to_friend if route == FRIEND else group_manager.port_to_group_member
@@ -307,6 +374,8 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
         machine.log(f"The {route} route from player(s) {who} to player {to} could not start", logging.WARNING)
+        if route == LEADER:
+            group_manager.forget_group(target)
         return [], _demote(port_map, movers, target, route)
     if result.refusal:
         machine.log(f"Port to player {to} refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
@@ -342,6 +411,9 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
         # A refusal is the moment (a friend busy), not the route; anything else that did not land is.
         strays = [client for client in movers if not any(client is c for c in landed)]
         demoted = _demote(port_map, strays, target, route)
+        if strays and route == LEADER:
+            # The record said these were in its group; a port that went elsewhere says otherwise.
+            group_manager.forget_group(target)
     return landed, demoted
 
 

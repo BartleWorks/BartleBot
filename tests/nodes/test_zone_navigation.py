@@ -618,38 +618,54 @@ async def test_a_split_start_follows_the_client_with_the_cheapest_route(monkeypa
     assert game.waves == [([1], [2])]
 
 
-def _grouped(game: _Game, leader: int, monkeypatch) -> list:
-    """Everyone friends and in one group that player `leader` leads, by the HUD; and the record of its reads."""
-    names = _NAMES[: len(game.clients)]
-    game.survey.return_value = port_map.PortMap.from_survey(
-        names, [[n for n in names if n != me] for me in names], [tuple(names) for _ in names]
-    )
-    read: list = []
+def _recorded(game: _Game, leader: int, monkeypatch, *, proves: bool = True) -> list:
+    """Everyone friends, and the group record has player `leader` leading the rest; the clients it checked.
 
-    async def hud_leads(client):
-        read.append(client)
-        return game.number(client) == leader
+    `proves` False is a record the HUD no longer bears out: members_led_by proves no one.
+    """
+    leading = game.clients[leader - 1]
+    record = group_manager.GroupRecord(leader=leading, members=tuple(game.clients))
+    monkeypatch.setattr(group_manager, "group_record", lambda client: record)
+    checked: list = []
 
-    monkeypatch.setattr(group_manager, "hud_leads", hud_leads)
-    return read
+    async def members_led_by(target, clients):
+        checked.append(target)
+        assert target is leading, "only the recorded leader is checked"
+        return [c for c in clients if c is not target] if proves else []
+
+    monkeypatch.setattr(group_manager, "members_led_by", members_led_by)
+    learn = AsyncMock()
+    monkeypatch.setattr(group_manager, "learn_group", learn)
+    monkeypatch.setattr(group_manager, "read_leads", learn)
+    return checked
 
 
-async def test_between_clients_that_tie_the_group_leader_travels(monkeypatch):
+async def test_between_clients_that_tie_the_recorded_group_leader_travels(monkeypatch):
     """So the others can take Teleport to Leader to it once it arrives."""
     game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
-    read = _grouped(game, 2, monkeypatch)
+    checked = _recorded(game, 2, monkeypatch)
 
     outcome = await _go(game, _nav(*_LONG), _ISLAND)
 
     assert outcome.success
     assert game.groups == [[2], [2], [2]]
     assert game.waves == [([1], [2])]
-    assert read == game.clients, "each client's leadership is read once, with no window"
+    assert checked == [game.clients[1]], "the recorded leader is checked once, and nobody else"
+    group_manager.learn_group.assert_not_awaited()
+
+
+async def test_a_record_the_hud_no_longer_bears_out_breaks_no_tie(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+    _recorded(game, 2, monkeypatch, proves=False)
+
+    assert (await _go(game, _nav(*_LONG), _ISLAND)).success
+    assert game.groups == [[1], [1], [1]]
+    group_manager.learn_group.assert_not_awaited()
 
 
 async def test_the_group_leader_does_not_outrank_a_cheaper_route(monkeypatch):
     game = _Game(monkeypatch, [_DELTA, _S1], friends=True)
-    _grouped(game, 1, monkeypatch)
+    _recorded(game, 1, monkeypatch)
 
     outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
 
@@ -657,14 +673,18 @@ async def test_the_group_leader_does_not_outrank_a_cheaper_route(monkeypatch):
     assert game.groups == [[2]]
 
 
-async def test_leadership_is_not_read_when_nobody_shares_a_group(monkeypatch):
+async def test_nothing_is_read_or_learned_for_a_tie_without_a_record(monkeypatch):
     game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
-    hud = AsyncMock()
-    monkeypatch.setattr(group_manager, "hud_leads", hud)
+    check, learn, menu = AsyncMock(), AsyncMock(), AsyncMock()
+    monkeypatch.setattr(group_manager, "members_led_by", check)
+    monkeypatch.setattr(group_manager, "learn_group", learn)
+    monkeypatch.setattr(group_manager, "read_leads", menu)
 
     assert (await _go(game, _nav(*_LONG), _ISLAND)).success
     assert game.groups == [[1], [1], [1]]
-    hud.assert_not_awaited()
+    check.assert_not_awaited()
+    learn.assert_not_awaited()
+    menu.assert_not_awaited()
 
 
 async def test_a_client_already_there_is_the_one_the_others_port_to(monkeypatch):
