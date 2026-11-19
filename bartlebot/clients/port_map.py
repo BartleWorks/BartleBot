@@ -197,13 +197,13 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
     """Read who can port to whom. Never raises: whatever cannot be read simply has no route.
 
     Every client's friends list is read concurrently -- one text read each, and each client's
-    input goes to its own window -- then closed. Then who is in a group with whom, which puts
-    the leader route and the group route in reach: from `states` when pre-run grouping has
-    just read them, else from the one leader's roster when the HUD shows every client grouped
-    and its leader is known, by an open group menu or the group record
-    (group_manager.leader_roster), one social-window visit in all. Only
-    when that cannot vouch for everyone and the friends lists leave a pair unconnected is
-    every Group tab read, at a visit per client.
+    input goes to its own window -- then closed. Then who is in a group with whom, for the
+    group route (the leader route is the group record's, checked at the port): from `states`
+    when pre-run grouping has just read them, else from the one leader's roster when the HUD
+    shows every client grouped and its leader is known, by an open group menu or the group
+    record (group_manager.leader_roster), one social-window visit in all. Only when that
+    cannot vouch for everyone and the friends lists leave a pair unconnected is every Group
+    tab read, at a visit per client.
     """
     if len(clients) < 2:
         return PortMap()
