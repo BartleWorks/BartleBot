@@ -14,6 +14,7 @@ from bartleby.runtime.clients.group_manager import GroupResult, GroupState
 
 import bartlebot.clients.client_manager as cm
 from bartlebot.clients.client_manager import ClientManager
+from bartlebot.clients.port_map import PortMap
 from tests.conftest import FakeClient
 
 # Both hooks survey group state before deciding whether to regroup. These stand in for the
@@ -214,6 +215,35 @@ async def test_a_recovery_regroup_updates_the_group_routes_in_the_runs_port_map(
         await harness._regroup_after_recovery()
 
     harness._machine.port_map.set_groups.assert_called_once_with(["W0", "W1"], [("W0", "W1"), ("W0", "W1")])
+
+
+async def test_a_recovery_regroup_offers_teleport_to_leader_again_to_whom_the_record_proves(settings):
+    """The crash broke the group, and Teleport to Leader to player 1 failed against it.
+
+    The regroup's form_group writes core's group record on every path (core's own tests), so
+    the next port proves the mover from it; the port map has to offer the route again, which
+    set_groups does.
+    """
+    clients = _clients()
+    try:
+        for i, client in enumerate(clients):
+            wn.remember(client, f"W{i}")
+        harness = RegroupHarness(clients)
+        harness._machine.port_map = PortMap.from_survey(["W0", "W1"], [[], []], [(), ()])
+        harness._machine.port_map.demote(clients[1], clients[0], "leader")
+        after = [GroupState(True, ("W0", "W1")), GroupState(True, ("W0", "W1"))]
+
+        with (
+            patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)),
+            patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=True, states=after))),
+        ):
+            await harness._regroup_after_recovery()
+
+        ports = harness._machine.port_map
+        assert ports.routes(clients[1], clients[0], led=[clients[1]]) == ["leader", "group"]
+        assert ports.routes(clients[1], clients[0], led=[]) == ["group"], "only a mover the record proves"
+    finally:
+        wn.clear_cache()
 
 
 async def test_a_recovery_that_finds_the_group_intact_still_refreshes_the_routes(settings):

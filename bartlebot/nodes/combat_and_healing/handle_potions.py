@@ -132,7 +132,7 @@ NODE_SPEC = NodeSpec(
         + "\n\n"
         + (
             "A player with too little mana to mark goes to buy anyway. After buying, it teleports "
-            "to a player who stayed behind or recalled, through the friends list or the group. "
+            "to a player who stayed behind or recalled, by Teleport to Leader, the friends list or the group. "
             "So does a player whose recall fails. A teleported player lands beside that player, "
             "away from its own starting spot. With Player Realms set to Separate, a player only "
             "teleports to one that shared its realm before the trip."
