@@ -21,6 +21,9 @@ poking at a live client:
 
     # which hard-coded offsets in a library the new dump says have moved
     uv run python tools/typedump.py stale ../wizwalker/wizwalker/memory/memory_objects --old tools/r806919_WizardDev.json
+
+    # which hard-coded offsets read a property other than the one their accessor names
+    uv run python tools/typedump.py misnamed ../wizwalker/wizwalker/memory/memory_objects
 """
 
 from __future__ import annotations
@@ -447,6 +450,90 @@ def fix_moved(source: str, findings: list[Stale]) -> str:
     return "".join(lines)
 
 
+#: Accessors whose name says the same as their property's in other words, so a misnamed
+#: check does not report them. A new entry is a decision that the offset is right.
+_ACCEPTED_NAMES = {
+    ("ActorBody", "orientation"): "m_pitch",  # reads pitch, roll and yaw as one
+    ("MadlibArg", "identifier"): "m_madlibToken",
+    ("MadlibBlock", "identifier"): "m_blockToken",
+    ("MadlibBlock", "entries"): "m_madlibs",
+    ("DeckListControl", "card_spacing_vertical_adjust"): "m_verticalSpacingAdjust",
+    ("HangingConversionSpellEffect", "scale_source_effect_percent"): "m_sourceEffectValuePercent",
+}
+_PY_DEF = re.compile(r"^\s+(?:async\s+)?def\s+(\w+)")
+
+
+def _name_key(name: str) -> str:
+    """A name with the conventions stripped: m_, a Hungarian prefix, read_/write_, case, underscores."""
+    parts = []
+    for part in name.split("."):
+        part = re.sub(r"^m_", "", part)
+        part = re.sub(r"^[a-z]{1,3}(?=[A-Z])", "", part)  # m_fScale, m_nMobileID, m_bPVP
+        parts.append(part)
+    return re.sub(r"^(?:read|write|maybe)_", "", "_".join(parts)).replace("_", "").lower()
+
+
+def _names_agree(accessor: str, prop: str) -> bool:
+    a, p = _name_key(accessor), _name_key(prop)
+    return a == p or a in p or p in a
+
+
+@dataclass(frozen=True)
+class Misnamed:
+    """A hard-coded offset whose property is not the one its accessor is named for."""
+
+    path: str
+    line: int
+    klass: str
+    accessor: str
+    offset: int
+    found: tuple[str, ...]
+
+
+def misnamed_offsets(source: str, path: str, dump: TypeDump) -> list[Misnamed]:
+    """The offsets in `source` at which `dump` has no property named like the accessor reading it.
+
+    ``stale`` sees only what moved between two dumps, so an offset a move once missed stays
+    wrong through every dump after it and nothing reports it again; this compares each offset
+    with the dump alone. An offset naming no property (a raw member) says nothing here.
+    """
+    found: list[Misnamed] = []
+    game_class: str | None = None
+    accessor: str | None = None
+    for lineno, line in enumerate(source.splitlines(), 1):
+        if m := _PY_CLASS.match(line):
+            name = _game_class_name(m.group(1))
+            game_class = name if dump.resolve(name) else None
+            accessor = None
+            continue
+        if m := _PY_DEF.match(line):
+            accessor = m.group(1)
+            continue
+        if game_class is None or accessor is None:
+            continue
+        code = line.split("#", 1)[0]
+        for call in _ANY_OFFSET_CALL.finditer(code):
+            offset = int(call.group(1), 0)
+            names = tuple(p.name for p in dump.at(game_class, offset))
+            if not names or any(_names_agree(accessor, n) for n in names):
+                continue
+            plain = re.sub(r"^write_", "", accessor)
+            if _ACCEPTED_NAMES.get((game_class, plain)) in names:
+                continue
+            found.append(Misnamed(path, lineno, game_class, accessor, offset, names))
+    return found
+
+
+def cmd_misnamed(dump: TypeDump, args) -> int:
+    """Report the hard-coded offsets whose property is not the one their accessor is named for."""
+    paths = [f for p in map(Path, args.paths) for f in (sorted(p.rglob("*.py")) if p.is_dir() else [p])]
+    findings = [f for path in paths for f in misnamed_offsets(path.read_text(encoding="utf-8"), str(path), dump)]
+    print(f"misnamed: {len(findings)}")
+    for f in findings:
+        print(f"  {f.path}:{f.line}  {f.klass}.{f.accessor} @{f.offset}  reads {', '.join(f.found)}")
+    return 1 if findings else 0
+
+
 def cmd_stale(dump: TypeDump, args) -> int:
     """Report the hard-coded offsets in source files that a new dump says have moved."""
     old = TypeDump.load(Path(args.old))
@@ -550,6 +637,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--verbose", action="store_true", help="also list the classes that could not be checked")
     p.add_argument("--fix", action="store_true", help="rewrite each moved offset in place; raw ones stay by hand")
     p.set_defaults(fn=cmd_stale)
+
+    p = sub.add_parser("misnamed", help="the hard-coded offsets whose property is not the one their accessor names")
+    p.add_argument("paths", nargs="+", help="files or folders of .py files")
+    p.set_defaults(fn=cmd_misnamed)
 
     p = sub.add_parser("diff", help="compare two dumps after a game patch")
     p.add_argument("old")
