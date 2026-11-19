@@ -44,7 +44,7 @@ wheels = [
 
 [[package]]
 name = "bartlebot"
-version = "0.3.1"
+version = "0.3.2"
 source = { editable = "." }
 dependencies = [
     { name = "bartleby-core", extra = ["qt", "runtime"] },
@@ -87,7 +87,7 @@ site = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.5.1" },
+    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.6.0" },
     { name = "beautifulsoup4", specifier = ">=4.0" },
     { name = "cryptography", specifier = ">=44" },
     { name = "curl-cffi", specifier = ">=0.15" },
@@ -104,7 +104,7 @@ requires-dist = [
     { name = "velopack", specifier = "==1.2.161" },
     { name = "wakepy", specifier = ">=1.0" },
     { name = "wizsprinter", git = "https://github.com/BartleWorks/wizsprinter.git?rev=088fc838bda285c8b06d2f235fb5671126035f59" },
-    { name = "wizwalker", git = "https://github.com/BartleWorks/wizwalker.git?rev=a1559cf4ffab9ba588315073ce7da62ef1127b28" },
+    { name = "wizwalker", git = "https://github.com/BartleWorks/wizwalker.git?rev=991c25715a55e739c3fa7640eaf9a1388b74f8ec" },
 ]
 
 [package.metadata.requires-dev]
@@ -123,8 +123,8 @@ site = [{ name = "zensical", specifier = "==0.0.71" }]
 
 [[package]]
 name = "bartleby-core"
-version = "0.5.1"
-source = { git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.5.1#57c462d1bd6fdee282dc338a3be6144047d376b7" }
+version = "0.6.0"
+source = { git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.6.0#f01b78c27d82a2db46ac6ef4e03de72650557e58" }
 dependencies = [
     { name = "keyring" },
     { name = "pydantic" },
@@ -1722,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "wizwalker"
 version = "1.8.2"
-source = { git = "https://github.com/BartleWorks/wizwalker.git?rev=a1559cf4ffab9ba588315073ce7da62ef1127b28#a1559cf4ffab9ba588315073ce7da62ef1127b28" }
+source = { git = "https://github.com/BartleWorks/wizwalker.git?rev=991c25715a55e739c3fa7640eaf9a1388b74f8ec#991c25715a55e739c3fa7640eaf9a1388b74f8ec" }
 dependencies = [
     { name = "aiofiles" },
     { name = "appdirs" },
