@@ -248,3 +248,60 @@ def test_fix_moved_rewrites_each_in_its_own_base_and_leaves_the_rest():
     assert "read_value_from_offset(248," in fixed[10]  # raw: left for a person
     assert "read_value_from_offset(88," in fixed[14]
     assert typedump.fix_moved(SOURCE, found).count("\r\n") == SOURCE.count("\r\n")
+
+
+# --- misnamed: an offset whose property is not the one its accessor names -----------
+
+NAMED = {
+    "class PropertyClass": {"bases": [], "properties": {}},
+    "class CombatParticipant": {
+        "bases": ["PropertyClass"],
+        "properties": {
+            "m_ownerID.m_full": _prop(112, "unsigned __int64"),
+            "m_curMaxHP": _prop(420),
+            "m_isMonster": _prop(428, "unsigned int"),
+            "m_fScale": _prop(432, "float"),
+        },
+    },
+    "class ActorBody": {"bases": ["PropertyClass"], "properties": {"m_pitch": _prop(100, "float")}},
+}
+
+NAMED_SOURCE = (
+    "class DynamicCombatParticipant(CombatParticipant):\n"
+    "    async def owner_id_full(self):\n"
+    "        return await self.read_value_from_offset(112, Primitive.uint64)\n"
+    "    async def is_monster(self):\n"
+    "        return await self.read_value_from_offset(420, Primitive.uint32)\n"
+    "    async def write_is_monster(self, value):\n"
+    "        await self.write_value_to_offset(420, value, Primitive.uint32)\n"
+    "    async def scale(self):\n"
+    "        return await self.read_value_from_offset(432, Primitive.float32)\n"
+    "    async def unreflected(self):\n"
+    "        return await self.read_value_from_offset(500, Primitive.uint64)\n"
+    "    # async def is_monster(self): return await self.read_value_from_offset(420, ...)\n"
+    "class ActorBody(PropertyClass):\n"
+    "    async def orientation(self):\n"
+    "        return await self.read_orient(100)\n"
+)
+
+
+def test_misnamed_reports_an_accessor_reading_another_property_and_nothing_else():
+    found = typedump.misnamed_offsets(NAMED_SOURCE, "p.py", TypeDump(NAMED))
+
+    # is_monster and its writer read m_curMaxHP. Not reported: the composite id and the
+    # Hungarian m_fScale, which name the same thing; the raw member at 500, which names
+    # nothing; the comment; and orientation, an accepted name for m_pitch.
+    assert [(f.accessor, f.offset, f.found) for f in found] == [
+        ("is_monster", 420, ("m_curMaxHP",)),
+        ("write_is_monster", 420, ("m_curMaxHP",)),
+    ]
+
+
+def test_cli_misnamed_fails_on_a_finding(tmp_path, capsys):
+    path = tmp_path / "dump.json"
+    path.write_text(json.dumps(NAMED), encoding="utf-8")
+    source = tmp_path / "combat_participant.py"
+    source.write_text(NAMED_SOURCE, encoding="utf-8")
+
+    assert main(["--dump", str(path), "misnamed", str(source)]) == 1
+    assert "CombatParticipant.is_monster @420  reads m_curMaxHP" in capsys.readouterr().out

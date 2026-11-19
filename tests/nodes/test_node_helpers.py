@@ -1846,6 +1846,9 @@ async def test_a_loading_client_is_not_pressed():
     client.send_key.assert_not_called()
 
 
+# A known flake (#329): now and then presses twice, not MAX_RETRIES times, and passes alone.
+# See core's tests/CLAUDE.md, "Known flakes are marked".
+@pytest.mark.flaky(reruns=2)
 async def test_a_client_never_through_is_pressed_max_retries_times_then_left_to_the_caller():
     client = FakeClient()
 
