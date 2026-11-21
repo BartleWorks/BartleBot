@@ -461,3 +461,41 @@ movement, kept current, are core's `docs/WIZARD101.md`, *Moving*.
 | 7 | #326 | authoring for walking |
 | 8 | core #17 | verified links |
 | 9 | #327 | the bot library on live |
+
+## Auto-combat
+
+Epic BartleBuddy #31: the team fights its own fights, with a duel for mob fights and one for
+boss fights, and a deck set that each wizard equips by name before a boss. BartleBot's fight
+runner, strategy layer and Combat Strategies window move to core, so both apps fight with one
+system. Filed in BartleBuddy, with the family stages' issues here and in core.
+https://claude.ai/artifact/DiNH2NhDqp2jHS5GWv2atw
+
+**In progress. The page is kept current while the stages land.**
+
+| stage | issue | what | status |
+|---|---|---|---|
+| 1 | BartleBuddy #32 | measure in game what the plan assumes (BartleBuddy's `tools/probe_combat_facts.py`) | landed |
+| 2 | #330 | the fight runner moves to core | planned |
+| 3 | BartleBuddy #33 | Auto-combat in BartleBuddy | planned |
+| 4 | #331 | the team's order told to wizsprinter, and a following hitter joining last | planned |
+| 5 | #332 | the strategy layer moves to core | planned |
+| 6 | #333 | the Combat Strategies window moves to core | planned |
+| 7 | #334 | mob and boss duels | planned |
+| 8 | core #22 | equipping a deck by its name | planned |
+| 9 | BartleBuddy #34 | deck sets, and Boss decks | planned |
+
+BartleBuddy's `docs/COMBAT.md`, from Stage 3, is the feature as built. The game's rules it rests
+on are core's `docs/WIZARD101.md`, *Decks and the backpack* and *Seats and casting order*.
+
+The rules every stage keeps:
+
+- **Every shared strategy file round-trips byte-identical.** A new field is left out while
+  empty, so either app loads what the other wrote.
+- **BartleBot resolves each fight exactly as now**, and its tests pass with only their imports
+  changed by a move.
+- **Stop all ends every combat lease at once**, and a wizard the player is playing is never cast
+  for.
+- **Nothing opens a backpack or the deck page in a fight**, and nothing equips a deck the player
+  didn't ask for.
+- **Logs name players by number**, and BartleBuddy's settings take no migration while it is
+  unreleased.
