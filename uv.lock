@@ -87,7 +87,7 @@ site = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bartleby-core", extras = ["runtime", "qt"], editable = "../bartleby-core" },
+    { name = "bartleby-core", extras = ["runtime", "qt"], git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.7.0" },
     { name = "beautifulsoup4", specifier = ">=4.0" },
     { name = "cryptography", specifier = ">=44" },
     { name = "curl-cffi", specifier = ">=0.15" },
@@ -123,7 +123,8 @@ site = [{ name = "zensical", specifier = "==0.0.71" }]
 
 [[package]]
 name = "bartleby-core"
-source = { editable = "../bartleby-core" }
+version = "0.7.0"
+source = { git = "https://github.com/BartleWorks/bartleby-core.git?tag=v0.7.0#99a90b9c9f7571ecce8125a7ebbaa9f0c43f1b43" }
 dependencies = [
     { name = "keyring" },
     { name = "pydantic" },
@@ -139,31 +140,6 @@ runtime = [
     { name = "pymem" },
     { name = "wizsprinter" },
     { name = "wizwalker" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "keyring", specifier = ">=25.0" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "pymem", marker = "extra == 'runtime'", specifier = ">=1.13" },
-    { name = "pyperclip", marker = "extra == 'qt'", specifier = ">=1.8" },
-    { name = "pyqt6", marker = "extra == 'qt'", specifier = ">=6.9" },
-    { name = "vdf", specifier = ">=3.4" },
-    { name = "wizsprinter", marker = "extra == 'runtime'", git = "https://github.com/BartleWorks/wizsprinter.git?rev=088fc838bda285c8b06d2f235fb5671126035f59" },
-    { name = "wizwalker", marker = "extra == 'runtime'", git = "https://github.com/BartleWorks/wizwalker.git?rev=d68082c942eb9438b1cd189a549ff310c2fb59ba" },
-]
-provides-extras = ["qt", "runtime"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "katsuba", specifier = ">=0.4.0" },
-    { name = "pillow", specifier = ">=11.0" },
-    { name = "pytest", specifier = ">=9.0" },
-    { name = "pytest-asyncio", specifier = ">=1.0" },
-    { name = "pytest-qt", specifier = ">=4.5.0" },
-    { name = "pytest-rerunfailures", specifier = ">=16.7" },
-    { name = "pytest-xdist", specifier = ">=3.6" },
-    { name = "ruff", specifier = ">=0.15" },
 ]
 
 [[package]]
