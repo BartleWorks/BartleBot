@@ -61,12 +61,14 @@ def test_no_active_strategy_runs_the_shipped_team_default():
     )
 
 
-def test_an_ambient_fight_with_no_active_strategy_has_everyone_attack():
+def test_an_ambient_fight_with_no_active_strategy_runs_default_team_duel_in_its_order():
     with _patch_active_strategy("bot-1", None):
         dsls, order, source, _level = resolve_combat(_make_machine(), True, 3, ambient=True)
-    assert dsls == [strategy_store.load_player_strategy(SHIPPED_TEAM_HITTER_ID).dsl] * 3
-    assert order == []
-    assert "'Default Team Duel (Everyone Attacks)' (the shipped Team default for an ambient fight" in source
+    hitter = strategy_store.load_player_strategy(SHIPPED_TEAM_HITTER_ID).dsl
+    support = strategy_store.load_player_strategy(SHIPPED_DEFAULT_SUPPORT_ID).dsl
+    assert dsls == [hitter, support, support]
+    assert order == [4, 3, 2, 1]
+    assert "'Default Team Duel' (the shipped Team default for an ambient fight" in source
 
 
 def test_no_active_strategy_runs_the_shipped_solo_default_with_one_client():

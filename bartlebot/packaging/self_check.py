@@ -180,7 +180,7 @@ def check_shared_set(root: Path) -> str:
                 raise CheckFailed(f"{path.relative_to(root).as_posix()} does not load: {exc}") from exc
     duels = {
         *combat_defaults.SHIPPED_DUEL_IDS.values(),
-        *combat_defaults.SHIPPED_AMBIENT_DUEL_IDS.values(),
+        combat_defaults.SHIPPED_EVERYONE_ATTACKS_DUEL_ID,
     }
     players = {
         combat_defaults.SHIPPED_DEFAULT_PLAYER_ID,

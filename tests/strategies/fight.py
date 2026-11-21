@@ -192,7 +192,11 @@ def team(size: int) -> tuple[Wizard, ...]:
 
 @dataclass(frozen=True)
 class Fight:
-    """One planning phase, as the client `me` sees it. `team` is in slot order."""
+    """One planning phase, as the client `me` sees it. `team` is in slot order.
+
+    `team_order` names the team in the duel's combat order, as the runner hands it to
+    wizsprinter (`team_order`), for `ally(-N)` to count through; None leaves it to the seats.
+    """
 
     team: Sequence[Wizard]
     enemies: Sequence[Enemy]
@@ -202,6 +206,7 @@ class Fight:
     pips: int = 7
     power_pips: int = 0
     deck: int = 20
+    team_order: Sequence[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -315,6 +320,9 @@ async def cast(dsl: str, fight: Fight) -> Turn:
     sprinty.had_first_round = fight.round > 1
     sprinty.was_pass = True
     sprinty.rel_round_offset = -sum(1 for r in provider.config.specific_rounds if r < fight.round)
+    if fight.team_order is not None:
+        # fake_combat gives each team member the owner id of its seat, 1 up.
+        sprinty.team_order = [names.index(name) + 1 for name in fight.team_order]
 
     with patch.object(sprinty_combat, "asyncio", _INSTANT):
         await sprinty.handle_round()

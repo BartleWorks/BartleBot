@@ -165,7 +165,7 @@ class AmbientSession:
             resolved = combat_runner.resolve_combat(
                 machine, use_default_strategy=self.node_strategy, num_clients=len(clients)
             )
-        dsls, _order, source, _level = resolved
+        dsls, order, source, _level = resolved
         self._log(f"DSL source={source!r}", logging.DEBUG)
 
         zones = await asyncio.gather(*(_zone(c) for c in clients))
@@ -176,7 +176,8 @@ class AmbientSession:
         for fighter in self.fighters:
             await centers.publish(machine, fighter, self._slot[fighter])
 
-        run = CombatRun({c: self._slot[c] + 1 for c in clients}, machine.log, AMBIENT_COMBAT_MAX_DURATION)
+        # Its players sit in whatever order they arrive, so wizsprinter is handed the duel's order to count by.
+        run = CombatRun({c: self._slot[c] + 1 for c in clients}, machine.log, AMBIENT_COMBAT_MAX_DURATION, order=order)
         await run.identify()
         holds = {
             f: FirstCastHold([h for h, hf in self.helpers.items() if hf is f], started=self._detected, clock=self.clock)

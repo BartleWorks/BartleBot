@@ -375,28 +375,11 @@ def test_a_stored_id_that_does_not_fit_falls_to_the_shipped_duel_and_says_why(tm
     assert answer.reasons == ("your Team default 'Four Box' takes 4 players, and 2 are connected",)
 
 
-def test_an_ambient_team_fight_falls_to_everyone_attacks(tmp_path):
-    """Nothing orders who joins a fight no node started, so no slot is the hitter's."""
-    everyone = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
-    answer = default_duel(3, _prefs(tmp_path), _library(_duel(SHIPPED_TEAM_DUEL_ID), everyone), ambient=True)
-    assert (answer.duel, answer.source) == (everyone, DefaultSource.SHIPPED)
-
-
-def test_an_ambient_solo_fight_keeps_the_solo_duel(tmp_path):
-    solo = _duel(SHIPPED_SOLO_DUEL_ID)
-    answer = default_duel(1, _prefs(tmp_path), _library(solo), ambient=True)
-    assert answer.duel == solo
-
-
-def test_your_team_default_still_answers_an_ambient_fight(tmp_path):
-    """Only the shipped default changes: a duel the user chose is theirs to run."""
-    mine = DuelCombatStrategy(name="Mine", min_players=2)
-    prefs = _prefs(tmp_path)
-    prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], mine.id)
-
-    answer = default_duel(2, prefs, _library(mine, _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)), ambient=True)
-
-    assert (answer.duel, answer.source) == (mine, DefaultSource.YOURS)
+def test_no_fight_gets_everyone_attacks_unless_the_user_chose_it(tmp_path):
+    """An ambient fight included: the runner hands wizsprinter the duel's order (#331)."""
+    team, everyone = _duel(SHIPPED_TEAM_DUEL_ID), _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    answer = default_duel(3, _prefs(tmp_path), _library(team, everyone))
+    assert (answer.duel, answer.source) == (team, DefaultSource.SHIPPED)
 
 
 def test_the_shipped_duel_stored_by_its_id_reads_as_recommended(tmp_path):
@@ -407,15 +390,15 @@ def test_the_shipped_duel_stored_by_its_id_reads_as_recommended(tmp_path):
     assert chosen_default(prefs, TeamSize.TEAM) is None
 
 
-def test_the_shipped_duel_stored_by_its_id_is_shipped_in_an_ambient_fight(tmp_path):
-    """Read as the user's, it would answer at level 3 and skip the ambient swap (epic #201 review, R5)."""
+def test_the_shipped_duel_stored_by_its_id_answers_as_the_shipped_default(tmp_path):
+    """Read as the user's, the label would say "your Team default" for a duel they never chose."""
     prefs = _prefs(tmp_path)
     prefs.set(PREFERENCE_KEYS[TeamSize.TEAM], SHIPPED_TEAM_DUEL_ID)
-    everyone = _duel(SHIPPED_EVERYONE_ATTACKS_DUEL_ID)
+    team = _duel(SHIPPED_TEAM_DUEL_ID)
 
-    answer = default_duel(2, prefs, _library(_duel(SHIPPED_TEAM_DUEL_ID), everyone), ambient=True)
+    answer = default_duel(2, prefs, _library(team))
 
-    assert (answer.duel, answer.source) == (everyone, DefaultSource.SHIPPED)
+    assert (answer.duel, answer.source) == (team, DefaultSource.SHIPPED)
 
 
 def test_nothing_readable_answers_nothing(tmp_path):

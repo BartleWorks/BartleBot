@@ -265,6 +265,7 @@ async def run(machine, clients: list, params: dict) -> str:
         list(range(1, len(clients) + 1)),
         time_limit=time_limit,
         log=machine.log,
+        order=combat_order,
     )
     for number, exc in fought.errors:
         machine.log(f"P{number}: combat raised {exc!r}", logging.WARNING)
