@@ -43,15 +43,18 @@ def _fixed_key(monkeypatch):
 
 
 class IdentityHarness:
-    """The attributes _refresh_account_identity and _read_user_id use on self."""
+    """The attributes learning and adopting an identity use on self: core's two halves of it."""
 
-    _refresh_account_identity = ClientManager._refresh_account_identity
+    _learn_identity = ClientManager._learn_identity
+    _learn_fingerprint = ClientManager._learn_fingerprint
+    _adopt_by_identity = ClientManager._adopt_by_identity
     _read_user_id = ClientManager._read_user_id
     _assign_slot = ClientManager._assign_slot
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
         self._hwnd_user_ids: dict[int, int] = {}
+        self._identity_tasks: dict = {}
         self._client_order: list[str | None] = []
         self._vacated_slots: dict[str, int] = {}
 
@@ -63,9 +66,16 @@ def _client(hwnd: int, user_id: int):
 
 
 async def _identify(harness, settings, clients) -> None:
-    """Run the real method against *settings*, as the app hands it its SettingsManager."""
+    """Run the real methods against *settings*, as the app hands it its SettingsManager.
+
+    A titled client's fingerprint is learned (a task of its own in the app, awaited here), and
+    one the title could not place is adopted by the user id it reports.
+    """
     harness._settings = settings
-    await ClientManager._refresh_account_identity(harness, clients)
+    for client in clients:
+        if (username := harness._hwnd_account_map.get(client.window_handle)) is not None:
+            await harness._learn_identity(client, username)
+    await harness._adopt_by_identity(clients)
 
 
 def _stored(settings) -> dict:
